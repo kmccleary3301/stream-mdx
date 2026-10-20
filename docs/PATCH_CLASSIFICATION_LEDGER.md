@@ -32,6 +32,7 @@ Ambiguous work defaults to `semantic`.
 | `finalize` | `semantic` | No | Changes finalized visible state |
 | `reorder` | `semantic` | No | Changes committed ordering |
 | `appendLines` | `semantic` | No | Changes committed code-line structure and visible content |
+| `appendInputSource` | `semantic` | No | Retains exactly the newly admitted root input bytes at a UTF-16 offset; ordered and non-coalescable |
 | `appendCode` | `semantic` | No | Atomically replaces the unfinished code tail and advances its exact authored-source frontier; never carries completed-prefix records |
 | `appendParagraph` | `semantic` | No | Replaces only the changed paragraph span tail and carries the exact authored source suffix under owner generation and expected revision guards |
 | `updateParagraphSpans` | `semantic` | No | Updates dependency-affected prepared paragraph meaning while preserving source identity under owner and span revision guards |
@@ -71,6 +72,22 @@ always semantic and epoch-guarded.
 line structure. It is semantic and only allowed when append safety is provable.
 Any ambiguity falls back to semantic replace.
 
+### `appendInputSource`
+
+`appendInputSource` is a semantic root operation that retains bytes, not a
+semantic child update or completion proof. Live `INITIALIZED` snapshots carry
+the matching input generation and complete raw baseline, including an empty
+baseline. Each later operation must target the root, match that generation, and
+start at the consumer's current UTF-16 length before mutation.
+
+Input operations remain ordered barriers. They are not coalesced or reordered,
+and reverse `setProps` deduplication clears its seen-target set at each input
+operation. Owner progress, ordinals, and envelope proofs remain independent.
+Native owner `sourceAppend` values are separately validated against the root
+document and contain exactly the newly owned authored suffix. An owner suffix
+may include an LF admitted by an earlier root input operation. Root input
+generation is independent of code, table, and paragraph owner generations.
+
 ### `appendCode` and `decorateCode`
 
 `appendCode` is always semantic, including lifecycle-only changes with no new
@@ -98,12 +115,13 @@ raw slices, ranges and row revisions remain fixed; a header-only update has an
 empty row update list and never walks or replaces body rows. The entire command
 is rejected when its owner generation or expected revision is stale.
 
-`appendTableRows` advances an append-only private source log while each accepted
-view exposes an immutable prefix bounded to its current `sourceRange`. A valid
-provisional-tail retraction shortens only that view; it never truncates the log.
-Re-extension verifies overlap inside the previously logged unfinished tail and
-appends only bytes not yet present. `processedTo` remains monotonic across both
-transitions.
+For live consumers, accepted table views use immutable windows into one
+root-owned input document, capped to each owner's `sourceRange`. They validate
+the exact newly owned `sourceAppend` against that document before updating the
+window. A suffix may include bytes, such as an LF, retained by an earlier root
+append. Cold snapshots without a document baseline use honest per-block raw
+slices and never reconstruct gaps between blocks. `processedTo` remains
+monotonic across retraction and re-extension.
 
 `closed` means the native table source prefix is committed while document input
 may continue; it is distinct from worker `FINALIZED`. Dependency invalidation may

@@ -1,6 +1,7 @@
 import {
   createParagraphSpanIndex,
   freezeParagraphSpanRecord,
+  createSourceWindow,
   type AppendSourceDocument,
   type Block,
   type InlineNode,
@@ -253,35 +254,6 @@ function visitFootnoteDependencies(nodes: readonly InlineNode[], visit: (label: 
   }
 }
 
-function sourceRangeReader(source: SourceSnapshot, from: number, to: number): SourceSnapshot {
-  const start = Math.max(0, Math.min(source.length, from));
-  const end = Math.max(start, Math.min(source.length, to));
-  const length = end - start;
-  let cached: string | undefined;
-  return Object.freeze({
-    lineChunks: true as const,
-    length,
-    chunk(localFrom: number): string {
-      const local = Math.max(0, Math.min(length, localFrom));
-      if (local === length) return "";
-      return source.chunk(start + local).slice(0, length - local);
-    },
-    read(localFrom: number, localTo: number): string {
-      const localStart = Math.max(0, Math.min(length, localFrom));
-      const localEnd = Math.max(localStart, Math.min(length, localTo));
-      return source.read(start + localStart, start + localEnd);
-    },
-    materialize(): string {
-      if (cached !== undefined) return cached;
-      const materialized = length === 0 ? "" : source.read(start, end);
-      if (typeof materialized !== "string") {
-        throw new Error("Root paragraph source snapshot did not return its owned source range");
-      }
-      cached = materialized;
-      return materialized;
-    },
-  });
-}
 
 function recordFromDraft(ownerId: string, draft: ParagraphDraft): ParagraphSpanRecord {
   return freezeParagraphSpanRecord({
@@ -401,7 +373,7 @@ export class RootParagraphSourceOwner {
   }
 
   getSourceSnapshot(): SourceSnapshot {
-    return sourceRangeReader(this.source.snapshot(), this.ownerStart, this.rawEnd);
+    return createSourceWindow(this.source.snapshot(), this.ownerStart, this.rawEnd);
   }
 
   createSnapshot(): ParagraphBlockSnapshot {

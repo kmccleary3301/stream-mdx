@@ -1,4 +1,4 @@
-import { AppendSourceDocument, type SourceSnapshot } from "./source-document";
+import { AppendSourceDocument, createSourceWindow, type SourceSnapshot } from "./source-document";
 import { createParagraphSpanIndex } from "./paragraph-span-index";
 import type {
   ParagraphBlockSnapshot,
@@ -32,7 +32,7 @@ export type ManagedParagraphPatchResult =
   | { readonly reason: string };
 
 interface ManagedParagraphSourceOwner {
-  readonly document: AppendSourceDocument;
+  readonly document?: AppendSourceDocument;
   readonly completedLength: number;
   readonly counters?: ParagraphStateWorkCounters;
 }
@@ -214,6 +214,7 @@ export function createManagedParagraphState(
   snapshot: ParagraphBlockSnapshot,
   ownerId: string,
   options?: ManagedParagraphStateOptions,
+  canonicalSource?: SourceSnapshot,
 ): ManagedParagraphViewState {
   let counters: ParagraphStateWorkCounters | undefined;
   let counterStage: ParagraphRecordCounterStage = "snapshot";
@@ -234,16 +235,26 @@ export function createManagedParagraphState(
   assertSnapshotSpans(snapshot, spans, snapshot.raw.length);
   const completedLength = completeParagraphSourceLength(snapshot, spans);
   if (completedLength > snapshot.raw.length) throw new RangeError("Completed paragraph source exceeds its owned range");
-  const document = counters
-    ? new AppendSourceDocument({ counters } as never)
-    : new AppendSourceDocument();
-  document.append(snapshot.raw);
+  let document: AppendSourceDocument | undefined;
+  let sourceSnapshot: SourceSnapshot;
+  if (canonicalSource) {
+    const { from, to } = snapshot.sourceRange;
+    if (to > canonicalSource.length || canonicalSource.read(from, to) !== snapshot.raw) {
+      throw new RangeError("Paragraph snapshot source does not match canonical input");
+    }
+    sourceSnapshot = createSourceWindow(canonicalSource, from, to);
+  } else {
+    document = counters
+      ? new AppendSourceDocument({ counters } as never)
+      : new AppendSourceDocument();
+    document.append(snapshot.raw);
+    sourceSnapshot = counters
+      ? createParagraphSourceSnapshot(document, snapshot.raw.length, counters)
+      : createParagraphSourceSnapshot(document, snapshot.raw.length);
+  }
   const owner: ManagedParagraphSourceOwner = counters
     ? { document, completedLength, counters }
     : { document, completedLength };
-  const sourceSnapshot = counters
-    ? createParagraphSourceSnapshot(document, snapshot.raw.length, counters)
-    : createParagraphSourceSnapshot(document, snapshot.raw.length);
   return createManagedParagraphView(snapshot, spans, sourceSnapshot, owner);
 }
 
@@ -251,6 +262,7 @@ export function appendManagedParagraphSpans(
   current: ManagedParagraphViewState,
   ownerId: string,
   patch: Extract<Patch, { op: "appendParagraph" }>,
+  canonicalSource?: SourceSnapshot,
 ): ManagedParagraphPatchResult {
   const old = current.source;
   const next = patch.paragraph;
@@ -370,12 +382,28 @@ export function appendManagedParagraphSpans(
   if (completedLength < owner.completedLength || completedLength > nextLength) {
     return { reason: "completed paragraph source frontier is invalid" };
   }
-  const nextOwner = appendParagraphSource(owner, current, next, patch.sourceAppend, nextLength, completedLength, retractingProvisionalTail);
-  const sourceSnapshot = nextLength === current.sourceSnapshot.length && patch.sourceAppend === ""
-    ? current.sourceSnapshot
-    : typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-      ? createParagraphSourceSnapshot(nextOwner.document, nextLength, nextOwner.counters)
-      : createParagraphSourceSnapshot(nextOwner.document, nextLength);
+  const nextOwner = appendParagraphSource(
+    owner,
+    current,
+    next,
+    patch.sourceAppend,
+    nextLength,
+    completedLength,
+    retractingProvisionalTail,
+    canonicalSource,
+  );
+  let sourceSnapshot = current.sourceSnapshot;
+  if (nextLength !== current.sourceSnapshot.length || patch.sourceAppend !== "") {
+    if (canonicalSource) {
+      sourceSnapshot = createSourceWindow(canonicalSource, next.sourceRange.from, next.sourceRange.to);
+    } else if (nextOwner.document) {
+      sourceSnapshot = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? createParagraphSourceSnapshot(nextOwner.document, nextLength, nextOwner.counters)
+        : createParagraphSourceSnapshot(nextOwner.document, nextLength);
+    } else {
+      return { reason: "paragraph source document is unavailable" };
+    }
+  }
   return { state: createManagedParagraphView(next, spans, sourceSnapshot, nextOwner) };
 }
 
@@ -482,11 +510,36 @@ function appendParagraphSource(
   nextLength: number,
   completedLength: number,
   retractingProvisionalTail: boolean,
+  canonicalSource?: SourceSnapshot,
 ): ManagedParagraphSourceOwner {
   if (completedLength < owner.completedLength || completedLength > nextLength) {
     throw new RangeError("Completed paragraph source frontier is invalid");
   }
-  const logSnapshot = owner.document.snapshot();
+  if (canonicalSource) {
+    if (nextLength < current.sourceSnapshot.length) {
+      if (
+        !retractingProvisionalTail ||
+        sourceAppend !== "" ||
+        nextLength < owner.completedLength ||
+        completedLength < owner.completedLength
+      ) throw new RangeError("Paragraph source can only retract its provisional tail");
+    } else if (nextLength !== current.sourceSnapshot.length + sourceAppend.length) {
+      throw new RangeError("Paragraph source append length is inconsistent");
+    }
+    if (
+      sourceAppend.length > 0 &&
+      (
+        next.sourceRange.to > canonicalSource.length ||
+        canonicalSource.read(current.source.sourceRange.to, next.sourceRange.to) !== sourceAppend
+      )
+    ) throw new RangeError("Paragraph source append does not match canonical input");
+    return typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? { document: undefined, completedLength, counters: owner.counters }
+      : { document: undefined, completedLength };
+  }
+  const document = owner.document;
+  if (!document) throw new RangeError("Paragraph source document is unavailable");
+  const logSnapshot = document.snapshot();
   if (logSnapshot.length < current.sourceSnapshot.length) {
     throw new RangeError("Paragraph source log is shorter than its owned prefix");
   }
@@ -498,8 +551,8 @@ function appendParagraphSource(
       completedLength < owner.completedLength
     ) throw new RangeError("Paragraph source can only retract its provisional tail");
     return typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-      ? { document: owner.document, completedLength, counters: owner.counters }
-      : { document: owner.document, completedLength };
+      ? { document, completedLength, counters: owner.counters }
+      : { document, completedLength };
   }
   if (nextLength !== current.sourceSnapshot.length + sourceAppend.length) {
     throw new RangeError("Paragraph source append length is inconsistent");
@@ -516,9 +569,9 @@ function appendParagraphSource(
   if (logSnapshot.length + neverLoggedSuffix.length < nextLength) {
     throw new RangeError("Paragraph source append cannot reach its declared frontier");
   }
-  if (neverLoggedSuffix.length > 0) owner.document.append(neverLoggedSuffix);
+  if (neverLoggedSuffix.length > 0) document.append(neverLoggedSuffix);
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-    return { document: owner.document, completedLength, counters: owner.counters };
+    return { document, completedLength, counters: owner.counters };
   }
-  return { document: owner.document, completedLength };
+  return { document, completedLength };
 }

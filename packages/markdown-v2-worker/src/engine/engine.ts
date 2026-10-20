@@ -1331,6 +1331,10 @@ export class MarkdownEngine {
     this.txCounter = 0;
     reportWorkerStructuralInvariantViolations("initialize", this.blocks, this.lastWorkerInvariantSignature);
     const snapshot = this.createRootSnapshot(this.blocks);
+    snapshot.inputSource = {
+      generation: this.documentGeneration,
+      raw: initialContent ?? "",
+    };
     const { patch: initialTocPatch, nextHeadings, nextSignature } = maybeBuildTocPatch(this.blocks, this.tocSignature);
     this.tocHeadings = nextHeadings;
     this.tocSignature = nextSignature;
@@ -1354,6 +1358,14 @@ export class MarkdownEngine {
       const { chunk, rest } = sliceAppendChunk(remaining, DEFAULT_APPEND_CHUNK_SIZE);
       remaining = rest;
 
+      this.dispatchPatchBatch([{
+        op: "appendInputSource",
+        at: { blockId: PATCH_ROOT_ID },
+        generation: this.documentGeneration,
+        from: this.sourceDocument.length,
+        text: chunk,
+        meta: { kind: "semantic" },
+      }]);
       this.performanceTimer.mark("append-operation");
 
       const metricsCollector = new WorkerMetricsCollector(this.workerGrammarEngine);
@@ -4417,6 +4429,7 @@ export class MarkdownEngine {
       }
       for (const owner of previousRootParagraphOwners) {
         const previous = owner.getMetadata();
+        if (previous.state === "finalized") continue;
         const change = finalizeRootParagraphOwner(owner, source);
         if (rootParagraphChangeNeedsReplacement(change)) {
           replacementRootFrom = replacementRootFrom === undefined

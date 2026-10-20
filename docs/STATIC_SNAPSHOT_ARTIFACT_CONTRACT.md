@@ -60,10 +60,13 @@ native header, body-row, and alignment records. Header `sourceRange` spans the
 native header through delimiter end (excluding its physical line ending); cell
 and body-row ranges retain their own authored UTF-16 slices.
 
-The reducer keeps one private append-only source log and gives each table view an
-immutable reader bounded to that view's current source frontier. Retracting a
-provisional tail cannot alter older snapshots or truncate completed source;
-later re-extension validates only the overlap with the retained unfinished tail.
+Live consumers retain one root-owned append-only input document. Managed table
+source values are immutable zero-copy windows into that document, capped to each
+owner's current authored range. Retraction and re-extension change the owner
+window only after validating the exact source suffix; they do not truncate or
+duplicate the consumer's input.
+
+Cold `Block[]` and standalone snapshots retain honest per-block source slices.
 Full source and row materialization remains a cold `getBlocks()` operation.
 
 
@@ -76,6 +79,15 @@ immutable `ParagraphSpanRecord`s. `appendParagraph` carries the required
 Owner generation and expected revision guard both operations. Typed
 `ParagraphSpanChildSnapshot`s preserve prepared `paragraph-text`,
 `paragraph-html`, or `paragraph-mdx` children at absolute source ranges.
+
+Live `INITIALIZED` root snapshots carry `inputSource: { generation, raw }`, with
+the baseline generation matching the worker message. Empty raw input is valid.
+Each admitted chunk then produces an ordered semantic `appendInputSource` at
+the root, using the exact UTF-16 start offset and newly admitted bytes. Input
+retention is not semantic completion or owner progress. Native owners keep
+independent generations, and their `sourceAppend` contains exactly the newly
+owned authored suffix, which may include an LF retained by an earlier root
+append.
 
 This cutover does not change static artifact `version: 1`, `schemaId`, or the
 serialized `blocks` format. Live native appends do not materialize a complete

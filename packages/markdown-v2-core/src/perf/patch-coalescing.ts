@@ -133,6 +133,7 @@ export function coalescePatchesLinear(patches: Patch[], config: CoalesceConfig =
     i++;
   }
 
+
   return [...result, ...rest];
 }
 
@@ -513,6 +514,7 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
     coalesced.push(current);
     i++;
   }
+
 
   // Add remaining patches that weren't in the coalescing window
   return [...coalesced, ...rest];

@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import { PATCH_ROOT_ID, type Block, type Patch } from "@stream-mdx/core";
+import { createBlockSnapshot, PATCH_ROOT_ID, type Block, type Patch } from "@stream-mdx/core";
 
 import { createRendererStore } from "../src/renderer/store";
 
@@ -110,6 +110,55 @@ async function main() {
   const updatedCode = codeStore.getNode("code-block");
   assert.ok(updatedCode, "expected code block after semantic line update");
   assert.ok(updatedCode.blockEpoch > initialCodeEpoch, "semantic code-line update should advance owning block epoch");
+  const canonicalCodeStore = createRendererStore();
+  const canonicalCodeRaw = "alpha";
+  const canonicalCodeGeneration = 29;
+  canonicalCodeStore.resetSnapshot({
+    id: PATCH_ROOT_ID,
+    type: "__root__",
+    inputSource: { generation: canonicalCodeGeneration, raw: canonicalCodeRaw },
+    children: [createBlockSnapshot({
+      id: "canonical-code",
+      type: "code",
+      isFinalized: false,
+      payload: { raw: canonicalCodeRaw, meta: { lang: "ts" } },
+    })],
+  });
+  const canonicalCode = canonicalCodeStore.getNode("canonical-code");
+  assert.ok(canonicalCode);
+  const canonicalLineId = canonicalCode.children[0];
+  assert.ok(canonicalLineId);
+  const capturedCanonicalBlock = canonicalCodeStore.getBlocks()[0];
+  assert.ok(capturedCanonicalBlock);
+  const updatedCanonicalRaw = "alpha(updated)";
+  canonicalCodeStore.applyPatches([
+    {
+      op: "appendInputSource",
+      at: { blockId: PATCH_ROOT_ID },
+      generation: canonicalCodeGeneration,
+      from: canonicalCodeRaw.length,
+      text: "(updated)",
+    },
+    {
+      op: "setProps",
+      at: { blockId: "canonical-code", nodeId: canonicalLineId },
+      props: { index: 0, text: updatedCanonicalRaw },
+      meta: {
+        kind: "semantic",
+        blockEpoch: canonicalCode.blockEpoch,
+        parseEpoch: canonicalCode.blockEpoch + 1,
+        tx: 201,
+      },
+    },
+  ]);
+  assert.equal(canonicalCodeStore.getCodeLines("canonical-code", 0, 1)[0]?.text, updatedCanonicalRaw, "legacy nested line updates can validate against appended canonical input");
+  assert.deepStrictEqual(
+    canonicalCodeStore.getCodeBlock("canonical-code")?.source.sourceRange,
+    { from: 0, to: updatedCanonicalRaw.length },
+    "the updated legacy source window remains bounded to its canonical range",
+  );
+  assert.equal(capturedCanonicalBlock.payload.raw, canonicalCodeRaw, "captured canonical legacy windows remain immutable");
+  assert.equal(canonicalCodeStore.getBlocks()[0]?.payload.raw, updatedCanonicalRaw, "the current legacy export reflects the validated canonical window");
 
   store.applyPatches([
     {

@@ -6,6 +6,13 @@ import { getPatchKind, isHeavyPatch, splitPatchBatch } from "../src/perf/patch-b
 function testSemanticDefaultClassification(): void {
   const patches: Patch[] = [
     {
+      op: "appendInputSource",
+      at: { blockId: "__root__" },
+      generation: 1,
+      from: 0,
+      text: "x",
+    },
+    {
       op: "insertChild",
       at: { blockId: "list-1" },
       index: 0,

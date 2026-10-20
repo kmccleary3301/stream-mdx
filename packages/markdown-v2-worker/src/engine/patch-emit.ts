@@ -199,7 +199,9 @@ export function dedupeSetPropsByTargetKeepingLatest(patches: Patch[]): Patch[] {
   const dedupedReversed: Patch[] = [];
   for (let i = patches.length - 1; i >= 0; i--) {
     const patch = patches[i];
-    if (patch.op === "setProps") {
+    if (patch.op === "appendInputSource") {
+      seen.clear();
+    } else if (patch.op === "setProps") {
       const target = patch.at.nodeId ?? patch.at.blockId;
       const key = `${patch.at.blockId}::${target}`;
       if (seen.has(key)) {

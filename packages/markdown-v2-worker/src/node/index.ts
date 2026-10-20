@@ -377,12 +377,22 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
     const handleMessage = (message: WorkerOut) => {
       switch (message.type) {
         case "INITIALIZED":
-          if (message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
-            fail(new Error(`Incompatible worker schema: ${message.schemaVersion}`));
+          if (
+            message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+            !Number.isSafeInteger(message.generation) ||
+            message.generation < 0 ||
+            message.snapshot.inputSource?.generation !== message.generation ||
+            typeof message.snapshot.inputSource?.raw !== "string"
+          ) {
+            fail(new Error("Incompatible worker initialization: canonical input baseline is missing or invalid"));
             break;
           }
-          snapshot = createInitialSnapshot(message.snapshot);
-          initialized = true;
+          try {
+            snapshot = createInitialSnapshot(message.snapshot);
+            initialized = true;
+          } catch (error) {
+            fail(error);
+          }
           scheduleIdleFinalize();
           break;
         case "PATCH":

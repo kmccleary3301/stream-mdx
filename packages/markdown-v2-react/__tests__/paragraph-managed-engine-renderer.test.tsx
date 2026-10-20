@@ -41,8 +41,11 @@ function patchesOf(messages: readonly WorkerOut[]): Patch[] {
 
 function applyMessages(store: RendererStore, messages: readonly WorkerOut[]): void {
   for (const message of messages) {
-    if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
-    else if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
+    if (message.type === "INITIALIZED") {
+      assert.ok(message.snapshot.inputSource, "live INITIALIZED snapshots must carry canonical input");
+      assert.equal(message.snapshot.inputSource.generation, message.generation, "root input and worker generations must match");
+      store.resetSnapshot(message.snapshot);
+    } else if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
     else if (message.type === "ERROR") assert.fail(`worker ${message.phase} failed: ${message.error.message}`);
   }
 }
@@ -159,6 +162,9 @@ async function runManagedParagraphEngineRendererRegression(): Promise<void> {
     const originalParagraph = "**pinned**. See [guide][destination]";
     const initialized = await handleAndApply(engine, store, emitted, paragraphInit(originalParagraph));
     assert.ok(initialized.some((message) => message.type === "INITIALIZED"), "INIT must publish the engine's native root snapshot");
+    const initializedMessage = initialized.find((message) => message.type === "INITIALIZED");
+    assert.ok(initializedMessage && initializedMessage.type === "INITIALIZED");
+    assert.equal(initializedMessage.snapshot.inputSource?.raw, originalParagraph, "INIT publishes the complete baseline, not append ops");
 
     const container = dom.window.document.getElementById("root");
     assert.ok(container, "missing JSDOM render root");
@@ -183,6 +189,14 @@ async function runManagedParagraphEngineRendererRegression(): Promise<void> {
     const afterFirstSource = originalParagraph + firstAppend;
     const firstAppendMessages = await handleAndApply(engine, store, emitted, { type: "APPEND", text: firstAppend });
     const firstAppendPatch = patchesOf(firstAppendMessages).find((patch) => patch.op === "appendParagraph");
+    const inputAppend = patchesOf(firstAppendMessages).find((patch) => patch.op === "appendInputSource");
+    assert.ok(inputAppend && inputAppend.op === "appendInputSource");
+    assert.equal(inputAppend.from, originalParagraph.length, "the first input append starts at the baseline UTF-16 length");
+    assert.equal(inputAppend.text, firstAppend, "the root operation carries only the newly admitted bytes");
+    assert.ok(
+      patchesOf(firstAppendMessages).indexOf(inputAppend) < patchesOf(firstAppendMessages).findIndex((patch) => patch.op === "appendParagraph"),
+      "root input retention precedes semantic paragraph ownership",
+    );
     assert.ok(firstAppendPatch && firstAppendPatch.op === "appendParagraph", "APPEND must publish a managed paragraph tail patch");
     assert.equal(firstAppendPatch.sourceAppend, firstAppend, "the semantic patch must carry only newly authored paragraph source");
     assert.equal(paragraphSource(store, id), afterFirstSource, "append source export must include the exact new authored suffix");
@@ -209,6 +223,10 @@ async function runManagedParagraphEngineRendererRegression(): Promise<void> {
     const afterSecondSource = afterFirstSource + secondAppend;
     const secondAppendMessages = await handleAndApply(engine, store, emitted, { type: "APPEND", text: secondAppend });
     assert.ok(patchesOf(secondAppendMessages).some((patch) => patch.op === "appendParagraph"), "a second APPEND must update the managed tail");
+    const secondInputAppend = patchesOf(secondAppendMessages).find((patch) => patch.op === "appendInputSource");
+    assert.ok(secondInputAppend && secondInputAppend.op === "appendInputSource");
+    assert.equal(secondInputAppend.from, afterFirstSource.length);
+    assert.equal(secondInputAppend.text, secondAppend);
     assert.equal(paragraphSource(store, id), afterSecondSource, "second append source export must remain exact");
 
     const currentState = paragraphState(store, id);
@@ -232,9 +250,14 @@ async function runManagedParagraphEngineRendererRegression(): Promise<void> {
     assert.ok(unresolvedSpan, "the engine-prepared tail must retain its unresolved reference dependency");
     const definition = "\n\n[destination]: /guide\n";
     const sourceBeforeDefinition = afterSecondSource;
+    const retainedReferenceSource = paragraphState(store, id).sourceSnapshot;
     const referenceMessages = await handleAndApply(engine, store, emitted, { type: "APPEND", text: definition });
     const referenceUpdatePatch = patchesOf(referenceMessages).find((patch) => patch.op === "updateParagraphSpans");
     assert.ok(referenceUpdatePatch && referenceUpdatePatch.op === "updateParagraphSpans", "a real later definition must publish targeted prepared-meaning updates");
+    const definitionInputAppend = patchesOf(referenceMessages).find((patch) => patch.op === "appendInputSource");
+    assert.ok(definitionInputAppend && definitionInputAppend.op === "appendInputSource");
+    assert.equal(definitionInputAppend.from, sourceBeforeDefinition.length);
+    assert.equal(definitionInputAppend.text, definition, "the reference definition is root input, not paragraph source");
     assert.deepEqual(
       referenceUpdatePatch.updates.map((update) => update.index),
       [unresolvedSpan.index],
@@ -245,6 +268,7 @@ async function runManagedParagraphEngineRendererRegression(): Promise<void> {
     assert.deepEqual(resolvedSpan.sourceRange, unresolvedSpan.sourceRange, "reference resolution must not change authored span range");
     assert.equal(resolvedSpan.sourceRevision, unresolvedSpan.sourceRevision, "reference resolution must not revise authored span source");
     assert.deepEqual(resolvedSpan.nodes.filter((node) => node.kind === "link").map((node) => node.kind === "link" ? node.href : undefined), ["/guide"], "the engine's reference update must carry the resolved link meaning");
+    assert.strictEqual(paragraphState(store, id).sourceSnapshot, retainedReferenceSource, "same-bounds reference updates retain the paragraph source window");
     const mountedLink = container.querySelector("p a[href=\"/guide\"]");
     assert.equal(mountedLink?.textContent, "guide", "the mounted native renderer must expose the actual late reference meaning");
     assert.equal(container.querySelector("p strong") === pinnedStrong, true, "targeted reference meaning must leave completed inline DOM unchanged");

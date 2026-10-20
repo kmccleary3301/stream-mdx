@@ -8,6 +8,9 @@ const SOURCE_FROM = 100;
 const INITIAL_RAW = "```ts\r\n  alpha\r\n  bet";
 const SOURCE_TO = SOURCE_FROM + INITIAL_RAW.length;
 const BODY_FROM = SOURCE_FROM + "```ts\r\n".length;
+const INPUT_GENERATION = 11;
+const INPUT_PREFIX = "x".repeat(SOURCE_FROM);
+const INITIAL_DOCUMENT = `${INPUT_PREFIX}${INITIAL_RAW}`;
 
 function codeLine(
   index: number,
@@ -33,6 +36,8 @@ function rootSnapshot(generation: number): NodeSnapshot {
   return {
     id: "__root__",
     type: "__root__",
+    range: { from: 0, to: INITIAL_DOCUMENT.length },
+    inputSource: { generation: INPUT_GENERATION, raw: INITIAL_DOCUMENT },
     children: [
       {
         id: OWNER_ID,
@@ -62,6 +67,35 @@ function rootSnapshot(generation: number): NodeSnapshot {
     ],
   };
 }
+function emptyCodeRootSnapshot(raw: string, from: number): NodeSnapshot {
+  const ownerId = "empty-code";
+  return {
+    id: "__root__",
+    type: "__root__",
+    inputSource: { generation: INPUT_GENERATION, raw },
+    children: [{
+      id: ownerId,
+      type: "code",
+      props: {},
+      range: { from, to: from },
+      children: [],
+      code: {
+        codeOwnerId: ownerId,
+        generation: 1,
+        revision: 0,
+        state: "finalized",
+        processedTo: from,
+        completeLineCount: 0,
+        lineCount: 0,
+        sourceRange: { from, to: from },
+        configurationRevision: 0,
+        info: "",
+        raw: "",
+        lines: [],
+      },
+    }],
+  };
+}
 
 const store = createRendererStore();
 store.resetSnapshot(rootSnapshot(7));
@@ -79,6 +113,7 @@ const stableRow = stablePrefix[0];
 assert.ok(stableRow);
 assert.strictEqual(stableRow.text, "  alpha");
 const oldBlocks = store.getBlocks();
+const versionBeforeInput = store.getVersion();
 assert.strictEqual(oldBlocks[0]?.payload.raw, INITIAL_RAW, "cold export preserves authored CRLF and indentation");
 
 const sourceAppend = "a\r\n```";
@@ -103,6 +138,41 @@ const appendPatch: Patch = {
   sourceAppend,
   meta: { kind: "semantic" },
 };
+store.applyPatches([
+  {
+    op: "appendInputSource",
+    at: { blockId: "__root__" },
+    generation: INPUT_GENERATION,
+    from: INITIAL_DOCUMENT.length - 1,
+    text: "stale",
+  },
+  {
+    op: "appendInputSource",
+    at: { blockId: "__root__" },
+    generation: INPUT_GENERATION - 1,
+    from: INITIAL_DOCUMENT.length,
+    text: "wrong generation",
+  },
+  {
+    op: "appendInputSource",
+    at: { blockId: "__root__", nodeId: "__root__" },
+    generation: INPUT_GENERATION,
+    from: INITIAL_DOCUMENT.length,
+    text: "wrong root target",
+  },
+]);
+assert.strictEqual(store.getVersion(), versionBeforeInput, "rejected input appends do not complete semantic work");
+assert.strictEqual(store.getBlocks(), oldBlocks, "input-only changes do not rebuild root children");
+store.applyPatches([{
+  op: "appendInputSource",
+  at: { blockId: "__root__" },
+  generation: INPUT_GENERATION,
+  from: INITIAL_DOCUMENT.length,
+  text: sourceAppend,
+}]);
+assert.strictEqual(store.getVersion(), versionBeforeInput, "input retention does not advance the semantic version");
+assert.strictEqual(store.getBlocks(), oldBlocks, "input-only append preserves the root block snapshot");
+assert.strictEqual(oldBlocks[0]?.payload.raw, INITIAL_RAW, "captured source windows remain immutable");
 store.applyPatches([appendPatch]);
 
 assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.revision, 1);
@@ -139,6 +209,22 @@ const decoratePatch: Extract<Patch, { op: "decorateCode" }> = {
   ],
   meta: { kind: "enrichment", blockEpoch: 0 },
 };
+const definitionAppend = "\n\n[reference]: /target";
+const versionBeforeDefinition = store.getVersion();
+store.applyPatches([{
+  op: "appendInputSource",
+  at: { blockId: "__root__" },
+  generation: INPUT_GENERATION,
+  from: INITIAL_DOCUMENT.length + sourceAppend.length,
+  text: definitionAppend,
+}]);
+assert.strictEqual(store.getVersion(), versionBeforeDefinition, "dependency text retention is not semantic completion");
+store.applyPatches([{
+  op: "setProps",
+  at: { blockId: OWNER_ID, nodeId: OWNER_ID },
+  props: { info: "meaning-only update" },
+}]);
+assert.strictEqual(store.getBlocks()[0]?.payload.raw, nextRaw, "same-bounds meaning updates do not absorb later definitions");
 store.applyPatches([decoratePatch]);
 assert.deepStrictEqual(store.getCodeLines(OWNER_ID, 0, 1)[0]?.decoration?.tokens, validOldRowTokens);
 assert.strictEqual(store.getCodeLines(OWNER_ID, 1, 2)[0]?.decoration, undefined, "stale row revisions are dropped independently");
@@ -403,4 +489,110 @@ const completedTailRange = rangeStore.getCodeLines(rangeOwnerId, 64, 128);
 assert.notStrictEqual(completedTailRange, provisionalRange, "the tail range refreshes when its provisional row closes");
 assert.strictEqual(completedTailRange[0]?.isProvisional, false);
 assert.strictEqual(completedTailRange[0]?.ending, "\r\n");
+const atomicStore = createRendererStore();
+atomicStore.resetSnapshot(rootSnapshot(9));
+const preservedBlocks = atomicStore.getBlocks();
+const preservedVersion = atomicStore.getVersion();
+const invalidBaseline = rootSnapshot(10);
+invalidBaseline.inputSource = { generation: INPUT_GENERATION, raw: "invalid" };
+assert.throws(() => atomicStore.resetSnapshot(invalidBaseline));
+assert.strictEqual(atomicStore.getVersion(), preservedVersion, "invalid baselines do not partially reset the store");
+assert.strictEqual(atomicStore.getBlocks(), preservedBlocks, "invalid baselines retain the previous semantic snapshot");
+const emptyCodeStore = createRendererStore();
+emptyCodeStore.resetSnapshot(emptyCodeRootSnapshot("x", 1));
+assert.equal(emptyCodeStore.getCodeBlock("empty-code")?.source.sourceRange.to, 1, "empty code at canonical EOF remains valid");
+const emptyCodeBlocks = emptyCodeStore.getBlocks();
+const emptyCodeVersion = emptyCodeStore.getVersion();
+assert.throws(
+  () => emptyCodeStore.resetSnapshot(emptyCodeRootSnapshot("", 1)),
+  "an empty code range past canonical EOF is invalid",
+);
+assert.strictEqual(emptyCodeStore.getBlocks(), emptyCodeBlocks, "invalid empty code ranges preserve the prior snapshot");
+assert.equal(emptyCodeStore.getVersion(), emptyCodeVersion, "invalid empty code ranges do not partially reset store state");
+const overlapStore = createRendererStore();
+overlapStore.resetSnapshot(rootSnapshot(17));
+const overlapInputFrom = INITIAL_DOCUMENT.length;
+overlapStore.applyPatches([{
+  op: "appendInputSource",
+  at: { blockId: "__root__" },
+  generation: INPUT_GENERATION,
+  from: overlapInputFrom,
+  text: "\n",
+}]);
+overlapStore.applyPatches([{
+  op: "appendInputSource",
+  at: { blockId: "__root__" },
+  generation: INPUT_GENERATION,
+  from: overlapInputFrom + 1,
+  text: "```",
+}]);
+overlapStore.applyPatches([{
+  op: "appendCode",
+  at: { blockId: OWNER_ID },
+  code: {
+    codeOwnerId: OWNER_ID,
+    generation: 17,
+    revision: 1,
+    state: "closed",
+    processedTo: SOURCE_TO + 4,
+    completeLineCount: 2,
+    lineCount: 2,
+    sourceRange: { from: SOURCE_FROM, to: SOURCE_TO + 4 },
+  },
+  expectedRevision: 0,
+  fromLine: 1,
+  lines: [codeLine(1, "  bet", BODY_FROM + 9, BODY_FROM + 14, "\n", 1, false)],
+  sourceAppend: "\n```",
+  meta: { kind: "semantic" },
+}]);
+assert.strictEqual(
+  overlapStore.getBlocks()[0]?.payload.raw,
+  `${INITIAL_RAW}\n\`\`\``,
+  "a newly owned code suffix may include an LF retained by an earlier root append",
+);
+const emptyBaselineStore = createRendererStore();
+emptyBaselineStore.resetSnapshot({
+  id: "__root__",
+  type: "__root__",
+  range: { from: 0, to: 0 },
+  inputSource: { generation: 0, raw: "" },
+  children: [],
+});
+assert.deepStrictEqual(emptyBaselineStore.getBlocks(), [], "an empty canonical input baseline is valid");
+const previousRaf = Object.getOwnPropertyDescriptor(globalThis, "requestAnimationFrame");
+const scheduledFrames: Array<(timestamp: number) => void> = [];
+Object.defineProperty(globalThis, "requestAnimationFrame", {
+  configurable: true,
+  value: (callback: (timestamp: number) => void) => {
+    scheduledFrames.push(callback);
+    return scheduledFrames.length;
+  },
+});
+try {
+  const notificationStore = createRendererStore();
+  notificationStore.resetSnapshot(rootSnapshot(23));
+  let rootNotifications = 0;
+  const unsubscribe = notificationStore.subscribe(() => {
+    rootNotifications += 1;
+  });
+  const initialNotification = scheduledFrames.shift();
+  assert.ok(initialNotification, "snapshot reset schedules its root notification");
+  initialNotification(0);
+  rootNotifications = 0;
+  const notificationVersion = notificationStore.getVersion();
+  notificationStore.applyPatches([{
+    op: "appendInputSource",
+    at: { blockId: "__root__" },
+    generation: INPUT_GENERATION,
+    from: INITIAL_DOCUMENT.length,
+    text: " retained input",
+  }]);
+  assert.equal(scheduledFrames.length, 0, "input-only appends schedule no notification");
+  assert.equal(rootNotifications, 0, "input-only appends do not notify semantic root children");
+  assert.equal(notificationStore.getVersion(), notificationVersion, "input-only appends do not signal semantic completion");
+  unsubscribe();
+} finally {
+  if (previousRaf) Object.defineProperty(globalThis, "requestAnimationFrame", previousRaf);
+  else Reflect.deleteProperty(globalThis, "requestAnimationFrame");
+}
 console.log("renderer store code range test passed");

@@ -74,6 +74,13 @@ function extractWorkerError(event: Event): Error {
   }
   return new Error("Worker error");
 }
+function hasCompatibleInputSource(message: Extract<WorkerOut, { type: "INITIALIZED" }>): boolean {
+  const inputSource = message.snapshot.inputSource;
+  return Number.isSafeInteger(message.generation) &&
+    message.generation >= 0 &&
+    inputSource?.generation === message.generation &&
+    typeof inputSource?.raw === "string";
+}
 
 // A borrowed worker can outlive its renderer. Keep cancelled FIFO slots until
 // their native responses arrive, including while no renderer is attached.
@@ -89,10 +96,14 @@ function getWorkerInitializations(worker: Worker): WorkerInitializationQueue {
       const initialization = queue.pending.shift();
       if (initialization) {
         queue.acknowledgements.set(event, initialization);
-        if (message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
-          initialization.reject?.(new Error(`Incompatible worker schema: expected ${STREAM_MDX_SCHEMA_VERSION}, received ${message.schemaVersion}`));
+        if (message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION || !hasCompatibleInputSource(message)) {
+          initialization.reject?.(new Error("Incompatible worker initialization: canonical input baseline is missing or invalid"));
         } else {
-          initialization.resolve?.(createInitialSnapshot(message.snapshot).getBlocks());
+          try {
+            initialization.resolve?.(createInitialSnapshot(message.snapshot).getBlocks());
+          } catch (error) {
+            initialization.reject?.(error instanceof Error ? error : new Error(String(error)));
+          }
         }
       }
     } else if (message.type === "ERROR" && message.phase === "INIT" && typeof message.meta?.rule !== "string") {
@@ -169,7 +180,7 @@ export class MarkdownRenderer implements Renderer {
     }
     this.patchScheduler = new PatchCommitScheduler({
       store: this.store,
-      onFlush: (result) => this.handlePatchFlush(result),
+      onFlush: (result, hasNonInputSourcePatch) => this.handlePatchFlush(result, hasNonInputSourcePatch),
       options: {
         frameBudgetMs: this.config.performance?.frameBudgetMs,
         timeoutMs: this.config.performance?.flushTimeoutMs,
@@ -467,18 +478,21 @@ export class MarkdownRenderer implements Renderer {
       case "INITIALIZED": {
         const initialization = this.initializationQueue?.acknowledgements.get(event);
         if (initialization && initialization.owner !== this) break;
-        if (message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
+        if (message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION || !hasCompatibleInputSource(message)) {
           this.workerSchemaReady = false;
           if (initialization && initialization === this.currentInitialization) {
             this.pendingStreamCommands = [];
             this.currentInitialization = null;
           }
+          const messageText = message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION
+            ? `Incompatible worker schema: expected ${STREAM_MDX_SCHEMA_VERSION}, received ${message.schemaVersion}`
+            : "Incompatible worker initialization: canonical input baseline is missing or invalid";
           this.lastWorkerError = {
             type: "ERROR",
             phase: "INIT",
-            error: { name: "WorkerSchemaMismatch", message: `Incompatible worker schema: expected ${STREAM_MDX_SCHEMA_VERSION}, received ${message.schemaVersion}` },
+            error: { name: "WorkerSchemaMismatch", message: messageText },
           };
-          const error = new Error(this.lastWorkerError.error.message);
+          const error = new Error(messageText);
           error.name = "WorkerSchemaMismatch";
           this.settleInitialization(error);
           break;
@@ -488,7 +502,21 @@ export class MarkdownRenderer implements Renderer {
           : this.currentInitialization === null;
         if (this.initializationQueue?.pending.length === 0 && matchesCurrentInitialization) {
           this.patchScheduler.clear();
-          this.store.resetSnapshot(message.snapshot);
+          try {
+            this.store.resetSnapshot(message.snapshot);
+          } catch (cause) {
+            const messageText = cause instanceof Error ? cause.message : String(cause);
+            this.workerSchemaReady = false;
+            this.lastWorkerError = {
+              type: "ERROR",
+              phase: "INIT",
+              error: { name: "WorkerSchemaMismatch", message: messageText },
+            };
+            const error = new Error(messageText);
+            error.name = "WorkerSchemaMismatch";
+            this.settleInitialization(error);
+            break;
+          }
           this.workerSchemaReady = true;
           this.lastWorkerError = null;
           if (this.updateCallbacks.length > 0) {
@@ -665,7 +693,7 @@ export class MarkdownRenderer implements Renderer {
   /**
    * Handle scheduled patch flush results from the commit scheduler.
    */
-  private handlePatchFlush(result: PatchFlushResult): void {
+  private handlePatchFlush(result: PatchFlushResult, hasNonInputSourcePatch: boolean): void {
     if (!result || result.batches.length === 0) {
       return;
     }
@@ -682,7 +710,7 @@ export class MarkdownRenderer implements Renderer {
 
     if (this.updateCallbacks.length > 0) {
       this.blocks = this.store.getBlocks() as Block[];
-      if (touchedIds.size > 0 || result.totalPatches > 0) {
+      if (touchedIds.size > 0 || hasNonInputSourcePatch) {
         this.notifyUpdateCallbacks();
       }
     }

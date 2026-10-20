@@ -1,4 +1,4 @@
-import { AppendSourceDocument, type SourceSnapshot } from "./source-document";
+import { AppendSourceDocument, createSourceWindow, type SourceSnapshot } from "./source-document";
 import { createTableRowIndex, type TableRowIndex } from "./table-row-index";
 import type { Patch } from "./types";
 import { freezeTableHeaderRecord } from "./table-records";
@@ -31,7 +31,7 @@ interface ManagedTableStateOptions {
 }
 
 interface ManagedTableSourceOwner {
-  readonly document: AppendSourceDocument;
+  readonly document?: AppendSourceDocument;
   readonly completedLength: number;
   readonly counters?: TableStateWorkCounters;
 }
@@ -46,6 +46,7 @@ export function createManagedTableState(
   snapshot: TableBlockSnapshot,
   ownerId: string,
   options?: ManagedTableStateOptions,
+  canonicalSource?: SourceSnapshot,
 ): ManagedTableViewState {
   let counters: TableStateWorkCounters | undefined;
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -81,16 +82,26 @@ export function createManagedTableState(
 
   const completedLength = completeTableSourceLength(snapshot, snapshot.header, rows);
   if (completedLength > snapshot.raw.length) throw new RangeError("Completed table source exceeds its raw range");
-  const document = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-    ? new AppendSourceDocument({ counters } as never)
-    : new AppendSourceDocument();
-  document.append(snapshot.raw);
+  let document: AppendSourceDocument | undefined;
+  let sourceSnapshot: SourceSnapshot;
+  if (canonicalSource) {
+    const { from, to } = snapshot.sourceRange;
+    if (to > canonicalSource.length || canonicalSource.read(from, to) !== snapshot.raw) {
+      throw new RangeError("Table snapshot source does not match canonical input");
+    }
+    sourceSnapshot = createSourceWindow(canonicalSource, from, to);
+  } else {
+    document = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? new AppendSourceDocument({ counters } as never)
+      : new AppendSourceDocument();
+    document.append(snapshot.raw);
+    sourceSnapshot = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? createTableSourceSnapshot(document, snapshot.raw.length, counters)
+      : createTableSourceSnapshot(document, snapshot.raw.length);
+  }
   const owner: ManagedTableSourceOwner = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
     ? { document, completedLength, counters }
     : { document, completedLength };
-  const sourceSnapshot = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-    ? createTableSourceSnapshot(document, snapshot.raw.length, counters)
-    : createTableSourceSnapshot(document, snapshot.raw.length);
   return createManagedTableView(snapshot, freezeTableHeaderRecord(snapshot.header), rows, sourceSnapshot, owner);
 }
 
@@ -98,6 +109,7 @@ export function appendManagedTableRows(
   current: ManagedTableViewState,
   ownerId: string,
   patch: Extract<Patch, { op: "appendTableRows" }>,
+  canonicalSource?: SourceSnapshot,
 ): ManagedTablePatchResult {
   const old = current.source;
   const next = patch.table;
@@ -154,7 +166,7 @@ export function appendManagedTableRows(
   if (rows.length !== next.rowCount || rows.completeRowCount !== next.completeRowCount) {
     return { reason: "table append row counts do not match their records" };
   }
-  const sourceReader = sourceForAppend(current, patch.sourceAppend);
+  const sourceReader = sourceForAppend(current, patch.sourceAppend, canonicalSource, next.sourceRange);
   const prefixRowEnd = patch.fromRow === 0
     ? current.header.sourceRange.to
     : current.rows.get(patch.fromRow - 1)?.sourceRange.to;
@@ -173,12 +185,28 @@ export function appendManagedTableRows(
     }
   }
 
-  const nextOwner = appendTableSource(owner, current, next, rows, patch.sourceAppend, nextLength, retractingProvisionalTail);
-  const sourceSnapshot = nextLength === current.sourceSnapshot.length && patch.sourceAppend === ""
-    ? current.sourceSnapshot
-    : typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-      ? createTableSourceSnapshot(nextOwner.document, nextLength, nextOwner.counters)
-      : createTableSourceSnapshot(nextOwner.document, nextLength);
+  const nextOwner = appendTableSource(
+    owner,
+    current,
+    next,
+    rows,
+    patch.sourceAppend,
+    nextLength,
+    retractingProvisionalTail,
+    canonicalSource,
+  );
+  let sourceSnapshot = current.sourceSnapshot;
+  if (nextLength !== current.sourceSnapshot.length || patch.sourceAppend !== "") {
+    if (canonicalSource) {
+      sourceSnapshot = createSourceWindow(canonicalSource, next.sourceRange.from, next.sourceRange.to);
+    } else if (nextOwner.document) {
+      sourceSnapshot = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? createTableSourceSnapshot(nextOwner.document, nextLength, nextOwner.counters)
+        : createTableSourceSnapshot(nextOwner.document, nextLength);
+    } else {
+      return { reason: "table source document is unavailable" };
+    }
+  }
   return { state: createManagedTableView(copyTableSource(next), current.header, rows, sourceSnapshot, nextOwner) };
 }
 
@@ -337,6 +365,7 @@ function appendTableSource(
   sourceAppend: string,
   nextLength: number,
   retractingProvisionalTail: boolean,
+  canonicalSource?: SourceSnapshot,
 ): ManagedTableSourceOwner {
   const completedLength = completeTableSourceLength(nextSource, current.header, nextRows);
   if (
@@ -345,7 +374,32 @@ function appendTableSource(
     nextLength < completedLength
   ) throw new RangeError("Completed table source frontier is invalid");
 
-  const logSnapshot = owner.document.snapshot();
+  if (canonicalSource) {
+    if (nextLength < current.sourceSnapshot.length) {
+      if (
+        !retractingProvisionalTail ||
+        sourceAppend !== "" ||
+        nextLength < owner.completedLength ||
+        completedLength !== owner.completedLength
+      ) throw new RangeError("Table source can only retract its provisional tail");
+    } else if (nextLength !== current.sourceSnapshot.length + sourceAppend.length) {
+      throw new RangeError("Table source append length is inconsistent");
+    }
+    if (
+      sourceAppend.length > 0 &&
+      (
+        nextSource.sourceRange.to > canonicalSource.length ||
+        canonicalSource.read(current.source.sourceRange.to, nextSource.sourceRange.to) !== sourceAppend
+      )
+    ) throw new RangeError("Table source append does not match canonical input");
+    return typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? { document: undefined, completedLength, counters: owner.counters }
+      : { document: undefined, completedLength };
+  }
+
+  const document = owner.document;
+  if (!document) throw new RangeError("Table source document is unavailable");
+  const logSnapshot = document.snapshot();
   if (logSnapshot.length < current.sourceSnapshot.length) {
     throw new RangeError("Table source log is shorter than its owned prefix");
   }
@@ -373,11 +427,11 @@ function appendTableSource(
   if (logSnapshot.length + neverLoggedSuffix.length < nextLength) {
     throw new RangeError("Table source append cannot reach its declared frontier");
   }
-  if (neverLoggedSuffix.length > 0) owner.document.append(neverLoggedSuffix);
+  if (neverLoggedSuffix.length > 0) document.append(neverLoggedSuffix);
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-    return { document: owner.document, completedLength, counters: owner.counters };
+    return { document, completedLength, counters: owner.counters };
   }
-  return { document: owner.document, completedLength };
+  return { document, completedLength };
 }
 function copyTableSource(source: TableBlockSourceMetadata): TableBlockSourceMetadata {
   return {
@@ -491,7 +545,13 @@ function assertTableRowRecord(
   }
 }
 
-function sourceForAppend(current: ManagedTableViewState, sourceAppend: string): TableSourceReader {
+function sourceForAppend(
+  current: ManagedTableViewState,
+  sourceAppend: string,
+  canonicalSource: SourceSnapshot | undefined,
+  nextRange: { readonly from: number; readonly to: number },
+): TableSourceReader {
+  if (canonicalSource) return createSourceWindow(canonicalSource, nextRange.from, nextRange.to);
   const prior = current.sourceSnapshot;
   return {
     length: prior.length + sourceAppend.length,

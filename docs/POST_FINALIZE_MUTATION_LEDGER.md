@@ -6,9 +6,10 @@ If a post-finalize visible mutation path is not listed here, it is a bug until p
 
 ## Contract
 
-After worker `FINALIZED`, committed source and block topology stay fixed. The
-allowlist includes source-neutral dependency updates that change prepared
-meaning without growing source or reopening an owner:
+After worker `FINALIZED`, existing committed owner source windows and block
+topology stay fixed. A newer semantic input transaction may append to the
+canonical root document without widening those windows; any resumed raw-EOF
+owner uses its own fresh generation.
 
 | Path | Source | Patch kind | Allowed? | Why |
 | --- | --- | --- | --- | --- |
@@ -17,6 +18,7 @@ meaning without growing source or reopening an owner:
 | MDX error status/message application | Worker `MDX_ERROR` routed through `handleMdxStatus` | `semantic` | Yes | Makes the finalized MDX block transition from pending to error; this is also a visible semantic state change and must stay epoch-guarded |
 | Paragraph dependency meaning | Worker `updateParagraphSpans` for link, footnote, or numbering invalidation | `semantic` | Yes | Changes only affected prepared spans whose owner generation, expected revision, span source revision, and source identity still match |
 | Table dependency meaning | Worker `updateTableRows` for reference, footnote, or numbering invalidation | `semantic` | Yes | Changes only affected row/header meaning while preserving table source identity under owner generation, expected revision, and row source identity guards |
+| Canonical root input retention | Worker `APPEND` admitted after EOF | `semantic` | Yes | Extends only the root input document; it does not mutate a finalized owner or count as owner progress |
 
 All semantic entries remain subject to epoch and transaction ordering and stale
 patch rejection. The paragraph and table entries cannot append source, change
@@ -106,9 +108,9 @@ whose source revision and source identity still match, and preserves the
 paragraph's authored bytes and span boundaries.
 
 `appendTableRows` and `appendParagraph` cannot grow or reopen same-generation
-finalized source. When raw engine input extends a finalized EOF paragraph, the
-engine replaces that owner under a fresh generation; it does not reopen the old
-owner.
+finalized source owners. Raw input accepted after EOF may extend the independent
+root input generation, but the engine replaces an affected owner under a fresh
+owner generation instead of reopening its finalized source window.
 
 ## Disallowed Post-Finalize Mutations
 

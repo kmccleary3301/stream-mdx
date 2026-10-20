@@ -92,8 +92,10 @@ At every committed semantic state:
 Managed table rows are immutable fixed-range records, not child `NodeRecord`s.
 Tail append, provisional-row retraction, and re-extension are atomic under the
 owner generation and expected revision; `processedTo` never regresses. The
-reducer retains a private append-only source log and exposes immutable prefix
-readers, so retraction cannot change completed raw or prior snapshots.
+Live consumers retain one root-owned append-only input document and expose
+managed table source through immutable windows capped to each owner's current
+range. Standalone cold snapshots without a baseline use honest per-block slices;
+they never invent text between blocks.
 
 A native table block in `closed` state has committed source while the document
 input session may remain active. This is not worker `FINALIZED`. Dependency
@@ -117,6 +119,21 @@ empty suffix and cannot remove completed source. The reducer rejects stale
 generation or revision, a regressing `processedTo` or completed-span frontier,
 a changed owner start, a suffix-length mismatch, and changed retained
 provisional bytes on re-extension.
+
+Live `INITIALIZED` roots carry `inputSource: { generation, raw }`, including an
+empty baseline, and its generation matches the worker message. Each later
+worker-admitted chunk is an ordered, non-coalescable semantic
+`appendInputSource` at the root with the exact UTF-16 offset and new bytes.
+Consumers validate the generation and point before mutation. Input retention
+does not rebuild semantic root children or count as semantic completion,
+ordinal progress, or owner progress.
+
+Code, table, and paragraph source windows share that one consumer document.
+Native owners validate `sourceAppend` against their own root range and carry
+only the exact newly owned authored suffix. An owner suffix may include an LF
+retained by an earlier root append. Root input generation is separate from
+native owner generations. Same-bounds dependency meaning updates retain the
+existing source window and cannot absorb later definitions.
 
 Each paragraph span retains its stable ID and index, absolute UTF-16 source
 range, source revision, and provisional flag, alongside prepared inline nodes,
@@ -156,6 +173,12 @@ Higher-level semantic guards must all pass before calling it.
 `createSourceWindow(snapshot, from, to)` exposes a capped, zero-origin UTF-16
 reader for that authored range. Old windows and staged readers remain unchanged
 after later appends; full materialization is explicit cold work.
+
+Live source consumers stage the complete baseline and node validation before
+resetting prior state. A live snapshot without `inputSource` is an incompatible
+producer, not a block-based reconstruction request. Empty input is a valid
+baseline; static artifacts remain version 1 and cold block exports do not
+materialize the complete root input as routine append work.
 
 Inline JSX tags and expressions belong to their paragraph or list-item projection. They must preserve surrounding prose and component allowlists without gaining block-module evaluation. A complete standalone component owns its source as block MDX and uses the existing evaluator. Normalized inline HTML, including quoted `code` elements, must retain the paragraph's text and elements.
 

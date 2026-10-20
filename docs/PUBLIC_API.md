@@ -32,6 +32,16 @@ The Lezer converter, math extension factory, link-label normalization, entity de
 
 `createBlockSnapshot(block)` uses `block.payload.meta.preparedNested` when present, preserving the owning parser's registered extensions. Without prepared data, container snapshots use the built-in parser and honor `block.payload.meta.mathEnabled`, including `false`. This fallback cannot recover registered extensions or reference definitions that were not stored in the block. Prepare nested snapshots with the owning parsers before serialization when those settings matter; the snapshot function takes no additional parser/configuration argument.
 
+Live worker `INITIALIZED` snapshots include the root `NodeSnapshot.inputSource`
+baseline, whose generation matches the message generation; an empty raw baseline
+is valid. Every later admitted chunk arrives as an ordered semantic
+`appendInputSource` root patch with its exact UTF-16 offset and newly admitted
+text. Consumers must reject a live initialization without this baseline before
+resetting prior state. Standalone `Block[]` and cold snapshots may omit it and
+retain honest per-block raw slices; they do not reconstruct missing document
+gaps. Root input generation is independent of native code, table, and paragraph
+owner generations. Source retention does not signal semantic completion.
+
 ## Runtime Context Matrix
 
 | Context | Primary API | Compile path | Determinism status |

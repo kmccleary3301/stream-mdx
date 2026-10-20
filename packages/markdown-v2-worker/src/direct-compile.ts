@@ -348,8 +348,14 @@ export async function compileMarkdownSnapshotDirect(
       throw new Error("[stream-mdx] direct compile failed: worker did not emit INITIALIZED.");
     }
 
-    if (initialized.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
-      throw new Error(`Incompatible worker schema: ${initialized.schemaVersion}`);
+    if (
+      initialized.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+      !Number.isSafeInteger(initialized.generation) ||
+      initialized.generation < 0 ||
+      initialized.snapshot.inputSource?.generation !== initialized.generation ||
+      typeof initialized.snapshot.inputSource?.raw !== "string"
+    ) {
+      throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
     }
     const snapshot = createInitialSnapshot(initialized.snapshot);
     for (const patch of extractPatches(initMessages)) {

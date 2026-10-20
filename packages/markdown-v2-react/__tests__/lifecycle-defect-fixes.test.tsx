@@ -27,16 +27,18 @@ class TestMockWorker extends EventTarget {
               },
             }
           : undefined;
+        const generation = ++this.generation;
         const initEvent = new Event("message") as MessageEvent<WorkerOut>;
         Object.defineProperty(initEvent, "data", {
           value: {
             type: "INITIALIZED",
             schemaVersion: STREAM_MDX_SCHEMA_VERSION,
-            generation: ++this.generation,
+            generation,
             snapshot: {
               id: PATCH_ROOT_ID,
               type: "__root__",
               props: {},
+              inputSource: { generation, raw: message.initialContent ?? "" },
               children: block ? [createBlockSnapshot(block)] : [],
             },
           },

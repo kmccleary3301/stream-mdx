@@ -43,9 +43,16 @@ export function createSnapshotStore(initial: Block[] | NodeSnapshot = []): Strea
       case "init":
         meta.init = event;
         break;
-      case "snapshot":
+      case "snapshot": {
+        const inputSource = event.snapshot.inputSource;
+        if (
+          !Number.isSafeInteger(inputSource?.generation) ||
+          (inputSource?.generation ?? -1) < 0 ||
+          typeof inputSource?.raw !== "string"
+        ) throw new Error("Incompatible stream-mdx snapshot: canonical input baseline is missing or invalid");
         setSnapshot(event.snapshot);
         break;
+      }
       case "patch":
         applyPatches(event.patches);
         meta.lastTx = event.tx;

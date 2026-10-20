@@ -3,6 +3,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
 import {
   AppendSourceDocument,
   createCodeLineIndex,
+  createSourceWindow,
   extractCodeLines,
   extractHighlightedLines,
   type Block,
@@ -16,6 +17,7 @@ import {
   type CodeTokenSpan,
   type NodeSnapshot,
   type Patch,
+  type SourceSnapshot,
   type TokenLineV1,
   type TokenStyle,
 } from "@stream-mdx/core";
@@ -38,7 +40,8 @@ export interface StoreCodeCounters {
 
 export interface StoredCodeBlockState {
   readonly view: CodeBlockViewState;
-  readonly document: AppendSourceDocument;
+  readonly sourceSnapshot: SourceSnapshot;
+  readonly document?: AppendSourceDocument;
   readonly managed: boolean;
   readonly ranges: Map<string, { readonly from: number; readonly to: number; readonly lines: readonly CodeLineRecord[] }>;
 }
@@ -135,6 +138,33 @@ function createSourceDocument(raw: string, counters?: StoreCodeCounters): Append
     : new AppendSourceDocument();
   document.append(raw);
   return document;
+}
+interface SourceStateForRaw {
+  readonly sourceSnapshot: SourceSnapshot;
+  readonly document?: AppendSourceDocument;
+}
+function sourceStateForRaw(
+  raw: string,
+  sourceFrom: number,
+  sourceTo: number,
+  counters?: StoreCodeCounters,
+  canonicalSource?: SourceSnapshot,
+): SourceStateForRaw {
+  if (canonicalSource) {
+    if (
+      !Number.isSafeInteger(sourceFrom) ||
+      !Number.isSafeInteger(sourceTo) ||
+      sourceFrom < 0 ||
+      sourceTo < sourceFrom ||
+      sourceTo > canonicalSource.length ||
+      canonicalSource.read(sourceFrom, sourceTo) !== raw
+    ) throw new RangeError("Code source range does not match the canonical input");
+    return { sourceSnapshot: createSourceWindow(canonicalSource, sourceFrom, sourceTo) };
+  }
+  const document = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? createSourceDocument(raw, counters)
+    : createSourceDocument(raw);
+  return { sourceSnapshot: createSourceWindow(document.snapshot(), 0, raw.length), document };
 }
 
 function splitRawLines(raw: string): RawLine[] {
@@ -355,6 +385,7 @@ function legacyCodeState(
   snapshot: NodeSnapshot,
   block: Block | undefined,
   counters?: StoreCodeCounters,
+  canonicalSource?: SourceSnapshot,
 ): StoredCodeBlockState {
   const raw = block?.payload.raw ?? (typeof snapshot.props?.raw === "string" ? snapshot.props.raw : typeof snapshot.props?.text === "string" ? snapshot.props.text : "");
   const sourceFrom = snapshot.range?.from ?? block?.payload.range?.from ?? 0;
@@ -418,9 +449,7 @@ function legacyCodeState(
     lineCount: index.length,
     sourceRange: { from: sourceFrom, to: sourceTo },
   };
-  const document = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-    ? createSourceDocument(raw, counters)
-    : createSourceDocument(raw);
+  const sourceState = sourceStateForRaw(raw, sourceFrom, sourceTo, counters, canonicalSource);
   const view = createView(
     source,
     configurationRevision,
@@ -434,20 +463,16 @@ function legacyCodeState(
           : undefined,
     index,
   );
-  return { view, document, managed: false, ranges: new Map() };
+  return { view, ...sourceState, managed: false, ranges: new Map() };
 }
 
 export function createStoredCodeBlockState(
   snapshot: NodeSnapshot,
   block: Block | undefined,
   counters?: StoreCodeCounters,
+  canonicalSource?: SourceSnapshot,
 ): StoredCodeBlockState {
-  if (snapshot.code === undefined) {
-    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-      return legacyCodeState(snapshot, block, counters);
-    }
-    return legacyCodeState(snapshot, block);
-  }
+  if (snapshot.code === undefined) return legacyCodeState(snapshot, block, counters, canonicalSource);
   const cold = snapshot.code as CodeBlockSnapshot;
   if (typeof cold.raw !== "string" || cold.codeOwnerId !== snapshot.id) {
     throw new TypeError("Code snapshot owner and raw source must match its node");
@@ -468,12 +493,16 @@ export function createStoredCodeBlockState(
       throw new RangeError("Code snapshot line ranges must be inside its source range");
     }
   }
-  const document = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-    ? createSourceDocument(cold.raw, counters)
-    : createSourceDocument(cold.raw);
+  const sourceState = sourceStateForRaw(
+    cold.raw,
+    cold.sourceRange.from,
+    cold.sourceRange.to,
+    counters,
+    canonicalSource,
+  );
   return {
     view: createView(cold, cold.configurationRevision, cold.info, cold.language, index),
-    document,
+    ...sourceState,
     managed: true,
     ranges: new Map(),
   };
@@ -493,6 +522,7 @@ function nextRangesForAppend(
 export function appendStoredCodeState(
   current: StoredCodeBlockState,
   patch: AppendCodePatch,
+  canonicalSource?: SourceSnapshot,
 ): { readonly state?: StoredCodeBlockState; readonly reason?: string } {
   if (!current.managed) return { reason: "owner is not source-managed" };
   const old = current.view.source;
@@ -524,7 +554,15 @@ export function appendStoredCodeState(
   if (patch.code.completeLineCount < old.completeLineCount) return { reason: "completed prefix moved backwards" };
   if (patch.code.lineCount !== patch.fromLine + patch.lines.length) return { reason: "changed tail line count does not match metadata" };
   try {
-    assertSourceRange(patch.code, current.document.length + patch.sourceAppend.length);
+    if (canonicalSource) {
+      if (canonicalSource.read(old.sourceRange.to, patch.code.sourceRange.to) !== patch.sourceAppend) {
+        return { reason: "authored source suffix does not match the canonical input" };
+      }
+      assertSourceRange(patch.code, patch.code.sourceRange.to - patch.code.sourceRange.from);
+    } else {
+      if (!current.document) return { reason: "cold code source document is unavailable" };
+      assertSourceRange(patch.code, current.document.length + patch.sourceAppend.length);
+    }
     const nextLines = current.view.lines.replaceTail(patch.fromLine, patch.lines);
     if (nextLines.length !== patch.code.lineCount || nextLines.completeLineCount !== patch.code.completeLineCount) {
       return { reason: "changed tail records do not match metadata counts" };
@@ -534,13 +572,21 @@ export function appendStoredCodeState(
         return { reason: "changed tail line range is outside the updated source range" };
       }
     }
+    if (!canonicalSource && patch.sourceAppend.length > 0) current.document!.append(patch.sourceAppend);
+    const sourceSnapshot = canonicalSource
+      ? patch.code.sourceRange.to === old.sourceRange.to
+        ? current.sourceSnapshot
+        : createSourceWindow(canonicalSource, patch.code.sourceRange.from, patch.code.sourceRange.to)
+      : current.document
+        ? createSourceWindow(current.document.snapshot(), 0, current.document.length)
+        : current.sourceSnapshot;
     const nextState: StoredCodeBlockState = {
       view: createView(patch.code, current.view.configurationRevision, current.view.info, current.view.language, nextLines),
-      document: current.document,
+      sourceSnapshot,
+      document: canonicalSource ? undefined : current.document,
       managed: true,
       ranges: nextRangesForAppend(current.ranges, patch.fromLine),
     };
-    current.document.append(patch.sourceAppend);
     return { state: nextState };
   } catch (error) {
     return { reason: error instanceof Error ? error.message : "append validation failed" };
@@ -602,6 +648,7 @@ export function appendLegacyCodeState(
     return {
       state: {
         view: createView(source, current.view.configurationRevision, current.view.info, current.view.language, index),
+        sourceSnapshot: current.sourceSnapshot,
         document: current.document,
         managed: false,
         ranges: nextRangesForAppend(current.ranges, patch.startIndex),
@@ -616,6 +663,7 @@ export function updateLegacyCodeLineState(
   line: { readonly id: string; readonly index: number; readonly props: Record<string, unknown> },
   counters?: StoreCodeCounters,
   allowSemanticEdit = false,
+  canonicalSource?: SourceSnapshot,
 ): StoredCodeBlockState | undefined {
   if (current.managed || !Number.isSafeInteger(line.index) || line.index < 0) return undefined;
   const previous = current.view.lines.get(line.index);
@@ -694,6 +742,7 @@ export function updateLegacyCodeLineState(
       : source;
     return {
       view: createView(nextSource, current.view.configurationRevision, current.view.info, current.view.language, lines),
+      sourceSnapshot: current.sourceSnapshot,
       document: current.document,
       managed: false,
       ranges,
@@ -714,8 +763,10 @@ export function updateLegacyCodeLineState(
     return undefined;
   }
 
-  // Native line edits have no source splice API; replace the final line explicitly.
-  const raw = current.document.snapshot().materialize();
+  if (!current.document && !canonicalSource) return undefined;
+  const raw = current.document
+    ? current.document.snapshot().materialize()
+    : current.sourceSnapshot.materialize();
   const relativeFrom = previous.sourceRange.from - source.sourceRange.from;
   const relativeTo = previous.sourceRange.to - source.sourceRange.from;
   if (
@@ -723,7 +774,11 @@ export function updateLegacyCodeLineState(
     relativeFrom < 0 ||
     relativeTo > raw.length ||
     relativeTo < relativeFrom ||
-    raw.slice(relativeFrom, relativeTo) !== previous.text
+    raw.slice(relativeFrom, relativeTo) !== previous.text ||
+    (canonicalSource && (
+      source.sourceRange.to > canonicalSource.length ||
+      canonicalSource.read(source.sourceRange.from, source.sourceRange.to) !== raw
+    ))
   ) {
     return undefined;
   }
@@ -767,6 +822,12 @@ export function updateLegacyCodeLineState(
     lineCount: lines.length,
     sourceRange: { from: source.sourceRange.from, to: nextSourceTo },
   };
+  let nextSourceState: SourceStateForRaw;
+  try {
+    nextSourceState = sourceStateForRaw(nextRaw, nextSource.sourceRange.from, nextSourceTo, counters, canonicalSource);
+  } catch {
+    return undefined;
+  }
   return {
     view: createView(
       nextSource,
@@ -775,9 +836,7 @@ export function updateLegacyCodeLineState(
       current.view.language,
       lines,
     ),
-    document: typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-      ? createSourceDocument(nextRaw, counters)
-      : createSourceDocument(nextRaw),
+    ...nextSourceState,
     managed: false,
     ranges: nextRangesForAppend(current.ranges, line.index),
   };
@@ -787,6 +846,7 @@ export function refreshLegacyCodeSource(
   current: StoredCodeBlockState,
   block: Block,
   counters?: StoreCodeCounters,
+  canonicalSource?: SourceSnapshot,
 ): StoredCodeBlockState {
   if (current.managed) return current;
   const raw = block.payload.raw;
@@ -802,6 +862,12 @@ export function refreshLegacyCodeSource(
     lineCount: current.view.lines.length,
     sourceRange: { from: sourceFrom, to: sourceTo },
   };
+  const validatedSourceState = sourceStateForRaw(raw, sourceFrom, sourceTo, counters, canonicalSource);
+  const sourceState = canonicalSource &&
+    current.view.source.sourceRange.from === sourceFrom &&
+    current.view.source.sourceRange.to === sourceTo
+    ? { sourceSnapshot: current.sourceSnapshot }
+    : validatedSourceState;
   return {
     view: createView(
       source,
@@ -810,9 +876,7 @@ export function refreshLegacyCodeSource(
       typeof metadata?.lang === "string" ? metadata.lang : current.view.language,
       current.view.lines,
     ),
-    document: typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-      ? createSourceDocument(raw, counters)
-      : createSourceDocument(raw),
+    ...sourceState,
     managed: false,
     ranges: current.ranges,
   };
@@ -874,6 +938,7 @@ export function decorateStoredCodeState(
     return {
       state: {
         view: createView(old, current.view.configurationRevision, current.view.info, current.view.language, lines),
+        sourceSnapshot: current.sourceSnapshot,
         document: current.document,
         managed: current.managed,
         ranges,
@@ -909,7 +974,7 @@ export function materializeStoredCodeBlock(
   props: Record<string, unknown>,
   range?: { readonly from: number; readonly to: number },
 ): Block {
-  const raw = state.document.snapshot().materialize();
+  const raw = state.sourceSnapshot.materialize();
   const result: Block = block
     ? {
         ...block,

@@ -92,11 +92,19 @@ the live document:
   "snapshot": {
     "id": "__root__",
     "type": "__root__",
+    "range": { "from": 0, "to": 0 },
+    "inputSource": { "generation": 7, "raw": "" },
     "props": {},
     "children": []
   }
 }
 ```
+
+Live snapshot events must include the complete root `inputSource` baseline,
+including when `raw` is empty. A worker `INITIALIZED` message also carries a
+generation, which must equal the baseline generation. Live consumers reject a
+missing or mismatched baseline before replacing prior state. Cold standalone
+snapshots may omit this field and retain only honest per-block source slices.
 
 ### 6.4 Done Event
 Explicit end-of-stream semantics:
@@ -108,6 +116,7 @@ Explicit end-of-stream semantics:
 - New fields are additive only in minor versions.
 - Consumers must ignore unknown fields and unknown node types.
 - Breaking changes require a major schema version bump.
+- Missing or mismatched live `inputSource` is an incompatible producer, not a reason to reconstruct the document from block snapshots.
 
 ## 7) Node Taxonomy and Props
 ### 7.1 Root
@@ -268,6 +277,30 @@ If the code fence is `diff` without a base language, treat as text and apply
 diff markers only. Optional base language can be inferred from file headers.
 
 ## 10) Patch Extensions
+### Root Input Retention
+
+Live initialization carries the full root input baseline. Each later worker
+admission emits one ordered semantic root operation:
+
+```ts
+type AppendInputSourcePatch = {
+  op: "appendInputSource";
+  at: { blockId: "__root__" };
+  generation: number;
+  from: number;
+  text: string;
+  meta?: PatchMeta;
+};
+```
+
+`from` is the current UTF-16 input length and `text` contains only newly
+admitted bytes. Consumers validate both before appending. This operation is not
+coalesced or reordered, but it does not rebuild semantic children or prove
+owner progress. Owner generations are independent from root input generation.
+Native `sourceAppend` values are exact newly owned authored suffixes validated
+against the root input; a suffix may include an LF retained by an earlier root
+append.
+
 Extend `appendLines` patches to carry tokens and diff metadata:
 ```ts
 type AppendLinesPatch = {

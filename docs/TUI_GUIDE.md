@@ -82,6 +82,18 @@ const worker = createWorkerThread({ stdout: true, stderr: true });
 const store = createSnapshotStore();
 
 worker.on("message", (msg: WorkerOut) => {
+  if (msg.type === "INITIALIZED") {
+    const inputSource = msg.snapshot.inputSource;
+    if (
+      msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+      !Number.isSafeInteger(msg.generation) ||
+      inputSource?.generation !== msg.generation ||
+      typeof inputSource?.raw !== "string"
+    ) throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
+    store.setSnapshot(msg.snapshot);
+    return;
+  }
+
   if (msg.type === "PATCH") {
     store.applyPatches(msg.patches);
     const blocks = store.getBlocks();
@@ -124,6 +136,12 @@ function renderToTerminal(blocks: ReturnType<typeof store.getBlocks>) {
 }
 ```
 
+The live `INITIALIZED` baseline is required even when its raw text is empty.
+Later `appendInputSource` patches are applied in order by the snapshot store;
+they retain worker-admitted input without rebuilding semantic children or
+completing owner progress. A standalone `Block[]` reset may omit the baseline
+and retains only honest per-block source slices.
+
 ## Runnable Repo Example
 
 If you want a concrete starting point instead of only architecture notes, use the minimal example path first:
@@ -137,6 +155,7 @@ Run it from the repo root:
 ```bash
 npm install
 npm run build:packages
+npm run worker:build
 npm run example:tui-minimal
 ```
 
@@ -170,6 +189,10 @@ const blocks = snapshot.getBlocks();
 ```
 
 Use the core path only when you need direct access to `DocumentSnapshot` internals. For most terminal apps, the TUI store is the cleaner choice.
+
+Live protocol snapshot events require the canonical root input baseline.
+`setSnapshot()` also supports cold standalone snapshots; that path must not be
+used to reconstruct missing live input from block payloads.
 
 The snapshot store applies the complete Core `Patch` union, including managed
 table tail appends and dependency-targeted row/header updates. Do not interpret

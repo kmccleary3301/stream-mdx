@@ -1,6 +1,7 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import {
+  AppendSourceDocument,
   appendManagedParagraphSpans,
   appendManagedTableRows,
   cloneBlock,
@@ -29,6 +30,7 @@ import {
   type ParagraphBlockSnapshot,
   type Patch,
   type SetPropsBatchEntry,
+  type SourceSnapshot,
   type TableRowRecord,
   type TokenLineV1,
 } from "@stream-mdx/core";
@@ -201,6 +203,16 @@ interface ParagraphSpanRangeSubscription {
 
 
 type NodeMap = Map<string, NodeRecord>;
+interface RendererInputSource {
+  readonly generation: number;
+  readonly document: AppendSourceDocument;
+}
+
+const inputSourceByNodeMap = new WeakMap<NodeMap, RendererInputSource>();
+
+function inputSourceSnapshotForMap(map: NodeMap): SourceSnapshot | undefined {
+  return inputSourceByNodeMap.get(map)?.document.snapshot();
+}
 const paragraphStateByRecord = new WeakMap<NodeRecord, ManagedParagraphViewState>();
 const retiredParagraphGenerationsByMap = new WeakMap<ReadonlyMap<string, NodeRecord>, Map<string, number>>();
 const coldParagraphBlocksByView = new WeakMap<ManagedParagraphViewState, Block>();
@@ -2064,6 +2076,9 @@ function buildNodeFromSnapshot(
   themes?: { light?: string; dark?: string },
   previous?: ReadonlyMap<string, NodeRecord>,
 ): NodeRecord {
+  if (snapshot.inputSource !== undefined) {
+    throw new TypeError("Input source baseline is only valid on the document root");
+  }
   if (snapshot.code && snapshot.type !== "code") {
     throw new TypeError("Code source metadata is only valid on code nodes");
   }
@@ -2083,18 +2098,28 @@ function buildNodeFromSnapshot(
     throw new TypeError("Managed paragraph children must be sourced from span records");
   }
   const prior = previous?.get(snapshot.id);
+  const canonicalSource = inputSourceSnapshotForMap(map);
+  const tableCounters = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? codeCountersByMap!.get(map)
+    : undefined;
   const tableState = snapshot.table
-    ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-      ? createManagedTableState(snapshot.table, snapshot.id, { counters: codeCountersByMap!.get(map) } as never)
-      : createManagedTableState(snapshot.table, snapshot.id)
+    ? createManagedTableState(
+      snapshot.table,
+      snapshot.id,
+      tableCounters ? { counters: tableCounters } as never : undefined,
+      canonicalSource,
+    )
     : undefined;
   const paragraphCounters = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
     ? paragraphCountersByMap!.get(map)
     : undefined;
   const paragraphState = snapshot.paragraph
-    ? paragraphCounters
-      ? createManagedParagraphState(snapshot.paragraph, snapshot.id, { counters: paragraphCounters, counterStage: "store" })
-      : createManagedParagraphState(snapshot.paragraph, snapshot.id)
+    ? createManagedParagraphState(
+      snapshot.paragraph,
+      snapshot.id,
+      paragraphCounters ? { counters: paragraphCounters, counterStage: "store" } : undefined,
+      canonicalSource,
+    )
     : undefined;
   const record: NodeRecord = {
     id: snapshot.id,
@@ -2113,9 +2138,10 @@ function buildNodeFromSnapshot(
   let codeState: StoredCodeBlockState | undefined;
   if (record.type === "code") {
     applyCodeBlockMetadata(record, themes);
-    codeState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-      ? createStoredCodeBlockState(snapshot, record.block, codeCountersByMap!.get(map))
-      : createStoredCodeBlockState(snapshot, record.block);
+    const codeCounters = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? codeCountersByMap!.get(map)
+      : undefined;
+    codeState = createStoredCodeBlockState(snapshot, record.block, codeCounters, canonicalSource);
   }
 
   map.set(record.id, record);
@@ -2961,6 +2987,24 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     if (rootSnapshot.id !== PATCH_ROOT_ID || rootSnapshot.type !== "__root__" || !Array.isArray(rootSnapshot.children)) {
       throw new TypeError("Renderer snapshot root must be the __root__ node");
     }
+    let nextInputSource: RendererInputSource | undefined;
+    if (rootSnapshot.inputSource !== undefined) {
+      const baseline = rootSnapshot.inputSource;
+      if (
+        !Number.isSafeInteger(baseline.generation) ||
+        baseline.generation < 0 ||
+        typeof baseline.raw !== "string" ||
+        (rootSnapshot.range !== undefined && (
+          rootSnapshot.range.from !== 0 ||
+          rootSnapshot.range.to !== baseline.raw.length
+        ))
+      ) {
+        throw new TypeError("Renderer input source baseline is invalid");
+      }
+      const document = new AppendSourceDocument();
+      document.append(baseline.raw);
+      nextInputSource = { generation: baseline.generation, document };
+    }
     const stack = [...rootSnapshot.children];
     while (stack.length > 0) {
       const snapshot = stack.pop();
@@ -2976,11 +3020,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       }
       for (const child of snapshot.children ?? []) stack.push(child);
     }
-    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-      (store as CampaignRendererStore).campaignCounters?.reset?.();
-    }
     const previousNodes = nodes;
     const nextNodes: NodeMap = new Map();
+    if (nextInputSource) inputSourceByNodeMap.set(nextNodes, nextInputSource);
     carryRetiredCodeGenerations(previousNodes, nextNodes);
     const root = createRootRecord();
     nextNodes.set(root.id, root);
@@ -2998,6 +3040,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     }
     recountRootProvisionalBlocks(nextNodes);
     normalizeAllListDepths(nextNodes, new Set<string>(), PATCH_ROOT_ID);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      (store as CampaignRendererStore).campaignCounters?.reset?.();
+    }
     clearSnapshotCaches(previousNodes);
     nodes = nextNodes;
     lastCoalescingMetrics = null;
@@ -3201,8 +3246,8 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                   props: normalized,
                 };
                 nextLegacyCodeState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-                  ? updateLegacyCodeLineState(currentCodeState, updatedLine, codeCountersByMap!.get(nodes), semanticUpdate)
-                  : updateLegacyCodeLineState(currentCodeState, updatedLine, undefined, semanticUpdate);
+                  ? updateLegacyCodeLineState(currentCodeState, updatedLine, codeCountersByMap!.get(nodes), semanticUpdate, inputSourceSnapshotForMap(nodes))
+                  : updateLegacyCodeLineState(currentCodeState, updatedLine, undefined, semanticUpdate, inputSourceSnapshotForMap(nodes));
                 if (!nextLegacyCodeState) {
                   appendDiagnostic(`code line state update rejected:${parent.id}:${target.id}`);
                   return;
@@ -3308,8 +3353,8 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             codeStateByRecord.set(
               target,
               typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-                ? refreshLegacyCodeSource(existingCodeState, target.block, codeCountersByMap!.get(nodes))
-                : refreshLegacyCodeSource(existingCodeState, target.block),
+                ? refreshLegacyCodeSource(existingCodeState, target.block, codeCountersByMap!.get(nodes), inputSourceSnapshotForMap(nodes))
+                : refreshLegacyCodeSource(existingCodeState, target.block, undefined, inputSourceSnapshotForMap(nodes)),
             );
           }
           if (perfEnabled) {
@@ -3443,6 +3488,21 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       };
       const applyPatch = (patch: Patch) => {
         switch (patch.op) {
+          case "appendInputSource": {
+            const source = inputSourceByNodeMap.get(nodes);
+            if (
+              !source ||
+              patch.at.blockId !== PATCH_ROOT_ID ||
+              patch.at.nodeId !== undefined ||
+              patch.at.indexPath !== undefined ||
+              patch.generation !== source.generation ||
+              patch.from !== source.document.length ||
+              typeof patch.text !== "string"
+            ) break;
+            source.document.append(patch.text);
+            break;
+          }
+
           case "insertChild": {
             if (rejectStaleEpochPatch(patch, patch.at)) break;
             const parent = resolveParent(nodes, patch.at);
@@ -3744,7 +3804,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               break;
             }
             const wasProvisional = isProvisionalRootBlock(target);
-            const appended = appendStoredCodeState(codeState, patch);
+            const appended = appendStoredCodeState(codeState, patch, inputSourceSnapshotForMap(nodes));
             if (!appended.state) {
               appendDiagnostic(`appendCode guard rejected:${target.id}:${appended.reason ?? "invalid source tail"}`);
               break;
@@ -3776,7 +3836,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             }
             let appended: ManagedTablePatchResult;
             try {
-              appended = appendManagedTableRows(current, target.id, patch);
+              appended = appendManagedTableRows(current, target.id, patch, inputSourceSnapshotForMap(nodes));
             } catch {
               appendDiagnostic(`appendTableRows guard rejected:${target.id}:invalid table record`);
               break;
@@ -3861,7 +3921,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             }
             let appended: ManagedParagraphPatchResult;
             try {
-              appended = appendManagedParagraphSpans(current, target.id, patch);
+              appended = appendManagedParagraphSpans(current, target.id, patch, inputSourceSnapshotForMap(nodes));
             } catch {
               appendDiagnostic(`appendParagraph guard rejected:${target.id}:invalid paragraph record`);
               break;

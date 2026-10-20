@@ -103,6 +103,7 @@ export function isHeavyPatch(patch: Patch): boolean {
 
 export function getPatchKind(patch: Patch): PatchKind {
   if (
+    patch.op === "appendInputSource" ||
     patch.op === "appendCode" ||
     patch.op === "appendParagraph" ||
     patch.op === "updateParagraphSpans" ||

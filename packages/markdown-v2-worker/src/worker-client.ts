@@ -34,16 +34,26 @@ export class MarkdownWorkerClient {
           this.messageListener = (ev: MessageEvent<WorkerOut>) => {
             let message = ev.data;
             if (message.type === "INITIALIZED") {
-              if (message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
-                const error = new Error(`Incompatible worker schema: expected ${STREAM_MDX_SCHEMA_VERSION}, received ${message.schemaVersion}`);
-                error.name = "WorkerSchemaMismatch";
-                this.initializationError = error;
-                this.initialized = false;
-                message = { type: "ERROR", phase: "INIT", error: { name: error.name, message: error.message } };
-              } else {
-                this.initialized = true;
-                this.initializationError = undefined;
-              }
+              if (
+                message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+                !Number.isSafeInteger(message.generation) ||
+                message.generation < 0 ||
+                message.snapshot.inputSource?.generation !== message.generation ||
+                typeof message.snapshot.inputSource?.raw !== "string"
+              ) {
+              const error = new Error(
+                message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION
+                  ? `Incompatible worker schema: expected ${STREAM_MDX_SCHEMA_VERSION}, received ${message.schemaVersion}`
+                  : "Incompatible worker initialization: canonical input baseline is missing or invalid",
+              );
+              error.name = "WorkerSchemaMismatch";
+              this.initializationError = error;
+              this.initialized = false;
+              message = { type: "ERROR", phase: "INIT", error: { name: error.name, message: error.message } };
+            } else {
+              this.initialized = true;
+              this.initializationError = undefined;
+            }
             } else if ((message.type === "PATCH" || message.type === "FINALIZED") && !this.initialized) {
               return;
             }

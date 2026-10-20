@@ -415,6 +415,7 @@ export interface NodeSnapshot {
   code?: CodeBlockSnapshot;
   table?: TableBlockSnapshot;
   paragraph?: ParagraphBlockSnapshot;
+  inputSource?: { generation: number; raw: string };
 }
 
 export interface NodePath {
@@ -452,6 +453,14 @@ export interface TocHeading {
 }
 
 export type Patch =
+  | {
+      op: "appendInputSource";
+      at: NodePath;
+      generation: number;
+      from: number;
+      text: string;
+      meta?: PatchMeta;
+    }
   | { op: "insertChild"; at: NodePath; index: number; node: NodeSnapshot; meta?: PatchMeta }
   | { op: "deleteChild"; at: NodePath; index: number; meta?: PatchMeta }
   | { op: "replaceChild"; at: NodePath; index: number; node: NodeSnapshot; meta?: PatchMeta }

@@ -1,7 +1,7 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import { parser as baseMdParser, GFM } from "@lezer/markdown";
-import { AppendSourceDocument } from "./source-document";
+import { AppendSourceDocument, createSourceWindow, type SourceSnapshot } from "./source-document";
 import {
   createCodeLineIndex,
   type CodeLineDecorationUpdate,
@@ -715,7 +715,8 @@ interface SnapshotCodeState {
   readonly info: string;
   readonly language?: string;
   readonly lines: CodeLineIndex;
-  readonly document: AppendSourceDocument;
+  readonly sourceSnapshot: SourceSnapshot;
+  readonly document?: AppendSourceDocument;
   readonly managed: boolean;
 }
 
@@ -748,10 +749,37 @@ const materializedBlocksBySnapshot = new WeakMap<DocumentSnapshot, MaterializedB
 const retiredCodeGenerationsBySnapshot = new WeakMap<DocumentSnapshot, Map<string, number>>();
 const retiredTableGenerationsBySnapshot = new WeakMap<DocumentSnapshot, Map<string, number>>();
 const retiredParagraphGenerationsBySnapshot = new WeakMap<DocumentSnapshot, Map<string, number>>();
+interface CanonicalInputSourceState {
+  readonly generation: number;
+  readonly document: AppendSourceDocument;
+}
+
+const inputSourceBySnapshot = new WeakMap<DocumentSnapshot, CanonicalInputSourceState>();
+
+function inputSourceSnapshot(snapshot: DocumentSnapshot): SourceSnapshot | undefined {
+  return inputSourceBySnapshot.get(snapshot)?.document.snapshot();
+}
 
 export function createInitialSnapshot(initialBlocks?: Block[]): DocumentSnapshot;
 export function createInitialSnapshot(rootSnapshot: NodeSnapshot): DocumentSnapshot;
 export function createInitialSnapshot(initial: Block[] | NodeSnapshot = []): DocumentSnapshot {
+  let inputSource: CanonicalInputSourceState | undefined;
+  if (!Array.isArray(initial) && initial.inputSource !== undefined) {
+    const baseline = initial.inputSource;
+    if (
+      !baseline ||
+      !Number.isSafeInteger(baseline.generation) ||
+      baseline.generation < 0 ||
+      typeof baseline.raw !== "string" ||
+      (initial.range !== undefined && (
+        initial.range.from !== 0 ||
+        initial.range.to !== baseline.raw.length
+      ))
+    ) throw new TypeError("Initial document input source is invalid");
+    const document = new AppendSourceDocument();
+    document.append(baseline.raw);
+    inputSource = { generation: baseline.generation, document };
+  }
   const nodes = new Map<string, SnapshotNode>();
   const root: SnapshotNode = {
     id: PATCH_ROOT_ID,
@@ -768,6 +796,7 @@ export function createInitialSnapshot(initial: Block[] | NodeSnapshot = []): Doc
     rootId: root.id,
     getBlocks: () => materializeBlocks(snapshot),
   };
+  if (inputSource) inputSourceBySnapshot.set(snapshot, inputSource);
   retiredCodeGenerationsBySnapshot.set(snapshot, new Map());
   retiredTableGenerationsBySnapshot.set(snapshot, new Map());
   retiredParagraphGenerationsBySnapshot.set(snapshot, new Map());
@@ -792,8 +821,26 @@ export function createInitialSnapshot(initial: Block[] | NodeSnapshot = []): Doc
 export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): void {
   if (!Array.isArray(patches) || patches.length === 0) return;
 
+  let semanticNodesChanged = false;
   for (const patch of patches) {
+    if (patch.op !== "appendInputSource") semanticNodesChanged = true;
     switch (patch.op) {
+      case "appendInputSource": {
+        const source = inputSourceBySnapshot.get(snapshot);
+        if (
+          !source ||
+          patch.at.blockId !== PATCH_ROOT_ID ||
+          patch.at.nodeId !== undefined ||
+          patch.at.indexPath !== undefined ||
+          !Number.isSafeInteger(patch.generation) ||
+          patch.generation !== source.generation ||
+          !Number.isSafeInteger(patch.from) ||
+          patch.from !== source.document.length ||
+          typeof patch.text !== "string"
+        ) break;
+        source.document.append(patch.text);
+        break;
+      }
       case "insertChild": {
         const parent = resolveParentNode(snapshot, patch.at);
         if (!parent) break;
@@ -872,7 +919,7 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
         if (!target?.tableState || target.type !== "table") break;
         let result: ManagedTablePatchResult;
         try {
-          result = appendManagedTableRows(target.tableState, target.id, patch);
+          result = appendManagedTableRows(target.tableState, target.id, patch, inputSourceSnapshot(snapshot));
         } catch {
           break;
         }
@@ -903,7 +950,7 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
         if (!target?.paragraphState || target.type !== "paragraph") break;
         let result: ManagedParagraphPatchResult;
         try {
-          result = appendManagedParagraphSpans(target.paragraphState, target.id, patch);
+          result = appendManagedParagraphSpans(target.paragraphState, target.id, patch, inputSourceSnapshot(snapshot));
         } catch {
           break;
         }
@@ -970,8 +1017,10 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
     }
   }
 
-  const cache = materializedBlocksBySnapshot.get(snapshot);
-  if (cache) cache.dirty = true;
+  if (semanticNodesChanged) {
+    const cache = materializedBlocksBySnapshot.get(snapshot);
+    if (cache) cache.dirty = true;
+  }
 }
 
 function materializeBlocks(snapshot: DocumentSnapshot): Block[] {
@@ -1044,7 +1093,11 @@ function assertCodeSourceMetadata(source: CodeBlockSourceMetadata, rawLength: nu
   }
 }
 
-function createManagedCodeState(snapshot: CodeBlockSnapshot, ownerId: string): SnapshotCodeState {
+function createManagedCodeState(
+  snapshot: CodeBlockSnapshot,
+  ownerId: string,
+  canonicalSource?: SourceSnapshot,
+): SnapshotCodeState {
   if (
     typeof snapshot.raw !== "string" ||
     snapshot.codeOwnerId !== ownerId ||
@@ -1073,20 +1126,31 @@ function createManagedCodeState(snapshot: CodeBlockSnapshot, ownerId: string): S
       throw new RangeError("Code snapshot line range is outside its source range");
     }
   }
-  const document = new AppendSourceDocument();
-  document.append(snapshot.raw);
+  let document: AppendSourceDocument | undefined;
+  let sourceSnapshot: SourceSnapshot;
+  if (canonicalSource) {
+    if (sourceRange.to > canonicalSource.length || canonicalSource.read(sourceRange.from, sourceRange.to) !== snapshot.raw) {
+      throw new RangeError("Code snapshot source does not match canonical input");
+    }
+    sourceSnapshot = createSourceWindow(canonicalSource, sourceRange.from, sourceRange.to);
+  } else {
+    document = new AppendSourceDocument();
+    document.append(snapshot.raw);
+    sourceSnapshot = createSourceWindow(document.snapshot(), 0, snapshot.raw.length);
+  }
   return {
     source: copyCodeSource(snapshot),
     configurationRevision: snapshot.configurationRevision,
     info: snapshot.info,
     language: snapshot.language,
     lines,
+    sourceSnapshot,
     document,
     managed: true,
   };
 }
 
-function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, SnapshotNode>): SnapshotCodeState {
+function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, SnapshotNode>, snapshot: DocumentSnapshot): SnapshotCodeState {
   const block = node.block;
   if (!block) throw new Error("Legacy code block is missing");
   const raw = block.payload.raw ?? "";
@@ -1100,8 +1164,19 @@ function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, Sn
     .filter((line): line is SnapshotNode => Boolean(line))
     .map((line, index) => nodeSnapshotLineRecord(line, index, sourceRange.from));
   const lines = createCodeLineIndex({ lines: lineNodes });
-  const document = new AppendSourceDocument();
-  document.append(raw);
+  const canonicalSource = inputSourceSnapshot(snapshot);
+  let document: AppendSourceDocument | undefined;
+  let sourceSnapshot: SourceSnapshot;
+  if (canonicalSource) {
+    if (sourceRange.to > canonicalSource.length || canonicalSource.read(sourceRange.from, sourceRange.to) !== raw) {
+      throw new RangeError("Legacy code source does not match canonical input");
+    }
+    sourceSnapshot = createSourceWindow(canonicalSource, sourceRange.from, sourceRange.to);
+  } else {
+    document = new AppendSourceDocument();
+    document.append(raw);
+    sourceSnapshot = createSourceWindow(document.snapshot(), 0, raw.length);
+  }
   return {
     source: {
       codeOwnerId: node.id,
@@ -1117,6 +1192,7 @@ function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, Sn
     info: typeof block.payload.meta?.info === "string" ? block.payload.meta.info : "",
     language: typeof block.payload.meta?.lang === "string" ? block.payload.meta.lang : undefined,
     lines,
+    sourceSnapshot,
     document,
     managed: false,
   };
@@ -1223,7 +1299,10 @@ function appendCodeState(
     patch.code.lineCount !== old.lineCount ||
     patch.code.completeLineCount !== old.completeLineCount
   )) return;
-  assertCodeSourceMetadata(patch.code, current.document.length + patch.sourceAppend.length);
+  const canonicalSource = inputSourceSnapshot(snapshot);
+  const document = current.document;
+  const nextLength = patch.code.sourceRange.to - patch.code.sourceRange.from;
+  assertCodeSourceMetadata(patch.code, nextLength);
   if (
     !Number.isSafeInteger(patch.expectedRevision) ||
     patch.expectedRevision !== old.revision ||
@@ -1231,10 +1310,15 @@ function appendCodeState(
     patch.fromLine !== old.completeLineCount ||
     patch.code.revision !== old.revision + 1 ||
     patch.code.sourceRange.from !== old.sourceRange.from ||
+    patch.code.sourceRange.to !== old.sourceRange.to + patch.sourceAppend.length ||
     patch.code.processedTo < old.processedTo ||
     patch.code.completeLineCount < old.completeLineCount ||
     patch.code.lineCount !== patch.fromLine + patch.lines.length ||
-    current.document.length !== old.sourceRange.to - old.sourceRange.from
+    current.sourceSnapshot.length !== old.sourceRange.to - old.sourceRange.from ||
+    (canonicalSource
+      ? patch.code.sourceRange.to > canonicalSource.length ||
+        canonicalSource.read(old.sourceRange.to, patch.code.sourceRange.to) !== patch.sourceAppend
+      : !document || document.length !== current.sourceSnapshot.length)
   ) {
     throw new RangeError("Code append does not match the current semantic frontier");
   }
@@ -1247,11 +1331,17 @@ function appendCodeState(
       throw new RangeError("Changed code line range is outside the updated source range");
     }
   }
-  current.document.append(patch.sourceAppend);
+  if (!canonicalSource && document && patch.sourceAppend.length > 0) document.append(patch.sourceAppend);
+  const sourceSnapshot = patch.sourceAppend.length === 0
+    ? current.sourceSnapshot
+    : canonicalSource
+      ? createSourceWindow(canonicalSource, patch.code.sourceRange.from, patch.code.sourceRange.to)
+      : createSourceWindow((document as AppendSourceDocument).snapshot(), 0, nextLength);
   node.codeState = {
     ...current,
     source: copyCodeSource(patch.code),
     lines,
+    sourceSnapshot,
   };
   syncManagedCodeChildren(snapshot, node);
 }
@@ -1297,7 +1387,7 @@ function materializeCodeBlock(node: SnapshotNode): Block {
   const state = node.codeState;
   if (!state) throw new Error("Code state is missing");
   if (!state.managed && node.block) return cloneBlock(node.block);
-  const raw = state.document.snapshot().materialize();
+  const raw = state.sourceSnapshot.materialize();
   const block: Block = node.block
     ? cloneBlock(node.block)
     : {
@@ -1657,6 +1747,9 @@ function buildNodeFromSnapshot(
   targetNodes: Map<string, SnapshotNode>,
 ): SnapshotNode | null {
   if (!snapshotNode || !snapshotNode.id) return null;
+  if (snapshotNode.inputSource !== undefined) {
+    throw new TypeError("Input source baseline is only valid on the document root");
+  }
   if (snapshotNode.code && snapshotNode.type !== "code") {
     throw new TypeError("Code source metadata is only valid on code nodes");
   }
@@ -1678,8 +1771,13 @@ function buildNodeFromSnapshot(
     block = cloneBlock(props.block as Block);
     delete props.block;
   }
-  const tableState = snapshotNode.table ? createManagedTableState(snapshotNode.table, snapshotNode.id) : undefined;
-  const paragraphState = snapshotNode.paragraph ? createManagedParagraphState(snapshotNode.paragraph, snapshotNode.id) : undefined;
+  const canonicalSource = inputSourceSnapshot(snapshot);
+  const tableState = snapshotNode.table
+    ? createManagedTableState(snapshotNode.table, snapshotNode.id, undefined, canonicalSource)
+    : undefined;
+  const paragraphState = snapshotNode.paragraph
+    ? createManagedParagraphState(snapshotNode.paragraph, snapshotNode.id, undefined, canonicalSource)
+    : undefined;
   if (!block && tableState) {
     block = {
       id: snapshotNode.id,
@@ -1711,7 +1809,7 @@ function buildNodeFromSnapshot(
   };
   targetNodes.set(node.id, node);
   if (snapshotNode.code) {
-    node.codeState = createManagedCodeState(snapshotNode.code, node.id);
+    node.codeState = createManagedCodeState(snapshotNode.code, node.id, canonicalSource);
   }
   if (!tableState && !paragraphState) {
     const childSnapshots = Array.isArray(snapshotNode.children) ? snapshotNode.children : [];
@@ -1721,7 +1819,7 @@ function buildNodeFromSnapshot(
     }
     if (snapshotNode.code) syncManagedCodeChildren(snapshot, node);
     if (node.type === "code" && node.block && !node.codeState) {
-      node.codeState = createLegacyCodeState(node, targetNodes);
+      node.codeState = createLegacyCodeState(node, targetNodes, snapshot);
     }
   }
   return node;

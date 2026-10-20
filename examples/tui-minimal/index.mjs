@@ -75,6 +75,15 @@ async function main() {
 
   worker.on("message", (msg) => {
     if (msg.type === "INITIALIZED") {
+      if (
+        msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+        !Number.isSafeInteger(msg.generation) ||
+        msg.generation < 0 ||
+        msg.snapshot.inputSource?.generation !== msg.generation ||
+        typeof msg.snapshot.inputSource?.raw !== "string"
+      ) {
+        throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
+      }
       store.setSnapshot(msg.snapshot);
       return;
     }

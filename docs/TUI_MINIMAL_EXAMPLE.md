@@ -18,6 +18,7 @@ From the repo root:
 ```bash
 npm install
 npm run build:packages
+npm run worker:build
 npm run example:tui-minimal
 ```
 
@@ -66,6 +67,17 @@ const worker = createWorkerThread({ stdout: true, stderr: true });
 const store = createSnapshotStore();
 
 worker.on("message", (msg: WorkerOut) => {
+  if (msg.type === "INITIALIZED") {
+    const inputSource = msg.snapshot.inputSource;
+    if (
+      msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+      !Number.isSafeInteger(msg.generation) ||
+      inputSource?.generation !== msg.generation ||
+      typeof inputSource?.raw !== "string"
+    ) throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
+    store.setSnapshot(msg.snapshot);
+    return;
+  }
   if (msg.type !== "PATCH") return;
   store.applyPatches(msg.patches);
   renderToTerminal(store.getBlocks());
