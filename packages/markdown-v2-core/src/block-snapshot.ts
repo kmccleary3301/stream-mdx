@@ -192,12 +192,29 @@ function materializeParagraphMixedSegments(
   return { segments, htmlTrees };
 }
 
+// The flat inline view of a mixed paragraph, for consumers that read `payload.inline`
+// (custom paragraph components). Component source stays literal text, as on the base path.
+function mixedParagraphInline(segments: readonly MixedContentSegment[]): InlineNode[] {
+  const inline: InlineNode[] = [];
+  for (const segment of segments) {
+    if (segment.kind === "text") {
+      if (segment.inline) inline.push(...cloneInlineNodes(segment.inline));
+      else inline.push({ kind: "text", text: segment.value });
+    } else if (segment.kind === "html") {
+      inline.push({ kind: "html", raw: segment.value, ...(segment.sanitized !== undefined ? { sanitized: segment.sanitized } : {}) });
+    } else {
+      inline.push({ kind: "text", text: segment.value });
+    }
+  }
+  return inline;
+}
+
 export function materializeManagedParagraphBlock(block: Block, state: ManagedParagraphViewState): Block {
   const paragraph = materializeManagedParagraphSnapshot(state);
   const result = cloneBlock(block);
   const mixed = materializeParagraphMixedSegments(paragraph);
   result.payload.raw = paragraph.raw;
-  result.payload.inline = mixed ? [] : paragraph.spans.flatMap((span) => cloneInlineNodes(span.nodes));
+  result.payload.inline = mixed ? mixedParagraphInline(mixed.segments) : paragraph.spans.flatMap((span) => cloneInlineNodes(span.nodes));
   result.payload.range = { ...paragraph.sourceRange };
   const meta: NonNullable<Block["payload"]["meta"]> = { ...(result.payload.meta ?? {}), paragraph };
   if (mixed) {
@@ -1138,27 +1155,8 @@ function primaryListItemChild(snapshot: DocumentSnapshot, parent: SnapshotNode):
 }
 
 function managedParagraphLegacyInline(paragraph: ParagraphBlockSnapshot): InlineNode[] {
-  const inline: InlineNode[] = [];
-  for (const span of paragraph.spans) {
-    if (!span.children?.length) {
-      inline.push(...cloneInlineNodes(span.nodes));
-      continue;
-    }
-    for (const child of span.children) {
-      const props = child.props ?? {};
-      if (child.type === "paragraph-text") {
-        if (Array.isArray(props.inline)) inline.push(...cloneInlineNodes(props.inline as InlineNode[]));
-        else if (typeof props.text === "string") inline.push({ kind: "text", text: props.text });
-      } else if (child.type === "paragraph-html" && typeof props.raw === "string") {
-        inline.push({
-          kind: "html",
-          raw: props.raw,
-          ...(child.meta?.sanitized === true && typeof props.html === "string" ? { sanitized: props.html } : {}),
-        });
-      }
-    }
-  }
-  return inline;
+  const mixed = materializeParagraphMixedSegments(paragraph);
+  return mixed ? mixedParagraphInline(mixed.segments) : paragraph.spans.flatMap((span) => cloneInlineNodes(span.nodes));
 }
 
 function materializeLegacyPreparedProjection(
