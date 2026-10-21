@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { createRequire } from "node:module";
 import fs from "node:fs/promises";
 import React from "react";
 import { JSDOM } from "jsdom";
@@ -14,7 +15,10 @@ import { applyPatchBatch, createInitialSnapshot, type Block, type HtmlOptions, t
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 
 import { createWorkerHarness } from "./worker-test-harness";
-import { buildSeededChunks } from "../../../scripts/regression/utils";
+import type * as RegressionUtils from "../../../scripts/regression/utils";
+// Root scripts are CommonJS (no package "type"); Node 22+ cannot bind their named exports from
+// this ESM test, so load the seeded chunker through require.
+const { buildSeededChunks } = createRequire(import.meta.url)("../../../scripts/regression/utils.ts") as typeof RegressionUtils;
 
 
 const DOC_PLUGINS = {
