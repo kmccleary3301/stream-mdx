@@ -140,6 +140,7 @@ export interface RendererStore {
   subscribeCodeLines(id: string, from: number, to: number, listener: () => void): () => void;
   getCodeLines(id: string, from: number, to: number): ReadonlyArray<CodeLineRecord>;
   getTableBlock(id: string): ManagedTableViewState | undefined;
+  getTableColdBlock(id: string): Block | undefined;
   getTableRows(id: string, from: number, to: number): ReadonlyArray<TableRowRecord>;
   subscribeTableRows(id: string, from: number, to: number, listener: () => void): () => void;
   getParagraphBlock(id: string): ManagedParagraphViewState | undefined;
@@ -1388,6 +1389,20 @@ const tableStateByRecord = new WeakMap<NodeRecord, ManagedTableViewState>();
 const retiredTableGenerationsByMap = new WeakMap<NodeMap, Map<string, number>>();
 const coldTableBlocksByView = new WeakMap<ManagedTableViewState, Block>();
 const EMPTY_TABLE_ROWS: ReadonlyArray<TableRowRecord> = Object.freeze([]);
+
+function tableColdBlock(record: NodeRecord, state: ManagedTableViewState): Block {
+  let block = coldTableBlocksByView.get(state);
+  if (!block) {
+    block = materializeManagedTableBlock(record.block ?? {
+      id: record.id,
+      type: "table",
+      isFinalized: true,
+      payload: { raw: "", range: { ...state.source.sourceRange }, meta: {} },
+    }, state);
+    coldTableBlocksByView.set(state, block);
+  }
+  return block;
+}
 
 interface TableRowRangeSubscription {
   readonly from: number;
@@ -2770,6 +2785,19 @@ function updateParagraphSpanChildRecords(
   return stableTopology;
 }
 
+/** Current legacy code record as the snapshot shape the legacy code state is derived from; the block supplies range and raw. */
+function legacyCodeSnapshot(map: NodeMap, record: NodeRecord): NodeSnapshot {
+  return {
+    id: record.id,
+    type: record.type,
+    props: record.props,
+    children: record.children.map((childId) => {
+      const child = map.get(childId);
+      return { id: childId, type: child?.type ?? "code-line", props: child?.props };
+    }),
+  };
+}
+
 /**
  * Mirrors `normalizeCodeLineProps`: a line whose text, index, tokens and html are unchanged keeps its props.
  * Streamed lines store `tokens: null` where a snapshot omits the key; views read tokens by truthiness only.
@@ -2944,19 +2972,7 @@ function coldBlockForStoreNode(
     return block;
   }
   const tableState = tableStateByRecord.get(record);
-  if (tableState) {
-    let block = coldTableBlocksByView.get(tableState);
-    if (!block) {
-      block = materializeManagedTableBlock(record.block ?? {
-        id: record.id,
-        type: "table",
-        isFinalized: true,
-        payload: { raw: "", range: { ...tableState.source.sourceRange }, meta: {} },
-      }, tableState);
-      coldTableBlocksByView.set(tableState, block);
-    }
-    return block;
-  }
+  if (tableState) return tableColdBlock(record, tableState);
   const codeState = codeStateByRecord.get(record);
   if (codeState) {
     let block = coldCodeBlocksByView.get(codeState.view);
@@ -3107,16 +3123,7 @@ function convertNodeToBlocks(map: NodeMap, root: NodeRecord, publicBlocks: WeakM
     const codeState = codeStateByRecord.get(child);
     const tableState = tableStateByRecord.get(child);
     if (tableState) {
-      let materialized = coldTableBlocksByView.get(tableState);
-      if (!materialized) {
-        materialized = materializeManagedTableBlock(child.block ?? {
-          id: child.id,
-          type: "table",
-          isFinalized: true,
-          payload: { raw: "", range: { ...tableState.source.sourceRange }, meta: {} },
-        }, tableState);
-        coldTableBlocksByView.set(tableState, materialized);
-      }
+      const materialized = tableColdBlock(child, tableState);
       let block = publicBlocks.get(materialized);
       if (!block) {
         block = cloneBlock(materialized);
@@ -4321,22 +4328,22 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           }
           const existingCodeState = codeStateByRecord.get(target);
           if (target.type === "code" && existingCodeState && !existingCodeState.managed) {
-            codeStateByRecord.set(
-              target,
-              typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-                ? refreshLegacyCodeSource(
-                    existingCodeState,
-                    target.block,
-                    inputSourceSnapshotForMap(nodes),
-                    codeCountersByMap!.get(nodes),
-                  )
-                : refreshLegacyCodeSource(
-                    existingCodeState,
-                    target.block,
-                    inputSourceSnapshotForMap(nodes),
-                  ),
-            );
-            if (target.block?.isFinalized && existingCodeState.view.source.state !== "finalized") {
+            const canonicalSource = inputSourceSnapshotForMap(nodes);
+            // The legacy diff inserts and deletes code-line children before re-sending the block; re-derive the lines then.
+            const linesChanged = target.children.length !== existingCodeState.view.lines.length;
+            let nextCodeState: StoredCodeBlockState;
+            if (linesChanged) {
+              const snapshot = legacyCodeSnapshot(nodes, target);
+              nextCodeState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+                ? createStoredCodeBlockState(snapshot, target.block, canonicalSource, codeCountersByMap!.get(nodes))
+                : createStoredCodeBlockState(snapshot, target.block, canonicalSource);
+            } else {
+              nextCodeState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+                ? refreshLegacyCodeSource(existingCodeState, target.block, canonicalSource, codeCountersByMap!.get(nodes))
+                : refreshLegacyCodeSource(existingCodeState, target.block, canonicalSource);
+            }
+            codeStateByRecord.set(target, nextCodeState);
+            if (linesChanged || (target.block?.isFinalized && existingCodeState.view.source.state !== "finalized")) {
               invalidateAllCodeLineRanges(target.id);
             }
           }
@@ -5248,6 +5255,18 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     getTableBlock(id: string) {
       const record = nodes.get(id);
       return record?.type === "table" ? tableStateByRecord.get(record) : undefined;
+    },
+    getTableColdBlock(id: string) {
+      const record = nodes.get(id);
+      const state = record?.type === "table" ? tableStateByRecord.get(record) : undefined;
+      if (!record || !state) return undefined;
+      const materialized = tableColdBlock(record, state);
+      let block = publicBlocks.get(materialized);
+      if (!block) {
+        block = cloneBlock(materialized);
+        publicBlocks.set(materialized, block);
+      }
+      return block;
     },
     getParagraphBlock(id: string) {
       const record = nodes.get(id);

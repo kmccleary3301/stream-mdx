@@ -311,7 +311,9 @@ export const BlockNodeRenderer: React.FC<{
         />
       );
     }
-    return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
+    // Native table rows live in the table owner; custom renderers consume the materialized header/rows/align meta.
+    const customBlock = block.type === "table" ? (store.getTableColdBlock(block.id) ?? block) : block;
+    return <>{registry.renderFinalizedBlock(customBlock, registry.renderBlock(customBlock))}</>;
   }
 
   let element: React.ReactElement | null;
