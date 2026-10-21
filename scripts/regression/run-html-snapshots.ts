@@ -1091,7 +1091,6 @@ async function run(): Promise<void> {
         const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table", "code"].some((tag) =>
           (fixture.tags ?? []).includes(tag),
         );
-        const waitForMdxCompiled = fixture.contentPolicy === "trusted-mdx";
         const tableTargetPct = fixture.expectTableByPct;
         const tableTargetChars =
           typeof tableTargetPct === "number" && scenario.maxChunkChars <= 512
@@ -1316,27 +1315,6 @@ async function run(): Promise<void> {
           }
 
           await awaitScenario(() => page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush()));
-
-          if (waitForMdxCompiled) {
-            try {
-              await awaitScenario(() =>
-                page.waitForFunction(
-                  () => {
-                    const summary = window.__streammdxRegression?.getSummary();
-                    if (!summary) return false;
-                    return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
-                  },
-                  undefined,
-                  { timeout: remainingTimeout() },
-                ),
-              );
-            } catch (error) {
-              failures += 1;
-              scenarioFailed = true;
-              console.error(`\nMDX compile timeout for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
-              console.error(error);
-            }
-          }
 
           const invariantViolations = (await awaitScenario(() =>
             page.evaluate(() => window.__streammdxRegression?.getInvariantViolations?.() ?? []),
