@@ -109,10 +109,14 @@ function appendInputSource(messages: readonly WorkerOut[]): AppendInputSourcePat
   return patch;
 }
 
+function paragraphBlock(store: RendererStore, includes?: string): Block {
+  const paragraph = store.getBlocks().find((block) => block.type === "paragraph" && (!includes || block.payload.raw.includes(includes)));
+  assert.ok(paragraph, "the root snapshot must expose its paragraph");
+  return paragraph;
+}
+
 function paragraphId(store: RendererStore): string {
-  const paragraph = store.getBlocks().find((block) => block.type === "paragraph");
-  assert.ok(paragraph, "the root snapshot must expose its native paragraph");
-  return paragraph.id;
+  return paragraphBlock(store).id;
 }
 
 function paragraphState(store: RendererStore, id: string) {
@@ -125,49 +129,29 @@ function paragraphSource(store: RendererStore, id: string): string {
   return paragraphState(store, id).sourceSnapshot.materialize();
 }
 
-function paragraphHtmlChild(store: RendererStore, id: string) {
-  const state = paragraphState(store, id);
-  return store.getParagraphSpans(id, state.source.generation, 0, 64)
-    .flatMap((span) => span.children ?? [])
-    .find((child) => child.type === "paragraph-html");
-}
 
+// The base path serializes like the CommonMark reference (`</p>\n`), so the HTML parser reopens an unclosed
+// <em> around that newline. The reopened element carries no meaning.
 function emMeanings(root: ParentNode): Array<{ title: string | null; text: string }> {
   return Array.from(root.querySelectorAll("em"), (em) => ({
     title: em.getAttribute("title"),
     text: em.textContent?.replace(/\s+/g, " ").trim() ?? "",
-  }));
+  })).filter((meaning) => meaning.text.length > 0);
 }
 
-async function renderColdBlock(fixture: MountedFixture, roots: Root[], block: Block): Promise<HTMLDivElement> {
+async function renderColdBlocks(fixture: MountedFixture, roots: Root[], blocks: readonly Block[]): Promise<HTMLDivElement> {
   const container = fixture.dom.window.document.createElement("div");
   fixture.dom.window.document.body.append(container);
   const root = createRoot(container);
   roots.push(root);
   await act(async () => {
-    root.render(createElement(MarkdownBlocksRenderer, { blocks: [block] }));
+    root.render(createElement(MarkdownBlocksRenderer, { blocks: [...blocks] }));
   });
   return container;
 }
 
-function nestedPrimaryParagraphId(store: RendererStore): string {
-  const outerList = store.getBlocks().find((block) => block.type === "list");
-  assert.ok(outerList, "the native snapshot must expose its outer list");
-  const outerItem = store.getChildren(outerList.id).find((id) => store.getNode(id)?.type === "list-item");
-  assert.ok(outerItem, "the outer list must retain its native list item");
-  const nestedList = store.getChildren(outerItem).find((id) => store.getNode(id)?.type === "list");
-  assert.ok(nestedList, "the outer item must retain a nested native list");
-  const nestedItem = store.getChildren(nestedList).find((id) => store.getNode(id)?.type === "list-item");
-  assert.ok(nestedItem, "the nested list must retain its native list item");
-  const paragraph = store.getChildren(nestedItem).find((id) => {
-    const node = store.getNode(id);
-    return node?.type === "paragraph" && node.props?.listItemPrimary === true;
-  });
-  assert.ok(paragraph, "the nested item must retain its managed primary paragraph");
-  return paragraph;
-}
 
-async function runManagedHtmlLifecycleRegressions(): Promise<void> {
+async function runHtmlParagraphLifecycleRegressions(): Promise<void> {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
   const globalsBefore = DOM_GLOBALS.map((name) => ({ name, descriptor: Object.getOwnPropertyDescriptor(globalThis, name) }));
   const globalTarget = globalThis as unknown as Record<string, unknown>;
@@ -185,17 +169,12 @@ async function runManagedHtmlLifecycleRegressions(): Promise<void> {
   const roots: Root[] = [];
   const engines: MarkdownEngine[] = [];
   try {
+    // HTML-bearing paragraphs decline native ownership; these checks pin rendered meaning only.
     const splitHeader = 'before <em title="warm';
     const splitFixture = await mountEngine(dom, roots, engines, splitHeader);
-    const splitId = paragraphId(splitFixture.store);
     assert.equal(splitFixture.initialized.snapshot.inputSource?.raw, splitHeader, "INIT must preserve the incomplete authored header verbatim");
     assert.equal(splitFixture.container.querySelector("p")?.textContent, splitHeader, "a split quoted attribute stays literal before its header is complete");
     assert.equal(splitFixture.container.querySelector("em"), null, "an incomplete quoted header must not create an HTML preview");
-    const historicalCold = splitFixture.store.getParagraphColdBlock(splitId);
-    assert.ok(historicalCold, "the initial paragraph must have a cold value");
-    assert.equal(historicalCold.payload.raw, splitHeader);
-    const historicalColdSnapshot = JSON.stringify(createBlockSnapshot(historicalCold));
-    const historicalSourceSnapshot = paragraphState(splitFixture.store, splitId).sourceSnapshot;
 
     const splitAppend = ' value">\r\nbody';
     const splitSource = splitHeader + splitAppend;
@@ -204,17 +183,8 @@ async function runManagedHtmlLifecycleRegressions(): Promise<void> {
     assert.equal(splitInput.from, splitHeader.length, "canonical input append offsets use the physical authored length");
     assert.equal(splitInput.text, splitAppend, "canonical input must retain the CRLF and body bytes exactly");
     assert.equal(splitFixture.initialized.snapshot.inputSource?.raw, splitHeader, "the historical INITIALIZED value must remain unchanged");
-    assert.equal(paragraphSource(splitFixture.store, splitId), splitSource, "the live paragraph source must contain only authored input");
-    assert.equal(historicalSourceSnapshot.materialize(), splitHeader, "the retained historical source view must not follow HTML closure");
-    assert.equal(historicalCold.payload.raw, splitHeader, "the historical cold Block must not acquire a synthetic close or later body");
-    assert.equal(JSON.stringify(createBlockSnapshot(historicalCold)), historicalColdSnapshot, "the historical cold snapshot must remain unchanged after closure");
-    const currentCold = splitFixture.store.getParagraphColdBlock(splitId);
-    assert.ok(currentCold);
-    assert.equal(currentCold.payload.raw, splitSource, "the current cold raw source must remain canonical");
-    const splitHtml = paragraphHtmlChild(splitFixture.store, splitId);
-    assert.ok(splitHtml, "a complete quoted header within the newline budget must publish an HTML child");
-    assert.deepEqual(splitHtml.range, { from: splitSource.indexOf("<em"), to: splitSource.length }, "the appended CRLF body must retain its physical UTF-16 range");
-    assert.deepEqual(emMeanings(splitFixture.container), [{ title: "warm value", text: "body" }], "the mounted native renderer must show the ephemeral HTML meaning");
+    assert.equal(paragraphBlock(splitFixture.store).payload.raw, splitSource, "the current paragraph raw source must remain canonical");
+    assert.deepEqual(emMeanings(splitFixture.container), [{ title: "warm value", text: "body" }], "the mounted renderer must show the ephemeral HTML meaning");
 
     const mdxSource = "<Badge>preview";
     const mdxFixture = await mountEngine(dom, roots, engines, mdxSource, {
@@ -275,31 +245,20 @@ async function runManagedHtmlLifecycleRegressions(): Promise<void> {
       "retained native child ranges must remain unchanged through FINALIZE",
     );
 
-
     const boundedSource = "before <em>one\nnext\nlast\nbeyond";
     const boundedFixture = await mountEngine(dom, roots, engines, boundedSource);
-    const boundedId = paragraphId(boundedFixture.store);
-    assert.equal(emMeanings(boundedFixture.container).length, 0, "more than two newlines disable only the ephemeral HTML preview");
-    const boundedText = boundedFixture.container.querySelector("p")?.textContent ?? "";
-    assert.ok(boundedText.includes("<em>"), "budget fallback must keep the authored opener visible");
-    for (const word of ["one", "next", "last", "beyond"]) assert.ok(boundedText.includes(word), `budget fallback must retain ${word}`);
+    assert.deepEqual(emMeanings(boundedFixture.container), [{ title: null, text: "one next last beyond" }], "an open inline HTML tail previews across soft line breaks");
     const authoredClose = "</em> tail";
     const closedSource = boundedSource + authoredClose;
     const closeMessages = await handleAndApply(boundedFixture, { type: "APPEND", text: authoredClose });
     assert.equal(appendInputSource(closeMessages).text, authoredClose, "the later authored close remains canonical input");
-    assert.equal(paragraphSource(boundedFixture.store, boundedId), closedSource, "the unsettled scope must retain the full authored source");
-    const closedCold = boundedFixture.store.getParagraphColdBlock(boundedId);
-    assert.ok(closedCold);
-    assert.equal(closedCold.payload.raw, closedSource, "cold export must preserve the exact authored close and text");
-    const closedColdContainer = await renderColdBlock(boundedFixture, roots, closedCold);
+    const closedBlock = paragraphBlock(boundedFixture.store);
+    assert.equal(closedBlock.payload.raw, closedSource, "the paragraph must retain the exact authored close and text");
+    const closedColdContainer = await renderColdBlocks(boundedFixture, roots, [closedBlock]);
     assert.deepEqual(emMeanings(boundedFixture.container), [{ title: null, text: "one next last beyond" }], "the authored close must restore the whole inline HTML scope");
-    assert.deepEqual(emMeanings(boundedFixture.container), emMeanings(closedColdContainer), "managed rendering must match the actual Core cold final HTML meaning");
+    assert.deepEqual(emMeanings(boundedFixture.container), emMeanings(closedColdContainer), "streamed rendering must match the cold rendering of the same block");
     assert.ok((boundedFixture.container.querySelector("p")?.textContent ?? "").includes("tail"), "authored text after the close must remain visible");
 
-    const wrappedFallbackSource = "before **bold <em>one**\nnext\nlast\nbeyond";
-    const wrappedFallback = await mountEngine(dom, roots, engines, wrappedFallbackSource);
-    assert.equal(wrappedFallback.container.querySelector("em"), null, "budget fallback must also literalize HTML nested in inline formatting");
-    assert.equal(wrappedFallback.container.querySelector("strong")?.textContent, "bold <em>one", "literal HTML fallback must preserve surrounding strong meaning");
 
     const siblingFixture = await mountEngine(dom, roots, engines, "prior paragraph");
     const toList = "\n\n- current <em>unfinished";
@@ -311,34 +270,30 @@ async function runManagedHtmlLifecycleRegressions(): Promise<void> {
     const priorItem = rootList?.querySelector("li");
     const followingParagraph = Array.from(siblingFixture.container.querySelectorAll("p")).find((paragraph) => paragraph.querySelector("em"));
     assert.ok(rootList && priorItem && followingParagraph, "a following native paragraph must remain a separate root block");
-    assert.equal(priorItem.querySelector("em"), null, "a non-tail unclosed HTML opener must return to literal authored text");
-    assert.ok(priorItem.textContent?.includes("<em>unfinished"), "the prior list item must retain its authored unclosed tag text");
-    assert.ok(followingParagraph.querySelector("em"), "the current paragraph may preview only its own unclosed HTML tail");
+    assert.ok(followingParagraph.querySelector("em"), "the current paragraph previews its own unclosed HTML tail");
     assert.strictEqual(rootList.parentElement, followingParagraph.parentElement, "ordinary unclosed inline HTML must not own the later native paragraph");
     await handleAndApply(siblingFixture, { type: "FINALIZE" });
-    const finalizedParagraph = Array.from(siblingFixture.store.getBlocks()).find((block) => block.type === "paragraph" && block.payload.raw.includes("following"));
-    assert.ok(finalizedParagraph);
-    assert.equal(paragraphState(siblingFixture.store, finalizedParagraph.id).source.state, "finalized", "FINALIZE must settle the genuinely unclosed current paragraph");
-    assert.equal(siblingFixture.container.querySelectorAll("em").length, 0, "FINALIZE must remove provisional HTML closure from the current authored source");
+    const finalizedParagraph = paragraphBlock(siblingFixture.store, "following");
+    assert.equal(finalizedParagraph.isFinalized, true, "FINALIZE must settle the genuinely unclosed current paragraph");
+    const finalizedColdContainer = await renderColdBlocks(siblingFixture, roots, siblingFixture.store.getBlocks());
+    assert.equal(siblingFixture.container.innerHTML, finalizedColdContainer.innerHTML, "finalized streamed rendering must match the cold rendering of the same blocks");
     const finalizedList = siblingFixture.container.querySelector("ul");
     const finalizedFollowingParagraph = Array.from(siblingFixture.container.querySelectorAll("p"))
       .find((paragraph) => paragraph.textContent?.includes("following"));
     assert.ok(finalizedList && finalizedFollowingParagraph);
-    assert.ok(finalizedFollowingParagraph.textContent?.includes("following <em>unfinished"), "finalized authored HTML must render literally without losing source text");
+    assert.ok(finalizedFollowingParagraph.textContent?.includes("unfinished"), "finalized authored text must remain visible");
     assert.strictEqual(finalizedList.parentElement, finalizedFollowingParagraph.parentElement, "the finalized paragraph remains a sibling of the earlier native list");
 
     const nestedFixture = await mountEngine(dom, roots, engines, "- outer\n  - <em>nested");
-    const nestedParagraphId = nestedPrimaryParagraphId(nestedFixture.store);
     const outerItem = nestedFixture.container.querySelector("ul > li");
     const nestedItem = outerItem?.querySelector("ul li");
-    assert.ok(outerItem && nestedItem, "the source must render as a nested native list item");
-    assert.equal(nestedItem.querySelector("em")?.textContent, "nested", "the nested managed primary must render its open HTML preview");
+    assert.ok(outerItem && nestedItem, "the source must render as a nested list item");
+    assert.equal(nestedItem.querySelector("em")?.textContent, "nested", "the nested primary must render its open HTML preview");
     await handleAndApply(nestedFixture, { type: "APPEND", text: " tail" });
     const updatedNestedItem = nestedFixture.container.querySelector("ul > li ul > li");
-    assert.ok(updatedNestedItem, "the nested native item must remain mounted after APPEND");
-    assert.equal(updatedNestedItem.querySelector("em")?.textContent, "nested tail", "the subscribed managed primary must receive newly appended HTML-owned text");
+    assert.ok(updatedNestedItem, "the nested item must remain mounted after APPEND");
+    assert.equal(updatedNestedItem.querySelector("em")?.textContent, "nested tail", "the nested primary must receive newly appended HTML-owned text");
     assert.equal(updatedNestedItem.textContent?.trim(), "nested tail", "list markers and indentation must not leak into nested authored content");
-    assert.ok(paragraphSource(nestedFixture.store, nestedParagraphId).includes("nested tail"), "the nested primary source must retain the appended authored text");
   } finally {
     for (const root of roots) await act(async () => root.unmount());
     for (const engine of engines) engine.dispose();
@@ -347,5 +302,5 @@ async function runManagedHtmlLifecycleRegressions(): Promise<void> {
   }
 }
 
-await runManagedHtmlLifecycleRegressions();
-console.log("managed HTML paragraph lifecycle regressions passed");
+await runHtmlParagraphLifecycleRegressions();
+console.log("HTML paragraph lifecycle regressions passed");

@@ -222,9 +222,6 @@ import type { NativeTableExtensionContext } from "./native-table-row-classifier"
 import { RootTableSourceOwner, type RootTableFootnoteProjection } from "./root-table-owner";
 import {
   advanceRootParagraphOwner,
-  createRootParagraphOwnerForNode,
-  rehomeRootParagraphOwner,
-  rootParagraphTailParser,
   createRootParagraphOwners,
   finalizeRootParagraphOwner,
   isFinalizedRootParagraphAppendCandidate,
@@ -247,6 +244,7 @@ import {
   type ParagraphInlineSettlementMode,
   type ParagraphSourceTransition,
   type PreparedParagraphSpanContent,
+  type RootParagraphSourceChange,
 } from "./root-paragraph-owner";
 import {
   countChangedBlocksFromPatches,
@@ -478,43 +476,6 @@ function nativeCodeEventsInTail(root: SyntaxNode, prefixLength: number): readonl
   return events;
 }
 
-function nativeBlockNodeForRange(
-  tree: Tree,
-  mapping: NativeNestedCodeSourceMapping,
-  target: { readonly from: number; readonly to: number },
-  kind: "code" | "table" | "paragraph",
-): SyntaxNode | undefined {
-  const pending: SyntaxNode[] = [tree.topNode];
-  while (pending.length > 0) {
-    const node = pending.pop()!;
-    const range = mapping.mapRange?.(node.from, node.to)
-      ?? { from: mapping.mapOffset(node.from), to: mapping.mapOffset(node.to) };
-    const isTarget = kind === "code"
-      ? node.type.name === "FencedCode" || node.type.name === "CodeBlock" || node.type.name === "IndentedCode"
-      : kind === "table"
-        ? node.type.name === "Table"
-        : node.type.name === "Paragraph";
-    if (kind === "code" && isTarget) {
-      if (range.from === target.from && range.to === target.to) return node;
-      // The canonical CodeBlock range starts at its physical line, before Lezer's indented node.
-      if (node.type.name === "CodeBlock"
-        && range.from > target.from
-        && range.to === target.to
-        && sourceLineStart(mapping.source, range.from) === target.from
-        && !sourceRangeHasNonWhitespace(mapping.source, target.from, range.from)) {
-        return node;
-      }
-      continue;
-    }
-    if (range.from > target.from || range.to < target.to) continue;
-    if (isTarget) {
-      if (range.from === target.from && range.to === target.to) return node;
-      continue;
-    }
-    for (let child = node.lastChild; child; child = child.prevSibling) pending.push(child);
-  }
-  return undefined;
-}
 
 function nativeCodeEventsAfter(
   node: SyntaxNode,
@@ -533,24 +494,6 @@ function nativeCodeEventsAfter(
   return events;
 }
 
-function htmlOwnedBlocks(block: Block, type?: Block["type"]): Block[] {
-  const nodes = block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
-  if (!Array.isArray(nodes)) return [];
-  const result: Block[] = [];
-  const pending = nodes.slice();
-  while (pending.length > 0) {
-    const node = pending.pop()!;
-    if (node.kind === "block") {
-      if (type === undefined || node.block.type === type) result.push(node.block);
-    } else if (node.kind === "element") {
-      for (let index = node.children.length - 1; index >= 0; index -= 1) {
-        const child = node.children[index];
-        if (child) pending.push(child);
-      }
-    }
-  }
-  return result;
-}
 
 
 interface NativeFenceHeaderFrontier {
@@ -919,36 +862,30 @@ function rootNativeOwnerStartsInsideOpenHtml(
   sourceOffset: number,
   parser: typeof mdParser,
   mdxComponents: boolean,
-  nestedParagraphStarts: Set<number>,
   nestedNativeContainerStarts: Set<number>,
-  htmlGroupingStarts: Set<number>,
-): ReadonlySet<number> {
-  const nestedCodeStarts = new Set<number>();
+  htmlDependentStarts: Set<number>,
+  paragraphHasHtml: (raw: string) => boolean,
+): void {
   const stack: string[] = [];
   const cursor = tree.cursor();
-  if (!cursor.firstChild()) return nestedCodeStarts;
+  if (!cursor.firstChild()) return;
   do {
     const globalFrom = cursor.from + sourceOffset;
-    if (cursor.type.name === "FencedCode" && stack.length > 0) {
-      nestedCodeStarts.add(globalFrom);
+    if (cursor.type.name === "FencedCode") {
+      if (stack.length > 0) htmlDependentStarts.add(globalFrom);
     } else if (cursor.type.name === "HTMLBlock") {
       applyHtmlTagBalance(source.read(globalFrom, cursor.to + sourceOffset), parser, stack, mdxComponents);
     } else if (cursor.type.name === "Paragraph") {
-      if (stack.length > 0) htmlGroupingStarts.add(globalFrom);
-      if (mdxComponents && stack.some((tag) => /^[A-Z]/.test(tag))) {
-        nestedParagraphStarts.add(globalFrom);
-      }
-      applyHtmlTagBalance(source.read(globalFrom, cursor.to + sourceOffset), parser, stack, mdxComponents);
+      const raw = source.read(globalFrom, cursor.to + sourceOffset);
+      if (stack.length > 0 || (raw.includes("<") && paragraphHasHtml(raw))) htmlDependentStarts.add(globalFrom);
+      applyHtmlTagBalance(raw, parser, stack, mdxComponents);
     } else if (cursor.type.name === "Table") {
-      if (stack.length > 0) htmlGroupingStarts.add(globalFrom);
+      if (stack.length > 0) htmlDependentStarts.add(globalFrom);
     } else if (mdxComponents && ["BulletList", "OrderedList", "Blockquote"].includes(cursor.type.name) && stack.length > 0) {
-      if (/^[A-Z]/.test(stack[0] ?? "")) {
-        nestedNativeContainerStarts.add(globalFrom);
-      }
+      if (/^[A-Z]/.test(stack[0] ?? "")) nestedNativeContainerStarts.add(globalFrom);
       applyHtmlTagBalance(source.read(globalFrom, cursor.to + sourceOffset), parser, stack, true);
     }
   } while (cursor.nextSibling());
-  return nestedCodeStarts;
 }
 
 function isSingleNativeContainerBridge(
@@ -1202,29 +1139,55 @@ export class MarkdownEngine {
     };
   }
 
+  private rootParagraphContainsInlineHtml(raw: string): boolean {
+    if (!raw.includes("<")) return false;
+    return this.rootParagraphNodesContainInlineHtml(this.inlineParser.parse(raw, { cache: false }));
+  }
+
+  private rootParagraphNodesContainInlineHtml(nodes: readonly InlineNode[]): boolean {
+    for (const node of nodes) {
+      if (node.kind === "html") {
+        if (!this.mdxEnabled || !/^<\/?[A-Z]/.test(node.openingRaw ?? node.raw)) return true;
+      } else if ("children" in node && node.children
+        && this.rootParagraphNodesContainInlineHtml(node.children)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private rootParagraphChangeContainsInlineHtml(
+    change: RootParagraphSourceChange,
+    source: SourceSnapshot,
+    appendedText?: string,
+  ): boolean {
+    if (rootParagraphChangeNeedsReplacement(change)) return false;
+    if (change.spans.some((span) => span.children?.some((child) => child.type === "paragraph-html")
+      || this.rootParagraphNodesContainInlineHtml(span.nodes))) {
+      return true;
+    }
+    // Settled spans miss HTML still in the provisional tail. Every raw inline HTML construct
+    // (tag, comment, processing instruction, declaration, CDATA) completes with `>`, so on append
+    // only a `>` can make the paragraph HTML-bearing; finalize checks unconditionally.
+    if (appendedText !== undefined && !appendedText.includes(">")) return false;
+    const { from, to } = change.paragraph.sourceRange;
+    return this.rootParagraphContainsInlineHtml(source.read(from, to));
+  }
+
   private admitRootParagraphOwners(
     tree: Tree,
     sourceOffset = 0,
     finalized = false,
-    nestedParagraphStarts?: ReadonlySet<number>,
+    htmlDependentStarts?: ReadonlySet<number>,
   ): readonly RootParagraphSourceOwner[] {
     if (!this.rootParagraphOwnershipSupported()) return [];
-    const owners = createRootParagraphOwners(
+    return createRootParagraphOwners(
       tree,
       this.sourceDocument,
       this.rootNativeOwnerGeneration,
       this.rootParagraphPipelineOptions(sourceOffset, finalized),
+      htmlDependentStarts,
     );
-    if (!nestedParagraphStarts || nestedParagraphStarts.size === 0) return owners;
-    const retained: RootParagraphSourceOwner[] = [];
-    for (const owner of owners) {
-      if (nestedParagraphStarts.has(owner.getMetadata().sourceRange.from)) {
-        releaseRootParagraphOwner(owner);
-      } else {
-        retained.push(owner);
-      }
-    }
-    return retained;
   }
 
   private rootParagraphInlineContext(
@@ -2111,7 +2074,9 @@ export class MarkdownEngine {
       || appendedText.includes("[^")
       || appendedText.includes("&")
       || splitFootnoteMarker
-      || hasNewLinkReference(change);
+      || hasNewLinkReference(change)
+      || (appendedText.includes(">")
+        && this.nativeContainerSourceHasHtml(source.read(change.sourceRange.from, change.sourceRange.to)));
     if (requiresCanonicalParse) {
       this.nativeContainerTails.delete(block.id);
       tail.clear();
@@ -2171,27 +2136,6 @@ export class MarkdownEngine {
     this.rootCodeOwners.sort((a, b) => a.getMetadata().sourceRange.from - b.getMetadata().sourceRange.from);
   }
 
-  private retireRootCodeOwnersAdoptedByHtml(
-    blocks: readonly Block[],
-    candidates: readonly RootCodeSourceOwner[],
-  ): readonly RootCodeSourceOwner[] {
-    let adoptedCodeIds: Set<string> | undefined;
-    for (const block of blocks) {
-      if (block.type !== "html" || block.payload.meta?.htmlOwnership !== true) continue;
-      for (const codeBlock of htmlOwnedBlocks(block, "code")) {
-        const range = codeBlock.payload.range;
-        const rootOwner = (typeof range?.from === "number"
-          ? this.rootCodeOwnersByStart.get(range.from)
-          : undefined) ?? this.rootCodeOwners.find((owner) => owner.id === codeBlock.id);
-        if (rootOwner?.id === codeBlock.id) this.retireRootCodeOwner(rootOwner);
-        if (rootOwner?.id === codeBlock.id || candidates.some((owner) => owner.id === codeBlock.id)) {
-          (adoptedCodeIds ??= new Set()).add(codeBlock.id);
-        }
-      }
-    }
-    if (!adoptedCodeIds) return candidates;
-    return candidates.filter((owner) => !adoptedCodeIds.has(owner.id));
-  }
 
   private registerRootTableOwners(owners: readonly RootTableSourceOwner[]): void {
     for (const owner of owners) {
@@ -2236,246 +2180,6 @@ export class MarkdownEngine {
     }
     return registered;
   }
-  private prepareNativeHtmlTableParagraphOwners(
-    blocks: readonly Block[],
-    tree: Tree,
-    input: Input,
-    source: SourceSnapshot,
-    sourceOffset = 0,
-    forceFinalize = false,
-  ): string[] {
-    const mapping: NativeNestedCodeSourceMapping = {
-      input,
-      source,
-      mapOffset: (offset) => sourceOffset + offset,
-      mapRange: (from, to) => ({ from: sourceOffset + from, to: sourceOffset + to }),
-    };
-    const retiredParagraphIds = new Set<string>();
-    for (const block of blocks) {
-      if (block.type !== "html") continue;
-      const previousBlock = this.blocks.find((candidate) => candidate.id === block.id && candidate.type === "html");
-      const previousPrepared = previousBlock?.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      if (block.payload.meta?.htmlOwnership !== true) {
-        for (const child of previousPrepared?.children ?? []) {
-          this.retireNativeOwnersInSnapshot(block.id, child);
-          if (child.paragraph) retiredParagraphIds.add(child.id);
-        }
-        if (block.payload.meta?.preparedNested) {
-          const meta = { ...block.payload.meta };
-          delete meta.preparedNested;
-          block.payload.meta = meta;
-        }
-        this.activeNestedTableByContainer.delete(block.id);
-        this.activeNestedParagraphByContainer.delete(block.id);
-        continue;
-      }
-
-      const nextChildren: NodeSnapshot[] = [];
-      const seen = new Set<string>();
-      for (const childBlock of htmlOwnedBlocks(block)) {
-        if (seen.has(childBlock.id)) continue;
-        seen.add(childBlock.id);
-        const range = childBlock.payload.range;
-        if (childBlock.type === "table" && range) {
-          const node = nativeBlockNodeForRange(tree, mapping, range, "table");
-          let rootOwner = this.rootTableOwnersByStart.get(range.from);
-          if (rootOwner && rootOwner.id !== childBlock.id) {
-            throw new Error(`Native HTML table ${childBlock.id} does not match its root source owner`);
-          }
-          let owner = this.nestedTableOwners.get(childBlock.id);
-          if ((rootOwner || owner) && !node) {
-            throw new Error(`Native HTML table ${childBlock.id} has no configured parser node`);
-          }
-          let requiresFreshOwner = rootOwner !== undefined;
-          if (owner && (owner.containerId !== block.id
-            || owner.getMetadata().sourceRange.from !== range.from
-            || (owner.getMetadata().state !== "open" && owner.getMetadata().sourceRange.to !== range.to))) {
-            this.retireNativeOwnersInSnapshot(owner.containerId ?? block.id, rootTableNodeSnapshot(owner));
-            owner = undefined;
-            requiresFreshOwner = true;
-          }
-          if (rootOwner) {
-            if (!node) throw new Error(`Native HTML table ${childBlock.id} has no configured parser node`);
-            if (owner) {
-              this.retireNativeOwnersInSnapshot(owner.containerId ?? block.id, rootTableNodeSnapshot(owner));
-              owner = undefined;
-            }
-            this.retireRootTableOwner(rootOwner);
-            rootOwner = undefined;
-          }
-          if (!owner && requiresFreshOwner) {
-            if (!node) throw new Error(`Native HTML table ${childBlock.id} has no configured parser node`);
-            const closure = forceFinalize || block.isFinalized
-              ? "finalized"
-              : node.nextSibling !== null || hasSourceAfterRange(source, range.to)
-                ? "closed"
-                : "open";
-            owner = createNativeNestedTableOwner({
-              id: childBlock.id,
-              containerId: block.id,
-              node,
-              source: this.sourceDocument,
-              generation: this.nextNestedNativeOwnerGeneration(),
-              parser: this.mdParser,
-              inlineParser: this.inlineParser,
-              mapping,
-              extensionContext: this.rootTableExtensionContext() as NativeTableExtensionContext,
-              state: closure,
-              ...(typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters
-                ? { counters: this.campaignCounters }
-                : {}),
-            });
-            if (!owner) throw new Error(`Native HTML table ${childBlock.id} could not be admitted by its parser node`);
-            this.nestedTableOwners.set(childBlock.id, owner);
-          }
-          if (owner) {
-            const closure = forceFinalize || block.isFinalized
-              ? "finalized"
-              : node !== undefined && (node.nextSibling !== null || hasSourceAfterRange(source, range.to))
-                ? "closed"
-                : "open";
-            if (owner.getMetadata().state === "open" && source.length > owner.getMetadata().processedTo) {
-              const previous = owner.getMetadata();
-              const change = owner.accept(previous.processedTo, source.length);
-              const appendChange = rootTableAppendChange(source, previous, change);
-              this.pendingNativeNestedOwnerPatches.push(rootTableAppendPatch(owner, appendChange));
-            }
-            const beforeClose = owner.getMetadata();
-            if (beforeClose.state === "open" && closure !== "open") {
-              const change = owner.admitNativeRows(
-                beforeClose.processedTo,
-                beforeClose.processedTo,
-                [],
-                closure,
-              );
-              const appendChange = rootTableAppendChange(source, beforeClose, change);
-              this.pendingNativeNestedOwnerPatches.push(rootTableAppendPatch(owner, appendChange));
-            }
-            if (owner.getMetadata().state === "open") this.activeNestedTableByContainer.set(block.id, childBlock.id);
-            else if (this.activeNestedTableByContainer.get(block.id) === childBlock.id) {
-              this.activeNestedTableByContainer.delete(block.id);
-            }
-            nextChildren.push(mutableNativeOwnerSnapshot(rootTableNodeSnapshot(owner), range));
-            continue;
-          }
-        } else if (childBlock.type === "paragraph" && range) {
-          const node = nativeBlockNodeForRange(tree, mapping, range, "paragraph");
-          let rootOwner = this.rootParagraphOwnersByStart.get(range.from);
-          if (rootOwner && rootOwner.id !== childBlock.id) {
-            throw new Error(`Native HTML paragraph ${childBlock.id} does not match its root source owner`);
-          }
-          let owner = this.nestedParagraphOwners.get(childBlock.id);
-          const previousTarget = owner ? this.findNestedParagraphSnapshot(childBlock.id) : undefined;
-          let requiresFreshOwner = rootOwner !== undefined;
-          if (owner && (previousTarget?.blockId !== block.id
-            || owner.getMetadata().sourceRange.from !== range.from
-            || (owner.getMetadata().state !== "open" && owner.getMetadata().sourceRange.to !== range.to))) {
-            this.retireNestedParagraphOwner(previousTarget?.blockId ?? block.id, childBlock.id, owner);
-            retiredParagraphIds.add(childBlock.id);
-            owner = undefined;
-            requiresFreshOwner = true;
-          }
-          if (owner && !node && !rootOwner) {
-            throw new Error(`Native HTML paragraph ${childBlock.id} has no configured parser node`);
-          }
-          if (rootOwner) {
-            if (owner) {
-              this.retireNestedParagraphOwner(previousTarget?.blockId ?? block.id, childBlock.id, owner);
-              owner = undefined;
-            }
-            const rootMetadata = rootOwner.getMetadata();
-            const matchingSourceRange = rootMetadata.sourceRange.from === range.from
-              && rootMetadata.sourceRange.to === range.to;
-            if (!matchingSourceRange && !node) {
-              throw new Error(`Native HTML paragraph ${childBlock.id} has no parser node for its changed source range`);
-            }
-            const previousRootOwner = rootOwner;
-            if (matchingSourceRange) {
-              const tailParser = rootParagraphTailParser(previousRootOwner);
-              this.retireRootParagraphOwner(previousRootOwner);
-              owner = rehomeRootParagraphOwner(
-                previousRootOwner,
-                this.nextNestedNativeOwnerGeneration(),
-                tailParser,
-              );
-              this.nestedParagraphOwners.set(childBlock.id, owner);
-              requiresFreshOwner = false;
-            } else {
-              this.retireRootParagraphOwner(previousRootOwner);
-              owner = undefined;
-              requiresFreshOwner = true;
-            }
-            retiredParagraphIds.add(childBlock.id);
-            rootOwner = undefined;
-          }
-          if (!owner && requiresFreshOwner) {
-            if (!node) throw new Error(`Native HTML paragraph ${childBlock.id} has no configured parser node`);
-            owner = createRootParagraphOwnerForNode(
-              node,
-              this.sourceDocument,
-              this.nextNestedNativeOwnerGeneration(),
-              this.rootParagraphPipelineOptions(sourceOffset, forceFinalize || block.isFinalized),
-            );
-            if (!owner) throw new Error(`Native HTML paragraph ${childBlock.id} could not be admitted by its parser node`);
-            this.nestedParagraphOwners.set(childBlock.id, owner);
-          }
-          if (owner) {
-            if (forceFinalize || block.isFinalized) {
-              const previous = owner.getMetadata();
-              if (previous.state !== "finalized") {
-                const change = finalizeRootParagraphOwner(owner, source);
-                if (rootParagraphChangeNeedsReplacement(change)) {
-                  if (!node) {
-                    throw new Error(`Native HTML paragraph ${childBlock.id} requires a parser-confirmed replacement node`);
-                  }
-                  this.retireNestedParagraphOwner(block.id, childBlock.id, owner);
-                  retiredParagraphIds.add(childBlock.id);
-                  owner = createRootParagraphOwnerForNode(
-                    node,
-                    this.sourceDocument,
-                    this.nextNestedNativeOwnerGeneration(),
-                    this.rootParagraphPipelineOptions(sourceOffset, true),
-                  );
-                  if (!owner) throw new Error(`Native HTML paragraph ${childBlock.id} could not be finalized by its parser node`);
-                  this.nestedParagraphOwners.set(childBlock.id, owner);
-                } else {
-                  const appendChange = rootParagraphAppendChange(source, previous, change);
-                  const appendPatch = rootParagraphAppendPatch(owner, appendChange);
-                  this.pendingNativeNestedOwnerPatches.push({
-                    ...appendPatch,
-                    at: { blockId: block.id, nodeId: childBlock.id },
-                  });
-                }
-              }
-            }
-            if (owner.getMetadata().state === "open") this.activeNestedParagraphByContainer.set(block.id, childBlock.id);
-            else if (this.activeNestedParagraphByContainer.get(block.id) === childBlock.id) {
-              this.activeNestedParagraphByContainer.delete(block.id);
-            }
-            nextChildren.push(mutableNativeOwnerSnapshot(rootParagraphNodeSnapshot(owner), range));
-            continue;
-          }
-        }
-        nextChildren.push(createBlockSnapshot(childBlock));
-      }
-
-      for (const previousChild of previousPrepared?.children ?? []) {
-        if (seen.has(previousChild.id)) continue;
-        this.retireNativeOwnersInSnapshot(block.id, previousChild);
-        if (previousChild.paragraph) retiredParagraphIds.add(previousChild.id);
-      }
-      nextChildren.sort((left, right) => (left.range?.from ?? Number.POSITIVE_INFINITY)
-        - (right.range?.from ?? Number.POSITIVE_INFINITY));
-      block.payload.meta = {
-        ...block.payload.meta,
-        preparedNested: {
-          props: previousPrepared?.props ?? {},
-          children: nextChildren,
-        },
-      };
-    }
-    return Array.from(retiredParagraphIds);
-  }
 
   private advanceRootNativeOwnerGeneration(): void {
     if (!Number.isSafeInteger(this.rootNativeOwnerGeneration + 1)) {
@@ -2484,14 +2188,6 @@ export class MarkdownEngine {
     this.rootNativeOwnerGeneration += 1;
   }
 
-  private nextNestedNativeOwnerGeneration(): number {
-    const nextGeneration = Math.max(this.nestedLeaseGeneration, this.rootNativeOwnerGeneration) + 1;
-    if (!Number.isSafeInteger(nextGeneration)) {
-      throw new RangeError("Nested native owner generation exceeds the safe integer range");
-    }
-    this.nestedLeaseGeneration = nextGeneration;
-    return nextGeneration;
-  }
 
   private isCurrentRootCodeOwner(owner: RootCodeSourceOwner): boolean {
     return this.rootCodeOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner;
@@ -2556,11 +2252,22 @@ export class MarkdownEngine {
     return block?.payload.range?.from === sourceOffset ? block : undefined;
   }
 
-  private retireRootOwnersReclassifiedBy(
-    tree: Tree,
-    sourceOffset: number,
-    nestedParagraphStarts: ReadonlySet<number>,
-  ): void {
+  private retireRootOwnersInHtmlRegions(htmlDependentStarts: ReadonlySet<number>): void {
+    if (htmlDependentStarts.size === 0) return;
+    for (let index = this.rootCodeOwners.length - 1; index >= 0; index -= 1) {
+      const owner = this.rootCodeOwners[index];
+      if (owner && htmlDependentStarts.has(owner.getMetadata().sourceRange.from)) this.retireRootCodeOwner(owner);
+    }
+    for (let index = this.rootTableOwners.length - 1; index >= 0; index -= 1) {
+      const owner = this.rootTableOwners[index];
+      if (owner && htmlDependentStarts.has(owner.getMetadata().sourceRange.from)) this.retireRootTableOwner(owner);
+    }
+    for (let index = this.rootParagraphOwners.length - 1; index >= 0; index -= 1) {
+      const owner = this.rootParagraphOwners[index];
+      if (owner && htmlDependentStarts.has(owner.getMetadata().sourceRange.from)) this.retireRootParagraphOwner(owner);
+    }
+  }
+  private retireRootOwnersReclassifiedBy(tree: Tree, sourceOffset: number): void {
     const parsedTypes = new Map<number, string>();
     for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
       parsedTypes.set(sourceOffset + node.from, node.type.name);
@@ -2584,13 +2291,7 @@ export class MarkdownEngine {
       if (!owner) continue;
       const metadata = owner.getMetadata();
       const from = metadata.sourceRange.from;
-      if (shouldRetire(
-        owner.id,
-        from,
-        "code",
-        this.rootCodeOwnersByStart.get(from) === owner,
-        "FencedCode",
-      )) {
+      if (shouldRetire(owner.id, from, "code", this.rootCodeOwnersByStart.get(from) === owner, "FencedCode")) {
         this.retireRootCodeOwner(owner);
       }
     }
@@ -2598,13 +2299,7 @@ export class MarkdownEngine {
       const owner = this.rootTableOwners[index];
       if (!owner) continue;
       const from = owner.getMetadata().sourceRange.from;
-      if (shouldRetire(
-        owner.id,
-        from,
-        "table",
-        this.rootTableOwnersByStart.get(from) === owner,
-        "Table",
-      )) {
+      if (shouldRetire(owner.id, from, "table", this.rootTableOwnersByStart.get(from) === owner, "Table")) {
         this.retireRootTableOwner(owner);
       }
     }
@@ -2612,55 +2307,49 @@ export class MarkdownEngine {
       const owner = this.rootParagraphOwners[index];
       if (!owner) continue;
       const from = owner.getMetadata().sourceRange.from;
-      if (nestedParagraphStarts.has(from) || shouldRetire(
-        owner.id,
-        from,
-        "paragraph",
-        this.rootParagraphOwnersByStart.get(from) === owner,
-        "Paragraph",
-      )) {
+      if (shouldRetire(owner.id, from, "paragraph", this.rootParagraphOwnersByStart.get(from) === owner, "Paragraph")) {
         this.retireRootParagraphOwner(owner);
       }
     }
   }
+  // HTML-bearing containers decline native ownership and use the base nested preparation.
+  private nativeContainerSourceHasHtml(raw: string): boolean {
+    return raw.includes("<") && this.rootParagraphContainsInlineHtml(raw);
+  }
+  // Retires a list/blockquote's nested native leases, tail and pending native patches.
+  private retireNativeContainer(block: Block): void {
+    if (block.type !== "list" && block.type !== "blockquote") return;
+    const prepared = (block.payload.meta?.preparedNested
+      ?? this.blocks.find((candidate) => candidate.id === block.id)?.payload.meta?.preparedNested) as PreparedNestedSnapshot | undefined;
+    for (const child of prepared?.children ?? []) this.retireNativeOwnersInSnapshot(block.id, child);
+    const active = this.nativeContainerActiveSnapshots.get(block.id);
+    if (active) this.retireNativeOwnersInSnapshot(block.id, active);
+    const activePath = this.nativeContainerActivePathSnapshots.get(block.id);
+    if (activePath) {
+      for (const snapshot of activePath) this.retireNativeOwnersInSnapshot(block.id, snapshot);
+    }
+
+    this.nativeContainerTails.get(block.id)?.clear();
+    this.nativeContainerTails.delete(block.id);
+    this.nativeContainerActiveSnapshots.delete(block.id);
+    this.nativeContainerActivePathSnapshots.delete(block.id);
+    this.nativeContainerActivePathFrames.delete(block.id);
+    this.nativeFenceHeaderFrontiers.delete(block.id);
+    this.activeNestedCodeByContainer.delete(block.id);
+    this.activeNestedTableByContainer.delete(block.id);
+    this.activeNestedParagraphByContainer.delete(block.id);
+    const retired = new Set([block.id]);
+    this.pendingNativeNestedPatches = this.retainPatchesOutsideRetiredContainers(this.pendingNativeNestedPatches, retired);
+    this.pendingNativeNestedOwnerPatches = this.retainPatchesOutsideRetiredContainers(this.pendingNativeNestedOwnerPatches, retired);
+  }
   // MDX grouping absorbs these containers, so retire their nested leases before rebuilding the region.
   private retireNativeOwnersInMdxContainers(nestedContainerStarts: ReadonlySet<number>): void {
-    if (nestedContainerStarts.size === 0) return;
-    const retiredContainerIds = new Set<string>();
     for (const from of nestedContainerStarts) {
       const block = this.rootBlockAtSourceStart(from);
-      if (!block || (block.type !== "list" && block.type !== "blockquote")) continue;
-      const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      for (const child of prepared?.children ?? []) this.retireNativeOwnersInSnapshot(block.id, child);
-      const active = this.nativeContainerActiveSnapshots.get(block.id);
-      if (active) this.retireNativeOwnersInSnapshot(block.id, active);
-      const activePath = this.nativeContainerActivePathSnapshots.get(block.id);
-      if (activePath) {
-        for (const snapshot of activePath) this.retireNativeOwnersInSnapshot(block.id, snapshot);
-      }
-
-      this.nativeContainerTails.get(block.id)?.clear();
-      this.nativeContainerTails.delete(block.id);
-      this.nativeContainerActiveSnapshots.delete(block.id);
-      this.nativeContainerActivePathSnapshots.delete(block.id);
-      this.nativeContainerActivePathFrames.delete(block.id);
-      this.nativeFenceHeaderFrontiers.delete(block.id);
-      this.activeNestedCodeByContainer.delete(block.id);
-      this.activeNestedTableByContainer.delete(block.id);
-      this.activeNestedParagraphByContainer.delete(block.id);
-      retiredContainerIds.add(block.id);
+      if (block) this.retireNativeContainer(block);
     }
-    if (retiredContainerIds.size === 0) return;
-    this.pendingNativeNestedPatches = this.retainPatchesOutsideRetiredMdxContainers(
-      this.pendingNativeNestedPatches,
-      retiredContainerIds,
-    );
-    this.pendingNativeNestedOwnerPatches = this.retainPatchesOutsideRetiredMdxContainers(
-      this.pendingNativeNestedOwnerPatches,
-      retiredContainerIds,
-    );
   }
-  private retainPatchesOutsideRetiredMdxContainers(
+  private retainPatchesOutsideRetiredContainers(
     patches: readonly Patch[],
     retiredContainerIds: ReadonlySet<string>,
   ): Patch[] {
@@ -2966,59 +2655,6 @@ export class MarkdownEngine {
     return processedTo;
   }
 
-  // Restart from an open HTML region so root native owners can be adopted only after grouping.
-  private rootNativeHtmlContextStart(source: SourceSnapshot): number | undefined {
-    const blocks = this.blocks;
-    const stack: string[] = [];
-    let openHtmlStart: number | undefined;
-    let codeIndex = 0;
-    let tableIndex = 0;
-    let paragraphIndex = 0;
-    let blockIndex = 0;
-    while (codeIndex < this.rootCodeOwners.length
-      || tableIndex < this.rootTableOwners.length
-      || paragraphIndex < this.rootParagraphOwners.length) {
-      const codeFrom = this.rootCodeOwners[codeIndex]?.getMetadata().sourceRange.from ?? Number.POSITIVE_INFINITY;
-      const tableFrom = this.rootTableOwners[tableIndex]?.getMetadata().sourceRange.from ?? Number.POSITIVE_INFINITY;
-      const paragraphFrom = this.rootParagraphOwners[paragraphIndex]?.getMetadata().sourceRange.from ?? Number.POSITIVE_INFINITY;
-      const ownerFrom = Math.min(codeFrom, tableFrom, paragraphFrom);
-      while (blockIndex < blocks.length) {
-        const block = blocks[blockIndex];
-        if (!block) {
-          blockIndex += 1;
-          continue;
-        }
-        const range = block.payload.range;
-        if (typeof range?.from !== "number") {
-          blockIndex += 1;
-          continue;
-        }
-        if (range.from >= ownerFrom) break;
-        const to = Math.min(typeof range.to === "number" ? range.to : ownerFrom, ownerFrom);
-        const mdxContainer = this.mdxEnabled
-          && stack.length > 0
-          && (block.type === "list" || block.type === "blockquote");
-        if (to > range.from && (block.type === "html" || block.type === "paragraph" || mdxContainer)) {
-          const hadOpenHtml = stack.length > 0;
-          applyHtmlTagBalance(
-            source.read(range.from, to),
-            this.mdParser,
-            stack,
-            mdxContainer ? true : this.mdxEnabled,
-          );
-          if (stack.length === 0) openHtmlStart = undefined;
-          else if (!hadOpenHtml || openHtmlStart === undefined) openHtmlStart = range.from;
-        }
-        if (typeof range.to === "number" && range.to > ownerFrom) break;
-        blockIndex += 1;
-      }
-      if (stack.length > 0 && openHtmlStart !== undefined) return openHtmlStart;
-      if (ownerFrom === codeFrom) codeIndex += 1;
-      else if (ownerFrom === tableFrom) tableIndex += 1;
-      else paragraphIndex += 1;
-    }
-    return undefined;
-  }
 
   private rootCodeHighlightConfiguration(finalizing = false): RootCodeHighlightConfiguration {
     const configuration = {
@@ -3295,7 +2931,7 @@ export class MarkdownEngine {
     const source = this.sourceDocument.snapshot();
     const newLength = this.sourceDocument.length;
     const change = advanceRootParagraphOwner(owner, source, appendedText);
-    if (rootParagraphChangeNeedsReplacement(change)) {
+    if (rootParagraphChangeNeedsReplacement(change) || this.rootParagraphChangeContainsInlineHtml(change, source, appendedText)) {
       const previousOwners = this.rootParagraphOwners.slice();
       this.retireRootParagraphOwner(owner);
       this.rootNativeFragmentOffset = null;
@@ -3425,8 +3061,6 @@ export class MarkdownEngine {
     }
     const continuationStart = this.rootQuoteContinuationStart(source, oldLength, newLength, previousBlocks);
     if (continuationStart !== undefined) tailOffset = Math.min(tailOffset, continuationStart);
-    const rootNativeHtmlStart = this.rootNativeHtmlContextStart(source);
-    if (rootNativeHtmlStart !== undefined) tailOffset = Math.min(tailOffset, rootNativeHtmlStart);
     if (this.rootNativeFragmentOffset !== tailOffset) this.treeFragments = [];
     const sourceInput = new SourceRangeInput(source, tailOffset, newLength);
     const input = new NativeMarkdownInput(sourceInput);
@@ -3436,24 +3070,24 @@ export class MarkdownEngine {
       continuationStart === undefined ? 128 : 0,
     );
     const tree = input.parse(this.mdParser, updatedFragments);
-    const nestedParagraphStarts = new Set<number>();
     const nestedNativeContainerStarts = new Set<number>();
-    const htmlGroupingStarts = new Set<number>();
-    const nestedCodeStarts = rootNativeOwnerStartsInsideOpenHtml(
+    const htmlDependentStarts = new Set<number>();
+    rootNativeOwnerStartsInsideOpenHtml(
       tree,
       source,
       tailOffset,
       this.mdParser,
       this.mdxEnabled,
-      nestedParagraphStarts,
       nestedNativeContainerStarts,
-      htmlGroupingStarts,
+      htmlDependentStarts,
+      (raw) => this.rootParagraphContainsInlineHtml(raw),
     );
-    let createdOwners = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-      ? createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset, this.campaignCounters)
-      : createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset);
-    this.retireRootOwnersReclassifiedBy(tree, tailOffset, nestedParagraphStarts);
+    this.retireRootOwnersReclassifiedBy(tree, tailOffset);
+    this.retireRootOwnersInHtmlRegions(htmlDependentStarts);
     this.retireNativeOwnersInMdxContainers(nestedNativeContainerStarts);
+    let createdOwners = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset, this.campaignCounters, htmlDependentStarts)
+      : createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset, undefined, htmlDependentStarts);
 
     const tailReferences = collectLinkReferences(tree, sourceInput);
     const tailReferenceStarts = collectLinkReferenceStarts(tree, sourceInput, tailOffset, tailReferences);
@@ -3491,6 +3125,7 @@ export class MarkdownEngine {
         tailOffset,
         forceFinalize,
         this.campaignCounters,
+        htmlDependentStarts,
       )
       : createRootTableOwners(
         tree,
@@ -3501,12 +3136,14 @@ export class MarkdownEngine {
         this.rootTableExtensionContext(),
         tailOffset,
         forceFinalize,
+        undefined,
+        htmlDependentStarts,
       );
     this.registerRootTableOwners(createdTableOwners);
 
     const existingRootParagraphCount = this.rootParagraphOwners.length;
     const createdParagraphOwners = this.registerRootParagraphOwners(
-      this.admitRootParagraphOwners(tree, tailOffset, forceFinalize, nestedParagraphStarts),
+      this.admitRootParagraphOwners(tree, tailOffset, forceFinalize, htmlDependentStarts),
     );
     const rootParagraphSemanticPatches: Patch[] = [];
     const tableSemanticPatches: Patch[] = [];
@@ -3528,8 +3165,6 @@ export class MarkdownEngine {
         ...(forceFinalize ? { forceFinalize: true } : {}),
       },
       nestedNativeContainerStarts,
-      nestedCodeStarts,
-      htmlGroupingStarts,
     );
     const tailBlocks = parsedTailBlocks.filter((block) => {
       const from = block.payload.range?.from;
@@ -3541,14 +3176,6 @@ export class MarkdownEngine {
       );
     });
     const documentContextTailBlocks = this.excludeRootCodeBlocksFromDocumentContext(tailBlocks, createdOwners);
-    const htmlRetiredParagraphIds = this.prepareNativeHtmlTableParagraphOwners(
-      documentContextTailBlocks,
-      tree,
-      input,
-      source,
-      tailOffset,
-      forceFinalize,
-    );
     const activeCreatedTableOwners = createdTableOwners.filter((owner) =>
       this.rootTableOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner);
     const activeCreatedParagraphOwners = createdParagraphOwners.filter((owner) =>
@@ -3595,7 +3222,6 @@ export class MarkdownEngine {
     const removedOwnerIds = Array.from(new Set([
       ...(footnoteTargets.removedOwnerIds ?? []),
       ...removedParagraphOwners,
-      ...htmlRetiredParagraphIds,
     ]));
     const nativeFootnotesChanged = tailBlocks.some((block) => {
       if (typeof block.payload.range?.to === "number" && block.payload.range.to < oldLength) return false;
@@ -3623,7 +3249,6 @@ export class MarkdownEngine {
       source,
       paragraphBridge,
     );
-    createdOwners = this.retireRootCodeOwnersAdoptedByHtml(changedBlocks, createdOwners);
     rootParagraphSemanticPatches.push(...this.takePendingRootParagraphPatches());
     this.registerRootCodeOwners(createdOwners);
     if (createdOwners.length > 0) {
@@ -3653,7 +3278,6 @@ export class MarkdownEngine {
         changedBlocks[index] = clone;
       }
     }
-    await this.prepareNativeHtmlCodeOwners(changedBlocks, tree, input, source, tailOffset, forceFinalize);
     this.blocks = changedBlocks;
     this.treeFragments = TreeFragment.addTree(tree, updatedFragments);
     this.rootNativeFragmentOffset = tailOffset;
@@ -3845,25 +3469,27 @@ export class MarkdownEngine {
     this.currentLinkReferences = collectLinkReferences(tree, rawInput);
     this.currentLinkReferenceStarts = collectLinkReferenceStarts(tree, rawInput, 0, this.currentLinkReferences);
     this.inlineParser.setReferences(this.currentLinkReferences);
-    const nestedParagraphStarts = new Set<number>();
+    const previousRootParagraphOwners = this.rootParagraphOwners.slice();
     const nestedNativeContainerStarts = new Set<number>();
-    const htmlGroupingStarts = new Set<number>();
-    let createdRootCodeOwners = options.admitRootCodeOwners
-      ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-        ? createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, this.campaignCounters)
-        : createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration)
-      : [];
-    const nestedCodeStarts = rootNativeOwnerStartsInsideOpenHtml(
+    const htmlDependentStarts = new Set<number>();
+    rootNativeOwnerStartsInsideOpenHtml(
       tree,
       rawInput,
       0,
       this.mdParser,
       this.mdxEnabled,
-      nestedParagraphStarts,
       nestedNativeContainerStarts,
-      htmlGroupingStarts,
+      htmlDependentStarts,
+      (raw) => this.rootParagraphContainsInlineHtml(raw),
     );
+    this.retireRootOwnersReclassifiedBy(tree, 0);
+    this.retireRootOwnersInHtmlRegions(htmlDependentStarts);
     this.retireNativeOwnersInMdxContainers(nestedNativeContainerStarts);
+    let createdRootCodeOwners = options.admitRootCodeOwners
+      ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, this.campaignCounters, htmlDependentStarts)
+        : createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, undefined, htmlDependentStarts)
+      : [];
     if (options.admitRootTableOwners) {
       this.registerRootTableOwners(
         typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
@@ -3877,6 +3503,7 @@ export class MarkdownEngine {
             0,
             Boolean(options.forceFinalize),
             this.campaignCounters,
+            htmlDependentStarts,
           )
           : createRootTableOwners(
             tree,
@@ -3887,12 +3514,14 @@ export class MarkdownEngine {
             this.rootTableExtensionContext(),
             0,
             Boolean(options.forceFinalize),
+            undefined,
+            htmlDependentStarts,
           ),
       );
     }
     const createdParagraphOwners = options.admitRootParagraphOwners
       ? this.registerRootParagraphOwners(
-          this.admitRootParagraphOwners(tree, 0, Boolean(options.forceFinalize), nestedParagraphStarts),
+          this.admitRootParagraphOwners(tree, 0, Boolean(options.forceFinalize), htmlDependentStarts),
         )
       : [];
     let extractedBlocks = await this.extractBlocks(
@@ -3900,47 +3529,32 @@ export class MarkdownEngine {
       rawInput,
       options,
       nestedNativeContainerStarts,
-      nestedCodeStarts,
-      htmlGroupingStarts,
     );
     extractedBlocks = this.excludeRootCodeBlocksFromDocumentContext(
       extractedBlocks,
       createdRootCodeOwners,
     ).filter((block) => !this.isRootOwnedBlock(block));
     const source = this.sourceDocument.snapshot();
-    const htmlRetiredParagraphIds = this.prepareNativeHtmlTableParagraphOwners(
-      extractedBlocks,
-      tree,
-      input,
-      source,
-      0,
-      Boolean(options.forceFinalize),
-    );
     const paragraphTargets = createdParagraphOwners
       .filter((owner) => this.rootParagraphOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner)
       .map((owner) => this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize()));
+    const removedParagraphOwnerIds = previousRootParagraphOwners
+      .filter((owner) => !this.rootParagraphOwners.includes(owner))
+      .map((owner) => owner.id);
     this.pendingRootParagraphPatches = [];
     extractedBlocks = this.runDocumentPlugins(
       extractedBlocks,
       source,
       createdParagraphOwners.length > 0
+      || removedParagraphOwnerIds.length > 0
       || this.nestedParagraphOwners.size > 0
       || this.nestedTableOwners.size > 0
         ? {
             deltas: paragraphTargets,
-            ...(htmlRetiredParagraphIds.length > 0 ? { removedOwnerIds: htmlRetiredParagraphIds } : {}),
+            ...(removedParagraphOwnerIds.length > 0 ? { removedOwnerIds: removedParagraphOwnerIds } : {}),
             rebuild: true,
           }
         : undefined,
-    );
-    createdRootCodeOwners = this.retireRootCodeOwnersAdoptedByHtml(extractedBlocks, createdRootCodeOwners);
-    await this.prepareNativeHtmlCodeOwners(
-      extractedBlocks,
-      tree,
-      input,
-      this.sourceDocument.snapshot(),
-      0,
-      Boolean(options.forceFinalize),
     );
     this.registerRootCodeOwners(createdRootCodeOwners);
     if (createdRootCodeOwners.length > 0) {
@@ -3990,26 +3604,26 @@ export class MarkdownEngine {
     );
     const nativeInput = new NativeMarkdownInput(source);
     let newTree = nativeInput.parse(this.mdParser, updatedFragments);
-    let nativeHtmlInput: Input = nativeInput;
-    const nestedParagraphStarts = new Set<number>();
     const nestedNativeContainerStarts = new Set<number>();
-    const htmlGroupingStarts = new Set<number>();
-    let createdRootCodeOwners = this.rootCodeOwners.length === 0
-      ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-        ? createRootCodeOwners(newTree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, this.campaignCounters)
-        : createRootCodeOwners(newTree, this.sourceDocument, this.rootNativeOwnerGeneration)
-      : [];
-    const nestedCodeStarts = rootNativeOwnerStartsInsideOpenHtml(
+    const htmlDependentStarts = new Set<number>();
+    rootNativeOwnerStartsInsideOpenHtml(
       newTree,
       source,
       0,
       this.mdParser,
       this.mdxEnabled,
-      nestedParagraphStarts,
       nestedNativeContainerStarts,
-      htmlGroupingStarts,
+      htmlDependentStarts,
+      (raw) => this.rootParagraphContainsInlineHtml(raw),
     );
+    this.retireRootOwnersReclassifiedBy(newTree, 0);
+    this.retireRootOwnersInHtmlRegions(htmlDependentStarts);
     this.retireNativeOwnersInMdxContainers(nestedNativeContainerStarts);
+    let createdRootCodeOwners = this.rootCodeOwners.length === 0
+      ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? createRootCodeOwners(newTree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, this.campaignCounters, htmlDependentStarts)
+        : createRootCodeOwners(newTree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, undefined, htmlDependentStarts)
+      : [];
     this.treeFragments = TreeFragment.addTree(newTree, updatedFragments);
     const newReferences = collectLinkReferences(newTree, source);
     const changedLabels = diffLinkReferences(this.currentLinkReferences, newReferences);
@@ -4020,7 +3634,7 @@ export class MarkdownEngine {
       ? this.invalidateLinkReferenceOwners(changedLabels)
       : undefined;
     let fallbackLinkReferencePatches: typeof linkReferencePatches = undefined;
-    const createdRootTableOwners = this.rootTableOwners.length === 0
+    let createdRootTableOwners = this.rootTableOwners.length === 0
       ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
         ? createRootTableOwners(
           newTree,
@@ -4032,6 +3646,7 @@ export class MarkdownEngine {
           0,
           false,
           this.campaignCounters,
+          htmlDependentStarts,
         )
         : createRootTableOwners(
           newTree,
@@ -4040,11 +3655,15 @@ export class MarkdownEngine {
           this.mdParser,
           this.inlineParser,
           this.rootTableExtensionContext(),
+          0,
+          false,
+          undefined,
+          htmlDependentStarts,
         )
       : [];
     this.registerRootTableOwners(createdRootTableOwners);
-    const createdRootParagraphOwners = this.rootParagraphOwners.length === 0
-      ? this.registerRootParagraphOwners(this.admitRootParagraphOwners(newTree, 0, false, nestedParagraphStarts))
+    let createdRootParagraphOwners = this.rootParagraphOwners.length === 0
+      ? this.registerRootParagraphOwners(this.admitRootParagraphOwners(newTree, 0, false, htmlDependentStarts))
       : [];
 
     let changedBlocks = await this.extractBlocks(
@@ -4055,8 +3674,6 @@ export class MarkdownEngine {
         previousBlocks: this.blocks,
       },
       nestedNativeContainerStarts,
-      nestedCodeStarts,
-      htmlGroupingStarts,
     );
     const appendedFootnotesChanged = appendedText.includes("[^") || appendedText.includes("&")
       || changedBlocks.some((block) => {
@@ -4065,12 +3682,9 @@ export class MarkdownEngine {
         return raw.includes("[^") || raw.includes("&");
       });
     const documentContextBlocks = this.excludeRootCodeBlocksFromDocumentContext(changedBlocks, createdRootCodeOwners);
-    const htmlRetiredParagraphIds = this.prepareNativeHtmlTableParagraphOwners(
-      documentContextBlocks,
-      newTree,
-      nativeInput,
-      source,
-    );
+    const removedParagraphOwnerIds = previousRootParagraphOwners
+      .filter((owner) => !this.rootParagraphOwners.includes(owner))
+      .map((owner) => owner.id);
     let activeCreatedRootTableOwners = createdRootTableOwners.filter((owner) =>
       this.rootTableOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner);
     let activeCreatedRootParagraphOwners = createdRootParagraphOwners.filter((owner) =>
@@ -4082,16 +3696,16 @@ export class MarkdownEngine {
       documentContextBlocks,
       source,
       createdRootParagraphOwners.length > 0
+      || removedParagraphOwnerIds.length > 0
       || this.nestedParagraphOwners.size > 0
       || this.nestedTableOwners.size > 0
         ? {
             deltas: paragraphTargets,
-            ...(htmlRetiredParagraphIds.length > 0 ? { removedOwnerIds: htmlRetiredParagraphIds } : {}),
-            rebuild: appendedFootnotesChanged || htmlRetiredParagraphIds.length > 0,
+            ...(removedParagraphOwnerIds.length > 0 ? { removedOwnerIds: removedParagraphOwnerIds } : {}),
+            rebuild: appendedFootnotesChanged || removedParagraphOwnerIds.length > 0,
           }
         : undefined,
     );
-    createdRootCodeOwners = this.retireRootCodeOwnersAdoptedByHtml(changedBlocks, createdRootCodeOwners);
     this.registerRootCodeOwners(createdRootCodeOwners);
     changedBlocks = changedBlocks.filter((block) => {
       const from = block.payload.range?.from;
@@ -4126,24 +3740,26 @@ export class MarkdownEngine {
       fallbackLinkReferencePatches = fullChangedLabels.size > 0
         ? this.invalidateLinkReferenceOwners(fullChangedLabels)
         : undefined;
-      const fullHtmlGroupingStarts = new Set<number>();
-      const fullNestedCodeStarts = rootNativeOwnerStartsInsideOpenHtml(
+      const fullHtmlDependentStarts = new Set<number>();
+      rootNativeOwnerStartsInsideOpenHtml(
         fullTree,
         source,
         0,
         this.mdParser,
         this.mdxEnabled,
-        nestedParagraphStarts,
         nestedNativeContainerStarts,
-        fullHtmlGroupingStarts,
+        fullHtmlDependentStarts,
+        (raw) => this.rootParagraphContainsInlineHtml(raw),
       );
+      this.retireRootOwnersReclassifiedBy(fullTree, 0);
+      this.retireRootOwnersInHtmlRegions(fullHtmlDependentStarts);
+      createdRootCodeOwners = createdRootCodeOwners.filter((owner) =>
+        !fullHtmlDependentStarts.has(owner.getMetadata().sourceRange.from));
       let fullBlocks = await this.extractBlocks(
         fullTree,
         source,
         {},
         nestedNativeContainerStarts,
-        fullNestedCodeStarts,
-        fullHtmlGroupingStarts,
       );
       fullBlocks = this.excludeRootCodeBlocksFromDocumentContext(fullBlocks, createdRootCodeOwners);
       fullBlocks = fullBlocks.filter((block) => {
@@ -4155,22 +3771,20 @@ export class MarkdownEngine {
           )
         );
       });
-      const htmlRetiredParagraphIds = this.prepareNativeHtmlTableParagraphOwners(
-        fullBlocks,
-        fullTree,
-        fullInput,
-        source,
-      );
+      const fullRemovedParagraphOwnerIds = previousRootParagraphOwners
+        .filter((owner) => !this.rootParagraphOwners.includes(owner))
+        .map((owner) => owner.id);
       fullBlocks = this.runDocumentPlugins(
         fullBlocks,
         source,
         this.rootParagraphOwners.length > 0
+        || fullRemovedParagraphOwnerIds.length > 0
         || this.nestedParagraphOwners.size > 0
         || this.nestedTableOwners.size > 0
           ? {
               deltas: this.rootParagraphOwners.map((owner) =>
                 this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize())),
-              ...(htmlRetiredParagraphIds.length > 0 ? { removedOwnerIds: htmlRetiredParagraphIds } : {}),
+              ...(fullRemovedParagraphOwnerIds.length > 0 ? { removedOwnerIds: fullRemovedParagraphOwnerIds } : {}),
               rebuild: true,
             }
           : undefined,
@@ -4187,11 +3801,9 @@ export class MarkdownEngine {
         this.rootTableOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner);
       activeCreatedRootParagraphOwners = createdRootParagraphOwners.filter((owner) =>
         this.rootParagraphOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner);
-      createdRootCodeOwners = this.retireRootCodeOwnersAdoptedByHtml(fullBlocks, createdRootCodeOwners);
       const fullLast = fullBlocks.length > 0 ? fullBlocks[fullBlocks.length - 1]?.payload?.range?.to ?? 0 : 0;
       if (fullLast >= newLen - 1 || fullBlocks.length >= changedBlocks.length) {
         newTree = fullTree;
-        nativeHtmlInput = fullInput;
         changedBlocks = fullBlocks;
       }
     }
@@ -4218,7 +3830,6 @@ export class MarkdownEngine {
         }
       }
     }
-    await this.prepareNativeHtmlCodeOwners(changedBlocks, newTree, nativeHtmlInput, source);
     const paragraphSemanticPatches = [
       ...(linkReferencePatches?.paragraphPatches ?? []),
       ...(fallbackLinkReferencePatches?.paragraphPatches ?? []),
@@ -4290,8 +3901,6 @@ export class MarkdownEngine {
     content: SourceText,
     options: ParseOptions = {},
     nestedNativeContainerStarts?: ReadonlySet<number>,
-    nestedCodeStarts?: ReadonlySet<number>,
-    htmlGroupingStarts?: ReadonlySet<number>,
   ): Promise<Block[]> {
     let nativeContainerPreparationFailed = false;
     try {
@@ -4318,20 +3927,17 @@ export class MarkdownEngine {
             const owner = this.rootCodeOwnersByStart.get(globalFrom);
             if (owner) {
               hasRecognizedNodes = true;
-              if (nestedCodeStarts?.has(globalFrom)) extracted.push(owner.materializeBlock());
               continue;
             }
           }
           const tableOwner = this.rootTableOwnersByStart.get(globalFrom);
           if (nodeType === "Table" && tableOwner) {
             hasRecognizedNodes = true;
-            if (htmlGroupingStarts?.has(globalFrom)) extracted.push(tableOwner.materializeBlock());
             continue;
           }
           const paragraphOwner = this.rootParagraphOwnersByStart.get(globalFrom);
           if (nodeType === "Paragraph" && paragraphOwner) {
             hasRecognizedNodes = true;
-            if (htmlGroupingStarts?.has(globalFrom)) extracted.push(paragraphOwner.materializeBlock());
             continue;
           }
 
@@ -5292,206 +4898,6 @@ export class MarkdownEngine {
     }
   }
 
-  private async prepareNativeHtmlCodeOwners(
-    blocks: readonly Block[],
-    tree: Tree,
-    input: Input,
-    source: SourceSnapshot,
-    sourceOffset = 0,
-    forceFinalize = false,
-  ): Promise<void> {
-    const mapping: NativeNestedCodeSourceMapping = {
-      input,
-      source,
-      mapOffset: (offset) => sourceOffset + offset,
-      mapRange: (from, to) => ({ from: sourceOffset + from, to: sourceOffset + to }),
-    };
-    const inputGeneration = this.documentGeneration;
-    const configurationRevision = this.rootCodeConfigurationRevision;
-
-    for (const block of blocks) {
-      if (block.type !== "html") continue;
-      const previousBlock = this.blocks.find((candidate) => candidate.id === block.id && candidate.type === "html");
-      const previousPrepared = previousBlock?.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      const currentPrepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      if (block.payload.meta?.htmlOwnership !== true) {
-        for (const child of previousPrepared?.children ?? []) {
-          if (child.type === "code") this.retireNativeOwnersInSnapshot(block.id, child);
-        }
-        if (block.payload.meta?.preparedNested) {
-          const meta = { ...block.payload.meta };
-          delete meta.preparedNested;
-          block.payload.meta = meta;
-        }
-        const activeId = this.activeNestedCodeByContainer.get(block.id);
-        if (activeId && this.nestedCodeOwners.get(activeId)?.containerId === block.id) {
-          this.activeNestedCodeByContainer.delete(block.id);
-        }
-        continue;
-      }
-      const codeBlocks = htmlOwnedBlocks(block, "code");
-      const nextChildren: NodeSnapshot[] = [];
-      const activeOwners: string[] = [];
-      const seen = new Set<string>();
-
-      for (const codeBlock of codeBlocks) {
-        if (seen.has(codeBlock.id)) continue;
-        seen.add(codeBlock.id);
-        const range = codeBlock.payload.range;
-        if (!range) throw new RangeError(`Native HTML code block ${codeBlock.id} is missing its authored source range`);
-        const node = nativeBlockNodeForRange(tree, mapping, range, "code");
-        let owner = this.nestedCodeOwners.get(codeBlock.id);
-
-        if (!node) {
-          if (owner && owner.containerId === block.id) {
-            const ownedRange = owner.getMetadata().sourceRange;
-            if (ownedRange.from !== range.from || range.to > ownedRange.to) {
-              throw new Error(`Native HTML code owner ${owner.id} advanced without its configured parser node`);
-            }
-            if ((forceFinalize || block.isFinalized) && owner.state !== "finalized") {
-              const finalized = owner.finalize(mapping);
-              if (finalized.revision !== finalized.expectedRevision) {
-                this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(finalized));
-              }
-            }
-            if (owner.state === "open") activeOwners.push(owner.id);
-            nextChildren.push(mutableNativeOwnerSnapshot(
-              owner.snapshot(configurationRevision),
-              owner.getMetadata().sourceRange,
-            ));
-            continue;
-          }
-          const nodeType = codeBlock.payload.meta?.lezerNodeType;
-          if (nodeType === "FencedCode" || nodeType === "CodeBlock" || nodeType === "IndentedCode") {
-            throw new Error(`Native HTML code block ${codeBlock.id} has no configured parser node`);
-          }
-          continue;
-        }
-
-        const codeHasClosingFence = node.type.name === "FencedCode" && node.lastChild?.type.name === "CodeMark";
-        const nodeEnded = node.nextSibling !== null || hasSourceAfterRange(source, range.to) || codeHasClosingFence;
-        const closure = forceFinalize || block.isFinalized
-          ? "finalized"
-          : nodeEnded
-            ? "closed"
-            : "open";
-        if (owner) {
-          const ownedRange = owner.getMetadata().sourceRange;
-          const replaceOwner = owner.containerId !== block.id
-            || ownedRange.from !== range.from
-            || (owner.state !== "open" && (closure === "open" || ownedRange.to !== range.to))
-            || (owner.state === "open" && range.to < ownedRange.to);
-          if (replaceOwner) {
-            this.retireNativeOwnersInSnapshot(
-              owner.containerId,
-              owner.snapshot(configurationRevision),
-            );
-            owner = undefined;
-          }
-        }
-
-        if (!owner) {
-          owner = NativeNestedCodeSourceOwner.admit({
-            id: codeBlock.id,
-            containerId: block.id,
-            generation: this.nextNestedNativeOwnerGeneration(),
-            inputGeneration,
-            source: this.sourceDocument,
-            node,
-            mapping,
-            closure,
-            range,
-          });
-          this.nestedCodeOwners.set(owner.id, owner);
-        } else if (owner.state === "open") {
-          const update = owner.acceptNativeTail({
-            nodes: nativeCodeEventsAfter(node, mapping, owner.getMetadata().sourceRange.to),
-            mapping,
-            inputGeneration,
-            sourceDocument: this.sourceDocument,
-            closure,
-            sourceRange: range,
-          });
-          if (update.revision !== update.expectedRevision || update.sourceAppend.length > 0) {
-            this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(update));
-          }
-        } else if (owner.state === "closed" && closure === "finalized") {
-          const finalized = owner.finalize(mapping);
-          if (finalized.revision !== finalized.expectedRevision) {
-            this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(finalized));
-          }
-        }
-
-        if (owner.state === "open") activeOwners.push(owner.id);
-        const previousOwnerSnapshot = previousPrepared
-          ? preparedSnapshotAtId(previousPrepared.children, owner.id)
-          : undefined;
-        const wasPublished = previousOwnerSnapshot?.code;
-        if (owner.state === "open" || !this.shouldDeferNativeNestedCodeHighlight(owner)) {
-          const decorations = await this.rootCodeHighlighter.decorateAvailable(
-            owner,
-            this.rootCodeHighlightConfiguration(owner.state === "finalized"),
-            () => !this.disposed
-              && inputGeneration === this.documentGeneration
-              && configurationRevision === this.rootCodeConfigurationRevision
-              && this.nestedCodeOwners.get(owner.id) === owner,
-          );
-          if (decorations.length > 0 && wasPublished?.codeOwnerId === owner.id
-            && wasPublished.generation === owner.generation) {
-            const patch = owner.decoratePatch(configurationRevision, decorations);
-            if (patch) this.pendingNativeNestedOwnerPatches.push(patch);
-          }
-        }
-        const metadata = owner.getMetadata();
-        const previousCode = previousOwnerSnapshot?.code;
-        const unchangedPublishedSource = previousCode?.codeOwnerId === owner.id
-          && previousCode.generation === owner.generation
-          && previousCode.revision === metadata.revision;
-        nextChildren.push(previousOwnerSnapshot && unchangedPublishedSource
-          ? cloneNativeSnapshot(previousOwnerSnapshot)
-          : mutableNativeOwnerSnapshot(owner.snapshot(configurationRevision), range));
-      }
-
-      for (const previousChild of previousPrepared?.children ?? []) {
-        if (nextChildren.some((child) => child.id === previousChild.id
-          && child.code?.generation === previousChild.code?.generation)) continue;
-        if (previousChild.type === "code") this.retireNativeOwnersInSnapshot(block.id, previousChild);
-      }
-      for (const currentChild of currentPrepared?.children ?? []) {
-        if (currentChild.type !== "code") nextChildren.push(cloneNativeSnapshot(currentChild));
-      }
-      nextChildren.sort((left, right) => (left.range?.from ?? Number.POSITIVE_INFINITY)
-        - (right.range?.from ?? Number.POSITIVE_INFINITY));
-      // HTML switches its canonical children when native code ownership is prepared.
-      const previousChildren = previousPrepared?.children
-        ?? (previousBlock ? createBlockSnapshot(previousBlock).children : undefined)
-        ?? [];
-      const preparedChildren = previousBlock
-        ? previousChildren.map(cloneNativeSnapshot)
-        : nextChildren;
-      if (previousBlock) {
-        this.mergeNativeContainerChildren(
-          block.id,
-          block.id,
-          preparedChildren,
-          nextChildren,
-          block.payload.range?.from ?? sourceOffset,
-          block.payload.range?.to ?? source.length,
-        );
-      }
-
-
-      if (activeOwners.length > 0) this.activeNestedCodeByContainer.set(block.id, activeOwners[activeOwners.length - 1]!);
-      else this.activeNestedCodeByContainer.delete(block.id);
-      block.payload.meta = {
-        ...block.payload.meta,
-        preparedNested: {
-          props: currentPrepared?.props ?? previousPrepared?.props ?? {},
-          children: preparedChildren,
-        },
-      };
-    }
-  }
 
   private async prepareNativeNestedChildren(
     block: Block,
@@ -5755,7 +5161,7 @@ export class MarkdownEngine {
           owner = NativeNestedCodeSourceOwner.admit({
             id,
             containerId: block.id,
-            generation: this.nextNestedNativeOwnerGeneration(),
+            generation: ++this.nestedLeaseGeneration,
             inputGeneration: this.documentGeneration,
             source: this.sourceDocument,
             node,
@@ -6581,8 +5987,16 @@ export class MarkdownEngine {
   private async prepareNestedChildren(block: Block, options?: ParseOptions, ancestorTypes: readonly string[] = [], nativeNode?: SyntaxNode): Promise<void> {
     block.payload.meta = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
     if (nativeNode && ["BulletList", "OrderedList", "Blockquote"].includes(nativeNode.type.name)) {
-      await this.prepareNativeNestedChildren(block, options, ancestorTypes, nativeNode);
-      return;
+      // Native containers carry no materialized raw; read their authored source from canonical input.
+      const range = block.payload.range;
+      const containerSource = range ? this.sourceDocument.snapshot().read(range.from, range.to) : block.payload.raw;
+      if (!this.nativeContainerSourceHasHtml(containerSource)) {
+        await this.prepareNativeNestedChildren(block, options, ancestorTypes, nativeNode);
+        return;
+      }
+      // HTML-bearing containers keep the base nested preparation, which reads the block raw.
+      this.retireNativeContainer(block);
+      block.payload.raw = containerSource;
     }
     const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text, this.inlineContext(block, ancestorTypes)).inline);
     const listItemSources = collectNestedListItemInlineSources(block, this.mdParser, nativeNode);
@@ -7930,15 +7344,6 @@ export class MarkdownEngine {
 
     for (const block of this.blocks) {
       if (!containersToFinalize.has(block.id)) continue;
-      if (block.type === "html" && block.payload.meta?.htmlOwnership === true) {
-        const tree = this.lastTree;
-        if (!tree) throw new Error(`Native HTML container ${block.id} is missing from the current syntax tree`);
-        const sourceOffset = this.rootNativeFragmentOffset ?? 0;
-        const input = new NativeMarkdownInput(new SourceRangeInput(source, sourceOffset));
-        this.prepareNativeHtmlTableParagraphOwners([block], tree, input, source, sourceOffset, true);
-        await this.prepareNativeHtmlCodeOwners([block], tree, input, source, sourceOffset, true);
-        continue;
-      }
       const tail = this.nativeContainerTails.get(block.id);
       if (tail) {
         const tailChange = tail.finalize(source, block.payload.range?.to ?? source.length);
@@ -8045,7 +7450,7 @@ export class MarkdownEngine {
         const previous = owner.getMetadata();
         if (previous.state === "finalized") continue;
         const change = finalizeRootParagraphOwner(owner, source);
-        if (rootParagraphChangeNeedsReplacement(change)) {
+        if (rootParagraphChangeNeedsReplacement(change) || this.rootParagraphChangeContainsInlineHtml(change, source)) {
           replacementRootFrom = replacementRootFrom === undefined
             ? previous.sourceRange.from
             : Math.min(replacementRootFrom, previous.sourceRange.from);

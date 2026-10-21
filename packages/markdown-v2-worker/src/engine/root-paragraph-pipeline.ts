@@ -139,28 +139,6 @@ export function createRootParagraphOwnerForNode(
   return createRootParagraphOwnerFromSnapshot(node, source, source.snapshot(), generation, options);
 }
 
-export function rootParagraphTailParser(owner: RootParagraphSourceOwner): NativeParagraphTailParser {
-  const tailParser = nativeTailByOwner.get(owner);
-  if (!tailParser) throw new Error("Native paragraph tail state is unavailable for this owner");
-  return tailParser;
-}
-
-export function rehomeRootParagraphOwner(
-  owner: RootParagraphSourceOwner,
-  generation: number,
-  tailParser: NativeParagraphTailParser,
-): RootParagraphSourceOwner {
-  const metadata = owner.getMetadata();
-  const tail = tailParser.state;
-  if (tail.ownerStart !== metadata.sourceRange.from
-    || tail.ownerEnd !== metadata.sourceRange.to
-    || tail.processedTo !== metadata.processedTo) {
-    throw new Error("Native paragraph tail does not match its canonical source owner");
-  }
-  const rehomed = owner.rehomeForGeneration(generation);
-  nativeTailByOwner.set(rehomed, tailParser);
-  return rehomed;
-}
 
 /** Admit only native root Paragraph nodes; syntax-tree ranges remain the source authority. */
 export function createRootParagraphOwners(
@@ -168,6 +146,7 @@ export function createRootParagraphOwners(
   source: AppendSourceDocument,
   generation: number,
   options: RootParagraphPipelineOptions,
+  excludedSourceStarts?: ReadonlySet<number>,
 ): readonly RootParagraphSourceOwner[] {
   if (options.attestation && options.attestation.parser !== options.parser) {
     throw new TypeError("Root paragraph window attestation belongs to a different MarkdownParser");
@@ -175,6 +154,7 @@ export function createRootParagraphOwners(
   const sourceSnapshot = source.snapshot();
   const owners: RootParagraphSourceOwner[] = [];
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
+    if (excludedSourceStarts?.has((options.sourceOffset ?? 0) + node.from)) continue;
     const owner = createRootParagraphOwnerFromSnapshot(node, source, sourceSnapshot, generation, options);
     if (owner) owners.push(owner);
   }

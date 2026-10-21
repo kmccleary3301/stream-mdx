@@ -87,9 +87,9 @@ assert.equal(parseCodeFenceInfo("unknown\\+&amp;").lang, "unknown+&");
 assert.equal(parseCodeFenceInfo("\\&amp;").lang, "&amp;", "escaped entity opener is not decoded a second time");
 assert.equal(parseCodeFenceInfo("unknown&madeup;").lang, "unknown&madeup;");
 
-for (const rawHtml of [
-  "- <pre>\n      literal\n  </pre>\n",
-  "> <pre>\n>     literal\n> </pre>\n",
+for (const [rawHtml, expectedHtml] of [
+  ["- <pre>\n      literal\n  </pre>\n", "<pre>\n    literal\n</pre>"],
+  ["> <pre>\n>     literal\n> </pre>\n", "<pre>\n    literal\n</pre>"],
 ] as const) {
   const container: Block = { id: "html", type: rawHtml.startsWith(">") ? "blockquote" : "list", isFinalized: true, payload: { raw: rawHtml } };
   const html = flatten(createBlockSnapshot(container)).find((node) => node.type === "html");
@@ -99,8 +99,7 @@ for (const rawHtml of [
   const closingTag = "</pre>";
   const sourceTo = rawHtml.indexOf(closingTag, sourceFrom) + closingTag.length;
   assert.deepEqual(htmlBlock.payload.range, { from: sourceFrom, to: sourceTo });
-  assert.equal(htmlBlock.payload.raw, rawHtml.slice(sourceFrom, sourceTo));
-  assert.ok(htmlBlock.payload.raw.includes("literal"));
+  assert.equal(htmlBlock.payload.raw, expectedHtml, "nested HTML renders from container-marker-free text");
 }
 
 const htmlQuoteRaw = "> <div>\n> literal\n>\n> #ABC-12\n>\n> ```js\n> const x=1;\n> ```\n>\n> </div>\n";
@@ -127,9 +126,8 @@ assert.deepEqual(htmlQuoteOpeningBlock.payload.range, {
   from: 400 + htmlOpeningFrom,
   to: 400 + htmlOpeningTo,
 });
-assert.equal(htmlQuoteOpeningBlock.payload.raw, htmlQuoteRaw.slice(htmlOpeningFrom, htmlOpeningTo));
+assert.equal(htmlQuoteOpeningBlock.payload.raw, "<div>\nliteral", "native continuation QuoteMarks are removed, not parsed independently");
 assert.equal(htmlQuoteOpening.type, "html");
-assert.ok(htmlQuoteOpeningBlock.payload.raw.includes("literal"));
 
 const nativeParser = parser.configure([GFM, createBlockCompatibilityExtension()]);
 for (const [fixture, itemPrefixes] of [

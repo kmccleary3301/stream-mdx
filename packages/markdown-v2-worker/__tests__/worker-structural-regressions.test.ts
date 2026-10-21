@@ -4,7 +4,6 @@ import {
   createBlockSnapshot,
   InlineParser,
   prepareNestedBlockSnapshotFromNative,
-  PATCH_ROOT_ID,
   STREAM_MDX_SCHEMA_VERSION,
   type Block,
   type NodeSnapshot,
@@ -671,22 +670,6 @@ async function runNativeHtmlFamilyScopeTest(): Promise<void> {
   assert.ok(init, "HTML family consumer requires an actual worker baseline");
   store.resetSnapshot(init.snapshot);
 
-  const assertNativeFamilies = () => {
-    const descendants = (id: string): string[] => [id, ...store.getChildren(id).flatMap(descendants)];
-    const nodeIds = store.getChildren(PATCH_ROOT_ID).flatMap(descendants);
-    const table = nodeIds.map((id) => store.getTableBlock(id)).find((view) =>
-      view?.source.sourceRange.from === source.indexOf("| Name"));
-    assert.ok(table, "HTML admission must retain the typed table owner");
-    assert.equal(table.source.rowCount, 2, "the native table must retain both authored rows");
-    const paragraph = nodeIds.map((id) => store.getParagraphBlock(id)).find((view) =>
-      view?.source.sourceRange.from === source.indexOf("Paragraph"));
-    assert.ok(paragraph, "HTML admission must retain the typed paragraph owner");
-    assert.equal(
-      paragraph.source.sourceRange.to,
-      source.indexOf("Paragraph") + "Paragraph **inside**.".length,
-      "native paragraph ownership must preserve the authored inline source range",
-    );
-  };
   const assertRenderedMeaning = (requireHtmlScope: boolean) => {
     const html = renderToStaticMarkup(createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store }));
     const dom = new JSDOM(html);
@@ -702,7 +685,7 @@ async function runNativeHtmlFamilyScopeTest(): Promise<void> {
         assert.deepEqual(rows(scope), expectedRows, "the table must render inside its authored HTML scope");
         const paragraph = scope.querySelector("p");
         assert.equal(paragraph?.textContent, "Paragraph inside.", "the paragraph must render in its authored HTML scope");
-        assert.equal(paragraph?.querySelector("strong")?.textContent, "inside", "HTML adoption must retain inline meaning");
+        assert.equal(paragraph?.querySelector("strong")?.textContent, "inside", "authored HTML rendering must retain inline meaning");
       }
     } finally {
       dom.window.close();
@@ -711,15 +694,13 @@ async function runNativeHtmlFamilyScopeTest(): Promise<void> {
 
   for (const text of chunks) {
     applyPatchMessages(store, await harness.send({ type: "APPEND", text }));
-    assert.deepEqual(store.getInvariantViolations(), [], "HTML append must preserve native ownership guards");
+    assert.deepEqual(store.getInvariantViolations(), [], "HTML append must preserve renderer store invariants");
   }
-  assertNativeFamilies();
   assertRenderedMeaning(false);
   const finalized = await harness.send({ type: "FINALIZE" });
   applyPatchMessages(store, finalized);
-  assert.deepEqual(store.getInvariantViolations(), [], "HTML finalization must preserve native ownership guards");
+  assert.deepEqual(store.getInvariantViolations(), [], "HTML finalization must preserve renderer store invariants");
   assert.ok(finalized.some((message) => message.type === "FINALIZED"), "HTML family consumer requires actual completion");
-  assertNativeFamilies();
   assertRenderedMeaning(true);
 }
 

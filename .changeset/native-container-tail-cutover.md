@@ -36,7 +36,6 @@ Apply sparse paragraph meaning updates only to affected index branches, preservi
 
 Keep MDX components finalized over their complete authored source. Retire absorbed paragraph and container leases before emitting further native updates, preserving unrelated batched changes.
 
-Render HTML-owned code through the existing renderer Store rather than a detached cold copy. Preserve static version-1 HTML-only embedded Block slots by admitting them once during cold initialization; keep supplied prepared children authoritative.
 
 Honor configured lazy tokenization for native nested code. Advance grammar state through skipped source without coloring unrequested rows, and retain requested tokens through append, finalize and cold JSON reset.
 
@@ -44,6 +43,3 @@ Do not republish a canonical root snapshot containing an already-published live 
 
 Retire the `appendLines` wire operation, generic code-line producers and reducers, and obsolete coalescing telemetry. Native source and decoration changes use their typed code owner. Static version-1 cold artifacts remain unchanged.
 
-Keep a typed code source owner while HTML placement is provisional. At HTML adoption, retire the root lease and publish its fresh native child in the same semantic transaction, preserving source and requested decoration.
-
-Keep native table and paragraph owners through provisional HTML placement, then transfer them into the confirmed HTML scope. Finalize closed tables idempotently and preserve canonical HTML children through lifecycle/property updates. Explicit cold exports include current code decorations rather than stale embedded snapshots.

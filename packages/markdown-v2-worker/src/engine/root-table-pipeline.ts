@@ -160,6 +160,7 @@ export function createRootTableOwners(
   sourceOffset = 0,
   finalizing = false,
   counters?: RootTableSourceOwnerCounters,
+  excludedSourceStarts?: ReadonlySet<number>,
 ): readonly RootTableSourceOwner[] {
   const reader = source.snapshot();
   const owners: RootTableSourceOwner[] = [];
@@ -168,9 +169,10 @@ export function createRootTableOwners(
   do {
     if (cursor.type.name !== "Table") continue;
     const table = cursor.node;
+    const tableFrom = table.from + sourceOffset;
+    if (excludedSourceStarts?.has(tableFrom)) continue;
     const parts = nativeTableParts(table);
     if (!parts) continue;
-    const tableFrom = table.from + sourceOffset;
     const delimiterEnd = parts.delimiter.to + sourceOffset;
     const bodyFrom = delimiterLineBoundary(reader, delimiterEnd, finalizing);
     if (bodyFrom === undefined) continue;

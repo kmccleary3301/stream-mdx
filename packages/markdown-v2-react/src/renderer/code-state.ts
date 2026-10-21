@@ -602,6 +602,19 @@ export function appendStoredCodeState(
     return { reason: error instanceof Error ? error.message : "append validation failed" };
   }
 }
+// Nested and indented fences author container and indentation prefixes before each code line's text.
+const CODE_LINE_PREFIX = /^[ \t>]*$/;
+
+/** Reads the authored line holding `text` at `from`, or undefined when the source does not end that line with `text`. */
+function authoredCodeLine(text: string, from: number, canonicalSource: SourceSnapshot): string | undefined {
+  if (from >= canonicalSource.length) return text.length === 0 ? text : undefined;
+  const chunk = canonicalSource.chunk(from);
+  const line = chunk.endsWith("\n") ? chunk.slice(0, -1) : chunk;
+  const authored = line.endsWith("\r") && !text.endsWith("\r") ? line.slice(0, -1) : line;
+  if (!authored.endsWith(text) || !CODE_LINE_PREFIX.test(authored.slice(0, authored.length - text.length))) return undefined;
+  return authored;
+}
+
 export function updateLegacyCodeLineState(
   current: StoredCodeBlockState,
   line: { readonly id: string; readonly index: number; readonly props: Record<string, unknown> },
@@ -719,12 +732,15 @@ export function updateLegacyCodeLineState(
     : current.sourceSnapshot.materialize();
   const relativeFrom = previous.sourceRange.from - source.sourceRange.from;
   const relativeTo = previous.sourceRange.to - source.sourceRange.from;
+  const previousAuthored = raw.slice(relativeFrom, relativeTo);
+  const previousPrefix = previousAuthored.slice(0, previousAuthored.length - previous.text.length);
   if (
     source.sourceRange.to !== source.sourceRange.from + raw.length ||
     relativeFrom < 0 ||
     relativeTo > raw.length ||
     relativeTo < relativeFrom ||
-    raw.slice(relativeFrom, relativeTo) !== previous.text ||
+    !previousAuthored.endsWith(previous.text) ||
+    !CODE_LINE_PREFIX.test(previousPrefix) ||
     (canonicalSource && (
       source.sourceRange.to > canonicalSource.length ||
       canonicalSource.read(source.sourceRange.from, source.sourceRange.to) !== raw
@@ -732,15 +748,20 @@ export function updateLegacyCodeLineState(
   ) {
     return undefined;
   }
+  const authored = canonicalSource
+    ? authoredCodeLine(text, previous.sourceRange.from, canonicalSource)
+    : `${previousPrefix}${text}`;
+  if (authored === undefined) return undefined;
 
-  const nextRaw = `${raw.slice(0, relativeFrom)}${text}${raw.slice(relativeTo)}`;
-  const nextSourceTo = source.sourceRange.to + text.length - previous.text.length;
+  const nextRaw = `${raw.slice(0, relativeFrom)}${authored}${raw.slice(relativeTo)}`;
+  const delta = authored.length - previousAuthored.length;
+  const nextSourceTo = source.sourceRange.to + delta;
   const updated = withLegacyDecoration(
     {
       ...previous,
       text,
       sourceRevision,
-      sourceRange: { from: previous.sourceRange.from, to: previous.sourceRange.from + text.length },
+      sourceRange: { from: previous.sourceRange.from, to: previous.sourceRange.from + authored.length },
       isProvisional,
       diffKind,
       oldNo,
@@ -748,7 +769,6 @@ export function updateLegacyCodeLineState(
     },
     decoration,
   );
-  const delta = text.length - previous.text.length;
   const allLines = current.view.lines.readRange(0, current.view.lines.length);
   const replacesOpenTail = source.state === "open" &&
     line.index === current.view.lines.length - 1 &&

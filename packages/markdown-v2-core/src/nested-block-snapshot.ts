@@ -520,7 +520,6 @@ function lowerNestedBlockSnapshot(
     } else if (name === "HTMLBlock" || name === "CommentBlock" || name === "ProcessingInstructionBlock") {
       type = "html";
       baseMeta.lezerNodeType = name;
-      display = readRaw(node);
     } else {
       inline = parseInline(display);
     }
@@ -528,7 +527,8 @@ function lowerNestedBlockSnapshot(
       id,
       type,
       isFinalized: block.isFinalized,
-      payload: { raw: readRaw(node), inline, range, meta: baseMeta },
+      // HTML renders from its raw, so it keeps the container-marker-free text (base behavior).
+      payload: { raw: type === "html" ? display : readRaw(node), inline, range, meta: baseMeta },
     };
     const snapshot = createBlockSnapshot(nested);
     if (type === "paragraph") snapshot.props = { ...snapshot.props, inline, text: inlineNodesToPlainText(inline ?? []) };

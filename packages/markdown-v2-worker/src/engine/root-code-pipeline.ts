@@ -171,13 +171,14 @@ export function createRootCodeOwners(
   generation: number,
   sourceOffset = 0,
   counters?: RootCodeSourceOwnerOptions["counters"],
+  excludedSourceStarts?: ReadonlySet<number>,
 ): readonly RootCodeSourceOwner[] {
   const reader = source.snapshot();
   const owners: RootCodeSourceOwner[] = [];
   const cursor = tree.cursor();
   if (!cursor.firstChild()) return owners;
   do {
-    if (cursor.type.name !== "FencedCode") continue;
+    if (cursor.type.name !== "FencedCode" || excludedSourceStarts?.has(cursor.from + sourceOffset)) continue;
     const opening = openingFor(cursor.node, reader, sourceOffset);
     if (!opening) continue;
     const id = generateBlockId(`${opening.from}:code`, "code");

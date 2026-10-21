@@ -297,6 +297,21 @@ async function runNestedLazyConsumers(): Promise<void> {
     const snippet = ownership === "root-html" ? ownedLines.join("\n")
       : ownership === "prepared" ? ["- outer", "", ...codeLines.map((line) => `  > ${line}`)].join("\n")
       : ["- outer", "", ...ownedLines.map((line) => `  ${line}`)].join("\n");
+    if (ownership !== "prepared") {
+      // Code inside HTML elements declines native ownership; eager and lazy consumers must still render the authored code.
+      for (const lazyEnabled of [false, true]) {
+        const { store } = await renderWithWorker(snippet, lazyEnabled, outputMode);
+        const dom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store })));
+        const code = dom.window.document.querySelector("[data-code-block]");
+        const totalLines = code?.getAttribute("data-code-total-lines");
+        const text = code?.textContent ?? "";
+        dom.window.close();
+        assert.strictEqual(totalLines, String(lines.length), `${ownership}/${outputMode}/lazy=${lazyEnabled} must own every authored code line`);
+        // The virtualized code view mounts a leading window of the lines.
+        assert.ok(lines.slice(0, 100).every((line) => text.includes(line)), `${ownership}/${outputMode}/lazy=${lazyEnabled} must render the authored code window`);
+      }
+      continue;
+    }
     const assertStreamingCode = (store: RendererStore) => {
       const discovery = findCodeId(store);
       assert.ok(discovery.codeId, `${ownership}/${outputMode} must publish a native code owner before FINALIZE: ${JSON.stringify(discovery.candidates)}`);

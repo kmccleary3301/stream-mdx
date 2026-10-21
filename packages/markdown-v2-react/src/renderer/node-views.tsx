@@ -25,7 +25,7 @@ import {
 } from "./hooks";
 import { subscribeRendererNode } from "./node-subscriptions";
 import { StreamingActivityContext } from "./streaming-activity-context";
-import { isListPatchDebugEnabled, type RendererStore } from "./store";
+import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from "./store";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 import { CodeBlockView } from "./code-block-view";
 import { ManagedParagraphBlockView, ManagedParagraphContentView } from "./paragraph-block-view";
@@ -689,7 +689,7 @@ const MixedSegmentView: React.FC<{
       if (registry && htmlTree !== undefined) {
         return <>{renderHtmlOwnershipTree(
           htmlTree, registry.getHtmlElements(), (block) =>
-            <OwnedHtmlBlock key={block.id} block={block} registry={registry} store={store} />,
+            <OwnedHtmlBlock key={block.id} block={block} registry={registry} />,
           (nodes, parentTag) => renderInlineNodes(nodes, inlineComponents, urlTransform, registry, parentTag),
           undefined, undefined, urlTransform,
           registry.hasElementFilters() ? (element, context, renderElement, renderChildren) => registry.filterElement(element, context, renderElement, renderChildren) : undefined,
@@ -747,17 +747,15 @@ const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   const tree = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
   if (tree) {
     return <>{registry.renderHtmlTree(tree, (block) =>
-      <OwnedHtmlBlock key={block.id} block={block} registry={registry} store={store} />)}</>;
+      <OwnedHtmlBlock key={block.id} block={block} registry={registry} />)}</>;
   }
   return registry.renderBlock(node.block);
 });
 
 HtmlBlockView.displayName = "HtmlBlockView";
 
-const OwnedHtmlBlock: React.FC<{ store: RendererStore; block: Block; registry: ComponentRegistry }> = ({ store, block, registry }) => {
-  if (!store.getNode(block.id)) {
-    throw new Error(`HTML tree block "${block.id}" has no admitted renderer node`);
-  }
+const OwnedHtmlBlock: React.FC<{ block: Block; registry: ComponentRegistry }> = ({ block, registry }) => {
+  const store = React.useMemo(() => createRendererStore([block]), [block]);
   return <BlockNodeRenderer store={store} blockId={block.id} registry={registry} />;
 };
 

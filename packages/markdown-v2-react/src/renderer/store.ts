@@ -270,7 +270,7 @@ interface NativePreparedLayout {
 const nativePreparedLayoutByRecord = new WeakMap<NodeRecord, NativePreparedLayout>();
 
 function isNativeContainerType(type: string): boolean {
-  return type === "list" || type === "blockquote" || type === "list-item" || type === "html";
+  return type === "list" || type === "blockquote" || type === "list-item";
 }
 
 function isManagedSourceFamily(type: string): boolean {
@@ -4281,7 +4281,14 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           } else {
             nativePreparedLayoutByRecord.delete(target);
           }
-          if (rangeChanged && rangeUpdate) target.block = blockWithSourceRange(target.block, rangeUpdate);
+          if (rangeChanged && rangeUpdate) {
+            target.block = blockWithSourceRange(target.block, rangeUpdate);
+          } else if (!incomingNativeContainer && target.range && !paragraphStateByRecord.has(target) && !isManagedSourceFamily(target.type)) {
+            // Live reads bind an unmanaged leaf's raw to its range, so a replacement block brings its own authored range.
+            const source = inputSourceSnapshotForMap(nodes);
+            const blockRange = source ? parseSourceRange(incomingBlock.payload?.range, source.length) : null;
+            if (blockRange) target.range = { ...blockRange };
+          }
           if (applyMetaUpdate && target.block && !hasManagedSourceOwner && !isManagedSourceFamily(metadataType)) {
             target.block = blockWithExactCanonicalMetadata(target.block, metadataValue);
           }
