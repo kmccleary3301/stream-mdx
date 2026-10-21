@@ -183,8 +183,11 @@ export function planInlineFormat(
   anticipation: NormalizedFormatAnticipation,
   enableMath: boolean,
 ): InlineFormatPlan {
-  if (request.raw.length > request.budgets.maxScanChars && !request.context.provisional) {
-    return { surface: "inline-format", decision: "accept-as-is", safety: "safe", ops: [], debugNotes: ["content already complete"] };
+  if (request.raw.length > request.budgets.maxScanChars) {
+    if (!request.context.provisional) {
+      return { surface: "inline-format", decision: "accept-as-is", safety: "safe", ops: [], debugNotes: ["content already complete"] };
+    }
+    return budgetFallback("inline-format", "budget-chars");
   }
   const budget = new LookaheadBudget(request.budgets);
   const scan = scanInlineTokens(request.raw, enableMath, request.budgets.maxScanChars);
@@ -192,9 +195,6 @@ export function planInlineFormat(
   const hasIncompleteMathInline = scan.stack.includes("math-inline");
   const hasIncompleteMathDisplay = scan.stack.includes("math-display");
   const hasIncompleteMath = hasIncompleteMathInline || hasIncompleteMathDisplay;
-  if (request.raw.length > request.budgets.maxScanChars) {
-    return budgetFallback(hasIncompleteMathDisplay ? "math-block" : hasIncompleteMathInline ? "math-inline" : "inline-format", "budget-chars");
-  }
 
   if (enableMath && hasIncompleteMath) {
     if (hasIncompleteMathInline && !anticipation.mathInline) {

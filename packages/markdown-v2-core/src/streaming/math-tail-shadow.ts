@@ -298,10 +298,8 @@ function summarizeOps(ops: readonly LookaheadRepairOp[]): string[] {
         return `${op.kind}:${op.tagName}`;
       case "self-close-tag":
         return op.kind;
-      default: {
-        const exhaustive: never = op;
-        return exhaustive;
-      }
+      default:
+        return op satisfies never;
     }
   });
 }

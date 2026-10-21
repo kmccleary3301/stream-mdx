@@ -22,6 +22,7 @@ async function runSession(harness: WorkerHarness, chunks: string[]): Promise<Ren
     initialContent: "",
     prewarmLangs: ["typescript"],
     docPlugins: { footnotes: true, html: true, mdx: true, math: true, tables: true, callouts: true },
+    mdx: { compileMode: "worker" },
   });
   assertNoErrors(initMessages);
   const init = initMessages.find((m): m is Extract<WorkerOut, { type: "INITIALIZED" }> => m.type === "INITIALIZED");

@@ -50,6 +50,12 @@ Seeded replay must actually vary marker-stripped chunks using the existing seed 
 
 Missing entries in the ordinary scenario matrix must be recorded from reviewed, repaired behavior. Do not narrow eligibility, copy another scenario's snapshot, normalize final HTML broadly, or promote semantic rendering failures. Repair source behavior first, inspect final DOM/text/topology and styles, then selectively record accepted or missing baselines. Existing byte-identical finals need no re-pin just because their diagnostic checkpoints changed.
 
+### Harness completion checkpoints
+
+`appendAndFlush` waits for the captured worker's complete UTF-16 source frontier through its existing `DEBUG_STATE` reply, then flushes and drains the renderer and allows its DOM commit frame. The first `PATCH` or `METRICS` event is not a complete-append checkpoint: one append may span several worker parse slices. The source checkpoint does not replace semantic queue drain, `FINALIZED`, or separate decoration readiness. A DOM commit frame is not proof of compositor paint.
+
+`restart` remounts even an empty renderer, so readiness cannot reuse the discarded worker. A restart may coalesce a pending configuration remount: `setConfig` completes against the current mounted renderer, while `waitForReady` still waits for that worker's initialization. The `complete-append-frontier` S5 fixture exercises that overlap and reads paragraph text immediately after each awaited append in the same page callback.
+
 Before updating HTML snapshots, the following must be green against the intended serving model:
 
 ```bash
