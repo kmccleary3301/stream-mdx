@@ -74,6 +74,7 @@ import type {
   WorkerPhase,
   SourceSnapshot,
   TableBlockSnapshot,
+  TableCellRecord,
   ContentPolicy,
   RestrictedComponentDescriptor,
 } from "@stream-mdx/core";
@@ -3321,6 +3322,7 @@ export class MarkdownEngine {
           rebuild: rebuildParagraphTargets,
         }
       : undefined;
+    await this.prepareTrustedMdxFlowChildrenForBlocks(tailBlocks, this.blocks, changedLabels);
     this.pendingRootParagraphPatches = [];
     let changedBlocks = this.runDocumentPlugins(
       [...stableBlocks, ...documentContextTailBlocks],
@@ -3754,6 +3756,7 @@ export class MarkdownEngine {
       },
       nestedNativeContainerStarts,
     );
+    await this.prepareTrustedMdxFlowChildrenForBlocks(changedBlocks, this.blocks, changedLabels);
     const appendedFootnotesChanged = appendedText.includes("[^") || appendedText.includes("&")
       || changedBlocks.some((block) => {
         if (typeof block.payload.range?.to === "number" && block.payload.range.to < oldLen) return false;
@@ -4213,7 +4216,7 @@ export class MarkdownEngine {
     const isFinalized = options.forceFinalize ? true : hasSourceAfterRange(fullContent, localTo);
     const blockType = type;
 
-    const id = generateBlockId(`${from + sourceOffset}:${blockType}`, blockType);
+    const id = generateBlockId(`${from}:${blockType}`, blockType);
 
     const initialMeta: Record<string, unknown> = nodeType ? { lezerNodeType: nodeType } : {};
     if (type === "code" && syntaxNode) {
@@ -4239,7 +4242,7 @@ export class MarkdownEngine {
       payload: {
         raw,
         meta: Object.keys(initialMeta).length > 0 ? initialMeta : undefined,
-        range: { from: from + sourceOffset, to: to + sourceOffset },
+        range: { from, to },
       },
     };
 
@@ -5122,17 +5125,20 @@ export class MarkdownEngine {
           // Trusted MDX cells bind compiler regions to authored cell ranges, so they publish the
           // legacy header/rows projection instead of the managed table record.
           const trustedTable = trustedNativePath;
+          const trustedCellInline = (cell: TableCellRecord, ownerIdPrefix: string) =>
+            this.prepareTrustedNativeInline(
+              this.inlineParser.parse(cell.raw, { sourceOffset: cell.sourceRange.from }),
+              cell.raw,
+              ownerIdPrefix,
+              cell.sourceRange.from,
+            );
           const header = tableData.header.map((inline, column) => {
             const cell = tableData.table.header.cells[column];
-            return trustedTable && cell
-              ? this.prepareTrustedNativeInline(inline, cell.raw, `${block.id}::th:${column}`, cell.sourceRange.from)
-              : inline;
+            return trustedTable && cell ? trustedCellInline(cell, `${block.id}::th:${column}`) : inline;
           });
           const rows = tableData.rows.map((row, rowIndex) => row.map((inline, column) => {
             const cell = tableData.table.rows[rowIndex]?.cells[column];
-            return trustedTable && cell
-              ? this.prepareTrustedNativeInline(inline, cell.raw, `${block.id}::td:${rowIndex}:${column}`, cell.sourceRange.from)
-              : inline;
+            return trustedTable && cell ? trustedCellInline(cell, `${block.id}::td:${rowIndex}:${column}`) : inline;
           }));
           block.payload.inline = [];
           block.payload.meta = {

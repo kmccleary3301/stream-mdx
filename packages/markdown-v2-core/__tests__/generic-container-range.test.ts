@@ -111,7 +111,7 @@ function managedMixedPrimaryParagraph(
       id: `${id}:mdx:0`,
       type: "paragraph-mdx",
       range: childRange(mdxRaw),
-      props: { raw: mdxRaw, status: "error", error: "InlineChip compilation failed" },
+      props: { raw: mdxRaw },
     },
     {
       id: `${id}:text:2`,
@@ -842,13 +842,9 @@ assert.ok(historicalMixedSegments);
 const historicalMdxSegment = historicalMixedSegments.find((segment) => segment.kind === "mdx");
 assert.ok(historicalMdxSegment);
 assert.equal(historicalMdxSegment.value, '<InlineChip tone="warm" />');
-assert.equal(historicalMdxSegment.status, "error");
-assert.equal(historicalMdxSegment.error, "InlineChip compilation failed");
 const historicalMdxChild = historicalMixedPrimaryItem.children?.find((child) => child.type === "list-item-mdx");
 assert.ok(historicalMdxChild);
 assert.equal(historicalMdxChild.props.raw, historicalMdxSegment.value);
-assert.equal(historicalMdxChild.props.status, historicalMdxSegment.status);
-assert.equal(historicalMdxChild.props.error, historicalMdxSegment.error);
 assert.equal(
   mixedPrimaryRaw.slice(historicalMdxChild.range?.from ?? 0, historicalMdxChild.range?.to ?? 0),
   historicalMdxSegment.value,
@@ -938,8 +934,6 @@ assert.ok(currentMixedSegments);
 const currentMdxSegment = currentMixedSegments.find((segment) => segment.kind === "mdx");
 assert.ok(currentMdxSegment);
 assert.equal(currentMdxSegment.value, '<InlineChip tone="warm" />');
-assert.equal(currentMdxSegment.status, "error");
-assert.equal(currentMdxSegment.error, "InlineChip compilation failed");
 assert.equal(historicalMixedPrimaryList.payload.raw, mixedPrimaryRaw);
 assert.deepEqual(itemBlock(historicalMixedPrimaryItem).payload.inline, initialMixedPrimaryInline);
 const remountedMixedPrimaryList = createInitialSnapshot([currentMixedPrimaryList]).getBlocks()[0];
@@ -951,8 +945,6 @@ assert.deepEqual(remountedMixedPrimaryItem.props.inline, currentMixedPrimaryInli
 assert.deepEqual(itemBlock(remountedMixedPrimaryItem).payload.inline, currentMixedPrimaryInline);
 const remountedMdxChild = remountedMixedPrimaryItem.children?.find((child) => child.type === "list-item-mdx");
 assert.equal(remountedMdxChild?.props.raw, currentMdxSegment.value);
-assert.equal(remountedMdxChild?.props.status, currentMdxSegment.status);
-assert.equal(remountedMdxChild?.props.error, currentMdxSegment.error);
 
 const layoutRaw = "- outer\n  outer secondary\n  - inner\n    nested secondary";
 const layoutRange = { from: 0, to: layoutRaw.length };

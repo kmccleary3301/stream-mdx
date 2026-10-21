@@ -137,6 +137,21 @@ function codeCompileSource(block: Block): string {
  * Open type-6/7 HTML blocks own physical source through the next blank line,
  * even when an incremental Lezer fragment retained only an earlier line.
  */
+/**
+ * Component boundaries own these HTML blocks: the registered header boundary ends a restricted
+ * opening at its header line, and trusted MDX flow roots end at their compiler-authored close.
+ */
+function opensComponent(
+  block: Block,
+  contentComponents: ReadonlyMap<string, RestrictedComponentDescriptor> | undefined,
+  mdxComponents: boolean,
+): boolean {
+  if (block.type !== "html" || (!contentComponents && !mdxComponents)) return false;
+  const name = /^[ \t]*<\s*([A-Za-z][\w-]*)/.exec(block.payload.raw ?? "")?.[1];
+  if (name === undefined) return false;
+  return (mdxComponents && /^[A-Z]/.test(name)) || contentComponents?.has(name) === true;
+}
+
 function recoverHtmlPhysicalSourceRange(
   block: Block,
   content: string | SourceSnapshot,
@@ -442,7 +457,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     pendingComponent = false;
   };
   for (const inputBlock of blocks) {
-    let block = regionOptions?.joinLeafRaws
+    let block = regionOptions?.joinLeafRaws || opensComponent(inputBlock, contentComponents, regionOptions?.mdxComponents === true)
       ? inputBlock
       : recoverHtmlPhysicalSourceRange(inputBlock, content, sourceOffset, options, parseInline);
     if (block.type !== "code") {

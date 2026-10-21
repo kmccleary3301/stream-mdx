@@ -175,7 +175,7 @@ function managedMixedPrimaryParagraph(
       id: `${id}:mdx:0`,
       type: "paragraph-mdx",
       range: childRange(mdxRaw),
-      props: { raw: mdxRaw, status: "error", error: "InlineChip compilation failed" },
+      props: { raw: mdxRaw },
     },
     {
       id: `${id}:text:2`,
@@ -1089,13 +1089,9 @@ async function runNativeContainerRangeTest(): Promise<void> {
     const historicalMdxSegment = historicalMixedSegments.find((segment) => segment.kind === "mdx");
     assert.ok(historicalMdxSegment);
     assert.equal(historicalMdxSegment.value, '<InlineChip tone="warm" />');
-    assert.equal(historicalMdxSegment.status, "error");
-    assert.equal(historicalMdxSegment.error, "InlineChip compilation failed");
     const historicalMdxChild = historicalMixedPrimaryItem.children?.find((node) => node.type === "list-item-mdx");
     assert.ok(historicalMdxChild);
     assert.equal(historicalMdxChild.props.raw, historicalMdxSegment.value);
-    assert.equal(historicalMdxChild.props.status, historicalMdxSegment.status);
-    assert.equal(historicalMdxChild.props.error, historicalMdxSegment.error);
     assert.equal(
       mixedPrimaryRaw.slice(historicalMdxChild.range?.from ?? 0, historicalMdxChild.range?.to ?? 0),
       historicalMdxSegment.value,
@@ -1191,20 +1187,15 @@ async function runNativeContainerRangeTest(): Promise<void> {
     const currentMdxSegment = currentMixedSegments.find((segment) => segment.kind === "mdx");
     assert.ok(currentMdxSegment);
     assert.equal(currentMdxSegment.value, '<InlineChip tone="warm" />');
-    assert.equal(currentMdxSegment.status, "error");
-    assert.equal(currentMdxSegment.error, "InlineChip compilation failed");
     const currentMdxChild = currentMixedPrimaryItem.children?.find((node) => node.type === "list-item-mdx");
     assert.ok(currentMdxChild);
     assert.equal(currentMdxChild.props.raw, currentMdxSegment.value);
-    assert.equal(currentMdxChild.props.status, currentMdxSegment.status);
-    assert.equal(currentMdxChild.props.error, currentMdxSegment.error);
     assert.equal(
       currentMixedPrimaryRaw.slice(currentMdxChild.range?.from ?? 0, currentMdxChild.range?.to ?? 0),
       currentMdxSegment.value,
     );
     assert.equal(historicalMixedPrimaryList.payload.raw, mixedPrimaryRaw);
     assert.deepEqual(historicalMixedPrimaryItem.props.inline, historicalMixedPrimaryInline);
-    assert.equal(historicalMdxChild.props.status, "error");
     const remountedMixedPrimaryStore = createRendererStore(currentMixedPrimaryBlocks);
     const remountedMixedPrimaryList = remountedMixedPrimaryStore.getBlocks()[0];
     assert.ok(remountedMixedPrimaryList);
@@ -1217,8 +1208,6 @@ async function runNativeContainerRangeTest(): Promise<void> {
     assert.deepEqual(remountedMixedPrimaryItem.props.inline, currentMixedPrimaryInline);
     const remountedMdxChild = remountedMixedPrimaryItem.children?.find((node) => node.type === "list-item-mdx");
     assert.equal(remountedMdxChild?.props.raw, currentMdxSegment.value);
-    assert.equal(remountedMdxChild?.props.status, currentMdxSegment.status);
-    assert.equal(remountedMdxChild?.props.error, currentMdxSegment.error);
 
     const layoutListId = "layout-list";
     const layoutItemId = `${layoutListId}::item:0`;

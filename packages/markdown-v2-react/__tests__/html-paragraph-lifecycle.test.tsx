@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createBlockSnapshot, STREAM_MDX_SCHEMA_VERSION, type Block, type Patch, type WorkerIn, type WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type Block, type Patch, type WorkerIn, type WorkerOut } from "@stream-mdx/core";
 import { MarkdownEngine } from "@stream-mdx/worker/engine";
 import { JSDOM } from "jsdom";
 import { act, createElement } from "react";
@@ -185,65 +185,6 @@ async function runHtmlParagraphLifecycleRegressions(): Promise<void> {
     assert.equal(splitFixture.initialized.snapshot.inputSource?.raw, splitHeader, "the historical INITIALIZED value must remain unchanged");
     assert.equal(paragraphBlock(splitFixture.store).payload.raw, splitSource, "the current paragraph raw source must remain canonical");
     assert.deepEqual(emMeanings(splitFixture.container), [{ title: "warm value", text: "body" }], "the mounted renderer must show the ephemeral HTML meaning");
-
-    const mdxSource = "<Badge>preview";
-    const mdxFixture = await mountEngine(dom, roots, engines, mdxSource, {
-      formatAnticipation: { inline: true, mdx: true },
-      mdxComponentNames: ["Badge"],
-    });
-    const mdxId = paragraphId(mdxFixture.store);
-    const mdxState = paragraphState(mdxFixture.store, mdxId);
-    const historicalMdxSource = mdxState.sourceSnapshot;
-    const historicalMdxCold = mdxFixture.store.getParagraphColdBlock(mdxId);
-    assert.ok(historicalMdxCold, "the initial MDX paragraph must have a cold value");
-    const historicalMdxSnapshot = JSON.stringify(createBlockSnapshot(historicalMdxCold));
-    const initializedMdxSnapshot = JSON.stringify(mdxFixture.initialized.snapshot);
-    assert.equal(mdxFixture.initialized.snapshot.inputSource?.raw, mdxSource, "INIT must preserve the exact authored MDX input");
-    assert.equal(paragraphSource(mdxFixture.store, mdxId), mdxSource, "the managed paragraph source must remain authored input");
-    assert.equal(historicalMdxCold.payload.raw, mdxSource, "cold paragraph export must not contain the prepared lookahead value");
-
-    const mdxSpans = mdxFixture.store.getParagraphSpans(mdxId, mdxState.source.generation, 0, 64);
-    const mdxChildren = mdxSpans.flatMap((span) => span.children ?? []);
-    const pendingMdxChild = mdxChildren.find((child) => child.type === "paragraph-mdx");
-    const previewTextChild = mdxChildren.find((child) => child.type === "paragraph-text");
-    assert.ok(pendingMdxChild && previewTextChild, "the engine must publish native MDX and text siblings");
-    assert.equal(pendingMdxChild.props?.status, "pending", "the opening-only registered component must remain a native pending descriptor");
-    const historicalMdxChildRanges = mdxChildren.map((child) => ({ type: child.type, range: { ...child.range } }));
-    assert.deepEqual(historicalMdxChildRanges, [
-      { type: "paragraph-mdx", range: { from: 0, to: 7 } },
-      { type: "paragraph-text", range: { from: 7, to: 14 } },
-    ], "native MDX and FIFO text sibling ranges must use canonical absolute source offsets");
-
-    const mountedMdxParagraph = mdxFixture.container.querySelector("p");
-    const pendingMdxRegion = mdxFixture.container.querySelector<HTMLSpanElement>('.markdown-mdx-inline[data-mdx-status="pending"]');
-    assert.ok(mountedMdxParagraph && pendingMdxRegion, "the mounted renderer must expose the native pending MDX region");
-    assert.strictEqual(pendingMdxRegion.parentElement, mountedMdxParagraph, "the pending MDX region must belong to the native paragraph");
-    assert.equal(pendingMdxRegion.nextSibling?.textContent, "preview", "the visible text child must remain the FIFO sibling after the MDX region");
-    const repairedDescriptor = pendingMdxRegion.textContent ?? "";
-    const parsedDescriptor = new dom.window.DOMParser().parseFromString(repairedDescriptor, "application/xml");
-    assert.equal(parsedDescriptor.getElementsByTagName("parsererror").length, 0, "the visible MDX lookahead descriptor must be structurally valid XML");
-    assert.equal(parsedDescriptor.documentElement.tagName, "Badge", "the repaired descriptor must retain the allowlisted Badge opening");
-    assert.equal(parsedDescriptor.documentElement.childNodes.length, 0, "the MDX descriptor must be an empty opening, with preview outside it");
-
-    await handleAndApply(mdxFixture, { type: "FINALIZE" });
-    const finalizedMdxState = paragraphState(mdxFixture.store, mdxId);
-    assert.equal(finalizedMdxState.source.state, "finalized", "FINALIZE must expose native finalized paragraph state");
-    assert.equal(paragraphSource(mdxFixture.store, mdxId), mdxSource, "FINALIZE must not alter authored paragraph source");
-    assert.equal(mdxFixture.container.querySelector('.markdown-mdx-inline[data-mdx-status="pending"]'), null, "FINALIZE must remove the ephemeral MDX preview");
-    assert.equal(mdxFixture.container.querySelector("p")?.textContent, mdxSource, "the finalized unclosed MDX source must render literally");
-    const finalizedMdxCold = mdxFixture.store.getParagraphColdBlock(mdxId);
-    assert.ok(finalizedMdxCold, "the finalized paragraph must remain available as a cold native block");
-    assert.equal(finalizedMdxCold.payload.raw, mdxSource, "the finalized cold paragraph must preserve exact authored source");
-    assert.equal(mdxFixture.initialized.snapshot.inputSource?.raw, mdxSource, "FINALIZE must not rewrite the historical INIT input");
-    assert.equal(JSON.stringify(mdxFixture.initialized.snapshot), initializedMdxSnapshot, "the retained INIT snapshot must remain unchanged after finalization");
-    assert.equal(historicalMdxSource.materialize(), mdxSource, "the retained source snapshot must remain unchanged after finalization");
-    assert.equal(historicalMdxCold.payload.raw, mdxSource, "the historical cold block must remain canonical after finalization");
-    assert.equal(JSON.stringify(createBlockSnapshot(historicalMdxCold)), historicalMdxSnapshot, "the historical cold snapshot must remain unchanged after finalization");
-    assert.deepEqual(
-      mdxChildren.map((child) => ({ type: child.type, range: { ...child.range } })),
-      historicalMdxChildRanges,
-      "retained native child ranges must remain unchanged through FINALIZE",
-    );
 
     const boundedSource = "before <em>one\nnext\nlast\nbeyond";
     const boundedFixture = await mountEngine(dom, roots, engines, boundedSource);

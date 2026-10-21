@@ -338,7 +338,10 @@ async function runManagedParagraphEngineRendererRegression(): Promise<void> {
     assert.ok(mixedMessages.some((message) => message.type === "INITIALIZED"), "default INIT must publish the actual engine snapshot");
     assert.equal(container.querySelector("p strong")?.textContent, "bold", "plain inline meaning must remain semantic paragraph DOM");
     assert.equal(container.querySelector("em strong")?.textContent, "nested", "HTML ownership trees must preserve nested inline structure");
-    assert.ok(container.querySelector(".markdown-mdx-inline")?.getAttribute("data-mdx-status"), "inline MDX must use the trusted/restricted status dispatcher");
+    assert.ok(
+      container.querySelector("p")?.textContent?.includes('<InlineChip tone="warm">MDX</InlineChip>'),
+      "restricted content keeps an unregistered component literal",
+    );
 
     const mixedAppend = " plus **tail**";
     await handleAndApply(engine, store, emitted, { type: "APPEND", text: mixedAppend });

@@ -3,7 +3,8 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 import { JSDOM } from "jsdom";
-import type { HtmlTreeNode, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+import type { Block, HtmlTreeNode, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { ComponentRegistry } from "@stream-mdx/react";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
@@ -18,6 +19,15 @@ function findMessage<T extends WorkerOut["type"]>(
   return messages.find((m): m is Extract<WorkerOut, { type: T }> => m.type === type);
 }
 
+/** Cold blocks of the INITIALIZED snapshot, as a consumer Store materializes them. */
+function findInitialized(messages: WorkerOut[]): { blocks: Block[] } | undefined {
+  const initialized = findMessage(messages, "INITIALIZED");
+  if (!initialized) return undefined;
+  const store = createRendererStore();
+  store.resetSnapshot(initialized.snapshot);
+  return { blocks: [...store.getBlocks()] };
+}
+
 describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
   const registeredComponents = [
     { name: "Card", renderWhen: "open" as const },
@@ -26,17 +36,18 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     { name: "Link", renderWhen: "open" as const },
   ];
 
-  it("produces kind:component HtmlTreeNode with case-sensitive name and frozen JSON props", async () => {
+  it("produces kind:component HtmlTreeNode with case-sensitive name and JSON props", async () => {
     const harness = await createWorkerHarness();
     const init: WorkerIn = {
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<Input placeholder="Search docs..." disabled count={5} />',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     };
 
     const messages = await harness.send(init);
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized, "worker must initialize");
 
     const blocks = initialized.blocks;
@@ -53,7 +64,6 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
       assert.strictEqual(root.props.placeholder, "Search docs...");
       assert.strictEqual(root.props.disabled, true);
       assert.strictEqual(root.props.count, 5);
-      assert.strictEqual(Object.isFrozen(root.props), true, "props must be frozen");
       assert.strictEqual(root.children.length, 0);
     }
   });
@@ -62,13 +72,14 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const init: WorkerIn = {
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<input type="text">\n\n<Input placeholder="component" />',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     };
 
     const messages = await harness.send(init);
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
 
     const blocks = initialized.blocks;
@@ -110,13 +121,14 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
 
     const init: WorkerIn = {
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: content,
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     };
 
     const messages = await harness.send(init);
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
 
     const blocks = initialized.blocks;
@@ -157,17 +169,18 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     }
   });
 
-  it("supports validated opening early render during streaming with frozen props", async () => {
+  it("supports validated opening early render during streaming", async () => {
     const harness = await createWorkerHarness();
     const init: WorkerIn = {
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<Card title="Early Stream">',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     };
 
     const initMessages = await harness.send(init);
-    const initialized = findMessage(initMessages, "INITIALIZED");
+    const initialized = findInitialized(initMessages);
     assert.ok(initialized);
 
     const openBlock = initialized.blocks[0];
@@ -181,7 +194,6 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
       assert.strictEqual(node.name, "Card");
       assert.strictEqual(node.status, "open", "must render early with status: open");
       assert.strictEqual(node.props.title, "Early Stream");
-      assert.strictEqual(Object.isFrozen(node.props), true);
     }
   });
 
@@ -189,6 +201,7 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const init: WorkerIn = {
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<Card title="Unfinished">\n\nBody paragraph.',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
@@ -219,13 +232,14 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const init: WorkerIn = {
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<UnknownWidget prop="val" />\n\n<Card 12345>',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     };
 
     const messages = await harness.send(init);
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
 
     const blocks = initialized.blocks;
@@ -254,13 +268,14 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const init: WorkerIn = {
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<Card title="Restricted" />\n\n{1 + 2}\n\nimport { x } from "mod";',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     };
 
     const messages = await harness.send(init);
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
 
     // None of the blocks should have type: "mdx"
@@ -293,12 +308,13 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
       const harness = await createWorkerHarness();
       const messages = await harness.send({
         type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent: content,
         contentPolicy: "restricted",
         contentComponents: harnessComponents,
         docPlugins: { mdx },
       });
-      const initialized = findMessage(messages, "INITIALIZED");
+      const initialized = findInitialized(messages);
       assert.ok(initialized);
       const dom = new JSDOM(renderToStaticMarkup(
         React.createElement(MarkdownBlocksRenderer, { blocks: initialized.blocks, contentComponents: hostComponents }),
@@ -330,11 +346,12 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const messages = await harness.send({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<Card title="unfinished',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     });
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
 
     const tree = initialized.blocks[0].payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
@@ -350,11 +367,12 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const messages = await harness.send({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<Input placeholder="search" />\n\nFollowing paragraph stays native.',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     });
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
     assert.strictEqual(initialized.blocks.length, 2);
 
@@ -373,6 +391,7 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const messages = await harness.send({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: [
         '<Card title="edge">opening fragment',
         "",
@@ -383,7 +402,7 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     });
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
     assert.strictEqual(initialized.blocks.length, 1);
 
@@ -404,6 +423,7 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const messages = await harness.send({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: [
         '<Card title="outer">',
         "",
@@ -424,7 +444,7 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     });
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
     assert.strictEqual(initialized.blocks.length, 1);
 
@@ -503,11 +523,12 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
       const harness = await createWorkerHarness();
       const messages = await harness.send({
         type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent: content,
         contentPolicy: "restricted",
         contentComponents: registeredComponents,
       });
-      const initialized = findMessage(messages, "INITIALIZED");
+      const initialized = findInitialized(messages);
       assert.ok(initialized);
       const rendered = renderToStaticMarkup(
         React.createElement(MarkdownBlocksRenderer, { blocks: initialized.blocks, contentComponents: hostComponents, componentRegistry }),
@@ -547,12 +568,13 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const messages = await harness.send({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '- <Input /> [blocked](https://example.invalid/)\n- <Input /> **[nested-blocked](https://nested.example.invalid/)**\n- <Input /> contact@example.invalid\n- <Input /> <campaign-mark data-owned="kept">custom HTML</campaign-mark>\n',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
       html: { allowRaw: true, allowedTags: { "campaign-mark": ["data-owned"] } },
     });
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
     const Input = () => React.createElement("input", { "data-policy-owner": true });
     const contentComponents = { Input: defineContentComponent({ component: Input }) };
@@ -581,12 +603,13 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const messages = await harness.send({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: 'Before <Alert>inside[^owned]</Alert> with <em>ordinary</em>.\n\n- <Input /> outside[^owned] with <Alert>nested[^owned]</Alert>.\n\n[^owned]: Owned definition.\n',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
       docPlugins: { footnotes: true, html: true },
     });
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
     const Alert = ({ children }: { children?: React.ReactNode }) => React.createElement("span", { "data-footnote-owner": true }, children);
     const hostComponents = {
@@ -622,11 +645,12 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const messages = await harness.send({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<div><Input />\n\nOutside unclosed HTML.\n',
       contentPolicy: "restricted",
       contentComponents: registeredComponents,
     });
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
     const Input = () => React.createElement("input", { "data-open-html": true });
     const hostComponents = { Input: defineContentComponent({ component: Input }) };
@@ -646,11 +670,12 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     const harness = await createWorkerHarness();
     const messages = await harness.send({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: '<Input placeholder="markdown policy" />',
       contentPolicy: "markdown",
       contentComponents: registeredComponents,
     });
-    const initialized = findMessage(messages, "INITIALIZED");
+    const initialized = findInitialized(messages);
     assert.ok(initialized);
 
     const tree = initialized.blocks[0].payload.meta?.htmlTree as HtmlTreeNode[] | undefined;

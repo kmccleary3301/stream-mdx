@@ -1317,7 +1317,9 @@ function materializeSnapshotNode(
   const children = node.codeState?.managed
     ? [...materializeManagedCodeLineSnapshots(node), ...projection.prepared.children]
     : projection.prepared.children;
-  const props = projection.prepared.props;
+  // The exported projection owns its props; the node's props gain `block`, which would make the block's
+  // `preparedNested` reach itself if the two shared one object.
+  const props = { ...projection.prepared.props };
   const range = node.range;
   const exportShape = node.preparedNestedExport;
   const prepared: PreparedNestedSnapshot | undefined = exportShape

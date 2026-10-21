@@ -18,38 +18,45 @@ class TestMockWorker extends EventTarget {
     this.messages.push(message);
     if (this.autoRespondInit && message.type === "INIT") {
       queueMicrotask(() => {
-        const block: Block | undefined = message.initialContent
-          ? {
-              id: "p1",
-              type: "paragraph",
-              isFinalized: true,
-              payload: {
-                raw: message.initialContent,
-                inline: [{ kind: "text", text: message.initialContent }],
-              },
-            }
-          : undefined;
-        const generation = ++this.generation;
-        const initEvent = new Event("message") as MessageEvent<WorkerOut>;
-        Object.defineProperty(initEvent, "data", {
-          value: {
-            type: "INITIALIZED",
-            schemaVersion: STREAM_MDX_SCHEMA_VERSION,
-            generation,
-            snapshot: {
-              id: PATCH_ROOT_ID,
-              type: "__root__",
-              props: {},
-              inputSource: { generation, raw: message.initialContent ?? "" },
-              children: block ? [createBlockSnapshot(block)] : [],
-            },
-          },
-        });
         void act(() => {
-          this.dispatchEvent(initEvent);
+          this.acknowledgeInit();
         });
       });
     }
+  }
+
+  /** Answers the latest INIT with a schema-matching INITIALIZED snapshot of its initial content. */
+  acknowledgeInit(): void {
+    const message = this.messages.findLast((candidate) => candidate.type === "INIT");
+    if (message?.type !== "INIT") throw new Error("acknowledgeInit requires a posted INIT");
+    const block: Block | undefined = message.initialContent
+      ? {
+          id: "p1",
+          type: "paragraph",
+          isFinalized: true,
+          payload: {
+            raw: message.initialContent,
+            inline: [{ kind: "text", text: message.initialContent }],
+          },
+        }
+      : undefined;
+    const generation = ++this.generation;
+    const initEvent = new Event("message") as MessageEvent<WorkerOut>;
+    Object.defineProperty(initEvent, "data", {
+      value: {
+        type: "INITIALIZED",
+        schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+        generation,
+        snapshot: {
+          id: PATCH_ROOT_ID,
+          type: "__root__",
+          props: {},
+          inputSource: { generation, raw: message.initialContent ?? "" },
+          children: block ? [createBlockSnapshot(block)] : [],
+        },
+      },
+    });
+    this.dispatchEvent(initEvent);
   }
   emit(message: WorkerOut): void {
     const event = new Event("message") as MessageEvent<WorkerOut>;
@@ -274,7 +281,7 @@ async function testAppendBeforeInitializationAckAfterRestart(): Promise<void> {
       "initial worker INIT should be posted",
     );
     await act(async () => {
-      workers[0].emit({ type: "INITIALIZED", blocks: [] });
+      workers[0].acknowledgeInit();
     });
 
     await act(async () => {
@@ -288,13 +295,16 @@ async function testAppendBeforeInitializationAckAfterRestart(): Promise<void> {
     await act(async () => {
       handle.current?.append(text);
     });
-    assert.ok(
-      workers[1].messages.some((message) => message.type === "APPEND" && message.text === text),
-      "append before the restarted worker's INIT acknowledgement must reach that worker",
+    await act(async () => {
+      workers[1].acknowledgeInit();
+    });
+    assert.deepEqual(
+      workers[1].messages.filter((message) => message.type === "APPEND").map((message) => message.text),
+      [text],
+      "append before the restarted worker's INIT acknowledgement reaches that worker exactly once",
     );
 
     await act(async () => {
-      workers[1].emit({ type: "INITIALIZED", blocks: [] });
       workers[1].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch(text)] });
     });
     await waitFor(() => container.textContent?.includes(text) ?? false, "pre-ack append should render after acknowledgement");
@@ -335,7 +345,7 @@ async function testRecoverableThemeInitErrorDoesNotBlockStaticText(): Promise<vo
         error: { message: "Unknown code theme" },
         meta: { theme: ["not-a-theme"] },
       });
-      worker.emit({ type: "INITIALIZED", blocks: [] });
+      worker.acknowledgeInit();
     });
     assert.strictEqual(reportedErrors.length, 1, "recoverable INIT errors should still reach onError");
     await waitFor(
@@ -343,17 +353,7 @@ async function testRecoverableThemeInitErrorDoesNotBlockStaticText(): Promise<vo
       "static text should be sent after a recoverable theme error and INIT acknowledgement",
     );
     await act(async () => {
-      worker.emit({
-        type: "INITIALIZED",
-        blocks: [
-          {
-            id: "theme-error-paragraph",
-            type: "paragraph",
-            isFinalized: true,
-            payload: { raw: text, inline: [{ kind: "text", text }] },
-          },
-        ],
-      });
+      worker.acknowledgeInit();
     });
     await waitFor(() => container.textContent?.includes(text) ?? false, "static text should render after recoverable theme error");
   } finally {
@@ -512,9 +512,11 @@ async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<vo
     await act(async () => {
       handle.current?.append("old generation");
     });
-    assert.deepEqual(appendTexts(workers[0]), ["old generation"], "initial pre-ack input reaches its attached worker");
     await act(async () => {
-      workers[0].emit({ type: "INITIALIZED", blocks: [] });
+      workers[0].acknowledgeInit();
+    });
+    assert.deepEqual(appendTexts(workers[0]), ["old generation"], "initial input reaches its attached worker once it acknowledges INIT");
+    await act(async () => {
       workers[0].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch("old generation", "old-generation")] });
     });
     await waitFor(
@@ -539,6 +541,9 @@ async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<vo
       () => workers.length === 2 && workers[1].messages.some((message) => message.type === "INIT"),
       "the fresh trusted generation attaches its worker",
     );
+    await act(async () => {
+      workers[1].acknowledgeInit();
+    });
     assert.deepEqual(
       appendTexts(workers[1]),
       freshChunks,
@@ -548,11 +553,10 @@ async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<vo
       workers[1].messages.filter((message) => message.type === "INIT" || message.type === "APPEND")
         .map((message) => message.type === "INIT" ? "INIT" : message.text),
       ["INIT", ...freshChunks],
-      "the new worker receives INIT before queued APPENDs, without waiting for its acknowledgement",
+      "the new worker receives INIT before its queued APPENDs",
     );
 
     await act(async () => {
-      workers[1].emit({ type: "INITIALIZED", blocks: [] });
       workers[1].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch("fresh first", "fresh-first")] });
       workers[1].emit({ type: "PATCH", tx: 2, patches: [insertParagraphPatch("fresh second", "fresh-second", 1)] });
     });
@@ -578,13 +582,15 @@ async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<vo
       () => workers.length === 3 && workers[2].messages.some((message) => message.type === "INIT"),
       "the second restart attaches only its final worker generation",
     );
+    await act(async () => {
+      workers[2].acknowledgeInit();
+    });
     assert.deepEqual(
       appendTexts(workers[2]),
       secondRestartChunks,
       "a second restart clears the earlier pending generation while preserving later chunks in order",
     );
     await act(async () => {
-      workers[2].emit({ type: "INITIALIZED", blocks: [] });
       workers[2].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch("second restart first", "second-first")] });
       workers[2].emit({ type: "PATCH", tx: 2, patches: [insertParagraphPatch("second restart second", "second-second", 1)] });
       handle.current?.finalize();
@@ -625,9 +631,13 @@ async function testInitialAppendBeforeWorkerAttachIsQueued(): Promise<void> {
     await act(async () => {
       root.render(<AppendBeforeAttach />);
     });
+    await waitFor(() => worker.messages.some((message) => message.type === "INIT"), "the initial worker receives INIT");
+    await act(async () => {
+      worker.acknowledgeInit();
+    });
     await waitFor(
       () => worker.messages.some((message) => message.type === "APPEND" && message.text === text),
-      "an initial pre-attach append is queued until INIT is posted",
+      "an initial pre-attach append is queued until INIT is acknowledged",
     );
     assert.deepEqual(
       worker.messages.filter((message) => message.type === "INIT" || message.type === "APPEND")
@@ -636,7 +646,6 @@ async function testInitialAppendBeforeWorkerAttachIsQueued(): Promise<void> {
       "the initial worker receives INIT before its queued append",
     );
     await act(async () => {
-      worker.emit({ type: "INITIALIZED", blocks: [] });
       worker.emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch(text)] });
     });
     await waitFor(() => container.textContent?.includes(text) ?? false, "initial pre-attach content renders");
