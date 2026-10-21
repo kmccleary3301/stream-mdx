@@ -719,7 +719,7 @@ async function compareSnapshotsWithCssom(
 ): Promise<{ ok: boolean; message?: string }> {
   const preparedExpected = await prepareSnapshotForComparison(page, expected);
   const preparedReceived = await prepareSnapshotForComparison(page, received);
-  return compareFinalSnapshots(preparedExpected, preparedReceived);
+  return compareFinalSnapshots(page, preparedExpected, preparedReceived);
 }
 
 async function readRootText(page: Page): Promise<string> {
