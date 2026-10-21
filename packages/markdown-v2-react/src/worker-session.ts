@@ -140,6 +140,9 @@ export function useWorkerSession({
   factories?: WorkerFactories;
 }) {
   const [workerReady, setWorkerReady] = useState(false);
+  const [inputReady, setInputReady] = useState(false);
+  const inputReadyRef = useRef(false);
+  const [initializationError, setInitializationError] = useState<Error | null>(null);
   const workerReadyRef = useRef(false);
   const readyRendererRef = useRef<MarkdownRenderer | null>(null);
   const activeInstanceRef = useRef<{
@@ -151,11 +154,33 @@ export function useWorkerSession({
     if (process.env.NODE_ENV !== "production" && debug) console.info("[debug] instantiate worker effect");
     setWorkerReady(false);
     workerReadyRef.current = false;
+    setInputReady(false);
+    inputReadyRef.current = false;
+    setInitializationError(null);
 
+    const reportError = (error: unknown) => {
+      if (cancelled) return;
+      const reported = error instanceof Error ? error : new Error(String(error));
+      inputReadyRef.current = false;
+      setInputReady(false);
+      setInitializationError(reported);
+      onErrorRef.current?.(reported);
+    };
     const attach = (lease: WorkerLease) => {
       renderer.detachWorker();
-      renderer.attachWorker(lease.worker, { skipInit: managedWorker });
       readyRendererRef.current = renderer;
+      renderer.attachWorker(lease.worker, {
+        skipInit: managedWorker,
+        onInitialized: () => {
+          if (cancelled || readyRendererRef.current !== renderer) return;
+          inputReadyRef.current = true;
+          setInitializationError(null);
+          setInputReady(true);
+        },
+        onInitializationError: (error) => {
+          if (!cancelled) reportError(error);
+        },
+      });
       workerReadyRef.current = true;
       setWorkerReady(true);
     };
@@ -174,9 +199,6 @@ export function useWorkerSession({
         activeInstanceRef.current = { lease, source: workerSource, engine, session, managedWorker };
         attach(lease);
       };
-      const reportError = (error: unknown) => {
-        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-      };
       try {
         const resolved = resolveWorkerSetup(engine, workerSource, () => cancelled, factories, managedWorker);
         if (resolved instanceof Promise) {
@@ -192,6 +214,8 @@ export function useWorkerSession({
       cancelled = true;
       setWorkerReady(false);
       workerReadyRef.current = false;
+      setInputReady(false);
+      inputReadyRef.current = false;
       if (readyRendererRef.current === renderer) readyRendererRef.current = null;
       renderer.detachWorker();
     };
@@ -202,5 +226,5 @@ export function useWorkerSession({
     activeInstanceRef.current = null;
   }, []);
 
-  return { workerReady, workerReadyRef, readyRendererRef };
+  return { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationError, readyRendererRef };
 }

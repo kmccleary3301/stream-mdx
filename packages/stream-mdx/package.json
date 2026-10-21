@@ -90,6 +90,16 @@
       "types": "./dist/plugins/tables.d.ts",
       "import": "./dist/plugins/tables.mjs",
       "require": "./dist/plugins/tables.cjs"
+    },
+    "./trusted-mdx/server": {
+      "types": "./dist/trusted-mdx/server.d.ts",
+      "import": "./dist/trusted-mdx/server.mjs",
+      "require": "./dist/trusted-mdx/server.cjs"
+    },
+    "./trusted-mdx": {
+      "types": "./dist/trusted-mdx.d.ts",
+      "import": "./dist/trusted-mdx.mjs",
+      "require": "./dist/trusted-mdx.cjs"
     }
   },
   "files": [

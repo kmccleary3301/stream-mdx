@@ -34,7 +34,6 @@ export interface ServeMarkdownWorkerOptions {
 }
 
 export type CodeHighlightingMode = "final" | "incremental" | "live";
-export type WorkerMdxMode = "server" | "worker";
 
 export interface ShikiTokenStyle {
   color?: string;
@@ -101,18 +100,14 @@ export interface ContentChangeRange {
   toB: number;
 }
 
-export interface MdxStatusUpdate {
-  compiledRef?: { id: string };
-  status: "compiled" | "error";
-  error?: string;
-  rawSignature?: string;
-}
 
 export interface ParseOptions {
   forceFinalize?: boolean;
   firstChangedPos?: number;
   previousBlocks?: Block[];
   sourceOffset?: number;
+  /** Nested reparses of one document keep the document's heading slug counts. */
+  continueHeadingIds?: boolean;
   admitRootCodeOwners?: boolean;
   admitRootTableOwners?: boolean;
   admitRootParagraphOwners?: boolean;

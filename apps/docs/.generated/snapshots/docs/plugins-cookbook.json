@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:43.738Z",
-  "hash": "3c118036d2cbab9ac4ceb4805ac6b6490dd92bece132e52931da1e98a2b91f3a",
-  "contentHash": "9c29527be8d79deb8511df7dbb5648bac666c432eb95df40e581f77126462047",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "createdAt": "2026-10-21T20:39:32.968Z",
+  "hash": "a2006ecaa50810853a3fe878870ed375e75f1b6c8676bf33ef7b161a7aea90f3",
+  "contentHash": "bc1e86440bc48db873c2f1203ed328e38dc4a5720824d3b2b697c8d60c51842d",
+  "configHash": "d64d46ce02762d98863946deda7988b7bcd8ea1dc64e6560ca32dea58f9aee58",
+  "hashSalt": "docs-snapshots-v3:a1af5d4ffe8abd279e6137ad50c87f390f5afe18b69fff05e82bf96e33ef3700",
   "blocks": [
     {
       "id": "db082c0",
@@ -96,7 +96,7 @@
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled.\n- How the worker is configured (`docPlugins`, `mdxCompileMode`).\n- How to keep MDX compilation parity (server vs worker).\n- Where “custom plugins” actually live in the architecture (worker bundle customization).",
+        "raw": "- How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled.\n- How the worker is configured (`docPlugins` and `contentPolicy`).\n- How restricted source components differ from full MDX evaluation.\n- How to opt into full MDX with an explicit trusted engine.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -128,11 +128,11 @@
               },
               {
                 "kind": "text",
-                "text": ", "
+                "text": " and "
               },
               {
                 "kind": "code",
-                "text": "mdxCompileMode"
+                "text": "contentPolicy"
               },
               {
                 "kind": "text",
@@ -142,13 +142,13 @@
             [
               {
                 "kind": "text",
-                "text": "How to keep MDX compilation parity (server vs worker)."
+                "text": "How restricted source components differ from full MDX evaluation."
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                "text": "How to opt into full MDX with an explicit trusted engine."
               }
             ]
           ],
@@ -222,7 +222,7 @@
                 "type": "list-item",
                 "range": {
                   "from": 274,
-                  "to": 338
+                  "to": 340
                 },
                 "props": {
                   "ordered": false,
@@ -232,7 +232,7 @@
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- How the worker is configured (`docPlugins`, `mdxCompileMode`).",
+                      "raw": "- How the worker is configured (`docPlugins` and `contentPolicy`).",
                       "inline": [
                         {
                           "kind": "text",
@@ -244,11 +244,11 @@
                         },
                         {
                           "kind": "text",
-                          "text": ", "
+                          "text": " and "
                         },
                         {
                           "kind": "code",
-                          "text": "mdxCompileMode"
+                          "text": "contentPolicy"
                         },
                         {
                           "kind": "text",
@@ -257,7 +257,7 @@
                       ],
                       "range": {
                         "from": 274,
-                        "to": 338
+                        "to": 340
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -277,19 +277,19 @@
                               },
                               {
                                 "kind": "text",
-                                "text": ", "
+                                "text": " and "
                               },
                               {
                                 "kind": "code",
-                                "text": "mdxCompileMode"
+                                "text": "contentPolicy"
                               },
                               {
                                 "kind": "text",
                                 "text": ")."
                               }
                             ],
-                            "text": "How the worker is configured (docPlugins, mdxCompileMode).",
-                            "raw": "- How the worker is configured (`docPlugins`, `mdxCompileMode`)."
+                            "text": "How the worker is configured (docPlugins and contentPolicy).",
+                            "raw": "- How the worker is configured (`docPlugins` and `contentPolicy`)."
                           },
                           "children": []
                         }
@@ -308,19 +308,19 @@
                     },
                     {
                       "kind": "text",
-                      "text": ", "
+                      "text": " and "
                     },
                     {
                       "kind": "code",
-                      "text": "mdxCompileMode"
+                      "text": "contentPolicy"
                     },
                     {
                       "kind": "text",
                       "text": ")."
                     }
                   ],
-                  "text": "How the worker is configured (docPlugins, mdxCompileMode).",
-                  "raw": "- How the worker is configured (`docPlugins`, `mdxCompileMode`)."
+                  "text": "How the worker is configured (docPlugins and contentPolicy).",
+                  "raw": "- How the worker is configured (`docPlugins` and `contentPolicy`)."
                 },
                 "children": []
               },
@@ -328,8 +328,8 @@
                 "id": "3438ec7e::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 339,
-                  "to": 395
+                  "from": 341,
+                  "to": 408
                 },
                 "props": {
                   "ordered": false,
@@ -339,16 +339,16 @@
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- How to keep MDX compilation parity (server vs worker).",
+                      "raw": "- How restricted source components differ from full MDX evaluation.",
                       "inline": [
                         {
                           "kind": "text",
-                          "text": "How to keep MDX compilation parity (server vs worker)."
+                          "text": "How restricted source components differ from full MDX evaluation."
                         }
                       ],
                       "range": {
-                        "from": 339,
-                        "to": 395
+                        "from": 341,
+                        "to": 408
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -360,11 +360,11 @@
                             "inline": [
                               {
                                 "kind": "text",
-                                "text": "How to keep MDX compilation parity (server vs worker)."
+                                "text": "How restricted source components differ from full MDX evaluation."
                               }
                             ],
-                            "text": "How to keep MDX compilation parity (server vs worker).",
-                            "raw": "- How to keep MDX compilation parity (server vs worker)."
+                            "text": "How restricted source components differ from full MDX evaluation.",
+                            "raw": "- How restricted source components differ from full MDX evaluation."
                           },
                           "children": []
                         }
@@ -375,11 +375,11 @@
                   "inline": [
                     {
                       "kind": "text",
-                      "text": "How to keep MDX compilation parity (server vs worker)."
+                      "text": "How restricted source components differ from full MDX evaluation."
                     }
                   ],
-                  "text": "How to keep MDX compilation parity (server vs worker).",
-                  "raw": "- How to keep MDX compilation parity (server vs worker)."
+                  "text": "How restricted source components differ from full MDX evaluation.",
+                  "raw": "- How restricted source components differ from full MDX evaluation."
                 },
                 "children": []
               },
@@ -387,8 +387,8 @@
                 "id": "3438ec7e::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 396,
-                  "to": 485
+                  "from": 409,
+                  "to": 468
                 },
                 "props": {
                   "ordered": false,
@@ -398,16 +398,16 @@
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- Where “custom plugins” actually live in the architecture (worker bundle customization).",
+                      "raw": "- How to opt into full MDX with an explicit trusted engine.",
                       "inline": [
                         {
                           "kind": "text",
-                          "text": "Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                          "text": "How to opt into full MDX with an explicit trusted engine."
                         }
                       ],
                       "range": {
-                        "from": 396,
-                        "to": 485
+                        "from": 409,
+                        "to": 468
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -419,11 +419,11 @@
                             "inline": [
                               {
                                 "kind": "text",
-                                "text": "Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                                "text": "How to opt into full MDX with an explicit trusted engine."
                               }
                             ],
-                            "text": "Where “custom plugins” actually live in the architecture (worker bundle customization).",
-                            "raw": "- Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                            "text": "How to opt into full MDX with an explicit trusted engine.",
+                            "raw": "- How to opt into full MDX with an explicit trusted engine."
                           },
                           "children": []
                         }
@@ -434,11 +434,11 @@
                   "inline": [
                     {
                       "kind": "text",
-                      "text": "Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                      "text": "How to opt into full MDX with an explicit trusted engine."
                     }
                   ],
-                  "text": "Where “custom plugins” actually live in the architecture (worker bundle customization).",
-                  "raw": "- Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                  "text": "How to opt into full MDX with an explicit trusted engine.",
+                  "raw": "- How to opt into full MDX with an explicit trusted engine."
                 },
                 "children": []
               }
@@ -447,22 +447,34 @@
         },
         "range": {
           "from": 189,
-          "to": 485
+          "to": 468
         }
       }
     },
     {
-      "id": "fad5025",
+      "id": "299fd8cb",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If you are looking for the top-level React API, start with `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 59,
+              "to": 79,
+              "kind": "code-inline"
+            },
+            {
+              "from": 84,
+              "to": 117,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 487,
-          "to": 605
+          "from": 470,
+          "to": 588
         },
         "inline": [
           {
@@ -489,7 +501,7 @@
       }
     },
     {
-      "id": "26df7ea9",
+      "id": "2818b258",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -498,13 +510,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 607,
-          "to": 610
+          "from": 590,
+          "to": 593
         }
       }
     },
     {
-      "id": "3d75b4e7",
+      "id": "7a9d821",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -516,8 +528,8 @@
           "headingId": "1-package-overview"
         },
         "range": {
-          "from": 612,
-          "to": 634
+          "from": 595,
+          "to": 617
         },
         "inline": [
           {
@@ -528,7 +540,7 @@
       }
     },
     {
-      "id": "11fbcf41",
+      "id": "3eb9633a",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -537,8 +549,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 636,
-          "to": 680
+          "from": 619,
+          "to": 663
         },
         "inline": [
           {
@@ -549,7 +561,7 @@
       }
     },
     {
-      "id": "38c4f87c",
+      "id": "628d1adf",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -596,17 +608,17 @@
             },
             "children": [
               {
-                "id": "38c4f87c::item:0",
+                "id": "628d1adf::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 682,
-                  "to": 714
+                  "from": 665,
+                  "to": 697
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "38c4f87c::item:0",
+                    "id": "628d1adf::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -622,8 +634,8 @@
                         }
                       ],
                       "range": {
-                        "from": 682,
-                        "to": 714
+                        "from": 665,
+                        "to": 697
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -667,17 +679,17 @@
                 "children": []
               },
               {
-                "id": "38c4f87c::item:1",
+                "id": "628d1adf::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 715,
-                  "to": 759
+                  "from": 698,
+                  "to": 742
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "38c4f87c::item:1",
+                    "id": "628d1adf::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -693,8 +705,8 @@
                         }
                       ],
                       "range": {
-                        "from": 715,
-                        "to": 759
+                        "from": 698,
+                        "to": 742
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -741,75 +753,30 @@
           }
         },
         "range": {
-          "from": 682,
-          "to": 759
+          "from": 665,
+          "to": 742
         }
       }
     },
     {
-      "id": "2f1c481a",
+      "id": "2198ea61",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Most apps do **not** need to import plugin registries directly. Start with `<StreamingMarkdown features={...} />`.",
         "meta": {
           "lezerNodeType": "Paragraph",
-          "mixedSegments": [
+          "protectedRanges": [
             {
-              "kind": "text",
-              "value": "Most apps do **not** need to import plugin registries directly. Start with `",
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "Most apps do "
-                },
-                {
-                  "kind": "strong",
-                  "children": [
-                    {
-                      "kind": "text",
-                      "text": "not"
-                    }
-                  ]
-                },
-                {
-                  "kind": "text",
-                  "text": " need to import plugin registries directly. Start with `"
-                }
-              ],
-              "range": {
-                "from": 761,
-                "to": 837
-              }
-            },
-            {
-              "kind": "mdx",
-              "value": "<StreamingMarkdown features={...} />",
-              "range": {
-                "from": 837,
-                "to": 873
-              },
-              "status": "pending"
-            },
-            {
-              "kind": "text",
-              "value": "`.",
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "`."
-                }
-              ],
-              "range": {
-                "from": 873,
-                "to": 875
-              }
+              "from": 75,
+              "to": 113,
+              "kind": "code-inline"
             }
           ]
         },
         "range": {
-          "from": 761,
-          "to": 875
+          "from": 744,
+          "to": 858
         },
         "inline": [
           {
@@ -841,7 +808,7 @@
       }
     },
     {
-      "id": "5d52db80",
+      "id": "77456426",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -850,8 +817,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 877,
-          "to": 987
+          "from": 860,
+          "to": 970
         },
         "inline": [
           {
@@ -875,7 +842,7 @@
       }
     },
     {
-      "id": "ad07a7a",
+      "id": "3607ad20",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -926,17 +893,17 @@
             },
             "children": [
               {
-                "id": "ad07a7a::item:0",
+                "id": "3607ad20::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 989,
-                  "to": 1020
+                  "from": 972,
+                  "to": 1003
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "ad07a7a::item:0",
+                    "id": "3607ad20::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -948,8 +915,8 @@
                         }
                       ],
                       "range": {
-                        "from": 989,
-                        "to": 1020
+                        "from": 972,
+                        "to": 1003
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -985,17 +952,17 @@
                 "children": []
               },
               {
-                "id": "ad07a7a::item:1",
+                "id": "3607ad20::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1021,
-                  "to": 1050
+                  "from": 1004,
+                  "to": 1033
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "ad07a7a::item:1",
+                    "id": "3607ad20::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1007,8 +974,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1021,
-                        "to": 1050
+                        "from": 1004,
+                        "to": 1033
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1044,17 +1011,17 @@
                 "children": []
               },
               {
-                "id": "ad07a7a::item:2",
+                "id": "3607ad20::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 1051,
-                  "to": 1078
+                  "from": 1034,
+                  "to": 1061
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "ad07a7a::item:2",
+                    "id": "3607ad20::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1066,8 +1033,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1051,
-                        "to": 1078
+                        "from": 1034,
+                        "to": 1061
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1103,17 +1070,17 @@
                 "children": []
               },
               {
-                "id": "ad07a7a::item:3",
+                "id": "3607ad20::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 1079,
-                  "to": 1105
+                  "from": 1062,
+                  "to": 1088
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "ad07a7a::item:3",
+                    "id": "3607ad20::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1125,8 +1092,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1079,
-                        "to": 1105
+                        "from": 1062,
+                        "to": 1088
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1165,23 +1132,30 @@
           }
         },
         "range": {
-          "from": 989,
-          "to": 1105
+          "from": 972,
+          "to": 1088
         }
       }
     },
     {
-      "id": "4aaad699",
+      "id": "62ff00a",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Scoped equivalents are available at `@stream-mdx/plugins/*`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 36,
+              "to": 59,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 1107,
-          "to": 1167
+          "from": 1090,
+          "to": 1150
         },
         "inline": [
           {
@@ -1200,7 +1174,7 @@
       }
     },
     {
-      "id": "44162091",
+      "id": "4404da77",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -1209,13 +1183,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 1169,
-          "to": 1172
+          "from": 1152,
+          "to": 1155
         }
       }
     },
     {
-      "id": "6e7f5103",
+      "id": "65bb19c2",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1227,8 +1201,8 @@
           "headingId": "2-built-in-plugin-domains-most-common-path"
         },
         "range": {
-          "from": 1174,
-          "to": 1224
+          "from": 1157,
+          "to": 1207
         },
         "inline": [
           {
@@ -1239,64 +1213,29 @@
       }
     },
     {
-      "id": "1e56c7e5",
+      "id": "325e6a96",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Built-in capabilities are toggled via `features` on `<StreamingMarkdown />`:",
         "meta": {
           "lezerNodeType": "Paragraph",
-          "mixedSegments": [
+          "protectedRanges": [
             {
-              "kind": "text",
-              "value": "Built-in capabilities are toggled via `features` on `",
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "Built-in capabilities are toggled via "
-                },
-                {
-                  "kind": "code",
-                  "text": "features"
-                },
-                {
-                  "kind": "text",
-                  "text": " on `"
-                }
-              ],
-              "range": {
-                "from": 1226,
-                "to": 1279
-              }
+              "from": 38,
+              "to": 48,
+              "kind": "code-inline"
             },
             {
-              "kind": "mdx",
-              "value": "<StreamingMarkdown />",
-              "range": {
-                "from": 1279,
-                "to": 1300
-              },
-              "status": "pending"
-            },
-            {
-              "kind": "text",
-              "value": "`:",
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "`:"
-                }
-              ],
-              "range": {
-                "from": 1300,
-                "to": 1302
-              }
+              "from": 52,
+              "to": 75,
+              "kind": "code-inline"
             }
           ]
         },
         "range": {
-          "from": 1226,
-          "to": 1302
+          "from": 1209,
+          "to": 1285
         },
         "inline": [
           {
@@ -1323,27 +1262,27 @@
       }
     },
     {
-      "id": "3613d7f4",
+      "id": "7a830efa",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\n\n<StreamingMarkdown\n  text={text}\n  worker=\"/workers/markdown-worker.js\"\n  features={{\n    tables: true,\n    html: true,\n    mdx: true,\n    math: true,\n    footnotes: true,\n    callouts: false,\n  }}\n  mdxCompileMode=\"worker\"\n/>;\n```",
+        "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\n\n<StreamingMarkdown\n  text={text}\n  worker=\"/workers/markdown-worker.js\"\n  features={{\n    tables: true,\n    html: true,\n    mdx: true,\n    math: true,\n    footnotes: true,\n    callouts: false,\n  }}\n/>;\n```",
         "meta": {
           "lezerNodeType": "FencedCode",
-          "code": "import { StreamingMarkdown } from \"stream-mdx\";\n\n<StreamingMarkdown\n  text={text}\n  worker=\"/workers/markdown-worker.js\"\n  features={{\n    tables: true,\n    html: true,\n    mdx: true,\n    math: true,\n    footnotes: true,\n    callouts: false,\n  }}\n  mdxCompileMode=\"worker\"\n/>;",
+          "code": "import { StreamingMarkdown } from \"stream-mdx\";\n\n<StreamingMarkdown\n  text={text}\n  worker=\"/workers/markdown-worker.js\"\n  features={{\n    tables: true,\n    html: true,\n    mdx: true,\n    math: true,\n    footnotes: true,\n    callouts: false,\n  }}\n/>;",
           "info": "tsx",
           "lang": "tsx",
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 1304,
-          "to": 1591
+          "from": 1287,
+          "to": 1548
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
       }
     },
     {
-      "id": "610d48be",
+      "id": "7c676501",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1352,8 +1291,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1593,
-          "to": 1599
+          "from": 1550,
+          "to": 1556
         },
         "inline": [
           {
@@ -1364,11 +1303,11 @@
       }
     },
     {
-      "id": "10da0f2a",
+      "id": "644a276b",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- `features` configures both the worker and the renderer.\n- `mdxCompileMode` enables MDX compilation/hydration and selects `\"server\"` vs `\"worker\"`.",
+        "raw": "- `features` configures parsing and renderer behavior.\n- `contentPolicy` defaults to `\"restricted\"`; `features.mdx` alone does not evaluate authored source.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -1390,33 +1329,33 @@
               },
               {
                 "kind": "text",
-                "text": " configures both the worker and the renderer."
+                "text": " configures parsing and renderer behavior."
               }
             ],
             [
               {
                 "kind": "code",
-                "text": "mdxCompileMode"
+                "text": "contentPolicy"
               },
               {
                 "kind": "text",
-                "text": " enables MDX compilation/hydration and selects "
+                "text": " defaults to "
               },
               {
                 "kind": "code",
-                "text": "\"server\""
+                "text": "\"restricted\""
               },
               {
                 "kind": "text",
-                "text": " vs "
+                "text": "; "
               },
               {
                 "kind": "code",
-                "text": "\"worker\""
+                "text": "features.mdx"
               },
               {
                 "kind": "text",
-                "text": "."
+                "text": " alone does not evaluate authored source."
               }
             ]
           ],
@@ -1427,21 +1366,21 @@
             },
             "children": [
               {
-                "id": "10da0f2a::item:0",
+                "id": "644a276b::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1601,
-                  "to": 1658
+                  "from": 1558,
+                  "to": 1612
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "10da0f2a::item:0",
+                    "id": "644a276b::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- `features` configures both the worker and the renderer.",
+                      "raw": "- `features` configures parsing and renderer behavior.",
                       "inline": [
                         {
                           "kind": "code",
@@ -1449,12 +1388,12 @@
                         },
                         {
                           "kind": "text",
-                          "text": " configures both the worker and the renderer."
+                          "text": " configures parsing and renderer behavior."
                         }
                       ],
                       "range": {
-                        "from": 1601,
-                        "to": 1658
+                        "from": 1558,
+                        "to": 1612
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1470,11 +1409,11 @@
                               },
                               {
                                 "kind": "text",
-                                "text": " configures both the worker and the renderer."
+                                "text": " configures parsing and renderer behavior."
                               }
                             ],
-                            "text": "features configures both the worker and the renderer.",
-                            "raw": "- `features` configures both the worker and the renderer."
+                            "text": "features configures parsing and renderer behavior.",
+                            "raw": "- `features` configures parsing and renderer behavior."
                           },
                           "children": []
                         }
@@ -1489,59 +1428,59 @@
                     },
                     {
                       "kind": "text",
-                      "text": " configures both the worker and the renderer."
+                      "text": " configures parsing and renderer behavior."
                     }
                   ],
-                  "text": "features configures both the worker and the renderer.",
-                  "raw": "- `features` configures both the worker and the renderer."
+                  "text": "features configures parsing and renderer behavior.",
+                  "raw": "- `features` configures parsing and renderer behavior."
                 },
                 "children": []
               },
               {
-                "id": "10da0f2a::item:1",
+                "id": "644a276b::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1659,
-                  "to": 1749
+                  "from": 1613,
+                  "to": 1714
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "10da0f2a::item:1",
+                    "id": "644a276b::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- `mdxCompileMode` enables MDX compilation/hydration and selects `\"server\"` vs `\"worker\"`.",
+                      "raw": "- `contentPolicy` defaults to `\"restricted\"`; `features.mdx` alone does not evaluate authored source.",
                       "inline": [
                         {
                           "kind": "code",
-                          "text": "mdxCompileMode"
+                          "text": "contentPolicy"
                         },
                         {
                           "kind": "text",
-                          "text": " enables MDX compilation/hydration and selects "
+                          "text": " defaults to "
                         },
                         {
                           "kind": "code",
-                          "text": "\"server\""
+                          "text": "\"restricted\""
                         },
                         {
                           "kind": "text",
-                          "text": " vs "
+                          "text": "; "
                         },
                         {
                           "kind": "code",
-                          "text": "\"worker\""
+                          "text": "features.mdx"
                         },
                         {
                           "kind": "text",
-                          "text": "."
+                          "text": " alone does not evaluate authored source."
                         }
                       ],
                       "range": {
-                        "from": 1659,
-                        "to": 1749
+                        "from": 1613,
+                        "to": 1714
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1553,31 +1492,31 @@
                             "inline": [
                               {
                                 "kind": "code",
-                                "text": "mdxCompileMode"
+                                "text": "contentPolicy"
                               },
                               {
                                 "kind": "text",
-                                "text": " enables MDX compilation/hydration and selects "
+                                "text": " defaults to "
                               },
                               {
                                 "kind": "code",
-                                "text": "\"server\""
+                                "text": "\"restricted\""
                               },
                               {
                                 "kind": "text",
-                                "text": " vs "
+                                "text": "; "
                               },
                               {
                                 "kind": "code",
-                                "text": "\"worker\""
+                                "text": "features.mdx"
                               },
                               {
                                 "kind": "text",
-                                "text": "."
+                                "text": " alone does not evaluate authored source."
                               }
                             ],
-                            "text": "mdxCompileMode enables MDX compilation/hydration and selects \"server\" vs \"worker\".",
-                            "raw": "- `mdxCompileMode` enables MDX compilation/hydration and selects `\"server\"` vs `\"worker\"`."
+                            "text": "contentPolicy defaults to \"restricted\"; features.mdx alone does not evaluate authored source.",
+                            "raw": "- `contentPolicy` defaults to `\"restricted\"`; `features.mdx` alone does not evaluate authored source."
                           },
                           "children": []
                         }
@@ -1588,31 +1527,31 @@
                   "inline": [
                     {
                       "kind": "code",
-                      "text": "mdxCompileMode"
+                      "text": "contentPolicy"
                     },
                     {
                       "kind": "text",
-                      "text": " enables MDX compilation/hydration and selects "
+                      "text": " defaults to "
                     },
                     {
                       "kind": "code",
-                      "text": "\"server\""
+                      "text": "\"restricted\""
                     },
                     {
                       "kind": "text",
-                      "text": " vs "
+                      "text": "; "
                     },
                     {
                       "kind": "code",
-                      "text": "\"worker\""
+                      "text": "features.mdx"
                     },
                     {
                       "kind": "text",
-                      "text": "."
+                      "text": " alone does not evaluate authored source."
                     }
                   ],
-                  "text": "mdxCompileMode enables MDX compilation/hydration and selects \"server\" vs \"worker\".",
-                  "raw": "- `mdxCompileMode` enables MDX compilation/hydration and selects `\"server\"` vs `\"worker\"`."
+                  "text": "contentPolicy defaults to \"restricted\"; features.mdx alone does not evaluate authored source.",
+                  "raw": "- `contentPolicy` defaults to `\"restricted\"`; `features.mdx` alone does not evaluate authored source."
                 },
                 "children": []
               }
@@ -1620,13 +1559,13 @@
           }
         },
         "range": {
-          "from": 1601,
-          "to": 1749
+          "from": 1558,
+          "to": 1714
         }
       }
     },
     {
-      "id": "4e4179d2",
+      "id": "4e0b61a9",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -1635,13 +1574,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 1751,
-          "to": 1754
+          "from": 1716,
+          "to": 1719
         }
       }
     },
     {
-      "id": "4ed2db47",
+      "id": "735fa31b",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1653,8 +1592,8 @@
           "headingId": "3-manual-worker-initialization-docplugins"
         },
         "range": {
-          "from": 1756,
-          "to": 1805
+          "from": 1721,
+          "to": 1770
         },
         "inline": [
           {
@@ -1673,56 +1612,24 @@
       }
     },
     {
-      "id": "3aea56ee",
+      "id": "6634a7bf",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If you are not using `<StreamingMarkdown />` (e.g. you build a custom renderer loop), initialize the worker with matching flags:",
         "meta": {
           "lezerNodeType": "Paragraph",
-          "mixedSegments": [
+          "protectedRanges": [
             {
-              "kind": "text",
-              "value": "If you are not using `",
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "If you are not using `"
-                }
-              ],
-              "range": {
-                "from": 1807,
-                "to": 1829
-              }
-            },
-            {
-              "kind": "mdx",
-              "value": "<StreamingMarkdown />",
-              "range": {
-                "from": 1829,
-                "to": 1850
-              },
-              "status": "pending"
-            },
-            {
-              "kind": "text",
-              "value": "` (e.g. you build a custom renderer loop), initialize the worker with matching flags:",
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "` (e.g. you build a custom renderer loop), initialize the worker with matching flags:"
-                }
-              ],
-              "range": {
-                "from": 1850,
-                "to": 1935
-              }
+              "from": 21,
+              "to": 44,
+              "kind": "code-inline"
             }
           ]
         },
         "range": {
-          "from": 1807,
-          "to": 1935
+          "from": 1772,
+          "to": 1900
         },
         "inline": [
           {
@@ -1741,42 +1648,69 @@
       }
     },
     {
-      "id": "492c20ce",
+      "id": "5e0ecc10",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```ts\nworker.postMessage({\n  type: \"INIT\",\n  initialContent: \"\",\n  prewarmLangs: [\"typescript\", \"bash\"],\n  docPlugins: {\n    footnotes: true,\n    html: true,\n    mdx: true,\n    tables: true,\n    callouts: false,\n    math: true,\n  },\n  mdx: { compileMode: \"worker\" },\n});\n```",
+        "raw": "```ts\nworker.postMessage({\n  type: \"INIT\",\n  initialContent: \"\",\n  prewarmLangs: [\"typescript\", \"bash\"],\n  docPlugins: {\n    footnotes: true,\n    html: true,\n    mdx: true,\n    tables: true,\n    callouts: false,\n    math: true,\n  },\n  contentPolicy: \"restricted\",\n});\n```",
         "meta": {
           "lezerNodeType": "FencedCode",
-          "code": "worker.postMessage({\n  type: \"INIT\",\n  initialContent: \"\",\n  prewarmLangs: [\"typescript\", \"bash\"],\n  docPlugins: {\n    footnotes: true,\n    html: true,\n    mdx: true,\n    tables: true,\n    callouts: false,\n    math: true,\n  },\n  mdx: { compileMode: \"worker\" },\n});",
+          "code": "worker.postMessage({\n  type: \"INIT\",\n  initialContent: \"\",\n  prewarmLangs: [\"typescript\", \"bash\"],\n  docPlugins: {\n    footnotes: true,\n    html: true,\n    mdx: true,\n    tables: true,\n    callouts: false,\n    math: true,\n  },\n  contentPolicy: \"restricted\",\n});",
           "info": "ts",
           "lang": "ts",
           "highlightLang": "typescript"
         },
         "range": {
-          "from": 1937,
-          "to": 2211
+          "from": 1902,
+          "to": 2173
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">worker.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">postMessage</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  type: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"INIT\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  initialContent: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  prewarmLangs: [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"typescript\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"bash\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">],</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  docPlugins: {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  },</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  mdx: { compileMode: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">});</span></span></code></pre>"
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">worker.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">postMessage</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  type: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"INIT\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  initialContent: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  prewarmLangs: [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"typescript\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"bash\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">],</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  docPlugins: {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  },</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  contentPolicy: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"restricted\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">});</span></span></code></pre>"
       }
     },
     {
-      "id": "39d4d3e2",
+      "id": "5cbaece3",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "The hosted worker bundle already includes StreamMDX’s built-in implementations for those domains. `docPlugins` controls what is enabled during parsing/aggregation.",
+        "raw": "The hosted worker bundle includes the built-in implementations for those domains. `docPlugins` controls parsing and aggregation. `contentPolicy` defaults to `\"restricted\"`; worker parsing does not evaluate authored MDX. In restricted mode, host registrations are created with `defineContentComponent`; only serializable names and render conditions cross `INIT`, never validators or component functions. Native projected children remain host React nodes.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 82,
+              "to": 94,
+              "kind": "code-inline"
+            },
+            {
+              "from": 129,
+              "to": 144,
+              "kind": "code-inline"
+            },
+            {
+              "from": 157,
+              "to": 171,
+              "kind": "code-inline"
+            },
+            {
+              "from": 276,
+              "to": 300,
+              "kind": "code-inline"
+            },
+            {
+              "from": 354,
+              "to": 360,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 2213,
-          "to": 2376
+          "from": 2175,
+          "to": 2628
         },
         "inline": [
           {
             "kind": "text",
-            "text": "The hosted worker bundle already includes StreamMDX’s built-in implementations for those domains. "
+            "text": "The hosted worker bundle includes the built-in implementations for those domains. "
           },
           {
             "kind": "code",
@@ -1784,13 +1718,45 @@
           },
           {
             "kind": "text",
-            "text": " controls what is enabled during parsing/aggregation."
+            "text": " controls parsing and aggregation. "
+          },
+          {
+            "kind": "code",
+            "text": "contentPolicy"
+          },
+          {
+            "kind": "text",
+            "text": " defaults to "
+          },
+          {
+            "kind": "code",
+            "text": "\"restricted\""
+          },
+          {
+            "kind": "text",
+            "text": "; worker parsing does not evaluate authored MDX. In restricted mode, host registrations are created with "
+          },
+          {
+            "kind": "code",
+            "text": "defineContentComponent"
+          },
+          {
+            "kind": "text",
+            "text": "; only serializable names and render conditions cross "
+          },
+          {
+            "kind": "code",
+            "text": "INIT"
+          },
+          {
+            "kind": "text",
+            "text": ", never validators or component functions. Native projected children remain host React nodes."
           }
         ]
       }
     },
     {
-      "id": "7c73b032",
+      "id": "7ea9c6ed",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -1799,172 +1765,226 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 2378,
-          "to": 2381
+          "from": 2630,
+          "to": 2633
         }
       }
     },
     {
-      "id": "2300bbfc",
+      "id": "44c87ca6",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "4) MDX parity (server vs worker)",
+        "raw": "4) Full MDX for trusted source",
         "meta": {
           "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
-          "headingText": "4) MDX parity (server vs worker)",
-          "headingId": "4-mdx-parity-server-vs-worker"
+          "headingText": "4) Full MDX for trusted source",
+          "headingId": "4-full-mdx-for-trusted-source"
         },
         "range": {
-          "from": 2383,
-          "to": 2418
+          "from": 2635,
+          "to": 2668
         },
         "inline": [
           {
             "kind": "text",
-            "text": "4) MDX parity (server vs worker)"
+            "text": "4) Full MDX for trusted source"
           }
         ]
       }
     },
     {
-      "id": "5fde6e00",
+      "id": "635cb5dd",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "StreamMDX is designed to keep server and worker compilation **equivalent**. For server compilation, use:",
+        "raw": "`features.mdx` enables component syntax parsing, not automatic evaluation. Restricted source can use host `defineContentComponent` registrations in `contentComponents`. For full MDX, create an explicit engine and pass it through the React integration:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 14,
+              "kind": "code-inline"
+            },
+            {
+              "from": 106,
+              "to": 130,
+              "kind": "code-inline"
+            },
+            {
+              "from": 148,
+              "to": 167,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 2420,
-          "to": 2524
+          "from": 2670,
+          "to": 2921
         },
         "inline": [
           {
-            "kind": "text",
-            "text": "StreamMDX is designed to keep server and worker compilation "
-          },
-          {
-            "kind": "strong",
-            "children": [
-              {
-                "kind": "text",
-                "text": "equivalent"
-              }
-            ]
+            "kind": "code",
+            "text": "features.mdx"
           },
           {
             "kind": "text",
-            "text": ". For server compilation, use:"
+            "text": " enables component syntax parsing, not automatic evaluation. Restricted source can use host "
+          },
+          {
+            "kind": "code",
+            "text": "defineContentComponent"
+          },
+          {
+            "kind": "text",
+            "text": " registrations in "
+          },
+          {
+            "kind": "code",
+            "text": "contentComponents"
+          },
+          {
+            "kind": "text",
+            "text": ". For full MDX, create an explicit engine and pass it through the React integration:"
           }
         ]
       }
     },
     {
-      "id": "750c873",
+      "id": "5e490dee",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```ts\nimport { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";\n```",
+        "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\nimport { createTrustedMdxEngine } from \"@stream-mdx/react/trusted-mdx\";\nimport { Callout } from \"./Callout\";\n\nconst hostWidgets = { Callout };\nconst mdxEngine = createTrustedMdxEngine({\n  components: hostWidgets,\n  imports: { \"host:widgets\": hostWidgets },\n});\n\n<StreamingMarkdown\n  text={trustedContent}\n  features={{ mdx: true }}\n  contentPolicy=\"trusted-mdx\"\n  engines={{ mdx: mdxEngine }}\n/>;\n```",
         "meta": {
           "lezerNodeType": "FencedCode",
-          "code": "import { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";",
-          "info": "ts",
-          "lang": "ts",
-          "highlightLang": "typescript"
+          "code": "import { StreamingMarkdown } from \"stream-mdx\";\nimport { createTrustedMdxEngine } from \"@stream-mdx/react/trusted-mdx\";\nimport { Callout } from \"./Callout\";\n\nconst hostWidgets = { Callout };\nconst mdxEngine = createTrustedMdxEngine({\n  components: hostWidgets,\n  imports: { \"host:widgets\": hostWidgets },\n});\n\n<StreamingMarkdown\n  text={trustedContent}\n  features={{ mdx: true }}\n  contentPolicy=\"trusted-mdx\"\n  engines={{ mdx: mdxEngine }}\n/>;",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
         },
         "range": {
-          "from": 2526,
-          "to": 2602
+          "from": 2923,
+          "to": 3378
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMdxContent } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/mdx-compile\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre>"
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { createTrustedMdxEngine } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react/trusted-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { Callout } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"./Callout\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> hostWidgets</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { Callout };</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> mdxEngine</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> createTrustedMdxEngine</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  components: hostWidgets,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  imports: { </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"host:widgets\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: hostWidgets },</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">});</span></span>\n<span class=\"line\" data-line=\"10\"></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{trustedContent}</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  contentPolicy</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"trusted-mdx\"</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  engines</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: mdxEngine }}</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
       }
     },
     {
-      "id": "7eec04b8",
+      "id": "7e9ceea8",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "This is the same pipeline used by the worker compilation path (remark/rehype stack + `@mdx-js/mdx` output as `function-body`).",
+        "raw": "The trusted engine evaluates authored code in the host realm. Use it only for reviewed, trusted input; it is not a sandbox. See `docs/SECURITY_MODEL.md` for CSP requirements and limitations.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 128,
+              "to": 152,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 2604,
-          "to": 2730
+          "from": 3380,
+          "to": 3570
         },
         "inline": [
           {
             "kind": "text",
-            "text": "This is the same pipeline used by the worker compilation path (remark/rehype stack + "
+            "text": "The trusted engine evaluates authored code in the host realm. Use it only for reviewed, trusted input; it is not a sandbox. See "
           },
           {
             "kind": "code",
-            "text": "@mdx-js/mdx"
+            "text": "docs/SECURITY_MODEL.md"
           },
           {
             "kind": "text",
-            "text": " output as "
-          },
-          {
-            "kind": "code",
-            "text": "function-body"
-          },
-          {
-            "kind": "text",
-            "text": ")."
+            "text": " for CSP requirements and limitations."
           }
         ]
       }
     },
     {
-      "id": "1cdfe264",
-      "type": "heading",
+      "id": "7f7f2183",
+      "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "Next.js route example",
+        "raw": "The explicit import map resolves authored specifiers only to supplied host bindings; no modules are fetched. Trusted evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox. Native worker `FINALIZED` does not imply trusted projection or host render commit readiness. See `docs/SECURITY_MODEL.md` for the lease, stale-work, and CSP boundaries.",
         "meta": {
-          "lezerNodeType": "ATXHeading3",
-          "headingLevel": 3,
-          "headingText": "Next.js route example",
-          "headingId": "next-js-route-example"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 161,
+              "to": 174,
+              "kind": "code-inline"
+            },
+            {
+              "from": 178,
+              "to": 190,
+              "kind": "code-inline"
+            },
+            {
+              "from": 228,
+              "to": 239,
+              "kind": "code-inline"
+            },
+            {
+              "from": 311,
+              "to": 335,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 2732,
-          "to": 2757
+          "from": 3572,
+          "to": 3954
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Next.js route example"
+            "text": "The explicit import map resolves authored specifiers only to supplied host bindings; no modules are fetched. Trusted evaluation runs in the host realm, requires "
+          },
+          {
+            "kind": "code",
+            "text": "unsafe-eval"
+          },
+          {
+            "kind": "text",
+            "text": " in "
+          },
+          {
+            "kind": "code",
+            "text": "script-src"
+          },
+          {
+            "kind": "text",
+            "text": ", and is not a sandbox. Native worker "
+          },
+          {
+            "kind": "code",
+            "text": "FINALIZED"
+          },
+          {
+            "kind": "text",
+            "text": " does not imply trusted projection or host render commit readiness. See "
+          },
+          {
+            "kind": "code",
+            "text": "docs/SECURITY_MODEL.md"
+          },
+          {
+            "kind": "text",
+            "text": " for the lease, stale-work, and CSP boundaries."
           }
         ]
       }
     },
     {
-      "id": "7ae45dd1",
-      "type": "code",
-      "isFinalized": true,
-      "payload": {
-        "raw": "```ts\nimport { NextRequest, NextResponse } from \"next/server\";\nimport { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";\n\nexport async function POST(request: NextRequest) {\n  const { content, blockId } = await request.json();\n  const compiled = await compileMdxContent(content);\n  return NextResponse.json({\n    id: blockId,\n    code: compiled.code,\n    dependencies: compiled.dependencies,\n  });\n}\n```",
-        "meta": {
-          "lezerNodeType": "FencedCode",
-          "code": "import { NextRequest, NextResponse } from \"next/server\";\nimport { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";\n\nexport async function POST(request: NextRequest) {\n  const { content, blockId } = await request.json();\n  const compiled = await compileMdxContent(content);\n  return NextResponse.json({\n    id: blockId,\n    code: compiled.code,\n    dependencies: compiled.dependencies,\n  });\n}",
-          "info": "ts",
-          "lang": "ts",
-          "highlightLang": "typescript"
-        },
-        "range": {
-          "from": 2759,
-          "to": 3170
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { NextRequest, NextResponse } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"next/server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMdxContent } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/mdx-compile\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> async</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> POST</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">request</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> NextRequest</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">content</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">blockId</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> request.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">json</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">();</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> compiled</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> compileMdxContent</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(content);</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> NextResponse.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">json</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    id: blockId,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    code: compiled.code,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    dependencies: compiled.dependencies,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  });</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>"
-      }
-    },
-    {
-      "id": "52128005",
+      "id": "44861893",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -1973,13 +1993,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 3172,
-          "to": 3175
+          "from": 3956,
+          "to": 3959
         }
       }
     },
     {
-      "id": "5db146be",
+      "id": "690d2e5f",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1991,8 +2011,8 @@
           "headingId": "5-tables-shadcn-wrappers"
         },
         "range": {
-          "from": 3177,
-          "to": 3207
+          "from": 3961,
+          "to": 3991
         },
         "inline": [
           {
@@ -2003,7 +2023,7 @@
       }
     },
     {
-      "id": "6ea2d758",
+      "id": "212b0a00",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2012,8 +2032,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3209,
-          "to": 3291
+          "from": 3993,
+          "to": 4075
         },
         "inline": [
           {
@@ -2024,7 +2044,7 @@
       }
     },
     {
-      "id": "2ee13a3f",
+      "id": "32a7c6fe",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -2037,14 +2057,14 @@
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 3293,
-          "to": 3649
+          "from": 4077,
+          "to": 4433
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@/components/ui/table\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> tableElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Table,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Thead: TableHeader,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Tbody: TableBody,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Tr: TableRow,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Th: TableHead,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Td: TableCell,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"12\"></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">tableElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{tableElements} />;</span></span></code></pre>"
       }
     },
     {
-      "id": "49a6e84b",
+      "id": "1844bbce",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -2053,13 +2073,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 3651,
-          "to": 3654
+          "from": 4435,
+          "to": 4438
         }
       }
     },
     {
-      "id": "36ae8cbc",
+      "id": "3955a7fc",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2071,8 +2091,8 @@
           "headingId": "6-custom-plugins-custom-syntax"
         },
         "range": {
-          "from": 3656,
-          "to": 3694
+          "from": 4440,
+          "to": 4478
         },
         "inline": [
           {
@@ -2083,7 +2103,7 @@
       }
     },
     {
-      "id": "2e060540",
+      "id": "51c3e178",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2092,8 +2112,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3696,
-          "to": 3843
+          "from": 4480,
+          "to": 4627
         },
         "inline": [
           {
@@ -2117,7 +2137,7 @@
       }
     },
     {
-      "id": "c5ce5da",
+      "id": "3caa5709",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2126,8 +2146,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3845,
-          "to": 3873
+          "from": 4629,
+          "to": 4657
         },
         "inline": [
           {
@@ -2138,7 +2158,7 @@
       }
     },
     {
-      "id": "609029d9",
+      "id": "3de6d4ea",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -2207,17 +2227,17 @@
             },
             "children": [
               {
-                "id": "609029d9::item:0",
+                "id": "3de6d4ea::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3875,
-                  "to": 3947
+                  "from": 4659,
+                  "to": 4731
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "609029d9::item:0",
+                    "id": "3de6d4ea::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2229,8 +2249,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3875,
-                        "to": 3947
+                        "from": 4659,
+                        "to": 4731
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2266,17 +2286,17 @@
                 "children": []
               },
               {
-                "id": "609029d9::item:1",
+                "id": "3de6d4ea::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 3948,
-                  "to": 3993
+                  "from": 4732,
+                  "to": 4777
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "609029d9::item:1",
+                    "id": "3de6d4ea::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2296,8 +2316,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3948,
-                        "to": 3993
+                        "from": 4732,
+                        "to": 4777
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2349,17 +2369,17 @@
                 "children": []
               },
               {
-                "id": "609029d9::item:2",
+                "id": "3de6d4ea::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 3994,
-                  "to": 4060
+                  "from": 4778,
+                  "to": 4844
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "609029d9::item:2",
+                    "id": "3de6d4ea::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2387,8 +2407,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3994,
-                        "to": 4060
+                        "from": 4778,
+                        "to": 4844
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2459,23 +2479,35 @@
           }
         },
         "range": {
-          "from": 3875,
-          "to": 4060
+          "from": 4659,
+          "to": 4844
         }
       }
     },
     {
-      "id": "4de21dc8",
+      "id": "6a659686",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If you control the worker bundle, plugin primitives live under `@stream-mdx/plugins/document` (and native extensions via `docs/PLUGIN_ABI.md`).",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 63,
+              "to": 93,
+              "kind": "code-inline"
+            },
+            {
+              "from": 121,
+              "to": 141,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 4062,
-          "to": 4205
+          "from": 4846,
+          "to": 4989
         },
         "inline": [
           {
@@ -2502,7 +2534,7 @@
       }
     },
     {
-      "id": "1bd7cad1",
+      "id": "f69c529",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -2511,13 +2543,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 4207,
-          "to": 4210
+          "from": 4991,
+          "to": 4994
         }
       }
     },
     {
-      "id": "5b38cd1f",
+      "id": "60d6f562",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2529,8 +2561,8 @@
           "headingId": "7-tree-shaking-and-bundle-size"
         },
         "range": {
-          "from": 4212,
-          "to": 4246
+          "from": 4996,
+          "to": 5030
         },
         "inline": [
           {
@@ -2541,17 +2573,29 @@
       }
     },
     {
-      "id": "2e32afe",
+      "id": "7ce6bbba",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If you import plugin utilities in your app code, prefer subpath imports (`stream-mdx/plugins/tables`) over the root barrel (`stream-mdx/plugins`) so bundlers can exclude unused modules.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 73,
+              "to": 100,
+              "kind": "code-inline"
+            },
+            {
+              "from": 124,
+              "to": 144,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 4248,
-          "to": 4433
+          "from": 5032,
+          "to": 5217
         },
         "inline": [
           {
@@ -2578,7 +2622,7 @@
       }
     },
     {
-      "id": "13c32462",
+      "id": "5cca6145",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2587,8 +2631,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4435,
-          "to": 4454
+          "from": 5219,
+          "to": 5238
         },
         "inline": [
           {
@@ -2599,7 +2643,7 @@
       }
     },
     {
-      "id": "12c7b885",
+      "id": "72970dc3",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -2658,17 +2702,17 @@
             },
             "children": [
               {
-                "id": "12c7b885::item:0",
+                "id": "72970dc3::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 4456,
-                  "to": 4530
+                  "from": 5240,
+                  "to": 5314
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "12c7b885::item:0",
+                    "id": "72970dc3::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2700,8 +2744,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4456,
-                        "to": 4530
+                        "from": 5240,
+                        "to": 5314
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2777,17 +2821,17 @@
                 "children": []
               },
               {
-                "id": "12c7b885::item:1",
+                "id": "72970dc3::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 4531,
-                  "to": 4650
+                  "from": 5315,
+                  "to": 5434
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "12c7b885::item:1",
+                    "id": "72970dc3::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2799,8 +2843,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4531,
-                        "to": 4650
+                        "from": 5315,
+                        "to": 5434
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2839,13 +2883,13 @@
           }
         },
         "range": {
-          "from": 4456,
-          "to": 4650
+          "from": 5240,
+          "to": 5434
         }
       }
     },
     {
-      "id": "14c038ab",
+      "id": "1ca1f3d2",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -2854,13 +2898,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 4652,
-          "to": 4655
+          "from": 5436,
+          "to": 5439
         }
       }
     },
     {
-      "id": "654787a4",
+      "id": "2ab443a4",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2872,8 +2916,8 @@
           "headingId": "8-troubleshooting"
         },
         "range": {
-          "from": 4657,
-          "to": 4678
+          "from": 5441,
+          "to": 5462
         },
         "inline": [
           {
@@ -2884,11 +2928,11 @@
       }
     },
     {
-      "id": "51703f42",
+      "id": "4d06bf81",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`).\n- **Worker fails under strict CSP**: host the worker bundle and use `worker=\"/workers/markdown-worker.js\"` (avoid `blob:`).\n- **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes).\n- **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps.",
+        "raw": "- **MDX renders as restricted content**: `contentPolicy` defaults to `\"restricted\"` and does not evaluate authored expressions. Register native source components with `defineContentComponent`; full MDX requires `engines.mdx` from `createTrustedMdxEngine`, trusted input, an explicit import map, and CSP permission for `unsafe-eval`.\n- **Worker fails under strict CSP**: host the worker bundle and use `worker=\"/workers/markdown-worker.js\"` (avoid `blob:`).\n- **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes).\n- **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -2909,45 +2953,61 @@
                 "children": [
                   {
                     "kind": "text",
-                    "text": "MDX blocks show raw content"
+                    "text": "MDX renders as restricted content"
                   }
                 ]
               },
               {
                 "kind": "text",
-                "text": ": set "
+                "text": ": "
               },
               {
                 "kind": "code",
-                "text": "features={{ mdx: true }}"
+                "text": "contentPolicy"
               },
               {
                 "kind": "text",
-                "text": " and "
+                "text": " defaults to "
               },
               {
                 "kind": "code",
-                "text": "mdxCompileMode=\"worker\""
+                "text": "\"restricted\""
               },
               {
                 "kind": "text",
-                "text": " (or implement "
+                "text": " and does not evaluate authored expressions. Register native source components with "
               },
               {
                 "kind": "code",
-                "text": "/api/mdx-compile-v2"
+                "text": "defineContentComponent"
               },
               {
                 "kind": "text",
-                "text": " for "
+                "text": "; full MDX requires "
               },
               {
                 "kind": "code",
-                "text": "\"server\""
+                "text": "engines.mdx"
               },
               {
                 "kind": "text",
-                "text": ")."
+                "text": " from "
+              },
+              {
+                "kind": "code",
+                "text": "createTrustedMdxEngine"
+              },
+              {
+                "kind": "text",
+                "text": ", trusted input, an explicit import map, and CSP permission for "
+              },
+              {
+                "kind": "code",
+                "text": "unsafe-eval"
+              },
+              {
+                "kind": "text",
+                "text": "."
               }
             ],
             [
@@ -3059,71 +3119,87 @@
             },
             "children": [
               {
-                "id": "51703f42::item:0",
+                "id": "4d06bf81::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 4680,
-                  "to": 4828
+                  "from": 5464,
+                  "to": 5796
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "51703f42::item:0",
+                    "id": "4d06bf81::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`).",
+                      "raw": "- **MDX renders as restricted content**: `contentPolicy` defaults to `\"restricted\"` and does not evaluate authored expressions. Register native source components with `defineContentComponent`; full MDX requires `engines.mdx` from `createTrustedMdxEngine`, trusted input, an explicit import map, and CSP permission for `unsafe-eval`.",
                       "inline": [
                         {
                           "kind": "strong",
                           "children": [
                             {
                               "kind": "text",
-                              "text": "MDX blocks show raw content"
+                              "text": "MDX renders as restricted content"
                             }
                           ]
                         },
                         {
                           "kind": "text",
-                          "text": ": set "
+                          "text": ": "
                         },
                         {
                           "kind": "code",
-                          "text": "features={{ mdx: true }}"
+                          "text": "contentPolicy"
                         },
                         {
                           "kind": "text",
-                          "text": " and "
+                          "text": " defaults to "
                         },
                         {
                           "kind": "code",
-                          "text": "mdxCompileMode=\"worker\""
+                          "text": "\"restricted\""
                         },
                         {
                           "kind": "text",
-                          "text": " (or implement "
+                          "text": " and does not evaluate authored expressions. Register native source components with "
                         },
                         {
                           "kind": "code",
-                          "text": "/api/mdx-compile-v2"
+                          "text": "defineContentComponent"
                         },
                         {
                           "kind": "text",
-                          "text": " for "
+                          "text": "; full MDX requires "
                         },
                         {
                           "kind": "code",
-                          "text": "\"server\""
+                          "text": "engines.mdx"
                         },
                         {
                           "kind": "text",
-                          "text": ")."
+                          "text": " from "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "createTrustedMdxEngine"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", trusted input, an explicit import map, and CSP permission for "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "unsafe-eval"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
                         }
                       ],
                       "range": {
-                        "from": 4680,
-                        "to": 4828
+                        "from": 5464,
+                        "to": 5796
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3138,122 +3214,67 @@
                                 "children": [
                                   {
                                     "kind": "text",
-                                    "text": "MDX blocks show raw content"
+                                    "text": "MDX renders as restricted content"
                                   }
                                 ]
                               },
                               {
                                 "kind": "text",
-                                "text": ": set "
+                                "text": ": "
                               },
                               {
                                 "kind": "code",
-                                "text": "features={{ mdx: true }}"
+                                "text": "contentPolicy"
                               },
                               {
                                 "kind": "text",
-                                "text": " and "
+                                "text": " defaults to "
                               },
                               {
                                 "kind": "code",
-                                "text": "mdxCompileMode=\"worker\""
+                                "text": "\"restricted\""
                               },
                               {
                                 "kind": "text",
-                                "text": " (or implement "
+                                "text": " and does not evaluate authored expressions. Register native source components with "
                               },
                               {
                                 "kind": "code",
-                                "text": "/api/mdx-compile-v2"
+                                "text": "defineContentComponent"
                               },
                               {
                                 "kind": "text",
-                                "text": " for "
+                                "text": "; full MDX requires "
                               },
                               {
                                 "kind": "code",
-                                "text": "\"server\""
+                                "text": "engines.mdx"
                               },
                               {
                                 "kind": "text",
-                                "text": ")."
+                                "text": " from "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "createTrustedMdxEngine"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", trusted input, an explicit import map, and CSP permission for "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "unsafe-eval"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
                               }
                             ],
-                            "text": "MDX blocks show raw content: set features={{ mdx: true }} and mdxCompileMode=\"worker\" (or implement /api/mdx-compile-v2 for \"server\").",
-                            "raw": "- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`)."
+                            "text": "MDX renders as restricted content: contentPolicy defaults to \"restricted\" and does not evaluate authored expressions. Register native source components with defineContentComponent; full MDX requires engines.mdx from createTrustedMdxEngine, trusted input, an explicit import map, and CSP permission for unsafe-eval.",
+                            "raw": "- **MDX renders as restricted content**: `contentPolicy` defaults to `\"restricted\"` and does not evaluate authored expressions. Register native source components with `defineContentComponent`; full MDX requires `engines.mdx` from `createTrustedMdxEngine`, trusted input, an explicit import map, and CSP permission for `unsafe-eval`."
                           },
-                          "children": [
-                            {
-                              "id": "51703f42::item:0::list-item:segment:0",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "strong",
-                                    "children": [
-                                      {
-                                        "kind": "text",
-                                        "text": "MDX blocks show raw content"
-                                      }
-                                    ]
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ": set `features={"
-                                  }
-                                ],
-                                "text": "**MDX blocks show raw content**: set `features={"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "51703f42::item:0::list-item:segment:1",
-                              "type": "list-item-mdx",
-                              "props": {
-                                "raw": "{ mdx: true }",
-                                "status": "pending"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "51703f42::item:0::list-item:segment:2",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "}"
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "and"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": "mdxCompileMode=\"worker\""
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "(or implement"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": "/api/mdx-compile-v2"
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "for"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": "\"server\"`)."
-                                  }
-                                ],
-                                "text": "}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`)."
-                              },
-                              "children": []
-                            }
-                          ]
+                          "children": []
                         }
                       }
                     }
@@ -3265,135 +3286,80 @@
                       "children": [
                         {
                           "kind": "text",
-                          "text": "MDX blocks show raw content"
+                          "text": "MDX renders as restricted content"
                         }
                       ]
                     },
                     {
                       "kind": "text",
-                      "text": ": set "
+                      "text": ": "
                     },
                     {
                       "kind": "code",
-                      "text": "features={{ mdx: true }}"
+                      "text": "contentPolicy"
                     },
                     {
                       "kind": "text",
-                      "text": " and "
+                      "text": " defaults to "
                     },
                     {
                       "kind": "code",
-                      "text": "mdxCompileMode=\"worker\""
+                      "text": "\"restricted\""
                     },
                     {
                       "kind": "text",
-                      "text": " (or implement "
+                      "text": " and does not evaluate authored expressions. Register native source components with "
                     },
                     {
                       "kind": "code",
-                      "text": "/api/mdx-compile-v2"
+                      "text": "defineContentComponent"
                     },
                     {
                       "kind": "text",
-                      "text": " for "
+                      "text": "; full MDX requires "
                     },
                     {
                       "kind": "code",
-                      "text": "\"server\""
+                      "text": "engines.mdx"
                     },
                     {
                       "kind": "text",
-                      "text": ")."
+                      "text": " from "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "createTrustedMdxEngine"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", trusted input, an explicit import map, and CSP permission for "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "unsafe-eval"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
                     }
                   ],
-                  "text": "MDX blocks show raw content: set features={{ mdx: true }} and mdxCompileMode=\"worker\" (or implement /api/mdx-compile-v2 for \"server\").",
-                  "raw": "- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`)."
+                  "text": "MDX renders as restricted content: contentPolicy defaults to \"restricted\" and does not evaluate authored expressions. Register native source components with defineContentComponent; full MDX requires engines.mdx from createTrustedMdxEngine, trusted input, an explicit import map, and CSP permission for unsafe-eval.",
+                  "raw": "- **MDX renders as restricted content**: `contentPolicy` defaults to `\"restricted\"` and does not evaluate authored expressions. Register native source components with `defineContentComponent`; full MDX requires `engines.mdx` from `createTrustedMdxEngine`, trusted input, an explicit import map, and CSP permission for `unsafe-eval`."
                 },
-                "children": [
-                  {
-                    "id": "51703f42::item:0::list-item:segment:0",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "MDX blocks show raw content"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": set `features={"
-                        }
-                      ],
-                      "text": "**MDX blocks show raw content**: set `features={"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "51703f42::item:0::list-item:segment:1",
-                    "type": "list-item-mdx",
-                    "props": {
-                      "raw": "{ mdx: true }",
-                      "status": "pending"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "51703f42::item:0::list-item:segment:2",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "}"
-                        },
-                        {
-                          "kind": "code",
-                          "text": "and"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "mdxCompileMode=\"worker\""
-                        },
-                        {
-                          "kind": "code",
-                          "text": "(or implement"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "/api/mdx-compile-v2"
-                        },
-                        {
-                          "kind": "code",
-                          "text": "for"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "\"server\"`)."
-                        }
-                      ],
-                      "text": "}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`)."
-                    },
-                    "children": []
-                  }
-                ]
+                "children": []
               },
               {
-                "id": "51703f42::item:1",
+                "id": "4d06bf81::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 4829,
-                  "to": 4952
+                  "from": 5797,
+                  "to": 5920
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "51703f42::item:1",
+                    "id": "4d06bf81::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3430,8 +3396,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4829,
-                        "to": 4952
+                        "from": 5797,
+                        "to": 5920
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3517,17 +3483,17 @@
                 "children": []
               },
               {
-                "id": "51703f42::item:2",
+                "id": "4d06bf81::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 4953,
-                  "to": 5062
+                  "from": 5921,
+                  "to": 6030
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "51703f42::item:2",
+                    "id": "4d06bf81::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3556,8 +3522,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4953,
-                        "to": 5062
+                        "from": 5921,
+                        "to": 6030
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3627,17 +3593,17 @@
                 "children": []
               },
               {
-                "id": "51703f42::item:3",
+                "id": "4d06bf81::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 5063,
-                  "to": 5222
+                  "from": 6031,
+                  "to": 6190
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "51703f42::item:3",
+                    "id": "4d06bf81::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3690,8 +3656,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5063,
-                        "to": 5222
+                        "from": 6031,
+                        "to": 6190
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3812,8 +3778,8 @@
           }
         },
         "range": {
-          "from": 4680,
-          "to": 5222
+          "from": 5464,
+          "to": 6190
         }
       }
     }
@@ -3827,55 +3793,49 @@
     },
     {
       "id": "1-package-overview",
-      "blockId": "3d75b4e7",
+      "blockId": "7a9d821",
       "level": 2,
       "text": "1) Package overview"
     },
     {
       "id": "2-built-in-plugin-domains-most-common-path",
-      "blockId": "6e7f5103",
+      "blockId": "65bb19c2",
       "level": 2,
       "text": "2) Built-in “plugin domains” (most common path)"
     },
     {
       "id": "3-manual-worker-initialization-docplugins",
-      "blockId": "4ed2db47",
+      "blockId": "735fa31b",
       "level": 2,
       "text": "3) Manual worker initialization (`docPlugins`)"
     },
     {
-      "id": "4-mdx-parity-server-vs-worker",
-      "blockId": "2300bbfc",
+      "id": "4-full-mdx-for-trusted-source",
+      "blockId": "44c87ca6",
       "level": 2,
-      "text": "4) MDX parity (server vs worker)"
-    },
-    {
-      "id": "next-js-route-example",
-      "blockId": "1cdfe264",
-      "level": 3,
-      "text": "Next.js route example"
+      "text": "4) Full MDX for trusted source"
     },
     {
       "id": "5-tables-shadcn-wrappers",
-      "blockId": "5db146be",
+      "blockId": "690d2e5f",
       "level": 2,
       "text": "5) Tables (Shadcn wrappers)"
     },
     {
       "id": "6-custom-plugins-custom-syntax",
-      "blockId": "36ae8cbc",
+      "blockId": "3955a7fc",
       "level": 2,
       "text": "6) “Custom plugins” (custom syntax)"
     },
     {
       "id": "7-tree-shaking-and-bundle-size",
-      "blockId": "5b38cd1f",
+      "blockId": "60d6f562",
       "level": 2,
       "text": "7) Tree-shaking and bundle size"
     },
     {
       "id": "8-troubleshooting",
-      "blockId": "654787a4",
+      "blockId": "2ab443a4",
       "level": 2,
       "text": "8) Troubleshooting"
     }
@@ -3888,9 +3848,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

@@ -2,7 +2,10 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "incremental": false,
-    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo",
+    "paths": {
+      "@stream-mdx/react/_internal/trusted-mdx-native-children": ["./src/trusted-mdx/native-children-slot.tsx"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["src/debug-wrapper.ts"]

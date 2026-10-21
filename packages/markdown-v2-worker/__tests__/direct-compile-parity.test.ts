@@ -58,7 +58,6 @@ async function runDirectCompileParityTest(): Promise<void> {
       codeHighlighting: "final" as const,
       outputMode: "html" as const,
     },
-    mdx: { compileMode: "server" as const },
     prewarmLangs: ["typescript"],
     themes: { light: "min-light", dark: "nord" },
     syntax: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],

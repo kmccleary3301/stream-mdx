@@ -36,18 +36,22 @@ async function testHtmlInlineProviderAppearsInMixedLookahead(): Promise<void> {
 
 async function testMdxTagProviderAppearsInMixedLookahead(): Promise<void> {
   const harness = await createWorkerHarness();
-  const messages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Prefix <InlineChip tone=\"warm\"> suffix",
-  prewarmLangs: [],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: true,
-    tables: true,
-    callouts: true,
-    math: true,
-    formatAnticipation: { inline: true, mdx: true },
-    mdxComponentNames: ["InlineChip"],
-  }, });
+  const messages = await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "Prefix <InlineChip tone=\"warm\"> suffix",
+    prewarmLangs: [],
+    docPlugins: {
+      footnotes: true,
+      html: true,
+      mdx: true,
+      tables: true,
+      callouts: true,
+      math: true,
+      formatAnticipation: { inline: true, mdx: true },
+    },
+    contentComponents: [{ name: "InlineChip" }],
+  });
 
   const meta = findParagraphMeta(messages);
   assert.ok(meta, "expected paragraph metadata");
@@ -58,18 +62,21 @@ async function testMdxTagProviderAppearsInMixedLookahead(): Promise<void> {
 
 async function testMdxExpressionProviderAppearsInMixedLookahead(): Promise<void> {
   const harness = await createWorkerHarness();
-  const messages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Prefix {expr and trailing prose",
-  prewarmLangs: [],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: true,
-    tables: true,
-    callouts: true,
-    math: true,
-    formatAnticipation: { inline: true, mdx: true },
-    mdxComponentNames: ["InlineChip"],
-  }, });
+  const messages = await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "Prefix {expr and trailing prose",
+    prewarmLangs: [],
+    docPlugins: {
+      footnotes: true,
+      html: true,
+      mdx: true,
+      tables: true,
+      callouts: true,
+      math: true,
+      formatAnticipation: { inline: true, mdx: true },
+    },
+  });
 
   const meta = findParagraphMeta(messages);
   assert.ok(meta, "expected paragraph metadata");

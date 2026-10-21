@@ -88,7 +88,6 @@ worker.postMessage({
   schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-  mdx: { compileMode: "worker" },
 });
 
 worker.postMessage({ type: "APPEND", text: "# Hello\n\nStreaming **markdown** in a TUI.\n" });

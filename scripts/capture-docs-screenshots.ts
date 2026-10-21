@@ -165,7 +165,6 @@ function startDevServer(): { stop: () => Promise<void> } {
 }
 
 function prepareCapturePrerequisites(): void {
-  execSync("npm run docs:worker:build", { cwd: ROOT, stdio: "inherit" });
   execSync("npm run docs:snapshots:build", { cwd: ROOT, stdio: "inherit" });
 }
 

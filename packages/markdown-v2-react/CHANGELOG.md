@@ -18,6 +18,13 @@
   - `restart()` cancels the current async iterator generation; it does not replay a consumed iterator. Supply a fresh iterator for a new stream. Renderer-owned text replacements reset the engine document, while caller-initialized managed workers retain their document ownership.
   - URL transformation and HTML/style sanitization now apply across native client rendering, SSR, and the optional unified adapter. Rejected URLs are omitted; custom components must honor the supplied sanitized attributes and children. `allowedElements` and `disallowedElements` are mutually exclusive.
 
+  - **P9 Security & Architecture Cutover (Strict Restricted Components & Trusted MDX Lane)**:
+    - The default reachable React package graph removes compiler/evaluator imports, dynamic imports, and root re-exports (`mdx-client`, `mdx-coordinator`, `mdx-prefetch`, `mdx-runtime`). The main root keeps pure Trusted-MDX contract types; the implementation is available only from `@stream-mdx/react/trusted-mdx`.
+    - Removed per-block MDX compilation/evaluation machinery and obsolete props `mdxComponents`, `mdxCompileMode`, `mdxHydration`, and `artifactHtml`.
+    - Introduced `contentPolicy` (`"markdown" | "restricted" | "trusted-mdx"`, default `"restricted"`) and `contentComponents` host registrations with strict prop validation.
+    - Only serializable descriptors (`name`, `renderWhen`) cross the Web Worker boundary in `WorkerIn` `INIT`; host callbacks (`validateProps`, `component`) remain on the main thread.
+    - Full MDX authoring requires caller-supplied `engines.mdx` from an explicitly configured trusted engine.
+    - Removed automatic artifact-fence execution and the `ArtifactFrame` default renderer; `artifact` and `html-artifact` fences stay inert code unless the host explicitly supplies a code renderer.
   The remaining consumed changesets describe the new opt-in renderers, controls, animation, table virtualization, themes, native extension APIs, and correctness/security fixes. These features do not enable themselves when upgrading. See the root README migration section and the generated package changelogs before upgrading custom integrations.
 
 ### Minor Changes

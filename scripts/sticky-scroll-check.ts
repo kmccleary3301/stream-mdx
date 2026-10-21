@@ -277,12 +277,14 @@ async function main() {
     }
 
     await page.goto(demoUrl, { waitUntil: "domcontentloaded" });
+
     await capture("07-demo-surface");
 
     const demoMainTextLength = await page.evaluate(() => {
       const main = document.querySelector("main");
       return main?.textContent?.trim().length ?? 0;
     });
+
 
     await page.goto(docsUrl, { waitUntil: "domcontentloaded" });
     await capture("08-docs-surface");

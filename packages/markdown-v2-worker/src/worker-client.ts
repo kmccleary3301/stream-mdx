@@ -1,7 +1,7 @@
 // V2 Worker Client for Markdown Renderer
 // Similar interface to the V1 streaming worker client
 
-import type { CodeHighlightOutputMode, CodeHighlightingMode, FormatAnticipationConfig, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type { CodeHighlightOutputMode, CodeHighlightingMode, ContentPolicy, FormatAnticipationConfig, RestrictedComponentDescriptor, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 import { createDefaultWorker, releaseDefaultWorker, type CreateDefaultWorkerOptions } from "./create-default-worker";
 
@@ -128,13 +128,13 @@ export class MarkdownWorkerClient {
       liveTokenization?: boolean;
       emitHighlightTokens?: boolean;
       emitDiffBlocks?: boolean;
-      mdxComponentNames?: string[];
       lazyTokenization?: {
         enabled?: boolean;
         thresholdLines?: number;
       };
     },
-    mdxOptions?: { compileMode?: "server" | "worker" },
+    contentPolicy?: ContentPolicy,
+    contentComponents?: readonly RestrictedComponentDescriptor[],
   ) {
     this.post({
       type: "INIT",
@@ -142,7 +142,8 @@ export class MarkdownWorkerClient {
       initialContent,
       prewarmLangs,
       docPlugins,
-      mdx: mdxOptions,
+      ...(contentPolicy ? { contentPolicy } : {}),
+      ...(contentComponents ? { contentComponents } : {}),
     } as WorkerIn);
   }
 
@@ -160,13 +161,6 @@ export class MarkdownWorkerClient {
     this.post({ type: "SET_CREDITS", credits: value } as WorkerIn);
   }
 
-  setMdxCompiled(blockId: string, compiledId: string, rawSignature?: string) {
-    this.post({ type: "MDX_COMPILED", blockId, compiledId, rawSignature } as WorkerIn);
-  }
-
-  setMdxError(blockId: string, error?: string, rawSignature?: string) {
-    this.post({ type: "MDX_ERROR", blockId, error, rawSignature } as WorkerIn);
-  }
 
   terminate(options: { force?: boolean } = {}) {
     if (this.worker) {

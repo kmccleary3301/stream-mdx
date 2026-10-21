@@ -7,7 +7,7 @@ import type {
   StreamingMarkdownHandle,
   StreamingMarkdownProps,
 } from "@stream-mdx/react";
-import { ArtifactFrame, StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "@stream-mdx/react";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 import "katex/dist/katex.min.css";
 
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { AlertCircle, Cpu, Pause, Play, RotateCcw, ShieldCheck, Terminal } from "lucide-react";
 
 const USER_PROMPT =
-  "Can you provide an architectural walkthrough of the StreamMDX engine-v2 pipeline? Include Bayes' Theorem with concrete mathematical notation, the engine flow diagram, a custom code fence renderer example, and an interactive self-contained HTML visualization artifact.";
+  "Can you provide an architectural walkthrough of the StreamMDX engine-v2 pipeline? Include Bayes' Theorem with concrete mathematical notation, the engine flow diagram, a custom code fence renderer example, and an HTML visualization example in an inert fenced code block.";
 
 /**
  * Custom code fence renderer example for language "metric".
@@ -207,8 +207,6 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
   const codeRenderers = useMemo(
     () => ({
       mermaid: MermaidBlock,
-      "html-artifact": ArtifactFrame,
-      artifact: ArtifactFrame,
       metric: CustomMetricRenderer,
     }),
     [],
@@ -217,7 +215,7 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
   const features = useMemo<NonNullable<StreamingMarkdownProps["features"]>>(
     () => ({
       mdx: false, // SAFE DEFAULT: mdx=false for agent content
-      html: false, // Enforce artifact containment rather than raw HTML injection
+      html: false, // Keep agent-supplied HTML disabled; fenced HTML examples remain code.
       tables: true,
       math: true,
       callouts: true,
@@ -246,12 +244,11 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
           <span className="text-xs text-muted-foreground">apps/docs/app/showcase/assistant-stream</span>
         </div>
         <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-          Streaming Assistant & Sandboxed Artifacts
+          Streaming Assistant & Safe Code Fences
         </h1>
         <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
           Chat-thread example demonstrating dual-engine streaming (worker vs. main-thread), formatted math, Mermaid
-          diagrams, custom code fence renderers, link safety, and sandboxed HTML visualizations via{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ArtifactFrame</code>.
+          diagrams, custom code fence renderers, link safety, and inert fenced HTML examples.
         </p>
       </header>
 

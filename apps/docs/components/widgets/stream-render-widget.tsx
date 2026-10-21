@@ -31,7 +31,9 @@ type StreamRenderWidgetProps = {
   defaultSpeed?: SpeedPreset;
   className?: string;
   features?: NonNullable<StreamingMarkdownProps["features"]>;
-  mdxCompileMode?: StreamingMarkdownProps["mdxCompileMode"];
+  contentPolicy?: StreamingMarkdownProps["contentPolicy"];
+  contentComponents?: StreamingMarkdownProps["contentComponents"];
+  engines?: StreamingMarkdownProps["engines"];
   showControls?: boolean;
 };
 
@@ -39,7 +41,7 @@ const DEFAULT_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   html: true,
   tables: true,
   math: true,
-  mdx: true,
+  mdx: false,
   footnotes: true,
   callouts: true,
   liveCodeHighlighting: false,
@@ -56,7 +58,9 @@ export function StreamRenderWidget({
   defaultSpeed = "standard",
   className,
   features = DEFAULT_FEATURES,
-  mdxCompileMode = "worker",
+  contentPolicy,
+  contentComponents,
+  engines,
   showControls = true,
 }: StreamRenderWidgetProps) {
   const [position, setPosition] = useState(0);
@@ -139,7 +143,9 @@ export function StreamRenderWidget({
               text={displayText}
               className="markdown-v2-output"
               worker="/workers/markdown-worker.js"
-              mdxCompileMode={mdxCompileMode}
+              contentPolicy={contentPolicy}
+              contentComponents={contentComponents}
+              engines={engines}
               features={features}
             />
           </div>

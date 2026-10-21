@@ -28,6 +28,8 @@ Use this checklist when cutting releases from `stream-mdx/`. This file is the op
 
    After streaming finishes, confirm the demo shows `Completed` and `window.__STREAMING_DEMO__.getState().isFinalizing` is `false`. The snapshot's pending and scheduling preset values must also reflect state-only changes, without requiring another renderer patch.
 
+`Completed` and `isFinalizing === false` report native worker/renderer completion only. When trusted MDX is enabled, whole-document preparation and host rendering may still be pending; release checks must observe trusted readiness separately rather than infer it from worker `FINALIZED`.
+
 4. Check documentation links and anchors.
 
    ```bash
@@ -234,6 +236,8 @@ Changesets is the canonical release path for the coordinated `1.0.0` cut.
    - `stream-mdx`
 
 The `release:*:v0.5.0` npm commands and `scripts/*v0.5.0.sh` wrappers stay as historical commands for the 0.5.0 cut. They assert that version and are not the 1.0 release path. Do not repoint them, alias them to 1.0, or add another version-specific wrapper. Future versions use the same Changesets commands and CI workflows.
+
+Keep the all-ten-package requirement scoped to the coordinated `1.0.0` release procedure above. Later unreleased changesets should name only public packages whose surfaces actually changed. A pending changeset records unreleased scope; it does not apply versions or assert publication.
 
 ### Scope of the historical correctness contract
 

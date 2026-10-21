@@ -20,6 +20,10 @@ import {
   findMissingRequiredTextFragments,
 } from "./utils";
 import type { RegressionScenario } from "./utils";
+import {
+  extractTopLevelElementHtml,
+  normalizeInlineStyleSerialization,
+} from "./html-style-normalization";
 
 const UPDATE = process.env.UPDATE_SNAPSHOTS === "1" || process.env.UPDATE_SNAPSHOTS === "true";
 const BASE_URL = process.env.STREAM_MDX_REGRESSION_BASE_URL || "http://localhost:3000";
@@ -103,10 +107,6 @@ type RenderInspection = {
     headerColumns: number;
     rowCellCounts: number[];
     emptyBodyCellCount: number;
-  }>;
-  mdxBlocks: Array<{
-    status: string | null;
-    textSample: string;
   }>;
   codeBlocks: Array<{
     text: string;
@@ -247,7 +247,7 @@ async function writeFailureArtifacts(
   return artifactDir;
 }
 
-function compareFinalSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok: boolean; message?: string } {
+function compareNormalizedFinalSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok: boolean; message?: string } {
   if (expected.final.structure && received.final.structure) {
     const expStructure = JSON.stringify(expected.final.structure);
     const recStructure = JSON.stringify(received.final.structure);
@@ -310,6 +310,28 @@ function compareFinalSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): 
   }
 
   return { ok: true };
+}
+// Persisted hashes describe raw HTML; derive comparison hashes only after style normalization.
+async function normalizeSnapshotForComparison(page: Page, snapshot: HtmlSnapshot): Promise<HtmlSnapshot> {
+  const html = await normalizeInlineStyleSerialization(page, snapshot.final.html);
+  const childHtml = extractTopLevelElementHtml(html);
+  const children = snapshot.final.children?.map((child, index) => {
+    const normalizedChild = childHtml[index];
+    return { ...child, hash: hashHtml(normalizedChild?.html ?? "") };
+  });
+  return { ...snapshot, final: { ...snapshot.final, html, children } };
+}
+
+async function compareFinalSnapshots(
+  page: Page,
+  expected: HtmlSnapshot,
+  received: HtmlSnapshot,
+): Promise<{ ok: boolean; message?: string }> {
+  const [normalizedExpected, normalizedReceived] = await Promise.all([
+    normalizeSnapshotForComparison(page, expected),
+    normalizeSnapshotForComparison(page, received),
+  ]);
+  return compareNormalizedFinalSnapshots(normalizedExpected, normalizedReceived);
 }
 
 function hashHtml(value: string): string {
@@ -697,7 +719,7 @@ async function compareSnapshotsWithCssom(
 ): Promise<{ ok: boolean; message?: string }> {
   const preparedExpected = await prepareSnapshotForComparison(page, expected);
   const preparedReceived = await prepareSnapshotForComparison(page, received);
-  return compareFinalSnapshots(preparedExpected, preparedReceived);
+  return compareFinalSnapshots(page, preparedExpected, preparedReceived);
 }
 
 async function readRootText(page: Page): Promise<string> {
@@ -716,8 +738,6 @@ async function readStructure(page: Page): Promise<{ topLevelTags: string[]; coun
       pre: root?.querySelectorAll("pre").length ?? 0,
       blockquote: root?.querySelectorAll("blockquote").length ?? 0,
       katex: root?.querySelectorAll(".katex").length ?? 0,
-      mdxPending: root?.querySelectorAll('.markdown-mdx[data-mdx-status="pending"]').length ?? 0,
-      mdxCompiled: root?.querySelectorAll('.markdown-mdx[data-mdx-status="compiled"]').length ?? 0,
       footnotes: root?.querySelectorAll(".footnotes").length ?? 0,
       hr: root?.querySelectorAll("hr").length ?? 0,
     };
@@ -741,7 +761,7 @@ async function readInspection(page: Page): Promise<RenderInspection> {
   return await page.evaluate(() => {
     const root = document.getElementById("regression-root");
     if (!root) {
-      return { tables: [], mdxBlocks: [], codeBlocks: [] };
+      return { tables: [], codeBlocks: [] };
     }
 
     const tables = Array.from(root.querySelectorAll("table")).map((table) => {
@@ -760,10 +780,6 @@ async function readInspection(page: Page): Promise<RenderInspection> {
       return { headerColumns, rowCellCounts, emptyBodyCellCount };
     });
 
-    const mdxBlocks = Array.from(root.querySelectorAll(".markdown-mdx")).map((node) => ({
-      status: node instanceof HTMLElement ? node.dataset.mdxStatus ?? null : null,
-      textSample: (node.textContent ?? "").slice(0, 160),
-    }));
 
     const codeBlocks = Array.from(root.querySelectorAll("pre code")).map((node) => {
       const text = (node.textContent ?? "").replace(/\r\n?/g, "\n");
@@ -773,7 +789,7 @@ async function readInspection(page: Page): Promise<RenderInspection> {
       };
     });
 
-    return { tables, mdxBlocks, codeBlocks };
+    return { tables, codeBlocks };
   });
 }
 
@@ -828,7 +844,7 @@ function validateTableInspection(
   label: string,
   failures: string[],
 ): void {
-  if (!fixture.forbidIncompleteTableRows) return;
+  if (!fixture.forbidIncompleteTableRows && typeof fixture.expectedTableColumnCount !== "number") return;
   const expectedColumns = fixture.expectedTableColumnCount ?? null;
   inspection.tables.forEach((table, tableIndex) => {
     const targetColumns = expectedColumns ?? table.headerColumns;
@@ -836,7 +852,7 @@ function validateTableInspection(
       failures.push(`${label}: table ${tableIndex} has no header columns.`);
       return;
     }
-    if (table.headerColumns > 0 && table.headerColumns !== targetColumns) {
+    if (table.headerColumns !== targetColumns) {
       failures.push(`${label}: table ${tableIndex} header column mismatch (${table.headerColumns} vs ${targetColumns}).`);
     }
     table.rowCellCounts.forEach((cellCount, rowIndex) => {
@@ -853,11 +869,11 @@ function validateCodePrefixInvariant(
   finalInspection: RenderInspection,
   failures: string[],
 ): void {
-  if (!fixture.enforceCodeTextPrefix) return;
   const finalCodeBlocks = finalInspection.codeBlocks.map((block) => normalizeCodeText(block.text));
   if (typeof fixture.expectedCodeBlockCount === "number" && finalCodeBlocks.length !== fixture.expectedCodeBlockCount) {
     failures.push(`final code block count mismatch: expected ${fixture.expectedCodeBlockCount}, got ${finalCodeBlocks.length}.`);
   }
+  if (!fixture.enforceCodeTextPrefix) return;
 
   const previousLineCounts = new Map<number, number>();
   for (const checkpoint of checkpoints) {
@@ -1075,7 +1091,6 @@ async function run(): Promise<void> {
         const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table", "code"].some((tag) =>
           (fixture.tags ?? []).includes(tag),
         );
-        const waitForMdxCompiled = fixture.waitForMdxCompiled ?? (fixture.tags ?? []).includes("mdx");
         const tableTargetPct = fixture.expectTableByPct;
         const tableTargetChars =
           typeof tableTargetPct === "number" && scenario.maxChunkChars <= 512
@@ -1088,8 +1103,6 @@ async function run(): Promise<void> {
           hasTable: false,
           hasPre: false,
           hasFootnotes: false,
-          hasMdxPending: false,
-          hasMdxCompiled: false,
           hasBlockquote: false,
           hasMath: false,
         };
@@ -1111,15 +1124,19 @@ async function run(): Promise<void> {
           );
           await awaitScenario(() =>
             page.evaluate(
-              async ({ fixtureId, scenarioId, nextSeed, nextSchedulerMode, preset }) => {
-                window.__streammdxRegression?.setMeta({
+              async ({ fixtureId, scenarioId, nextSeed, nextSchedulerMode, preset, contentPolicy }) => {
+                const api = window.__streammdxRegression;
+                api?.setMeta({
                   fixtureId,
                   scenarioId,
                   seed: nextSeed ?? undefined,
                   schedulerMode: nextSchedulerMode ?? undefined,
                 });
-                if (preset && window.__streammdxRegression?.setConfig) {
-                  await window.__streammdxRegression.setConfig(preset);
+                if (api?.setConfig) {
+                  await api.setConfig({
+                    contentPolicy,
+                    ...(preset ?? {}),
+                  });
                 }
               },
               {
@@ -1128,6 +1145,7 @@ async function run(): Promise<void> {
                 nextSeed: activeSeed,
                 nextSchedulerMode: schedulerMode,
                 preset: getSchedulerPreset(schedulerMode),
+                contentPolicy: fixture.contentPolicy ?? "markdown",
               },
             ),
           );
@@ -1166,7 +1184,6 @@ async function run(): Promise<void> {
             const textContent = await readRootText(page);
             if (
               enforcePrefixInvariant &&
-              !summary.selectors.hasMdxPending &&
               lastCheckpointText &&
               !textContent.startsWith(lastCheckpointText)
             ) {
@@ -1299,27 +1316,6 @@ async function run(): Promise<void> {
 
           await awaitScenario(() => page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush()));
 
-          if (waitForMdxCompiled) {
-            try {
-              await awaitScenario(() =>
-                page.waitForFunction(
-                  () => {
-                    const summary = window.__streammdxRegression?.getSummary();
-                    if (!summary) return false;
-                    return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
-                  },
-                  undefined,
-                  { timeout: remainingTimeout() },
-                ),
-              );
-            } catch (error) {
-              failures += 1;
-              scenarioFailed = true;
-              console.error(`\nMDX compile timeout for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
-              console.error(error);
-            }
-          }
-
           const invariantViolations = (await awaitScenario(() =>
             page.evaluate(() => window.__streammdxRegression?.getInvariantViolations?.() ?? []),
           )) as { message: string }[];
@@ -1361,38 +1357,56 @@ async function run(): Promise<void> {
         const finalStructure = await awaitScenario(() => readStructure(page));
         const finalInspection = await awaitScenario(() => readInspection(page));
         const rootChildren = await awaitScenario(() => readRootChildren(page));
-         const childHashes = rootChildren.map((child, index) => ({
-           index,
-           tag: child.tag,
-           hash: hashHtml(child.html),
-           textSample: child.text,
-         }));
-         const snapshot: HtmlSnapshot = {
-           fixtureId: fixture.id,
-           fixtureTitle: fixture.title,
-           scenarioId: scenario.id,
-           scenario,
-           runMeta: {
-             seed: activeSeed,
-             schedulerMode,
-             usedSplitMarkers: usesFixedSplit,
-             fixtureTags: [...(fixture.tags ?? [])],
-           },
-           totalLength: text.length,
-           checkpoints,
-           final: {
-             id: "after-finalize",
-             appendedChars: appended,
-             rootChildCount: finalSummary.rootChildCount,
-             selectors: finalSummary.selectors,
-             html: finalHtml ?? "",
-             runtimeState: finalRuntimeState,
-             structure: finalStructure,
-             children: childHashes,
-             inspection: finalInspection,
-           },
-         };
-         const htmlInvariantFailures: string[] = [];
+        const childHashes = rootChildren.map((child, index) => ({
+          index,
+          tag: child.tag,
+          hash: hashHtml(child.html),
+          textSample: child.text,
+        }));
+        const snapshot: HtmlSnapshot = {
+          fixtureId: fixture.id,
+          fixtureTitle: fixture.title,
+          scenarioId: scenario.id,
+          scenario,
+          runMeta: {
+            seed: activeSeed,
+            schedulerMode,
+            usedSplitMarkers: usesFixedSplit,
+            fixtureTags: [...(fixture.tags ?? [])],
+          },
+          totalLength: text.length,
+          checkpoints,
+          final: {
+            id: "after-finalize",
+            appendedChars: appended,
+            rootChildCount: finalSummary.rootChildCount,
+            selectors: finalSummary.selectors,
+            html: finalHtml ?? "",
+            runtimeState: finalRuntimeState,
+            structure: finalStructure,
+            children: childHashes,
+            inspection: finalInspection,
+          },
+        };
+        const htmlInvariantFailures: string[] = [];
+        if (fixture.contentPolicy === "trusted-mdx") {
+          const diagnosticMessages = await awaitScenario(() =>
+            page.evaluate(() => {
+              const root = document.getElementById("regression-root");
+              if (!root) return [];
+              return Array.from(root.querySelectorAll<HTMLElement>("[data-mdx-diagnostic]")).map((node) => {
+                const attribute = node.getAttribute("data-mdx-diagnostic")?.trim();
+                return attribute || node.querySelector(".markdown-mdx-diagnostic")?.textContent?.trim()
+                  || `MDX ${node.getAttribute("data-mdx-status") ?? "diagnostic"} without diagnostic detail`;
+              });
+            }),
+          );
+          if (diagnosticMessages.length > 0) {
+            htmlInvariantFailures.push(
+              `trusted MDX render diagnostics present: ${diagnosticMessages.join("; ")}`,
+            );
+          }
+        }
         if (fixture.id === "complete-append-frontier" && usesFixedSplit) {
           const finalFrontier = await awaitScenario(() =>
             page.evaluate((expected) => {
@@ -1414,9 +1428,9 @@ async function run(): Promise<void> {
             );
           }
         }
-         const finalHtmlValue = finalHtml ?? "";
-         const rawBlockMathNeedle = '<p class="markdown-paragraph">$$';
-         const rawInlineCodeNeedle =
+        const finalHtmlValue = finalHtml ?? "";
+        const rawBlockMathNeedle = '<p class="markdown-paragraph">$$';
+        const rawInlineCodeNeedle =
           "`this is a really really really really really really really really really really really really really really really really really really really really really long inline code span`";
         const isSanitizationFixture = (fixture.tags ?? []).includes("sanitization");
         const emptyNestedListCount = fixture.forbidEmptyNestedLists
@@ -1501,11 +1515,6 @@ async function run(): Promise<void> {
           if (presentForbiddenHtmlFragments.length > 0) {
             htmlInvariantFailures.push(`forbidden html fragments present: ${presentForbiddenHtmlFragments.join(", ")}.`);
           }
-        }
-        if (typeof fixture.expectedMdxBlockCount === "number" && finalInspection.mdxBlocks.length !== fixture.expectedMdxBlockCount) {
-          htmlInvariantFailures.push(
-            `final mdx block count mismatch: expected ${fixture.expectedMdxBlockCount}, got ${finalInspection.mdxBlocks.length}.`,
-          );
         }
         validateTableInspection(fixture, finalInspection, "after-finalize", htmlInvariantFailures);
         validateCodePrefixInvariant(fixture, checkpoints, finalInspection, htmlInvariantFailures);

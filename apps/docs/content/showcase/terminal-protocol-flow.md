@@ -77,7 +77,6 @@ worker.postMessage({
   schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   docPlugins: { tables: true, html: true, mdx: false, math: false, footnotes: true },
-  mdx: { compileMode: "server" },
 });
 ```
 

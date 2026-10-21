@@ -45,37 +45,71 @@ export function trimProvisionalNativeCode(raw: string, code: string): string {
 }
 
 /** Match native list-item owners by absolute source range, never by their text. */
-export function collectNestedListItemInlineSources(block: Block, parser: MarkdownParser, nativeNode?: SyntaxNode): Map<string, { text: string; from: number }> {
+export function collectNestedListItemInlineSources(
+  block: Block,
+  parser: MarkdownParser,
+  nativeNode?: SyntaxNode,
+  includeSourcePositions = false,
+): Map<string, { text: string; from: number; sourcePositions?: number[] }> {
   const source = block.payload.raw;
   const offset = block.payload.range?.from ?? 0;
   const sourceOffset = nativeNode ? offset : 0;
-  const sources = new Map<string, { text: string; from: number }>();
-  const leafText = (node: SyntaxNode): string => {
+  const sources = new Map<string, { text: string; from: number; sourcePositions?: number[] }>();
+  const captureSourcePositions = includeSourcePositions && block.isFinalized;
+  const leafText = (node: SyntaxNode): { text: string; sourcePositions?: number[] } => {
     const marks: SyntaxNode[] = [];
     const collectMarks = (child: SyntaxNode): void => {
       if (child.type.name === "QuoteMark") marks.push(child);
       else for (let nested = child.firstChild; nested; nested = nested.nextSibling) collectMarks(nested);
     };
     collectMarks(node);
-    let text = "";
+    let rawText = "";
+    const rawPositions = captureSourcePositions ? [] as number[] : undefined;
+    const appendRange = (from: number, to: number) => {
+      rawText += source.slice(from, to);
+      if (rawPositions) for (let position = from; position < to; position++) rawPositions.push(offset + position);
+    };
     let from = node.from - sourceOffset;
     for (const mark of marks.sort((a, b) => a.from - b.from)) {
-      text += source.slice(from, mark.from - sourceOffset);
+      const markFrom = mark.from - sourceOffset;
+      appendRange(from, markFrom);
       from = mark.to - sourceOffset;
       if (source[from] === " " || source[from] === "\t") from++;
     }
-    return (text + source.slice(from, node.to - sourceOffset)).split("\n").map((line) => line.trimStart()).join("\n");
+    appendRange(from, node.to - sourceOffset);
+    if (!rawPositions) return { text: rawText.split("\n").map((line) => line.trimStart()).join("\n") };
+
+    let text = "";
+    const sourcePositions: number[] = [];
+    let lineStart = 0;
+    while (lineStart <= rawText.length) {
+      const newline = rawText.indexOf("\n", lineStart);
+      const lineEnd = newline === -1 ? rawText.length : newline;
+      const line = rawText.slice(lineStart, lineEnd);
+      const trimLength = line.length - line.trimStart().length;
+      text += line.slice(trimLength);
+      for (let index = lineStart + trimLength; index < lineEnd; index++) sourcePositions.push(rawPositions[index]);
+      if (newline === -1) break;
+      text += "\n";
+      sourcePositions.push(rawPositions[newline]);
+      lineStart = newline + 1;
+    }
+    return { text, sourcePositions };
   };
   const visit = (node: SyntaxNode): void => {
     if (node.type.name === "ListItem" || node.type.name === "EmptyListItem") {
       let primary = node.firstChild;
       while (primary && ["ListMark", "QuoteMark", "LinkReference"].includes(primary.type.name)) primary = primary.nextSibling;
-      let text = primary && (primary.type.name === "Paragraph" || primary.type.name === "Task") ? leafText(primary) : "";
-      const task = primary?.type.name === "Task" ? /^\[([ xX])\][ \t]+/.exec(text) : null;
-      if (task) text = text.slice(task[0].length);
+      const leaf = primary && (primary.type.name === "Paragraph" || primary.type.name === "Task")
+        ? leafText(primary)
+        : { text: "" };
+      const task = primary?.type.name === "Task" ? /^\[([ xX])\][ \t]+/.exec(leaf.text) : null;
+      const text = task ? leaf.text.slice(task[0].length) : leaf.text;
+      const sourcePositions = leaf.sourcePositions?.slice(task?.[0].length ?? 0);
       sources.set(`${offset + node.from - sourceOffset}:${offset + node.to - sourceOffset}`, {
         text,
-        from: offset + (primary?.from ?? node.from) - sourceOffset + (task?.[0].length ?? 0),
+        from: sourcePositions?.[0] ?? (offset + (primary?.from ?? node.from) - sourceOffset + (task?.[0].length ?? 0)),
+        ...(sourcePositions ? { sourcePositions } : {}),
       });
     }
     for (let child = node.firstChild; child; child = child.nextSibling) visit(child);
@@ -83,6 +117,52 @@ export function collectNestedListItemInlineSources(block: Block, parser: Markdow
   visit(nativeNode ?? parser.parse(source).topNode);
   return sources;
 }
+/** Return an exact authored heading-content span using native marker coordinates. */
+export function getNativeHeadingContentRange(
+  node: SyntaxNode,
+  rawSource: string,
+  baseOffset: number,
+): { from: number; to: number } | undefined {
+  if (!Number.isSafeInteger(baseOffset) || baseOffset < 0) return undefined;
+  const localNodeFrom = node.from - baseOffset;
+  const localNodeTo = node.to - baseOffset;
+  if (localNodeFrom < 0 || localNodeTo <= localNodeFrom || localNodeTo > rawSource.length) return undefined;
+
+  const headerMarks: SyntaxNode[] = [];
+  for (let child = node.firstChild; child; child = child.nextSibling) {
+    if (child.type.name === "HeaderMark") headerMarks.push(child);
+  }
+  let start: number;
+  let end: number;
+  if (node.type.name.startsWith("ATXHeading")) {
+    const opening = headerMarks[0];
+    if (!opening) return undefined;
+    start = opening.to - baseOffset;
+    if (start < localNodeFrom || start > localNodeTo) return undefined;
+    while (start < localNodeTo && (rawSource[start] === " " || rawSource[start] === "\t")) start++;
+    const closing = headerMarks.length > 1 ? headerMarks[headerMarks.length - 1] : undefined;
+    end = closing ? closing.from - baseOffset : localNodeTo;
+  } else if (node.type.name.startsWith("SetextHeading")) {
+    const underline = headerMarks[headerMarks.length - 1];
+    if (!underline) return undefined;
+    start = localNodeFrom;
+    end = underline.from - baseOffset;
+    while (start < end && (rawSource[start] === " " || rawSource[start] === "\t")) start++;
+  } else {
+    return undefined;
+  }
+
+  if (end < start || end > localNodeTo) return undefined;
+  while (end > start) {
+    const character = rawSource[end - 1];
+    if (character !== " " && character !== "\t" && character !== "\r" && character !== "\n") break;
+    end--;
+  }
+  return end > start
+    ? { from: baseOffset + start, to: baseOffset + end }
+    : undefined;
+}
+
 
 
 
@@ -268,35 +348,8 @@ export function collectWorkerStructuralInvariantViolations(nextBlocks: ReadonlyA
       }
     }
 
-    if (block.type !== "mdx") {
-      if (block.payload.compiledMdxRef || block.payload.compiledMdxModule) {
-        violations.push(`non-mdx block carries mdx artifact:${block.id}:${block.type}`);
-      }
-      continue;
-    }
 
-    const meta = (block.payload.meta ?? {}) as { mdxStatus?: unknown };
-    const status = typeof meta.mdxStatus === "string" ? meta.mdxStatus : undefined;
-    const hasCompiledArtifact = Boolean(block.payload.compiledMdxRef || block.payload.compiledMdxModule);
-
-    if (block.isFinalized && status === "pending") {
-      violations.push(`finalized mdx block remained pending:${block.id}`);
-    }
-    if (status === "compiled" && !hasCompiledArtifact) {
-      violations.push(`compiled mdx block missing artifact:${block.id}`);
-    }
-    if (status === "error" && hasCompiledArtifact) {
-      violations.push(`errored mdx block retained compiled artifact:${block.id}`);
-    }
-    if (
-      block.payload.compiledMdxRef &&
-      block.payload.compiledMdxModule &&
-      block.payload.compiledMdxRef.id !== block.payload.compiledMdxModule.id
-    ) {
-      violations.push(`mdx artifact id mismatch:${block.id}:${block.payload.compiledMdxRef.id}:${block.payload.compiledMdxModule.id}`);
-    }
   }
-
   return violations;
 }
 

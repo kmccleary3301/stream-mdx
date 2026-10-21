@@ -8,11 +8,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
 import { ComponentRegistry } from "./components";
-import { getMDXComponentFactory, registerMDXComponents } from "./mdx-client";
+import { toSerializableDescriptors, type ContentComponentsMap } from "./components/content-components";
 import { CodeHighlightRequestContext } from "./renderer/code-highlight-context";
 import { getPatchKind, isHeavyPatch, splitPatchBatch } from "./renderer/patch-batching";
 import { PatchCommitScheduler } from "./renderer/patch-commit-scheduler";
 import { createRendererStore, type RendererStore } from "./renderer/store";
+import { attachTrustedRevisionFeed, type TrustedRevisionFeed } from "./trusted-revision-feed";
 import { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
 
 export { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
@@ -38,28 +39,25 @@ const WORKER_DEBUG_ENABLED =
     return false;
   })() || false;
 
-function isLikelyMdxComponentName(name: string): boolean {
-  if (!name) return false;
-  const first = name.charAt(0);
-  return first.toUpperCase() === first && first.toLowerCase() !== first;
-}
-
-function getMdxComponentNames(config: RendererConfig): string[] | undefined {
-  const components = config.mdx?.components;
-  if (!components) return undefined;
-  const names = Object.keys(components).filter(isLikelyMdxComponentName);
-  return names.length > 0 ? names : undefined;
-}
 
 interface OwnedInitialization {
   owner?: MarkdownRenderer;
+  generation: number;
   resolve?: (blocks: Block[]) => void;
   reject?: (error: Error) => void;
+}
+
+interface OwnedFinalization {
+  owner?: MarkdownRenderer;
+  generation: number;
+  version: number;
 }
 
 interface WorkerInitializationQueue {
   pending: OwnedInitialization[];
   acknowledgements: WeakMap<MessageEvent<WorkerOut>, OwnedInitialization>;
+  pendingFinalizations: OwnedFinalization[];
+  finalizationAcknowledgements: WeakMap<MessageEvent<WorkerOut>, OwnedFinalization>;
 }
 
 function extractWorkerError(event: Event): Error {
@@ -88,7 +86,12 @@ const workerInitializations = new WeakMap<Worker, WorkerInitializationQueue>();
 function getWorkerInitializations(worker: Worker): WorkerInitializationQueue {
   const existing = workerInitializations.get(worker);
   if (existing) return existing;
-  const queue: WorkerInitializationQueue = { pending: [], acknowledgements: new WeakMap() };
+  const queue: WorkerInitializationQueue = {
+    pending: [],
+    acknowledgements: new WeakMap(),
+    pendingFinalizations: [],
+    finalizationAcknowledgements: new WeakMap(),
+  };
   workerInitializations.set(worker, queue);
   worker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
     const message = event.data;
@@ -106,6 +109,18 @@ function getWorkerInitializations(worker: Worker): WorkerInitializationQueue {
           }
         }
       }
+    } else if (message.type === "FINALIZED") {
+      const finalization = queue.pendingFinalizations.shift();
+      if (finalization) queue.finalizationAcknowledgements.set(event, finalization);
+    } else if (message.type === "ERROR" && message.phase === "FINALIZE") {
+      queue.pendingFinalizations.shift();
+    } else if (
+      message.type === "ERROR" &&
+      message.phase === "INIT" &&
+      message.meta?.theme !== undefined
+    ) {
+      // Theme errors are reported but must retain INIT until its INITIALIZED response.
+      queue.pending[0]?.reject?.(new Error(message.error.message));
     } else if (message.type === "ERROR" && message.phase === "INIT" && typeof message.meta?.rule !== "string") {
       const initialization = queue.pending.shift();
       if (initialization) {
@@ -119,6 +134,7 @@ function getWorkerInitializations(worker: Worker): WorkerInitializationQueue {
     while (queue.pending.length > 0) {
       queue.pending.shift()?.reject?.(error);
     }
+    queue.pendingFinalizations.length = 0;
   });
   return queue;
 }
@@ -146,16 +162,24 @@ export class MarkdownRenderer implements Renderer {
   private flushListeners = new Set<(result: PatchFlushResult) => void>();
   private workerMessageListener: ((event: MessageEvent<WorkerOut>) => void) | null = null;
   private workerErrorListener: ((event: Event) => void) | null = null;
+  private readonly trustedRevisionFeed: TrustedRevisionFeed | null;
+  private trustedFinalizedGeneration: number | null = null;
+  private trustedFinalizedVersion: number | null = null;
+  private inputSealed = false;
+  private trustedSemanticAwaitingFlush = false;
 
   constructor(config: RendererConfig = {}) {
+    if (config.contentPolicy === "trusted-mdx" && !config.engines?.mdx) {
+      throw new Error("contentPolicy='trusted-mdx' requires an explicit engines.mdx trusted MDX engine.");
+    }
     this.config = config;
+    this.trustedRevisionFeed = config.contentPolicy === "trusted-mdx" ? attachTrustedRevisionFeed(this) : null;
     this.store = createRendererStore([], { themes: config.themes });
     this.componentRegistry = new ComponentRegistry(
       {},
       {},
       this.config.codeRenderers ?? {},
       {
-        artifactHtml: this.config.artifactHtml,
         mathRenderer: this.config.mathRenderer,
         tableVirtualization: this.config.tableVirtualization,
         urlTransform: this.config.urlTransform,
@@ -167,16 +191,11 @@ export class MarkdownRenderer implements Renderer {
         allowElement: this.config.allowElement,
         unwrapDisallowed: this.config.unwrapDisallowed,
         disableAutolinkProtocols: this.config.disableAutolinkProtocols,
+        contentComponents: this.config.contentComponents,
       },
     );
     if (this.config.html?.literalTagContent) {
       this.componentRegistry.setLiteralTagContent(this.config.html.literalTagContent);
-    }
-    if (this.config.mdx?.compileEndpoint) {
-      getMDXComponentFactory(this.config.mdx.compileEndpoint);
-    }
-    if (this.config.mdx?.components) {
-      registerMDXComponents(this.config.mdx.components);
     }
     this.patchScheduler = new PatchCommitScheduler({
       store: this.store,
@@ -199,7 +218,11 @@ export class MarkdownRenderer implements Renderer {
   /**
    * Attach Web Worker
    */
-  attachWorker(worker: Worker, options?: { skipInit?: boolean }): void {
+  attachWorker(worker: Worker, options?: {
+    skipInit?: boolean;
+    onInitialized?: () => void;
+    onInitializationError?: (error: Error) => void;
+  }): void {
     if (this.worker) this.detachWorker();
     this.patchScheduler.restart();
     this.componentRegistry.resetAnimationTimeline();
@@ -219,13 +242,22 @@ export class MarkdownRenderer implements Renderer {
     this.worker.addEventListener("message", this.workerMessageListener);
     this.workerErrorListener = this.handleWorkerError.bind(this);
     this.worker.addEventListener("error", this.workerErrorListener);
-    if (!this.skipWorkerInit) this.initializeWorker();
+    if (!this.skipWorkerInit) {
+      this.initializeWorker("", {
+        resolve: () => options?.onInitialized?.(),
+        reject: options?.onInitializationError,
+      });
+    } else {
+      options?.onInitialized?.();
+    }
   }
 
-  private initializeWorker(initialContent = "", completion: OwnedInitialization = {}): void {
+  private initializeWorker(
+    initialContent = "",
+    completion: Omit<OwnedInitialization, "owner" | "generation"> = {},
+  ): void {
     if (!this.worker) throw new Error("Worker not attached");
     this.store.setThemes(this.config.themes);
-    const mdxComponentNames = getMdxComponentNames(this.config);
     const codeHighlighting = this.config.plugins?.codeHighlighting;
     const outputMode = this.config.plugins?.outputMode;
     const liveTokenization = this.config.plugins?.liveTokenization;
@@ -245,21 +277,28 @@ export class MarkdownRenderer implements Renderer {
       ...(liveTokenization !== undefined ? { liveTokenization } : {}),
       ...(emitHighlightTokens !== undefined ? { emitHighlightTokens } : {}),
       ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
-      ...(mdxComponentNames ? { mdxComponentNames } : {}),
     };
-    const initialization = { ...completion, owner: this };
+    const initialization = {
+      ...completion,
+      owner: this,
+      generation: this.trustedRevisionFeed?.getSnapshot().generation ?? 0,
+    };
     this.pendingStreamCommands = [];
     this.currentInitialization = initialization;
     this.initializationQueue?.pending.push(initialization);
     this.workerSchemaReady = false;
     try {
+      const contentComponents = this.config.contentComponents
+        ? toSerializableDescriptors(this.config.contentComponents)
+        : undefined;
       this.worker.postMessage({
         type: "INIT",
         schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent,
         prewarmLangs: this.config.highlight?.langs || [],
         docPlugins,
-        mdx: { compileMode: this.config.mdx?.compileStrategy ?? "server" },
+        contentPolicy: this.config.contentPolicy ?? "restricted",
+        ...(contentComponents ? { contentComponents } : {}),
         ...(this.config.themes ? { themes: this.config.themes } : {}),
         ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
         ...(this.config.html ? { html: this.config.html } : {}),
@@ -316,6 +355,9 @@ export class MarkdownRenderer implements Renderer {
       initialization.resolve = undefined;
       initialization.reject = undefined;
     }
+    for (const finalization of this.initializationQueue?.pendingFinalizations ?? []) {
+      if (finalization.owner === this) finalization.owner = undefined;
+    }
     try {
       if (this.workerMessageListener) {
         this.worker.removeEventListener("message", this.workerMessageListener);
@@ -364,6 +406,9 @@ export class MarkdownRenderer implements Renderer {
    * Append text chunk for streaming
    */
   append(text: string): void {
+    if (this.trustedRevisionFeed && this.inputSealed) {
+      throw new Error("Cannot append after FINALIZE; start a new generation first.");
+    }
     if (!this.worker) {
       throw new Error("Worker not attached");
     }
@@ -374,6 +419,11 @@ export class MarkdownRenderer implements Renderer {
     // PATCH handling stays closed until this owner's INIT ACK, so queue source commands behind it.
     if (this.workerSchemaReady) this.worker.postMessage({ type: "APPEND", text } as WorkerIn);
     else this.pendingStreamCommands.push({ type: "APPEND", text });
+    this.trustedRevisionFeed?.append(text);
+    if (this.trustedRevisionFeed && text.length > 0) {
+      this.trustedFinalizedGeneration = null;
+      this.trustedFinalizedVersion = null;
+    }
   }
 
   /**
@@ -386,6 +436,11 @@ export class MarkdownRenderer implements Renderer {
         return;
       }
 
+      this.inputSealed = false;
+      this.trustedRevisionFeed?.replace(text);
+      this.trustedFinalizedGeneration = null;
+      this.trustedFinalizedVersion = null;
+      this.trustedSemanticAwaitingFlush = false;
       this.patchScheduler.restart();
       this.componentRegistry.resetAnimationTimeline();
       this.store.reset([]);
@@ -424,11 +479,8 @@ export class MarkdownRenderer implements Renderer {
     this.componentRegistry.setInlineComponents(map);
   }
 
-  setMdxComponents(map: Record<string, React.ComponentType<unknown>>): void {
-    if (this.config.mdx?.compileEndpoint) {
-      getMDXComponentFactory(this.config.mdx.compileEndpoint);
-    }
-    registerMDXComponents(map);
+  setContentComponents(map: ContentComponentsMap): void {
+    this.componentRegistry.setContentComponents(map);
   }
   setCodeRenderers(map: Record<string, CodeFenceRenderer>): void {
     this.componentRegistry.setCodeRenderers(map);
@@ -497,11 +549,19 @@ export class MarkdownRenderer implements Renderer {
           this.settleInitialization(error);
           break;
         }
+        if (
+          initialization &&
+          this.trustedRevisionFeed &&
+          initialization.generation !== this.trustedRevisionFeed.getSnapshot().generation
+        ) {
+          break;
+        }
         const matchesCurrentInitialization = initialization !== undefined
           ? initialization === this.currentInitialization
           : this.currentInitialization === null;
         if (this.initializationQueue?.pending.length === 0 && matchesCurrentInitialization) {
           this.patchScheduler.clear();
+          this.trustedSemanticAwaitingFlush = false;
           try {
             this.store.resetSnapshot(message.snapshot);
           } catch (cause) {
@@ -548,6 +608,7 @@ export class MarkdownRenderer implements Renderer {
           const batches = splitPatchBatch(message.patches);
           batches.forEach((batch, index) => {
             const hasSemantic = batch.some((patch) => getPatchKind(patch) === "semantic");
+            if (hasSemantic && this.trustedRevisionFeed) this.trustedSemanticAwaitingFlush = true;
             const priority: "high" | "low" = hasSemantic ? "high" : batch.some(isHeavyPatch) ? "low" : "high";
             this.patchScheduler.enqueue({
               patches: batch,
@@ -590,9 +651,21 @@ export class MarkdownRenderer implements Renderer {
         // Debug-only worker payloads; ignore in the renderer.
         break;
 
-      case "FINALIZED":
-        // Server/CLI compile completion signal; ignore in the renderer.
+      case "FINALIZED": {
+        const finalization = this.initializationQueue?.finalizationAcknowledgements.get(event);
+        if (
+          !finalization ||
+          finalization.owner !== this ||
+          !this.trustedRevisionFeed ||
+          !this.trustedRevisionFeed.isCurrent(finalization)
+        ) {
+          break;
+        }
+        this.trustedFinalizedGeneration = finalization.generation;
+        this.trustedFinalizedVersion = finalization.version;
+        this.tryPublishTrustedRevision(finalization);
         break;
+      }
 
       default:
         console.warn("Unknown worker message type:", message);
@@ -624,7 +697,12 @@ export class MarkdownRenderer implements Renderer {
     return this.patchScheduler.isPaused();
   }
 
-  restart(): void {
+  restart(options: { reinitializeWorker?: boolean } = {}): void {
+    this.inputSealed = false;
+    this.trustedRevisionFeed?.reset();
+    this.trustedFinalizedGeneration = null;
+    this.trustedFinalizedVersion = null;
+    this.trustedSemanticAwaitingFlush = false;
     this.patchScheduler.restart();
     this.componentRegistry.resetAnimationTimeline();
     this.store.reset([]);
@@ -638,7 +716,7 @@ export class MarkdownRenderer implements Renderer {
     if (this.updateCallbacks.length > 0) {
       this.notifyUpdateCallbacks();
     }
-    if (this.workerHasContent) {
+    if (options.reinitializeWorker !== false && this.workerHasContent) {
       if (!this.skipWorkerInit) this.initializeWorker();
       this.workerHasContent = false;
     }
@@ -646,10 +724,24 @@ export class MarkdownRenderer implements Renderer {
 
   finalize(): void {
     if (!this.worker) return;
-    if (this.workerSchemaReady) {
-      this.worker.postMessage({ type: "FINALIZE" } as WorkerIn);
-    } else if (this.currentInitialization?.owner === this) {
-      this.pendingStreamCommands.push({ type: "FINALIZE" });
+    // FINALIZE before this owner's INIT ACK queues behind it; other owners' sessions drop it.
+    if (!this.workerSchemaReady && this.currentInitialization?.owner !== this) return;
+    this.inputSealed = this.trustedRevisionFeed !== null;
+    const token = this.trustedRevisionFeed?.requestFinalization();
+    const finalization: OwnedFinalization = {
+      owner: this,
+      generation: token?.generation ?? 0,
+      version: token?.version ?? 0,
+    };
+    const queue = this.initializationQueue;
+    queue?.pendingFinalizations.push(finalization);
+    try {
+      if (this.workerSchemaReady) this.worker.postMessage({ type: "FINALIZE" } as WorkerIn);
+      else this.pendingStreamCommands.push({ type: "FINALIZE" });
+    } catch (error) {
+      const index = queue?.pendingFinalizations.lastIndexOf(finalization) ?? -1;
+      if (index >= 0) queue?.pendingFinalizations.splice(index, 1);
+      throw error;
     }
   }
 
@@ -694,9 +786,21 @@ export class MarkdownRenderer implements Renderer {
    * Handle scheduled patch flush results from the commit scheduler.
    */
   private handlePatchFlush(result: PatchFlushResult, hasNonInputSourcePatch: boolean): void {
-    if (!result || result.batches.length === 0) {
-      return;
+    if (!result) return;
+    if (this.trustedRevisionFeed) {
+      this.trustedSemanticAwaitingFlush = result.remainingSemanticQueueSize > 0;
+      if (
+        this.trustedFinalizedGeneration !== null &&
+        this.trustedFinalizedVersion !== null &&
+        !this.trustedSemanticAwaitingFlush
+      ) {
+        this.tryPublishTrustedRevision({
+          generation: this.trustedFinalizedGeneration,
+          version: this.trustedFinalizedVersion,
+        });
+      }
     }
+    if (result.batches.length === 0) return;
 
     const touchedIds = new Set<string>();
     for (const batch of result.batches) {
@@ -725,6 +829,19 @@ export class MarkdownRenderer implements Renderer {
       }
     }
   }
+  private tryPublishTrustedRevision(token: { readonly generation: number; readonly version: number }): void {
+    const feed = this.trustedRevisionFeed;
+    if (
+      !feed ||
+      this.trustedFinalizedGeneration !== token.generation ||
+      this.trustedFinalizedVersion !== token.version ||
+      this.trustedSemanticAwaitingFlush ||
+      !feed.isCurrent(token)
+    ) {
+      return;
+    }
+    feed.complete(token, this.store.getBlocks());
+  }
 
   /**
    * Notify all update callbacks
@@ -746,7 +863,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
   renderStatic: (text: string) => Promise<Block[]>;
   setBlockComponents: (components: Partial<BlockComponents>) => void;
   setInlineComponents: (components: Partial<InlineComponents>) => void;
-  setMdxComponents: (components: Record<string, React.ComponentType<unknown>>) => void;
   store: ReturnType<MarkdownRenderer["getStore"]>;
 } {
   const [renderer] = useState(() => new MarkdownRenderer(config));
@@ -777,12 +893,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
     return unsubscribe;
   }, [renderer]);
 
-  const mdxComponents = config.mdx?.components;
-  useEffect(() => {
-    if (mdxComponents && Object.keys(mdxComponents).length > 0) {
-      renderer.setMdxComponents(mdxComponents);
-    }
-  }, [renderer, mdxComponents]);
 
   const append = useCallback(
     (text: string) => {
@@ -812,12 +922,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
     [renderer],
   );
 
-  const setMdxComponents = useCallback(
-    (components: Record<string, React.ComponentType<unknown>>) => {
-      renderer.setMdxComponents(components);
-    },
-    [renderer],
-  );
 
   return {
     renderer,
@@ -826,7 +930,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
     renderStatic,
     setBlockComponents,
     setInlineComponents,
-    setMdxComponents,
     store: renderer.getStore(),
   };
 }

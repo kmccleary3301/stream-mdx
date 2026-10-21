@@ -92,7 +92,7 @@ async function runCodeBlockTerminalNewlineGuardTest(): Promise<void> {
   root.render(React.createElement(BlockNodeRenderer, { store, blockId, registry }));
   await sleep(40);
 
-  const code = container.querySelector('div[data-code-block="true"] pre code') as HTMLElement | null;
+  const code = container.querySelector('[data-code-block="true"] pre code') as HTMLElement | null;
   assert.ok(code, "expected rendered code element");
   assert.strictEqual(code.textContent, "alpha\nbeta\ngam", "renderer must not synthesize a premature trailing newline");
 

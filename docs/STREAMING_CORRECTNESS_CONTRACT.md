@@ -188,7 +188,15 @@ producer, not a block-based reconstruction request. Empty input is a valid
 baseline; static artifacts remain version 1 and cold block exports do not
 materialize the complete root input as routine append work.
 
-Inline JSX tags and expressions belong to their paragraph or list-item projection. They must preserve surrounding prose and component allowlists without gaining block-module evaluation. A complete standalone component owns its source as block MDX and uses the existing evaluator. Normalized inline HTML, including quoted `code` elements, must retain the paragraph's text and elements.
+Inline JSX tags and expressions belong to their paragraph or list-item projection. They must preserve surrounding prose and component allowlists without gaining block-module evaluation. A complete standalone component owns its source as block MDX and remains inert unless admitted by the restricted policy's host registrations. Registrations use `defineContentComponent`; narrowed source-prop types require a type-predicate validator. Only serializable name/render-condition descriptors cross the worker boundary; component callbacks and native projected children remain host-side.
+
+The trusted lane is separate from native parsing: a host may submit one complete authored-document revision for explicit trusted preparation and evaluation. The worker never compiles or evaluates authored modules. `FINALIZED` means native semantic completion only; it does not promise trusted compilation, projection, or host render commit readiness.
+
+Compiler-authored native phrasing children retain their exact source ranges, whitespace and shared inline preparation without gaining a synthetic paragraph wrapper. One prepared native paragraph may cover an exact contiguous run of compiler inline children; render its body once and use typed continuations only for the covered slots. Document-wide reference definitions may split compiler phrasing differently from a local native parse; this does not justify a whole-document Worker reparse or synthetic per-token owners. Real Markdown block children retain their block views. An exact compiler JSX flow frame owns its body; descendant regions resolve through their own native or compiler child slots, not as additional roots. Canonical prepared children are authoritative, including an empty tree; inactive HTML copies are not additional ownership sources. Missing/duplicate owners, partial coverage, gaps, overlap and crossings of non-inline children remain errors.
+
+Recognized restricted-component headers have a registration-aware native boundary: the completed opening-header line does not absorb the following Markdown heading, paragraph, list or fence merely because there is no blank separator. Preserve any same-line body suffix and document-relative child ranges. This exception does not change ordinary CommonMark HTML blocks or activate component syntax inside code or comments; incomplete and invalid headers remain unadmitted literal source.
+
+`renderWhen: "closed"` suppresses only an open native component. A finalized incomplete body that passes validation remains rendered with its diagnostic; an incomplete opening header remains literal and does not invoke the host component.
 
 Native `InlineCode` spans own their literal contents. Mixed-content projection must not promote braces or tags inside them to MDX or HTML, including multi-backtick spans and code inside prepared quotes or lists. Direct compilation, worker patches, and serialized resets must preserve the same code text.
 
@@ -220,9 +228,11 @@ When streaming input is complete and finalization has finished:
 
 1. The final streamed semantic output must match a cold parse of the full final content.
 2. This parity must hold for normalized block semantics, text content, and final HTML output.
-3. No provisional nodes or pending MDX states may remain.
+3. No provisional native nodes or pending native semantic transactions may remain.
 
 This is stronger than "looks right in the demo". Final parity is a release requirement.
+
+`FINALIZED` is the native semantic barrier. Trusted whole-document compilation and rendering are a separate host-owned lifecycle and may still be in progress after native finalization. Native final-state parity does not claim trusted-MDX readiness; checks of trusted output must observe that lifecycle separately.
 
 ## 6) Intermediate-State Safety
 

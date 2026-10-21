@@ -37,7 +37,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
   return { promise, resolve, reject };
 }
 
-async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "INIT" }>, "html" | "syntax" | "docPlugins" | "mdx"> = {}): Promise<RendererStore> {
+async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "INIT" }>, "html" | "syntax" | "docPlugins"> = {}): Promise<RendererStore> {
   const worker = createInlineEngineWorker();
   const store = createRendererStore();
   const { promise, resolve, reject } = deferred<RendererStore>();
@@ -234,7 +234,7 @@ const codeSource = [
   "| `{:js}{:js}` |",
   "",
 ].join("\n");
-const codeInit = { ...init, docPlugins: { ...init.docPlugins, mdx: true }, mdx: { compileMode: "server" as const } };
+const codeInit = { ...init, contentPolicy: "trusted-mdx" as const, docPlugins: { ...init.docPlugins, mdx: true } };
 const codeCompiled = await compileMarkdownSnapshotDirect({ text: codeSource, init: codeInit });
 const codeSerialized = JSON.parse(JSON.stringify(codeCompiled.blocks)) as Block[];
 const codeStore = await streamed(codeSource, codeInit);
@@ -289,7 +289,6 @@ for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
     const document = new JSDOM(markup).window.document;
     assert.equal(document.querySelector("code")?.textContent, "{:js}{:js}");
     assert.equal(document.querySelector("em")?.textContent, "HTML");
-    assert.equal(document.querySelector('[data-mdx-status="error"]'), null);
     assert.equal(document.querySelector('a[href="/safe"]')?.textContent, "link");
     assert.equal(document.querySelector("p")?.textContent, "Code {:js}{:js} with HTML and {outside} <InlineChip /> link tail.");
   }

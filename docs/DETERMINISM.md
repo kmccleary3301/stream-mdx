@@ -54,7 +54,7 @@ Hidden sources of nondeterminism to avoid:
 - locale-dependent sorting or collation
 - unstable hashing
 - dependency drift (Shiki grammars/themes, sanitizer behavior)
-- differing MDX compilation pipelines between worker/server modes
+- Trusted-MDX compilation is a separate host-owned boundary, not part of worker parser parity
 
 ## How We Test It
 

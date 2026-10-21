@@ -10,7 +10,7 @@ The regression stack currently locks in:
 - deterministic seeded final-HTML convergence for promoted high-risk fixtures
 - scheduler-mode final-HTML parity for representative fixtures
 - computed style snapshots and explicit geometry/color invariants for high-risk surfaces
-- finalize-time invariants such as duplicate IDs, queue drain, MDX state, and structural signatures
+- finalize-time invariants such as duplicate IDs, queue drain, native semantic completion, and structural signatures; trusted document readiness and committed-render checks are a separate asynchronous lifecycle
 
 Snapshots live in:
 

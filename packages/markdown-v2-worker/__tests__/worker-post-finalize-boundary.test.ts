@@ -75,114 +75,6 @@ async function runLazyTokenizationBoundaryTest(): Promise<void> {
   assert.ok(updatedBlock.isFinalized, "lazy tokenization must not reopen finalized code blocks");
 }
 
-async function runMdxStatusBoundaryTest(): Promise<void> {
-  const harness = await createWorkerHarness();
-
-  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
-  prewarmLangs: [],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: true,
-    tables: true,
-    callouts: true,
-    math: true,
-  },
-  mdx: { compileMode: "server" }, });
-
-  const raw = "<Preview message=\"hello\" />";
-  await harness.send({ type: "APPEND", text: raw });
-  await harness.send({ type: "FINALIZE" });
-
-  const beforeDump = findDumpBlocks(await harness.send({ type: "DUMP_BLOCKS" }));
-  const mdxBlock = beforeDump.blocks.find((block) => block.type === "mdx");
-  assert.ok(mdxBlock, "expected finalized mdx block");
-  assert.ok(mdxBlock.isFinalized, "mdx block must be finalized before coordinator status update");
-
-  const staleMessages = await harness.send({
-    type: "MDX_COMPILED",
-    blockId: mdxBlock.id,
-    compiledId: "compiled-stale",
-    rawSignature: `${raw} stale`,
-  });
-  assert.strictEqual(getPatchMessages(staleMessages).length, 0, "stale finalized MDX update must be ignored");
-
-  const validMessages = await harness.send({
-    type: "MDX_COMPILED",
-    blockId: mdxBlock.id,
-    compiledId: "compiled-valid",
-    rawSignature: raw,
-  });
-  const validPatches = getPatchMessages(validMessages).flatMap((message) => message.patches as Patch[]);
-  assert.ok(validPatches.length > 0, "expected valid finalized MDX update to emit a patch");
-  assert.ok(
-    validPatches.every((patch) => getPatchKind(patch) === "semantic"),
-    `finalized MDX status updates must remain semantic: ${validPatches.map((patch) => `${patch.op}:${getPatchKind(patch)}`).join(", ")}`,
-  );
-
-  const afterDump = findDumpBlocks(await harness.send({ type: "DUMP_BLOCKS" }));
-  const updatedBlock = afterDump.blocks.find((block) => block.id === mdxBlock.id);
-  assert.ok(updatedBlock, "expected finalized mdx block after valid update");
-  assert.ok(updatedBlock.isFinalized, "MDX status updates must not reopen finalized blocks");
-  assert.strictEqual(updatedBlock.payload.compiledMdxRef?.id, "compiled-valid", "expected compiled MDX ref after valid update");
-}
-
-async function runMdxErrorBoundaryTest(): Promise<void> {
-  const harness = await createWorkerHarness();
-
-  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
-  prewarmLangs: [],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: true,
-    tables: true,
-    callouts: true,
-    math: true,
-  },
-  mdx: { compileMode: "server" }, });
-
-  const raw = "<Preview message=\"broken\" />";
-  await harness.send({ type: "APPEND", text: raw });
-  await harness.send({ type: "FINALIZE" });
-
-  const beforeDump = findDumpBlocks(await harness.send({ type: "DUMP_BLOCKS" }));
-  const mdxBlock = beforeDump.blocks.find((block) => block.type === "mdx");
-  assert.ok(mdxBlock, "expected finalized mdx block");
-  assert.ok(mdxBlock.isFinalized, "mdx block must be finalized before coordinator error update");
-
-  const staleMessages = await harness.send({
-    type: "MDX_ERROR",
-    blockId: mdxBlock.id,
-    error: "stale compile failure",
-    rawSignature: `${raw} stale`,
-  });
-  assert.strictEqual(getPatchMessages(staleMessages).length, 0, "stale finalized MDX error update must be ignored");
-
-  const validMessages = await harness.send({
-    type: "MDX_ERROR",
-    blockId: mdxBlock.id,
-    error: "compile failed",
-    rawSignature: raw,
-  });
-  const validPatches = getPatchMessages(validMessages).flatMap((message) => message.patches as Patch[]);
-  assert.ok(validPatches.length > 0, "expected valid finalized MDX error update to emit a patch");
-  assert.ok(
-    validPatches.every((patch) => getPatchKind(patch) === "semantic"),
-    `finalized MDX error updates must remain semantic: ${validPatches.map((patch) => `${patch.op}:${getPatchKind(patch)}`).join(", ")}`,
-  );
-
-  const afterDump = findDumpBlocks(await harness.send({ type: "DUMP_BLOCKS" }));
-  const updatedBlock = afterDump.blocks.find((block) => block.id === mdxBlock.id);
-  assert.ok(updatedBlock, "expected finalized mdx block after valid error update");
-  assert.ok(updatedBlock.isFinalized, "MDX error updates must not reopen finalized blocks");
-  assert.strictEqual(updatedBlock.payload.compiledMdxRef?.id, undefined, "error update should clear compiled ref");
-  assert.strictEqual(
-    (updatedBlock.payload.meta as { mdxStatus?: string; mdxError?: string } | undefined)?.mdxStatus,
-    "error",
-    "expected mdx status to transition to error",
-  );
-}
 
 function findNestedCode(blocks: Block[]): Block {
   const visit = (snapshot: NodeSnapshot): Block | undefined => {
@@ -307,8 +199,6 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
 }
 
 await runLazyTokenizationBoundaryTest();
-await runMdxStatusBoundaryTest();
-await runMdxErrorBoundaryTest();
 const lifecycleDom = new JSDOM("<!doctype html><html><body></body></html>");
 const lifecycleGlobals = new Map(["window", "document", "HTMLElement", "Node", "navigator"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
 try {

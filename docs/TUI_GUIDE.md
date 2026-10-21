@@ -118,7 +118,6 @@ worker.postMessage({
     math: true,
     footnotes: true,
   },
-  mdx: { compileMode: "worker" },
 });
 
 worker.postMessage({ type: "APPEND", text: "# Hello\n\nStreaming **markdown** in a TUI.\n" });
@@ -236,7 +235,6 @@ const result = await compileMarkdownSnapshot({
       math: true,
       footnotes: true,
     },
-    mdx: { compileMode: "server" },
     prewarmLangs: ["typescript"],
   },
   cache: {
@@ -271,7 +269,6 @@ const result = await compileMarkdownSnapshotDirect({
       math: true,
       footnotes: true,
     },
-    mdx: { compileMode: "server" },
   },
 });
 ```

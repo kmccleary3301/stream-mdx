@@ -1,6 +1,6 @@
 {
   "fixtureId": "mdx-expression-no-swallow-negative",
-  "fixtureTitle": "MDX Expression No Swallow Negative",
+  "fixtureTitle": "Unfinished MDX-Like Expressions Stay Visible",
   "scenarioId": "S1_slow_small",
   "scenario": {
     "id": "S1_slow_small",
@@ -32,7 +32,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.800000011920929,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "mdx-expression-no-swallow-negative",
           "scenarioId": "S1_slow_small",
@@ -49,8 +49,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -59,12 +57,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expr\">MDX Expr</h1></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expr\">MDX Expr</h1></div>",
       "textSample": "MDX Expr",
       "structure": {
         "topLevelTags": [
@@ -75,15 +71,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -97,7 +90,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 3,
-        "lastPatchToDomMs": 14.300000011920929,
+        "lastPatchToDomMs": 14.099999994039536,
         "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "mdx-expression-no-swallow-negative",
@@ -115,8 +108,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -125,12 +116,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Ne\">MDX Expression No Swallow Ne</h1></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Ne\">MDX Expression No Swallow Ne</h1></div>",
       "textSample": "MDX Expression No Swallow Ne",
       "structure": {
         "topLevelTags": [
@@ -141,15 +130,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -163,7 +149,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 5,
-        "lastPatchToDomMs": 14.199999988079071,
+        "lastPatchToDomMs": 16.400000005960464,
         "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-expression-no-swallow-negative",
@@ -181,8 +167,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -191,12 +175,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text </p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text </p></div>",
       "textSample": "MDX Expression No Swallow NegativePrefix text ",
       "structure": {
         "topLevelTags": [
@@ -207,15 +189,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -229,8 +208,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 12,
-        "lastPatchToDomMs": 15,
-        "lastDurationMs": 0.19999998807907104,
+        "lastPatchToDomMs": 15.099999994039536,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-expression-no-swallow-negative",
           "scenarioId": "S1_slow_small",
@@ -247,8 +226,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -257,12 +234,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item wit</li></ul></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item wit</li></ul></div>",
       "textSample": "MDX Expression No Swallow NegativePrefix text with {expr and trailing prose that must stay visible.List item wit",
       "structure": {
         "topLevelTags": [
@@ -273,15 +248,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -295,8 +267,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 24,
-        "lastPatchToDomMs": 14.199999988079071,
-        "lastDurationMs": 0.19999998807907104,
+        "lastPatchToDomMs": 13.800000011920929,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "mdx-expression-no-swallow-negative",
           "scenarioId": "S1_slow_small",
@@ -313,8 +285,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -323,12 +293,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that m</li></ul></div></li></ul></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that m</li></ul></div></li></ul></div>",
       "textSample": "MDX Expression No Swallow NegativePrefix text with {expr and trailing prose that must stay visible.List item with {nestedExpr and sibling prose that must remain visible.Nested item with {nestedChildEx",
       "structure": {
         "topLevelTags": [
@@ -339,15 +307,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -361,8 +326,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 27,
-        "lastPatchToDomMs": 14.099999994039536,
-        "lastDurationMs": 0.29999998211860657,
+        "lastPatchToDomMs": 15,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-expression-no-swallow-negative",
           "scenarioId": "S1_slow_small",
@@ -379,8 +344,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -389,12 +352,10 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockqu</p></blockquote></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockqu</p></blockquote></div>",
       "textSample": "MDX Expression No Swallow NegativePrefix text with {expr and trailing prose that must stay visible.List item with {nestedExpr and sibling prose that must remain visible.Nested item with {nestedChildEx",
       "structure": {
         "topLevelTags": [
@@ -405,15 +366,12 @@
           "pre": 0,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -427,8 +385,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 35,
-        "lastPatchToDomMs": 14.800000011920929,
-        "lastDurationMs": 0.19999998807907104,
+        "lastPatchToDomMs": 14.099999994039536,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-expression-no-swallow-negative",
           "scenarioId": "S1_slow_small",
@@ -445,8 +403,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -455,12 +411,10 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with {quotedExpr and trailing content.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Quoted list item with {quotedNe</li></ul></blockquote></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with {quotedExpr and trailing content.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Quoted list item with {quotedNe</li></ul></blockquote></div>",
       "textSample": "MDX Expression No Swallow NegativePrefix text with {expr and trailing prose that must stay visible.List item with {nestedExpr and sibling prose that must remain visible.Nested item with {nestedChildEx",
       "structure": {
         "topLevelTags": [
@@ -471,15 +425,12 @@
           "pre": 0,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -493,7 +444,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 42,
-        "lastPatchToDomMs": 14.900000005960464,
+        "lastPatchToDomMs": 14.699999988079071,
         "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "mdx-expression-no-swallow-negative",
@@ -511,8 +462,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -521,12 +470,10 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with {quotedExpr and trailing content.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Quoted list item with {quotedNestedExpr and quoted sibling prose that must remain visible.</li></ul></blockquote><p class=\"markdown-paragraph\">Final par</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with {quotedExpr and trailing content.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Quoted list item with {quotedNestedExpr and quoted sibling prose that must remain visible.</li></ul></blockquote><p class=\"markdown-paragraph\">Final par</p></div>",
       "textSample": "MDX Expression No Swallow NegativePrefix text with {expr and trailing prose that must stay visible.List item with {nestedExpr and sibling prose that must remain visible.Nested item with {nestedChildEx",
       "structure": {
         "topLevelTags": [
@@ -537,15 +484,12 @@
           "pre": 0,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -559,8 +503,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 47,
-        "lastPatchToDomMs": 14.400000005960464,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 13.5,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-expression-no-swallow-negative",
           "scenarioId": "S1_slow_small",
@@ -577,8 +521,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -587,12 +529,10 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with {quotedExpr and trailing content.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Quoted list item with {quotedNestedExpr and quoted sibling prose that must remain visible.</li></ul></blockquote><p class=\"markdown-paragraph\">Final paragraph after the MDX expression negatives.</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with {quotedExpr and trailing content.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Quoted list item with {quotedNestedExpr and quoted sibling prose that must remain visible.</li></ul></blockquote><p class=\"markdown-paragraph\">Final paragraph after the MDX expression negatives.</p></div>",
       "textSample": "MDX Expression No Swallow NegativePrefix text with {expr and trailing prose that must stay visible.List item with {nestedExpr and sibling prose that must remain visible.Nested item with {nestedChildEx",
       "structure": {
         "topLevelTags": [
@@ -603,15 +543,12 @@
           "pre": 0,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -624,20 +561,18 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with {quotedExpr and trailing content.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Quoted list item with {quotedNestedExpr and quoted sibling prose that must remain visible.</li></ul></blockquote><p class=\"markdown-paragraph\">Final paragraph after the MDX expression negatives.</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Expression No Swallow Negative\">MDX Expression No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with {expr and trailing prose that must stay visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with {nestedExpr and sibling prose that must remain visible.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with {nestedChildExpr and sibling prose that must remain visible.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with {quotedExpr and trailing content.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Quoted list item with {quotedNestedExpr and quoted sibling prose that must remain visible.</li></ul></blockquote><p class=\"markdown-paragraph\">Final paragraph after the MDX expression negatives.</p></div>",
     "runtimeState": {
       "rendererVersion": 52,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 49,
-      "lastPatchToDomMs": 11.600000023841858,
-      "lastDurationMs": 0.9000000059604645,
+      "lastPatchToDomMs": 13.400000005960464,
+      "lastDurationMs": 0.5999999940395355,
       "meta": {
         "fixtureId": "mdx-expression-no-swallow-negative",
         "scenarioId": "S1_slow_small",
@@ -659,8 +594,6 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       }
@@ -669,13 +602,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "9e55ddd3cf112d5cd3e7b6a72443310cfdb34295e18190664013e28a40b7baf8",
+        "hash": "23fa858ca33fe2dbf58e25cbfe6f9cb225190710105f1beef8325b3fcb4c813a",
         "textSample": "MDX Expression No Swallow NegativePrefix text with {expr and trailing prose that must stay visible.List item with {neste"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

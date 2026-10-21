@@ -7,7 +7,6 @@ declare global {
   type SnippetTestConfig = {
     initialStreamLimit?: number | null;
     initialIsRunning?: boolean;
-    initialMdxStrategy?: "server" | "worker";
   };
 
   interface Window {
@@ -79,7 +78,6 @@ function SnippetTestClient() {
       fullText={content}
       initialStreamLimit={config.initialStreamLimit ?? null}
       initialIsRunning={typeof config.initialIsRunning === "boolean" ? config.initialIsRunning : true}
-      initialMdxStrategy={config.initialMdxStrategy ?? "worker"}
     />
   );
 }

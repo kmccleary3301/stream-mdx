@@ -4,7 +4,7 @@ import type {
   Block,
   CodeHighlightOutputMode,
   CodeHighlightingMode,
-  CompiledMdxModule,
+  ContentPolicy,
   FormatAnticipationConfig,
   HtmlOptions,
   InlineHtmlDescriptor,
@@ -13,6 +13,8 @@ import type {
   SyntaxRuleSpec,
   TokenLineV1,
 } from "@stream-mdx/core";
+import type { ContentComponentsMap } from "./components/content-components";
+import type { TrustedMdxEngine } from "./trusted-mdx-contract";
 import type { ComponentRegistry } from "./components";
 
 export type { HtmlOptions, SyntaxRuleSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
@@ -198,14 +200,7 @@ export interface BlockComponents {
   blockquote: React.FC<{ inlines: InlineNode[]; renderedContent?: React.ReactNode }>;
   list: React.FC<{ ordered: boolean; items: InlineNode[][] }>;
   html: React.FC<{ __trustedHtml: TrustedHTML | string; elements?: Record<string, GenericComponent>; isSanitized?: boolean; literalTagContent?: string[]; children?: React.ReactNode }>;
-  mdx: React.FC<{
-    compiledRef?: { id: string };
-    compiledModule?: CompiledMdxModule | null;
-    status?: "pending" | "compiled" | "error";
-    errorMessage?: string;
-    raw?: string;
-    meta?: Record<string, unknown>;
-  }>;
+  mdx: React.FC<{ raw?: string; meta?: Record<string, unknown> }>;
   hr: React.FC<React.HTMLAttributes<HTMLHRElement>>;
   table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;
   [k: string]: GenericComponent;
@@ -239,11 +234,10 @@ export interface RendererConfig extends ElementFilterOptions {
   sanitization?: {
     schemaId?: string;
   };
-  mdx?: {
-    enabled?: boolean;
-    compileEndpoint?: string;
-    compileStrategy?: "server" | "worker";
-    components?: Record<string, GenericComponent>;
+  contentPolicy?: ContentPolicy;
+  contentComponents?: ContentComponentsMap;
+  engines?: {
+    mdx?: TrustedMdxEngine;
   };
   plugins?: {
     footnotes?: boolean;
@@ -262,7 +256,6 @@ export interface RendererConfig extends ElementFilterOptions {
   };
   codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
-  artifactHtml?: boolean;
   blockRenderer?: BlockRendererOverride;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
@@ -307,7 +300,6 @@ export interface Renderer {
   onUpdate(cb: (blocks: ReadonlyArray<Block>) => void): () => void;
   setBlockComponents(map: Partial<BlockComponents>): void;
   setInlineComponents(map: Partial<InlineComponents>): void;
-  setMdxComponents(map: Record<string, GenericComponent>): void;
   setCodeRenderers(map: Record<string, CodeFenceRenderer>): void;
   setMathRenderer(renderer: MathRenderer): void;
   setTableVirtualization(options: TableVirtualizationOptions): void;

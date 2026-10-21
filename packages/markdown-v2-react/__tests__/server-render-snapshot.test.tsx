@@ -15,7 +15,6 @@ async function runServerRenderSnapshotTest(): Promise<void> {
     text: ["# Hello", "", "A paragraph.", "", "```ts", "const x = 1;", "```"].join("\n"),
     init: {
       docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-      mdx: { compileMode: "server" },
       prewarmLangs: ["typescript"],
     },
   });

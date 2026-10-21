@@ -25,7 +25,8 @@ export interface SnapshotArtifactV1 {
   tocHeadings?: TocHeading[];
   init?: {
     docPlugins?: WorkerInitMessage["docPlugins"];
-    mdx?: WorkerInitMessage["mdx"];
+    contentPolicy?: WorkerInitMessage["contentPolicy"];
+    contentComponents?: WorkerInitMessage["contentComponents"];
     prewarmLangs?: string[];
     themes?: WorkerInitMessage["themes"];
     syntax?: WorkerInitMessage["syntax"];
@@ -329,12 +330,13 @@ export async function compileMarkdownSnapshotDirect(
         type: "INIT",
         schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent: text,
-        prewarmLangs: init?.prewarmLangs,
-        docPlugins: init?.docPlugins,
-        mdx: init?.mdx,
-        themes: init?.themes,
-        syntax: init?.syntax,
-        html: init?.html,
+        ...(init?.prewarmLangs === undefined ? {} : { prewarmLangs: init.prewarmLangs }),
+        ...(init?.docPlugins === undefined ? {} : { docPlugins: init.docPlugins }),
+        ...(init?.contentPolicy === undefined ? {} : { contentPolicy: init.contentPolicy }),
+        ...(init?.contentComponents === undefined ? {} : { contentComponents: init.contentComponents }),
+        ...(init?.themes === undefined ? {} : { themes: init.themes }),
+        ...(init?.syntax === undefined ? {} : { syntax: init.syntax }),
+        ...(init?.html === undefined ? {} : { html: init.html }),
       },
       timeoutMs,
     );
@@ -391,12 +393,13 @@ export async function compileMarkdownSnapshotDirect(
       })(),
       init: init
         ? {
-            docPlugins: init.docPlugins,
-            mdx: init.mdx,
-            prewarmLangs: init.prewarmLangs,
-            themes: init.themes,
-            syntax: init.syntax,
-            html: init.html,
+            ...(init.docPlugins === undefined ? {} : { docPlugins: init.docPlugins }),
+            ...(init.contentPolicy === undefined ? {} : { contentPolicy: init.contentPolicy }),
+            ...(init.contentComponents === undefined ? {} : { contentComponents: init.contentComponents }),
+            ...(init.prewarmLangs === undefined ? {} : { prewarmLangs: init.prewarmLangs }),
+            ...(init.themes === undefined ? {} : { themes: init.themes }),
+            ...(init.syntax === undefined ? {} : { syntax: init.syntax }),
+            ...(init.html === undefined ? {} : { html: init.html }),
           }
         : undefined,
     };

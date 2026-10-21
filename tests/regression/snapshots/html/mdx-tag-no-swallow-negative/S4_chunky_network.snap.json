@@ -1,6 +1,6 @@
 {
   "fixtureId": "mdx-tag-no-swallow-negative",
-  "fixtureTitle": "MDX Tag No Swallow Negative",
+  "fixtureTitle": "Unfinished MDX-Like Tags Stay Visible",
   "scenarioId": "S4_chunky_network",
   "scenario": {
     "id": "S4_chunky_network",
@@ -32,7 +32,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.9000000059604645,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "mdx-tag-no-swallow-negative",
           "scenarioId": "S4_chunky_network",
@@ -49,8 +49,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -59,13 +57,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
-      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with &lt;DangerChip&gt;{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -75,15 +71,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -98,7 +91,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.9000000059604645,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "mdx-tag-no-swallow-negative",
           "scenarioId": "S4_chunky_network",
@@ -115,8 +108,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -125,13 +116,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
-      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with &lt;DangerChip&gt;{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -141,15 +130,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -164,7 +150,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.9000000059604645,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "mdx-tag-no-swallow-negative",
           "scenarioId": "S4_chunky_network",
@@ -181,8 +167,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -191,13 +175,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
-      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with &lt;DangerChip&gt;{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -207,15 +189,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -230,7 +209,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.9000000059604645,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "mdx-tag-no-swallow-negative",
           "scenarioId": "S4_chunky_network",
@@ -247,8 +226,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -257,13 +234,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
-      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with &lt;DangerChip&gt;{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -273,15 +248,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -296,7 +268,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.9000000059604645,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "mdx-tag-no-swallow-negative",
           "scenarioId": "S4_chunky_network",
@@ -313,8 +285,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -323,13 +293,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
-      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with &lt;DangerChip&gt;{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -339,15 +307,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -362,7 +327,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.9000000059604645,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "mdx-tag-no-swallow-negative",
           "scenarioId": "S4_chunky_network",
@@ -379,8 +344,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -389,13 +352,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
-      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with &lt;DangerChip&gt;{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -405,15 +366,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -428,7 +386,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.9000000059604645,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "mdx-tag-no-swallow-negative",
           "scenarioId": "S4_chunky_network",
@@ -445,8 +403,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -455,13 +411,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
-      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with &lt;DangerChip&gt;{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -471,15 +425,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -494,7 +445,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.9000000059604645,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "mdx-tag-no-swallow-negative",
           "scenarioId": "S4_chunky_network",
@@ -511,8 +462,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -521,13 +470,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
-      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with &lt;DangerChip&gt;{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -537,15 +484,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -558,20 +502,18 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with &lt;DangerChip&gt;{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
     "runtimeState": {
       "rendererVersion": 6,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 3,
-      "lastPatchToDomMs": 16.19999998807907,
-      "lastDurationMs": 0.19999998807907104,
+      "lastPatchToDomMs": 13.299999982118607,
+      "lastDurationMs": 0,
       "meta": {
         "fixtureId": "mdx-tag-no-swallow-negative",
         "scenarioId": "S4_chunky_network",
@@ -593,8 +535,6 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       }
@@ -603,13 +543,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "a50230e539e81b6184a66dde51998edec5debb122ab817d0366a3cd99065b342",
-        "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following "
+        "hash": "b5fda6d12cbf84c4b38cde5746601c8ec9828c58ed0015ae3827af8ce3fb98be",
+        "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip>{expr and trailing prose that must stay visible.This following p"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

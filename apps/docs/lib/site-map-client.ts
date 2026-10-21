@@ -114,8 +114,8 @@ export const SEARCH_ENTRIES: SiteLink[] = [
   },
   {
     href: "/showcase/assistant-stream",
-    label: "Streaming Assistant & Sandboxed Artifacts",
-    summary: "Executable chat thread showcasing dual-engine streaming, math, Mermaid, and sandboxed ArtifactFrame visualizations.",
+    label: "Streaming Assistant & Safe Code Fences",
+    summary: "Executable chat thread showcasing dual-engine streaming, math, Mermaid, and inert fenced HTML examples.",
     kind: "showcase",
   },
   {

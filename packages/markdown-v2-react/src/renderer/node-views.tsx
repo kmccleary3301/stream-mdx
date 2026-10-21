@@ -1,6 +1,6 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import { normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type UrlTransform } from "@stream-mdx/core";
+import { normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { InlineComponents, TableElements } from "../types";
 import {
@@ -16,7 +16,8 @@ import {
   tableToTsv,
 } from "../components";
 import type { ComponentRegistry } from "../components";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
+import { renderOwnedHtmlTree } from "../components/owned-html";
 import {
   RenderConfigVersionContext,
   useRendererChildren,
@@ -30,6 +31,13 @@ import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualize
 import { CodeBlockView } from "./code-block-view";
 import { ManagedParagraphBlockView, ManagedParagraphContentView } from "./paragraph-block-view";
 import { ManagedTableBlockView } from "./table-block-view";
+import { TrustedMdxProjectionContext } from "../trusted-mdx-boundary";
+import { renderTrustedMdxInlineChild, TrustedMdxInlineBlockView } from "./trusted-mdx-inline-child";
+import {
+  assertTrustedMdxNativeChildContinuations,
+  type TrustedMdxDocumentSnapshot,
+  type TrustedMdxNativeChildOwner,
+} from "../trusted-mdx-contract";
 import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 import { getStoreResetVersion } from "./store-reset-version";
 
@@ -148,7 +156,94 @@ function useListProjectionFrontier(
 }
 
 
-export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = ({ store, blockId, registry }) => {
+import { renderTrustedMdxOwner } from "../trusted-mdx/native-inline";
+import { getActiveTrustedMdxNativeTree } from "../trusted-mdx/projection";
+
+function hasTrustedMdxInline(nodes: readonly InlineNode[]): boolean {
+  return nodes.some((node) =>
+    node.kind === "trusted-mdx-inline" ||
+    ("children" in node && Array.isArray(node.children) && hasTrustedMdxInline(node.children)),
+  );
+}
+
+type TrustedMdxFlowNode = Extract<InlineNode, { readonly kind: "trusted-mdx-inline" }>;
+type TrustedMdxParagraphSegment =
+  | { readonly kind: "flow"; readonly node: TrustedMdxFlowNode }
+  | { readonly kind: "paragraph"; readonly nodes: InlineNode[] };
+
+function hasFlowPlacement(ownerId: string, snapshot: TrustedMdxDocumentSnapshot): boolean {
+  const projection = snapshot.projections[ownerId];
+  return (
+    projection?.kind === "render" ||
+    projection?.kind === "server-content" ||
+    projection?.kind === "unmapped"
+  ) && projection.placement === "flow";
+}
+
+function hasTrustedFlowNodes(
+  nodes: readonly InlineNode[],
+  snapshot: TrustedMdxDocumentSnapshot,
+): boolean {
+  for (const node of nodes) {
+    if (node.kind === "trusted-mdx-inline" && hasFlowPlacement(node.ownerId, snapshot)) return true;
+    if ("children" in node && Array.isArray(node.children) && hasTrustedFlowNodes(node.children, snapshot)) return true;
+  }
+  return false;
+}
+
+function splitTrustedFlowNode(
+  node: InlineNode,
+  snapshot: TrustedMdxDocumentSnapshot,
+): TrustedMdxParagraphSegment[] | null {
+  if (node.kind === "trusted-mdx-inline" && hasFlowPlacement(node.ownerId, snapshot)) {
+    return [{ kind: "flow", node }];
+  }
+  if (!("children" in node) || !Array.isArray(node.children) || !hasTrustedFlowNodes(node.children, snapshot)) return null;
+  const children = splitTrustedFlowNodes(node.children, snapshot);
+  if (!children) return null;
+  return children.map((segment) =>
+    segment.kind === "flow"
+      ? segment
+      : { kind: "paragraph", nodes: [{ ...node, children: [...segment.nodes] } as InlineNode] },
+  );
+}
+
+function splitTrustedFlowNodes(
+  nodes: readonly InlineNode[],
+  snapshot: TrustedMdxDocumentSnapshot,
+): TrustedMdxParagraphSegment[] | null {
+  if (!hasTrustedFlowNodes(nodes, snapshot)) return null;
+  const segments: TrustedMdxParagraphSegment[] = [];
+  let paragraph: InlineNode[] = [];
+  let foundFlow = false;
+  const flushParagraph = () => {
+    if (paragraph.length === 0) return;
+    segments.push({ kind: "paragraph", nodes: paragraph });
+    paragraph = [];
+  };
+
+  for (const node of nodes) {
+    const split = splitTrustedFlowNode(node, snapshot);
+    if (!split) {
+      paragraph.push(node);
+      continue;
+    }
+    foundFlow = true;
+    flushParagraph();
+    segments.push(...split);
+  }
+
+  flushParagraph();
+  return foundFlow ? segments : null;
+}
+
+export const BlockNodeRenderer: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  nativeFlowChild?: boolean;
+  parentTagName?: string;
+}> = ({ store, blockId, registry, nativeFlowChild = false, parentTagName }) => {
   const node = useRendererNode(store, blockId);
   const renderParagraphChild = React.useCallback(
     (nodeId: string) => (
@@ -164,7 +259,19 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
     ),
     [registry, store],
   );
+  const trustedSnapshot = React.useContext(TrustedMdxProjectionContext);
   if (!node) return null;
+  // Trusted projections apply before any native owner view, including managed paragraphs.
+  const projection = trustedSnapshot?.projections[blockId];
+  if (projection?.kind === "module") return null;
+  if (!nativeFlowChild && projection?.nativeFlowParent === true) return null;
+  if (
+    node.type !== "mdx" &&
+    (projection?.kind === "render" || projection?.kind === "server-content") &&
+    projection.wholeBlockFlowRoot === true
+  ) {
+    return <MdxBlockView store={store} blockId={blockId} registry={registry} />;
+  }
   if (node.type === "paragraph" && store.getParagraphBlock(blockId)) {
     const block = node.block;
     if (!block) return null;
@@ -190,7 +297,8 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
 
   // The native quote view still invokes the registered wrapper, but supplies its prepared children.
   const preparedQuote = block.type === "blockquote" && Boolean(block.payload.meta?.preparedNested);
-  const mixedParagraph = block.type === "paragraph" && Array.isArray(block.payload.meta?.mixedSegments);
+  const hasPreparedMdxInline = block.type === "paragraph" && hasTrustedMdxInline(block.payload.inline ?? []);
+  const mixedParagraph = block.type === "paragraph" && Array.isArray(block.payload.meta?.mixedSegments) && !hasPreparedMdxInline;
   if ((registry.hasCustomBlockComponent(block.type) || mixedParagraph) && !preparedQuote) {
     if (block.type === "code") {
       return (
@@ -226,7 +334,7 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
       element = <CodeBlockView store={store} blockId={block.id} registry={registry} />;
       break;
     case "html":
-      element = <HtmlBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <HtmlBlockView store={store} blockId={block.id} registry={registry} parentTagName={parentTagName} />;
       break;
     case "mdx":
       element = <MdxBlockView store={store} blockId={block.id} registry={registry} />;
@@ -241,6 +349,7 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
 };
 
 const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+  const trustedSnapshot = React.useContext(TrustedMdxProjectionContext);
   const node = useRendererNode(store, blockId);
   const block = node?.block;
   const childIds = useRendererChildren(store, blockId);
@@ -251,11 +360,67 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     recordViewRecords(store, 1);
   }
 
+  const includesTrustedMdx = hasTrustedMdxInline(block.payload.inline ?? []);
   const inlineComponents = registry.getInlineComponents();
   const htmlElements = registry.getHtmlElements();
   const literalTagContent = registry.getLiteralTagContent();
-  if (block.payload.meta?.htmlParagraphTree) {
-    return <>{registry.renderHtmlTree(block.payload.meta.htmlParagraphTree, undefined, block)}</>;
+  const meta = block.payload.meta;
+  const sourceOwnedHtmlTree = meta?.htmlOwnership === true && Array.isArray(meta.htmlTree) ? meta.htmlTree : undefined;
+  if (sourceOwnedHtmlTree) {
+    return <>{registry.renderHtmlTree(sourceOwnedHtmlTree, undefined, block)}</>;
+  }
+  if (meta?.htmlParagraphTree) {
+    return <>{registry.renderHtmlTree(meta.htmlParagraphTree, undefined, block)}</>;
+  }
+
+  if (block.isFinalized && trustedSnapshot) {
+    const flowSegments = splitTrustedFlowNodes(block.payload.inline ?? [], trustedSnapshot);
+    if (flowSegments) {
+      const ParagraphComponent = registry.getBlockComponent("paragraph");
+      return (
+        <>
+          {flowSegments.map((segment, index) => {
+            const key = `${block.id}:trusted-flow:${index}`;
+            if (segment.kind === "flow") {
+              const flowProjection = trustedSnapshot.projections[segment.node.ownerId];
+              const nativeChildren =
+                flowProjection !== undefined &&
+                (flowProjection.kind === "render" || flowProjection.kind === "server-content") &&
+                flowProjection.nativeChildren === true
+                  ? renderTrustedMdxNativeChildren(block, flowProjection.rootElementName, registry, store, flowProjection.nativeChildOwners, flowProjection.flowChildren)
+                  : undefined;
+              return (
+                <React.Fragment key={key}>
+                  {renderTrustedMdxOwner(segment.node.ownerId, trustedSnapshot, segment.node.raw, true, nativeChildren)}
+                </React.Fragment>
+              );
+            }
+            const children = renderInlineNodes(
+              segment.nodes,
+              inlineComponents,
+              registry.getUrlTransform(),
+              registry,
+              "p",
+              registry.getRenderInlineContext(block.isFinalized, key),
+            );
+            const paragraph = React.createElement(ParagraphComponent, {
+              key,
+              inlines: segment.nodes,
+              raw: block.payload.raw,
+              meta: block.payload.meta,
+              children,
+            });
+            if (!registry.hasElementFilters()) return paragraph;
+            return registry.filterElement(
+              { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
+              { source: "markdown" },
+              () => paragraph,
+              () => children,
+            );
+          })}
+        </>
+      );
+    }
   }
 
   if (!block.isFinalized) {
@@ -263,7 +428,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     const meta = (block.payload.meta ?? {}) as { inlineStatus?: string; mixedSegments?: MixedContentSegment[] };
     const segments = Array.isArray(meta.mixedSegments) ? meta.mixedSegments : [];
     // Preserve the existing behavior for MDX/HTML-mixed paragraphs while streaming.
-    if (segments.length > 0) {
+    if (segments.length > 0 && !includesTrustedMdx) {
       const allowMixedStreaming = Boolean((meta as { allowMixedStreaming?: boolean }).allowMixedStreaming);
       if (!allowMixedStreaming) {
         return <p className="markdown-paragraph streaming-partial">{raw}</p>;
@@ -349,7 +514,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     ? ((block.payload.meta as { mixedSegments?: MixedContentSegment[] }).mixedSegments as MixedContentSegment[])
     : undefined;
 
-  if (segments && segments.length > 0) {
+  if (segments && segments.length > 0 && !includesTrustedMdx) {
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       recordViewRecords(store, segments.length);
     }
@@ -520,7 +685,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
         }
         case "mdx":
           elements.push(
-            <span key={`blockquote-mdx-${block.id}-${segmentIndex}`} data-mdx-status={segment.status ?? "pending"}>
+            <span key={`blockquote-mdx-${block.id}-${segmentIndex}`}>
               {segment.value}
             </span>,
           );
@@ -565,7 +730,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
     if (childNode.type === "list") {
       return <ListBlockView key={childId} store={store} blockId={childId} registry={registry} depth={0} />;
     }
-    return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
+    return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} parentTagName="blockquote" />;
   });
 
   if (block.payload.meta?.preparedNested && childIds.length === 0) {
@@ -661,6 +826,7 @@ const MixedSegmentView: React.FC<{
   registry?: ComponentRegistry;
   parentTagName?: string;
 }> = React.memo(({ store, nodeId, inlineComponents, urlTransform, registry, parentTagName }) => {
+  const trustedSnapshot = React.useContext(TrustedMdxProjectionContext);
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -687,14 +853,19 @@ const MixedSegmentView: React.FC<{
     case "list-item-html": {
       const htmlTree = node.props?.htmlTree as HtmlTreeNode[] | undefined;
       if (registry && htmlTree !== undefined) {
-        return <>{renderHtmlOwnershipTree(
-          htmlTree, registry.getHtmlElements(), (block) =>
-            <OwnedHtmlBlock key={block.id} block={block} registry={registry} />,
-          (nodes, parentTag) => renderInlineNodes(nodes, inlineComponents, urlTransform, registry, parentTag),
-          undefined, undefined, urlTransform,
-          registry.hasElementFilters() ? (element, context, renderElement, renderChildren) => registry.filterElement(element, context, renderElement, renderChildren) : undefined,
+        return <>{renderOwnedHtmlTree(htmlTree, {
+          elements: registry.getHtmlElements(),
+          renderBlock: (block) => <OwnedHtmlBlock key={block.id} block={block} registry={registry} />,
+          renderInline: (nodes, parentTagName) => renderInlineNodes(nodes, inlineComponents, urlTransform, registry, parentTagName),
+          inlineComponents,
+          urlTransform,
+          isAutolinkProtocolDisabled: (href) => registry.isAutolinkProtocolDisabled(href),
+          filterElement: registry.hasElementFilters()
+            ? (element, context, renderElement, renderChildren) => registry.filterElement(element, context, renderElement, renderChildren)
+            : undefined,
           parentTagName,
-        )}</>;
+          contentComponents: registry.getContentComponents(),
+        })}</>;
       }
       const raw = typeof node.props?.raw === "string" ? (node.props.raw as string) : undefined;
       const html = typeof node.props?.html === "string" ? (node.props?.html as string) : "";
@@ -715,24 +886,11 @@ const MixedSegmentView: React.FC<{
     case "paragraph-mdx":
     case "blockquote-mdx":
     case "list-item-mdx": {
-      const status = (node.props?.status as string) ?? "pending";
-      const raw = typeof node.props?.raw === "string" ? (node.props?.raw as string) : "";
-      if (status === "compiled") {
-        return <span className="markdown-mdx-inline" data-mdx-status="compiled" />;
+      const raw = typeof node.props?.raw === "string" ? node.props.raw : "";
+      if (trustedSnapshot) {
+        return renderTrustedMdxOwner(node.id, trustedSnapshot, raw, true);
       }
-      if (status === "error") {
-        const message = raw || "MDX error";
-        return (
-          <span className="markdown-mdx-inline text-destructive" data-mdx-status="error">
-            {message}
-          </span>
-        );
-      }
-      return (
-        <span className="markdown-mdx-inline" data-mdx-status={status}>
-          {status === "compiled" ? "" : raw}
-        </span>
-      );
+      return <span className="markdown-mdx-inline">{raw}</span>;
     }
     default:
       return null;
@@ -741,27 +899,126 @@ const MixedSegmentView: React.FC<{
 
 MixedSegmentView.displayName = "MixedSegmentView";
 
-const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry; parentTagName?: string }> = React.memo(({ store, blockId, registry, parentTagName }) => {
   const node = useRendererNode(store, blockId);
   if (!node || !node.block) return null;
   const tree = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
   if (tree) {
-    return <>{registry.renderHtmlTree(tree, (block) =>
-      <OwnedHtmlBlock key={block.id} block={block} registry={registry} />)}</>;
+    return <>{registry.renderHtmlTree(
+      tree,
+      (block, blockParentTagName) => (
+        <OwnedHtmlBlock key={block.id} block={block} registry={registry} parentTagName={blockParentTagName} />
+      ),
+      undefined,
+      parentTagName,
+    )}</>;
   }
   return registry.renderBlock(node.block);
 });
 
 HtmlBlockView.displayName = "HtmlBlockView";
 
-const OwnedHtmlBlock: React.FC<{ block: Block; registry: ComponentRegistry }> = ({ block, registry }) => {
+const OwnedHtmlBlock: React.FC<{
+  block: Block;
+  registry: ComponentRegistry;
+  nativeFlowChild?: boolean;
+  parentTagName?: string;
+}> = ({ block, registry, nativeFlowChild = false, parentTagName }) => {
   const store = React.useMemo(() => createRendererStore([block]), [block]);
-  return <BlockNodeRenderer store={store} blockId={block.id} registry={registry} />;
+  return <BlockNodeRenderer store={store} blockId={block.id} registry={registry} nativeFlowChild={nativeFlowChild} parentTagName={parentTagName} />;
 };
+
+function findPreparedTreeBlock(
+  tree: readonly HtmlTreeNode[] | undefined,
+  blockId: string,
+): Block | undefined {
+  if (!tree) return undefined;
+  const pending: HtmlTreeNode[] = [...tree];
+  while (pending.length > 0) {
+    const node = pending.pop();
+    if (!node) continue;
+    if (node.kind === "block") {
+      if (node.block.id === blockId) return node.block;
+    } else if (node.kind === "element" || node.kind === "component") {
+      pending.push(...node.children);
+    }
+  }
+  return undefined;
+}
+
+function renderTrustedMdxNativeChildren(
+  block: Block,
+  rootElementName: string | null | undefined,
+  registry: ComponentRegistry,
+  store: RendererStore,
+  childOwners?: readonly TrustedMdxNativeChildOwner[],
+  flowChildren?: readonly TrustedMdxFlowChildSpan[],
+): React.ReactNode | undefined {
+  if (rootElementName === undefined) return undefined;
+  if (!childOwners || !flowChildren || childOwners.length !== flowChildren.length) {
+    throw new Error(`Trusted MDX flow owner "${block.id}" has misaligned compiler child spans and native owners.`);
+  }
+  assertTrustedMdxNativeChildContinuations(childOwners, flowChildren);
+  const preparedTree = getActiveTrustedMdxNativeTree(block.payload.meta);
+  return childOwners.map((owner, index) => {
+    if (owner === null) return undefined;
+    if (owner.kind === "continuation") {
+      return undefined;
+    }
+    if (owner.kind === "block") {
+      if (flowChildren[index]?.kind === "inline") {
+        return (
+          <TrustedMdxInlineBlockView
+            key={`${owner.blockId}:${index}`}
+            store={store}
+            blockId={owner.blockId}
+            registry={registry}
+            parentTagName={rootElementName ?? undefined}
+          />
+        );
+      }
+      return (
+        <BlockNodeRenderer
+          key={`${owner.blockId}:${index}`}
+          store={store}
+          blockId={owner.blockId}
+          registry={registry}
+          nativeFlowChild
+          parentTagName={rootElementName ?? undefined}
+        />
+      );
+    }
+    const child = findPreparedTreeBlock(preparedTree, owner.blockId);
+    if (!child) {
+      throw new Error(`Trusted MDX flow owner "${block.id}" has no prepared tree block "${owner.blockId}".`);
+    }
+    if (flowChildren[index]?.kind === "inline") {
+      return (
+        <React.Fragment key={`${owner.blockId}:${index}`}>
+          {renderTrustedMdxInlineChild(child, registry, rootElementName ?? undefined)}
+        </React.Fragment>
+      );
+    }
+    return <OwnedHtmlBlock key={`${owner.blockId}:${index}`} block={child} registry={registry} nativeFlowChild parentTagName={rootElementName ?? undefined} />;
+  });
+}
+
 
 const MdxBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
+  const trustedSnapshot = React.useContext(TrustedMdxProjectionContext);
   if (!node || !node.block) return null;
+  const projection = trustedSnapshot?.projections[node.id];
+  const nativeChildren =
+    projection !== undefined &&
+    (projection.kind === "render" || projection.kind === "server-content") &&
+    projection.nativeChildren === true
+      ? renderTrustedMdxNativeChildren(node.block, projection.rootElementName, registry, store, projection.nativeChildOwners, projection.flowChildren)
+      : undefined;
+  const projected = trustedSnapshot
+    ? renderTrustedMdxOwner(node.id, trustedSnapshot, node.block.payload.raw ?? "", false, nativeChildren)
+    : undefined;
+  if (projected !== undefined) return projected;
   return registry.renderBlock(node.block);
 });
 
@@ -1150,7 +1407,7 @@ const ListItemView: React.FC<{ store: RendererStore; nodeId: string; index: numb
         case "list":
           return <ListBlockView key={childId} store={store} blockId={childId} registry={registry} depth={depth + 1} />;
         default:
-          return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
+          return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} parentTagName="li" />;
       }
     });
   }, [contentChildIds, store, inlineComponents, registry, depth, listLoose, renderConfigVersion]);

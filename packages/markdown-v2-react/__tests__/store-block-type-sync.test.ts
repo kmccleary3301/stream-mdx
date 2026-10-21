@@ -24,7 +24,7 @@ function mdxBlock(id: string): Block {
     isFinalized: true,
     payload: {
       raw: "<Preview />",
-      meta: { originalType: "html", mdxStatus: "pending" },
+      meta: { originalType: "html" },
     },
   };
 }

@@ -2,11 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
 import { components as mdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
 import { cn } from "@/lib/utils";
 import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle, type StreamingMarkdownProps } from "@stream-mdx/react";
-import { useCallback, useMemo, useRef, useState, type ComponentType } from "react";
+import { useCallback, useMemo, useRef, useState, type ElementType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Streamdown } from "streamdown";
@@ -58,6 +59,11 @@ const RICH_FEATURE_STRESS: NonNullable<StreamingMarkdownProps["features"]> = {
     regex: false,
   },
 };
+
+const comparisonMdxEngine = createTrustedMdxEngine({
+  components: mdxComponents as Readonly<Record<string, ElementType>>,
+});
+const comparisonMdxEngines = { mdx: comparisonMdxEngine };
 const streamdownPlugins = {
   code,
   math: createMathPlugin({ singleDollarTextMath: true }),
@@ -694,7 +700,8 @@ export function StaticRenderComparison() {
                 features={streamMdxFeatures}
                 scheduling={{ batch: "rAF", startupMicrotaskFlushes: 4 }}
                 caret={false}
-                mdxComponents={mdxComponents as Record<string, ComponentType<unknown>>}
+                contentPolicy={streamMdxFeatures.mdx ? "trusted-mdx" : "restricted"}
+                engines={streamMdxFeatures.mdx ? comparisonMdxEngines : undefined}
                 components={registry.getBlockComponentMap()}
                 inlineComponents={registry.getInlineComponentMap()}
                 tableElements={tableElements}

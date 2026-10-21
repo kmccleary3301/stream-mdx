@@ -324,8 +324,6 @@ export class RootCodeSourceOwner {
         inline: undefined,
         highlightedHtml: presentation?.highlightedHtml,
         sanitizedHtml: undefined,
-        compiledMdxRef: undefined,
-        compiledMdxModule: undefined,
       },
     };
     this.cachedBlock = { revision: this.revision, block };

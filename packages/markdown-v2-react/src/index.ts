@@ -1,9 +1,24 @@
 export * from "./components";
 export { STREAM_MDX_ANIMATION_CSS } from "./animation";
-export * from "./mdx-client";
-export * from "./mdx-coordinator";
-export * from "./mdx-prefetch";
-export type { MdxHydrationOptions } from "./mdx-hydration-context";
+export type {
+  TrustedMdxRenderProps,
+  TrustedMdxRevision,
+  TrustedMdxBlockProjection,
+  TrustedMdxDocumentSnapshot,
+  TrustedMdxDocument,
+  TrustedMdxEngine,
+  TrustedMdxEngineOptions,
+} from "./trusted-mdx-contract";
+export { defineContentComponent } from "./components/content-components";
+export type {
+  BroadContentComponentOptions,
+  ContentComponentHostProps,
+  ContentComponentProps,
+  ContentComponentPropsGuard,
+  ContentComponentRegistration,
+  ContentComponentsMap,
+  ValidatedContentComponentOptions,
+} from "./components/content-components";
 export * from "./math/display-wrapper";
 export * from "./renderer";
 export * from "./renderer/deferred-render-context";

@@ -2,7 +2,7 @@ import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
-import { detectMDX, type Block, type InlineNode, type MixedContentSegment, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { detectMDX, type Block, type ContentPolicy, type InlineNode, type MixedContentSegment, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 import { collectMathProtectedRanges } from "../src/engine/parse-extract";
@@ -29,12 +29,17 @@ function containsMathNodes(nodes: InlineNode[] | undefined): boolean {
   return false;
 }
 
-async function renderSnippetWithPlugins(snippet: string): Promise<Block[]> {
+async function renderSnippetWithPlugins(snippet: string, contentPolicy?: ContentPolicy): Promise<Block[]> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
-  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
-  prewarmLangs: [],
-  docPlugins: { html: true, mdx: true, math: true, tables: true, callouts: true }, });
+  const initMessages = await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: [],
+    ...(contentPolicy === undefined ? {} : { contentPolicy }),
+    docPlugins: { html: true, mdx: true, math: true, tables: true, callouts: true },
+  });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not initialize before streaming snippet");
   store.resetSnapshot(init.snapshot);
@@ -56,17 +61,19 @@ async function testNestedNegativeMathFallback(): Promise<void> {
   const source = readFileSync(new URL("../../../tests/regression/fixtures/math-left-right-nested-negative.md", import.meta.url), "utf8");
   const tex = "\\left( \\frac{\\left[a+b}{c}";
   const harness = await createWorkerHarness();
-  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
-  prewarmLangs: [],
-  mdx: { compileMode: "worker" },
-  docPlugins: { html: true, mdx: true, math: true, formatAnticipation: { mathInline: true, mathBlock: true, mdx: true, html: true } }, });
+  await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: { html: true, mdx: true, math: true, formatAnticipation: { mathInline: true, mathBlock: true, mdx: true, html: true } },
+  });
   const assertFallback = (blocks: Block[]): void => {
     const math = blocks.find((block) => block.payload.raw.includes(tex));
     assert.ok(math, "the actual nested-negative math source must remain visible");
     assert.equal(math.type, "paragraph", "raw math must not compile through MDX's EOF math closure");
     assert.ok(math.payload.inline?.every((node) => node.kind === "text"), "unsupported math must remain literal, not speculative math or JSX");
     assert.equal(math.payload.inline?.map((node) => node.kind === "text" ? node.text : "").join(""), math.payload.raw);
-    assert.equal(math.payload.compiledMdxModule, undefined);
     assert.equal(math.payload.meta?.mixedSegments, undefined);
     const protectedRanges = math.payload.meta?.protectedRanges as Array<{ from: number; to: number; kind: string }> | undefined;
     assert.ok(protectedRanges?.some((range) => range.kind === "math-display" && range.from === 0 && range.to === math.payload.raw.length));
@@ -128,7 +135,7 @@ async function testNestedNegativeMathFallback(): Promise<void> {
 }
 
 async function main() {
-  const blocks = await renderSnippetWithPlugins(SAMPLE_SNIPPET);
+  const blocks = await renderSnippetWithPlugins(SAMPLE_SNIPPET, "trusted-mdx");
   const mdxBlock = blocks.find((block) => block.type === "mdx");
   assert.ok(mdxBlock, "expected MDX detection plugin to retag Callout block to type 'mdx'");
 

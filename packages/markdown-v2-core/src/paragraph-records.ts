@@ -186,6 +186,15 @@ function freezeInlineNode(node: InlineNode): InlineNode {
       Object.freeze(owned);
       return owned;
     }
+    case "trusted-mdx-inline": {
+      const owned: Extract<InlineNode, { kind: "trusted-mdx-inline" }> = {
+        kind: "trusted-mdx-inline",
+        raw: node.raw,
+        ownerId: node.ownerId,
+      };
+      Object.freeze(owned);
+      return owned;
+    }
     default: {
       const unreachable: never = node;
       return unreachable;
@@ -250,6 +259,20 @@ function freezeParagraphChildHtmlNode(node: HtmlTreeNode): HtmlTreeNode {
       children,
       ...(node.inlineNode ? { inlineNode: freezeInlineNode(node.inlineNode) } : {}),
       ...(node.paragraphRoot === undefined ? {} : { paragraphRoot: node.paragraphRoot }),
+    };
+    return Object.freeze(owned);
+  }
+  if (node.kind === "component") {
+    const children = node.children.map(freezeParagraphChildHtmlNode);
+    Object.freeze(children);
+    const owned: Extract<HtmlTreeNode, { kind: "component" }> = {
+      kind: "component",
+      name: node.name,
+      props: freezeOwnedValue(node.props) as Readonly<Record<string, unknown>>,
+      status: node.status,
+      children,
+      ...(node.rawSource === undefined ? {} : { rawSource: node.rawSource }),
+      ...(node.diagnostic === undefined ? {} : { diagnostic: node.diagnostic }),
     };
     return Object.freeze(owned);
   }

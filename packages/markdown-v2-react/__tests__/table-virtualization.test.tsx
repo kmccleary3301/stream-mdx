@@ -56,18 +56,35 @@ const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></
 // Browser geometry at the public DOM boundary. Verify natural passes include all rows.
 let availableWidth = 800;
 let changedIdWidth: number | undefined;
-let changedRowHeight = 0;
+let changedRowHeight = 40;
 const naturalPassRowCounts: number[] = [];
-dom.window.HTMLTableElement.prototype.getBoundingClientRect = function () {
-  if (this.style.tableLayout !== "fixed") naturalPassRowCounts.push(this.querySelectorAll("tbody tr[data-row-id]").length);
-  return new dom.window.DOMRect(0, 0, availableWidth, 4800);
-};
+const rowHeightById = new Map<string, number>();
 dom.window.HTMLTableCellElement.prototype.getBoundingClientRect = function () {
   const idWidth = changedIdWidth ?? (availableWidth === 800 ? 80 : 60);
   return new dom.window.DOMRect(0, 0, this.cellIndex === 0 ? idWidth : availableWidth - idWidth, 40);
 };
+dom.window.HTMLTableSectionElement.prototype.getBoundingClientRect = function () {
+  const height = this.tagName === "THEAD"
+    ? Math.max(0, ...Array.from(
+      this.querySelectorAll<HTMLTableCellElement>("tr:first-child > th, tr:first-child > td"),
+      (cell) => cell.getBoundingClientRect().height,
+    ))
+    : Array.from(this.querySelectorAll<HTMLTableRowElement>("tr"))
+      .reduce((total, row) => total + row.getBoundingClientRect().height, 0);
+  return new dom.window.DOMRect(0, 0, availableWidth, height);
+};
 dom.window.HTMLTableRowElement.prototype.getBoundingClientRect = function () {
-  return new dom.window.DOMRect(0, 0, availableWidth, this.dataset.rowId ? changedRowHeight : 0);
+  const rowId = this.dataset.rowId;
+  const spacerHeight = Number.parseFloat(this.style.height);
+  const height = rowId ? rowHeightById.get(rowId) ?? changedRowHeight : Number.isFinite(spacerHeight) ? spacerHeight : 0;
+  return new dom.window.DOMRect(0, 0, availableWidth, height);
+};
+dom.window.HTMLTableElement.prototype.getBoundingClientRect = function () {
+  if (this.style.tableLayout !== "fixed") naturalPassRowCounts.push(this.querySelectorAll("tbody tr[data-row-id]").length);
+  const headerHeight = this.querySelector("thead")?.getBoundingClientRect().height ?? 0;
+  const bodyHeight = Array.from(this.querySelectorAll<HTMLTableRowElement>("tbody tr"))
+    .reduce((total, row) => total + row.getBoundingClientRect().height, 0);
+  return new dom.window.DOMRect(0, 0, availableWidth, headerHeight + bodyHeight);
 };
 Object.defineProperty(dom.window.HTMLDivElement.prototype, "clientWidth", { configurable: true, get: () => availableWidth });
 const globals = {
@@ -165,10 +182,26 @@ try {
   assert.equal(spacer?.getAttribute("aria-hidden"), "true");
   assert.equal(spacer?.querySelector("td")?.colSpan, 2);
 
-  // Six 40px visible rows plus two overscan rows. Measured 80px rows reduce the window.
+  // Five 40px body rows fit below the header; measured 80px rows reduce the window.
   Object.defineProperty(viewport, "clientHeight", { configurable: true, value: 240 });
   Object.defineProperty(viewport, "clientWidth", { configurable: true, get: () => availableWidth });
+  Object.defineProperty(viewport, "scrollHeight", {
+    configurable: true,
+    get: () => viewport.querySelector("table")?.getBoundingClientRect().height ?? 0,
+  });
+  let scrollTop = viewport.scrollTop;
+  Object.defineProperty(viewport, "scrollTop", {
+    configurable: true,
+    get: () => scrollTop,
+    set: (requested: number) => {
+      scrollTop = Math.min(Math.max(0, requested), Math.max(0, viewport.scrollHeight - viewport.clientHeight));
+    },
+  });
+  assert.ok(viewport.scrollHeight > viewport.clientHeight, "viewport scrollHeight includes its rendered table content");
   for (const row of rows()) {
+    const rowId = row.dataset.rowId;
+    assert.ok(rowId);
+    rowHeightById.set(rowId, 80);
     row.getBoundingClientRect = () => new dom.window.DOMRect(0, 0, 800, 80);
   }
   TestResizeObserver.notify();
@@ -182,10 +215,16 @@ try {
   assert.equal(naturalPassRowCounts.at(-1), 120, "resize measurement uses every row, not the current window");
 
   viewport.scrollTop = 100000;
+  assert.equal(viewport.scrollTop, viewport.scrollHeight - viewport.clientHeight,
+    "the browser clamps oversized scroll offsets to the rendered content extent");
   viewport.dispatchEvent(new dom.window.Event("scroll"));
   await waitFor(() => container.textContent?.includes("Row-119") ?? false, "scroll beyond estimates still reaches the last row");
-  assert.equal(container.querySelector(".markdown-table-spacer-bottom"), null);
-  assert.ok(container.querySelector(".markdown-table-spacer-top"));
+  TestResizeObserver.notify();
+  await waitFor(() => container.textContent?.includes("Row-119") === true &&
+    viewport.scrollTop === viewport.scrollHeight - viewport.clientHeight,
+  "last row remains visible after row measurements and tail pinning settle");
+  assert.ok(rows().length < 120, "the settled tail window keeps mounted data rows below the full source");
+  assert.notEqual(rows()[0].dataset.rowId, firstId, "the tail window no longer includes the first source row");
 
   render({ enabled: true, minRows: 40, overscan: 10000, maxHeight: 320 });
   await waitFor(() => viewport.style.maxHeight === "320px", "maxHeight config updates a mounted table");
@@ -205,6 +244,7 @@ try {
 
   changedIdWidth = 120;
   changedRowHeight = 48;
+  rowHeightById.clear();
   render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 });
   for (const observer of pendingObservers) observer.deliverPending();
   await waitFor(() => rows().length === 7 && container.querySelector<HTMLTableColElement>("col")?.style.width === "120px",

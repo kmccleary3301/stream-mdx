@@ -35,8 +35,9 @@ function formatRelative(filePath: string) {
 /** Resolves to undefined on success, otherwise a short failure reason. */
 function runFile(filePath: string): Promise<string | undefined> {
   return new Promise((resolve) => {
-    // Node exits with code 13 when a test's top-level await never settles, so truncated files fail.
-    const child = spawn(process.execPath, ["--import", "tsx", filePath], { stdio: "inherit" });
+    // Children reuse this runner's tsx loader flags. Node exits with code 13 when a test's top-level
+    // await never settles, so truncated files fail.
+    const child = spawn(process.execPath, [...process.execArgv, filePath], { stdio: "inherit" });
     const timer = setTimeout(() => child.kill("SIGKILL"), FILE_TIMEOUT_MS);
     child.on("error", (error) => {
       clearTimeout(timer);

@@ -138,6 +138,12 @@ function inlineNodeEqual(left: InlineNode, right: InlineNode): boolean {
         && left.number === right.number
         && left.occurrence === right.occurrence
         && left.defined === right.defined;
+    case "trusted-mdx-inline":
+      return right.kind === "trusted-mdx-inline"
+        && left.raw === right.raw
+        && left.ownerId === right.ownerId
+        && left.sourceRange?.from === right.sourceRange?.from
+        && left.sourceRange?.to === right.sourceRange?.to;
     case "plugin":
       return right.kind === "plugin"
         && left.name === right.name

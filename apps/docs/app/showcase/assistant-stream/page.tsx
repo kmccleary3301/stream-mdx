@@ -3,9 +3,9 @@ import { readShowcaseFile } from "@/lib/showcase";
 import { AssistantStreamClient } from "@/components/screens/showcase/assistant-stream-client";
 
 export const metadata: Metadata = {
-  title: "Streaming Assistant & Sandboxed Artifacts",
+  title: "Streaming Assistant & Safe Code Fences",
   description:
-    "Executable chat thread showcasing dual-engine streaming, math, Mermaid diagrams, custom code fence renderers, link safety, and sandboxed ArtifactFrame visualizations.",
+    "Executable chat thread showcasing dual-engine streaming, math, Mermaid diagrams, custom code fence renderers, link safety, and inert fenced HTML examples.",
 };
 
 export default async function AssistantStreamPage() {

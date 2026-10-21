@@ -1201,7 +1201,6 @@ async function renderSnippet(
         __TEST_SNIPPET_CONFIG__?: {
           initialStreamLimit?: number | null;
           initialIsRunning?: boolean;
-          initialMdxStrategy?: "server" | "worker";
         };
       };
       runtimeWindow.__TEST_SNIPPET_CONTENT__ = content;
@@ -1213,7 +1212,6 @@ async function renderSnippet(
         ? {
             initialStreamLimit: options.streamLimit ?? null,
             initialIsRunning: false,
-            initialMdxStrategy: compileMode,
           }
         : {
             initialStreamLimit: null,

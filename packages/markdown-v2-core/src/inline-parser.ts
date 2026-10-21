@@ -260,8 +260,10 @@ export class InlineParser {
    */
   parse(content: string, options: InlineParseOptions = {}): InlineNode[] {
     const hasCustomRefs = options.references !== undefined;
-    const shouldCache = options.cache !== false && this.maxCacheEntries > 0 && !hasCustomRefs;
-
+    const sourceOffset = Number.isSafeInteger(options.sourceOffset) && (options.sourceOffset as number) >= 0
+      ? options.sourceOffset
+      : undefined;
+    const shouldCache = options.cache !== false && this.maxCacheEntries > 0 && !hasCustomRefs && sourceOffset === undefined;
     if (shouldCache) {
       const cached = this.cache.get(content);
       if (cached) {
@@ -310,7 +312,7 @@ export class InlineParser {
       }
 
       elements = this.lezerParser.parseInline(content, 0) as unknown as MarkdownElement[];
-      result = this.converter.convert(elements, content);
+      result = this.converter.convert(elements, content, 0, content.length, sourceOffset);
 
       if (hasCustomRefs) {
         this.converter.setReferences(this.references);

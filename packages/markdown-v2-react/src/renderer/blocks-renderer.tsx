@@ -4,6 +4,7 @@ import React, { useMemo, useRef } from "react";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
 import type { AnimatedProp, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, ElementFilterOptions } from "../types";
+import type { ContentComponentsMap } from "../components/content-components";
 import { RenderConfigVersionContext, useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
 import { createRendererStore, type RendererStore } from "./store";
@@ -23,6 +24,7 @@ export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
+  contentComponents?: ContentComponentsMap;
 }
 
 interface AppliedRenderConfig {
@@ -32,6 +34,7 @@ interface AppliedRenderConfig {
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
+  contentComponents?: ContentComponentsMap;
   version: number;
 }
 
@@ -50,6 +53,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     controls,
     controlsComponent,
     animated,
+    contentComponents,
     className = "markdown-renderer",
     style,
     store,
@@ -89,15 +93,19 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       if (animated !== undefined || previous.animated !== undefined) {
         reg.setAnimated(animated);
       }
+      if (contentComponents !== undefined || previous.contentComponents !== undefined) {
+        reg.setContentComponents(contentComponents);
+      }
       // Inline literals re-run this memo every render; only an effective change re-renders mounted blocks.
       const changed =
         urlTransform !== previous.urlTransform ||
         controlsComponent !== previous.controlsComponent ||
         !sameElementFilters(filters, previous.filters) ||
         !samePlainConfig(controls, previous.controls) ||
-        !samePlainConfig(animated, previous.animated);
+        !samePlainConfig(animated, previous.animated) ||
+        contentComponents !== previous.contentComponents;
       const version = changed ? previous.version + 1 : previous.version;
-      applied.current = { blockRenderer, urlTransform, filters, controls, controlsComponent, animated, version };
+      applied.current = { blockRenderer, urlTransform, filters, controls, controlsComponent, animated, contentComponents, version };
       return { registry: reg, version };
     }, [
       componentRegistry,
@@ -112,6 +120,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       controls,
       controlsComponent,
       animated,
+      contentComponents,
     ]);
     const effectiveStore = useMemo(() => {
       if (store) return store;

@@ -326,8 +326,8 @@ async function checkNestedListCodeIndentation(page: Page, theme: "light" | "dark
   await setTheme(page, theme);
 
   const nestedCode = await page.evaluate(() => {
-    const frames = Array.from(document.querySelectorAll("#regression-root .markdown-list-item-children div[data-code-block='true']")) as HTMLElement[];
-    return frames.map((frame) => {
+    const blocks = Array.from(document.querySelectorAll("#regression-root .markdown-list-item-children [data-code-block='true']")) as HTMLElement[];
+    return blocks.map((frame) => {
       const childContainer = frame.closest(".markdown-list-item-children") as HTMLElement | null;
       const code = frame.querySelector("code");
       const rect = frame.getBoundingClientRect();
@@ -365,7 +365,7 @@ async function checkRenderedMarkdownScope(page: Page, theme: "light" | "dark"): 
     const heading = firstOutput?.querySelector("h1") as HTMLElement | null;
     const list = firstOutput?.querySelector(".markdown-list") as HTMLElement | null;
     const table = firstOutput?.querySelector("table") as HTMLElement | null;
-    const code = firstOutput?.querySelector(".docs-code-block, pre.markdown-code-block, div[data-code-block='true']") as HTMLElement | null;
+    const code = firstOutput?.querySelector(".docs-code-block, pre.markdown-code-block, [data-code-block='true']") as HTMLElement | null;
 
     return {
       outputCount: outputs.length,

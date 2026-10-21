@@ -159,7 +159,8 @@ function listItemContentIndent(node: SyntaxNode, source: SourceText): number {
     + (spacing >= 1 && spacing <= 4 ? spacing : 1);
 }
 
-function stripLeadingColumns(line: string, requiredColumns: number): string {
+/** Leading characters to drop for `requiredColumns`; a split tab leaves `pad` spaces. */
+function leadingColumnCut(line: string, requiredColumns: number): { skip: number; pad: number } {
   let columns = 0;
   let index = 0;
   while (index < line.length && columns < requiredColumns) {
@@ -169,33 +170,93 @@ function stripLeadingColumns(line: string, requiredColumns: number): string {
       index += 1;
     } else if (char === "\t") {
       const nextColumns = columns + (4 - (columns % 4));
-      if (nextColumns > requiredColumns) {
-        return " ".repeat(nextColumns - requiredColumns) + line.slice(index + 1);
-      }
+      if (nextColumns > requiredColumns) return { skip: index + 1, pad: nextColumns - requiredColumns };
       columns = nextColumns;
       index += 1;
     } else {
       break;
     }
   }
-  return line.slice(index);
+  return { skip: index, pad: 0 };
 }
 
-function stripListIndent(text: string, listIndent: number): string {
-  if (listIndent === 0 || text.length === 0) return text;
+function stripLeadingColumns(line: string, requiredColumns: number): string {
+  const cut = leadingColumnCut(line, requiredColumns);
+  return " ".repeat(cut.pad) + line.slice(cut.skip);
+}
+
+/** Leaf display text; `positions` holds every character's authored offset when requested. */
+interface LeafText {
+  readonly text: string;
+  readonly positions?: readonly number[];
+}
+
+function normalizeLeafLineEndings(leaf: LeafText): LeafText {
+  const { text, positions } = leaf;
+  if (!text.includes("\r")) return leaf;
+  if (!positions) return { text: text.replace(/\r\n?/g, "\n") };
   let result = "";
+  const resultPositions: number[] = [];
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index]!;
+    if (char === "\r" && text[index + 1] === "\n") continue;
+    result += char === "\r" ? "\n" : char;
+    resultPositions.push(positions[index]!);
+  }
+  return { text: result, positions: resultPositions };
+}
+
+function stripListIndent(leaf: LeafText, listIndent: number): LeafText {
+  const { text, positions } = leaf;
+  if (listIndent === 0 || text.length === 0) return leaf;
+  let result = "";
+  const resultPositions = positions ? [] as number[] : undefined;
   let from = 0;
   let firstLine = true;
   while (from < text.length) {
     const newline = text.indexOf("\n", from);
     const lineEnd = newline < 0 ? text.length : newline;
-    const line = text.slice(from, lineEnd);
-    result += firstLine ? line : stripLeadingColumns(line, listIndent);
+    const cut = firstLine ? { skip: 0, pad: 0 } : leadingColumnCut(text.slice(from, lineEnd), listIndent);
+    result += " ".repeat(cut.pad) + text.slice(from + cut.skip, lineEnd);
     if (newline >= 0) result += "\n";
+    if (resultPositions && positions) {
+      // Padding from a split tab maps to the tab itself.
+      for (let pad = 0; pad < cut.pad; pad += 1) resultPositions.push(positions[from + cut.skip - 1]!);
+      for (let index = from + cut.skip; index < lineEnd; index += 1) resultPositions.push(positions[index]!);
+      if (newline >= 0) resultPositions.push(positions[newline]!);
+    }
     from = newline < 0 ? text.length : newline + 1;
     firstLine = false;
   }
-  return result;
+  return resultPositions ? { text: result, positions: resultPositions } : { text: result };
+}
+
+/** Rebinds leaf-local inline source ranges to authored offsets. */
+function mapInlineSourceRanges(nodes: InlineNode[], positions: readonly number[]): InlineNode[] {
+  return nodes.map((node) => {
+    const range = node.sourceRange;
+    let sourceRange: { from: number; to: number } | undefined;
+    if (
+      range &&
+      Number.isSafeInteger(range.from) &&
+      Number.isSafeInteger(range.to) &&
+      range.from >= 0 &&
+      range.to > range.from &&
+      range.to <= positions.length
+    ) {
+      const authoredFrom = positions[range.from];
+      const authoredEnd = positions[range.to - 1];
+      if (Number.isSafeInteger(authoredFrom) && Number.isSafeInteger(authoredEnd)) {
+        sourceRange = { from: authoredFrom!, to: authoredEnd! + 1 };
+      }
+    }
+    const { sourceRange: _localRange, ...rest } = node;
+    return {
+      ...rest,
+      ...(sourceRange ? { sourceRange } : {}),
+      ...("children" in node && Array.isArray(node.children) ? { children: mapInlineSourceRanges(node.children, positions) } : {}),
+    } as InlineNode;
+  });
 }
 
 function lowerNestedBlockSnapshot(
@@ -210,9 +271,19 @@ function lowerNestedBlockSnapshot(
   includeContainerRaw: boolean,
 ): PreparedNestedSnapshot {
   const input = mapping.input;
-  const meta = block.payload.meta as { formatAnticipation?: FormatAnticipationConfig; mathEnabled?: boolean } | undefined;
-  const parseInline = (text: string): InlineNode[] => {
-    if (block.isFinalized) return inlineParser.parse(text);
+  const meta = block.payload.meta as {
+    formatAnticipation?: FormatAnticipationConfig;
+    mathEnabled?: boolean;
+    trustedMdxSource?: boolean;
+  } | undefined;
+  // Finalized trusted-MDX sources keep authored inline ranges for compiler-owned native children.
+  const trustedSource = meta?.trustedMdxSource === true && block.isFinalized;
+  const parseInline = (text: string, positions?: readonly number[]): InlineNode[] => {
+    if (block.isFinalized) {
+      return trustedSource && positions
+        ? mapInlineSourceRanges(inlineParser.parse(text, { sourceOffset: 0 }), positions)
+        : inlineParser.parse(text);
+    }
     if (streamingInline) return streamingInline(text);
     const formatAnticipation = meta?.formatAnticipation ?? { inline: true, mathInline: true, mathBlock: true, regex: true };
     const regexAppend = normalizeFormatAnticipation(formatAnticipation).regex ? inlineParser.getRegexAnticipationAppend(text) : "";
@@ -245,7 +316,7 @@ function lowerNestedBlockSnapshot(
     return identityForChild?.(parentId, parentNode, child, semanticChildIndex, role, fallbackId)
       ?? { id: fallbackId, semanticChildIndex };
   };
-  const leafText = (node: SyntaxNode): string => {
+  const leafText = (node: SyntaxNode, withPositions = false): LeafText => {
     const marks: SyntaxNode[] = [];
     const visit = (child: SyntaxNode) => {
       if (child.type.name === "QuoteMark") marks.push(child);
@@ -254,9 +325,11 @@ function lowerNestedBlockSnapshot(
     visit(node);
     marks.sort((left, right) => left.from - right.from);
     let result = "";
-    const readSource = (from: number, to: number): string => {
+    const positions = withPositions && trustedSource ? [] as number[] : undefined;
+    const appendSource = (from: number, to: number): void => {
       const range = sourceRange(mapping, from, to);
-      return mapping.source.read(range.from, range.to);
+      result += mapping.source.read(range.from, range.to);
+      if (positions) for (let position = range.from; position < range.to; position += 1) positions.push(position);
     };
     const sourceCharAtInputOffset = (offset: number): string => {
       const range = sourceRange(mapping, offset, offset);
@@ -264,20 +337,19 @@ function lowerNestedBlockSnapshot(
     };
     let from = node.from;
     for (const mark of marks) {
-      result += readSource(from, mark.from);
+      appendSource(from, mark.from);
       from = mark.to;
       const next = sourceCharAtInputOffset(from);
       if (next === " " || next === "\t") from += 1;
     }
-    result += readSource(from, node.to);
+    appendSource(from, node.to);
     let listIndent = 0;
     for (let parent = node.parent; parent; parent = parent.parent) {
       if (parent.type.name === "ListItem" || parent.type.name === "EmptyListItem") {
         listIndent += listItemContentIndent(parent, input);
       }
     }
-    if (result.includes("\r")) result = result.replace(/\r\n?/g, "\n");
-    return stripListIndent(result, listIndent);
+    return stripListIndent(normalizeLeafLineEndings(positions ? { text: result, positions } : { text: result }), listIndent);
   };
   const looseList = (node: SyntaxNode): boolean => {
     const knownLooseness = mapping.knownListLoosenessForNode?.(node);
@@ -363,37 +435,42 @@ function lowerNestedBlockSnapshot(
           primaryChild.props = { ...(primaryChild.props ?? {}), listItemPrimary: true };
         }
         let inline: InlineNode[] | undefined;
+        let primarySourcePositions: readonly number[] | undefined;
         const segmentChildren: NodeSnapshot[] = [];
         if (primary && !primaryChild) {
-          const text = leafText(primary);
-          const taskPrefix = isTask ? text.match(/^\[([ xX])\][ \t]+/) : null;
-          const primaryText = taskPrefix ? text.slice(taskPrefix[0].length) : text;
-          inline = parseInline(primaryText);
-          const baseOffset = primaryRange
-            ? sourceRange(
-                mapping,
-                primary.from + (taskPrefix?.[0].length ?? 0),
-                primary.from + (taskPrefix?.[0].length ?? 0),
-              ).from
-            : range.from;
-          const protectedRanges: ProtectedRange[] = [];
-          if (primaryText.includes("`")) {
-            const cursor = parser.parse(primaryText).cursor();
-            do {
-              if (cursor.name === "InlineCode") protectedRanges.push({ from: baseOffset + cursor.from, to: baseOffset + cursor.to, kind: "code-inline" });
-            } while (cursor.next());
-          }
-          const segments = extractMixedContentSegments(primaryText, baseOffset, parseInline, { protectedRanges });
-          const structured = segments.some((segment) => segment.kind === "mdx");
-          if (structured) {
-            segmentChildren.push(...segments.map((segment, segmentIndex): NodeSnapshot => ({
-              id: `${itemId}::list-item:segment:${segmentIndex}`,
-              type: `list-item-${segment.kind}`,
-              props: segment.kind === "text" ? { inline: segment.inline, text: segment.value }
-                : segment.kind === "html" ? { raw: segment.value, html: segment.sanitized ?? segment.value }
-                : { raw: segment.value, status: segment.status ?? "pending", error: segment.error },
-              children: [],
-            })));
+          const leaf = leafText(primary, true);
+          const taskPrefix = isTask ? leaf.text.match(/^\[([ xX])\][ \t]+/) : null;
+          const primaryText = taskPrefix ? leaf.text.slice(taskPrefix[0].length) : leaf.text;
+          primarySourcePositions = leaf.positions?.slice(taskPrefix?.[0].length ?? 0);
+          inline = parseInline(primaryText, primarySourcePositions);
+          // Trusted sources leave JSX to the trusted compiler, so they never split native MDX segments.
+          if (!trustedSource) {
+            const baseOffset = primaryRange
+              ? sourceRange(
+                  mapping,
+                  primary.from + (taskPrefix?.[0].length ?? 0),
+                  primary.from + (taskPrefix?.[0].length ?? 0),
+                ).from
+              : range.from;
+            const protectedRanges: ProtectedRange[] = [];
+            if (primaryText.includes("`")) {
+              const cursor = parser.parse(primaryText).cursor();
+              do {
+                if (cursor.name === "InlineCode") protectedRanges.push({ from: baseOffset + cursor.from, to: baseOffset + cursor.to, kind: "code-inline" });
+              } while (cursor.next());
+            }
+            const segments = extractMixedContentSegments(primaryText, baseOffset, parseInline, { protectedRanges });
+            if (segments.some((segment) => segment.kind === "mdx")) {
+              segmentChildren.push(...segments.map((segment, segmentIndex): NodeSnapshot => ({
+                id: `${itemId}::list-item:segment:${segmentIndex}`,
+                type: `list-item-${segment.kind}`,
+                range: segment.range ? { ...segment.range } : undefined,
+                props: segment.kind === "text" ? { inline: segment.inline, text: segment.value }
+                  : segment.kind === "html" ? { raw: segment.value, html: segment.sanitized ?? segment.value }
+                  : { raw: segment.value },
+                children: [],
+              })));
+            }
           }
         }
         content.forEach((child, semanticChildIndex) => {
@@ -419,7 +496,10 @@ function lowerNestedBlockSnapshot(
             raw: itemRaw,
             ...(primaryChild ? {} : { inline: inline ?? [] }),
             range: itemRange,
-            meta: { sourceContainer: "list" },
+            meta: {
+              sourceContainer: "list",
+              ...(primarySourcePositions ? { inlineSourcePositions: primarySourcePositions } : {}),
+            },
           },
         };
         const itemChildren = primaryChild ? [primaryChild, ...segmentChildren] : segmentChildren;
@@ -497,7 +577,11 @@ function lowerNestedBlockSnapshot(
       return createBlockSnapshot(nested);
     }
     let type: Block["type"] = "paragraph";
-    let display = leafText(node);
+    const isHeading = name.startsWith("ATXHeading") || name.startsWith("SetextHeading");
+    const leaf = leafText(node, name === "Paragraph" || isHeading);
+    let display = leaf.text;
+    let inlineSourcePositions = leaf.positions;
+    let inlineSourceText: string | undefined;
     let inline: InlineNode[] | undefined;
     if (name === "Paragraph" && !display.trim()) return null;
     if (name === "FencedCode" || name === "CodeBlock" || name === "IndentedCode") {
@@ -511,27 +595,43 @@ function lowerNestedBlockSnapshot(
       if (fence.lang) baseMeta.lang = fence.lang;
       Object.assign(baseMeta, fence.meta);
       display = readRaw(node);
-    } else if (name.startsWith("ATXHeading") || name.startsWith("SetextHeading")) {
+    } else if (isHeading) {
       type = "heading";
       baseMeta.headingLevel = Number(name.slice(name.startsWith("ATX") ? 10 : 13)) || 1;
-      inline = parseInline(removeHeadingMarkers(display));
+      const headingText = removeHeadingMarkers(display);
+      inlineSourceText = headingText;
+      if (inlineSourcePositions) {
+        const prefixLength = /^(?:#{1,6})(?:\s+|$)/.exec(display)?.[0].length ?? 0;
+        inlineSourcePositions = inlineSourcePositions.slice(prefixLength, prefixLength + headingText.length);
+      }
+      inline = parseInline(headingText, inlineSourcePositions);
     } else if (name === "HorizontalRule") {
       type = "hr";
     } else if (name === "HTMLBlock" || name === "CommentBlock" || name === "ProcessingInstructionBlock") {
       type = "html";
       baseMeta.lezerNodeType = name;
     } else {
-      inline = parseInline(display);
+      inlineSourceText = display;
+      inline = parseInline(display, inlineSourcePositions);
     }
+    const raw = type === "html" ? display : readRaw(node);
     const nested: Block = {
       id,
       type,
       isFinalized: block.isFinalized,
       // HTML renders from its raw, so it keeps the container-marker-free text (base behavior).
-      payload: { raw: type === "html" ? display : readRaw(node), inline, range, meta: baseMeta },
+      payload: { raw, inline, range, meta: baseMeta },
     };
     const snapshot = createBlockSnapshot(nested);
     if (type === "paragraph") snapshot.props = { ...snapshot.props, inline, text: inlineNodesToPlainText(inline ?? []) };
+    const snapshotBlock = inlineSourcePositions ? snapshot.props?.block as Block | undefined : undefined;
+    if (snapshotBlock) {
+      snapshotBlock.payload.meta = {
+        ...snapshotBlock.payload.meta,
+        inlineSourcePositions,
+        ...(inlineSourceText !== undefined && inlineSourceText !== raw ? { inlineSourceText } : {}),
+      };
+    }
     return snapshot;
   };
 

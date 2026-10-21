@@ -109,7 +109,7 @@ async function testControlsAbsentByDefault(): Promise<void> {
   );
 
   await waitFor(
-    () => Boolean(container.querySelector('div[data-code-block="true"]')),
+    () => Boolean(container.querySelector('[data-code-block="true"]')),
     "expected code block to render",
   );
 
@@ -133,7 +133,7 @@ async function testControlsAbsentByDefault(): Promise<void> {
   );
 
   await waitFor(
-    () => Boolean(container.querySelector('div[data-code-block="true"]')),
+    () => Boolean(container.querySelector('[data-code-block="true"]')),
     "expected code block to render with controls=false",
   );
 
@@ -198,7 +198,7 @@ async function testCopyWritesRawCode(): Promise<void> {
   assert.ok(copyButton, "expected copy button");
   assert.strictEqual(copyButton.getAttribute("data-stream-mdx-target"), "code");
   assert.strictEqual(copyButton.getAttribute("type"), "button");
-  const codeFrame = container.querySelector('div[data-code-block="true"]');
+  const codeFrame = container.querySelector('[data-code-block="true"]');
   assert.ok(codeFrame, "expected code frame");
   assert.ok(!codeFrame.contains(copyButton), "controls must not render inside the code frame");
 

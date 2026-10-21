@@ -1,7 +1,6 @@
 import { trimProvisionalFenceTail } from "../code-fence-streaming";
 // Default component implementations for V2 Markdown Renderer
 export * from "./bottom-stick-scroll-area";
-export * from "./artifact-frame";
 export * from "./diff-renderer";
 export * from "./katex-math";
 export * from "./controls";
@@ -17,11 +16,7 @@ export {
 export { defaultUrlTransform, type UrlTransform, type UrlTransformContext } from "@stream-mdx/core";
 import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, normalizeLang, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
 import type { UrlTransform } from "@stream-mdx/core";
-import { markMdxHydrated, markMdxHydrationError, markMdxHydrationStart } from "../mdx-hydration-metrics";
-import { MdxHydrationContext } from "../mdx-hydration-context";
-import { loadMdxRuntime } from "../mdx-runtime";
-import { useDeferredRender } from "../renderer/use-deferred-render";
-import { MdxCoordinatorLeaf } from "../mdx-coordinator";
+import type { ContentComponentsMap } from "./content-components";
 import type {
   Block,
   FootnoteItem,
@@ -31,7 +26,9 @@ import type {
 } from "@stream-mdx/core";
 import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderInlineHtmlSegment } from "../utils/inline-html";
+import { renderOwnedHtmlTree, type OwnedHtmlRenderContext } from "./owned-html";
+import { TrustedMdxInlineOwner } from "../trusted-mdx/native-inline";
 import type {
   AllowElementFn,
   AnimatedProp,
@@ -53,7 +50,6 @@ import type {
 } from "../types";
 export type { CodeFenceRendererConfig, CodeFenceRendererProps };
 import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext, type ResolvedAnimatedOptions } from "../animation";
-import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
 import { DEFAULT_TABLE_VIRTUALIZATION_CONFIG, resolveTableVirtualizationConfig, type TableVirtualizationConfig, type TableVirtualizationOptions } from "../renderer/virtualized-table";
@@ -71,33 +67,6 @@ import {
   tableToTsv,
 } from "./controls";
 export { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./link-safety-modal";
-class MdxRuntimeBoundary extends React.Component<
-  { resetKey: number; onError: (error: Error) => void; children?: React.ReactNode },
-  { hasError: boolean }
-> {
-  state = { hasError: false };
-
-  static getDerivedStateFromError(): { hasError: boolean } {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error) {
-    this.props.onError(error);
-  }
-
-  componentDidUpdate(prevProps: { resetKey: number }) {
-    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
-      this.setState({ hasError: false });
-    }
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return null;
-    }
-    return this.props.children;
-  }
-}
 
 /**
  * Render inline nodes to React elements
@@ -344,6 +313,9 @@ export function renderInlineNodes(
         }
         return React.createElement(React.Fragment, { key }, node.raw);
       }
+
+      case "trusted-mdx-inline":
+        return React.createElement(TrustedMdxInlineOwner, { key, ownerId: node.ownerId, source: node.raw });
 
       case "html": {
         const children = node.children ? renderInlineNodes(node.children, components, urlTransform, registry, node.tagName?.toLowerCase(), itemChildContext) : undefined;
@@ -674,7 +646,7 @@ export const defaultBlockComponents: BlockComponents = {
     });
   },
 
-  mdx: ({ compiledRef, compiledModule, status, errorMessage, meta }) => {
+  mdx: ({ raw, meta }) => {
     const originalType = typeof meta?.originalType === "string" ? String(meta.originalType) : undefined;
     const mixedSegments = Array.isArray((meta as { mixedSegments?: MixedContentSegment[] } | undefined)?.mixedSegments)
       ? ((meta as { mixedSegments?: MixedContentSegment[] }).mixedSegments as MixedContentSegment[])
@@ -686,191 +658,12 @@ export const defaultBlockComponents: BlockComponents = {
       }
       return React.createElement(React.Fragment, {}, ...structured);
     }
-
-    const [Comp, setComp] = React.useState<React.ComponentType | null>(null);
-    const [internalError, setInternalError] = React.useState<string | null>(null);
-    const [renderError, setRenderError] = React.useState<string | null>(null);
-    const [retryKey, setRetryKey] = React.useState(0);
-    const hydrationContext = React.useContext(MdxHydrationContext);
-    const hydrationController = hydrationContext?.controller ?? null;
-    const hydrationOptions = hydrationContext?.options;
-    const containerRef = React.useRef<HTMLDivElement | null>(null);
-    const deferHydration = hydrationOptions?.strategy === "visible";
-    const shouldHydrate = useDeferredRender(
-      containerRef,
-      deferHydration
-        ? {
-            enabled: true,
-            rootMargin: hydrationOptions?.rootMargin,
-            idleTimeoutMs: hydrationOptions?.idleTimeoutMs,
-            debounceMs: hydrationOptions?.debounceMs,
-          }
-        : { enabled: false },
+    const diagnostic = "MDX requires explicit engines.mdx in trusted-mdx mode";
+    return React.createElement(
+      "div",
+      { className: "markdown-mdx-inert", "data-diagnostic": diagnostic },
+      React.createElement("pre", null, React.createElement("code", null, raw ?? "")),
     );
-    const resolvedId = compiledModule?.id ?? (compiledRef?.id && compiledRef.id !== "pending" ? compiledRef.id : undefined);
-    const handleRetry = React.useCallback(() => {
-      setInternalError(null);
-      setRenderError(null);
-      setComp(null);
-      setRetryKey((prev) => prev + 1);
-    }, []);
-    const handleRuntimeError = React.useCallback(
-      (error: Error) => {
-        const message = error instanceof Error ? error.message : String(error);
-        setRenderError(message);
-        markMdxHydrationError(resolvedId ?? compiledRef?.id);
-      },
-      [resolvedId, compiledRef?.id],
-    );
-
-    const effectiveStatus: "pending" | "compiled" | "error" = status ? status : resolvedId ? "compiled" : "pending";
-    const failureMessage = errorMessage ?? internalError ?? renderError ?? null;
-    const moduleDependencies = compiledModule?.dependencies;
-
-    React.useEffect(() => {
-      if (!shouldHydrate) {
-        return;
-      }
-      if (status === "error") {
-        markMdxHydrationError(resolvedId ?? compiledRef?.id);
-        return;
-      }
-
-      let cancelled = false;
-      async function ensure() {
-        let permit: { release: () => void } | null = null;
-        try {
-          if (status === "error" || !resolvedId || resolvedId === "pending") {
-            if (!cancelled) {
-              setComp(null);
-              setInternalError(null);
-            }
-            return;
-          }
-
-          if (hydrationController) {
-            permit = await hydrationController.acquire();
-            if (cancelled) {
-              permit.release();
-              return;
-            }
-          }
-
-          setInternalError(null);
-          setRenderError(null);
-          markMdxHydrationStart(resolvedId);
-          const { getMDXComponentFactory, registerInlineMdxModule } = await loadMdxRuntime();
-          if (compiledModule?.code) {
-            registerInlineMdxModule({
-              id: compiledModule.id,
-              code: compiledModule.code,
-              dependencies: moduleDependencies ?? [],
-            });
-          }
-
-          const factory = getMDXComponentFactory();
-          const C = await factory.createComponent({ id: resolvedId });
-          if (!cancelled) {
-            setComp(() => C);
-            setInternalError(null);
-            markMdxHydrated(resolvedId);
-          }
-        } catch (error: unknown) {
-          if (!cancelled) {
-            const message = error instanceof Error ? error.message : String(error);
-            setInternalError(message);
-            markMdxHydrationError(resolvedId);
-          }
-        } finally {
-          permit?.release();
-        }
-      }
-      ensure();
-      return () => {
-        cancelled = true;
-      };
-    }, [compiledModule?.id, compiledModule?.code, moduleDependencies, resolvedId, status, shouldHydrate, retryKey]);
-
-    const compileMode = compiledModule?.source === "worker" || compiledRef?.id?.startsWith("worker:") ? "worker" : "server";
-
-    const pendingId = resolvedId && resolvedId !== "pending" ? resolvedId : (compiledRef?.id ?? "pending");
-    const waitingForVisibility = deferHydration && !shouldHydrate && Boolean(resolvedId);
-    const pendingLabel = waitingForVisibility
-      ? "MDX ready (hydrate on view)…"
-      : compileMode === "worker"
-        ? "Compiling MDX (client)…"
-        : "Compiling MDX (server)…";
-    const message =
-      failureMessage ??
-      (compileMode === "worker"
-        ? "MDX compilation failed in client mode. Try switching back to server rendering or restarting the stream."
-        : "MDX compilation failed. Try restarting the stream.");
-    const allowRetry = Boolean(internalError || renderError);
-    const retryButton = allowRetry
-      ? React.createElement(
-          "button",
-          {
-            type: "button",
-            className: "markdown-mdx-retry",
-            onClick: handleRetry,
-          },
-          "Retry hydration",
-        )
-      : null;
-    const errorPanel = React.createElement(
-      React.Fragment,
-      null,
-      React.createElement("strong", null, "MDX failed"),
-      React.createElement("div", null, message),
-    );
-
-    if (Comp && !failureMessage) {
-      return React.createElement(
-        "div",
-        {
-          className: "markdown-mdx",
-          ref: containerRef,
-          "data-mdx-ref": resolvedId ?? compiledRef?.id ?? "compiled",
-          "data-mdx-status": failureMessage ? "error" : "compiled",
-          "data-mdx-mode": compileMode,
-        },
-        React.createElement(
-          MdxRuntimeBoundary,
-          { resetKey: retryKey, onError: handleRuntimeError },
-          React.createElement(Comp, {}),
-        ),
-      );
-    }
-
-    if (failureMessage) {
-      return React.createElement(
-        "div",
-        {
-          className: "markdown-mdx error",
-          ref: containerRef,
-          "data-mdx-ref": pendingId,
-          "data-mdx-status": "error",
-          "data-mdx-mode": compileMode,
-        },
-        errorPanel,
-        retryButton,
-      );
-    }
-
-    if (!Comp) {
-      return React.createElement(
-        "div",
-        {
-          className: "markdown-mdx",
-          ref: containerRef,
-          "data-mdx-ref": pendingId,
-          "data-mdx-status": "pending",
-          "data-mdx-mode": compileMode,
-        },
-        pendingLabel,
-      );
-    }
-
   },
 
   // Footnotes block rendered at page end
@@ -968,7 +761,7 @@ export class ComponentRegistry {
   private tableElements: TableElements;
   private literalTagContent?: string[];
   private codeRenderers: Record<string, CodeFenceRenderer> = {};
-  private artifactHtml = false;
+  private contentComponents?: ContentComponentsMap;
   private linkHandler: ((url: string) => void) | undefined;
   private blockRenderer?: BlockRendererOverride;
   private blockComponentMapCache: BlockComponents | null = null;
@@ -993,7 +786,6 @@ export class ComponentRegistry {
     inlineComponents: Partial<InlineComponents> = {},
     codeRenderers: Record<string, CodeFenceRenderer> = {},
     options?: {
-      artifactHtml?: boolean;
       mathRenderer?: MathRenderer;
       blockRenderer?: BlockRendererOverride;
       tableVirtualization?: TableVirtualizationOptions;
@@ -1001,6 +793,7 @@ export class ComponentRegistry {
       controls?: ControlsConfig;
       controlsComponent?: React.ComponentType<ControlsComponentProps>;
       animated?: AnimatedProp;
+      contentComponents?: ContentComponentsMap;
     } & ElementFilterOptions,
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
@@ -1008,6 +801,9 @@ export class ComponentRegistry {
     this.htmlElements = getDefaultHtmlElements();
     if (options?.urlTransform) {
       this.urlTransform = options.urlTransform;
+    }
+    if (options?.contentComponents) {
+      this.contentComponents = options.contentComponents;
     }
     if (!inlineComponents.html) {
       this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string }) =>
@@ -1125,9 +921,6 @@ export class ComponentRegistry {
     this.codeRenderers = next;
   }
 
-  setArtifactHtml(enabled: boolean): void {
-    this.artifactHtml = enabled;
-  }
 
   /** Link handler handed to code fence renderers as `openLink` (StreamingMarkdown installs its `linkSafety`-aware handler). */
   setLinkHandler(handler: ((url: string) => void) | undefined): void {
@@ -1249,12 +1042,6 @@ export class ComponentRegistry {
     if (canonical !== normalized && Object.prototype.hasOwnProperty.call(this.codeRenderers, canonical)) {
       return this.codeRenderers[canonical];
     }
-    if (normalized === "artifact" || normalized === "html-artifact") {
-      return ArtifactFrame;
-    }
-    if (normalized === "html" && this.artifactHtml) {
-      return ArtifactFrame;
-    }
     return undefined;
   }
 
@@ -1361,59 +1148,47 @@ export class ComponentRegistry {
   getInlineComponents(): InlineComponents {
     return this.inlineComponents;
   }
-
-  renderHtmlTree(tree: HtmlTreeNode[], renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block), paragraph?: Block): React.ReactNode {
-    return this.renderOwnedHtmlTree(tree, renderBlock, paragraph);
+  setContentComponents(contentComponents?: ContentComponentsMap): void {
+    this.contentComponents = contentComponents;
   }
 
-  private renderOwnedHtmlTree(
+  getContentComponents(): ContentComponentsMap | undefined {
+    return this.contentComponents;
+  }
+
+
+  renderHtmlTree(
     tree: HtmlTreeNode[],
-    renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block),
+    renderBlock: (block: Block, parentTagName?: string) => React.ReactNode = (block) => this.renderBlock(block),
     paragraph?: Block,
     parentTagName?: string,
   ): React.ReactNode {
-    return renderHtmlOwnershipTree(tree, this.htmlElements, renderBlock,
-      (nodes, parentTagName) => renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName),
-      (node, children) => {
-        if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
-          const component = this.inlineComponents[node.kind];
-          if (node.kind === "link") {
-            const { href, ...linkProps } = node;
-            const transform = this.urlTransform ?? defaultUrlTransform;
-            const safeHref = transform(href ?? "", "href", { source: "markdown" });
-            const direct = component ? React.createElement(component, {
-              ...linkProps,
-              ...(safeHref != null ? { href: safeHref } : {}),
-              children,
-            }) : React.createElement("a", { href: safeHref ?? undefined }, children);
-            if (!this.hasElementFilters()) return direct;
-            return this.filterElement(
-              { tagName: "a", properties: { href: safeHref, title: node.title } },
-              { source: "markdown" },
-              () => direct,
-              () => children,
-            );
-          }
-          const tag = node.kind === "strike" ? "del" : node.kind;
-          const direct = component ? React.createElement(component, { ...node, children }) : React.createElement(tag, {}, children);
-          if (!this.hasElementFilters()) return direct;
-          return this.filterElement(
-            { tagName: tag, properties: {} },
-            { source: "markdown" },
-            () => direct,
-            () => children,
-          );
-        }
-        if (node.kind === "plugin") {
-          const component = this.inlineComponents[node.name] ?? this.inlineComponents.plugin;
-          return component ? React.createElement(component, { ...node.attrs, name: node.name, attrs: node.attrs, raw: node.raw, children }) : node.raw;
-        }
-        return renderInlineNodes([node], this.inlineComponents, this.urlTransform, this);
-      }, paragraph ? (children) => React.createElement(this.getBlockComponent("paragraph"), {
+    return renderOwnedHtmlTree(tree, this.ownedHtmlRenderContext(renderBlock, paragraph, parentTagName));
+  }
+
+  private ownedHtmlRenderContext(
+    renderBlock: (block: Block, parentTagName?: string) => React.ReactNode = (block) => this.renderBlock(block),
+    paragraph?: Block,
+    parentTagName?: string,
+    inlineContext?: RenderInlineAnimationContext,
+  ): OwnedHtmlRenderContext {
+    return {
+      elements: this.htmlElements,
+      renderBlock,
+      renderInline: (nodes, parentTagName) =>
+        renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName, inlineContext),
+      inlineComponents: this.inlineComponents,
+      urlTransform: this.urlTransform,
+      isAutolinkProtocolDisabled: (href) => this.isAutolinkProtocolDisabled(href),
+      filterElement: this.hasElementFilters()
+        ? (element, context, renderElement, renderChildren) => this.filterElement(element, context, renderElement, renderChildren)
+        : undefined,
+      parentTagName,
+      contentComponents: this.contentComponents,
+      renderParagraph: paragraph ? (children) => React.createElement(this.getBlockComponent("paragraph"), {
         ...this.getBlockProps(paragraph), children,
       }) : undefined,
-      this.urlTransform,
-      this.hasElementFilters() ? (el, ctx, rEl, rCh) => this.filterElement(el, ctx, rEl, rCh) : undefined, parentTagName);
+    };
   }
 
   getBlockComponentMap(): BlockComponents {
@@ -1456,8 +1231,13 @@ export class ComponentRegistry {
    * Render a block
    */
   renderBlock(block: Block): React.ReactElement {
-    if (block.type === "paragraph" && block.payload.meta?.htmlParagraphTree) {
-      return React.createElement(React.Fragment, {}, this.renderHtmlTree(block.payload.meta.htmlParagraphTree, undefined, block));
+    const meta = block.payload.meta;
+    const sourceOwnedHtmlTree = meta?.htmlOwnership === true && Array.isArray(meta.htmlTree) ? meta.htmlTree : undefined;
+    if (block.type === "paragraph" && sourceOwnedHtmlTree) {
+      return React.createElement(React.Fragment, {}, this.renderHtmlTree(sourceOwnedHtmlTree, undefined, block));
+    }
+    if (block.type === "paragraph" && meta?.htmlParagraphTree) {
+      return React.createElement(React.Fragment, {}, this.renderHtmlTree(meta.htmlParagraphTree, undefined, block));
     }
     const Component = this.getBlockComponent(block.type);
     const props = this.getBlockProps(block);
@@ -1658,20 +1438,11 @@ export class ComponentRegistry {
         if (filtered === null || filtered === undefined) {
           return React.createElement(React.Fragment, { key: block.id });
         }
-        return this.attachMdxCoordinator(block, React.isValidElement(filtered) ? filtered : React.createElement(React.Fragment, { key: block.id }, filtered));
+        return React.isValidElement(filtered) ? filtered : React.createElement(React.Fragment, { key: block.id }, filtered);
       }
     }
 
-    return this.attachMdxCoordinator(block, finalElement);
-  }
-  private attachMdxCoordinator(block: Block, element: React.ReactElement): React.ReactElement {
-    if (block.type !== "mdx") return element;
-    return React.createElement(
-      React.Fragment,
-      { key: block.id },
-      React.createElement(MdxCoordinatorLeaf, { key: `${block.id}:coordinator`, block }),
-      element,
-    );
+    return finalElement;
   }
 
   /**
@@ -1689,7 +1460,12 @@ export class ComponentRegistry {
         const headingText =
           typeof meta.headingText === "string" && meta.headingText.trim().length > 0 ? (meta.headingText as string) : removeHeadingMarkers(rawHeading).trim();
         const level = (normalizedLevel ?? this.extractHeadingLevel(rawHeading)) as 1 | 2 | 3 | 4 | 5 | 6;
-        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform, this, `h${level}`, animCtx);
+        const ownedTree = block.payload.meta?.htmlOwnership === true ? block.payload.meta.htmlTree : undefined;
+        const ownedRoot = ownedTree?.length === 1 ? ownedTree[0] : undefined;
+        const ownedChildren = ownedRoot?.kind === "element" && ownedRoot.tagName === `h${level}` ? ownedRoot.children : undefined;
+        const renderedChildren = ownedChildren
+          ? renderOwnedHtmlTree(ownedChildren, this.ownedHtmlRenderContext(undefined, undefined, `h${level}`, animCtx))
+          : renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform, this, `h${level}`, animCtx);
         return {
           level,
           inlines: inlineNodes,
@@ -1709,7 +1485,7 @@ export class ComponentRegistry {
                 segments, this.inlineComponents, DEFAULT_INLINE_HTML_RENDERERS,
                 this.htmlElements, this.literalTagContent, this.urlTransform, this, animCtx,
                 block.payload.meta?.mixedHtmlTrees as Record<number, HtmlTreeNode[]> | undefined,
-                (tree) => this.renderOwnedHtmlTree(tree, undefined, undefined, "p"),
+                (tree) => renderOwnedHtmlTree(tree, this.ownedHtmlRenderContext(undefined, undefined, "p")),
               )
             : renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform, this, "p", animCtx),
         };
@@ -1761,22 +1537,10 @@ export class ComponentRegistry {
       }
 
       case "mdx":
-        return (() => {
-          const meta = block.payload.meta as { mdxStatus?: unknown; mdxError?: unknown } | undefined;
-          const rawStatus = typeof meta?.mdxStatus === "string" ? meta.mdxStatus : undefined;
-          const status = rawStatus === "pending" || rawStatus === "compiled" || rawStatus === "error" ? rawStatus : undefined;
-          const errorMessage = typeof meta?.mdxError === "string" ? String(meta.mdxError) : undefined;
-          const compiledModule = block.payload.compiledMdxModule ?? null;
-          const compiledRef = block.payload.compiledMdxRef ?? (compiledModule ? { id: compiledModule.id } : undefined);
-          return {
-            compiledRef: compiledRef ?? { id: "pending" },
-            compiledModule,
-            status,
-            errorMessage,
-            raw: typeof block.payload.raw === "string" ? block.payload.raw : undefined,
-            meta,
-          };
-        })();
+        return {
+          raw: typeof block.payload.raw === "string" ? block.payload.raw : undefined,
+          meta: block.payload.meta as Record<string, unknown> | undefined,
+        };
 
       case "table": {
         const header = Array.isArray(block.payload.meta?.header) ? (block.payload.meta?.header as InlineNode[][]) : undefined;
@@ -2116,16 +1880,7 @@ function renderMixedParagraphSegments(
         break;
       }
       case "mdx": {
-        const status = segment.status ?? "pending";
-        let element: React.ReactNode;
-        if (status === "compiled") {
-          element = React.createElement("span", { className: "markdown-mdx-inline", "data-mdx-status": "compiled" });
-        } else if (status === "error") {
-          const message = segment.value || "MDX error";
-          element = React.createElement("span", { className: "markdown-mdx-inline text-destructive", "data-mdx-status": "error" }, message);
-        } else {
-          element = React.createElement("span", { className: "markdown-mdx-inline", "data-mdx-status": status }, segment.value);
-        }
+        const element = React.createElement("span", { className: "markdown-mdx-inline" }, segment.value);
         inlineBuffer.push(React.createElement(React.Fragment, { key }, element));
         break;
       }

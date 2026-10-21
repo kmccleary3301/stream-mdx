@@ -501,7 +501,7 @@ function listItemSegmentSnapshot(
   return {
     id,
     type: "list-item-mdx",
-    props: { raw: segment.value, status: segment.status ?? "pending", error: segment.error },
+    props: { raw: segment.value },
     ...(range ? { range } : {}),
     children: [],
   };
@@ -1587,6 +1587,14 @@ function carryStoreCounters(previous: NodeMap, next: NodeMap): void {
   if (counters) codeCountersByMap!.set(next, counters);
 }
 
+const preparedStoreCaptureByStore = new WeakMap<RendererStore, () => RendererStore>();
+
+export function capturePreparedRendererStore(store: RendererStore): RendererStore {
+  const capture = preparedStoreCaptureByStore.get(store);
+  if (!capture) throw new Error("RendererStore was not created by createRendererStore.");
+  return capture();
+}
+
 // Ids whose record object or version changed during the current synchronous store mutation. Keyed node
 // subscriptions wake exactly these ids: the same condition `getNodeWithVersion` snapshots change on.
 let activeChangedIds: Set<string> | null = null;
@@ -1841,7 +1849,6 @@ function estimateBlockPayloadSize(block: Block): number {
   if (typeof payload.raw === "string") size += payload.raw.length;
   if (typeof payload.highlightedHtml === "string") size += payload.highlightedHtml.length;
   if (typeof payload.sanitizedHtml === "string") size += payload.sanitizedHtml.length;
-  if (typeof payload.compiledMdxModule?.code === "string") size += payload.compiledMdxModule.code.length;
   if (Array.isArray(payload.inline)) size += payload.inline.length * 8;
   return size;
 }
@@ -3412,6 +3419,26 @@ function resolveStoreParagraphCounters(options?: RendererStoreOptions): StorePar
   };
 }
 
+
+/** Read-only native frame rebuilt from cold blocks, which carry their managed owner snapshots. */
+function createPreparedRendererStoreSnapshot(
+  blocks: ReadonlyArray<Block>,
+  themes?: { light: string; dark: string },
+): RendererStore {
+  const prepared = createRendererStore(blocks.map((block) => cloneBlock(block)), themes ? { themes: { ...themes } } : undefined);
+  const readOnly = (): never => {
+    throw new Error("Prepared renderer snapshots are read-only.");
+  };
+  const snapshot: RendererStore = {
+    ...prepared,
+    reset: readOnly,
+    resetSnapshot: readOnly,
+    applyPatches: readOnly,
+    setThemes: readOnly,
+  };
+  registerNodeSubscriptions(snapshot, () => () => {});
+  return snapshot;
+}
 export function createRendererStore(initialBlocks: Block[] = [], options?: RendererStoreOptions): RendererStore {
   let currentThemes = options?.themes;
   let nodes: NodeMap = createFreshNodeMap();
@@ -5490,5 +5517,6 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     internalStore.campaignCounters = (options as RendererStoreOptions & { campaignCounters?: RendererCampaignCounters })?.campaignCounters;
   }
   rebuildFromBlocks(initialBlocks);
+  preparedStoreCaptureByStore.set(store, () => createPreparedRendererStoreSnapshot(store.getBlocks(), currentThemes));
   return store;
 }

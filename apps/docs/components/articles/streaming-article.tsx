@@ -1,15 +1,23 @@
 "use client";
 
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
 import type { BlockComponents, StreamingMarkdownHandle } from "@stream-mdx/react";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "@stream-mdx/react";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type ElementType } from "react";
+
+import { components as trustedMdxComponents } from "@/mdx-components";
 
 import { DocsCodeBlock } from "@/components/markdown/docs-code-block";
 import { useTocContext } from "@/components/on-this-page/toc-context";
 import type { TocHeading } from "@/lib/toc";
 
+
+const articleMdxEngine = createTrustedMdxEngine({
+  components: trustedMdxComponents as Readonly<Record<string, ElementType>>,
+});
+const articleMdxEngines = { mdx: articleMdxEngine };
 export function StreamingArticle({ content }: { content: string }) {
   const tocContext = useTocContext();
   const handleRef = useRef<StreamingMarkdownHandle | null>(null);
@@ -60,7 +68,8 @@ export function StreamingArticle({ content }: { content: string }) {
         codeRenderers={codeRenderers}
         worker="/workers/markdown-worker.js"
         ref={handleRef}
-        mdxCompileMode="worker"
+        contentPolicy="trusted-mdx"
+        engines={articleMdxEngines}
         features={{
           html: true,
           tables: true,

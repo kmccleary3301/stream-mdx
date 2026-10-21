@@ -29,8 +29,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S3_fast_reasonable",
@@ -47,8 +47,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -57,12 +55,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is &lt;</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is &lt;</p></div>",
       "textSample": "Inline HTMLHere is <",
       "structure": {
         "topLevelTags": [
@@ -73,15 +69,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -95,8 +88,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S3_fast_reasonable",
@@ -113,8 +106,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -123,12 +114,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is &lt;</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is &lt;</p></div>",
       "textSample": "Inline HTMLHere is <",
       "structure": {
         "topLevelTags": [
@@ -139,15 +128,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -161,8 +147,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S3_fast_reasonable",
@@ -179,8 +165,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -189,12 +173,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is &lt;</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is &lt;</p></div>",
       "textSample": "Inline HTMLHere is <",
       "structure": {
         "topLevelTags": [
@@ -205,15 +187,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -227,8 +206,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 3,
-        "lastPatchToDomMs": 13.299999997019768,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 13.299999982118607,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S3_fast_reasonable",
@@ -245,8 +224,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -255,12 +232,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n</div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n</div>",
       "textSample": "Inline HTMLHere is Cmd + Shift + P.\n",
       "structure": {
         "topLevelTags": [
@@ -271,15 +246,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -293,8 +265,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 6,
-        "lastPatchToDomMs": 15.100000001490116,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 15.5,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S3_fast_reasonable",
@@ -311,8 +283,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -321,12 +291,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subs</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subs</p></div>",
       "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubs",
       "structure": {
         "topLevelTags": [
@@ -337,15 +305,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -359,8 +324,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 8,
-        "lastPatchToDomMs": 16.100000001490116,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 14.599999994039536,
+        "lastDurationMs": 0.20000001788139343,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S3_fast_reasonable",
@@ -377,8 +342,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -387,12 +350,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2&lt;/su</sup></p>\n</div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2&lt;/su</sup></p>\n</div>",
       "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2</su\n",
       "structure": {
         "topLevelTags": [
@@ -403,15 +364,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -425,8 +383,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 10,
-        "lastPatchToDomMs": 14.799999997019768,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 16,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S3_fast_reasonable",
@@ -443,8 +401,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -453,13 +409,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nCompiling MDX (server)…",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: ``<span class=\"markdown-mdx-inline\">{:js}</span><span class=\"markdown-mdx-inline\">{:js}</span></p></div>",
+      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: ``{:js}{:js}",
       "structure": {
         "topLevelTags": [
           "div"
@@ -469,91 +423,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 1,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMdxPending",
-      "appendedChars": 240,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 13,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 10,
-        "lastPatchToDomMs": 14.799999997019768,
-        "lastDurationMs": 0.10000000149011612,
-        "meta": {
-          "fixtureId": "inline-html",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nCompiling MDX (server)…",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "mdxPending": 1,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
         "codeBlocks": []
       }
     },
@@ -567,8 +442,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 11,
-        "lastPatchToDomMs": 13,
-        "lastDurationMs": 0.19999999552965164,
+        "lastPatchToDomMs": 12,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S3_fast_reasonable",
@@ -585,8 +460,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -595,12 +468,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
       "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: {:js}{:js}.",
       "structure": {
         "topLevelTags": [
@@ -611,15 +482,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -632,20 +500,18 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
     "runtimeState": {
       "rendererVersion": 16,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 13,
-      "lastPatchToDomMs": 13.899999998509884,
-      "lastDurationMs": 0.29999999701976776,
+      "lastPatchToDomMs": 10.800000011920929,
+      "lastDurationMs": 0.4000000059604645,
       "meta": {
         "fixtureId": "inline-html",
         "scenarioId": "S3_fast_reasonable",
@@ -667,8 +533,6 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       }
@@ -677,13 +541,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "fe11494c354a1a925f4818f397969dbd8098e8494bd194d980785014003d5151",
+        "hash": "91ee6f9845ec76e3a55fd0e71c6ae76b788d0e16ffc1c9a679204238aba7f58d",
         "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with l"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

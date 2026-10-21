@@ -1,6 +1,6 @@
 {
   "fixtureId": "mdx-multi-status",
-  "fixtureTitle": "MDX Multi Status",
+  "fixtureTitle": "Mixed MDX Inputs Stay Markdown",
   "scenarioId": "S2_typical",
   "scenario": {
     "id": "S2_typical",
@@ -87,80 +87,31 @@
       "selector": "#regression-root kbd"
     },
     "table": {
-      "selector": "#regression-root table",
-      "computed": {
-        "border-collapse": "collapse",
-        "border-spacing": "2px",
-        "table-layout": "auto",
-        "display": "table",
-        "padding-top": "0px",
-        "padding-right": "0px",
-        "padding-bottom": "0px",
-        "padding-left": "0px",
-        "margin-top": "0px",
-        "margin-bottom": "0px",
-        "border-top-width": "0px",
-        "border-right-width": "0px",
-        "border-bottom-width": "0px",
-        "border-left-width": "0px",
-        "border-top-color": "rgb(232, 232, 232)",
-        "border-right-color": "rgb(232, 232, 232)",
-        "border-bottom-color": "rgb(232, 232, 232)",
-        "border-left-color": "rgb(232, 232, 232)",
-        "border-top-left-radius": "0px",
-        "border-top-right-radius": "0px",
-        "border-bottom-left-radius": "0px",
-        "border-bottom-right-radius": "0px",
-        "background-color": "rgba(0, 0, 0, 0)",
-        "box-shadow": "none",
-        "overflow": "visible",
-        "overflow-x": "visible",
-        "overflow-y": "visible"
-      }
+      "missing": true,
+      "selector": "#regression-root table"
     },
     "table-row": {
-      "selector": "#regression-root tbody tr",
-      "computed": {
-        "border-bottom-width": "0px",
-        "border-bottom-color": "rgb(232, 232, 232)"
-      }
+      "missing": true,
+      "selector": "#regression-root tbody tr"
     },
     "table-th": {
-      "selector": "#regression-root th",
-      "computed": {
-        "padding-top": "1px",
-        "padding-right": "1px",
-        "padding-bottom": "1px",
-        "padding-left": "1px",
-        "text-align": "center",
-        "vertical-align": "middle",
-        "border-bottom-width": "0px",
-        "border-bottom-color": "rgb(232, 232, 232)"
-      }
+      "missing": true,
+      "selector": "#regression-root th"
     },
     "table-td": {
-      "selector": "#regression-root td",
-      "computed": {
-        "padding-top": "1px",
-        "padding-right": "1px",
-        "padding-bottom": "1px",
-        "padding-left": "1px",
-        "text-align": "start",
-        "vertical-align": "middle",
-        "border-bottom-width": "0px",
-        "border-bottom-color": "rgb(232, 232, 232)"
-      }
+      "missing": true,
+      "selector": "#regression-root td"
     },
     "list-ol": {
       "selector": "#regression-root ol",
       "computed": {
-        "display": "block",
+        "display": "flex",
         "padding-top": "0px",
         "padding-right": "0px",
         "padding-bottom": "0px",
-        "padding-left": "0px",
-        "margin-top": "0px",
-        "margin-bottom": "0px",
+        "padding-left": "28px",
+        "margin-top": "17.5px",
+        "margin-bottom": "17.5px",
         "border-top-width": "0px",
         "border-right-width": "0px",
         "border-bottom-width": "0px",
@@ -178,8 +129,8 @@
         "overflow": "visible",
         "overflow-x": "visible",
         "overflow-y": "visible",
-        "--list-indent": "",
-        "--list-marker-digits": ""
+        "--list-indent": "2rem",
+        "--list-marker-digits": "1"
       }
     },
     "list-nested-ol": {
@@ -193,26 +144,26 @@
     "list-ol-li": {
       "selector": "#regression-root ol > li",
       "computed": {
-        "margin-top": "0px",
-        "margin-bottom": "0px",
+        "margin-top": "1.4px",
+        "margin-bottom": "1.4px",
         "padding-left": "0px",
-        "position": "static",
+        "position": "relative",
         "line-height": "21px"
       },
       "pseudo": {
         "::before": {
-          "content": "none",
-          "position": "static",
-          "left": "auto",
-          "top": "auto",
-          "width": "auto",
-          "height": "auto",
+          "content": "\"1. \"",
+          "position": "absolute",
+          "left": "-28px",
+          "top": "0px",
+          "width": "28px",
+          "height": "21px",
           "margin-top": "0px",
-          "padding-right": "0px",
+          "padding-right": "7px",
           "font-size": "14px",
           "color": "rgb(32, 32, 32)",
-          "opacity": "1",
-          "display": "inline"
+          "opacity": "0.5",
+          "display": "block"
         }
       }
     },
@@ -240,38 +191,9 @@
       "missing": true,
       "selector": "#regression-root .footnotes .footnote-backref"
     },
-    "preview-pre-adjacent": {
+    "preview-code-adjacent": {
       "missing": true,
-      "selector": "#regression-root .markdown-mdx + pre"
-    },
-    "mdx-block": {
-      "selector": "#regression-root .markdown-mdx",
-      "computed": {
-        "display": "block",
-        "padding-top": "0px",
-        "padding-right": "0px",
-        "padding-bottom": "0px",
-        "padding-left": "0px",
-        "margin-top": "0px",
-        "margin-bottom": "0px",
-        "border-top-width": "0px",
-        "border-right-width": "0px",
-        "border-bottom-width": "0px",
-        "border-left-width": "0px",
-        "border-top-color": "rgb(232, 232, 232)",
-        "border-right-color": "rgb(232, 232, 232)",
-        "border-bottom-color": "rgb(232, 232, 232)",
-        "border-left-color": "rgb(232, 232, 232)",
-        "border-top-left-radius": "0px",
-        "border-top-right-radius": "0px",
-        "border-bottom-left-radius": "0px",
-        "border-bottom-right-radius": "0px",
-        "background-color": "rgba(0, 0, 0, 0)",
-        "box-shadow": "none",
-        "overflow": "visible",
-        "overflow-x": "visible",
-        "overflow-y": "visible"
-      }
+      "selector": "#regression-root figure[data-with-codeblock=\"true\"] + :is(pre, figure, div[data-code-block=\"true\"], div:has(> div > [data-radix-scroll-area-viewport]))"
     },
     "math-inline": {
       "selector": "#regression-root .katex",

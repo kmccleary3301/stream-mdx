@@ -112,6 +112,7 @@ This is a breaking release for custom integrations:
 - Provisional lookahead is bounded before completeness scanning. Every provisional input over 512 characters falls back to raw text, even when its delimiters are closed. Oversized finalized/nonprovisional complete content remains preserved; within-budget finalized projection retains its existing behavior. The declared caps are 512 scan characters, two newlines, six synthetic operations, nesting depth eight, one validation failure, and a cooperative five-millisecond provider guard. These are internal limits, not new React props or latency guarantees. See [configuration](docs/CONFIGURATION.md#formatanticipation).
 - Core root exports no longer expose Lezer converter, math extension factory, link-label normalization, entity decoder, or default/regex plugin adapter internals. Use the retained `InlineParser`, streaming preparation APIs, `prepareNestedBlockSnapshot`, native extension configuration, and public worker/compiler entries. Owning parser settings remain authoritative, including disabled math in nested snapshot fallbacks. See [core parser and snapshot contracts](docs/PUBLIC_API.md#core-parser-and-snapshot-contracts).
 - URL transforms and HTML/style sanitization apply in client, SSR, and unified rendering. Rejected URLs are omitted, and custom components must use the sanitized attributes and children they receive. `allowedElements` and `disallowedElements` cannot be supplied together. See the [security model](docs/SECURITY_MODEL.md).
+- The old automatic MDX compile modes and `mdxComponents` prop are removed. Markdown remains native/restricted by default; full MDX requires a host-created `createTrustedMdxEngine` from `@stream-mdx/react/trusted-mdx`, an explicit import allowlist, `contentPolicy="trusted-mdx"`, and CSP permission for `unsafe-eval`. The trusted engine runs code in the host realm and is not a sandbox. See [MDX migration guidance](apps/docs/content/guides/mdx-and-html.md).
 
 Controls, streaming animation, table virtualization, and custom renderer extensions remain opt-in. Read the generated package changelogs for the feature and correctness changes consumed into this release. For release operations, use the [Changesets/CI checklist](docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md#6-packaging-and-publish-gates). The version-specific 0.5.0 release commands remain historical; they are not aliases for 1.0.
 
@@ -140,11 +141,9 @@ export function Demo({ text }: { text: string }) {
         tables: true,
         html: true,
         math: true,
-        mdx: true,
         footnotes: true,
         codeHighlighting: "incremental",
       }}
-      mdxCompileMode="worker"
       prewarmLangs={["tsx", "bash", "json"]}
     />
   );
@@ -360,7 +359,7 @@ stream-mdx/
 | Build everything | `npm run build` | Includes the starter app build. |
 | Run all workspace tests | `npm test` | Package-level tests across the monorepo. |
 | Build hosted worker for docs/app surfaces | `npm run docs:worker:build` | Produces and copies `markdown-worker.js`. |
-| Build docs snapshots | `npm run docs:snapshots:build` | Compiles markdown docs into snapshot artifacts. |
+| Build docs snapshots | `npm run docs:snapshots:build` | Builds packages and the hosted worker, then compiles doc snapshots. |
 | Run docs locally | `npm run docs:dev` | Prepares packages, worker, docs snapshots, then starts Next dev. |
 | Build docs for production | `npm run docs:build` | End-to-end docs build/export path. |
 | Run regression suites | `npm run test:regression` | HTML + style snapshot suites. |
@@ -380,6 +379,8 @@ npm run build:packages
 npm run test:regression:seeded-smoke:server
 npm run docs:dev
 ```
+
+Managed seeded smoke writes static-server output to `tmp/seeded-smoke/docs-server.log`. The server logs directly to that file, so synchronous replay commands cannot stall HTTP responses by filling a log pipe.
 
 ## Architecture Summary
 
