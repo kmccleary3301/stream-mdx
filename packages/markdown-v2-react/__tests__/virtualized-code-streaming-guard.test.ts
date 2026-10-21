@@ -27,34 +27,36 @@ async function testInlineWorkerCustomCodeHighlighting(): Promise<void> {
   const authoredCode = Array.from({ length: 64 }, (_, index) => `const item${index} = ${index};`).join("\n");
   const markdown = `\`\`\`ts\n${authoredCode}\n\`\`\``;
   const expectedLineCount = authoredCode.split("\n").length;
+  const replacementCode = authoredCode;
+  const replacementMarkdown = markdown;
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { pretendToBeVisual: true });
   const { window } = dom;
   const globalKeys = ["window", "document", "HTMLElement", "Node", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver"] as const;
   const previousGlobals = Object.fromEntries(
     globalKeys.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
   ) as Record<(typeof globalKeys)[number], PropertyDescriptor | undefined>;
-  let cancelledFrames = 0;
   Object.assign(globalThis, {
     window,
     document: window.document,
     HTMLElement: window.HTMLElement,
     Node: window.Node,
     requestAnimationFrame: window.requestAnimationFrame.bind(window),
-    cancelAnimationFrame: (id: number) => {
-      cancelledFrames++;
-      window.cancelAnimationFrame(id);
-    },
+    cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
     ResizeObserver: ResizeObserverStub,
   });
 
   const store = createRendererStore();
   const worker = createInlineEngineWorker();
   let finalized = false;
+  let replacementRequested = false;
+  let replacementRequest: CodeHighlightRequest | null = null;
   let workerError: Error | null = null;
   worker.onmessage = (event: MessageEvent<WorkerOut>) => {
     const message = event.data;
-    if (message.type === "INITIALIZED") store.reset(message.blocks);
-    else if (message.type === "PATCH") store.applyPatches(message.patches);
+    if (message.type === "INITIALIZED") {
+      store.reset(message.blocks);
+      if (replacementRequested) worker.postMessage({ type: "FINALIZE" });
+    } else if (message.type === "PATCH") store.applyPatches(message.patches);
     else if (message.type === "FINALIZED") finalized = true;
     else if (message.type === "ERROR") workerError = new Error(message.error.message);
   };
@@ -110,7 +112,6 @@ async function testInlineWorkerCustomCodeHighlighting(): Promise<void> {
       );
     };
     const registry = new ComponentRegistry({ code: customCode });
-    const requests: CodeHighlightRequest[] = [];
     root = createRoot(container);
     root.render(
       React.createElement(
@@ -120,13 +121,31 @@ async function testInlineWorkerCustomCodeHighlighting(): Promise<void> {
           CodeHighlightRequestContext.Provider,
           {
             value: (request) => {
-              requests.push({ ...request });
+              if (replacementRequested) {
+                replacementRequest = request;
+                return;
+              }
               worker.postMessage({
                 type: "TOKENIZE_RANGE",
                 blockId: request.blockId,
                 startLine: request.startLine,
                 endLine: request.endLine,
                 priority: request.priority,
+              });
+              replacementRequested = true;
+              finalized = false;
+              worker.postMessage({
+                type: "INIT",
+                initialContent: replacementMarkdown,
+                prewarmLangs: [],
+                docPlugins: {
+                  html: false,
+                  mdx: false,
+                  tables: false,
+                  math: false,
+                  outputMode: "html",
+                  lazyTokenization: { enabled: true, thresholdLines: 50 },
+                },
               });
             },
           },
@@ -135,6 +154,25 @@ async function testInlineWorkerCustomCodeHighlighting(): Promise<void> {
       ),
     );
 
+    await waitFor(() => replacementRequest !== null, "replacement consumer requests a fresh lazy range");
+    const replacementBeforeHighlight = store.getBlocks().find((candidate) => candidate.type === "code");
+    assert.ok(replacementBeforeHighlight, "replacement INIT should retain the code block");
+    assert.equal(replacementBeforeHighlight.payload.meta?.lazyTokenizedUntil, 0, "invalidated first-document work must not commit to the replacement");
+    assert.equal(
+      container.querySelector('[data-highlighted-code] [data-highlighted-line]'),
+      null,
+      "replacement output stays unhighlighted until its own range is sent",
+    );
+    const pendingReplacementRequest = replacementRequest;
+    assert.ok(pendingReplacementRequest, "replacement range request should be captured");
+    // Check invalidated work before forwarding the replacement's own real worker request.
+    worker.postMessage({
+      type: "TOKENIZE_RANGE",
+      blockId: pendingReplacementRequest.blockId,
+      startLine: pendingReplacementRequest.startLine,
+      endLine: pendingReplacementRequest.endLine,
+      priority: pendingReplacementRequest.priority,
+    });
     await waitFor(() => {
       const updated = store.getBlocks().find((candidate) => candidate.id === block.id);
       const meta = updated?.payload.meta;
@@ -142,28 +180,35 @@ async function testInlineWorkerCustomCodeHighlighting(): Promise<void> {
         && container.querySelector('[data-highlighted-code] [data-highlighted-line] span[style]') !== null;
     }, "custom component receives real worker-highlighted code after lazy completion");
 
-    const updated = store.getBlocks().find((candidate) => candidate.id === block.id);
-    assert.equal(updated?.payload.meta?.lazyTokenizedUntil, expectedLineCount);
-    assert.equal(container.querySelector("[data-authored-source]")?.textContent, authoredCode);
+    const replacementBlock = store.getBlocks().find((candidate) => candidate.type === "code");
+    assert.ok(replacementBlock, "replacement INIT should retain the code block");
+    assert.equal(replacementBlock.id, block.id, "replacement INIT should reuse the code block ID");
+    assert.equal(replacementBlock.payload.meta?.lazyTokenizedUntil, expectedLineCount);
+    assert.equal(container.querySelector("[data-authored-source]")?.textContent, replacementCode);
+    const highlightedRows = Array.from(container.querySelectorAll("[data-highlighted-code] [data-highlighted-line]"));
+    assert.equal(highlightedRows.length, expectedLineCount, "replacement should render every highlighted source line");
     assert.equal(
-      container.querySelector('[data-highlighted-code] [data-highlighted-line] span[style]')?.textContent,
-      "const",
-      "custom code output should contain actual syntax-highlighted token markup",
+      highlightedRows.map((row) => row.textContent).join("\n"),
+      replacementCode,
+      "replacement code should render every authored line from its real syntax-highlighted output",
     );
-    assert.deepStrictEqual(
-      requests.map(({ blockId, startLine, endLine, priority, reason }) => ({ blockId, startLine, endLine, priority, reason })),
-      [{ blockId: block.id, startLine: 0, endLine: expectedLineCount, priority: "visible", reason: "finalize-full" }],
-      "strict-effect replay should leave one full-range request",
-    );
-    assert.ok(cancelledFrames > 0, "StrictMode effect replay cancels the abandoned animation frame");
   } finally {
-    root?.unmount();
-    worker.terminate();
-    window.close();
-    for (const key of globalKeys) {
-      const descriptor = previousGlobals[key];
-      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
-      else Reflect.deleteProperty(globalThis, key);
+    try {
+      root?.unmount();
+    } finally {
+      try {
+        worker.terminate();
+      } finally {
+        try {
+          window.close();
+        } finally {
+          for (const key of globalKeys) {
+            const descriptor = previousGlobals[key];
+            if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+            else Reflect.deleteProperty(globalThis, key);
+          }
+        }
+      }
     }
   }
 }
@@ -179,46 +224,62 @@ class ResizeObserverStub {
 async function renderBlock(
   block: Block,
   registry = new ComponentRegistry(),
-): Promise<{ pre: HTMLElement; requests: Array<Record<string, unknown>> }> {
+): Promise<{ pre: HTMLElement }> {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     pretendToBeVisual: true,
   });
   const { window } = dom;
-  (globalThis as any).window = window;
-  (globalThis as any).document = window.document;
-  (globalThis as any).HTMLElement = window.HTMLElement;
-  (globalThis as any).Node = window.Node;
-  (globalThis as any).requestAnimationFrame = window.requestAnimationFrame.bind(window);
-  (globalThis as any).cancelAnimationFrame = window.cancelAnimationFrame.bind(window);
-  (globalThis as any).ResizeObserver = ResizeObserverStub;
-
-  const store = createRendererStore([block]);
+  const globalKeys = ["window", "document", "HTMLElement", "Node", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver"] as const;
+  const previousGlobals = Object.fromEntries(
+    globalKeys.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
+  ) as Record<(typeof globalKeys)[number], PropertyDescriptor | undefined>;
   const container = window.document.getElementById("root");
-  const requests: Array<Record<string, unknown>> = [];
-  assert.ok(container, "missing test root container");
-
-  const root = createRoot(container);
-  root.render(
-    React.createElement(
-      CodeHighlightRequestContext.Provider,
-      { value: (request) => requests.push({ ...request }) },
-      React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }),
-    ),
-  );
-  await sleep(60);
-  for (let attempt = 0; attempt < 10 && requests.length === 0; attempt += 1) {
-    await sleep(20);
+  let root: Root | null = null;
+  try {
+    assert.ok(container, "missing test root container");
+    Object.assign(globalThis, {
+      window,
+      document: window.document,
+      HTMLElement: window.HTMLElement,
+      Node: window.Node,
+      requestAnimationFrame: window.requestAnimationFrame.bind(window),
+      cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
+      ResizeObserver: ResizeObserverStub,
+    });
+    const store = createRendererStore([block]);
+    root = createRoot(container);
+    root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
+    let pre: HTMLElement | null = null;
+    await waitFor(() => {
+      pre = container.querySelector<HTMLElement>('pre[data-code-block="true"]');
+      return pre !== null;
+    }, "expected code block to render");
+    assert.ok(pre, "expected code block to render");
+    return { pre };
+  } finally {
+    try {
+      root?.unmount();
+    } finally {
+      try {
+        window.close();
+      } finally {
+        for (const key of globalKeys) {
+          const descriptor = previousGlobals[key];
+          if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+          else Reflect.deleteProperty(globalThis, key);
+        }
+      }
+    }
   }
-
-  const pre = container.querySelector('pre[data-code-block="true"]') as HTMLElement | null;
-  assert.ok(pre, "expected code block to render");
-  root.unmount();
-  return { pre, requests };
 }
 
 async function runVirtualizedCodeStreamingGuardTest(): Promise<void> {
   const fixturePath = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "virtualized-code.md");
   const raw = fs.readFileSync(fixturePath, "utf8");
+  const authoredSource = raw
+    .replace(/\r\n?/g, "\n")
+    .replace(/^```[^\n]*\n/, "")
+    .replace(/\n```[\s\S]*$/, "");
 
   const finalizedLazyBlock: Block = {
     id: "code-block-lazy",
@@ -226,19 +287,15 @@ async function runVirtualizedCodeStreamingGuardTest(): Promise<void> {
     isFinalized: true,
     payload: {
       raw,
-      meta: { lang: "ts", lazyTokenization: true, code: raw.replace(/^```[^\n]*\n/, "").replace(/\n```$/, "") },
+      meta: { lang: "ts", lazyTokenization: true, code: authoredSource },
     },
   };
-  const expectedLineCount = finalizedLazyBlock.payload.meta?.code?.split("\n").length ?? 0;
-  const { pre, requests } = await renderBlock(finalizedLazyBlock);
+  const { pre } = await renderBlock(finalizedLazyBlock);
   assert.strictEqual(pre.getAttribute("data-code-virtualized"), "false", "lazy-tokenized code must remain non-virtualized");
-  assert.ok(requests.length > 0, "finalized lazy non-virtualized code should request a full highlight pass");
-  const fullRequest = requests.find((request) => request.blockId === finalizedLazyBlock.id);
-  assert.ok(fullRequest, "expected a lazy highlight request for the finalized lazy code block");
-  assert.deepStrictEqual(
-    { startLine: fullRequest?.startLine, endLine: fullRequest?.endLine, priority: fullRequest?.priority, reason: fullRequest?.reason },
-    { startLine: 0, endLine: expectedLineCount, priority: "visible", reason: "finalize-full" },
-    "finalized lazy non-virtualized code should request the entire code range",
+  assert.equal(
+    Array.from(pre.querySelectorAll(".line"), (line) => line.textContent ?? "").join("\n").replace(/\n$/, ""),
+    authoredSource,
+    "lazy non-virtualized code should preserve every authored line in the DOM",
   );
 
   await testInlineWorkerCustomCodeHighlighting();

@@ -3,6 +3,9 @@ import { useCodeHighlightRequester } from "./code-highlight-context";
 
 type LazyCodeHighlightRequestOptions = {
   blockId: string;
+  // The store root is stable across patches and replaced by reset.
+  documentIdentity: object;
+  blockEpoch: number;
   blockIsFinalized: boolean;
   lazyEnabled: boolean;
   lazyTokenizedUntil: number;
@@ -12,6 +15,8 @@ type LazyCodeHighlightRequestOptions = {
 
 export function useLazyCodeHighlightRequest({
   blockId,
+  documentIdentity,
+  blockEpoch,
   blockIsFinalized,
   lazyEnabled,
   lazyTokenizedUntil,
@@ -19,7 +24,13 @@ export function useLazyCodeHighlightRequest({
   shouldVirtualize,
 }: LazyCodeHighlightRequestOptions): void {
   const highlightRequester = useCodeHighlightRequester();
-  const lastRangeRef = React.useRef<{ blockId: string; endLine: number; tokenizedUntil: number } | null>(null);
+  const lastRangeRef = React.useRef<{
+    blockId: string;
+    endLine: number;
+    tokenizedUntil: number;
+    documentIdentity: object;
+    blockEpoch: number;
+  } | null>(null);
   const rafRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
@@ -27,10 +38,22 @@ export function useLazyCodeHighlightRequest({
     if (totalLazyLineCount <= 0 || lazyTokenizedUntil >= totalLazyLineCount) return;
 
     const last = lastRangeRef.current;
-    if (last?.blockId === blockId && last.endLine === totalLazyLineCount && last.tokenizedUntil === lazyTokenizedUntil) {
+    if (
+      last?.documentIdentity === documentIdentity &&
+      last.blockEpoch === blockEpoch &&
+      last.blockId === blockId &&
+      last.endLine === totalLazyLineCount &&
+      last.tokenizedUntil === lazyTokenizedUntil
+    ) {
       return;
     }
-    const nextRange = { blockId, endLine: totalLazyLineCount, tokenizedUntil: lazyTokenizedUntil };
+    const nextRange = {
+      blockId,
+      endLine: totalLazyLineCount,
+      tokenizedUntil: lazyTokenizedUntil,
+      documentIdentity,
+      blockEpoch,
+    };
     lastRangeRef.current = nextRange;
 
     const requestFullHighlight = () => {
@@ -54,5 +77,15 @@ export function useLazyCodeHighlightRequest({
       };
     }
     requestFullHighlight();
-  }, [blockId, blockIsFinalized, highlightRequester, lazyEnabled, lazyTokenizedUntil, shouldVirtualize, totalLazyLineCount]);
+  }, [
+    blockId,
+    blockIsFinalized,
+    blockEpoch,
+    documentIdentity,
+    highlightRequester,
+    lazyEnabled,
+    lazyTokenizedUntil,
+    shouldVirtualize,
+    totalLazyLineCount,
+  ]);
 }

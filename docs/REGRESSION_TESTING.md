@@ -40,6 +40,12 @@ Final HTML remains byte-for-byte compared outside canonicalizable inline style d
 
 `math-display-checkpoint-supported` retains a dedicated ordinary S5 boundary assertion. Immediately after its explicit marker, the open display formula `a_n = \frac{1}{n}` must have renderable display KaTeX with matching TeX/MathML and no KaTeX error. After finalize, the formula must include the `\sqrt{x}` tail, and the fixture's trailing prose must remain present. An eventual `.katex` selector alone does not satisfy the boundary contract.
 
+### Source-owned release boundaries
+
+- `packages/markdown-v2-core/__tests__/lookahead-budget-boundaries.test.ts` covers provisional size limits and finalized-content preservation. Oversized provisional input falls back to literal source before token scanning; finalized complete content still renders its formatting.
+- `packages/markdown-v2-react/__tests__/virtualized-code-streaming-guard.test.ts` uses a real inline worker and mounted custom code consumer. Identical-source `INIT` with reused code IDs starts a fresh lazy-request lifetime; held replacement work leaves the new document unhighlighted, and releasing its real request renders the authored token rows. Pending requests remain cancellable on detach.
+- The snippet analyzer validates every retained coalescing batch before breakdown or release guardrails: six finite nonnegative integer counters, finite nonnegative duration, reconciled input/output counts, and operation counts bounded by input. Retained sums cannot exceed aggregate counts; lower sums are valid because history is capped. A singleton may omit coalescing metrics because the scheduler skips that work. Missing counters never become zero observations, and reported coalescing work without retained samples fails.
+
 ### Seed coverage and eligibility
 
 The existing `--seed` and `--seed-count` replay options generate varied deterministic chunks from marker-stripped text, including for split-marker fixtures. Seeded replay has an internal exception to the ordinary marker-only scenario restriction; scenario include/exclude tags still apply. The seeded smoke's S2 requests for `imaginary-empty-list` and `math-display-checkpoint-supported` therefore execute real varied chunks and compare exact finals against their ordinary S5 baselines and against the other seeds.

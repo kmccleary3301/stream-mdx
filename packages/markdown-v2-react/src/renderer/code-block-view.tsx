@@ -1,4 +1,4 @@
-import { dedentIndentedCode, getDefaultCodeWrapperAttributes, stripCodeFence, type TokenLineV1 } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, dedentIndentedCode, getDefaultCodeWrapperAttributes, stripCodeFence, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { trimProvisionalFenceTail } from "../code-fence-streaming";
 import {
@@ -108,6 +108,8 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     lazyTokenizedUntil,
     totalLazyLineCount,
     shouldVirtualize,
+    documentIdentity: store.getNode(PATCH_ROOT_ID) ?? store,
+    blockEpoch: node.blockEpoch,
   });
   const lastRangeRef = React.useRef<{
     visibleStart: number;

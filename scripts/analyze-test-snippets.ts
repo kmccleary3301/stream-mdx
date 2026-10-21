@@ -280,30 +280,28 @@ type PerfSamples = {
   longTasksMs: number[];
 };
 
+type CoalescingMetrics = NonNullable<StreamingFlushBatchSample["coalescing"]>;
+
 type FlushBatchSample = {
-  tx: number | null;
+  tx: number | null | undefined;
   patchCount: number;
-  appliedPatchCount?: number;
-  queueDelayMs: number;
-  durationMs: number;
-  priority: "high" | "low";
-  receivedAt?: number | null;
-  appliedAt?: number | null;
-  queueDepthBefore?: number;
-  remainingQueue?: number;
-  effectiveQueueDepth?: number;
-  flushStartedAt?: number;
-  flushCompletedAt?: number;
-  coalescing?: {
-    inputPatchCount?: number;
-    outputPatchCount?: number;
-    coalescedCount?: number;
-    durationMs?: number;
-    appendLinesCoalesced?: number;
-    setPropsCoalesced?: number;
-    insertChildCoalesced?: number;
-  } | null;
+  appliedPatchCount: number | undefined;
+  queueDelayMs: number | undefined;
+  durationMs: number | undefined;
+  priority: "high" | "low" | undefined;
+  receivedAt: number | null | undefined;
+  appliedAt: number | null | undefined;
+  queueDepthBefore: number | undefined;
+  remainingQueue: number | undefined;
+  effectiveQueueDepth: number | undefined;
+  flushStartedAt: number | undefined;
+  flushCompletedAt: number | undefined;
+  coalescing: CoalescingMetrics | null | undefined;
 };
+
+type CoalescingBatchValidation =
+  | { valid: true }
+  | { valid: false; message: string };
 
 type WorkerPerfMetrics = PerformanceMetrics;
 
@@ -338,6 +336,7 @@ type TelemetrySnapshot = {
     durationMs: number;
   } | null;
   flushBatches?: FlushBatchSample[] | null;
+  coalescingBatchValidation: CoalescingBatchValidation;
 };
 
 type RawTelemetrySnapshot = {
@@ -348,7 +347,7 @@ type RawTelemetrySnapshot = {
   stream: TelemetrySnapshot["stream"];
   patchTotals: TelemetrySnapshot["patchTotals"];
   coalescingTotals: TelemetrySnapshot["coalescingTotals"];
-  flushBatches: StreamingFlushBatchSample[] | null;
+  flushBatches: unknown;
 };
 
 type LookaheadTraceBlock = NonNullable<LookaheadTraceStep["blocks"]>[number];
@@ -537,32 +536,216 @@ function computePercentile(values: number[], percentile: number): number | null 
   return sorted[index];
 }
 
-function collectCoalescingDurations(batches?: unknown): number[] | null {
-  if (batches === null || batches === undefined) return [];
-  if (!Array.isArray(batches)) return null;
-  const durations: number[] = [];
-  for (const candidate of batches) {
-    if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) return null;
-    const batch = candidate as Partial<FlushBatchSample>;
-    const patchCount = batch.patchCount;
-    if (
-      typeof patchCount !== "number" ||
-      !Number.isFinite(patchCount) ||
-      !Number.isInteger(patchCount) ||
-      patchCount < 1
-    ) {
-      return null;
+function isTelemetryRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value >= 0;
+}
+
+function isFiniteNonNegativeNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function finiteTelemetryNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+
+type CoalescingMetricsNormalization =
+  | { valid: true; metrics: CoalescingMetrics }
+  | { valid: false; message: string };
+
+function normalizeCoalescingMetrics(value: unknown): CoalescingMetricsNormalization {
+  if (!isTelemetryRecord(value)) {
+    return { valid: false, message: "metrics must be an object" };
+  }
+  const inputPatchCount = value.inputPatchCount;
+  const outputPatchCount = value.outputPatchCount;
+  const coalescedCount = value.coalescedCount;
+  const appendLinesCoalesced = value.appendLinesCoalesced;
+  const setPropsCoalesced = value.setPropsCoalesced;
+  const insertChildCoalesced = value.insertChildCoalesced;
+  const durationMs = value.durationMs;
+  if (
+    !isNonNegativeInteger(inputPatchCount) ||
+    !isNonNegativeInteger(outputPatchCount) ||
+    !isNonNegativeInteger(coalescedCount) ||
+    !isNonNegativeInteger(appendLinesCoalesced) ||
+    !isNonNegativeInteger(setPropsCoalesced) ||
+    !isNonNegativeInteger(insertChildCoalesced) ||
+    !isFiniteNonNegativeNumber(durationMs)
+  ) {
+    return {
+      valid: false,
+      message: "metrics require six finite non-negative integer counters and a finite non-negative duration",
+    };
+  }
+  if (
+    inputPatchCount !== outputPatchCount + coalescedCount ||
+    appendLinesCoalesced + setPropsCoalesced + insertChildCoalesced > inputPatchCount
+  ) {
+    return { valid: false, message: "counter relationships do not reconcile or operation counts exceed input patches" };
+  }
+  return {
+    valid: true,
+    metrics: {
+      inputPatchCount,
+      outputPatchCount,
+      coalescedCount,
+      appendLinesCoalesced,
+      setPropsCoalesced,
+      insertChildCoalesced,
+      durationMs,
+    },
+  };
+}
+
+type NormalizedFlushBatches = {
+  batches: FlushBatchSample[] | null;
+  validation: CoalescingBatchValidation;
+};
+
+function normalizeFlushBatches(
+  rawBatches: unknown,
+  totals: TelemetrySnapshot["coalescingTotals"],
+): NormalizedFlushBatches {
+  const totalsReportWork =
+    totals !== null &&
+    totals !== undefined &&
+    (totals.input !== 0 ||
+      totals.output !== 0 ||
+      totals.coalesced !== 0 ||
+      totals.appendLines !== 0 ||
+      totals.setProps !== 0 ||
+      totals.insertChild !== 0 ||
+      totals.durationMs !== 0);
+  if (rawBatches === null || rawBatches === undefined) {
+    return {
+      batches: null,
+      validation: totalsReportWork
+        ? { valid: false, message: "Reported coalescing work has no retained batch samples" }
+        : { valid: true },
+    };
+  }
+  if (!Array.isArray(rawBatches)) {
+    return {
+      batches: null,
+      validation: { valid: false, message: "Retained flush batch telemetry is not an array" },
+    };
+  }
+  const rawBatchCandidates: unknown[] = rawBatches;
+
+  const batches: FlushBatchSample[] = [];
+  const observedCounts = { input: 0, output: 0, coalesced: 0, appendLines: 0, setProps: 0, insertChild: 0 };
+  const invalid = (message: string): NormalizedFlushBatches => ({
+    batches: null,
+    validation: { valid: false, message },
+  });
+
+  for (let index = 0; index < rawBatchCandidates.length; index += 1) {
+    const candidate = rawBatchCandidates[index];
+    if (!isTelemetryRecord(candidate)) {
+      return invalid(`Retained flush batch ${index} is not an object`);
     }
-    const coalescing = batch.coalescing;
-    if (coalescing === null || coalescing === undefined) {
+    const patchCount = candidate.patchCount;
+    if (!isNonNegativeInteger(patchCount) || patchCount < 1) {
+      return invalid(`Retained flush batch ${index} has an invalid patch count`);
+    }
+
+    const rawMetrics = candidate.coalescing;
+    let coalescing: CoalescingMetrics | null | undefined;
+    if (rawMetrics === null || rawMetrics === undefined) {
       // The scheduler deliberately skips coalescing for singleton patch batches.
-      if (patchCount === 1) continue;
-      return null;
+      if (patchCount !== 1) {
+        return invalid(`Retained multi-patch batch ${index} is missing coalescing metrics`);
+      }
+      coalescing = rawMetrics;
+    } else {
+      const normalizedMetrics = normalizeCoalescingMetrics(rawMetrics);
+      if (!normalizedMetrics.valid) {
+        return invalid(`Retained coalescing batch ${index}: ${normalizedMetrics.message}`);
+      }
+      const metrics = normalizedMetrics.metrics;
+      coalescing = metrics;
+      observedCounts.input += metrics.inputPatchCount;
+      observedCounts.output += metrics.outputPatchCount;
+      observedCounts.coalesced += metrics.coalescedCount;
+      observedCounts.appendLines += metrics.appendLinesCoalesced;
+      observedCounts.setProps += metrics.setPropsCoalesced;
+      observedCounts.insertChild += metrics.insertChildCoalesced;
     }
-    if (typeof coalescing !== "object" || Array.isArray(coalescing)) return null;
-    const duration = coalescing.durationMs;
-    if (typeof duration !== "number" || !Number.isFinite(duration) || duration < 0) return null;
-    durations.push(duration);
+
+    const tx = candidate.tx === null ? null : finiteTelemetryNumber(candidate.tx);
+    const appliedPatchCount = finiteTelemetryNumber(candidate.appliedPatchCount);
+    const queueDelayMs = finiteTelemetryNumber(candidate.queueDelayMs);
+    const durationMs = finiteTelemetryNumber(candidate.durationMs);
+    const priority = candidate.priority === "high" || candidate.priority === "low" ? candidate.priority : undefined;
+    const receivedAt = candidate.receivedAt === null ? null : finiteTelemetryNumber(candidate.receivedAt);
+    const appliedAt = candidate.appliedAt === null ? null : finiteTelemetryNumber(candidate.appliedAt);
+    const queueDepthBefore = finiteTelemetryNumber(candidate.queueDepthBefore);
+    const remainingQueue = finiteTelemetryNumber(candidate.remainingQueue);
+    const effectiveQueueDepth = finiteTelemetryNumber(candidate.effectiveQueueDepth);
+    const flushStartedAt = finiteTelemetryNumber(candidate.flushStartedAt);
+    const flushCompletedAt = finiteTelemetryNumber(candidate.flushCompletedAt);
+    batches.push({
+      tx,
+      patchCount,
+      appliedPatchCount,
+      queueDelayMs,
+      durationMs,
+      priority,
+      receivedAt,
+      appliedAt,
+      queueDepthBefore,
+      remainingQueue,
+      effectiveQueueDepth,
+      flushStartedAt,
+      flushCompletedAt,
+      coalescing,
+    });
+  }
+  if (batches.length === 0 && totalsReportWork) {
+    return invalid("Reported coalescing work has no retained batch samples");
+  }
+
+  if (
+    !isNonNegativeInteger(observedCounts.input) ||
+    !isNonNegativeInteger(observedCounts.output) ||
+    !isNonNegativeInteger(observedCounts.coalesced) ||
+    !isNonNegativeInteger(observedCounts.appendLines) ||
+    !isNonNegativeInteger(observedCounts.setProps) ||
+    !isNonNegativeInteger(observedCounts.insertChild)
+  ) {
+    return invalid("Retained coalescing batch counters cannot be summed as finite non-negative integers");
+  }
+  if (
+    totals &&
+    isNonNegativeInteger(totals.input) &&
+    isNonNegativeInteger(totals.output) &&
+    isNonNegativeInteger(totals.coalesced) &&
+    isNonNegativeInteger(totals.appendLines) &&
+    isNonNegativeInteger(totals.setProps) &&
+    isNonNegativeInteger(totals.insertChild) &&
+    (observedCounts.input > totals.input ||
+      observedCounts.output > totals.output ||
+      observedCounts.coalesced > totals.coalesced ||
+      observedCounts.appendLines > totals.appendLines ||
+      observedCounts.setProps > totals.setProps ||
+      observedCounts.insertChild > totals.insertChild)
+  ) {
+    return invalid("Retained coalescing batch counters exceed the reported aggregate totals");
+  }
+
+  return { batches, validation: { valid: true } };
+}
+
+function collectCoalescingDurations(batches?: FlushBatchSample[] | null): number[] {
+  if (!Array.isArray(batches)) return [];
+  const durations: number[] = [];
+  for (const batch of batches) {
+    if (batch.coalescing) durations.push(batch.coalescing.durationMs);
   }
   return durations;
 }
@@ -572,6 +755,7 @@ function normalizeTelemetrySnapshot(raw: RawTelemetrySnapshot | null): Telemetry
 
   const ensureArray = (value: number[] | null | undefined): number[] =>
     value?.map((num) => Number(num)).filter((num) => Number.isFinite(num)) ?? [];
+  const normalizedBatches = normalizeFlushBatches(raw.flushBatches, raw.coalescingTotals);
 
   return {
     summary: raw.summary,
@@ -589,7 +773,8 @@ function normalizeTelemetrySnapshot(raw: RawTelemetrySnapshot | null): Telemetry
     stream: raw.stream ?? null,
     patchTotals: raw.patchTotals ?? null,
     coalescingTotals: raw.coalescingTotals ?? null,
-    flushBatches: raw.flushBatches,
+    flushBatches: normalizedBatches.batches,
+    coalescingBatchValidation: normalizedBatches.validation,
   };
 }
 
@@ -604,21 +789,20 @@ async function appendCoalescingCsvRows(snippetName: string, batches?: FlushBatch
   if (!Array.isArray(batches) || batches.length === 0) return;
   const lines: string[] = [];
   for (const batch of batches) {
-    if (!batch || typeof batch !== "object") continue;
     const metrics = batch.coalescing;
     if (!metrics) continue;
     const values = [
       snippetName,
       batch.tx ?? "",
       batch.priority ?? "",
-      Number.isFinite(batch.queueDelayMs) ? batch.queueDelayMs : "",
-      Number.isFinite(batch.durationMs) ? batch.durationMs : "",
-      metrics.inputPatchCount ?? 0,
-      metrics.outputPatchCount ?? 0,
-      metrics.coalescedCount ?? 0,
-      metrics.appendLinesCoalesced ?? 0,
-      metrics.setPropsCoalesced ?? 0,
-      metrics.insertChildCoalesced ?? 0,
+      typeof batch.queueDelayMs === "number" && Number.isFinite(batch.queueDelayMs) ? batch.queueDelayMs : "",
+      typeof batch.durationMs === "number" && Number.isFinite(batch.durationMs) ? batch.durationMs : "",
+      metrics.inputPatchCount,
+      metrics.outputPatchCount,
+      metrics.coalescedCount,
+      metrics.appendLinesCoalesced,
+      metrics.setPropsCoalesced,
+      metrics.insertChildCoalesced,
     ];
     lines.push(values.map((value) => csvEscape(String(value ?? ""))).join(","));
   }
@@ -639,19 +823,16 @@ function computeCoalescingBreakdown(batches?: FlushBatchSample[] | null): Coales
   let batchesWithMetrics = 0;
   const durations: number[] = [];
   for (const batch of batches) {
-    if (!batch || typeof batch !== "object") continue;
     const metrics = batch.coalescing;
     if (!metrics) continue;
-    input += metrics.inputPatchCount ?? 0;
-    output += metrics.outputPatchCount ?? 0;
-    coalesced += metrics.coalescedCount ?? 0;
-    appendLines += metrics.appendLinesCoalesced ?? 0;
-    setProps += metrics.setPropsCoalesced ?? 0;
-    insertChild += metrics.insertChildCoalesced ?? 0;
-    if (typeof metrics.durationMs === "number" && Number.isFinite(metrics.durationMs)) {
-      durationTotal += metrics.durationMs;
-      durations.push(metrics.durationMs);
-    }
+    input += metrics.inputPatchCount;
+    output += metrics.outputPatchCount;
+    coalesced += metrics.coalescedCount;
+    appendLines += metrics.appendLinesCoalesced;
+    setProps += metrics.setPropsCoalesced;
+    insertChild += metrics.insertChildCoalesced;
+    durationTotal += metrics.durationMs;
+    durations.push(metrics.durationMs);
     batchesWithMetrics += 1;
   }
   if (batchesWithMetrics === 0) {
@@ -679,7 +860,7 @@ function computeCoalescingBreakdown(batches?: FlushBatchSample[] | null): Coales
     setPropsMerged: setProps,
     insertChildMerged: insertChild,
     durationMsTotal: durationTotal,
-    durationMsAvg: batchesWithMetrics > 0 ? durationTotal / batchesWithMetrics : 0,
+    durationMsAvg: durationTotal / batchesWithMetrics,
     durationMsP95: computePercentile(durations, 0.95),
   };
 }
@@ -732,6 +913,7 @@ function recordCoalescingGuardrailResult(
 function evaluateCoalescingGuardrails(snippetName: string, analysis: SnippetAnalysis["analysis"], telemetry: TelemetrySnapshot | null): void {
   const issues = analysis.issues;
   const totals = telemetry?.coalescingTotals;
+  const batchValidation = telemetry?.coalescingBatchValidation;
   if (!totals) {
     recordCoalescingGuardrailResult(
       snippetName,
@@ -742,10 +924,8 @@ function evaluateCoalescingGuardrails(snippetName: string, analysis: SnippetAnal
     );
   } else {
     const counts = [totals.input, totals.output, totals.coalesced, totals.appendLines, totals.setProps, totals.insertChild];
-    const countsAreValid = counts.every(
-      (value) => typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value >= 0,
-    );
-    const durationIsValid = typeof totals.durationMs === "number" && Number.isFinite(totals.durationMs) && totals.durationMs >= 0;
+    const countsAreValid = counts.every(isNonNegativeInteger);
+    const durationIsValid = isFiniteNonNegativeNumber(totals.durationMs);
     if (!countsAreValid || !durationIsValid) {
       recordCoalescingGuardrailResult(
         snippetName,
@@ -767,19 +947,20 @@ function evaluateCoalescingGuardrails(snippetName: string, analysis: SnippetAnal
       );
     }
   }
+  if (batchValidation && !batchValidation.valid) {
+    recordCoalescingGuardrailResult(
+      snippetName,
+      "coalescing/batches/invalid",
+      "fail",
+      batchValidation.message,
+      issues,
+    );
+  }
 
 
-  if (MAX_COALESCING_DURATION_P95_MS > 0) {
+  if (MAX_COALESCING_DURATION_P95_MS > 0 && batchValidation?.valid !== false) {
     const durations = collectCoalescingDurations(telemetry?.flushBatches ?? null);
-    if (durations === null) {
-      recordCoalescingGuardrailResult(
-        snippetName,
-        "coalescing/duration/invalid",
-        "fail",
-        "Every retained coalescing sample must report a finite, non-negative duration; missing metadata is valid only for single-patch batches",
-        issues,
-      );
-    } else if (durations.length === 0) {
+    if (durations.length === 0) {
       const noWork =
         totals?.input === 0 &&
         totals.output === 0 &&

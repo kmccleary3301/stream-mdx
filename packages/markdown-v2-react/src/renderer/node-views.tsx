@@ -1,4 +1,4 @@
-import { normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type UrlTransform } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { InlineComponents, TableElements } from "../types";
 import {
@@ -22,7 +22,12 @@ import { StreamingActivityContext } from "./streaming-activity-context";
 import { CodeBlockView } from "./code-block-view";
 import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 
-const CustomCodeBlockView: React.FC<{ block: Block; registry: ComponentRegistry }> = React.memo(({ block, registry }) => {
+const CustomCodeBlockView: React.FC<{
+  block: Block;
+  registry: ComponentRegistry;
+  documentIdentity: object;
+  blockEpoch: number;
+}> = React.memo(({ block, registry, documentIdentity, blockEpoch }) => {
   const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
   const lazyEnabled = Boolean(meta.lazyTokenization);
   const lazyTokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? meta.lazyTokenizedUntil : 0;
@@ -38,6 +43,8 @@ const CustomCodeBlockView: React.FC<{ block: Block; registry: ComponentRegistry 
     lazyTokenizedUntil,
     totalLazyLineCount,
     shouldVirtualize: false,
+    documentIdentity,
+    blockEpoch,
   });
 
   return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
@@ -72,7 +79,14 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
   const mixedParagraph = block.type === "paragraph" && Array.isArray(block.payload.meta?.mixedSegments);
   if ((registry.hasCustomBlockComponent(block.type) || mixedParagraph) && !preparedQuote) {
     if (block.type === "code") {
-      return <CustomCodeBlockView block={block} registry={registry} />;
+      return (
+        <CustomCodeBlockView
+          block={block}
+          registry={registry}
+          documentIdentity={store.getNode(PATCH_ROOT_ID) ?? store}
+          blockEpoch={node.blockEpoch}
+        />
+      );
     }
     return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
   }
