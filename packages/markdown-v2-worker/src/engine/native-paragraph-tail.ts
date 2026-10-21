@@ -507,7 +507,7 @@ export class NativeParagraphTailParser {
     if (!this.attested) return this.parseFullConfiguredContext(source, true, "unattested-grammar");
 
     const windowFrom = this.lastLineStart;
-    const input = new NativeMarkdownInput(new SourceRangeInput(source, windowFrom), true);
+    const input = new NativeMarkdownInput(new SourceRangeInput(source, windowFrom));
     const tree = input.parse(this.parser);
     const parsed = inspectWindow(tree, source, windowFrom, this.ownerEnd, input.length, true);
     if (parsed.replacementNode) {
@@ -531,7 +531,7 @@ export class NativeParagraphTailParser {
     finalizing: boolean,
     reason: NativeParagraphTailFallbackReason,
   ): NativeParagraphTailChange {
-    const input = new NativeMarkdownInput(source, finalizing);
+    const input = new NativeMarkdownInput(source);
     const tree = input.parse(this.parser);
     const located = rootAtOwnerStart(tree.topNode, this.ownerStart, this.ownerEnd);
     if (!located.owner) {

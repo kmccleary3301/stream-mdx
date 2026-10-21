@@ -9,6 +9,7 @@ import {
   type CodeBlockSnapshot,
   type CodeBlockSourceMetadata,
   type CodeLineDecoration,
+  type CodeLineIndex,
   type CodeLineRecord,
   type TokenLineV1,
   type NodeSnapshot,
@@ -35,7 +36,31 @@ import {
 import type { ShikiThemedToken } from "./types";
 
 const OPENING_BY_OWNER = new WeakMap<RootCodeSourceOwner, RootCodeSourceOpening>();
+const PREPARED_CODE_SOURCE_BY_OWNER = new WeakMap<PreparedCodeLineOwner, PreparedCodeLineSource>();
 
+export interface PreparedCodeLineOwner {
+  readonly id: string;
+  getLines(): CodeLineIndex;
+  decorateLines(decorations: readonly CodeLineDecoration[]): CodeLineIndex;
+}
+
+export interface PreparedCodeLineSource {
+  readonly info: string;
+  readonly language?: string;
+}
+
+export function registerPreparedCodeLineSource(
+  owner: PreparedCodeLineOwner,
+  source: PreparedCodeLineSource,
+): void {
+  PREPARED_CODE_SOURCE_BY_OWNER.set(owner, Object.freeze({ ...source }));
+}
+
+function preparedCodeSourceOf(owner: PreparedCodeLineOwner): PreparedCodeLineSource {
+  const source = PREPARED_CODE_SOURCE_BY_OWNER.get(owner);
+  if (!source) throw new Error(`Prepared code source is unavailable for owner ${owner.id}`);
+  return source;
+}
 export interface RootCodeHighlightConfiguration {
   readonly highlighter: SharedHighlighter | null;
   readonly themes: CodeThemePair;
@@ -160,12 +185,13 @@ export function createRootCodeOwners(
       ? new RootCodeSourceOwner({ id, generation, source, opening, counters })
       : new RootCodeSourceOwner({ id, generation, source, opening });
     OPENING_BY_OWNER.set(owner, opening);
+    registerPreparedCodeLineSource(owner, opening);
     if (opening.bodyFrom < source.length) owner.accept(opening.bodyFrom, source.length);
     owners.push(owner);
   } while (cursor.nextSibling());
   return owners;
 }
-
+ 
 function openingOf(owner: RootCodeSourceOwner): RootCodeSourceOpening {
   const opening = OPENING_BY_OWNER.get(owner);
   if (!opening) throw new Error("Root code opening is unavailable for this owner");
@@ -231,16 +257,16 @@ interface HighlightOwnerState {
 }
 
 type HtmlCodeLineDecoration = CodeLineDecoration & { readonly html: string | null };
-/** One continuation state per root code owner; isolated range requests never replay its prefix. */
+/** One continuation state per prepared code lease; range requests never replay its prefix. */
 export class RootCodeHighlighter {
-  private readonly owners = new Map<string, HighlightOwnerState>();
+  private owners = new WeakMap<PreparedCodeLineOwner, HighlightOwnerState>();
 
   async decorateAvailable(
-    owner: RootCodeSourceOwner,
+    owner: PreparedCodeLineOwner,
     config: RootCodeHighlightConfiguration,
     isCurrent: () => boolean,
   ): Promise<readonly HtmlCodeLineDecoration[]> {
-    const state = this.state(owner.id);
+    const state = this.state(owner);
     return this.enqueue(state, async () => {
       if (!config.enabled || !config.highlighter || !isCurrent()) return [];
       const index = owner.getLines();
@@ -276,20 +302,20 @@ export class RootCodeHighlighter {
         if (valid.length === rows.length) state.processedCompleteLines = to;
         return valid;
       } catch (error) {
-        console.warn("Root code highlighting failed", owner.id, error);
+        console.warn("Code highlighting failed", owner.id, error);
         return [];
       }
     });
   }
 
   async tokenizeRange(
-    owner: RootCodeSourceOwner,
+    owner: PreparedCodeLineOwner,
     fromLine: number,
     toLine: number,
     config: RootCodeHighlightConfiguration,
     isCurrent: () => boolean,
   ): Promise<readonly HtmlCodeLineDecoration[]> {
-    const state = this.state(owner.id);
+    const state = this.state(owner);
     return this.enqueue(state, async () => {
       if (!config.enabled || !config.highlighter || !isCurrent()) return [];
       const index = owner.getLines();
@@ -304,8 +330,8 @@ export class RootCodeHighlighter {
         if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
           config.counters?.recordTokenization(rows.length, input.length, "engine");
         }
-        const opening = openingOf(owner);
-        const { lang, meta } = parseCodeFenceInfo(opening.info);
+        const source = preparedCodeSourceOf(owner);
+        const { lang, meta } = parseCodeFenceInfo(source.info);
         const diffInfo = detectDiffLanguage(lang, meta);
         let rendered: Array<TokenLineV1 | null>;
         let html: Array<string | null>;
@@ -334,14 +360,14 @@ export class RootCodeHighlighter {
         if (valid.length > 0) owner.decorateLines(valid);
         return valid;
       } catch (error) {
-        console.warn("Root code range highlighting failed", owner.id, error);
+        console.warn("Code range highlighting failed", owner.id, error);
         return [];
       }
     });
   }
 
   clear(): void {
-    this.owners.clear();
+    this.owners = new WeakMap<PreparedCodeLineOwner, HighlightOwnerState>();
   }
 
   private makeDecorations(
@@ -369,11 +395,11 @@ export class RootCodeHighlighter {
     return decorations;
   }
 
-  private state(ownerId: string): HighlightOwnerState {
-    let state = this.owners.get(ownerId);
+  private state(owner: PreparedCodeLineOwner): HighlightOwnerState {
+    let state = this.owners.get(owner);
     if (!state) {
       state = { processedCompleteLines: 0, work: Promise.resolve() };
-      this.owners.set(ownerId, state);
+      this.owners.set(owner, state);
     }
     return state;
   }
@@ -385,16 +411,16 @@ export class RootCodeHighlighter {
   }
 
   private async resolveLanguage(
-    owner: RootCodeSourceOwner,
+    owner: PreparedCodeLineOwner,
     config: RootCodeHighlightConfiguration,
     state: HighlightOwnerState,
   ): Promise<string> {
     if (state.resolvedLanguage) return state.resolvedLanguage;
     if (!state.resolution) {
-      const opening = openingOf(owner);
-      const { lang, meta } = parseCodeFenceInfo(opening.info);
+      const source = preparedCodeSourceOf(owner);
+      const { lang, meta } = parseCodeFenceInfo(source.info);
       const diffInfo = detectDiffLanguage(lang, meta);
-      const requested = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : opening.language ?? "text";
+      const requested = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : source.language ?? "text";
       state.resolution = resolveHighlightLanguage(config.highlighter, requested).then((language) => {
         return language;
       });

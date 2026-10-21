@@ -2,13 +2,15 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import type { Block } from "@stream-mdx/core";
-import type { MarkdownBlocksRendererProps } from "@stream-mdx/react/server";
+import type { MarkdownBlocksRendererProps } from "../../packages/markdown-v2-react/src/renderer/blocks-renderer";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
 import {
   ComponentRegistry,
   MarkdownBlocksRenderer,
 } from "./diagnostic-dist/index.mjs";
 import type { DenseFixture } from "./replay-fixtures";
+import type { FootnoteItem, InlineNode } from "@stream-mdx/core";
+import { getCodeBlockLang, verifyAuthoredCodeExpectations } from "./replay-code-parity";
 
 /**
  * Verifies SSR-rendered semantic expectations for a DenseFixture against
@@ -424,4 +426,170 @@ export function verifyRenderedExpectations(
   } finally {
     dom.window.close();
   }
+}
+
+export function collectBlocksRecursively(blocks: ReadonlyArray<Block>): Block[] {
+  const result: Block[] = [];
+  const seen = new Set<string>();
+
+  function visitBlock(b: Block) {
+    if (seen.has(b.id)) return;
+    seen.add(b.id);
+    result.push(b);
+
+    const meta = b.payload.meta as Record<string, unknown> | undefined;
+    const prepared = meta?.preparedNested as
+      | { children?: Array<{ props?: { block?: Block }; type?: string; children?: unknown[] }> }
+      | undefined;
+    if (prepared?.children) {
+      for (const child of prepared.children) {
+        visitNode(child);
+      }
+    }
+  }
+
+  function visitNode(node: { props?: { block?: Block }; type?: string; children?: unknown[] }) {
+    if (node.props?.block) {
+      visitBlock(node.props.block);
+    }
+    if (Array.isArray(node.children)) {
+      for (const child of node.children) {
+        if (child && typeof child === "object") {
+          visitNode(child as { props?: { block?: Block }; type?: string; children?: unknown[] });
+        }
+      }
+    }
+  }
+
+  for (const b of blocks) {
+    visitBlock(b);
+  }
+  return result;
+}
+
+function extractInlineText(node: InlineNode): string {
+  if (node.kind === "text") return node.text;
+  if ("children" in node && Array.isArray(node.children)) {
+    const children = node.children;
+    return children.map(extractInlineText).join("");
+  }
+  if ("raw" in node && typeof node.raw === "string") {
+    return node.raw;
+  }
+  return "";
+}
+
+function extractFootnoteItemText(item: FootnoteItem): string {
+  if (!Array.isArray(item.inlines)) return "";
+  return item.inlines.map(extractInlineText).join("");
+}
+
+export function verifyIndependentExpectations(
+  blocks: ReadonlyArray<Block>,
+  fixture: DenseFixture,
+  store: RendererStore,
+): { ok: boolean; message?: string } {
+  const exp = fixture.expectations;
+  if (!exp) return { ok: true };
+
+  const allBlocks = collectBlocksRecursively(blocks);
+  const codeBlocks = allBlocks.filter((b) => b.type === "code");
+  const listBlock = allBlocks.find((b) => b.type === "list");
+
+  if (exp.codeBlocks) {
+    const authoredResult = verifyAuthoredCodeExpectations(fixture.source, exp.codeBlocks);
+    if (!authoredResult.ok) return authoredResult;
+
+    for (const expCb of exp.codeBlocks) {
+      const match = codeBlocks.find((cb) => {
+        const meta = cb.payload.meta as Record<string, unknown> | undefined;
+        return getCodeBlockLang(meta) === expCb.lang;
+      });
+      if (!match) {
+        return {
+          ok: false,
+          message: `Missing expected code block with lang='${expCb.lang}' (observed code langs: [${codeBlocks
+            .map((codeBlock) => getCodeBlockLang(codeBlock.payload.meta as Record<string, unknown> | undefined))
+            .filter(Boolean)
+            .join(", ")}])`,
+        };
+      }
+
+      const codeView = store.getCodeBlock(match.id);
+      if (!codeView) {
+        return { ok: false, message: `Missing prepared code owner state for block ${match.id}` };
+      }
+      if (codeView.source.lineCount !== expCb.codeLines.length) {
+        return {
+          ok: false,
+          message: `Code block lang='${expCb.lang}' line count mismatch: actual=${codeView.source.lineCount} expected=${expCb.codeLines.length}`,
+        };
+      }
+      const actualLines = store.getCodeLines(match.id, 0, codeView.source.lineCount);
+      if (actualLines.length !== expCb.codeLines.length) {
+        return {
+          ok: false,
+          message: `Bounded prepared code read returned ${actualLines.length} rows for lang='${expCb.lang}'; expected=${expCb.codeLines.length}`,
+        };
+      }
+
+      for (let lineIndex = 0; lineIndex < expCb.codeLines.length; lineIndex += 1) {
+        const expectedLine = expCb.codeLines[lineIndex];
+        const actualLine = actualLines[lineIndex];
+        if (actualLine?.text !== expectedLine) {
+          return {
+            ok: false,
+            message: `Code block lang='${expCb.lang}' line ${lineIndex} mismatch: actual=${JSON.stringify(actualLine?.text)} expected=${JSON.stringify(expectedLine)}`,
+          };
+        }
+      }
+    }
+  }
+
+
+  if (exp.footnotes) {
+    const fnFooter = allBlocks.find((b) => b.type === "footnotes");
+    if (!fnFooter) {
+      return { ok: false, message: "Missing expected footnotes footer block" };
+    }
+    const items = (fnFooter.payload.meta?.items as FootnoteItem[] | undefined) ?? [];
+    for (const expFn of exp.footnotes) {
+      const item = items.find((it) => it.label === expFn.label);
+      if (!item) {
+        return { ok: false, message: `Footnotes footer missing definition for '${expFn.label}'` };
+      }
+      if (item.number !== expFn.number) {
+        return {
+          ok: false,
+          message: `Footnote '${expFn.label}' expected number ${expFn.number} but got ${item.number}`,
+        };
+      }
+      if (typeof item.refCount === "number" && item.refCount < 1) {
+        return {
+          ok: false,
+          message: `Footnote '${expFn.label}' has zero occurrence count`,
+        };
+      }
+      if (expFn.textSnippet) {
+        const itemText = extractFootnoteItemText(item);
+        if (!itemText.includes(expFn.textSnippet)) {
+          return {
+            ok: false,
+            message: `Footnote '${expFn.label}' body text ${JSON.stringify(itemText)} missing expected snippet: ${JSON.stringify(expFn.textSnippet)}`,
+          };
+        }
+      }
+    }
+  }
+
+  if (exp.listLooseness) {
+    if (listBlock) {
+      const isLoose = Boolean(listBlock.payload.meta?.loose);
+      if (!isLoose) {
+        return { ok: false, message: "Inherited red: list with blank-line separated item not marked loose" };
+      }
+    }
+  }
+
+  return { ok: true };
 }

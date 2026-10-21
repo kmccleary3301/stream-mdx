@@ -2,13 +2,21 @@ declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
 
 import type { CodeLineRecord } from "@stream-mdx/core";
 import React from "react";
+import { CODE_LINE_RANGE_SIZE } from "./code-state";
 import { useCodeHighlightRequester } from "./code-highlight-context";
 import type { RendererStore } from "./store";
 import { NativeCodeLineGroup } from "./native-code-line";
 
-export const CODE_LINE_RANGE_SIZE = 64;
 
 const EMPTY_CODE_LINES: readonly CodeLineRecord[] = Object.freeze([]);
+type CodeLineRangeCounterStore = RendererStore & {
+  campaignCounters?: {
+    recordStoreRecordsTouched?(count: number, stage: "view"): void;
+    recordRecordSlotsAllocated?(count: number, stage: "view"): void;
+  };
+};
+
+
 
 type DirtyCodeLineRange = {
   readonly startLine: number;
@@ -50,6 +58,9 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
   visibleEnd,
 }: CodeLineRangeViewProps): React.ReactElement {
   const readRange = React.useCallback(() => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      (store as CodeLineRangeCounterStore).campaignCounters?.recordStoreRecordsTouched?.(1, "view");
+    }
     const current = store.getCodeBlock(blockId);
     if (
       !current ||
@@ -58,9 +69,21 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
     ) {
       return EMPTY_CODE_LINES;
     }
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      (store as CodeLineRangeCounterStore).campaignCounters?.recordStoreRecordsTouched?.(1, "view");
+    }
     return store.getCodeLines(blockId, chunkStart, chunkStart + CODE_LINE_RANGE_SIZE);
   }, [blockId, chunkStart, configurationRevision, generation, store]);
-  const lines = React.useSyncExternalStore(store.subscribe, readRange, readRange);
+  const subscribe = React.useCallback(
+    (listener: () => void) => store.subscribeCodeLines(
+      blockId,
+      chunkStart,
+      chunkStart + CODE_LINE_RANGE_SIZE,
+      listener,
+    ),
+    [blockId, chunkStart, store],
+  );
+  const lines = React.useSyncExternalStore(subscribe, readRange, readRange);
   const highlightRequester = useCodeHighlightRequester();
   const previousDemandRef = React.useRef<PreviousHighlightDemand | null>(null);
 
@@ -78,6 +101,9 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       if (line.index < rangeStart || line.index >= rangeEnd) continue;
       mappedRows.push(React.createElement(NativeCodeLineGroup, { key: line.id, line }));
     }
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      (store as CodeLineRangeCounterStore).campaignCounters?.recordRecordSlotsAllocated?.(mappedRows.length, "view");
+    }
     return mappedRows;
   }, [blockId, chunkStart, configurationRevision, generation, lines, rangeEnd, rangeStart, store]);
 
@@ -90,6 +116,9 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       return;
     }
 
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      (store as CodeLineRangeCounterStore).campaignCounters?.recordStoreRecordsTouched?.(1, "view");
+    }
     const current = store.getCodeBlock(blockId);
     if (
       !current ||

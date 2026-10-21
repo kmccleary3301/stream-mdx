@@ -1,6 +1,6 @@
 # Streaming Correctness Contract
 
-_Last updated: 2026-10-19_
+_Last updated: 2026-10-20_
 
 This document defines the correctness rules for StreamMDX's streaming renderer.
 
@@ -88,6 +88,14 @@ At every committed semantic state:
 4. A committed table row must not have a cell count that conflicts with the committed table shape.
 5. A committed code block must preserve stable line ordering and contiguous line identity.
 6. A committed MDX block must not silently lose content between states.
+
+Unmanaged generic nodes publish their canonical range and metadata with content.
+`setProps.props.range` carries the physical authored range; `props.meta` replaces
+the metadata object, `null` clears it, and omission retains it. `Patch.meta` is
+the separate ordering/classification envelope. Core and React consume these
+reserved fields without turning them into presentation props or mutating earlier
+cold values. These fields cannot replace managed code, table or paragraph source
+ownership or bypass its guards.
 
 Managed table rows are immutable fixed-range records, not child `NodeRecord`s.
 Tail append, provisional-row retraction, and re-extension are atomic under the

@@ -1,5 +1,5 @@
 import type { MarkdownParser } from "@lezer/markdown";
-import { dedentIndentedCode, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type HtmlOptions, type InlineNode, type SourceSnapshot } from "@stream-mdx/core";
+import { dedentIndentedCode, sanitizeHtmlInWorker, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type HtmlOptions, type InlineNode, type SourceSnapshot } from "@stream-mdx/core";
 import { trimProvisionalFenceTail } from "./parse-extract";
 
 const VOID: Record<string, true> = { area: true, base: true, br: true, col: true, embed: true, hr: true, img: true, input: true, link: true, meta: true, param: true, source: true, track: true, wbr: true };
@@ -100,6 +100,112 @@ function codeCompileSource(block: Block): string {
   return `${fence}${info}\n${content}\n${fence}`;
 }
 
+/**
+ * Open type-6/7 HTML blocks own physical source through the next blank line,
+ * even when an incremental Lezer fragment retained only an earlier line.
+ */
+function recoverHtmlPhysicalSourceRange(
+  block: Block,
+  content: string | SourceSnapshot,
+  sourceOffset: number,
+  options?: HtmlOptions,
+  parseInline?: (text: string) => InlineNode[],
+): Block {
+  const range = block.payload.range;
+  const meta = block.payload.meta;
+  if (block.type !== "html" || meta?.lezerNodeType !== "HTMLBlock" || !range) return block;
+  const rawSource = block.payload.raw ?? "";
+  if (
+    !/^[ \t]*<\/?[A-Za-z][\w-]*(?=[ \t/>]|$)/.test(rawSource) ||
+    /^[ \t]*<(?:script|pre|style|textarea)(?:\s|>|$)/i.test(rawSource)
+  ) {
+    return block;
+  }
+
+  const localFrom = range.from - sourceOffset;
+  const sourceLength = content.length;
+  if (localFrom < 0 || localFrom >= sourceLength) return block;
+
+  let lineStart = localFrom;
+  let lastLineEnd = localFrom;
+  let firstLine = true;
+  while (lineStart <= sourceLength) {
+    let lineEnd = sourceLength;
+    let lineBreakCode = 0;
+    let blank = true;
+    if (typeof content === "string") {
+      for (let index = lineStart; index < sourceLength; index++) {
+        const code = content.charCodeAt(index);
+        if (code === 10 || code === 13) {
+          lineEnd = index;
+          lineBreakCode = code;
+          break;
+        }
+        if (code !== 9 && code !== 32) blank = false;
+      }
+    } else {
+      let cursor = lineStart;
+      while (cursor < sourceLength) {
+        const chunkEnd = Math.min(cursor + 1024, sourceLength);
+        const chunk = content.read(cursor, chunkEnd);
+        let foundLineBreak = false;
+        for (let index = 0; index < chunk.length; index++) {
+          const code = chunk.charCodeAt(index);
+          if (code === 10 || code === 13) {
+            lineEnd = cursor + index;
+            lineBreakCode = code;
+            foundLineBreak = true;
+            break;
+          }
+          if (code !== 9 && code !== 32) blank = false;
+        }
+        if (foundLineBreak) break;
+        cursor = chunkEnd;
+      }
+    }
+    if (blank) {
+      if (firstLine) return block;
+      break;
+    }
+
+    lastLineEnd = lineEnd;
+    firstLine = false;
+    if (lineEnd === sourceLength) break;
+    lineStart = lineEnd + 1;
+    if (lineBreakCode === 13 && lineStart < sourceLength) {
+      const nextCode = typeof content === "string"
+        ? content.charCodeAt(lineStart)
+        : content.read(lineStart, lineStart + 1).charCodeAt(0);
+      if (nextCode === 10) lineStart++;
+    }
+  }
+
+  const sourceTo = sourceOffset + lastLineEnd;
+  if (sourceTo <= range.to) return block;
+  const raw = typeof content === "string" ? content.slice(localFrom, lastLineEnd) : content.read(localFrom, lastLineEnd);
+  const existingProtected = Array.isArray(meta.protectedRanges) ? meta.protectedRanges as unknown[] : [];
+  const protectedRanges = existingProtected.filter((candidate) => {
+    if (!candidate || typeof candidate !== "object" || !("kind" in candidate)) return true;
+    return candidate.kind !== "html-block";
+  });
+  protectedRanges.push({ from: 0, to: raw.length, kind: "html-block" });
+  return {
+    ...block,
+    payload: {
+      ...block.payload,
+      raw,
+      sanitizedHtml: sanitizeHtmlInWorker(raw, options),
+      range: { ...range, to: sourceTo },
+      meta: {
+        ...meta,
+        sanitized: true,
+        htmlTree: sanitizeHtmlTreeInWorker(raw, options, undefined, parseInline),
+        protectedRanges,
+      },
+    },
+  };
+}
+
 /** Own balanced HTML regions across native block boundaries, retaining pending MDX roots. */
 export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string | SourceSnapshot, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean }): Block[] {
   const result: Block[] = [];
@@ -147,7 +253,10 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     stack = [];
     pendingComponent = false;
   };
-  for (const block of blocks) {
+  for (const inputBlock of blocks) {
+    const block = regionOptions?.joinLeafRaws
+      ? inputBlock
+      : recoverHtmlPhysicalSourceRange(inputBlock, content, sourceOffset, options, parseInline);
     if (region.length === 0 && block.type !== "html") {
       result.push(block);
       continue;
@@ -166,6 +275,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
   flush();
   return result;
 }
+
 
 /**
  * Browser reconstruction owns the entire paragraph, not independently auto-closed tag fragments.

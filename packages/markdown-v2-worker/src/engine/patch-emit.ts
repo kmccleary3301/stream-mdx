@@ -302,6 +302,25 @@ export function shallowEqual(a: Record<string, unknown>, b: Record<string, unkno
   }
   return true;
 }
+function isManagedSourceSnapshot(node: NodeSnapshot): boolean {
+  return Boolean(node.code || node.table || node.paragraph) ||
+    node.type === "code" ||
+    node.type.startsWith("code-") ||
+    node.type === "table" ||
+    node.type.startsWith("table-") ||
+    node.type === "paragraph" ||
+    node.type.startsWith("paragraph-");
+}
+
+function canonicalSnapshotMeta(node: NodeSnapshot): Record<string, unknown> | undefined {
+  const meta = node.meta;
+  const nativeContainer = node.type === "list" || node.type === "blockquote" || node.type === "list-item";
+  if (!meta || !nativeContainer || !Object.prototype.hasOwnProperty.call(meta, "preparedNested")) {
+    return meta;
+  }
+  const { preparedNested: _preparedNested, ...canonicalMeta } = meta;
+  return canonicalMeta;
+}
 
 export function haveSameMultiset(a: string[], b: string[]): boolean {
   if (a.length !== b.length) return false;
@@ -361,6 +380,23 @@ export function diffListChildren(
   metrics?: WorkerMetricsCollector | null,
   counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
 ): void {
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    diffListChildrenWithOwner(blockId, listNode, prevChildren, nextChildren, patches, metrics, false, counters);
+  } else {
+    diffListChildrenWithOwner(blockId, listNode, prevChildren, nextChildren, patches, metrics, false);
+  }
+}
+
+function diffListChildrenWithOwner(
+  blockId: string,
+  listNode: NodeSnapshot,
+  prevChildren: NodeSnapshot[],
+  nextChildren: NodeSnapshot[],
+  patches: Patch[],
+  metrics: WorkerMetricsCollector | null | undefined,
+  managedSourceOwner: boolean,
+  counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
+): void {
   const prevLength = prevChildren.length;
   const nextLength = nextChildren.length;
 
@@ -378,9 +414,9 @@ export function diffListChildren(
     }
     if (prevChildren[prefix].id !== nextChildren[prefix].id) break;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-      diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner, counters);
     } else {
-      diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner);
     }
     prefix++;
   }
@@ -424,9 +460,9 @@ export function diffListChildren(
     const nextIdx = nextLength - 1 - suffix;
     if (prevChildren[prevIdx].id !== nextChildren[nextIdx].id) break;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-      diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner, counters);
     } else {
-      diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner);
     }
     suffix++;
   }
@@ -473,7 +509,7 @@ export function diffListChildren(
   const sharedMid = Math.min(prevMid.length, nextMid.length);
   let midPrefix = 0;
   while (midPrefix < sharedMid && prevMid[midPrefix].id === nextMid[midPrefix].id) {
-    diffNodeSnapshot(blockId, prevMid[midPrefix], nextMid[midPrefix], patches, metrics);
+    diffNodeSnapshotWithOwner(blockId, prevMid[midPrefix], nextMid[midPrefix], patches, metrics, managedSourceOwner);
     midPrefix++;
   }
 
@@ -509,7 +545,7 @@ export function diffListChildren(
 
   if (remainingPrevMid.length === remainingNextMid.length && remainingPrevMid.every((child, idx) => child.id === remainingNextMid[idx].id)) {
     for (let idx = 0; idx < remainingPrevMid.length; idx++) {
-      diffNodeSnapshot(blockId, remainingPrevMid[idx], remainingNextMid[idx], patches, metrics);
+      diffNodeSnapshotWithOwner(blockId, remainingPrevMid[idx], remainingNextMid[idx], patches, metrics, managedSourceOwner);
     }
     return;
   }
@@ -541,16 +577,48 @@ export function diffNodeSnapshot(
   metrics?: WorkerMetricsCollector | null,
   counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
 ): void {
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    diffNodeSnapshotWithOwner(blockId, prevNode, nextNode, patches, metrics, false, counters);
+  } else {
+    diffNodeSnapshotWithOwner(blockId, prevNode, nextNode, patches, metrics, false);
+  }
+}
+
+function diffNodeSnapshotWithOwner(
+  blockId: string,
+  prevNode: NodeSnapshot,
+  nextNode: NodeSnapshot,
+  patches: Patch[],
+  metrics: WorkerMetricsCollector | null | undefined,
+  inheritedManagedSourceOwner: boolean,
+  counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
+): void {
+  const managedSourceOwner = inheritedManagedSourceOwner || isManagedSourceSnapshot(prevNode) || isManagedSourceSnapshot(nextNode);
   const prevProps = prevNode.props ?? {};
   const nextProps = nextNode.props ?? {};
   const propsChanged = !shallowEqual(prevProps, nextProps);
+  const prevMeta = managedSourceOwner ? undefined : canonicalSnapshotMeta(prevNode);
+  const nextMeta = managedSourceOwner ? undefined : canonicalSnapshotMeta(nextNode);
+  const metadataChanged = !managedSourceOwner &&
+    ((prevMeta === undefined) !== (nextMeta === undefined) ||
+      (prevMeta !== undefined && nextMeta !== undefined && !shallowEqual(prevMeta, nextMeta)));
+  const rangeChanged = !managedSourceOwner && nextNode.range !== undefined &&
+    (prevNode.range?.from !== nextNode.range.from || prevNode.range?.to !== nextNode.range.to);
 
   const emitSetProps = () => {
-    if (!propsChanged) return;
+    if (!propsChanged && (managedSourceOwner || (!metadataChanged && !rangeChanged))) return;
+    const patchProps: Record<string, unknown> = propsChanged ? { ...nextProps } : {};
+    if (managedSourceOwner) {
+      delete patchProps.meta;
+      delete patchProps.range;
+    } else {
+      if (nextNode.range) patchProps.range = { ...nextNode.range };
+      patchProps.meta = nextMeta ?? null;
+    }
     patches.push({
       op: "setProps",
       at: { blockId, nodeId: prevNode.id },
-      props: nextProps ?? {},
+      props: patchProps,
     });
   };
 
@@ -560,12 +628,13 @@ export function diffNodeSnapshot(
   if (prevNode.type === "list" && nextNode.type === "list") {
     emitSetProps();
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-      diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics, counters);
+      diffListChildrenWithOwner(blockId, prevNode, prevChildren, nextChildren, patches, metrics, managedSourceOwner, counters);
     } else {
-      diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics);
+      diffListChildrenWithOwner(blockId, prevNode, prevChildren, nextChildren, patches, metrics, managedSourceOwner);
     }
     return;
   }
+
 
   // Special handling for code blocks: detect pure append and emit appendLines.
   // Defer the code-block setProps until after child mutations so the renderer
@@ -574,7 +643,7 @@ export function diffNodeSnapshot(
     const commonLength = Math.min(prevChildren.length, nextChildren.length);
     let divergeIndex = 0;
     while (divergeIndex < commonLength && prevChildren[divergeIndex].id === nextChildren[divergeIndex].id) {
-      diffNodeSnapshot(blockId, prevChildren[divergeIndex], nextChildren[divergeIndex], patches, metrics);
+      diffNodeSnapshotWithOwner(blockId, prevChildren[divergeIndex], nextChildren[divergeIndex], patches, metrics, managedSourceOwner);
       divergeIndex++;
     }
 
@@ -646,9 +715,9 @@ export function diffNodeSnapshot(
     }
     if (prevChildren[prefix].id !== nextChildren[prefix].id) break;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-      diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner, counters);
     } else {
-      diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner);
     }
     prefix++;
   }
@@ -662,9 +731,9 @@ export function diffNodeSnapshot(
     const nextIdx = nextChildren.length - 1 - suffix;
     if (prevChildren[prevIdx].id !== nextChildren[nextIdx].id) break;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-      diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner, counters);
     } else {
-      diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner);
     }
     suffix++;
   }
@@ -714,7 +783,7 @@ export function diffNodeSnapshot(
       for (const child of nextMid) {
         const previous = prevMap.get(child.id);
         if (previous) {
-          diffNodeSnapshot(blockId, previous, child, patches, metrics);
+          diffNodeSnapshotWithOwner(blockId, previous, child, patches, metrics, managedSourceOwner);
         }
       }
       return;

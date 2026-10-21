@@ -45,12 +45,9 @@ export class NativeMarkdownInput implements Input {
   readonly lineChunks = true;
   readonly length: number;
   private readonly source: Input;
-  private readonly finalizing: boolean;
-
-  constructor(source: Input | string, finalizing = false) {
+  constructor(source: Input | string, _finalizing = false) {
     this.source = typeof source === "string" ? new NativeStringInput(source) : source;
     this.length = source.length;
-    this.finalizing = finalizing;
   }
 
   /** Native range gaps remove CRLF placeholders without changing authored tree coordinates. */
@@ -75,7 +72,7 @@ export class NativeMarkdownInput implements Input {
         : absolute + 1 < this.length
           ? this.source.read(absolute + 1, absolute + 2).charCodeAt(0)
           : -1;
-      if (nextUnit === 10 || (absolute + 1 === this.length && !this.finalizing)) {
+      if (nextUnit === 10) {
         return this.read(start, absolute + 1);
       }
       return offset === 0 ? "\n" : raw.slice(0, offset);
@@ -102,7 +99,7 @@ export class NativeMarkdownInput implements Input {
         : absolute + 1 < this.length
           ? this.source.read(absolute + 1, absolute + 2).charCodeAt(0)
           : -1;
-      parts.push(nextUnit === 10 || (absolute + 1 === this.length && !this.finalizing) ? " " : "\n");
+      parts.push(nextUnit === 10 ? " " : "\n");
       inputStart = offset + 1;
     }
     parts.push(raw.slice(inputStart));

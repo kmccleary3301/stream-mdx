@@ -10,7 +10,7 @@ import type {
   SessionCountersSnapshot,
   StageCounters,
 } from "./counter-sink";
-import type { DivergenceReport } from "./scaling-diagnostics";
+import type { DivergenceReport } from "./replay-fixtures";
 
 export interface TableBoundaryEvidence {
   ownerId: string;
@@ -18,7 +18,6 @@ export interface TableBoundaryEvidence {
   initialCompleteRows: number;
   finalCompleteRows: number;
   appendedRows: number;
-  appendPatchCount: number;
   patchRowSlots: number;
   sourcePatchUnits: number;
   sourceSuffixUnits: number;

@@ -216,7 +216,7 @@ Private tooling under `scripts/perf/` provides deterministic invariant verificat
 
 ### Node replay oracle and work counters
 
-The replay oracle executes in-process under Node (>=20) to verify parser, tokenization, store, and view invariants against full authored-source MDAST and independent Shiki tokens with no invented closing-fence sentinel and no carriage-return (CR) trimming:
+The aggregate replay oracle runs in-process under Node (>=20) and verifies parser, tokenization, store, and view behavior against full authored-source MDAST and independent Shiki tokens, with no invented closing-fence sentinel or carriage-return (CR) trimming:
 
 1. Build the counter-instrumented diagnostic bundle:
    ```bash
@@ -224,29 +224,23 @@ The replay oracle executes in-process under Node (>=20) to verify parser, tokeni
    ```
    This compiles `scripts/perf/diagnostic-dist/index.mjs` counter-enabled (`__STREAM_MDX_COUNTERS__ = true`). In contrast, standard package and hosted worker builds MUST define `__STREAM_MDX_COUNTERS__ = false` with dead-code syntax folding.
 
-2. Run the dense replay oracle:
+2. Run the aggregate replay oracle:
    ```bash
-   npx tsx scripts/perf/replay-oracle.ts --json <owned-result.json>
+   npx tsx scripts/perf/replay-oracle.ts --section all --json <owned-result.json>
    ```
-   Optional flags: `--fixture <id>`, `--seed <number>`, `--bail`. The script currently expects those exact identities; do NOT generalize flags it does not have.
+   The aggregate command includes the dense semantic/Shiki proof and all source-aware scaling families. Optional selectors are `--section engine-fixture|mounted-code|code-scaling|table-scaling`; `--fixture <id>`, `--seed <number>`, and `--bail` are also supported. Focused scaling sections select a workload only; they do not change its measurement mode.
 
 Oracle execution and invariants:
 - The oracle exits `1` on measured invariant or product divergence, and exits `2` on fatal runtime errors. It MUST NOT be treated as a skipped-green baseline.
 - Verification mounts real JSDOM containers and native views (`MarkdownBlocksRenderer`, `ComponentRegistry`) to exercise real consumer work.
 - It verifies cold non-finalizing prefix equality at every actual patch publication frontier, final store equality, and independent CommonMark/GFM syntax expectations.
-- Attempts $N$ vs $4N$ bounded equal-size appends with bounded line width across paragraph, code, table and list. The retained baseline has measurements for paragraph, code and list only: the LF table setup is classified as a paragraph, records a block-type divergence and has no table measurement.
-- Measurement excludes `FINALIZE` and enumerated backward invalidation by resetting counters after prefix setup to isolate append window work.
-- Tracks eight stage counters across `engine`, `snapshot`, `patch`, `store`, and `view`:
-  1. `lines_tokenized`
-  2. `units_tokenized`
-  3. `inline_source_units_prepared`
-  4. `snapshot_nodes_built`
-  5. `prefix_comparisons`
-  6. `patches_emitted`
-  7. `store_records_touched`
-  8. `blocks_reprepared`
-- A $1.25\times$ future optimized-path gate compares the sum of observed stage counters per append-window unit at $4N$ versus $N$. This is neither CPU cost nor complete source-text/view-input-volume coverage; flat view-record counts do not prove that growing text props are cheap.
-- P1 records inherited reds directly into divergence reports rather than masking them.
+- Attempts $N$ vs $4N$ bounded equal-size append windows with bounded line width across `paragraph`, `code-lines`, `table-rows`, `list-items`, and `list-primary-paragraph`, using the existing 20/80 setup prefixes and ten equal-size appends per workload. The aggregate chooses each workload's current source-aware measurement mode; focused code/table sections restrict only which workload runs.
+- Measurement excludes `FINALIZE` and enumerated backward invalidation by resetting counters after prefix setup to isolate append-window work.
+- Work counters are grouped across `engine`, `snapshot`, `patch`, `store`, and `view`. Per-family observed lists include the shared lexer/snapshot/patch/store counters plus source reads/materialization, directory copies, and explicit record slots; code also counts prepared code-source units.
+- Paragraph measurements include actual source-to-span lookup probes, projection/view-record visits, and explicit view slots. Emitted span/source records remain semantic evidence.
+- Table evidence retains source-reader work, semantic patch row slots, exact owned source suffix, cold semantic parity, retained completed boundary rows, and native DOM row/cell counts.
+- The $1.25\times$ gate compares observed counter counts per append-window unit at $4N$ versus $N$, with source-counter requirements and per-stage ratios preserved. It is not literal CPU cost and excludes V8 backing-store growth, `Array#splice` relocation, `Set` internals, React Fiber reconciliation, and browser DOM/layout internals.
+- The aggregate reports divergences from the current P2 paths it exercises; focused sections are subsets and do not replace the aggregate proof.
 
 ### Physical functional progress observer
 
@@ -282,7 +276,7 @@ Driver requirements and constraints:
   - No offscreen/tail-visible or paint guarantee.
   - No worker CPU, heap, or capacity guarantees.
 - Do NOT paste campaign numeric timing results.
-- Inherited reds (including nested code blocks, LF table setup, CRLF table parsing, and link/footnote reference resolution) are NOT fixed and MUST NOT be characterized as resolved.
+- Do not carry a prior worktree's inherited-red or pass/fail status into this one; aggregate output is evidence only for the current measurements and proof paths it actually exercised.
 
 ## Notes
 

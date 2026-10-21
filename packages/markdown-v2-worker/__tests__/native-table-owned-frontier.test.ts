@@ -1,10 +1,16 @@
+import type { SyntaxNode } from "@lezer/common";
 import assert from "node:assert/strict";
 import { GFM, parser } from "@lezer/markdown";
 import { AppendSourceDocument, InlineParser, createBlockCompatibilityExtension } from "@stream-mdx/core";
 import { HtmlContinuationExtension } from "../src/parser/html-extension";
 import { NativeMarkdownInput } from "../src/engine/native-markdown-input";
 import { SourceRangeInput } from "../src/engine/root-code-pipeline";
-import { createRootTableOwners, rootTableAppendChange, rootTableAppendPatch } from "../src/engine/root-table-pipeline";
+import {
+  createNativeNestedTableOwner,
+  createRootTableOwners,
+  rootTableAppendChange,
+  rootTableAppendPatch,
+} from "../src/engine/root-table-pipeline";
 
 const markdownParser = parser.configure([GFM, createBlockCompatibilityExtension(), HtmlContinuationExtension]);
 const reclassifyingParser = parser.configure([
@@ -18,6 +24,14 @@ const reclassifyingParser = parser.configure([
     }],
   },
 ]);
+
+function findNativeTable(node: SyntaxNode): SyntaxNode | undefined {
+  if (node.type.name === "Table") return node;
+  for (let child = node.firstChild; child; child = child.nextSibling) {
+    const table = findNativeTable(child);
+    if (table) return table;
+  }
+}
 const source = new AppendSourceDocument();
 source.append("|h|\r\n|---|\r\n");
 const inlineParser = new InlineParser({ maxCacheEntries: 0 });
@@ -180,3 +194,75 @@ assert.equal(resumedTableOwner.getMetadata().sourceRange.from, 17, "native re-ad
 assert.equal(resumedTableOwner.getRows().get(0)?.sourceRange.from, 33);
 assert.equal(resumedTableOwner.createSnapshot().raw, "|later|\r\n|---|\r\nrow");
 assert.equal(emptyPrefixOwner.createSnapshot().raw, "|h|\r\n|---|", "new root admission must not re-extend the closed table owner");
+
+const nestedTableText = "- intro \u{1D4B9}\r\n\r\n  | h | v |\r\n  | --- | --- |\r\n  | a | b |\r\n  | c | d |";
+const nestedTableSource = new AppendSourceDocument();
+nestedTableSource.append(nestedTableText);
+const nestedTableSnapshot = nestedTableSource.snapshot();
+const nestedTableTree = new NativeMarkdownInput(nestedTableSnapshot).parse(markdownParser);
+const nestedTableNode = findNativeTable(nestedTableTree.topNode);
+assert.ok(nestedTableNode, "configured parser must produce the nested native table");
+const nestedTableOwner = createNativeNestedTableOwner({
+  id: "nested-crlf-table",
+  containerId: "list-container",
+  node: nestedTableNode,
+  source: nestedTableSource,
+  generation: 10,
+  parser: markdownParser,
+  inlineParser,
+  mapping: {
+    input: nestedTableSnapshot,
+    source: nestedTableSnapshot,
+    mapOffset: (offset: number) => offset,
+  },
+  extensionContext: "header-independent",
+  state: "open",
+});
+assert.ok(nestedTableOwner, "native nested table must admit its source owner");
+const initialNestedTable = nestedTableOwner.getMetadata();
+const firstInitialNestedRow = nestedTableOwner.getRows().get(0);
+const secondInitialNestedRow = nestedTableOwner.getRows().get(1);
+assert.ok(firstInitialNestedRow, "the first native body row must be retained");
+assert.ok(secondInitialNestedRow, "the final native body row must be retained");
+const initialNestedRows = [firstInitialNestedRow, secondInitialNestedRow] as const;
+assert.equal(initialNestedTable.sourceRange.from, nestedTableNode.from);
+assert.ok(initialNestedTable.sourceRange.from > nestedTableText.indexOf("\u{1D4B9}"));
+assert.ok(nestedTableOwner.createSnapshot().raw.includes("\r\n"), "owned source must preserve physical CRLF");
+assert.ok(
+  nestedTableSnapshot.read(firstInitialNestedRow.sourceRange.to, secondInitialNestedRow.sourceRange.from).includes("\r\n"),
+  "completed row source ranges must exclude, not normalize, their physical line ending",
+);
+assert.equal(initialNestedTable.processedTo, nestedTableText.length);
+assert.equal(initialNestedTable.completeRowCount, 1);
+assert.equal(initialNestedTable.rowCount, 2);
+assert.equal(initialNestedRows[0].isProvisional, false);
+assert.equal(initialNestedRows[1].isProvisional, true, "only the unterminated final row remains provisional");
+const initialNestedValues = initialNestedRows.map((row) => row.cells.map((cell) => cell.raw.trim()));
+assert.deepEqual(initialNestedValues, [["a", "b"], ["c", "d"]]);
+const firstNestedCell = initialNestedRows[0].cells[0]!;
+assert.equal(
+  nestedTableSnapshot.read(firstNestedCell.sourceRange.from, firstNestedCell.sourceRange.to),
+  firstNestedCell.raw,
+  "native cell ranges must address the authored UTF-16 source window",
+);
+
+const nestedAppendFrom = initialNestedTable.processedTo;
+nestedTableSource.append("\r\n  | e | f |");
+const appendedNestedTable = nestedTableOwner.accept(nestedAppendFrom, nestedTableSource.length);
+assert.equal(appendedNestedTable.table.completeRowCount, 2);
+assert.equal(appendedNestedTable.table.rowCount, 3);
+const firstAppendedNestedRow = nestedTableOwner.getRows().get(0);
+const secondAppendedNestedRow = nestedTableOwner.getRows().get(1);
+const thirdAppendedNestedRow = nestedTableOwner.getRows().get(2);
+assert.ok(firstAppendedNestedRow);
+assert.ok(secondAppendedNestedRow);
+assert.ok(thirdAppendedNestedRow);
+const appendedNestedRows = [firstAppendedNestedRow, secondAppendedNestedRow, thirdAppendedNestedRow] as const;
+assert.deepEqual(
+  [firstAppendedNestedRow, secondAppendedNestedRow].map((row) => row.cells.map((cell) => cell.raw.trim())),
+  initialNestedValues,
+  "appending a CRLF row must preserve previously admitted cell values",
+);
+assert.equal(appendedNestedRows[1].isProvisional, false);
+assert.equal(appendedNestedRows[2].isProvisional, true);
+assert.deepEqual(appendedNestedRows[2].cells.map((cell) => cell.raw.trim()), ["e", "f"]);

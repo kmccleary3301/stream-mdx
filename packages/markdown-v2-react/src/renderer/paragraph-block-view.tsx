@@ -23,11 +23,30 @@ function recordViewRecords(store: RendererStore, count: number): void {
   counterStore.campaignCounters?.recordStoreRecordsTouched?.(count, "view");
 }
 
-function firstSpanEndingAfter(state: ManagedParagraphViewState, sourceOffset: number): number {
+type ParagraphProjectionViewCounters = {
+  recordStoreRecordsTouched?(count: number, stage: "view"): void;
+  recordRecordSlotsAllocated?(count: number, stage: "view"): void;
+};
+
+function recordViewSlots(store: RendererStore, count: number): void {
+  const counterStore = store as RendererStore & {
+    campaignCounters?: {
+      recordRecordSlotsAllocated?(count: number, stage: string): void;
+    };
+  };
+  counterStore.campaignCounters?.recordRecordSlotsAllocated?.(count, "view");
+}
+
+function paragraphProjectionViewCounters(store: RendererStore): ParagraphProjectionViewCounters | undefined {
+  return (store as RendererStore & { campaignCounters?: ParagraphProjectionViewCounters }).campaignCounters;
+}
+
+function firstSpanEndingAfter(state: ManagedParagraphViewState, sourceOffset: number, store: RendererStore): number {
   let low = 0;
   let high = state.spans.length;
   while (low < high) {
     const middle = low + Math.floor((high - low) / 2);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
     const span = state.spans.get(middle);
     if (!span) throw new RangeError("Paragraph span index is incomplete");
     if (span.sourceRange.to <= sourceOffset) low = middle + 1;
@@ -36,11 +55,12 @@ function firstSpanEndingAfter(state: ManagedParagraphViewState, sourceOffset: nu
   return low;
 }
 
-function firstSpanStartingAtOrAfter(state: ManagedParagraphViewState, sourceOffset: number): number {
+function firstSpanStartingAtOrAfter(state: ManagedParagraphViewState, sourceOffset: number, store: RendererStore): number {
   let low = 0;
   let high = state.spans.length;
   while (low < high) {
     const middle = low + Math.floor((high - low) / 2);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
     const span = state.spans.get(middle);
     if (!span) throw new RangeError("Paragraph span index is incomplete");
     if (span.sourceRange.from < sourceOffset) low = middle + 1;
@@ -52,11 +72,14 @@ function firstSpanStartingAtOrAfter(state: ManagedParagraphViewState, sourceOffs
 function paragraphTextSpanRange(
   state: ManagedParagraphViewState,
   sourceRange: ParagraphSourceRange,
+  store: RendererStore,
 ): { readonly from: number; readonly to: number } {
-  const from = firstSpanEndingAfter(state, sourceRange.from);
-  const to = firstSpanStartingAtOrAfter(state, sourceRange.to);
+  const from = firstSpanEndingAfter(state, sourceRange.from, store);
+  const to = firstSpanStartingAtOrAfter(state, sourceRange.to, store);
   if (from < to) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
     const first = state.spans.get(from);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
     const last = state.spans.get(to - 1);
     if (!first || !last || first.sourceRange.from < sourceRange.from || last.sourceRange.to > sourceRange.to) {
       throw new RangeError("Prepared paragraph span crosses a mixed text segment boundary");
@@ -64,6 +87,7 @@ function paragraphTextSpanRange(
   }
   return { from, to };
 }
+
 
 function readParagraphSource(state: ManagedParagraphViewState, from: number, to: number): string {
   if (
@@ -83,11 +107,15 @@ function appendSourceGap(
   segmentKey: string,
   from: number,
   to: number,
+  store: RendererStore,
 ): void {
   if (to < from) throw new RangeError("Paragraph source spans overlap or regress");
   if (to === from) return;
   const source = readParagraphSource(state, from, to);
-  if (source) nodes.push(<React.Fragment key={`${segmentKey}:source:${from}:${to}`}>{source}</React.Fragment>);
+  if (source) {
+    nodes.push(<React.Fragment key={`${segmentKey}:source:${from}:${to}`}>{source}</React.Fragment>);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewSlots(store, 1);
+  }
 }
 function renderPlainParagraphRange(
   state: ManagedParagraphViewState,
@@ -98,17 +126,19 @@ function renderPlainParagraphRange(
   segmentKey: string,
   from: number,
   to: number,
+  parentTagName: string,
 ): React.ReactNode[] {
   const rendered: React.ReactNode[] = [];
   if (to <= from) return rendered;
   let cursor = from;
-  let index = firstSpanEndingAfter(state, from);
+  let index = firstSpanEndingAfter(state, from, store);
   while (index < state.spans.length) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
     const span = state.spans.get(index);
     if (!span || span.sourceRange.from >= to) break;
     const spanFrom = Math.max(from, span.sourceRange.from);
     const spanTo = Math.min(to, span.sourceRange.to);
-    appendSourceGap(rendered, state, segmentKey, cursor, spanFrom);
+    appendSourceGap(rendered, state, segmentKey, cursor, spanFrom, store);
     if (span.children?.length) {
       cursor = Math.max(cursor, spanTo);
       index += 1;
@@ -125,15 +155,16 @@ function renderPlainParagraphRange(
           registry.getInlineComponents(),
           registry.getUrlTransform(),
           registry,
-          "p",
+          parentTagName,
           registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`),
         )}
       </React.Fragment>,
     );
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewSlots(store, 1);
     cursor = spanTo;
     index += 1;
   }
-  appendSourceGap(rendered, state, segmentKey, cursor, to);
+  appendSourceGap(rendered, state, segmentKey, cursor, to, store);
   return rendered;
 }
 
@@ -148,7 +179,8 @@ const ParagraphSpanRangeView: React.FC<{
   sourceEnd?: number;
   segmentKey: string;
   registry: ComponentRegistry;
-}> = React.memo(({ store, blockId, generation, from, spanFrom, spanTo, sourceStart, sourceEnd, segmentKey, registry }) => {
+  parentTagName: string;
+}> = React.memo(({ store, blockId, generation, from, spanFrom, spanTo, sourceStart, sourceEnd, segmentKey, registry, parentTagName }) => {
   const subscribe = React.useCallback(
     (listener: () => void) => store.subscribeParagraphSpans(blockId, generation, from, listener),
     [store, blockId, generation, from],
@@ -177,7 +209,7 @@ const ParagraphSpanRangeView: React.FC<{
     const span: ParagraphSpanRecord | undefined = spans[index - from];
     if (!span) throw new RangeError("Paragraph span range cache is incomplete");
     if (span.sourceRange.from < cursor) throw new RangeError("Prepared paragraph spans overlap or regress");
-    appendSourceGap(rendered, state, segmentKey, cursor, span.sourceRange.from);
+    appendSourceGap(rendered, state, segmentKey, cursor, span.sourceRange.from, store);
     if (span.children?.length) {
       cursor = span.sourceRange.to;
       continue;
@@ -189,17 +221,18 @@ const ParagraphSpanRangeView: React.FC<{
           inlineComponents,
           urlTransform,
           registry,
-          "p",
+          parentTagName,
           registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`),
         )}
       </React.Fragment>,
     );
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewSlots(store, 1);
     cursor = span.sourceRange.to;
   }
 
   const next = visibleTo < state.spans.length ? state.spans.get(visibleTo) : undefined;
   const end = sourceEnd ?? next?.sourceRange.from ?? state.source.sourceRange.to;
-  appendSourceGap(rendered, state, segmentKey, cursor, end);
+  appendSourceGap(rendered, state, segmentKey, cursor, end, store);
   return <>{rendered}</>;
 });
 
@@ -215,7 +248,8 @@ const ParagraphSpanProjectionNodeView: React.FC<{
   blockId: string;
   generation: number;
   registry: ComponentRegistry;
-}> = React.memo(({ root, rangeSize, spanFrom, spanTo, sourceStart, sourceEnd, segmentKey, store, blockId, generation, registry }) => {
+  parentTagName: string;
+}> = React.memo(({ root, rangeSize, spanFrom, spanTo, sourceStart, sourceEnd, segmentKey, store, blockId, generation, registry, parentTagName }) => {
   const firstRange = Math.floor(spanFrom / rangeSize);
   const lastRange = Math.ceil(spanTo / rangeSize) - 1;
   const renderRange = React.useCallback(({ chunkStart }: BlockRangeProjectionRange) => {
@@ -236,10 +270,26 @@ const ParagraphSpanProjectionNodeView: React.FC<{
         sourceEnd={rangeIndex === lastRange ? sourceEnd : undefined}
         segmentKey={`${segmentKey}:range:${rangeIndex}`}
         registry={registry}
+        parentTagName={parentTagName}
       />
     );
-  }, [blockId, firstRange, generation, rangeSize, registry, segmentKey, sourceEnd, sourceStart, spanFrom, spanTo, store, lastRange]);
+  }, [blockId, firstRange, generation, parentTagName, rangeSize, registry, segmentKey, sourceEnd, sourceStart, spanFrom, spanTo, store, lastRange]);
 
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    return (
+      <BlockRangeProjectionTree
+        node={root}
+        nodeStart={0}
+        rangeSize={rangeSize}
+        rangeStart={spanFrom}
+        rangeEnd={spanTo}
+        visibleStart={spanFrom}
+        visibleEnd={spanTo}
+        renderRange={renderRange}
+        viewCounters={paragraphProjectionViewCounters(store)}
+      />
+    );
+  }
   return (
     <BlockRangeProjectionTree
       node={root}
@@ -267,16 +317,19 @@ const ParagraphSegmentProjectionNodeView: React.FC<{
   tailSpanOwnerIndex?: number;
   spanCount?: number;
   registry: ComponentRegistry;
+  parentTagName: string;
   renderNested: (nodeId: string) => React.ReactNode;
-}> = React.memo(({ node, base, previousEvent, sourceStart, sourceEnd, tailSpanOwnerIndex, spanCount, segmentKey, store, blockId, generation, registry, renderNested }) => {
+}> = React.memo(({ node, base, previousEvent, sourceStart, sourceEnd, tailSpanOwnerIndex, spanCount, segmentKey, store, blockId, generation, registry, renderNested, parentTagName }) => {
   const state = store.getParagraphBlock(blockId);
   if (!state || state.source.generation !== generation) return null;
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
   if (node.kind === "branch") {
     const children: React.ReactNode[] = [];
     let childBase = base;
     let previous = previousEvent;
     for (let index = 0; index < node.children.length; index += 1) {
       const child = node.children[index];
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
       if (!child) throw new RangeError("Paragraph segment projection branch is incomplete");
       const childEnd = childBase + child.eventCount;
       const containsTailSpanOwner = tailSpanOwnerIndex !== undefined &&
@@ -297,11 +350,14 @@ const ParagraphSegmentProjectionNodeView: React.FC<{
           blockId={blockId}
           generation={generation}
           registry={registry}
+          parentTagName={parentTagName}
           renderNested={renderNested}
         />,
       );
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewSlots(store, 1);
       childBase = childEnd;
       previous = child.lastEvent;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
     }
     return <>{children}</>;
   }
@@ -309,8 +365,13 @@ const ParagraphSegmentProjectionNodeView: React.FC<{
   const rendered: React.ReactNode[] = [];
   for (let offset = 0; offset < node.events.length; offset += 1) {
     const event = node.events[offset];
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
     if (!event) throw new RangeError("Paragraph segment projection leaf is incomplete");
-    const prior = offset > 0 ? node.events[offset - 1] : previousEvent;
+    let prior = previousEvent;
+    if (offset > 0) {
+      prior = node.events[offset - 1];
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
+    }
     const gapStart = prior?.range.to ?? sourceStart ?? state.source.sourceRange.from;
     const gapFrom = Math.max(state.source.sourceRange.from, Math.min(gapStart, state.source.sourceRange.to));
     const gapTo = Math.max(gapFrom, Math.min(event.range.from, state.source.sourceRange.to));
@@ -325,7 +386,7 @@ const ParagraphSegmentProjectionNodeView: React.FC<{
         ? Math.min(state.source.sourceRange.to, Math.max(event.range.from, sourceEnd ?? state.source.sourceRange.to))
         : Math.min(event.range.to, state.source.sourceRange.to);
       const range = { from: Math.min(event.range.from, end), to: end };
-      const spanRange = paragraphTextSpanRange(state, range);
+      const spanRange = paragraphTextSpanRange(state, range, store);
       if (tailSpanCount === 0 || spanRange.from === spanRange.to) {
         eventContent = readParagraphSource(state, range.from, range.to);
       } else {
@@ -343,6 +404,7 @@ const ParagraphSegmentProjectionNodeView: React.FC<{
             blockId={blockId}
             generation={generation}
             registry={registry}
+            parentTagName={parentTagName}
           />
         );
       }
@@ -352,14 +414,86 @@ const ParagraphSegmentProjectionNodeView: React.FC<{
     rendered.push(
       <React.Fragment key={`${segmentKey}:event:${eventIndex}`}>
         {gapFrom < gapTo
-          ? renderPlainParagraphRange(state, store, blockId, generation, registry, `${segmentKey}:gap:${eventIndex}`, gapFrom, gapTo)
+          ? renderPlainParagraphRange(state, store, blockId, generation, registry, `${segmentKey}:gap:${eventIndex}`, gapFrom, gapTo, parentTagName)
           : null}
         {eventContent}
       </React.Fragment>,
     );
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewSlots(store, 1);
   }
   return <>{rendered}</>;
 });
+
+function renderManagedParagraphContent(
+  store: RendererStore,
+  blockId: string,
+  state: ManagedParagraphViewState,
+  registry: ComponentRegistry,
+  renderNested: (nodeId: string) => React.ReactNode,
+  parentTagName: string,
+): React.ReactElement {
+  const projection = store.getParagraphSegmentProjection(blockId);
+  if (!projection?.root || projection.eventCount === 0) {
+    throw new RangeError("Paragraph segment projection is unavailable");
+  }
+  const lastEvent = projection.root.lastEvent;
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
+  const trailingFrom = lastEvent.type === "paragraph-text"
+    ? state.source.sourceRange.to
+    : Math.min(lastEvent.range.to, state.source.sourceRange.to);
+  const trailing = trailingFrom < state.source.sourceRange.to
+    ? renderPlainParagraphRange(
+        state,
+        store,
+        blockId,
+        state.source.generation,
+        registry,
+        `${blockId}:source-tail`,
+        trailingFrom,
+        state.source.sourceRange.to,
+        parentTagName,
+      )
+    : [];
+  return (
+    <>
+      <ParagraphSegmentProjectionNodeView
+        key={`${blockId}:segment-plan`}
+        node={projection.root}
+        base={0}
+        sourceStart={state.source.sourceRange.from}
+        sourceEnd={state.source.sourceRange.to}
+        segmentKey={blockId}
+        store={store}
+        blockId={blockId}
+        generation={state.source.generation}
+        registry={registry}
+        parentTagName={parentTagName}
+        tailSpanOwnerIndex={projection.tailSpanOwnerIndex}
+        spanCount={state.spans.length}
+        renderNested={renderNested}
+      />
+      {trailing ? <React.Fragment key={`${blockId}:source-tail`}>{trailing}</React.Fragment> : null}
+    </>
+  );
+}
+
+export const ManagedParagraphContentView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  renderNested: (nodeId: string) => React.ReactNode;
+  parentTagName: string;
+}> = React.memo(({ store, blockId, registry, renderNested, parentTagName }) => {
+  const node = useRendererNode(store, blockId);
+  const state = store.getParagraphBlock(blockId);
+  const isFinalized = Boolean(state && state.source.state !== "open");
+  React.useEffect(() => {
+    if (isFinalized) registry.getRenderInlineContext(true, blockId);
+  }, [registry, blockId, isFinalized]);
+  if (!node || !state || !node.block) return null;
+  return renderManagedParagraphContent(store, blockId, state, registry, renderNested, parentTagName);
+});
+
 
 export const ManagedParagraphBlockView: React.FC<{
   store: RendererStore;
@@ -375,46 +509,8 @@ export const ManagedParagraphBlockView: React.FC<{
   }, [registry, blockId, isFinalized]);
   if (!node || !state || !node.block) return null;
 
-  const projection = store.getParagraphSegmentProjection(blockId);
-  if (!projection?.root || projection.eventCount === 0) {
-    throw new RangeError("Paragraph segment projection is unavailable");
-  }
-  const lastEvent = projection.root.lastEvent;
-  const trailingFrom = lastEvent.type === "paragraph-text"
-    ? state.source.sourceRange.to
-    : Math.min(lastEvent.range.to, state.source.sourceRange.to);
-  const trailing = trailingFrom < state.source.sourceRange.to
-    ? renderPlainParagraphRange(
-        state,
-        store,
-        blockId,
-        state.source.generation,
-        registry,
-        `${blockId}:source-tail`,
-        trailingFrom,
-        state.source.sourceRange.to,
-      )
-    : [];
-  const content = (
-    <>
-      <ParagraphSegmentProjectionNodeView
-        key={`${blockId}:segment-plan`}
-        node={projection.root}
-        base={0}
-        sourceStart={state.source.sourceRange.from}
-        sourceEnd={state.source.sourceRange.to}
-        segmentKey={blockId}
-        store={store}
-        blockId={blockId}
-        generation={state.source.generation}
-        registry={registry}
-        tailSpanOwnerIndex={projection.tailSpanOwnerIndex}
-        spanCount={state.spans.length}
-        renderNested={renderNested}
-      />
-      {trailing ? <React.Fragment key={`${blockId}:source-tail`}>{trailing}</React.Fragment> : null}
-    </>
-  );
+  const content = renderManagedParagraphContent(store, blockId, state, registry, renderNested, "p");
+
   const ParagraphComponent = registry.getBlockComponent("paragraph");
   let element: React.ReactElement;
   if (registry.hasCustomBlockComponent("paragraph")) {

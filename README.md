@@ -85,6 +85,18 @@ Minimal modular baseline:
 npm install @stream-mdx/react @stream-mdx/worker @stream-mdx/core @stream-mdx/plugins
 ```
 
+## Native source and prepared content
+
+List items keep primary text in a managed paragraph child. Task markers remain in authored source and render one checkbox, including empty tasks. Explicit cold `Block[]` exports retain the legacy item inline and mixed-content representation.
+
+Late link definitions update existing nested paragraphs, tables and headings without widening authored ranges. Footnote publication updates affected paragraph and table occurrences in document reference order. Earlier cold snapshots remain historical; list looseness changes layout without rebuilding completed item content.
+
+Generic nodes publish heading metadata and physical ranges with content updates. Metadata replacement and clearing reach both Core and React cold exports without changing earlier snapshots; managed source owners retain their existing guards.
+
+CR is a Markdown line ending immediately; a following LF completes the same physical CRLF ending. Splitting that pair does not turn a valid table header back into prose. Canonical input retains both UTF-16 units. Root source-kind changes retire the old paragraph lease before publishing its replacement, including definition syntax that later becomes prose again.
+
+Provisional HTML and allowlisted MDX lookahead changes only prepared content, not canonical input, physical UTF-16 ranges or cold raw exports. Repair stays within the owning paragraph. Rejected or over-budget markup, and openings left unclosed at `FINALIZE`, render literally. Speculative repair does not authorize MDX execution.
+
 ## Migrating from 0.5.0 to 1.0.0
 
 Upgrade installed `stream-mdx` and `@stream-mdx/*` packages together to `1.0.0`, then recopy the matching hosted worker asset. Internal runtime dependencies are pinned to that version. The optional unified adapter requires core and React from the `^1.0.0` line.

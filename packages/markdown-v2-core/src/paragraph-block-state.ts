@@ -217,7 +217,7 @@ export function createManagedParagraphState(
   canonicalSource?: SourceSnapshot,
 ): ManagedParagraphViewState {
   let counters: ParagraphStateWorkCounters | undefined;
-  let counterStage: ParagraphRecordCounterStage = "snapshot";
+  let counterStage: ParagraphRecordCounterStage | undefined;
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     counters = options?.counters;
     counterStage = options?.counterStage ?? "snapshot";
@@ -229,7 +229,7 @@ export function createManagedParagraphState(
     !Array.isArray(snapshot.spans)
   ) throw new RangeError("Paragraph snapshot owner or shape is invalid");
   assertParagraphSource(snapshot, snapshot.raw.length);
-  const spans = counters
+  const spans = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters
     ? createParagraphSpanIndex({ spans: snapshot.spans, campaignCounters: counters, counterStage })
     : createParagraphSpanIndex({ spans: snapshot.spans });
   assertSnapshotSpans(snapshot, spans, snapshot.raw.length);
@@ -244,15 +244,15 @@ export function createManagedParagraphState(
     }
     sourceSnapshot = createSourceWindow(canonicalSource, from, to);
   } else {
-    document = counters
+    document = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters
       ? new AppendSourceDocument({ counters } as never)
       : new AppendSourceDocument();
     document.append(snapshot.raw);
-    sourceSnapshot = counters
+    sourceSnapshot = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters
       ? createParagraphSourceSnapshot(document, snapshot.raw.length, counters)
       : createParagraphSourceSnapshot(document, snapshot.raw.length);
   }
-  const owner: ManagedParagraphSourceOwner = counters
+  const owner: ManagedParagraphSourceOwner = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters
     ? { document, completedLength, counters }
     : { document, completedLength };
   return createManagedParagraphView(snapshot, spans, sourceSnapshot, owner);

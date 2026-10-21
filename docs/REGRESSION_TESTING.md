@@ -56,6 +56,27 @@ HTML and style runners fail when eligibility filters execute no cases. Explicit 
 
 The style runner honors `waitForMdxCompiled: false`, just like the HTML runner. Fixtures for bounded inline shells or unsupported MDX do not wait for an unsupported compiled-inline state.
 
+## Native source replay
+
+The Node replay checks committed source, child hierarchy and stable identity against a cold parse. Code checks use current exported blocks and owned source/line views. Independent Shiki checks token styles after decoration readiness, not between `appendCode` and its following `decorateCode`.
+
+Build the diagnostic runtime once after a frozen source change, then select the failing fixture:
+
+```bash
+node --import tsx scripts/perf/build-diagnostic-bundle.ts
+node --import tsx scripts/perf/replay-oracle.ts --section engine-fixture --fixture fence-indent-multiline --json /tmp/stream-mdx-fence.json
+```
+
+This path needs no docs build or browser. The complete `--section all` run also includes mounted consumers and all current scaling families; reserve it for the coherent packet proof rather than each small repair.
+
+Failure JSON retains the first differing current/cold block and tree plus its source prefix. Own-undefined property paths are recorded separately because JSON would omit those keys. A Worker `ERROR` stops that chunking plan and records the offered UTF-16 prefix needed to reproduce it; that error prefix is not a semantic-commit claim.
+
+Do not compare private generic code-node mirrors, derived list-depth caches, pending token decoration or generated pre/code wrapper attributes as semantic source. Authored text, physical ranges, IDs, child nesting, language and distinct metadata remain strict. Actual wrapper CSS/background behavior still requires the style and physical-view guards above.
+
+Cumulative insertion counts do not prove duplicate ownership across removals or reclassification. Check the current hierarchy and actual source/owner transitions; retain the separate INITIALIZED source-baseline contract.
+
+For built-in lists only, missing and own-undefined `start`, or list-item `task`/`checked`, are the same optional value. Actual numbers and booleans remain strict; custom props are not exempt.
+
 ## CI vs local
 
 These checks are no longer purely local-only.

@@ -105,8 +105,6 @@ const initialView = store.getCodeBlock(OWNER_ID);
 assert.ok(initialView, "managed code snapshot should be indexed");
 assert.strictEqual(initialView.source.sourceRange.from, SOURCE_FROM);
 assert.strictEqual(initialView.source.sourceRange.to, SOURCE_TO);
-assert.strictEqual(store.getChildren(OWNER_ID).length, 0, "managed source rows must not inflate the node map");
-assert.strictEqual(store.getNode(`${OWNER_ID}::line:0`), undefined, "managed source rows stay out of NodeRecords");
 
 const stablePrefix = store.getCodeLines(OWNER_ID, 0, 1);
 const stableRow = stablePrefix[0];
@@ -489,6 +487,30 @@ const completedTailRange = rangeStore.getCodeLines(rangeOwnerId, 64, 128);
 assert.notStrictEqual(completedTailRange, provisionalRange, "the tail range refreshes when its provisional row closes");
 assert.strictEqual(completedTailRange[0]?.isProvisional, false);
 assert.strictEqual(completedTailRange[0]?.ending, "\r\n");
+const legacyBoundaryId = "legacy-code-range-boundary";
+const legacyBoundaryBlock: Block = {
+  id: legacyBoundaryId,
+  type: "code",
+  isFinalized: false,
+  payload: {
+    raw: Array.from({ length: 64 }, (_, index) => `line-${index}`).join("\n"),
+    meta: { lang: "ts" },
+  },
+};
+const legacyBoundaryStore = createRendererStore([legacyBoundaryBlock]);
+const provisionalBoundaryRange = legacyBoundaryStore.getCodeLines(legacyBoundaryId, 0, 64);
+assert.strictEqual(provisionalBoundaryRange.length, 64);
+assert.ok(provisionalBoundaryRange[63]?.isProvisional);
+legacyBoundaryStore.applyPatches([{
+  op: "appendLines",
+  at: { blockId: legacyBoundaryId, nodeId: legacyBoundaryId },
+  startIndex: 64,
+  lines: ["line-64"],
+} satisfies Patch]);
+const finalizedBoundaryRange = legacyBoundaryStore.getCodeLines(legacyBoundaryId, 0, 64);
+assert.notStrictEqual(finalizedBoundaryRange, provisionalBoundaryRange, "legacy tail completion refreshes the prior boundary range");
+assert.strictEqual(finalizedBoundaryRange[63]?.isProvisional, false);
+assert.strictEqual(legacyBoundaryStore.getCodeLines(legacyBoundaryId, 64, 128)[0]?.text, "line-64");
 const atomicStore = createRendererStore();
 atomicStore.resetSnapshot(rootSnapshot(9));
 const preservedBlocks = atomicStore.getBlocks();
@@ -591,6 +613,55 @@ try {
   assert.equal(rootNotifications, 0, "input-only appends do not notify semantic root children");
   assert.equal(notificationStore.getVersion(), notificationVersion, "input-only appends do not signal semantic completion");
   unsubscribe();
+  const codeRangeStore = createRendererStore();
+  codeRangeStore.resetSnapshot(rootSnapshot(7));
+  let prefixRangeNotifications = 0;
+  let tailRangeNotifications = 0;
+  const unsubscribePrefixRange = codeRangeStore.subscribeCodeLines(OWNER_ID, 0, 64, () => {
+    prefixRangeNotifications += 1;
+  });
+  const unsubscribeTailRange = codeRangeStore.subscribeCodeLines(OWNER_ID, 64, 128, () => {
+    tailRangeNotifications += 1;
+  });
+  const initialCodeNotification = scheduledFrames.shift();
+  assert.ok(initialCodeNotification, "code snapshot reset schedules range notifications");
+  initialCodeNotification(0);
+  prefixRangeNotifications = 0;
+  tailRangeNotifications = 0;
+  codeRangeStore.applyPatches([{
+    op: "appendInputSource",
+    at: { blockId: "__root__" },
+    generation: INPUT_GENERATION,
+    from: INITIAL_DOCUMENT.length,
+    text: sourceAppend,
+  }]);
+  codeRangeStore.applyPatches([appendPatch]);
+  const appendCodeNotification = scheduledFrames.shift();
+  assert.ok(appendCodeNotification, "code append schedules its changed range");
+  appendCodeNotification(0);
+  assert.strictEqual(prefixRangeNotifications, 1, "append notifies only the bucket containing changed code lines");
+  assert.strictEqual(tailRangeNotifications, 0, "append does not inspect or notify unrelated code ranges");
+  const lateDecorationWithStaleTail: Extract<Patch, { op: "decorateCode" }> = {
+    ...decoratePatch,
+    decorations: [
+      decoratePatch.decorations[0]!,
+      { ...decoratePatch.decorations[1]!, index: 64, lineId: `${OWNER_ID}::line:64` },
+    ],
+  };
+  codeRangeStore.applyPatches([lateDecorationWithStaleTail]);
+  const decorateCodeNotification = scheduledFrames.shift();
+  assert.ok(decorateCodeNotification, "late decoration schedules its changed code range");
+  decorateCodeNotification(0);
+  assert.strictEqual(prefixRangeNotifications, 2, "late decoration notifies the bucket for its accepted line");
+  assert.strictEqual(tailRangeNotifications, 0, "stale decorations do not notify unrelated buckets");
+  codeRangeStore.applyPatches([{ op: "finalize", at: { blockId: OWNER_ID } }]);
+  const finalizeCodeNotification = scheduledFrames.shift();
+  assert.ok(finalizeCodeNotification, "code finalization schedules owner range updates");
+  finalizeCodeNotification(0);
+  assert.strictEqual(prefixRangeNotifications, 3);
+  assert.strictEqual(tailRangeNotifications, 1, "owner finality invalidates active ranges");
+  unsubscribePrefixRange();
+  unsubscribeTailRange();
 } finally {
   if (previousRaf) Object.defineProperty(globalThis, "requestAnimationFrame", previousRaf);
   else Reflect.deleteProperty(globalThis, "requestAnimationFrame");

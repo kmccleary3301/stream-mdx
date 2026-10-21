@@ -20,6 +20,12 @@ import {
   type ParagraphSourceText,
   type ParagraphSourceTextReader,
 } from "./native-paragraph-source";
+import {
+  inlineNodesEqual,
+  literalizeFallbackHtml,
+  literalizeFallbackHtmlInChildren,
+  stringListsEqual,
+} from "./root-paragraph-content";
 
 declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
 
@@ -135,6 +141,27 @@ interface ParagraphDraft {
   readonly sourceText?: ParagraphSourceText;
   readonly children?: readonly ParagraphSpanChildSnapshot[];
 }
+const EMPTY_INLINE_NODES: readonly InlineNode[] = Object.freeze([]);
+const EMPTY_ATTEMPTED_REFERENCES: readonly string[] = Object.freeze([]);
+
+function emptyProjectedSourceDraft(
+  index: number,
+  sourceText: ParagraphSourceText,
+  sourceRevision: number,
+  isProvisional: boolean,
+): ParagraphDraft | undefined {
+  if (sourceText.text.length !== 0 || sourceText.sourceRange.from === sourceText.sourceRange.to) return undefined;
+  return {
+    index,
+    from: sourceText.sourceRange.from,
+    to: sourceText.sourceRange.to,
+    sourceRevision,
+    isProvisional,
+    nodes: EMPTY_INLINE_NODES,
+    attemptedReferences: EMPTY_ATTEMPTED_REFERENCES,
+    sourceText,
+  };
+}
 
 const EMPTY_SPAN_RECORDS: readonly ParagraphSpanRecord[] = Object.freeze([]);
 
@@ -144,108 +171,6 @@ function nextRevision(revision: number, label: string): number {
   return next;
 }
 
-function stringListsEqual(left: readonly string[], right: readonly string[]): boolean {
-  if (left.length !== right.length) return false;
-  for (let index = 0; index < left.length; index += 1) {
-    if (left[index] !== right[index]) return false;
-  }
-  return true;
-}
-
-function stringRecordsEqual(
-  left: Record<string, string> | undefined,
-  right: Record<string, string> | undefined,
-): boolean {
-  if (left === undefined || right === undefined) return left === right;
-  const keys = Object.keys(left);
-  if (keys.length !== Object.keys(right).length) return false;
-  for (const key of keys) {
-    if (!Object.prototype.hasOwnProperty.call(right, key) || left[key] !== right[key]) return false;
-  }
-  return true;
-}
-
-function optionalInlineNodesEqual(
-  left: readonly InlineNode[] | undefined,
-  right: readonly InlineNode[] | undefined,
-): boolean {
-  if (left === undefined || right === undefined) return left === right;
-  return inlineNodesEqual(left, right);
-}
-
-function inlineNodesEqual(left: readonly InlineNode[], right: readonly InlineNode[]): boolean {
-  if (left.length !== right.length) return false;
-  for (let index = 0; index < left.length; index += 1) {
-    const leftNode = left[index];
-    const rightNode = right[index];
-    if (!leftNode || !rightNode || !inlineNodeEqual(leftNode, rightNode)) return false;
-  }
-  return true;
-}
-
-function inlineNodeEqual(left: InlineNode, right: InlineNode): boolean {
-  if (left.kind !== right.kind) return false;
-  switch (left.kind) {
-    case "text":
-      return right.kind === "text" && left.text === right.text;
-    case "strong":
-      return right.kind === "strong" && inlineNodesEqual(left.children, right.children);
-    case "em":
-      return right.kind === "em" && inlineNodesEqual(left.children, right.children);
-    case "strike":
-      return right.kind === "strike" && inlineNodesEqual(left.children, right.children);
-    case "code":
-      return right.kind === "code" && left.text === right.text;
-    case "link":
-      return right.kind === "link"
-        && left.href === right.href
-        && left.title === right.title
-        && left.autolink === right.autolink
-        && inlineNodesEqual(left.children, right.children);
-    case "image":
-      return right.kind === "image"
-        && left.src === right.src
-        && left.alt === right.alt
-        && left.title === right.title;
-    case "br":
-      return right.kind === "br";
-    case "html":
-      return right.kind === "html"
-        && left.raw === right.raw
-        && left.openingRaw === right.openingRaw
-        && left.closingRaw === right.closingRaw
-        && left.sanitized === right.sanitized
-        && left.tagName === right.tagName
-        && left.isClose === right.isClose
-        && left.isSelfClosing === right.isSelfClosing
-        && stringRecordsEqual(left.attributes, right.attributes)
-        && optionalInlineNodesEqual(left.children, right.children);
-    case "mention":
-      return right.kind === "mention" && left.handle === right.handle;
-    case "citation":
-      return right.kind === "citation" && left.id === right.id;
-    case "math-inline":
-      return right.kind === "math-inline" && left.tex === right.tex;
-    case "math-display":
-      return right.kind === "math-display" && left.tex === right.tex;
-    case "footnote-ref":
-      return right.kind === "footnote-ref"
-        && left.label === right.label
-        && left.number === right.number
-        && left.occurrence === right.occurrence
-        && left.defined === right.defined;
-    case "plugin":
-      return right.kind === "plugin"
-        && left.name === right.name
-        && left.raw === right.raw
-        && stringRecordsEqual(left.attrs, right.attrs)
-        && optionalInlineNodesEqual(left.children, right.children);
-    default: {
-      const unreachable: never = left;
-      return unreachable;
-    }
-  }
-}
 
 function visitFootnoteDependencies(nodes: readonly InlineNode[], visit: (label: string) => void): void {
   for (const node of nodes) {
@@ -327,12 +252,12 @@ export class RootParagraphSourceOwner {
     let initialDrafts: ParagraphDraft[];
     if (opening.state === "open" && inlineSettlement === "native-tail") {
       initialDrafts = this.prepareOpenTail(reader, opening.from, opening.to, 0, undefined, initialSourceText);
-    } else if (initialRaw.length > 0) {
+    } else if (initialRaw.length > 0 || initialSourceText.sourceRange.from < initialSourceText.sourceRange.to) {
       const parsed = this.parseWithAttempts(initialRaw);
       initialDrafts = [{
         index: 0,
-        from: opening.from,
-        to: opening.to,
+        from: initialSourceText.sourceRange.from,
+        to: initialSourceText.sourceRange.to,
         sourceRevision: 0,
         isProvisional: opening.state === "open",
         nodes: parsed.nodes,
@@ -370,6 +295,9 @@ export class RootParagraphSourceOwner {
 
   getSpans(): ParagraphSpanIndex {
     return this.spanIndex;
+  }
+  getSourceTextReader(): ParagraphSourceTextReader {
+    return this.sourceTextReader;
   }
 
   getSourceSnapshot(): SourceSnapshot {
@@ -497,16 +425,24 @@ export class RootParagraphSourceOwner {
       }
       const sourceText = this.readParagraphSourceText(sourceSnapshot, this.ownerStart, nativeChange.ownerEnd, sourceTextReader);
       const parsed = this.parseWithAttempts(sourceText.text);
-      tailDrafts = sourceText.text.length === 0 ? [] : [{
-        index: 0,
-        from: sourceText.sourceRange.from,
-        to: sourceText.sourceRange.to,
-        sourceRevision: previousTail ? nextRevision(previousTail.sourceRevision, "Paragraph span source") : nextRevision(this.revision, "Paragraph owner"),
-        isProvisional: nextState === "open",
-        nodes: parsed.nodes,
-        attemptedReferences: parsed.attemptedReferences,
-        sourceText,
-      }];
+      const sourceRevision = previousTail
+        ? nextRevision(previousTail.sourceRevision, "Paragraph span source")
+        : nextRevision(this.revision, "Paragraph owner");
+      const emptyDraft = emptyProjectedSourceDraft(0, sourceText, sourceRevision, nextState === "open");
+      if (sourceText.text.length === 0) {
+        tailDrafts = emptyDraft ? [emptyDraft] : [];
+      } else {
+        tailDrafts = [{
+          index: 0,
+          from: sourceText.sourceRange.from,
+          to: sourceText.sourceRange.to,
+          sourceRevision,
+          isProvisional: nextState === "open",
+          nodes: parsed.nodes,
+          attemptedReferences: parsed.attemptedReferences,
+          sourceText,
+        }];
+      }
     } else {
       const tailStart = previousTail?.sourceRange.from ?? completePrefixEnd;
       const sourceText = this.readParagraphSourceText(sourceSnapshot, tailStart, nativeChange.ownerEnd, sourceTextReader);
@@ -548,6 +484,17 @@ export class RootParagraphSourceOwner {
           attemptedReferences: parsed.attemptedReferences,
           sourceText: provisionalSourceText,
         });
+      }
+      if (drafts.length === 0) {
+        const emptyDraft = emptyProjectedSourceDraft(
+          index,
+          sourceText,
+          previousTail
+            ? nextRevision(previousTail.sourceRevision, "Paragraph span source")
+            : nextRevision(this.revision, "Paragraph owner"),
+          false,
+        );
+        if (emptyDraft) drafts.push(emptyDraft);
       }
       tailDrafts = drafts;
     }
@@ -658,6 +605,7 @@ export class RootParagraphSourceOwner {
       attemptedReferences = Object.freeze(Array.from(references).sort());
     }
     const tailRecords: ParagraphSpanRecord[] = rawTail.length === 0
+      && sourceText.sourceRange.from === sourceText.sourceRange.to
       ? []
       : [this.createSpanRecord({
           index: completeSpanCount,
@@ -820,7 +768,15 @@ export class RootParagraphSourceOwner {
         ? { ...draft, nodes: parsed.nodes, attemptedReferences: parsed.attemptedReferences }
         : draft);
     }
-    const children = prepared.children?.map((child) => {
+    const hasHtmlCandidate = content.includes("<");
+    const sourceNodes = prepared.nodes ?? draft.nodes;
+    const preparedNodes = hasHtmlCandidate ? literalizeFallbackHtml(sourceNodes) : sourceNodes;
+    const preparedChildren = prepared.children === undefined
+      ? undefined
+      : hasHtmlCandidate
+        ? literalizeFallbackHtmlInChildren(prepared.children)
+        : prepared.children;
+    const children = preparedChildren?.map((child) => {
       const logicalFrom = child.range.from - draft.from;
       const logicalTo = child.range.to - draft.from;
       if (logicalFrom < 0 || logicalTo > content.length) {
@@ -830,7 +786,7 @@ export class RootParagraphSourceOwner {
     });
     return recordFromDraft(this.id, {
       ...draft,
-      nodes: children ? [] : Array.from(prepared.nodes ?? draft.nodes),
+      nodes: children ? [] : Array.from(preparedNodes ?? draft.nodes),
       attemptedReferences: prepared.attemptedReferences,
       ...(children ? { children } : {}),
     });
@@ -884,6 +840,10 @@ export class RootParagraphSourceOwner {
         attemptedReferences: parsed.attemptedReferences,
         sourceText: tailSourceText,
       });
+    }
+    if (drafts.length === 0) {
+      const emptyDraft = emptyProjectedSourceDraft(index, mappedSourceText, settledRevision, true);
+      if (emptyDraft) drafts.push(emptyDraft);
     }
     return drafts;
   }

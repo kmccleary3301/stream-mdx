@@ -248,6 +248,91 @@ async function main() {
     rejectionCount + 1,
     "replaying an old setHTML patch must increment the stale rejection counter",
   );
+  const inheritedStore = createRendererStore();
+  inheritedStore.resetSnapshot({
+    id: PATCH_ROOT_ID,
+    type: "__root__",
+    children: [
+      {
+        id: "epoch-parent",
+        type: "container",
+        props: {},
+        meta: { blockEpoch: 7 },
+        children: [{ id: "epoch-child", type: "leaf", props: {} }],
+      },
+    ],
+  });
+  const initialChild = inheritedStore.getNode("epoch-child");
+  assert.ok(initialChild);
+  const initialEpoch = initialChild.blockEpoch;
+  const publishedParent = inheritedStore.getNodeWithVersion("epoch-parent");
+  assert.strictEqual(publishedParent.node?.blockEpoch, initialEpoch);
+  const publishedChild = inheritedStore.getNodeWithVersion("epoch-child");
+  assert.strictEqual(publishedChild.node?.blockEpoch, initialEpoch);
+  inheritedStore.applyPatches([
+    {
+      op: "setProps",
+      at: { blockId: "epoch-parent", nodeId: "epoch-parent" },
+      props: { layoutRevision: 1 },
+      meta: { kind: "semantic" },
+    } satisfies Patch,
+  ]);
+  const currentChild = inheritedStore.getNode("epoch-child");
+  const currentChildSnapshot = inheritedStore.getNodeWithVersion("epoch-child");
+  const currentParentSnapshot = inheritedStore.getNodeWithVersion("epoch-parent");
+  assert.ok(currentChild);
+  assert.ok(currentChild.blockEpoch > initialEpoch, "child reads expose the current inherited block epoch");
+  const currentParent = currentParentSnapshot.node;
+  assert.ok(currentParent && currentParent.blockEpoch > initialEpoch);
+  assert.strictEqual(
+    publishedChild.node?.blockEpoch,
+    initialEpoch,
+    "previously published node snapshots retain their epoch value",
+  );
+  assert.strictEqual(
+    publishedParent.node?.blockEpoch,
+    initialEpoch,
+    "previously published direct-owner reads retain their epoch value",
+  );
+  assert.strictEqual(currentChildSnapshot.node?.blockEpoch, currentChild.blockEpoch);
+  inheritedStore.applyPatches([
+    {
+      op: "setProps",
+      at: { blockId: "epoch-parent", nodeId: "epoch-child" },
+      props: { staleMarker: true },
+      meta: { kind: "semantic", blockEpoch: initialEpoch },
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(inheritedStore.getNode("epoch-child")?.props.staleMarker, undefined);
+  assert.ok(
+    inheritedStore.getInvariantViolations().some((message) =>
+      message.includes(`stale epoch rejected:setProps:epoch-parent:expected=${initialEpoch}:actual=${currentChild.blockEpoch}`),
+    ),
+    "epoch guards compare patches against the same inherited epoch exposed by node reads",
+  );
+  inheritedStore.applyPatches([
+    {
+      op: "setProps",
+      at: { blockId: "epoch-parent", nodeId: "epoch-child" },
+      props: { currentMarker: true },
+      meta: { kind: "semantic", blockEpoch: currentChild.blockEpoch },
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(inheritedStore.getNode("epoch-child")?.props.currentMarker, true);
+  const publishedChildren = inheritedStore.getChildrenWithVersion("epoch-parent");
+  inheritedStore.applyPatches([
+    {
+      op: "insertChild",
+      at: { blockId: "epoch-parent" },
+      index: 1,
+      node: { id: "epoch-appended-child", type: "leaf", props: {}, children: [] },
+    } satisfies Patch,
+  ]);
+  assert.deepStrictEqual(publishedChildren.children, ["epoch-child"]);
+  assert.deepStrictEqual(
+    inheritedStore.getChildrenWithVersion("epoch-parent").children,
+    ["epoch-child", "epoch-appended-child"],
+  );
 }
 
 await main();

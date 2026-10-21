@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import { GFM, parser } from "@lezer/markdown";
 import { createBlockSnapshot } from "../src/block-snapshot";
 import { createBlockCompatibilityExtension } from "../src/block-compatibility";
+import { AppendSourceDocument } from "../src/source-document";
 import { InlineParser } from "../src/inline-parser";
-import { prepareNestedBlockSnapshot } from "../src/nested-block-snapshot";
-import { parseCodeFenceInfo } from "../src/utils";
+import { prepareNestedBlockSnapshot, prepareNestedBlockSnapshotFromNative } from "../src/nested-block-snapshot";
 import type { Block, NodeSnapshot } from "../src/types";
 
 function flatten(snapshot: NodeSnapshot): NodeSnapshot[] {
@@ -203,3 +203,103 @@ assert.deepEqual(mixedCodeNodes.filter((node) => node.type === "list-item-html")
 assert.deepEqual(mixedCodeNodes.filter((node) => node.type === "list-item-text").flatMap((node) => node.props?.inline as Array<{ kind: string; text?: string }>).filter((node) => node.kind === "code"), [
   { kind: "code", text: "{:js}{:js}" },
 ]);
+const nativeNestedSourceText = [
+  "lead 😀",
+  "> **Quoted paragraph**",
+  "> continuation",
+  ">",
+  "> 3. [x] item",
+  ">",
+  ">    list paragraph",
+  ">    continuation",
+  ">",
+  ">    | Name | Count |",
+  ">    | :--- | ---: |",
+  ">    | alpha | 2 |",
+  "",
+].join("\r\n");
+const nativeNestedDocument = new AppendSourceDocument();
+nativeNestedDocument.append(nativeNestedSourceText);
+const nativeNestedSource = nativeNestedDocument.snapshot();
+const nativeNestedTree = nativeParser.parse(nativeNestedSource);
+let nativeQuote = nativeNestedTree.topNode.firstChild;
+while (nativeQuote && nativeQuote.type.name !== "Blockquote") nativeQuote = nativeQuote.nextSibling;
+assert.ok(nativeQuote);
+const nativeNestedBlock: Block = {
+  id: "direct-native-container",
+  type: "blockquote",
+  isFinalized: true,
+  payload: {
+    raw: "",
+    range: { from: nativeQuote.from, to: nativeQuote.to },
+  },
+};
+const nativeNestedPrepared = prepareNestedBlockSnapshotFromNative(
+  nativeNestedBlock,
+  nativeQuote,
+  {
+    input: nativeNestedSource,
+    source: nativeNestedSource,
+    mapOffset: (offset) => offset,
+    mapRange: (from, to) => ({ from, to }),
+  },
+  new InlineParser(),
+  nativeParser,
+);
+nativeNestedBlock.payload.meta = { preparedNested: nativeNestedPrepared };
+const nativeNestedNodes = flatten(createBlockSnapshot(nativeNestedBlock));
+const nativeParagraph = nativeNestedNodes.find((node) =>
+  node.type === "paragraph" && String(node.props?.text).includes("Quoted paragraph"));
+assert.ok(nativeParagraph);
+assert.equal(
+  String(nativeParagraph.props?.text).replace(/\r\n/g, "\n"),
+  "Quoted paragraph\ncontinuation",
+);
+const nativeParagraphBlock = nativeParagraph.props?.block as Block;
+const nativeParagraphRange = nativeParagraphBlock.payload.range!;
+assert.equal(
+  nativeParagraphBlock.payload.raw,
+  nativeNestedSource.read(nativeParagraphRange.from, nativeParagraphRange.to),
+);
+assert.ok(nativeParagraphBlock.payload.raw.includes("**Quoted paragraph**"));
+
+const nativeList = nativeNestedNodes.find((node) => node.type === "list");
+assert.ok(nativeList);
+assert.equal(nativeList.props?.ordered, true);
+assert.equal(nativeList.props?.start, 3);
+assert.equal(nativeList.props?.loose, true);
+const nativeTaskItem = nativeList.children?.find((node) => node.type === "list-item");
+assert.ok(nativeTaskItem);
+assert.equal(nativeTaskItem.props?.task, true);
+assert.equal(nativeTaskItem.props?.checked, true);
+assert.equal(nativeTaskItem.props?.text, "item");
+assert.equal(nativeTaskItem.children?.some((node) => node.type === "table"), true);
+const nativeListParagraph = nativeTaskItem.children?.find((node) => node.type === "paragraph");
+assert.ok(nativeListParagraph);
+assert.equal(
+  String(nativeListParagraph.props?.text).replace(/\r\n/g, "\n"),
+  "list paragraph\ncontinuation",
+);
+assert.equal(nativeListParagraph.props?.tight, false);
+const nativeListParagraphBlock = nativeListParagraph.props?.block as Block;
+const nativeListParagraphRange = nativeListParagraphBlock.payload.range!;
+assert.equal(
+  nativeListParagraphBlock.payload.raw,
+  nativeNestedSource.read(nativeListParagraphRange.from, nativeListParagraphRange.to),
+);
+assert.ok(nativeListParagraphBlock.payload.raw.includes("\r\n"));
+assert.notEqual(nativeListParagraphBlock.payload.raw, nativeListParagraph.props?.text);
+
+const nativeTable = nativeNestedNodes.find((node) => node.type === "table");
+assert.ok(nativeTable);
+assert.deepEqual(
+  (nativeTable.props?.block as Block).payload.meta?.align,
+  ["left", "right"],
+);
+const nativeTableHeader = nativeTable.children?.find((node) => node.type === "table-header");
+assert.deepEqual(
+  nativeTableHeader?.children?.map((cell) => cell.props?.text),
+  ["Name", "Count"],
+);
+const nativeTableRows = nativeTable.children?.find((node) => node.type === "table-body")?.children;
+assert.deepEqual(nativeTableRows?.[0]?.children?.map((cell) => cell.props?.text), ["alpha", "2"]);

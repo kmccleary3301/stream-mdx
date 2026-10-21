@@ -1,6 +1,6 @@
 # Patch Classification Ledger
 
-_Last updated: 2026-10-19_
+_Last updated: 2026-10-20_
 
 This ledger is the canonical semantic/enrichment map for the `Patch` union in
 `packages/markdown-v2-core/src/types.ts`.
@@ -60,6 +60,19 @@ If a future path needs it, the path must be added here with tests before use.
 
 These operations change committed tree shape or ordering. They are always
 semantic and must stay in atomic semantic batches.
+
+### `setProps` and `setPropsBatch`
+
+Unmanaged generic nodes use reserved `props.range` and `props.meta` for canonical
+authored ranges and metadata alongside content changes. Metadata omission retains
+the current value, `null` clears it, and an object replaces the complete value.
+Coalescing must preserve that replacement boundary rather than merge metadata keys.
+Core and React consume both fields separately from presentation props and retain
+historical cold values. Managed source owners still require their typed operations
+and source guards.
+
+`Patch.meta` remains the control envelope. A metadata payload does not change the
+default semantic classification or expand the audited enrichment allowlist.
 
 ### `finalize`
 

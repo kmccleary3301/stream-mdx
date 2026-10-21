@@ -17,12 +17,18 @@ import {
 } from "../components";
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
-import { RenderConfigVersionContext, useRendererChildren, useRendererNode } from "./hooks";
+import {
+  RenderConfigVersionContext,
+  useRendererChildren,
+  useRendererNode,
+  useRendererNodeSnapshot,
+} from "./hooks";
+import { subscribeRendererNode } from "./node-subscriptions";
 import { StreamingActivityContext } from "./streaming-activity-context";
 import { createRendererStore, isListPatchDebugEnabled, type NodeRecord, type RendererStore } from "./store";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 import { CodeBlockView } from "./code-block-view";
-import { ManagedParagraphBlockView } from "./paragraph-block-view";
+import { ManagedParagraphBlockView, ManagedParagraphContentView } from "./paragraph-block-view";
 import { ManagedTableBlockView } from "./table-block-view";
 import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 
@@ -76,6 +82,66 @@ function recordViewRecords(store: RendererStore, count: number): void {
     };
   };
   counterStore.campaignCounters?.recordStoreRecordsTouched?.(count, "view");
+}
+
+function recordViewSlots(store: RendererStore, count: number): void {
+  const counterStore = store as RendererStore & {
+    campaignCounters?: {
+      recordRecordSlotsAllocated?(count: number, stage: "view"): void;
+    };
+  };
+  counterStore.campaignCounters?.recordRecordSlotsAllocated?.(count, "view");
+}
+const LIST_PROJECTION_CHUNK_SIZE = 64;
+
+function readListProjectionFrontier(store: RendererStore, parentId: string): number | null {
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, 1);
+  }
+  const parent = store.getNode(parentId);
+  if (!parent || parent.block?.isFinalized) return null;
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, 1);
+  }
+  return store.getChildren(parentId).length;
+}
+
+function useListProjectionFrontier(
+  store: RendererStore,
+  parentId: string,
+  chunkEnd: number,
+): number | null {
+  const getFrontier = React.useCallback(
+    () => readListProjectionFrontier(store, parentId),
+    [parentId, store],
+  );
+  const subscribe = React.useCallback((listener: () => void) => {
+    let active = true;
+    let unsubscribe = () => {};
+    let lastFrontier = getFrontier();
+    const onParentChanged = () => {
+      if (!active) return;
+      const nextFrontier = getFrontier();
+      if (nextFrontier === lastFrontier) return;
+      lastFrontier = nextFrontier;
+      if (nextFrontier === null || nextFrontier >= chunkEnd) {
+        active = false;
+        unsubscribe();
+      }
+      listener();
+    };
+    unsubscribe = subscribeRendererNode(store, parentId, onParentChanged);
+    lastFrontier = getFrontier();
+    if (lastFrontier === null || lastFrontier >= chunkEnd) {
+      active = false;
+      unsubscribe();
+    }
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [chunkEnd, getFrontier, parentId, store]);
+  return React.useSyncExternalStore(subscribe, getFrontier, getFrontier);
 }
 
 
@@ -388,7 +454,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   const normalizedText =
     typeof meta.normalizedText === "string"
       ? meta.normalizedText
-    : normalizeBlockquoteText(typeof block.payload.raw === "string" ? block.payload.raw : "");
+    : childIds.length === 0
+      ? normalizeBlockquoteText(typeof block.payload.raw === "string" ? block.payload.raw : "")
+      : "";
   const inlineComponents = registry.getInlineComponents();
 
   const renderTextWithBreaks = (text: string, keyPrefix: string) => {
@@ -694,28 +762,147 @@ const MdxBlockView: React.FC<{ store: RendererStore; blockId: string; registry: 
 
 MdxBlockView.displayName = "MdxBlockView";
 
+
+type ListItemLayout = {
+  inlineComponents: InlineComponents;
+  registry: ComponentRegistry;
+  ordered: boolean;
+  listLoose?: boolean;
+  listStart?: number;
+  depth: number;
+  renderConfigVersion: number;
+};
+
+const ListItemLayoutContext = React.createContext<ListItemLayout | null>(null);
+const EMPTY_LIST_CHILDREN: ReadonlyArray<string> = Object.freeze([]);
+
+type ListProjectionCache = {
+  children: ReadonlyArray<string>;
+  rawLength: number;
+  baseElements: ReadonlyArray<React.ReactElement>;
+  baseRawLength: number;
+  baseItemCount: number;
+  itemCount: number;
+  markerDigits: number;
+  hasElementFilters: boolean;
+  needsListItemIds: boolean;
+  token: number;
+};
 const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry; depth?: number }> = React.memo(
   ({ store, blockId, registry, depth = 0 }) => {
-    const node = useRendererNode(store, blockId);
+    const nodeSnapshot = useRendererNodeSnapshot(store, blockId);
+    const node = nodeSnapshot.node;
     const block = node?.block;
-    const childIds = useRendererChildren(store, blockId);
+    const childIds = node?.children ?? EMPTY_LIST_CHILDREN;
+    const renderConfigVersion = React.useContext(RenderConfigVersionContext);
     const inlineComponents = registry.getInlineComponents();
     const ordered = Boolean(node?.props?.ordered ?? block?.payload.meta?.ordered);
+    const listLoose = typeof node?.props?.loose === "boolean"
+      ? node.props.loose
+      : typeof block?.payload.meta?.loose === "boolean"
+        ? block.payload.meta.loose
+        : undefined;
+    const start = typeof node?.props?.start === "number" ? node.props.start : undefined;
     const Tag = ordered ? "ol" : "ul";
     const listDebugEnabled = isListPatchDebugEnabled();
-    const listItemIds = React.useMemo(() => {
-      const ids: string[] = [];
+    const hasElementFilters = registry.hasElementFilters();
+    const itemLayout = React.useMemo<ListItemLayout>(
+      () => ({ inlineComponents, registry, ordered, listLoose, listStart: start, depth, renderConfigVersion }),
+      [depth, inlineComponents, listLoose, ordered, registry, renderConfigVersion, start],
+    );
+    const projectionCacheRef = React.useRef<ListProjectionCache | null>(null);
+    const previousProjection = projectionCacheRef.current;
+    const needsListItemIds = hasElementFilters || listDebugEnabled;
+    const listItemIds: Array<ListProjectionCache["children"][number]> | null = needsListItemIds ? [] : null;
+    let projectionCache: ListProjectionCache;
+    let rebuiltProjection = false;
+
+    if (
+      !previousProjection ||
+      previousProjection.children !== childIds ||
+      childIds.length < previousProjection.rawLength ||
+      previousProjection.hasElementFilters !== hasElementFilters ||
+      previousProjection.needsListItemIds !== needsListItemIds
+    ) {
+      const baseElements: React.ReactElement[] = [];
+      let itemCount = 0;
+      let markerDigits = 1;
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
         recordViewRecords(store, childIds.length);
       }
       for (const childId of childIds) {
         const childNode = store.getNode(childId);
-        if (childNode?.type === "list-item") {
-          ids.push(childId);
+        if (childNode?.type !== "list-item") continue;
+        listItemIds?.push(childId);
+        if (!hasElementFilters) {
+          baseElements.push(
+            <ListItemView key={childId} store={store} nodeId={childId} index={itemCount} />,
+          );
         }
+        if (ordered) {
+          const digits = String((start ?? 1) + itemCount).length;
+          if (digits > markerDigits) markerDigits = digits;
+        }
+        itemCount += 1;
       }
-      return ids;
-    }, [childIds, store]);
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        if (listItemIds) recordViewSlots(store, listItemIds.length);
+        if (!hasElementFilters) recordViewSlots(store, baseElements.length);
+      }
+      projectionCache = {
+        children: childIds,
+        rawLength: childIds.length,
+        baseElements: Object.freeze(baseElements),
+        baseRawLength: childIds.length,
+        baseItemCount: itemCount,
+        itemCount,
+        markerDigits,
+        hasElementFilters,
+        needsListItemIds,
+        token: (previousProjection?.token ?? 0) + 1,
+      };
+      rebuiltProjection = true;
+    } else {
+      projectionCache = previousProjection;
+      let itemCount = projectionCache.itemCount;
+      let markerDigits = projectionCache.markerDigits;
+      const firstNewChild = projectionCache.rawLength;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, childIds.length - firstNewChild);
+      }
+      for (let index = firstNewChild; index < childIds.length; index += 1) {
+        const childNode = store.getNode(childIds[index]!);
+        if (childNode?.type !== "list-item") continue;
+        if (ordered) {
+          const digits = String((start ?? 1) + itemCount).length;
+          if (digits > markerDigits) markerDigits = digits;
+        }
+        itemCount += 1;
+      }
+      projectionCache.rawLength = childIds.length;
+      projectionCache.itemCount = itemCount;
+      projectionCache.markerDigits = markerDigits;
+    }
+    projectionCache.markerDigits = ordered && projectionCache.itemCount > 0
+      ? Math.max(
+        String(start ?? 1).length,
+        String((start ?? 1) + projectionCache.itemCount - 1).length,
+      )
+      : 1;
+    projectionCacheRef.current = projectionCache;
+
+    if (listItemIds && !rebuiltProjection) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, childIds.length);
+      }
+      for (const childId of childIds) {
+        if (store.getNode(childId)?.type === "list-item") listItemIds.push(childId);
+      }
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewSlots(store, listItemIds.length);
+      }
+    }
+    const childListItemIds = listItemIds ?? EMPTY_LIST_CHILDREN;
     React.useEffect(() => {
       if (!listDebugEnabled) return;
       const childTypes = childIds.map((childId) => store.getNode(childId)?.type ?? "missing");
@@ -725,62 +912,47 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         ordered,
         childIds,
         childTypes,
-        listItemIds,
-        listItems: listItemIds.length,
+        listItemIds: childListItemIds,
+        listItems: childListItemIds.length,
         totalChildren: childIds.length,
         isFinalized: block?.isFinalized ?? false,
       });
-    }, [listDebugEnabled, blockId, depth, ordered, childIds, listItemIds, store, block?.isFinalized]);
-    const { listStyle, markerDigits } = React.useMemo(() => {
-      if (!ordered || listItemIds.length === 0) {
-        return { listStyle: undefined, markerDigits: 1 };
-      }
-      let maxDigits = 1;
-      const startNum = typeof node?.props?.start === "number" ? node.props.start : 1;
-      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-        recordViewRecords(store, listItemIds.length);
-      }
-      listItemIds.forEach((childId, index) => {
-        const childNode = store.getNode(childId);
-        const raw = typeof childNode?.block?.payload?.raw === "string" ? childNode.block.payload.raw : undefined;
-        const markerMatch = raw ? raw.match(/^(\d+)[.)]\s+/) : null;
-        let digits: number;
-        if (markerMatch) {
-          digits = markerMatch[1].length;
-        } else {
-          digits = String(startNum + index).length;
-        }
-        if (digits > maxDigits) maxDigits = digits;
-      });
+    }, [block?.isFinalized, blockId, childIds, childListItemIds, depth, listDebugEnabled, nodeSnapshot.version, ordered, store]);
+
+    const markerDigits = ordered && projectionCache.itemCount > 0 ? projectionCache.markerDigits : 1;
+    const listStyle = React.useMemo(() => {
+      if (!ordered || projectionCache.itemCount === 0) return undefined;
       const baseIndent = depth === 0 ? "2rem" : depth === 1 ? "1.75rem" : "1.5rem";
-      const extraDigits = Math.max(0, maxDigits - 1);
+      const extraDigits = Math.max(0, markerDigits - 1);
       return {
-        markerDigits: maxDigits,
-        listStyle: {
-          ["--list-indent" as const]: extraDigits > 0 ? `calc(${baseIndent} + ${extraDigits}ch)` : baseIndent,
-          ["--list-marker-digits" as const]: String(maxDigits),
-        } as React.CSSProperties,
-      };
-    }, [ordered, listItemIds, store, depth]);
-    if (listItemIds.length === 0) return null;
-    const start = typeof node?.props?.start === "number" ? node.props.start : undefined;
+        ["--list-indent" as const]: extraDigits > 0 ? `calc(${baseIndent} + ${extraDigits}ch)` : baseIndent,
+        ["--list-marker-digits" as const]: String(markerDigits),
+      } as React.CSSProperties;
+    }, [depth, markerDigits, ordered, projectionCache.itemCount]);
+
+    if (!node || projectionCache.itemCount === 0) return null;
+
     const renderChildren = () => {
+      if (!hasElementFilters) {
+        return (
+          <ListProjectionRoot
+            key={projectionCache.token}
+            store={store}
+            parentId={blockId}
+            baseElements={projectionCache.baseElements}
+            firstDynamicIndex={projectionCache.baseRawLength}
+            firstDynamicItemIndex={projectionCache.baseItemCount}
+          />
+        );
+      }
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-        recordViewRecords(store, listItemIds.length);
+        recordViewRecords(store, childListItemIds.length);
+        recordViewSlots(store, childListItemIds.length);
       }
       return (
         <>
-          {listItemIds.map((childId, index) => (
-            <ListItemView
-              key={childId}
-              store={store}
-              nodeId={childId}
-              inlineComponents={inlineComponents}
-              registry={registry}
-              ordered={ordered}
-              index={index}
-              depth={depth}
-            />
+          {childListItemIds.map((childId, index) => (
+            <ListItemView key={childId} store={store} nodeId={childId} index={index} />
           ))}
         </>
       );
@@ -797,43 +969,43 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         {renderChildren()}
       </Tag>
     );
-    if (!registry.hasElementFilters()) {
-      return renderElement();
+    let renderedList: React.ReactNode;
+    if (!hasElementFilters) {
+      renderedList = renderElement();
+    } else {
+      const filtered = registry.filterElement(
+        { tagName: Tag, properties: { className: `markdown-list ${ordered ? "ordered" : "unordered"}` }, blockType: "list" },
+        { source: "markdown" },
+        renderElement,
+        renderChildren,
+      );
+      if (filtered === null || filtered === undefined) return null;
+      renderedList = React.isValidElement(filtered) ? filtered : <>{filtered}</>;
     }
-    const filtered = registry.filterElement(
-      { tagName: Tag, properties: { className: `markdown-list ${ordered ? "ordered" : "unordered"}` }, blockType: "list" },
-      { source: "markdown" },
-      renderElement,
-      renderChildren,
+    return (
+      <ListItemLayoutContext.Provider value={itemLayout}>
+        {renderedList}
+      </ListItemLayoutContext.Provider>
     );
-    if (filtered === null || filtered === undefined) return null;
-    return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
   },
 );
 
 ListBlockView.displayName = "ListBlockView";
 
-const ListItemView: React.FC<{
-  store: RendererStore;
-  nodeId: string;
-  inlineComponents: ReturnType<ComponentRegistry["getInlineComponents"]>;
-  registry: ComponentRegistry;
-  ordered: boolean;
-  index: number;
-  depth: number;
-}> = React.memo(({ store, nodeId, inlineComponents, registry, ordered, index, depth }) => {
+const ListItemView: React.FC<{ store: RendererStore; nodeId: string; index: number }> = React.memo(({ store, nodeId, index }) => {
+  const itemLayout = React.useContext(ListItemLayoutContext);
+  if (!itemLayout) throw new Error("List item view requires its parent list layout");
+  const { inlineComponents, registry, ordered, listLoose, listStart, depth } = itemLayout;
   const node = useRendererNode(store, nodeId);
   const childIds = useRendererChildren(store, nodeId);
+  const childClassificationVersion = store.getNodeWithVersion(nodeId).version;
   const inline = (node?.props?.inline as InlineNode[] | undefined) ?? [];
   const isTask = Boolean(node?.props?.task);
   const isChecked = Boolean(node?.props?.checked);
   const block = node?.block;
-  const raw = typeof block?.payload?.raw === "string" ? block.payload.raw : undefined;
-  const markerMatch = raw ? raw.match(/^([^\s]+)\s+/) : null;
-  const marker = markerMatch?.[1]?.trim();
-  const inferredIndex = typeof node?.props?.index === "number" ? Number(node?.props?.index) : index;
-  const isOrdered = Boolean(node?.props?.ordered ?? ordered);
-  const start = typeof node?.props?.start === "number" ? node.props.start : 1;
+  const inferredIndex = typeof node?.props?.index === "number" ? Number(node.props.index) : index;
+  const isOrdered = ordered;
+  const start = listStart ?? 1;
   const itemNumber = start + inferredIndex;
   const counterText = !isTask ? (isOrdered ? `${itemNumber}.` : "\u2022") : undefined;
   const listDebugEnabled = isListPatchDebugEnabled();
@@ -841,23 +1013,42 @@ const ListItemView: React.FC<{
   const animCtx = registry.getRenderInlineContext(Boolean(block?.isFinalized), nodeId);
   // Inline output below is memoized on registry identity; filter/URL changes bump this version instead.
   const renderConfigVersion = React.useContext(RenderConfigVersionContext);
-  const [segmentChildIds, contentChildIds] = React.useMemo(() => {
+  const isLoose = listLoose ?? Boolean(node?.props?.loose);
+  const paragraphParentTagName = isLoose ? "p" : "li";
+  const renderParagraphNested = React.useCallback(
+    (childId: string) => (
+      <MixedSegmentView
+        key={childId}
+        store={store}
+        nodeId={childId}
+        inlineComponents={inlineComponents}
+        urlTransform={registry.getUrlTransform()}
+        registry={registry}
+        parentTagName={paragraphParentTagName}
+      />
+    ),
+    [store, inlineComponents, registry, paragraphParentTagName, renderConfigVersion],
+  );
+  const { segmentChildIds, contentChildIds, primaryParagraphId } = React.useMemo(() => {
     const segments: string[] = [];
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       recordViewRecords(store, childIds.length);
     }
     const structural: string[] = [];
+    let primaryParagraphId: string | undefined;
     for (const childId of childIds) {
       const childNode = store.getNode(childId);
       if (!childNode) continue;
-      if (childNode.type?.startsWith("list-item-")) {
+      if (childNode.type === "paragraph" && childNode.props?.listItemPrimary === true) {
+        primaryParagraphId = childId;
+      } else if (childNode.type?.startsWith("list-item-")) {
         segments.push(childId);
       } else {
         structural.push(childId);
       }
     }
-    return [segments, structural];
-  }, [childIds, store]);
+    return { segmentChildIds: segments, contentChildIds: structural, primaryParagraphId };
+  }, [childIds, childClassificationVersion, store]);
 
   const segmentElements = React.useMemo(() => {
     return segmentChildIds.map((childId) => {
@@ -869,6 +1060,18 @@ const ListItemView: React.FC<{
   }, [segmentChildIds, store, inlineComponents, registry]);
 
   const primaryContent = React.useMemo(() => {
+    if (primaryParagraphId !== undefined) {
+      return (
+        <ManagedParagraphContentView
+          key={primaryParagraphId}
+          store={store}
+          blockId={primaryParagraphId}
+          registry={registry}
+          renderNested={renderParagraphNested}
+          parentTagName={paragraphParentTagName}
+        />
+      );
+    }
     if (segmentChildIds.length > 0) {
       return segmentElements;
     }
@@ -876,7 +1079,7 @@ const ListItemView: React.FC<{
       recordViewRecords(store, inline.length);
     }
     return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, "li", animCtx);
-  }, [segmentChildIds, segmentElements, inline, inlineComponents, registry, renderConfigVersion]);
+  }, [primaryParagraphId, renderParagraphNested, paragraphParentTagName, segmentChildIds, segmentElements, inline, inlineComponents, registry, renderConfigVersion]);
 
   const trailingChildren = React.useMemo(() => {
     return contentChildIds.map((childId) => {
@@ -887,19 +1090,44 @@ const ListItemView: React.FC<{
       if (!childNode) return null;
       switch (childNode.type) {
         case "paragraph": {
-          const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
-          const childAnimCtx = registry.getRenderInlineContext(Boolean(childNode.block?.isFinalized), childId);
-          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-            recordViewRecords(store, childInline.length);
+          const childIsLoose = listLoose ?? !Boolean(childNode.props?.tight);
+          const childParentTagName = childIsLoose ? "p" : "li";
+          let childContent: React.ReactNode;
+          if (store.getParagraphBlock(childId)) {
+            childContent = (
+              <ManagedParagraphContentView
+                key={childId}
+                store={store}
+                blockId={childId}
+                registry={registry}
+                renderNested={(nestedId) => (
+                  <MixedSegmentView
+                    key={nestedId}
+                    store={store}
+                    nodeId={nestedId}
+                    inlineComponents={inlineComponents}
+                    urlTransform={registry.getUrlTransform()}
+                    registry={registry}
+                    parentTagName={childParentTagName}
+                  />
+                )}
+                parentTagName={childParentTagName}
+              />
+            );
+          } else {
+            const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              recordViewRecords(store, childInline.length);
+            }
+            childContent = renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform(), registry, childParentTagName);
           }
-          const childInlines = renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform(), registry, "p", childAnimCtx);
-          if (childNode.props?.tight) {
-            return <React.Fragment key={childId}>{childInlines}</React.Fragment>;
+          if (!childIsLoose) {
+            return <React.Fragment key={childId}>{childContent}</React.Fragment>;
           }
           if (!registry.hasElementFilters()) {
             return (
               <p key={childId} className="markdown-list-item-paragraph">
-                {childInlines}
+                {childContent}
               </p>
             );
           }
@@ -908,10 +1136,10 @@ const ListItemView: React.FC<{
             { source: "markdown", parentTagName: "li" },
             () => (
               <p key={childId} className="markdown-list-item-paragraph">
-                {childInlines}
+                {childContent}
               </p>
             ),
-            () => childInlines,
+            () => childContent,
           );
         }
         case "list":
@@ -920,7 +1148,7 @@ const ListItemView: React.FC<{
           return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
       }
     });
-  }, [contentChildIds, store, inlineComponents, registry, depth, renderConfigVersion]);
+  }, [contentChildIds, store, inlineComponents, registry, depth, listLoose, renderConfigVersion]);
 
   const filteredChildren = trailingChildren.filter((child): child is NonNullable<typeof child> => Boolean(child));
   const hasChildren = filteredChildren.length > 0;
@@ -932,7 +1160,6 @@ const ListItemView: React.FC<{
       depth,
       ordered: isOrdered,
       inferredIndex,
-      marker,
       isTask,
       isChecked,
       childIds,
@@ -949,7 +1176,6 @@ const ListItemView: React.FC<{
     depth,
     isOrdered,
     inferredIndex,
-    marker,
     isTask,
     isChecked,
     childIds,
@@ -961,17 +1187,8 @@ const ListItemView: React.FC<{
     block?.isFinalized,
   ]);
 
-  const isLoose = Boolean(node?.props?.loose);
-  const hasPrimaryContent = isTask || segmentChildIds.length > 0 || inline.length > 0;
-  const renderedPrimary = !hasPrimaryContent ? null : isLoose ? (
-    <p className="markdown-paragraph">
-      {isTask ? (
-        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} />
-      ) : null}
-      {isTask ? " " : null}
-      {primaryContent}
-    </p>
-  ) : (
+  const hasPrimaryContent = primaryParagraphId !== undefined || isTask || segmentChildIds.length > 0 || inline.length > 0;
+  const primaryChildren = (
     <>
       {isTask ? (
         <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} />
@@ -980,6 +1197,24 @@ const ListItemView: React.FC<{
       {primaryContent}
     </>
   );
+  let renderedPrimary: React.ReactNode = null;
+  if (hasPrimaryContent) {
+    if (!isLoose) {
+      renderedPrimary = primaryChildren;
+    } else if (primaryParagraphId === undefined || !registry.hasElementFilters()) {
+      renderedPrimary = <p className="markdown-paragraph">{primaryChildren}</p>;
+    } else {
+      const filtered = registry.filterElement(
+        { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
+        { source: "markdown", parentTagName: "li" },
+        () => <p className="markdown-paragraph">{primaryChildren}</p>,
+        () => primaryChildren,
+      );
+      if (filtered !== null && filtered !== undefined) {
+        renderedPrimary = React.isValidElement(filtered) ? filtered : <>{filtered}</>;
+      }
+    }
+  }
 
   const renderChildren = () => (
     <>
@@ -1011,6 +1246,78 @@ const ListItemView: React.FC<{
 });
 
 ListItemView.displayName = "ListItemView";
+
+const ListProjectionTail: React.FC<{
+  store: RendererStore;
+  parentId: string;
+  firstChildIndex: number;
+  firstItemIndex: number;
+}> = React.memo(({ store, parentId, firstChildIndex, firstItemIndex }) => {
+  const chunkEndIndex = firstChildIndex + LIST_PROJECTION_CHUNK_SIZE;
+  const frontier = useListProjectionFrontier(store, parentId, chunkEndIndex);
+  const isSealed = frontier === null;
+  const childIds = store.getChildren(parentId);
+  const childEnd = Math.max(firstChildIndex, Math.min(childIds.length, chunkEndIndex));
+  const chunkItems: React.ReactElement[] = [];
+  let itemIndex = firstItemIndex;
+  for (let index = firstChildIndex; index < childEnd; index += 1) {
+    const childId = childIds[index]!;
+    if (store.getNode(childId)?.type !== "list-item") continue;
+    chunkItems.push(
+      <ListItemView key={childId} store={store} nodeId={childId} index={itemIndex} />,
+    );
+    itemIndex += 1;
+  }
+  const hasMoreChildren = childIds.length > childEnd;
+  const chunkIsFull = childIds.length >= chunkEndIndex;
+  const shouldRenderTail = hasMoreChildren || (chunkIsFull && !isSealed);
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, childEnd - firstChildIndex);
+    recordViewSlots(store, chunkItems.length + (shouldRenderTail ? 1 : 0));
+  }
+  return (
+    <>
+      {chunkItems}
+      {shouldRenderTail ? (
+        <ListProjectionTail
+          key={chunkEndIndex}
+          store={store}
+          parentId={parentId}
+          firstChildIndex={chunkEndIndex}
+          firstItemIndex={itemIndex}
+        />
+      ) : null}
+    </>
+  );
+});
+
+ListProjectionTail.displayName = "ListProjectionTail";
+
+const ListProjectionRoot: React.FC<{
+  store: RendererStore;
+  parentId: string;
+  baseElements: ReadonlyArray<React.ReactElement>;
+  firstDynamicIndex: number;
+  firstDynamicItemIndex: number;
+}> = React.memo(({ store, parentId, baseElements, firstDynamicIndex, firstDynamicItemIndex }) => {
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewSlots(store, 1);
+  }
+  return (
+    <>
+      {baseElements}
+      <ListProjectionTail
+        key={firstDynamicIndex}
+        store={store}
+        parentId={parentId}
+        firstChildIndex={firstDynamicIndex}
+        firstItemIndex={firstDynamicItemIndex}
+      />
+    </>
+  );
+});
+
+ListProjectionRoot.displayName = "ListProjectionRoot";
 
 const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);

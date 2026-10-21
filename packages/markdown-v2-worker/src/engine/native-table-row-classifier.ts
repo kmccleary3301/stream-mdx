@@ -1,7 +1,10 @@
 import type { Input, SyntaxNode, Tree } from "@lezer/common";
 import type { MarkdownParser } from "@lezer/markdown";
+import { nativeTableCellPositions, nativeTableColumnCount, type NativeSourceRange } from "@stream-mdx/core";
 import type { SourceSnapshot } from "@stream-mdx/core";
 import { NativeMarkdownInput } from "./native-markdown-input";
+export { nativeTableCellPositions, nativeTableColumnCount };
+export type { NativeTableCellPosition } from "@stream-mdx/core";
 
 export type NativeTableRowClassifierState = "open" | "closed" | "finalized";
 export type NativeTableExtensionContext = "header-independent" | "source-dependent";
@@ -11,11 +14,6 @@ export interface NativeTableSourceRange {
   readonly to: number;
 }
 
-export interface NativeTableCellPosition {
-  readonly nativeColumnIndex: number;
-  readonly from: number;
-  readonly to: number;
-}
 
 /** A span for an actual native TableCell node; empty cells have no native node. */
 export interface NativeTableCellSpan {
@@ -167,48 +165,10 @@ function isHorizontalWhitespaceLine(
 }
 
 
-/** Native TableCell/TableDelimiter child sequence; no authored pipe splitting is performed. */
-export function nativeTableCellPositions(rowNode: SyntaxNode): NativeTableCellPosition[] {
-  const cells: NativeTableCellPosition[] = [];
-  const cursor = rowNode.cursor();
-  let nativeColumnIndex = 0;
-  let firstDelimiter = true;
-  if (!cursor.firstChild()) return cells;
-  do {
-    if (cursor.type.name === "TableDelimiter") {
-      const isLeadingOuterPipe = firstDelimiter && cursor.from === rowNode.from;
-      firstDelimiter = false;
-      if (!isLeadingOuterPipe) nativeColumnIndex += 1;
-    } else if (cursor.type.name === "TableCell") {
-      cells.push({ nativeColumnIndex, from: cursor.from, to: cursor.to });
-    }
-  } while (cursor.nextSibling());
-  return cells;
-}
-
-/** Native header child positions determine the admitted number of logical columns, including empty cells. */
-export function nativeTableColumnCount(rowNode: SyntaxNode): number {
-  const cursor = rowNode.cursor();
-  let nativeColumnIndex = 0;
-  let firstDelimiter = true;
-  let trailingDelimiter = false;
-  if (!cursor.firstChild()) return 0;
-  do {
-    if (cursor.type.name === "TableDelimiter") {
-      const isLeadingOuterPipe = firstDelimiter && cursor.from === rowNode.from;
-      firstDelimiter = false;
-      if (!isLeadingOuterPipe) nativeColumnIndex += 1;
-      trailingDelimiter = cursor.to === rowNode.to;
-    } else if (cursor.type.name === "TableCell") {
-      trailingDelimiter = false;
-    }
-  } while (cursor.nextSibling());
-  return nativeColumnIndex + (trailingDelimiter ? 0 : 1);
-}
 
 function mappedNativeCells(
   rowNode: SyntaxNode,
-  mapOffset: (offset: number) => number,
+  mapRange: (from: number, to: number) => NativeSourceRange,
 ): NativeTableCellSpan[] {
   const positions = nativeTableCellPositions(rowNode);
   const cells = new Array<NativeTableCellSpan>(positions.length);
@@ -217,20 +177,39 @@ function mappedNativeCells(
     cells[ordinal] = {
       ordinal,
       nativeColumnIndex: position.nativeColumnIndex,
-      sourceRange: { from: mapOffset(position.from), to: mapOffset(position.to) },
+      sourceRange: mapRange(position.from, position.to),
     };
   }
   return cells;
 }
 
-function lineEndingEndAfter(input: Input, end: number): number {
+function lineEndingEndAfter(input: Input, end: number, atEOF = false): number {
   let cursor = end;
   while (cursor < input.length) {
     const unit = input.read(cursor, cursor + 1);
     if (unit === "\n") return cursor + 1;
+    if (unit === "\r") {
+      if (cursor + 1 < input.length && input.read(cursor + 1, cursor + 2) === "\n") return cursor + 2;
+      return cursor + 1 === input.length && !atEOF ? end : cursor + 1;
+    }
     if (unit !== " " && unit !== "\t") break;
     cursor += 1;
   }
+  return end;
+}
+
+function sourceLineEndingEndAfter(source: SourceSnapshot, end: number): number {
+  let cursor = end;
+  while (cursor < source.length) {
+    const unit = source.read(cursor, cursor + 1);
+    if (unit !== " " && unit !== "\t") break;
+    cursor += 1;
+  }
+  const ending = source.read(cursor, cursor + 1);
+  if (ending === "\n") return cursor + 1;
+  if (ending === "\r") return cursor + 1 < source.length && source.read(cursor + 1, cursor + 2) === "\n"
+    ? cursor + 2
+    : cursor + 1;
   return end;
 }
 
@@ -255,7 +234,7 @@ function tableNodeFromTree(
 
 function nativeRowsFromTree(
   tableNode: SyntaxNode,
-  mapOffset: (offset: number) => number,
+  mapRange: (from: number, to: number) => NativeSourceRange,
   firstRowIndex: number,
   input: Input,
   atEOF: boolean,
@@ -266,21 +245,31 @@ function nativeRowsFromTree(
   do {
     if (cursor.type.name !== "TableRow") continue;
     const rowNode = cursor.node;
-    const lineEnd = lineEndingEndAfter(input, rowNode.to);
+    const lineEnd = lineEndingEndAfter(input, rowNode.to, atEOF);
     const hasEnding = lineEnd > rowNode.to;
     const finalAtEOF = atEOF && !hasEnding;
-    const cells = mappedNativeCells(rowNode, mapOffset);
     rows.push({
       node: rowNode,
       row: {
         index: firstRowIndex + rows.length,
-        sourceRange: { from: mapOffset(rowNode.from), to: mapOffset(rowNode.to) },
-        cells,
+        sourceRange: mapRange(rowNode.from, rowNode.to),
+        cells: mappedNativeCells(rowNode, mapRange),
         isProvisional: !hasEnding && !finalAtEOF,
       },
     });
   } while (cursor.nextSibling());
   return rows;
+}
+
+/** Extracts native rows from an existing Table node without reparsing its authored source. */
+export function nativeTableRowsFromNode(
+  tableNode: SyntaxNode,
+  input: Input,
+  mapRange: (from: number, to: number) => NativeSourceRange,
+  atEOF: boolean,
+  firstRowIndex = 0,
+): readonly NativeTableRowSpan[] {
+  return nativeRowsFromTree(tableNode, mapRange, firstRowIndex, input, atEOF).map(({ row }) => row);
 }
 
 export class NativeTableRowClassifier {
@@ -321,6 +310,63 @@ export class NativeTableRowClassifier {
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       this.counters = options.counters;
     }
+  }
+
+  /** Admit rows from the already-configured native Table tree through the same row frontier. */
+  admitNativeRows(
+    source: SourceSnapshot,
+    from: number,
+    to: number,
+    rows: readonly NativeTableRowSpan[],
+    state: NativeTableRowClassifierState,
+    actualInterruptFrom?: number,
+  ): NativeTableRowClassifierChange {
+    this.validateRange(source, from, to);
+    if (this.state !== "open") throw new Error(`Cannot accept source for a ${this.state} native table classifier`);
+    if (actualInterruptFrom !== undefined
+      && (!Number.isSafeInteger(actualInterruptFrom) || actualInterruptFrom < to || actualInterruptFrom > source.length)) {
+      throw new RangeError("Native table interruption must follow the admitted input within the source snapshot");
+    }
+    const admittedState = actualInterruptFrom !== undefined && state === "open" ? "closed" : state;
+    const normalizedRows = admittedState === "open" || rows.every((row) => !row.isProvisional)
+      ? rows
+      : rows.map((row) => row.isProvisional ? { ...row, isProvisional: false } : row);
+    for (let index = 0; index < normalizedRows.length; index += 1) {
+      const row = normalizedRows[index]!;
+      if (row.index !== this.nextRowIndex + index
+        || row.sourceRange.from < from || row.sourceRange.to < row.sourceRange.from || row.sourceRange.to > to
+        || row.cells.some((cell) => cell.sourceRange.from < row.sourceRange.from
+          || cell.sourceRange.to < cell.sourceRange.from
+          || cell.sourceRange.to > row.sourceRange.to)) {
+        throw new RangeError("Native table rows must form an ordered mapped interval inside the accepted source");
+      }
+    }
+    let completeCount = 0;
+    while (completeCount < normalizedRows.length && !normalizedRows[completeCount]!.isProvisional) completeCount += 1;
+    if (completeCount < normalizedRows.length - 1) {
+      throw new Error("Only the final admitted native table row may be provisional");
+    }
+    const completeRows = normalizedRows.slice(0, completeCount);
+    const provisionalRow = normalizedRows[completeCount];
+    const previousRow = completeRows[completeRows.length - 1];
+    this.nextRowIndex += completeRows.length;
+    this.acceptedTo = to;
+    this.state = admittedState;
+    this.interruptFrom = actualInterruptFrom;
+    if (this.extensionContext === "header-independent") {
+      this.tailFrom = admittedState === "open"
+        ? previousRow ? sourceLineEndingEndAfter(source, previousRow.sourceRange.to) : from
+        : to;
+    }
+    return {
+      completeRows,
+      ...(provisionalRow ? { provisionalRow } : {}),
+      fromRow: this.nextRowIndex - completeRows.length,
+      state: this.state,
+      acceptedTo: this.acceptedTo,
+      boundedTailFrom: this.extensionContext === "source-dependent" ? this.tableFrom : this.tailFrom,
+      ...(actualInterruptFrom === undefined ? {} : { actualInterruptFrom, remainderFrom: actualInterruptFrom }),
+    };
   }
 
   /** Accept one contiguous authored append interval. */
@@ -370,19 +416,22 @@ export class NativeTableRowClassifier {
       this.counters?.recordSourceUnitsMaterialized(raw.length, "engine");
     }
 
-    const input = new NativeMarkdownInput(new SyntheticTableTailInput(this.prefix, raw, rawLimit), atEOF);
+    const input = new NativeMarkdownInput(new SyntheticTableTailInput(this.prefix, raw, rawLimit));
     const tree = input.parse(this.parser);
     const { table, hasConfirmedFollowingRoot } = tableNodeFromTree(tree, input, atEOF);
     const prefixLength = this.prefix.length;
     const rows = nativeRowsFromTree(
       table,
-      (offset) => authoredOffset(prefixLength, offset, this.tailFrom, rawLimit),
+      (from, to) => ({
+        from: authoredOffset(prefixLength, from, this.tailFrom, rawLimit),
+        to: authoredOffset(prefixLength, to, this.tailFrom, rawLimit),
+      }),
       priorRowIndex,
       input,
       atEOF,
     );
     const lastTableLineEnd = rows.length > 0 ? rows[rows.length - 1]!.node.to : prefixLength - 1;
-    const nextLineOffset = lineEndingEndAfter(input, lastTableLineEnd);
+    const nextLineOffset = lineEndingEndAfter(input, lastTableLineEnd, atEOF);
     const nextLineInTail = nextLineOffset - prefixLength;
     const blankInterrupt = isHorizontalWhitespaceLine(raw, nextLineInTail, rawLimit);
     const confirmedBlankInterrupt = blankInterrupt !== undefined && (blankInterrupt || atEOF);
@@ -396,12 +445,12 @@ export class NativeTableRowClassifier {
   private classifySourceContext(source: SourceSnapshot, to: number, atEOF: boolean): NativeTableRowClassifierChange {
     const priorRowIndex = this.nextRowIndex;
     const window = new SourceWindowInput(source, this.tableFrom, to);
-    const input = new NativeMarkdownInput(window, atEOF);
+    const input = new NativeMarkdownInput(window);
     const tree = input.parse(this.parser);
     const { table, hasConfirmedFollowingRoot } = tableNodeFromTree(tree, input, atEOF);
     const rows = nativeRowsFromTree(
       table,
-      (offset) => this.tableFrom + offset,
+      (from, to) => ({ from: this.tableFrom + from, to: this.tableFrom + to }),
       0,
       input,
       atEOF,
@@ -417,7 +466,7 @@ export class NativeTableRowClassifier {
       } while (tableChildren.nextSibling());
     }
     const lastTableLineEnd = rows.length > 0 ? rows[rows.length - 1]!.node.to : delimiterEnd;
-    const nextLineOffset = lineEndingEndAfter(input, lastTableLineEnd);
+    const nextLineOffset = lineEndingEndAfter(input, lastTableLineEnd, atEOF);
     const text = input.read(0, input.length);
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       this.counters?.recordSourceUnitsMaterialized(text.length, "engine");
@@ -477,7 +526,7 @@ export class NativeTableRowClassifier {
     } else if (this.extensionContext === "header-independent" && completeRows.length > 0) {
       const lastComplete = rows[parsedCompleteRowCount - 1];
       if (!lastComplete) throw new Error("Native table completed-row index invariant violated");
-      const lineEnd = lineEndingEndAfter(input, lastComplete.node.to);
+      const lineEnd = lineEndingEndAfter(input, lastComplete.node.to, atEOF);
       this.tailFrom = authoredOffset(
         prefixLength,
         lineEnd,

@@ -1,10 +1,15 @@
 import type { SyntaxNode, Tree } from "@lezer/common";
 import type { MarkdownParser } from "@lezer/markdown";
 import {
+  createNativeTableHeaderRecordFromMapping,
   freezeTableBlockSnapshot,
   generateBlockId,
+  nativeTableParts,
   type AppendSourceDocument,
   type InlineParser,
+  type NativeSourceMapping,
+  type NativeSourceRange,
+  type NodePath,
   type NodeSnapshot,
   type Patch,
   type SourceSnapshot,
@@ -12,6 +17,7 @@ import {
 } from "@stream-mdx/core";
 import {
   nativeTableColumnCount,
+  nativeTableRowsFromNode,
   type NativeTableExtensionContext,
 } from "./native-table-row-classifier";
 import { createNativeTableHeaderRecord } from "./native-table-projection";
@@ -20,6 +26,7 @@ import {
   type RootTableSemanticChange,
   type RootTableSourceChange,
   type RootTableSourceOwnerCounters,
+  type RootTableSourceOwnerState,
 } from "./root-table-owner";
 
 export interface RootTablePatchChange {
@@ -30,6 +37,22 @@ export interface RootTablePatchChange {
   readonly sourceAppend: string;
   /** Parser-only continuation for the mutable root tail; omitted from semantic patches. */
   readonly rootResumeFrom?: number;
+}
+
+export interface NativeNestedTableOwnerOptions {
+  readonly id: string;
+  readonly containerId: string;
+  readonly node: SyntaxNode;
+  readonly source: AppendSourceDocument;
+  readonly generation: number;
+  readonly parser: MarkdownParser;
+  readonly inlineParser: InlineParser;
+  readonly mapping: NativeSourceMapping;
+  readonly extensionContext: NativeTableExtensionContext;
+  readonly state?: RootTableSourceOwnerState;
+  readonly finalizing?: boolean;
+  readonly actualInterruptFrom?: number;
+  readonly counters?: RootTableSourceOwnerCounters;
 }
 
 function delimiterLineBoundary(source: SourceSnapshot, lineEnd: number, finalizing: boolean): number | undefined {
@@ -49,16 +72,81 @@ function delimiterLineBoundary(source: SourceSnapshot, lineEnd: number, finalizi
   return finalizing ? cursor + 1 : undefined;
 }
 
-function tableParts(table: SyntaxNode): { header: SyntaxNode; delimiter: SyntaxNode } | undefined {
-  let header: SyntaxNode | undefined;
-  let delimiter: SyntaxNode | undefined;
-  const cursor = table.cursor();
-  if (!cursor.firstChild()) return undefined;
-  do {
-    if (cursor.type.name === "TableHeader") header = cursor.node;
-    else if (cursor.type.name === "TableDelimiter") delimiter = cursor.node;
-  } while (cursor.nextSibling());
-  return header && delimiter ? { header, delimiter } : undefined;
+function mappedNativeRange(mapping: NativeSourceMapping, from: number, to: number): NativeSourceRange {
+  return mapping.mapRange?.(from, to) ?? { from: mapping.mapOffset(from), to: mapping.mapOffset(to) };
+}
+
+
+/** Admit a table already present in the owning parser's native container tree. */
+export function createNativeNestedTableOwner(
+  options: NativeNestedTableOwnerOptions,
+): RootTableSourceOwner | undefined {
+  if (options.node.type.name !== "Table") return undefined;
+  const parts = nativeTableParts(options.node);
+  if (!parts) return undefined;
+  const source = options.source.snapshot();
+  const tableRange = mappedNativeRange(options.mapping, options.node.from, options.node.to);
+  const delimiterRange = mappedNativeRange(options.mapping, parts.delimiter.from, parts.delimiter.to);
+  const finalizing = options.finalizing === true;
+  const bodyFrom = delimiterLineBoundary(source, delimiterRange.to, finalizing);
+  if (bodyFrom === undefined) return undefined;
+  const state = options.state ?? (
+    finalizing ? "finalized" : options.node.nextSibling || options.actualInterruptFrom !== undefined ? "closed" : "open"
+  );
+  const acceptedTo = delimiterLineBoundary(source, tableRange.to, true) ?? tableRange.to;
+  if (acceptedTo < bodyFrom || acceptedTo > source.length) {
+    throw new RangeError("Native nested table input must map inside the canonical source document");
+  }
+  const id = options.id;
+  const initialCellAttempts = new Map<string, ReadonlySet<string>>();
+  const header = createNativeTableHeaderRecordFromMapping(
+    parts.header,
+    parts.delimiter,
+    id,
+    options.mapping,
+    options.inlineParser,
+    (cellId, labels, sourceUnits) => {
+      initialCellAttempts.set(cellId, new Set(labels));
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        options.counters?.recordInlineSourceUnits(sourceUnits, "engine");
+      }
+    },
+  );
+  const columnCount = Math.max(1, nativeTableColumnCount(parts.header));
+  const owner = new RootTableSourceOwner({
+    id,
+    containerId: options.containerId,
+    generation: options.generation,
+    source: options.source,
+    parser: options.parser,
+    inlineParser: options.inlineParser,
+    opening: {
+      from: tableRange.from,
+      bodyFrom,
+      sourceRangeEnd: delimiterRange.to,
+      header,
+      columnCount,
+      extensionContext: options.extensionContext,
+    },
+    initialCellAttempts,
+    ...(typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && options.counters
+      ? { counters: options.counters }
+      : {}),
+  });
+  const rows = nativeTableRowsFromNode(
+    options.node,
+    options.mapping.input,
+    (from, to) => mappedNativeRange(options.mapping, from, to),
+    state !== "open",
+  );
+  owner.admitNativeRows(bodyFrom, acceptedTo, rows, state, options.actualInterruptFrom);
+  return owner;
+}
+
+function rootTableOwnerTarget(owner: RootTableSourceOwner): NodePath {
+  return owner.containerId
+    ? { blockId: owner.containerId, nodeId: owner.id }
+    : { blockId: owner.id };
 }
 
 /** Build owners only after native TableHeader/TableDelimiter admission and a stable delimiter terminator. */
@@ -80,7 +168,7 @@ export function createRootTableOwners(
   do {
     if (cursor.type.name !== "Table") continue;
     const table = cursor.node;
-    const parts = tableParts(table);
+    const parts = nativeTableParts(table);
     if (!parts) continue;
     const tableFrom = table.from + sourceOffset;
     const delimiterEnd = parts.delimiter.to + sourceOffset;
@@ -201,7 +289,7 @@ export function rootTableAppendPatch(
   // Serialize semantic table state only; the resume coordinate controls native parsing, not the patch.
   return {
     op: "appendTableRows",
-    at: { blockId: owner.id },
+    at: rootTableOwnerTarget(owner),
     table: publishedTableSource(change.table),
     expectedRevision: change.expectedRevision,
     fromRow: change.fromRow,
@@ -218,7 +306,7 @@ export function rootTableSemanticPatch(
   if (!change) return null;
   return {
     op: "updateTableRows",
-    at: { blockId: owner.id },
+    at: rootTableOwnerTarget(owner),
     tableOwnerId: change.tableOwnerId,
     generation: change.generation,
     expectedRevision: change.expectedRevision,

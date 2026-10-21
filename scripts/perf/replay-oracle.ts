@@ -1,9 +1,8 @@
 #!/usr/bin/env tsx
-import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 
 /**
- * P2 Root-Code Replay Oracle
- * Preserves the frozen P1 dense replay on the no-flag path while exposing focused P2 proofs.
+ * P2 Streaming Replay Oracle
+ * Verifies the current dense semantic replay and P2 source-aware scaling paths.
  * Runs in-process under Node (>=20).
  *
  * Imports directly from ./diagnostic-dist/index.mjs to execute with __STREAM_MDX_COUNTERS__ = true.
@@ -24,25 +23,17 @@ import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
  *   npx tsx scripts/perf/replay-oracle.ts --section code-scaling --json /tmp/stream-mdx-p2-code-scaling.json
  *   node --import tsx scripts/perf/replay-oracle.ts --section table-scaling --json /tmp/stream-mdx-p2-table-scaling.json
  *
- * The no-flag command retains the complete P1 fixture matrix and aggregate path.
- * Section selection runs only the named proof; engine-fixture defaults to the root-code fixture.
+ * The aggregate command runs the complete dense replay and every current P2 scaling family.
+ * Section selection focuses only the named proof; engine-fixture defaults to the root-code fixture.
  */
 
 import fs from "node:fs";
+import { isDeepStrictEqual } from "node:util";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import { createHighlighter, type Highlighter } from "shiki";
 
-import type {
-  Block,
-  CodeBlockSourceMetadata,
-  CodeLineRecord,
-  FootnoteItem,
-  InlineNode,
-  Patch,
-  WorkerIn,
-  WorkerOut,
-} from "@stream-mdx/core";
-import { blocksStructurallyEqual, cloneBlock, PATCH_ROOT_ID } from "@stream-mdx/core";
+import type { Block, WorkerOut } from "@stream-mdx/core";
+import { cloneBlock } from "@stream-mdx/core";
 import type { MarkdownEngineOptions } from "../../packages/markdown-v2-worker/src/engine/types";
 import type { RendererStore, RendererStoreOptions } from "../../packages/markdown-v2-react/src/renderer/store";
 import {
@@ -52,39 +43,26 @@ import {
 } from "./diagnostic-dist/index.mjs";
 
 import { projectFootnotePublication, publishedFootnoteLabels } from "../../packages/markdown-v2-worker/__tests__/footnote-publication";
-import { DENSE_FIXTURES, type DenseFixture, type ChunkingPlan, generateChunkingPlans } from "./replay-fixtures";
+import { DENSE_FIXTURES, type DenseFixture, generateChunkingPlans } from "./replay-fixtures";
 import { runGenerationAndResetInvariants, runLiveReactLayer } from "./lifecycle-invariants";
-import {
-  runScalingDiagnostics,
-  type DivergenceReport,
-  type ScalingMeasurement,
-} from "./scaling-diagnostics";
-import {
-  getCodeBlockLang,
-  verifyAuthoredCodeExpectations,
-  verifyCompletedLineTokens,
-} from "./replay-code-parity";
+import { runScalingDiagnostics, type ScalingMeasurement } from "./scaling-diagnostics";
+import { verifyCompletedLineTokens } from "./replay-code-parity";
 
 import { verifyRenderedExpectations } from "./replay-semantic-expectations";
-// --- Configuration & Constants ---
+import {
+  blocksSemanticallyEqual,
+  describeBlockSemanticDifference,
+  describeProvisionalTailSemanticDifference,
+  normalizeSemanticDtoValue,
+  provisionalTailBlocksSemanticallyEqual,
+  semanticBlockProjection,
+  type SemanticBlockComparison,
+} from "./semantic-block-comparison";
+import { PARITY_INIT, runRootCodeInitializationTrace } from "./replay-code-initialization";
+import { capturePriorCodeOwners, verifyCodeWirePatches } from "./replay-code-parity";
+import { collectBlocksRecursively, verifyIndependentExpectations } from "./replay-semantic-expectations";
+import { recordDivergence, type DivergenceReport } from "./replay-fixtures";
 
-const PARITY_INIT: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
-prewarmLangs: ["typescript", "javascript", "markdown"],
-docPlugins: {
-  footnotes: true,
-  html: true,
-  mdx: false,
-  tables: true,
-  callouts: false,
-  math: true,
-  formatAnticipation: { inline: true, mathInline: true, mathBlock: true, html: true, mdx: false, regex: false },
-  codeHighlighting: "incremental",
-  outputMode: "both",
-  emitHighlightTokens: true,
-  emitDiffBlocks: false,
-  themes: { dark: "github-dark", light: "github-light" },
-},
-mdx: { compileMode: "server" }, };
 
 export interface OracleSummary {
   passed: boolean;
@@ -102,283 +80,170 @@ function delay(ms: number): Promise<void> {
 }
 
 function blockSignature(block: Block): string {
-  return JSON.stringify({
-    id: block.id,
-    type: block.type,
-    isFinalized: block.isFinalized,
-    raw: block.payload.raw ?? "",
-    meta: block.payload.meta ?? null,
-  });
+  return JSON.stringify(block);
+}
+interface SemanticStoreNodeSnapshot {
+  readonly id: string;
+  readonly type: string;
+  readonly range: { readonly from: number; readonly to: number } | undefined;
+  readonly props: unknown;
+  readonly meta: unknown;
+  readonly block: SemanticBlockComparison | null;
+  readonly children: SemanticStoreNode[];
+}
+type SemanticStoreNode = SemanticStoreNodeSnapshot | { readonly id: string; readonly missing: true };
+interface SemanticStoreForest {
+  roots: Array<{ id: string; value: SemanticStoreNode }>;
+  missingNodeIds: string[];
+  missingCanonicalBlockIds: string[];
 }
 
-function recordDivergence(
-  divergences: DivergenceReport[],
-  fixture: DenseFixture,
-  plan: ChunkingPlan,
-  stage: string,
-  tx: number,
-  frontier: number,
-  message: string,
-): void {
-  divergences.push({
-    fixtureId: fixture.id,
-    planMode: plan.mode,
-    seed: plan.seed,
-    stage,
-    commitIndex: tx,
-    frontier,
-    sourcePrefix: fixture.source.slice(0, Math.min(frontier, 80)),
-    message,
-  });
-}
-function diffBlockFields(curr: Block, other: Block): string {
-  const diffs: string[] = [];
-  if (curr.type !== other.type) {
-    diffs.push(`type (${curr.type} vs ${other.type})`);
-  }
-  if (curr.isFinalized !== other.isFinalized) {
-    diffs.push(`isFinalized (${curr.isFinalized} vs ${other.isFinalized})`);
-  }
-  if ((curr.payload.raw ?? "") !== (other.payload.raw ?? "")) {
-    diffs.push(`raw (len ${(curr.payload.raw ?? "").length} vs ${(other.payload.raw ?? "").length})`);
-  }
-  const currInlineStr = JSON.stringify(curr.payload.inline ?? []);
-  const otherInlineStr = JSON.stringify(other.payload.inline ?? []);
-  if (currInlineStr !== otherInlineStr) {
-    diffs.push(`inline mismatch (curr=${currInlineStr.slice(0, 50)} other=${otherInlineStr.slice(0, 50)})`);
-  }
-  const currMetaStr = JSON.stringify(curr.payload.meta ?? null);
-  const otherMetaStr = JSON.stringify(other.payload.meta ?? null);
-  if (currMetaStr !== otherMetaStr) {
-    const currKeys = Object.keys((curr.payload.meta as Record<string, unknown>) ?? {});
-    const otherKeys = Object.keys((other.payload.meta as Record<string, unknown>) ?? {});
-    const diffKeys = new Set(
-      [...currKeys, ...otherKeys].filter(
-        (k) =>
-          JSON.stringify((curr.payload.meta as Record<string, unknown>)?.[k]) !==
-          JSON.stringify((other.payload.meta as Record<string, unknown>)?.[k]),
-      ),
-    );
-    diffs.push(`meta mismatch on keys [${Array.from(diffKeys).join(", ")}]`);
-  }
-  return diffs.length > 0 ? diffs.join("; ") : "payload structural difference";
-}
-interface PriorCodeOwnerState {
-  readonly source: CodeBlockSourceMetadata;
-  readonly completedRows: ReadonlyArray<CodeLineRecord>;
-}
-
-interface CodeWireFailure {
-  readonly stage: "wire:appendCode" | "wire:decorateCode";
-  readonly message: string;
-}
-
-function capturePriorCodeOwners(
-  patches: ReadonlyArray<Patch>,
+function captureSemanticStoreForest(
   store: RendererStore,
-): Map<string, PriorCodeOwnerState> {
-  const prior = new Map<string, PriorCodeOwnerState>();
-  for (const patch of patches) {
-    if (patch.op !== "appendCode" || prior.has(patch.code.codeOwnerId)) continue;
-    const view = store.getCodeBlock(patch.code.codeOwnerId);
-    if (!view) continue;
-    prior.set(patch.code.codeOwnerId, {
-      source: view.source,
-      completedRows: store.getCodeLines(patch.code.codeOwnerId, 0, view.source.completeLineCount),
-    });
-  }
-  return prior;
+  blocks: ReadonlyArray<Block>,
+  publishedLabels: Set<string>,
+): SemanticStoreForest {
+  const missingNodeIds: string[] = [];
+  const missingCanonicalBlockIds: string[] = [];
+  const canonicalBlocks = new Map(
+    collectBlocksRecursively(blocks)
+      .filter((block) => block.type === "code" || block.type === "table" || block.type === "list")
+      .map((block) => [block.id, block] as const),
+  );
+  const visit = (id: string): SemanticStoreNode => {
+    const node = store.getNode(id);
+    if (!node) {
+      missingNodeIds.push(id);
+      return { id, missing: true };
+    }
+    const usesTypedBlockProjection = node.type === "code" || node.type === "table";
+    const semanticProps = { ...node.props };
+    // List depth is a store view cache; rendering derives it from the compared child hierarchy.
+    if (node.type === "list" || node.type === "list-item") {
+      delete semanticProps.depth;
+    }
+    // Missing and own-undefined optional built-in fields have the same native meaning.
+    if ((node.type === "list" || node.type === "list-item") && semanticProps.start === undefined) delete semanticProps.start;
+    if (node.type === "list-item") {
+      if (semanticProps.task === undefined) delete semanticProps.task;
+      if (semanticProps.checked === undefined) delete semanticProps.checked;
+    }
+    const hasCanonicalListLayout = node.type === "list" && typeof semanticProps.loose === "boolean";
+    const usesCanonicalBlockProjection = usesTypedBlockProjection || hasCanonicalListLayout;
+    const coldBlock = semanticProps.block;
+    // Generic code-node block DTOs are stale mirrors; code meaning comes from the canonical exported block.
+    if (node.type === "code") {
+      delete semanticProps.block;
+      // Generated pre/code wrapper attributes differ between native and cold HTML projections.
+      // Source semantics and ready token styles are checked through their public code owners.
+      delete semanticProps.preAttrs;
+      delete semanticProps.codeAttrs;
+    } else if (
+      coldBlock !== null && typeof coldBlock === "object" &&
+      "id" in coldBlock && coldBlock.id === node.id &&
+      "type" in coldBlock && coldBlock.type === node.type &&
+      "payload" in coldBlock && coldBlock.payload !== null && typeof coldBlock.payload === "object" &&
+      "raw" in coldBlock.payload && typeof coldBlock.payload.raw === "string"
+    ) {
+      // The cold DTO bridge is consumed on update; its meaning is compared through node.block below.
+      delete semanticProps.block;
+    }
+    const canonicalBlock = usesCanonicalBlockProjection ? canonicalBlocks.get(id) : node.block;
+    if (usesCanonicalBlockProjection && !canonicalBlock) missingCanonicalBlockIds.push(id);
+    // Block HTML reads its canonical Block, not setHTML's duplicate transport props.
+    if (node.type === "html" && canonicalBlock?.type === "html" && canonicalBlock.id === node.id) {
+      delete semanticProps.html;
+      delete semanticProps.policy;
+      delete semanticProps.meta;
+    }
+    const isFinalized = canonicalBlock?.isFinalized ?? true;
+    const props = projectFootnotePublication({
+      id: node.id,
+      type: node.type,
+      isFinalized,
+      payload: { raw: "", meta: semanticProps },
+    }, publishedLabels).payload.meta;
+    const meta = node.type === "code"
+      ? undefined
+      : projectFootnotePublication({
+          id: node.id,
+          type: node.type,
+          isFinalized,
+          payload: { raw: "", meta: node.meta },
+        }, publishedLabels).payload.meta;
+    const semanticMeta = normalizeSemanticDtoValue(meta);
+    // Native list props and canonical exports own layout; this metadata is an initial snapshot mirror.
+    if (hasCanonicalListLayout && semanticMeta && typeof semanticMeta === "object" && !Array.isArray(semanticMeta)) {
+      delete (semanticMeta as Record<string, unknown>).loose;
+    }
+    return {
+      id: node.id,
+      type: node.type,
+      // Typed code/table source and rows come from owned exports, not cached generic range/block values.
+      range: usesTypedBlockProjection ? undefined : node.range ? { ...node.range } : undefined,
+      props: normalizeSemanticDtoValue(props),
+      meta: semanticMeta,
+      block: canonicalBlock
+        ? semanticBlockProjection(projectFootnotePublication(canonicalBlock, publishedLabels))
+        : null,
+      // Native code lines/table rows live outside generic children and are compared through their owned exports.
+      children: usesTypedBlockProjection ? [] : store.getChildren(id).map(visit),
+    };
+  };
+  return {
+    roots: blocks.map((block) => ({ id: block.id, value: visit(block.id) })),
+    missingNodeIds,
+    missingCanonicalBlockIds,
+  };
 }
 
-function verifyCodeWirePatches(
-  patches: ReadonlyArray<Patch>,
-  prior: ReadonlyMap<string, PriorCodeOwnerState>,
-  store: RendererStore,
-  authoredSource: string,
-  initializedGeneration: number,
-): CodeWireFailure[] {
-  const failures: CodeWireFailure[] = [];
-  for (const patch of patches) {
-    if (patch.op === "appendCode") {
-      const ownerId = patch.code.codeOwnerId;
-      const before = prior.get(ownerId);
-      if (!before) {
-        failures.push({
-          stage: "wire:appendCode",
-          message: `appendCode for ${ownerId} has no previously initialized owner state`,
-        });
-        continue;
-      }
-      if (patch.meta?.kind !== "semantic" || patch.at.blockId !== ownerId) {
-        failures.push({
-          stage: "wire:appendCode",
-          message: `appendCode for ${ownerId} is not a semantic patch addressed to its owner`,
-        });
-      }
-      if (
-        patch.expectedRevision !== before.source.revision ||
-        patch.code.revision !== before.source.revision + 1 ||
-        patch.code.codeOwnerId !== ownerId ||
-        patch.code.generation !== before.source.generation ||
-        patch.code.generation !== initializedGeneration ||
-        patch.code.sourceRange.from !== before.source.sourceRange.from
-      ) {
-        failures.push({
-          stage: "wire:appendCode",
-          message: `appendCode owner/revision/generation envelope mismatch for ${ownerId}`,
-        });
-      }
-      const sourceFrom = before.source.sourceRange.to;
-      const sourceTo = patch.code.sourceRange.to;
-      if (
-        sourceFrom < 0 ||
-        sourceTo < sourceFrom ||
-        sourceTo > authoredSource.length ||
-        patch.sourceAppend !== authoredSource.slice(sourceFrom, sourceTo) ||
-        sourceFrom + patch.sourceAppend.length !== sourceTo
-      ) {
-        failures.push({
-          stage: "wire:appendCode",
-          message: `appendCode sourceAppend for ${ownerId} differs from its exact authored source interval`,
-        });
-      }
-      if (
-        patch.fromLine !== before.source.completeLineCount ||
-        patch.code.completeLineCount < before.source.completeLineCount ||
-        patch.code.lineCount !== patch.fromLine + patch.lines.length
-      ) {
-        failures.push({
-          stage: "wire:appendCode",
-          message: `appendCode for ${ownerId} did not carry only its bounded changed line tail`,
-        });
-      }
-      const current = store.getCodeBlock(ownerId);
-      if (!current) {
-        failures.push({ stage: "wire:appendCode", message: `appendCode owner ${ownerId} is absent after apply` });
-        continue;
-      }
-      const changedRows = store.getCodeLines(ownerId, patch.fromLine, patch.code.lineCount);
-      if (changedRows.length !== patch.lines.length) {
-        failures.push({
-          stage: "wire:appendCode",
-          message: `appendCode for ${ownerId} installed ${changedRows.length} changed rows for ${patch.lines.length} records`,
-        });
-      } else {
-        for (let offset = 0; offset < patch.lines.length; offset += 1) {
-          const sent = patch.lines[offset];
-          const stored = changedRows[offset];
-          if (
-            !sent ||
-            !stored ||
-            sent.id !== stored.id ||
-            sent.index !== stored.index ||
-            sent.text !== stored.text ||
-            sent.ending !== stored.ending ||
-            sent.sourceRange.from !== stored.sourceRange.from ||
-            sent.sourceRange.to !== stored.sourceRange.to ||
-            sent.sourceRevision !== stored.sourceRevision ||
-            sent.isProvisional !== stored.isProvisional ||
-            stored.index !== patch.fromLine + offset
-          ) {
-            failures.push({
-              stage: "wire:appendCode",
-              message: `appendCode changed record ${offset} for ${ownerId} differs from the bounded prepared store row`,
-            });
-            break;
-          }
-        }
-      }
-      const stableRows = store.getCodeLines(ownerId, 0, before.source.completeLineCount);
-      if (
-        stableRows.length !== before.completedRows.length ||
-        stableRows.some((row, index) => row !== before.completedRows[index])
-      ) {
-        failures.push({
-          stage: "wire:appendCode",
-          message: `appendCode for ${ownerId} replaced a previously completed source row`,
-        });
-      }
-    } else if (patch.op === "decorateCode") {
-      const ownerId = patch.codeOwnerId;
-      const current = store.getCodeBlock(ownerId);
-      if (
-        patch.meta?.kind !== "enrichment" ||
-        patch.at.blockId !== ownerId ||
-        !current ||
-        patch.generation !== current.source.generation ||
-        patch.generation !== initializedGeneration ||
-        patch.configurationRevision !== current.configurationRevision
-      ) {
-        failures.push({
-          stage: "wire:decorateCode",
-          message: `decorateCode enrichment owner/generation/configuration envelope mismatch for ${ownerId}`,
-        });
-        continue;
-      }
-      for (const decoration of patch.decorations) {
-        const rows = store.getCodeLines(ownerId, decoration.index, decoration.index + 1);
-        const row = rows[0];
-        const identityMatches =
-          row !== undefined &&
-          row.id === decoration.lineId &&
-          row.sourceRevision === decoration.sourceRevision &&
-          decoration.configurationRevision === patch.configurationRevision;
-        const storedDecorationMatches =
-          decoration.tokens === null
-            ? row?.decoration === undefined
-            : row?.decoration?.lineId === decoration.lineId &&
-              row?.decoration?.sourceRevision === decoration.sourceRevision &&
-              row?.decoration?.configurationRevision === patch.configurationRevision;
-        if (!identityMatches || !storedDecorationMatches) {
-          failures.push({
-            stage: "wire:decorateCode",
-            message: `decorateCode row identity/source revision/configuration mismatch for ${ownerId} line ${decoration.index}`,
-          });
-          break;
-        }
-      }
-    }
-  }
-  return failures;
+function blockSourceMatches(block: Block, source: string): boolean {
+  const range = block.payload.range;
+  return range !== undefined &&
+    Number.isSafeInteger(range.from) &&
+    Number.isSafeInteger(range.to) &&
+    range.from >= 0 &&
+    range.to >= range.from &&
+    range.to <= source.length &&
+    block.payload.raw === source.slice(range.from, range.to);
 }
+function semanticTreeDifference(
+  current: SemanticStoreForest,
+  baseline: SemanticStoreForest,
+  index: number,
+  openTailLifecycleDifference = false,
+): string | undefined {
+  if (current.missingNodeIds.length > 0 || baseline.missingNodeIds.length > 0) {
+    return `missing public store nodes (current=${current.missingNodeIds.join(",")} baseline=${baseline.missingNodeIds.join(",")})`;
+  }
+  if (current.missingCanonicalBlockIds.length > 0 || baseline.missingCanonicalBlockIds.length > 0) {
+    return `missing canonical code/table/list block exports (current=${current.missingCanonicalBlockIds.join(",")} baseline=${baseline.missingCanonicalBlockIds.join(",")})`;
+  }
+  const currentRoot = current.roots[index];
+  const baselineRoot = baseline.roots[index];
+  if (!currentRoot || !baselineRoot) return "semantic store root is missing";
+  if (currentRoot.id !== baselineRoot.id) {
+    return `semantic store root ID mismatch (${currentRoot.id} vs ${baselineRoot.id})`;
+  }
+  if ("missing" in currentRoot.value || "missing" in baselineRoot.value) return "semantic store root is missing";
 
-function collectBlocksRecursively(blocks: ReadonlyArray<Block>): Block[] {
-  const result: Block[] = [];
-  const seen = new Set<string>();
-
-  function visitBlock(b: Block) {
-    if (seen.has(b.id)) return;
-    seen.add(b.id);
-    result.push(b);
-
-    const meta = b.payload.meta as Record<string, unknown> | undefined;
-    const prepared = meta?.preparedNested as
-      | { children?: Array<{ props?: { block?: Block }; type?: string; children?: unknown[] }> }
-      | undefined;
-    if (prepared?.children) {
-      for (const child of prepared.children) {
-        visitNode(child);
+  // Only the open tail root's duplicated block lifecycle bit can differ; compared props,
+  // canonical block meaning, non-code metadata/range and every descendant remain strict.
+  const currentValue = openTailLifecycleDifference
+    ? {
+        ...currentRoot.value,
+        block: currentRoot.value.block ? { ...currentRoot.value.block, isFinalized: false } : null,
       }
-    }
-  }
-
-  function visitNode(node: { props?: { block?: Block }; type?: string; children?: unknown[] }) {
-    if (node.props?.block) {
-      visitBlock(node.props.block);
-    }
-    if (Array.isArray(node.children)) {
-      for (const child of node.children) {
-        if (child && typeof child === "object") {
-          visitNode(child as { props?: { block?: Block }; type?: string; children?: unknown[] });
-        }
+    : currentRoot.value;
+  const baselineValue = openTailLifecycleDifference
+    ? {
+        ...baselineRoot.value,
+        block: baselineRoot.value.block ? { ...baselineRoot.value.block, isFinalized: false } : null,
       }
-    }
-  }
-
-  for (const b of blocks) {
-    visitBlock(b);
-  }
-  return result;
+    : baselineRoot.value;
+  return isDeepStrictEqual(currentValue, baselineValue)
+    ? undefined
+    : "nested semantic store topology or payload differs";
 }
 
 
@@ -399,7 +264,10 @@ async function getHighlighter(): Promise<Highlighter> {
 
 // --- Cold Parse Helpers ---
 
-async function coldNonFinalizingParse(prefixSource: string): Promise<ReadonlyArray<Block>> {
+/** Fresh INIT + APPEND only: this is the open-prefix oracle and deliberately sends no FINALIZE. */
+async function coldNonFinalizingParse(
+  prefixSource: string,
+): Promise<{ blocks: ReadonlyArray<Block>; store: RendererStore }> {
   const store = createRendererStore();
   const engine = new MarkdownEngine({
     post: (msg: WorkerOut) => {
@@ -415,13 +283,16 @@ async function coldNonFinalizingParse(prefixSource: string): Promise<ReadonlyArr
     if (prefixSource.length > 0) {
       await engine.handle({ type: "APPEND", text: prefixSource });
     }
-    return store.getBlocks();
+    return { blocks: store.getBlocks(), store };
   } finally {
     engine.dispose();
   }
 }
 
-async function coldFinalizeParse(fullSource: string): Promise<ReadonlyArray<Block>> {
+/** Full-source canonical baseline: unlike the prefix oracle, this always sends FINALIZE. */
+async function coldFinalizeParse(
+  fullSource: string,
+): Promise<{ blocks: ReadonlyArray<Block>; store: RendererStore }> {
   const store = createRendererStore();
   const engine = new MarkdownEngine({
     post: (msg: WorkerOut) => {
@@ -438,142 +309,13 @@ async function coldFinalizeParse(fullSource: string): Promise<ReadonlyArray<Bloc
       await engine.handle({ type: "APPEND", text: fullSource });
     }
     await engine.handle({ type: "FINALIZE" });
-    return store.getBlocks();
+    return { blocks: store.getBlocks(), store };
   } finally {
     engine.dispose();
   }
 }
 
 
-
-// --- Independent CommonMark/GFM Expectations ---
-
-function extractInlineText(node: InlineNode): string {
-  if (node.kind === "text") return node.text;
-  if ("children" in node && Array.isArray(node.children)) {
-    const children = node.children;
-    return children.map(extractInlineText).join("");
-  }
-  if ("raw" in node && typeof node.raw === "string") {
-    return node.raw;
-  }
-  return "";
-}
-
-function extractFootnoteItemText(item: FootnoteItem): string {
-  if (!Array.isArray(item.inlines)) return "";
-  return item.inlines.map(extractInlineText).join("");
-}
-
-function verifyIndependentExpectations(
-  blocks: ReadonlyArray<Block>,
-  fixture: DenseFixture,
-  store: RendererStore,
-): { ok: boolean; message?: string } {
-  const exp = fixture.expectations;
-  if (!exp) return { ok: true };
-
-  const allBlocks = collectBlocksRecursively(blocks);
-  const codeBlocks = allBlocks.filter((b) => b.type === "code");
-  const listBlock = allBlocks.find((b) => b.type === "list");
-
-  if (exp.codeBlocks) {
-    const authoredResult = verifyAuthoredCodeExpectations(fixture.source, exp.codeBlocks);
-    if (!authoredResult.ok) return authoredResult;
-
-    for (const expCb of exp.codeBlocks) {
-      const match = codeBlocks.find((cb) => {
-        const meta = cb.payload.meta as Record<string, unknown> | undefined;
-        return getCodeBlockLang(meta) === expCb.lang;
-      });
-      if (!match) {
-        return {
-          ok: false,
-          message: `Missing expected code block with lang='${expCb.lang}' (observed code langs: [${codeBlocks
-            .map((codeBlock) => getCodeBlockLang(codeBlock.payload.meta as Record<string, unknown> | undefined))
-            .filter(Boolean)
-            .join(", ")}])`,
-        };
-      }
-
-      const codeView = store.getCodeBlock(match.id);
-      if (!codeView) {
-        return { ok: false, message: `Missing prepared code owner state for block ${match.id}` };
-      }
-      if (codeView.source.lineCount !== expCb.codeLines.length) {
-        return {
-          ok: false,
-          message: `Code block lang='${expCb.lang}' line count mismatch: actual=${codeView.source.lineCount} expected=${expCb.codeLines.length}`,
-        };
-      }
-      const actualLines = store.getCodeLines(match.id, 0, codeView.source.lineCount);
-      if (actualLines.length !== expCb.codeLines.length) {
-        return {
-          ok: false,
-          message: `Bounded prepared code read returned ${actualLines.length} rows for lang='${expCb.lang}'; expected=${expCb.codeLines.length}`,
-        };
-      }
-
-      for (let lineIndex = 0; lineIndex < expCb.codeLines.length; lineIndex += 1) {
-        const expectedLine = expCb.codeLines[lineIndex];
-        const actualLine = actualLines[lineIndex];
-        if (actualLine?.text !== expectedLine) {
-          return {
-            ok: false,
-            message: `Code block lang='${expCb.lang}' line ${lineIndex} mismatch: actual=${JSON.stringify(actualLine?.text)} expected=${JSON.stringify(expectedLine)}`,
-          };
-        }
-      }
-    }
-  }
-
-
-  if (exp.footnotes) {
-    const fnFooter = allBlocks.find((b) => b.type === "footnotes");
-    if (!fnFooter) {
-      return { ok: false, message: "Missing expected footnotes footer block" };
-    }
-    const items = (fnFooter.payload.meta?.items as FootnoteItem[] | undefined) ?? [];
-    for (const expFn of exp.footnotes) {
-      const item = items.find((it) => it.label === expFn.label);
-      if (!item) {
-        return { ok: false, message: `Footnotes footer missing definition for '${expFn.label}'` };
-      }
-      if (item.number !== expFn.number) {
-        return {
-          ok: false,
-          message: `Footnote '${expFn.label}' expected number ${expFn.number} but got ${item.number}`,
-        };
-      }
-      if (typeof item.refCount === "number" && item.refCount < 1) {
-        return {
-          ok: false,
-          message: `Footnote '${expFn.label}' has zero occurrence count`,
-        };
-      }
-      if (expFn.textSnippet) {
-        const itemText = extractFootnoteItemText(item);
-        if (!itemText.includes(expFn.textSnippet)) {
-          return {
-            ok: false,
-            message: `Footnote '${expFn.label}' body text ${JSON.stringify(itemText)} missing expected snippet: ${JSON.stringify(expFn.textSnippet)}`,
-          };
-        }
-      }
-    }
-  }
-
-  if (exp.listLooseness) {
-    if (listBlock) {
-      const isLoose = Boolean(listBlock.payload.meta?.loose);
-      if (!isLoose) {
-        return { ok: false, message: "Inherited red: list with blank-line separated item not marked loose" };
-      }
-    }
-  }
-
-  return { ok: true };
-}
 
 // --- Engine Layer Replay ---
 
@@ -582,6 +324,7 @@ interface CapturedPublication {
   frontier: number;
   storeBlocks: Block[];
   signatures: Map<string, string>;
+  semanticTree: SemanticStoreForest;
 }
 
 async function runEngineLayerFixture(
@@ -601,11 +344,26 @@ async function runEngineLayerFixture(
     let lastTx = -1;
     let initializedGeneration: number | undefined;
     let initializationCount = 0;
-    const codeInsertions = new Map<string, number>();
     let stopChunking = false;
+    let offeredFrontier = 0;
 
     const engine = new MarkdownEngine({
       post: (msg: WorkerOut) => {
+        if (msg.type === "ERROR") {
+          if (!stopChunking) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "engine:error",
+              lastTx,
+              offeredFrontier,
+              `Worker ERROR after offering ${offeredFrontier} UTF-16 units: ${JSON.stringify(msg.error)}`,
+            );
+          }
+          stopChunking = true;
+          return;
+        }
         if (msg.type === "INITIALIZED") {
           if (initializationCount > 0) {
             recordDivergence(
@@ -663,22 +421,6 @@ async function runEngineLayerFixture(
             return;
           }
           lastTx = msg.tx;
-          for (const patch of msg.patches) {
-            if (patch.op !== "insertChild" || patch.at.blockId !== PATCH_ROOT_ID || patch.node.type !== "code") continue;
-            const insertions = (codeInsertions.get(patch.node.id) ?? 0) + 1;
-            codeInsertions.set(patch.node.id, insertions);
-            if (insertions > 1) {
-              recordDivergence(
-                divergences,
-                fixture,
-                chunking,
-                "invariant:duplicate-code-insert",
-                msg.tx,
-                sessionSink.processed_frontier,
-                `Root code owner ${patch.node.id} was inserted ${insertions} times after INITIALIZED.snapshot`,
-              );
-            }
-          }
           const priorCodeOwners = capturePriorCodeOwners(msg.patches, store);
 
           // Atomic store mutation
@@ -702,7 +444,6 @@ async function runEngineLayerFixture(
             priorCodeOwners,
             store,
             fixture.source,
-            initializedGeneration ?? -1,
           )) {
             recordDivergence(
               divergences,
@@ -733,11 +474,13 @@ async function runEngineLayerFixture(
           // Capture immutable publication snapshot at actual processed publication frontier
           const pubFrontier = sessionSink.publications.at(-1)?.frontier ?? sessionSink.processed_frontier;
           const currentBlocks = store.getBlocks().map(cloneBlock);
+          const published = publishedFootnoteLabels(currentBlocks);
           capturedPublications.push({
             tx: msg.tx,
             frontier: pubFrontier,
             storeBlocks: currentBlocks,
             signatures: new Map(currentBlocks.map((b) => [b.id, blockSignature(b)])),
+            semanticTree: captureSemanticStoreForest(store, currentBlocks, published),
           });
         }
       },
@@ -762,22 +505,52 @@ async function runEngineLayerFixture(
       // Stream chunks
       for (let c = 0; c < chunking.chunks.length; c++) {
         if (stopChunking) break;
+        offeredFrontier += chunking.chunks[c].length;
         await engine.handle({ type: "APPEND", text: chunking.chunks[c] });
       }
 
-      // Check captured publications at their actual frontiers
+      // Check captured publications at their actual frontiers.
       for (const pub of capturedPublications) {
         if (stopChunking) break;
+        const historyChanged = pub.signatures.size !== pub.storeBlocks.length ||
+          pub.storeBlocks.some((block) => pub.signatures.get(block.id) !== blockSignature(block));
+        if (historyChanged) {
+          recordDivergence(
+            divergences,
+            fixture,
+            chunking,
+            "engine:history",
+            pub.tx,
+            pub.frontier,
+            "A captured publication block changed after its publication frontier",
+          );
+          stopChunking = true;
+          break;
+        }
+
         const prefixSource = fixture.source.slice(0, pub.frontier);
-        const coldBlocks = await coldNonFinalizingParse(prefixSource);
-
+        const coldParse = await coldNonFinalizingParse(prefixSource);
+        const coldBlocks = coldParse.blocks;
         const published = publishedFootnoteLabels(pub.storeBlocks);
-        const coldFinalized = coldBlocks.filter((b) => b.isFinalized);
+        const coldTree = captureSemanticStoreForest(coldParse.store, coldBlocks, published);
+        if (pub.semanticTree.missingNodeIds.length > 0 || coldTree.missingNodeIds.length > 0) {
+          recordDivergence(
+            divergences,
+            fixture,
+            chunking,
+            "engine:prefix",
+            pub.tx,
+            pub.frontier,
+            `Missing public semantic store nodes (current=${pub.semanticTree.missingNodeIds.join(",")} cold=${coldTree.missingNodeIds.join(",")})`,
+          );
+          stopChunking = true;
+          break;
+        }
 
-        for (let i = 0; i < coldFinalized.length; i++) {
-          const coldBlock = coldFinalized[i];
+        for (let i = 0; i < Math.max(pub.storeBlocks.length, coldBlocks.length); i++) {
           const curr = pub.storeBlocks[i];
-          if (!curr) {
+          const coldBlock = coldBlocks[i];
+          if (!curr || !coldBlock) {
             recordDivergence(
               divergences,
               fixture,
@@ -785,15 +558,68 @@ async function runEngineLayerFixture(
               "engine:prefix",
               pub.tx,
               pub.frontier,
-              `Finalized block ${coldBlock.id} (index ${i}) missing in non-finalizing baseline`,
+              curr
+                ? `Cold non-finalizing baseline is missing current block ${curr.id} at index ${i}`
+                : `Current store is missing cold block ${coldBlock!.id} at index ${i}`,
             );
             stopChunking = true;
             break;
           }
 
-          const projectedCold = projectFootnotePublication(coldBlock, published);
-          if (!blocksStructurallyEqual(curr, projectedCold)) {
-            const fieldDiff = diffBlockFields(curr, projectedCold);
+          if (curr.isFinalized) {
+            if (!coldBlock.isFinalized) {
+              recordDivergence(
+                divergences,
+                fixture,
+                chunking,
+                "engine:prefix",
+                pub.tx,
+                pub.frontier,
+                `Finalized block ${curr.id} is provisional in the cold non-finalizing baseline`,
+              );
+              stopChunking = true;
+              break;
+            }
+            const projectedCold = projectFootnotePublication(coldBlock, published);
+            if (!blocksSemanticallyEqual(curr, projectedCold)) {
+              recordDivergence(
+                divergences,
+                fixture,
+                chunking,
+                "engine:prefix",
+                pub.tx,
+                pub.frontier,
+                `Prefix divergence at index ${i} (${curr.id}) [curr=${curr.type} cold=${coldBlock.type}]: ${describeBlockSemanticDifference(curr, projectedCold)}`,
+                {
+                  current: { block: curr, tree: pub.semanticTree.roots[i] },
+                  cold: { block: coldBlock, tree: coldTree.roots[i] },
+                },
+              );
+              stopChunking = true;
+              break;
+            }
+            const treeDiff = semanticTreeDifference(pub.semanticTree, coldTree, i);
+            if (treeDiff) {
+              recordDivergence(
+                divergences,
+                fixture,
+                chunking,
+                "engine:prefix",
+                pub.tx,
+                pub.frontier,
+                `Prefix semantic store divergence at index ${i} (${curr.id}): ${treeDiff}`,
+                {
+                  current: { block: curr, tree: pub.semanticTree.roots[i] },
+                  cold: { block: coldBlock, tree: coldTree.roots[i] },
+                },
+              );
+              stopChunking = true;
+              break;
+            }
+            continue;
+          }
+
+          if (i !== pub.storeBlocks.length - 1) {
             recordDivergence(
               divergences,
               fixture,
@@ -801,20 +627,86 @@ async function runEngineLayerFixture(
               "engine:prefix",
               pub.tx,
               pub.frontier,
-              `Prefix divergence at index ${i} (${curr.id}) [curr=${curr.type} cold=${coldBlock.type}]: ${fieldDiff}`,
+              `Provisional block ${curr.id} is not the current source tail`,
+              {
+                current: { block: curr, tree: pub.semanticTree.roots[i] },
+                cold: { block: coldBlock, tree: coldTree.roots[i] },
+              },
+            );
+            stopChunking = true;
+            break;
+          }
+          if (!blockSourceMatches(curr, prefixSource) || !blockSourceMatches(coldBlock, prefixSource) ||
+              curr.id !== coldBlock.id || curr.type !== coldBlock.type ||
+              !isDeepStrictEqual(curr.payload.range, coldBlock.payload.range) ||
+              curr.payload.raw !== coldBlock.payload.raw) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "engine:prefix",
+              pub.tx,
+              pub.frontier,
+              `Provisional tail ${curr.id} does not retain the same exact authored source range in the current and cold stores`,
+              {
+                current: { block: curr, tree: pub.semanticTree.roots[i] },
+                cold: { block: coldBlock, tree: coldTree.roots[i] },
+              },
+            );
+            stopChunking = true;
+            break;
+          }
+          const openTailLifecycleDifference = !curr.isFinalized && coldBlock.isFinalized;
+          const projectedCold = projectFootnotePublication(coldBlock, published);
+          if (!provisionalTailBlocksSemanticallyEqual(curr, projectedCold)) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "engine:prefix",
+              pub.tx,
+              pub.frontier,
+              `Provisional tail semantic divergence at index ${i} (${curr.id}): ${describeProvisionalTailSemanticDifference(curr, projectedCold)}`,
+              {
+                current: { block: curr, tree: pub.semanticTree.roots[i] },
+                cold: { block: coldBlock, tree: coldTree.roots[i] },
+              },
+            );
+            stopChunking = true;
+            break;
+          }
+          const treeDiff = semanticTreeDifference(
+            pub.semanticTree,
+            coldTree,
+            i,
+            openTailLifecycleDifference,
+          );
+          if (treeDiff) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "engine:prefix",
+              pub.tx,
+              pub.frontier,
+              `Provisional tail store divergence at index ${i} (${curr.id}): ${treeDiff}`,
+              {
+                current: { block: curr, tree: pub.semanticTree.roots[i] },
+                cold: { block: coldBlock, tree: coldTree.roots[i] },
+              },
             );
             stopChunking = true;
             break;
           }
         }
       }
-
       if (stopChunking) continue;
 
-      // Finalize and verify final semantic store equality against cold finalize
+      // Finalize and verify final semantic store equality against cold finalize.
       await engine.handle({ type: "FINALIZE" });
       const finalStoreBlocks = store.getBlocks();
-      const coldCanonicalBlocks = await coldFinalizeParse(fixture.source);
+      const coldFinalize = await coldFinalizeParse(fixture.source);
+      const coldCanonicalBlocks = coldFinalize.blocks;
 
       if (finalStoreBlocks.length !== coldCanonicalBlocks.length) {
         recordDivergence(
@@ -830,6 +722,19 @@ async function runEngineLayerFixture(
       }
 
       const published = publishedFootnoteLabels(finalStoreBlocks);
+      const currentTree = captureSemanticStoreForest(store, finalStoreBlocks, published);
+      const coldTree = captureSemanticStoreForest(coldFinalize.store, coldCanonicalBlocks, published);
+      if (currentTree.missingNodeIds.length > 0 || coldTree.missingNodeIds.length > 0) {
+        recordDivergence(
+          divergences,
+          fixture,
+          chunking,
+          "engine:final",
+          374,
+          fixture.source.length,
+          `Missing public semantic store nodes (current=${currentTree.missingNodeIds.join(",")} cold=${coldTree.missingNodeIds.join(",")})`,
+        );
+      }
       for (let i = 0; i < finalStoreBlocks.length; i++) {
         const curr = finalStoreBlocks[i];
         const base = coldCanonicalBlocks[i];
@@ -848,8 +753,7 @@ async function runEngineLayerFixture(
         }
 
         const projectedBase = projectFootnotePublication(base, published);
-        if (!blocksStructurallyEqual(curr, projectedBase)) {
-          const fieldDiff = diffBlockFields(curr, projectedBase);
+        if (!blocksSemanticallyEqual(curr, projectedBase)) {
           recordDivergence(
             divergences,
             fixture,
@@ -857,7 +761,28 @@ async function runEngineLayerFixture(
             "engine:final",
             386,
             fixture.source.length,
-            `Final block drift at index ${i} (${curr.id}) [curr=${curr.type} base=${base.type}]: ${fieldDiff}`,
+            `Final block drift at index ${i} (${curr.id}) [curr=${curr.type} base=${base.type}]: ${describeBlockSemanticDifference(curr, projectedBase)}`,
+            {
+              current: { block: curr, tree: currentTree.roots[i] },
+              cold: { block: base, tree: coldTree.roots[i] },
+            },
+          );
+          break;
+        }
+        const treeDiff = semanticTreeDifference(currentTree, coldTree, i);
+        if (treeDiff) {
+          recordDivergence(
+            divergences,
+            fixture,
+            chunking,
+            "engine:final",
+            387,
+            fixture.source.length,
+            `Final semantic store divergence at index ${i} (${curr.id}): ${treeDiff}`,
+            {
+              current: { block: curr, tree: currentTree.roots[i] },
+              cold: { block: base, tree: coldTree.roots[i] },
+            },
           );
           break;
         }
@@ -871,7 +796,6 @@ async function runEngineLayerFixture(
         engine,
         store,
         fixture.source,
-        initializedGeneration ?? -1,
       );
       if (!tokenResult.ok) {
         recordDivergence(
@@ -918,376 +842,6 @@ async function runEngineLayerFixture(
   return divergences;
 }
 
-async function runRootCodeInitializationTrace(
-  fixture: DenseFixture,
-  highlighter: Highlighter,
-): Promise<DivergenceReport[]> {
-  const divergences: DivergenceReport[] = [];
-  const plan: ChunkingPlan = { mode: "whole", seed: 0, chunks: [] };
-  const followup = "\nPost-initialization source append.\n";
-  const fullSource = fixture.source + followup;
-  const store = createRendererStore();
-  let initializationCount = 0;
-  let initializedGeneration: number | undefined;
-  let initialCodeOwners = new Set<string>();
-  let patchTx = -1;
-  const engine = new MarkdownEngine({
-    post: (msg: WorkerOut) => {
-      if (msg.type === "INITIALIZED") {
-        initializationCount += 1;
-        if (initializationCount > 1) {
-          recordDivergence(
-            divergences,
-            fixture,
-            plan,
-            "initialized-root:duplicate",
-            msg.generation,
-            0,
-            `Root-code trace received ${initializationCount} INITIALIZED messages`,
-          );
-        }
-        if (msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
-          recordDivergence(
-            divergences,
-            fixture,
-            plan,
-            "initialized-root:schema",
-            msg.generation,
-            0,
-            `INITIALIZED schema ${msg.schemaVersion} does not match ${STREAM_MDX_SCHEMA_VERSION}`,
-          );
-        }
-        initializedGeneration = msg.generation;
-        try {
-          store.resetSnapshot(msg.snapshot);
-        } catch (error) {
-          recordDivergence(
-            divergences,
-            fixture,
-            plan,
-            "initialized-root:store-reset",
-            msg.generation,
-            0,
-            `INITIALIZED root snapshot could not reset the renderer store: ${String(error)}`,
-          );
-          return;
-        }
-        initialCodeOwners = new Set(
-          store.getBlocks()
-            .filter((block) => block.type === "code" && store.getNode(block.id)?.parentId === PATCH_ROOT_ID)
-            .map((block) => block.id),
-        );
-        return;
-      }
-      if (msg.type === "PATCH") {
-        if (initializationCount !== 1) {
-          recordDivergence(
-            divergences,
-            fixture,
-            plan,
-            "initialized-root:patch-order",
-            msg.tx,
-            0,
-            "PATCH was published outside the single INITIALIZED root generation",
-          );
-        }
-        if (msg.tx <= patchTx) {
-          recordDivergence(
-            divergences,
-            fixture,
-            plan,
-            "initialized-root:fifo",
-            msg.tx,
-            0,
-            `PATCH tx ${msg.tx} did not advance beyond ${patchTx}`,
-          );
-        }
-        patchTx = msg.tx;
-        const prior = capturePriorCodeOwners(msg.patches, store);
-        try {
-          store.applyPatches(msg.patches);
-        } catch (error) {
-          recordDivergence(
-            divergences,
-            fixture,
-            plan,
-            "initialized-root:patch-apply",
-            msg.tx,
-            0,
-            `Store rejected root-code followup PATCH: ${String(error)}`,
-          );
-          return;
-        }
-        for (const patch of msg.patches) {
-          if (
-            patch.op === "insertChild" &&
-            patch.at.blockId === PATCH_ROOT_ID &&
-            initialCodeOwners.has(patch.node.id)
-          ) {
-            recordDivergence(
-              divergences,
-              fixture,
-              plan,
-              "initialized-root:duplicate-code-insert",
-              msg.tx,
-              fixture.source.length,
-              `INITIALIZED code owner ${patch.node.id} was inserted again by PATCH`,
-            );
-          }
-        }
-        for (const failure of verifyCodeWirePatches(
-          msg.patches,
-          prior,
-          store,
-          fullSource,
-          initializedGeneration ?? -1,
-        )) {
-          recordDivergence(
-            divergences,
-            fixture,
-            plan,
-            `initialized-root:${failure.stage}`,
-            msg.tx,
-            fixture.source.length,
-            failure.message,
-          );
-        }
-        return;
-      }
-      if (msg.type === "ERROR" || msg.type === "RESET") {
-        recordDivergence(
-          divergences,
-          fixture,
-          plan,
-          `initialized-root:${msg.type.toLowerCase()}`,
-          -1,
-          0,
-          msg.type === "ERROR" ? msg.error.message : msg.reason,
-        );
-      }
-    },
-  });
-
-  try {
-    await engine.handle({ ...PARITY_INIT, initialContent: fixture.source });
-    if (initializationCount !== 1 || initializedGeneration === undefined) {
-      recordDivergence(
-        divergences,
-        fixture,
-        plan,
-        "initialized-root:missing",
-        initializationCount,
-        0,
-        `Expected one INITIALIZED root snapshot; observed ${initializationCount}`,
-      );
-      return divergences;
-    }
-
-    const blocks = store.getBlocks();
-    const rootCodeBlocks = blocks.filter(
-      (block) => block.type === "code" && store.getNode(block.id)?.parentId === PATCH_ROOT_ID,
-    );
-    if (rootCodeBlocks.length !== fixture.expectations?.codeBlocks?.length) {
-      recordDivergence(
-        divergences,
-        fixture,
-        plan,
-        "initialized-root:code-owner-count",
-        0,
-        fixture.source.length,
-        `INITIALIZED root code owners=${rootCodeBlocks.length} expected=${fixture.expectations?.codeBlocks?.length ?? 0}`,
-      );
-    }
-    for (const block of rootCodeBlocks) {
-      const codeView = store.getCodeBlock(block.id);
-      if (!codeView) {
-        recordDivergence(
-          divergences,
-          fixture,
-          plan,
-          "initialized-root:code-state",
-          0,
-          fixture.source.length,
-          `INITIALIZED code owner ${block.id} has no prepared store view`,
-        );
-        continue;
-      }
-      if (
-        codeView.source.codeOwnerId !== block.id ||
-        codeView.source.generation !== initializedGeneration ||
-        codeView.source.state !== "closed" ||
-        store.getChildren(block.id).length !== 0
-      ) {
-        recordDivergence(
-          divergences,
-          fixture,
-          plan,
-          "initialized-root:code-state",
-          0,
-          fixture.source.length,
-          `INITIALIZED code owner ${block.id} has mismatched owner/generation/state or per-line NodeRecords`,
-        );
-      }
-      const { from, to } = codeView.source.sourceRange;
-      if (
-        block.payload.range?.from !== from ||
-        block.payload.range?.to !== to ||
-        block.payload.raw !== fixture.source.slice(from, to)
-      ) {
-        recordDivergence(
-          divergences,
-          fixture,
-          plan,
-          "initialized-root:authored-source",
-          0,
-          fixture.source.length,
-          `INITIALIZED code owner ${block.id} did not cold-export its exact authored source range`,
-        );
-      }
-      const expected = fixture.expectations?.codeBlocks?.find(
-        (code) => code.lang === codeView.language,
-      );
-      if (expected) {
-        const rows = store.getCodeLines(block.id, 0, codeView.source.lineCount);
-        if (rows.length !== expected.codeLines.length) {
-          recordDivergence(
-            divergences,
-            fixture,
-            plan,
-            "initialized-root:bounded-lines",
-            0,
-            fixture.source.length,
-            `INITIALIZED code owner ${block.id} returned ${rows.length} rows; expected ${expected.codeLines.length}`,
-          );
-        } else {
-          for (let index = 0; index < rows.length; index += 1) {
-            const row = rows[index];
-            const expectedText = expected.codeLines[index];
-            const authoredLine = fixture.source.slice(row.sourceRange.from, row.sourceRange.to);
-            const expectedAuthoredLine = `${" ".repeat(expected.openingFenceIndent ?? 0)}${expectedText}`;
-            const authoredEnding = fixture.source.slice(
-              row.sourceRange.to,
-              row.sourceRange.to + row.ending.length,
-            );
-            if (
-              row.text !== expectedText ||
-              authoredLine !== expectedAuthoredLine ||
-              authoredEnding !== row.ending
-            ) {
-              recordDivergence(
-                divergences,
-                fixture,
-                plan,
-                "initialized-root:authored-line",
-                0,
-                row.sourceRange.to,
-                `INITIALIZED code owner ${block.id} line ${index} lost dedented text or authored source/ending`,
-              );
-              break;
-            }
-            if (store.getNode(row.id)) {
-              recordDivergence(
-                divergences,
-                fixture,
-                plan,
-                "initialized-root:line-record",
-                0,
-                row.sourceRange.to,
-                `INITIALIZED source-owned code line ${row.id} was materialized as a NodeRecord`,
-              );
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    const expectationResult = verifyIndependentExpectations(blocks, fixture, store);
-    if (!expectationResult.ok) {
-      recordDivergence(
-        divergences,
-        fixture,
-        plan,
-        "initialized-root:expectations",
-        0,
-        fixture.source.length,
-        expectationResult.message ?? "CommonMark root-code expectation failed",
-      );
-    }
-    const tokenResult = await verifyCompletedLineTokens(
-      collectBlocksRecursively(blocks),
-      highlighter,
-      engine,
-      store,
-      fixture.source,
-      initializedGeneration,
-    );
-    if (!tokenResult.ok) {
-      recordDivergence(
-        divergences,
-        fixture,
-        plan,
-        "initialized-root:tokens",
-        0,
-        fixture.source.length,
-        tokenResult.message ?? "INITIALIZED root-code token parity failed",
-      );
-    }
-
-    const initialRowsByOwner = new Map<string, ReadonlyArray<CodeLineRecord>>();
-    for (const block of rootCodeBlocks) {
-      const view = store.getCodeBlock(block.id);
-      if (view) initialRowsByOwner.set(block.id, store.getCodeLines(block.id, 0, view.source.lineCount));
-    }
-    await engine.handle({ type: "APPEND", text: followup });
-    if (initializationCount !== 1) {
-      recordDivergence(
-        divergences,
-        fixture,
-        plan,
-        "initialized-root:followup-reset",
-        initializationCount,
-        fixture.source.length,
-        "Tail append promoted the existing initialized root code through a new snapshot generation",
-      );
-    }
-    for (const block of rootCodeBlocks) {
-      const view = store.getCodeBlock(block.id);
-      const rows = view ? store.getCodeLines(block.id, 0, view.source.lineCount) : [];
-      const initialRows = initialRowsByOwner.get(block.id) ?? [];
-      if (
-        !view ||
-        view.source.generation !== initializedGeneration ||
-        view.source.state !== "closed" ||
-        rows.length !== initialRows.length ||
-        rows.some((row, index) => row !== initialRows[index])
-      ) {
-        recordDivergence(
-          divergences,
-          fixture,
-          plan,
-          "initialized-root:followup-stability",
-          patchTx,
-          fixture.source.length,
-          `Post-INITIALIZED tail append changed root code owner ${block.id}`,
-        );
-      }
-    }
-  } catch (error) {
-    recordDivergence(
-      divergences,
-      fixture,
-      plan,
-      "initialized-root:exception",
-      -1,
-      -1,
-      error instanceof Error ? error.stack ?? error.message : String(error),
-    );
-  } finally {
-    engine.dispose();
-  }
-  return divergences;
-}
 
 // --- Main Oracle Runner ---
 
@@ -1383,7 +937,7 @@ export async function runReplayOracle(options: {
   let failedFixtures = 0;
   let rootTraceFixtures = 0;
 
-  console.log(`\n=== StreamMDX ${section === "all" ? "P1 Dense Replay" : "P2 Engine Fixture"} Oracle ===`);
+  console.log(`\n=== StreamMDX ${section === "all" ? "Dense Replay" : "P2 Engine Fixture"} Oracle ===`);
   console.log(`Fixtures: ${targetFixtures.length} | Seed: ${seed} | Environment: In-Process Node`);
 
   // Phase 1: Engine Layer Replay across seeded chunkings
@@ -1506,7 +1060,7 @@ export async function runReplayOracle(options: {
       scalingMeasurements = scalingResult.measurements;
 
       for (const m of scalingMeasurements) {
-        const status = m.gatePassed ? "✓ [PASS]" : "✗ [INHERITED RED]";
+        const status = m.gatePassed ? "✓ [PASS]" : "✗ [CURRENT SCOPED RED]";
         console.log(
           `  ${status} ${m.workload} (block: ${m.expectedBlockType}): total work/unit N=${m.workPerUnitN.toFixed(4)} 4N=${m.workPerUnit4N.toFixed(4)} (ratio: ${m.totalRatio.toFixed(2)}x, gate <= 1.25x)`,
         );

@@ -1,4 +1,6 @@
-import type { SyntaxNode } from "@lezer/common";
+declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
+
+import type { Input, SyntaxNode } from "@lezer/common";
 import type { SourceSnapshot } from "@stream-mdx/core";
 
 export interface ParagraphSourceRange {
@@ -35,9 +37,18 @@ export interface NativeParagraphSourceContext {
   readonly sourceRange: ParagraphSourceRange;
   readonly textRange: ParagraphSourceRange;
   readonly markers: readonly NativeParagraphSourceMarker[];
+  readonly taskMarker?: ParagraphSourceRange;
   /** Exact ASCII space/tab container-indent ranges supplied by native parsing. */
   readonly indentationRanges?: readonly ParagraphSourceRange[];
-  readonly task: boolean;
+}
+export type NativeParagraphSourceTextReader = ParagraphSourceTextReader & {
+  appendContext(context: NativeParagraphSourceContext, replaceFrom?: number): void;
+  fork(context: NativeParagraphSourceContext, replaceFrom?: number): NativeParagraphSourceTextReader;
+};
+
+interface NativeParagraphSourceDiagnosticCounters {
+  recordPrefixComparisons?(count?: number, stage?: "engine"): void;
+  recordSourceUnitsRead?(count: number, stage?: "engine"): void;
 }
 
 export type NativeParagraphMarkerMapper = (
@@ -247,9 +258,28 @@ function appendMappedSlice(
   return outputLength + to - from;
 }
 
+function firstRangeEndingAfter<T>(
+  values: readonly T[],
+  from: number,
+  rangeOf: (value: T) => ParagraphSourceRange,
+  startAt?: number,
+  counters?: NativeParagraphSourceDiagnosticCounters,
+): number {
+  let low = Math.min(startAt ?? 0, values.length);
+  let high = values.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "engine");
+    }
+    if (rangeOf(values[middle]!).to <= from) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
 type NativeParagraphOmission = {
   readonly range: ParagraphSourceRange;
-  readonly markerType?: NativeParagraphSourceMarker["typeName"];
+  readonly markerType?: NativeParagraphSourceMarker["typeName"] | "TaskMarker";
 };
 
 function nativeParagraphOmissions(
@@ -257,27 +287,57 @@ function nativeParagraphOmissions(
   sourceRange: ParagraphSourceRange,
   contentFrom: number,
   contentTo: number,
+  firstIndentation: number,
+  counters?: NativeParagraphSourceDiagnosticCounters,
 ): NativeParagraphOmission[] {
   const omissions: NativeParagraphOmission[] = [];
-  for (const marker of context.markers) {
-    if (marker.range.from >= contentTo || marker.range.to <= contentFrom) continue;
+  const firstMarker = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? firstRangeEndingAfter(context.markers, contentFrom, (marker) => marker.range, undefined, counters)
+    : firstRangeEndingAfter(context.markers, contentFrom, (marker) => marker.range);
+  for (let index = firstMarker; index < context.markers.length; index += 1) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "engine");
+    }
+    const marker = context.markers[index]!;
+    if (marker.range.from >= contentTo) break;
     assertRange(marker.range, context.sourceRange.to, "Native paragraph marker");
     if (marker.range.from < contentFrom || marker.range.to > contentTo) {
       throw new RangeError("Native paragraph marker mapping escapes the requested authored text range");
     }
     omissions.push({ range: marker.range, markerType: marker.typeName });
   }
-  for (const range of context.indentationRanges ?? []) {
-    if (range.from >= contentTo || range.to <= contentFrom) continue;
+  const taskMarker = context.taskMarker;
+  if (taskMarker && taskMarker.from < contentTo && taskMarker.to > contentFrom) {
+    assertRange(taskMarker, context.sourceRange.to, "Native paragraph task marker");
+    if (taskMarker.from < contentFrom || taskMarker.to > contentTo) {
+      throw new RangeError("Native task marker mapping escapes the requested authored text range");
+    }
+    omissions.push({ range: taskMarker, markerType: "TaskMarker" });
+  }
+  const indentationRanges = context.indentationRanges ?? [];
+  for (let index = firstIndentation; index < indentationRanges.length; index += 1) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "engine");
+    }
+    const range = indentationRanges[index]!;
+    if (range.from >= contentTo) break;
     assertRange(range, context.sourceRange.to, "Native paragraph indentation");
     if (range.from < contentFrom || range.to > contentTo) {
       throw new RangeError("Native paragraph indentation mapping escapes the requested authored text range");
     }
     omissions.push({ range });
   }
-  omissions.sort((left, right) => left.range.from - right.range.from || left.range.to - right.range.to);
+  omissions.sort((left, right) => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "engine");
+    }
+    return left.range.from - right.range.from || left.range.to - right.range.to;
+  });
   let previousTo = contentFrom;
   for (const omission of omissions) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "engine");
+    }
     if (omission.range.from < previousTo || omission.range.to > sourceRange.to) {
       throw new RangeError("Native paragraph marker and indentation ranges overlap or escape the requested extent");
     }
@@ -294,6 +354,7 @@ export function nativeParagraphSourceTextFromInput(
   input: string,
   sourceRange: ParagraphSourceRange,
   context: NativeParagraphSourceContext,
+  counters?: NativeParagraphSourceDiagnosticCounters,
 ): ParagraphSourceText {
   assertRange(context.sourceRange, context.sourceRange.to, "Native paragraph owner");
   assertRange(sourceRange, context.sourceRange.to, "Native paragraph input");
@@ -305,17 +366,27 @@ export function nativeParagraphSourceTextFromInput(
   if (context.textRange.from < context.sourceRange.from || context.textRange.to > context.sourceRange.to) {
     throw new RangeError("Native paragraph text range escapes its physical owner");
   }
-
   const contentFrom = Math.max(sourceRange.from, context.textRange.from);
   const contentTo = Math.min(sourceRange.to, context.textRange.to);
-  for (const indentation of context.indentationRanges ?? []) {
-    if (indentation.from >= contentTo || indentation.to <= contentFrom) continue;
+  const indentationRanges = context.indentationRanges ?? [];
+  const firstIndentation = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? firstRangeEndingAfter(indentationRanges, contentFrom, (range) => range, undefined, counters)
+    : firstRangeEndingAfter(indentationRanges, contentFrom, (range) => range);
+  for (let index = firstIndentation; index < indentationRanges.length; index += 1) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "engine");
+    }
+    const indentation = indentationRanges[index]!;
+    if (indentation.from >= contentTo) break;
+    if (indentation.to <= contentFrom) continue;
     const exactIndent = input.slice(indentation.from - sourceRange.from, indentation.to - sourceRange.from);
     if (!/^[\t ]+$/.test(exactIndent)) {
       throw new RangeError("Native paragraph indentation ranges may contain only authored ASCII spaces and tabs");
     }
   }
-  const omissions = nativeParagraphOmissions(context, sourceRange, contentFrom, contentTo);
+  const omissions = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? nativeParagraphOmissions(context, sourceRange, contentFrom, contentTo, firstIndentation, counters)
+    : nativeParagraphOmissions(context, sourceRange, contentFrom, contentTo, firstIndentation);
   const parts: string[] = [];
   const runs: SourceRun[] = [];
   let logicalLength = 0;
@@ -340,6 +411,12 @@ export function nativeParagraphSourceTextFromInput(
       if (omission.markerType === "QuoteMark" && cursor < lineTo) {
         const next = input[cursor - sourceRange.from];
         if (next === " " || next === "\t") cursor += 1;
+      } else if (omission.markerType === "TaskMarker") {
+        while (cursor < lineTo) {
+          const next = input[cursor - sourceRange.from];
+          if (next !== " " && next !== "\t") break;
+          cursor += 1;
+        }
       }
       omissionIndex += 1;
     }
@@ -351,57 +428,72 @@ export function nativeParagraphSourceTextFromInput(
 
   let text = parts.length === 0 ? "" : parts.length === 1 ? parts[0]! : parts.join("");
   if (text.length !== logicalLength) throw new RangeError("Native paragraph logical text lost UTF-16 units");
-  if (context.task) {
-    const taskPrefix = /^\[([ xX])\][\t ]+/.exec(text);
-    if (taskPrefix) {
-      const removed = taskPrefix[0].length;
-      text = text.slice(removed);
-      return sourceTextFromRuns(text, sourceRange, sliceRuns(runs, removed, logicalLength));
-    }
-  }
   return sourceTextFromRuns(text, sourceRange, runs);
 }
 
-/** Exact ASCII space/tab line-prefix ranges for the legacy P2 list-leaf projection. */
+/** Exact ASCII space/tab container-indent ranges from only the current native input window. */
 export function nativeParagraphSpaceTabIndentationRangesFromInput(
-  input: string,
-  sourceRange: ParagraphSourceRange,
+  input: Input,
+  inputRange: ParagraphSourceRange,
+  mapRange: (from: number, to: number) => ParagraphSourceRange,
   markers: readonly NativeParagraphSourceMarker[],
+  counters?: NativeParagraphSourceDiagnosticCounters,
 ): readonly ParagraphSourceRange[] {
-  if (input.length !== sourceRange.to - sourceRange.from) {
-    throw new RangeError("Native paragraph indentation input must cover its physical range");
+  const text = input.read(inputRange.from, inputRange.to);
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && text.length > 0) {
+    counters?.recordSourceUnitsRead?.(text.length, "engine");
   }
-  const orderedMarkers = markers.slice().sort((left, right) => left.range.from - right.range.from);
+  if (text.length !== inputRange.to - inputRange.from) {
+    throw new RangeError("Native paragraph indentation input must cover its bounded native range");
+  }
   const ranges: ParagraphSourceRange[] = [];
-  let markerIndex = 0;
-  let lineFrom = sourceRange.from;
-  while (lineFrom < sourceRange.to) {
-    const localLineFrom = lineFrom - sourceRange.from;
-    const newline = input.indexOf("\n", localLineFrom);
-    const lineTo = newline < 0 ? sourceRange.to : Math.min(sourceRange.to, sourceRange.from + newline);
-    let cursor = lineFrom;
-    while (markerIndex < orderedMarkers.length && orderedMarkers[markerIndex]!.range.to <= lineFrom) markerIndex += 1;
-    while (markerIndex < orderedMarkers.length && orderedMarkers[markerIndex]!.range.from < lineTo) {
-      const marker = orderedMarkers[markerIndex]!;
-      if (marker.range.from < cursor || marker.range.to > lineTo) {
+  let lineFrom = 0;
+  while (lineFrom < text.length) {
+    let lineTo = text.indexOf("\n", lineFrom);
+    const carriageReturn = text.indexOf("\r", lineFrom);
+    if (carriageReturn >= 0 && (lineTo < 0 || carriageReturn < lineTo)) lineTo = carriageReturn;
+    if (lineTo < 0) lineTo = text.length;
+    const line = text.slice(lineFrom, lineTo);
+    const sourceRange = mapRange(inputRange.from + lineFrom, inputRange.from + lineTo);
+    if (line.length !== sourceRange.to - sourceRange.from) {
+      throw new RangeError("Native paragraph indentation line does not map to a contiguous physical range");
+    }
+    const orderedMarkers = markers
+      .filter((marker) => {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          counters?.recordPrefixComparisons?.(1, "engine");
+        }
+        return marker.range.from >= sourceRange.from && marker.range.to <= sourceRange.to;
+      })
+      .sort((left, right) => {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          counters?.recordPrefixComparisons?.(1, "engine");
+        }
+        return left.range.from - right.range.from;
+      });
+    let cursor = sourceRange.from;
+    for (const marker of orderedMarkers) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        counters?.recordPrefixComparisons?.(1, "engine");
+      }
+      if (marker.range.from < cursor || marker.range.to > sourceRange.to) {
         throw new RangeError("Native marker does not align with its physical line");
       }
-      const before = input.slice(cursor - sourceRange.from, marker.range.from - sourceRange.from);
+      const before = line.slice(cursor - sourceRange.from, marker.range.from - sourceRange.from);
       const leading = /^[\t ]*/.exec(before)![0].length;
       if (leading > 0) ranges.push(Object.freeze({ from: cursor, to: cursor + leading }));
       if (leading !== before.length) break;
       cursor = marker.range.to;
-      if (marker.typeName === "QuoteMark" && cursor < lineTo) {
-        const next = input[cursor - sourceRange.from];
+      if (marker.typeName === "QuoteMark" && cursor < sourceRange.to) {
+        const next = line[cursor - sourceRange.from];
         if (next === " " || next === "\t") cursor += 1;
       }
-      markerIndex += 1;
     }
-    const remainder = input.slice(cursor - sourceRange.from, lineTo - sourceRange.from);
+    const remainder = line.slice(cursor - sourceRange.from);
     const leading = /^[\t ]*/.exec(remainder)![0].length;
     if (leading > 0) ranges.push(Object.freeze({ from: cursor, to: cursor + leading }));
-    if (lineTo === sourceRange.to) break;
-    lineFrom = lineTo + 1;
+    if (lineTo === text.length) break;
+    lineFrom = lineTo + (text[lineTo] === "\r" && text[lineTo + 1] === "\n" ? 2 : 1);
   }
   return Object.freeze(ranges);
 }
@@ -412,6 +504,7 @@ export function readNativeParagraphSourceText(
   context: NativeParagraphSourceContext,
   from = context.sourceRange.from,
   to = context.sourceRange.to,
+  counters?: NativeParagraphSourceDiagnosticCounters,
 ): ParagraphSourceText {
   assertRange(context.sourceRange, source.length, "Native paragraph owner");
   assertRange({ from, to }, source.length, "Native paragraph read");
@@ -420,8 +513,16 @@ export function readNativeParagraphSourceText(
   }
   const input = source.read(from, to);
   if (input.length !== to - from) throw new RangeError("Canonical paragraph source read returned a short range");
-  return nativeParagraphSourceTextFromInput(input, { from, to }, context);
+  return typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? nativeParagraphSourceTextFromInput(input, { from, to }, context, counters)
+    : nativeParagraphSourceTextFromInput(input, { from, to }, context);
 }
+
+type NativeParagraphSourceMarkerAnchor = {
+  readonly typeName: NativeParagraphSourceMarker["typeName"];
+  readonly from: number;
+  readonly to: number;
+};
 
 /** Build context from actual native Paragraph/Task nodes; marker coordinates stay caller-mapped. */
 export function nativeParagraphSourceContext(
@@ -429,44 +530,206 @@ export function nativeParagraphSourceContext(
   sourceRange: ParagraphSourceRange,
   textRange: ParagraphSourceRange,
   mapMarker: NativeParagraphMarkerMapper,
-  extraMarkers: readonly NativeParagraphSourceMarker[] = [],
+  extraMarkers: readonly NativeParagraphSourceMarkerAnchor[] = [],
   extraIndentationRanges: readonly ParagraphSourceRange[] = [],
+  minimumSourceOffset = sourceRange.from,
+  skipAncestorSiblingScan = false,
+  counters?: NativeParagraphSourceDiagnosticCounters,
 ): NativeParagraphSourceContext {
-  const markers: NativeParagraphSourceMarker[] = Array.from(extraMarkers);
-  const seen = new Set<SyntaxNode>();
+  const markers: NativeParagraphSourceMarker[] = [];
+  for (const marker of extraMarkers) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "engine");
+    }
+    if (marker.from < sourceRange.to && marker.to > sourceRange.from && marker.to > minimumSourceOffset) {
+      markers.push({ typeName: marker.typeName, range: marker });
+    }
+  }
+  let seen: Set<SyntaxNode> | undefined;
   const collect = (node: SyntaxNode): void => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "engine");
+    }
+    if (minimumSourceOffset > sourceRange.from) {
+      const nodeRange = mapMarker(node);
+      if (nodeRange && nodeRange.to <= minimumSourceOffset) return;
+    }
     if (node.type.name === "QuoteMark" || node.type.name === "ListMark") {
-      if (seen.has(node)) return;
-      seen.add(node);
+      if (seen?.has(node)) return;
+      seen?.add(node);
       const range = mapMarker(node);
-      if (range) markers.push({ typeName: node.type.name, range });
+      if (range && range.to > minimumSourceOffset) markers.push({ typeName: node.type.name, range });
       return;
     }
     for (let child = node.firstChild; child; child = child.nextSibling) collect(child);
   };
+  // Typed anchors replace ancestor sibling scans, not marks inside the changing paragraph.
+  if (!skipAncestorSiblingScan) seen = new Set<SyntaxNode>();
   collect(paragraph);
-  for (let parent = paragraph.parent; parent; parent = parent.parent) {
-    for (let child = parent.firstChild; child; child = child.nextSibling) {
-      if (child.type.name === "QuoteMark" || child.type.name === "ListMark") collect(child);
+  if (!skipAncestorSiblingScan) {
+    for (let parent = paragraph.parent; parent; parent = parent.parent) {
+      for (let child = parent.firstChild; child; child = child.nextSibling) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          counters?.recordPrefixComparisons?.(1, "engine");
+        }
+        if (child.type.name === "QuoteMark" || child.type.name === "ListMark") collect(child);
+      }
     }
   }
-  let task = false;
-  for (let node: SyntaxNode | null = paragraph; node; node = node.parent) {
-    if (node.type.name === "Task") task = true;
-  }
+  const taskMarkerNode = paragraph.type.name === "Task" ? paragraph.getChild("TaskMarker") : null;
+  const taskMarker = taskMarkerNode ? mapMarker(taskMarkerNode) : undefined;
   return Object.freeze({
     sourceRange: Object.freeze({ from: sourceRange.from, to: sourceRange.to }),
     textRange: Object.freeze({ from: textRange.from, to: textRange.to }),
-    markers: Object.freeze(markers.filter((marker) =>
-      marker.range.from < sourceRange.to && marker.range.to > sourceRange.from,
-    )),
+    markers: Object.freeze(markers.filter((marker) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        counters?.recordPrefixComparisons?.(1, "engine");
+      }
+      return marker.range.from < sourceRange.to
+        && marker.range.to > sourceRange.from
+        && marker.range.to > minimumSourceOffset;
+    })),
+    ...(taskMarker ? { taskMarker: Object.freeze({ from: taskMarker.from, to: taskMarker.to }) } : {}),
     indentationRanges: Object.freeze(Array.from(extraIndentationRanges)),
-    task,
   });
 }
 
 export function readNativeParagraphSourceTextReader(
   context: NativeParagraphSourceContext,
-): ParagraphSourceTextReader {
-  return (source, from, to) => readNativeParagraphSourceText(source, context, from, to);
+  counters?: NativeParagraphSourceDiagnosticCounters,
+): NativeParagraphSourceTextReader {
+  let sourceRange = { from: context.sourceRange.from, to: context.sourceRange.from };
+  let textRange = { from: context.textRange.from, to: context.textRange.from };
+  const markers: NativeParagraphSourceMarker[] = [];
+  const indentationRanges: ParagraphSourceRange[] = [];
+  let taskMarker: ParagraphSourceRange | undefined;
+  let markerReplaceStart = 0;
+  let indentationReplaceStart = 0;
+  let previousReplaceFrom: number | undefined;
+  const appendContext = (next: NativeParagraphSourceContext, replaceFrom?: number): void => {
+    if (replaceFrom !== undefined
+      && (!Number.isSafeInteger(replaceFrom)
+        || replaceFrom < next.sourceRange.from
+        || replaceFrom > next.sourceRange.to)) {
+      throw new RangeError("Native paragraph context replacement must stay inside its physical owner");
+    }
+    sourceRange = {
+      from: Math.min(sourceRange.from, next.sourceRange.from),
+      to: Math.max(sourceRange.to, next.sourceRange.to),
+    };
+    textRange = {
+      from: Math.min(textRange.from, next.textRange.from),
+      to: Math.max(textRange.to, next.textRange.to),
+    };
+    if (replaceFrom !== undefined) {
+      const monotonicReplace = previousReplaceFrom !== undefined && replaceFrom >= previousReplaceFrom;
+      const markerSearchFrom = monotonicReplace ? markerReplaceStart : 0;
+      const indentationSearchFrom = monotonicReplace ? indentationReplaceStart : 0;
+      const markerStart = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? firstRangeEndingAfter(markers, replaceFrom, (marker) => marker.range, markerSearchFrom, counters)
+        : firstRangeEndingAfter(markers, replaceFrom, (marker) => marker.range, markerSearchFrom);
+      const indentationStart = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? firstRangeEndingAfter(indentationRanges, replaceFrom, (range) => range, indentationSearchFrom, counters)
+        : firstRangeEndingAfter(indentationRanges, replaceFrom, (range) => range, indentationSearchFrom);
+      markers.splice(markerStart);
+      indentationRanges.splice(indentationStart);
+      markerReplaceStart = markerStart;
+      indentationReplaceStart = indentationStart;
+      previousReplaceFrom = replaceFrom;
+      if (taskMarker && taskMarker.to > replaceFrom) taskMarker = undefined;
+    }
+    for (const marker of next.markers) {
+      const last = markers[markers.length - 1];
+      if (last && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        counters?.recordPrefixComparisons?.(1, "engine");
+      }
+      if (!last
+        || last.range.from < marker.range.from
+        || (last.range.from === marker.range.from && last.range.to < marker.range.to)) {
+        markers.push(marker);
+        continue;
+      }
+      let low = 0;
+      let high = markers.length;
+      while (low < high) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          counters?.recordPrefixComparisons?.(1, "engine");
+        }
+        const middle = (low + high) >>> 1;
+        const current = markers[middle]!;
+        if (current.range.from < marker.range.from
+          || (current.range.from === marker.range.from && current.range.to < marker.range.to)) low = middle + 1;
+        else high = middle;
+      }
+      const current = markers[low];
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && current) {
+        counters?.recordPrefixComparisons?.(1, "engine");
+      }
+      if (current?.typeName !== marker.typeName
+        || current.range.from !== marker.range.from
+        || current.range.to !== marker.range.to) {
+        markers.splice(low, 0, marker);
+        if (low < markerReplaceStart) markerReplaceStart += 1;
+      }
+    }
+    if (next.taskMarker) taskMarker = next.taskMarker;
+    for (const range of next.indentationRanges ?? []) {
+      const last = indentationRanges[indentationRanges.length - 1];
+      if (last && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        counters?.recordPrefixComparisons?.(1, "engine");
+      }
+      if (!last || last.from < range.from || (last.from === range.from && last.to < range.to)) {
+        indentationRanges.push(range);
+        continue;
+      }
+      let low = 0;
+      let high = indentationRanges.length;
+      while (low < high) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          counters?.recordPrefixComparisons?.(1, "engine");
+        }
+        const middle = (low + high) >>> 1;
+        const current = indentationRanges[middle]!;
+        if (current.from < range.from || (current.from === range.from && current.to < range.to)) low = middle + 1;
+        else high = middle;
+      }
+      const current = indentationRanges[low];
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && current) {
+        counters?.recordPrefixComparisons?.(1, "engine");
+      }
+      if (current?.from !== range.from || current.to !== range.to) {
+        indentationRanges.splice(low, 0, range);
+        if (low < indentationReplaceStart) indentationReplaceStart += 1;
+      }
+    }
+  };
+  appendContext(context);
+  const reader = ((source: SourceSnapshot, from: number, to: number) => {
+    const currentContext = {
+      sourceRange,
+      textRange,
+      markers,
+      ...(taskMarker ? { taskMarker } : {}),
+      indentationRanges,
+    };
+    return typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? readNativeParagraphSourceText(source, currentContext, from, to, counters)
+      : readNativeParagraphSourceText(source, currentContext, from, to);
+  }) as NativeParagraphSourceTextReader;
+  reader.appendContext = appendContext;
+  reader.fork = (next, replaceFrom) => {
+    const forkContext = {
+      sourceRange,
+      textRange,
+      markers,
+      ...(taskMarker ? { taskMarker } : {}),
+      indentationRanges,
+    };
+    const fork = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? readNativeParagraphSourceTextReader(forkContext, counters)
+      : readNativeParagraphSourceTextReader(forkContext);
+    fork.appendContext(next, replaceFrom);
+    return fork;
+  };
+  return reader;
 }

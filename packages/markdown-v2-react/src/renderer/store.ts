@@ -28,11 +28,14 @@ import {
   type NodeSnapshot,
   type ParagraphSpanRecord,
   type ParagraphBlockSnapshot,
+  type HtmlTreeNode,
   type Patch,
+  type PreparedNestedSnapshot,
   type SetPropsBatchEntry,
   type SourceSnapshot,
   type TableRowRecord,
   type TokenLineV1,
+  type MixedContentSegment,
 } from "@stream-mdx/core";
 import { getPatchKind } from "@stream-mdx/core/perf/patch-batching";
 import {
@@ -46,6 +49,7 @@ import {
 } from "./block-range-projection";
 import { PARAGRAPH_SPAN_RANGE_SIZE } from "./paragraph-span-range";
 import {
+  CODE_LINE_RANGE_SIZE,
   appendLegacyCodeState,
   appendStoredCodeState,
   createStoredCodeBlockState,
@@ -133,6 +137,7 @@ export interface RendererStore {
   getBlocks(): ReadonlyArray<Block>;
   hasProvisionalBlocks(): boolean;
   getCodeBlock(id: string): CodeBlockViewState | undefined;
+  subscribeCodeLines(id: string, from: number, to: number, listener: () => void): () => void;
   getCodeLines(id: string, from: number, to: number): ReadonlyArray<CodeLineRecord>;
   getTableBlock(id: string): ManagedTableViewState | undefined;
   getTableRows(id: string, from: number, to: number): ReadonlyArray<TableRowRecord>;
@@ -157,14 +162,26 @@ export interface RendererStore {
 }
 
 function snapshotToBlock(node: NodeSnapshot): Block | null {
+  const managedSourceNode =
+    Boolean(node.code || node.table || node.paragraph) ||
+    isManagedSourceFamily(node.type);
   const candidate = node.props?.block;
   if (candidate && typeof candidate === "object") {
-    return cloneBlock(candidate as Block);
+    const block = cloneBlock(isNativeContainerType(node.type) ? blockWithoutPreparedNested(candidate as Block) : candidate as Block);
+    if (!managedSourceNode) {
+      block.payload.range = node.range ? { ...node.range } : undefined;
+      const meta = node.meta ? { ...node.meta } : undefined;
+      if (isNativeContainerType(node.type) && meta) delete meta.preparedNested;
+      block.payload.meta = meta;
+    }
+    return block;
   }
   if (node.type === "code") {
     return null;
   }
   if (node.type && node.id) {
+    const meta = managedSourceNode ? { ...(node.props ?? {}) } : { ...(node.props ?? {}), ...(node.meta ?? {}) };
+    if (isNativeContainerType(node.type)) delete meta.preparedNested;
     return {
       id: node.id,
       type: node.type as Block["type"],
@@ -172,7 +189,8 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
       payload: {
         raw: typeof node.props?.raw === "string" ? node.props.raw : typeof node.props?.text === "string" ? node.props.text : "",
         inline: Array.isArray(node.props?.inline) ? (node.props.inline as InlineNode[]) : undefined,
-        meta: node.props ?? {},
+        range: !managedSourceNode && node.range ? { ...node.range } : undefined,
+        meta,
       },
     };
   }
@@ -208,11 +226,453 @@ interface RendererInputSource {
   readonly document: AppendSourceDocument;
 }
 
-const inputSourceByNodeMap = new WeakMap<NodeMap, RendererInputSource>();
+const inputSourceByNodeMap = new WeakMap<ReadonlyMap<string, NodeRecord>, RendererInputSource>();
 
-function inputSourceSnapshotForMap(map: NodeMap): SourceSnapshot | undefined {
+function inputSourceSnapshotForMap(map: ReadonlyMap<string, NodeRecord>): SourceSnapshot | undefined {
   return inputSourceByNodeMap.get(map)?.document.snapshot();
 }
+
+/**
+ * Source-projected record views. They close over the map and input source they were projected from, so
+ * `buildNodeFromSnapshot` drops them whenever it carries a record into a (possibly new) map; see `forgetSourceProjections`.
+ */
+interface SourceProjectedRecordView {
+  readonly version: number;
+  readonly view: NodeRecord;
+}
+const nativeContainerNodeRecordViews = new WeakMap<NodeRecord, SourceProjectedRecordView>();
+const unmanagedLeafRecordViews = new WeakMap<NodeRecord, SourceProjectedRecordView>();
+const coldNativeContainerBlocks = new WeakMap<NodeRecord, { readonly version: number; readonly block: Block }>();
+interface EffectiveEpochRecordView {
+  readonly version: number;
+  readonly effectiveEpoch: number;
+  readonly baseView: NodeRecord;
+  readonly view: NodeRecord;
+}
+const effectiveEpochNodeRecordViews = new WeakMap<NodeRecord, EffectiveEpochRecordView>();
+
+/** A reused record must neither read nor keep alive a projection over its previous map and source. */
+function forgetSourceProjections(record: NodeRecord): void {
+  nativeContainerNodeRecordViews.delete(record);
+  unmanagedLeafRecordViews.delete(record);
+  coldNativeContainerBlocks.delete(record);
+  effectiveEpochNodeRecordViews.delete(record);
+}
+/**
+ * Where a native container's producer supplied a `preparedNested` layout: on its block, its snapshot meta, or both.
+ * The tree itself is not retained: generic children own the hierarchy, and live reads project the current tree from
+ * them on demand. Admitted meta never changes afterwards, so only the block flag follows later block updates.
+ */
+interface NativePreparedLayout {
+  readonly block: boolean;
+  readonly meta: boolean;
+}
+const nativePreparedLayoutByRecord = new WeakMap<NodeRecord, NativePreparedLayout>();
+
+function isNativeContainerType(type: string): boolean {
+  return type === "list" || type === "blockquote" || type === "list-item";
+}
+
+function isManagedSourceFamily(type: string): boolean {
+  return type === "code" ||
+    type.startsWith("code-") ||
+    type === "table" ||
+    type.startsWith("table-") ||
+    type.startsWith("paragraph-");
+}
+
+function blockWithExactCanonicalMetadata(block: Block, meta: Record<string, unknown> | undefined): Block {
+  if (plainDataEqual(block.payload.meta, meta)) return block;
+  const payloadDescriptors = Object.getOwnPropertyDescriptors(block.payload);
+  payloadDescriptors.meta = {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: meta ? { ...meta } : undefined,
+  };
+  return { ...block, payload: Object.defineProperties({}, payloadDescriptors) as Block["payload"] };
+}
+
+/** Drops a producer's prepared tree by shallow copy, so the tree is never cloned into a private record. */
+function blockWithoutPreparedNested(block: Block): Block {
+  const meta = block.payload.meta;
+  if (!meta || !Object.prototype.hasOwnProperty.call(meta, "preparedNested")) return block;
+  const { preparedNested: _preparedNested, ...rest } = meta;
+  return { ...block, payload: { ...block.payload, meta: rest } };
+}
+/** Adds canonical node metadata omitted by the producer's generic Block projection. */
+function blockWithCanonicalMetadata(block: Block, canonicalMeta?: Record<string, unknown>): Block {
+  if (!canonicalMeta) return block;
+  const blockMeta = block.payload.meta;
+  for (const key in canonicalMeta) {
+    if (
+      Object.prototype.hasOwnProperty.call(canonicalMeta, key) &&
+      (!blockMeta || !Object.prototype.hasOwnProperty.call(blockMeta, key))
+    ) {
+      const payloadDescriptors = Object.getOwnPropertyDescriptors(block.payload);
+      payloadDescriptors.meta = {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: { ...canonicalMeta, ...(blockMeta ?? {}) },
+      };
+      return { ...block, payload: Object.defineProperties({}, payloadDescriptors) as Block["payload"] };
+    }
+  }
+  return block;
+}
+function blockWithCanonicalInline(block: Block, value: unknown): Block {
+  if (!Array.isArray(value)) return block;
+  const inline = value as InlineNode[];
+  const blockMeta = block.payload.meta;
+  const updatePayloadInline = block.payload.inline !== inline;
+  const updateMetaInline = Boolean(
+    blockMeta &&
+    Object.prototype.hasOwnProperty.call(blockMeta, "inline") &&
+    blockMeta.inline !== inline,
+  );
+  if (!updatePayloadInline && !updateMetaInline) return block;
+  const payloadDescriptors = Object.getOwnPropertyDescriptors(block.payload);
+  if (updatePayloadInline) {
+    payloadDescriptors.inline = {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: inline,
+    };
+  }
+  if (updateMetaInline) {
+    payloadDescriptors.meta = {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: { ...blockMeta, inline },
+    };
+  }
+  return { ...block, payload: Object.defineProperties({}, payloadDescriptors) as Block["payload"] };
+}
+
+
+interface LegacyListLayout {
+  readonly ordered: boolean;
+  readonly loose: boolean;
+  readonly start?: number;
+}
+
+interface LegacyPrimaryParagraph {
+  readonly record: NodeRecord;
+  readonly block: Block;
+  readonly inline: InlineNode[];
+}
+
+function legacyListLayout(record: NodeRecord): LegacyListLayout {
+  const blockMeta = record.block?.payload.meta;
+  const value = (key: "ordered" | "loose" | "start"): unknown => {
+    if (Object.prototype.hasOwnProperty.call(record.props, key)) return record.props[key];
+    if (record.meta && Object.prototype.hasOwnProperty.call(record.meta, key)) return record.meta[key];
+    return blockMeta?.[key];
+  };
+  const ordered = Boolean(value("ordered"));
+  const start = value("start");
+  return {
+    ordered,
+    loose: Boolean(value("loose")),
+    start: ordered && typeof start === "number" && start !== 1 ? start : undefined,
+  };
+}
+
+function copyInlineNodes(nodes: readonly InlineNode[]): InlineNode[] {
+  return nodes.map((node) => {
+    if ("children" in node && Array.isArray(node.children)) {
+      return { ...node, children: copyInlineNodes(node.children) };
+    }
+    return { ...node };
+  });
+}
+
+function legacyInlineText(nodes: readonly InlineNode[]): string {
+  let text = "";
+  for (const node of nodes) {
+    switch (node.kind) {
+      case "text":
+      case "code":
+        text += node.text;
+        break;
+      case "strong":
+      case "em":
+      case "strike":
+      case "link":
+        text += legacyInlineText(node.children);
+        break;
+      case "html":
+        if (node.children) text += legacyInlineText(node.children);
+        break;
+      case "plugin":
+        text += node.children ? legacyInlineText(node.children) : node.raw;
+        break;
+      case "footnote-ref":
+        text += `[^${node.label}]`;
+        break;
+      case "image":
+        text += node.alt ?? "";
+        break;
+      default:
+        break;
+    }
+  }
+  return text;
+}
+
+function managedParagraphLegacyInline(paragraph: ParagraphBlockSnapshot): InlineNode[] {
+  const inline: InlineNode[] = [];
+  for (const span of paragraph.spans) {
+    if (!span.children?.length) {
+      inline.push(...copyInlineNodes(span.nodes));
+      continue;
+    }
+    for (const child of span.children) {
+      const props = child.props ?? {};
+      if (child.type === "paragraph-text") {
+        if (Array.isArray(props.inline)) inline.push(...copyInlineNodes(props.inline as InlineNode[]));
+        else if (typeof props.text === "string") inline.push({ kind: "text", text: props.text });
+      } else if (child.type === "paragraph-html" && typeof props.raw === "string") {
+        inline.push({
+          kind: "html",
+          raw: props.raw,
+          ...(child.meta?.sanitized === true && typeof props.html === "string" ? { sanitized: props.html } : {}),
+        });
+      }
+    }
+  }
+  return inline;
+}
+
+function legacyPrimaryParagraph(
+  map: NodeMap,
+  item: NodeRecord,
+  source?: SourceSnapshot,
+): LegacyPrimaryParagraph | undefined {
+  if (item.type !== "list-item") return undefined;
+  for (const childId of item.children) {
+    const record = map.get(childId);
+    const state = record?.type === "paragraph" && record.props.listItemPrimary === true
+      ? paragraphStateByRecord.get(record)
+      : undefined;
+    if (!record || !state) continue;
+    const block = coldBlockForStoreNode(map, record, source);
+    const paragraph = block?.payload.meta?.paragraph as ParagraphBlockSnapshot | undefined;
+    if (!block || !paragraph) return undefined;
+    return { record, block, inline: managedParagraphLegacyInline(paragraph) };
+  }
+  return undefined;
+}
+
+function listItemSegmentSnapshot(
+  parentId: string,
+  segment: MixedContentSegment,
+  index: number,
+  htmlTree?: HtmlTreeNode[],
+): NodeSnapshot {
+  const id = `${parentId}::list-item:segment:${index}`;
+  const range = segment.range ? { ...segment.range } : undefined;
+  if (segment.kind === "text") {
+    return {
+      id,
+      type: "list-item-text",
+      props: { text: segment.value, inline: segment.inline ? copyInlineNodes(segment.inline) : undefined },
+      ...(range ? { range } : {}),
+      children: [],
+    };
+  }
+  if (segment.kind === "html") {
+    return {
+      id,
+      type: "list-item-html",
+      props: {
+        raw: segment.value,
+        html: segment.sanitized ?? segment.value,
+        ...(htmlTree !== undefined ? { htmlTree } : {}),
+      },
+      ...(segment.sanitized ? { meta: { sanitized: true } } : {}),
+      ...(range ? { range } : {}),
+      children: [],
+    };
+  }
+  return {
+    id,
+    type: "list-item-mdx",
+    props: { raw: segment.value, status: segment.status ?? "pending", error: segment.error },
+    ...(range ? { range } : {}),
+    children: [],
+  };
+}
+
+function hasManagedPrimaryListChild(map: NodeMap, list: NodeRecord): boolean {
+  for (const itemId of list.children) {
+    const item = map.get(itemId);
+    if (item?.type !== "list-item") continue;
+    for (const childId of item.children) {
+      const child = map.get(childId);
+      if (child?.type === "paragraph" && child.props.listItemPrimary === true && paragraphStateByRecord.has(child)) return true;
+    }
+  }
+  return false;
+}
+
+function projectLegacyListItemBlock(block: Block, paragraph: Block, inline: InlineNode[]): Block {
+  const result = cloneBlock(block);
+  const meta = { ...(result.payload.meta ?? {}) };
+  delete meta.paragraph;
+  delete meta.mixedSegments;
+  delete meta.mixedHtmlTrees;
+  const paragraphMeta = paragraph.payload.meta;
+  if (Array.isArray(paragraphMeta?.mixedSegments)) {
+    meta.mixedSegments = paragraphMeta.mixedSegments;
+    if (paragraphMeta.mixedHtmlTrees !== undefined) meta.mixedHtmlTrees = paragraphMeta.mixedHtmlTrees;
+  }
+  result.payload.inline = copyInlineNodes(inline);
+  result.payload.meta = meta;
+  return result;
+}
+
+function storePreparedNested(
+  map: NodeMap,
+  record: NodeRecord,
+  source?: SourceSnapshot,
+  legacyProjection = false,
+  inheritedListLayout?: LegacyListLayout,
+  primaryParagraph?: LegacyPrimaryParagraph,
+): PreparedNestedSnapshot {
+  const listLayout = record.type === "list" ? legacyListLayout(record) : inheritedListLayout;
+  const itemLayout = record.type === "list-item"
+    ? listLayout ?? { ordered: false, loose: false }
+    : listLayout;
+  const primary = legacyProjection && record.type === "list-item"
+    ? primaryParagraph ?? legacyPrimaryParagraph(map, record, source)
+    : undefined;
+  const props = nodePropsForSnapshot(record, source);
+  if (legacyProjection && record.type === "list-item") {
+    props.ordered = itemLayout?.ordered ?? false;
+    props.loose = itemLayout?.loose ?? false;
+    props.start = itemLayout?.start;
+    if (primary) {
+      props.inline = copyInlineNodes(primary.inline);
+      props.text = legacyInlineText(primary.inline);
+    }
+  }
+  const children: NodeSnapshot[] = [];
+  const mixedSegments = primary?.block.payload.meta?.mixedSegments;
+  const mixedHtmlTrees = primary?.block.payload.meta?.mixedHtmlTrees as Record<number, HtmlTreeNode[]> | undefined;
+  if (legacyProjection && Array.isArray(mixedSegments)) {
+    for (let index = 0; index < mixedSegments.length; index += 1) {
+      const segment = mixedSegments[index] as MixedContentSegment | undefined;
+      if (segment) children.push(listItemSegmentSnapshot(record.id, segment, index, mixedHtmlTrees?.[index]));
+    }
+  }
+  for (const childId of record.children) {
+    if (legacyProjection && primary?.record.id === childId) continue;
+    const child = map.get(childId);
+    if (!child) continue;
+    if (legacyProjection && primary && child.id.startsWith(`${record.id}::list-item:segment:`)) continue;
+    const snapshot = storeNodeSnapshot(map, child, source, legacyProjection, itemLayout);
+    if (snapshot) {
+      if (legacyProjection && record.type === "list-item" && child.type === "paragraph" && child.props.listItemPrimary !== true) {
+        snapshot.props = { ...snapshot.props, tight: !itemLayout?.loose };
+      }
+      children.push(snapshot);
+    }
+  }
+  return { props, children };
+}
+
+
+/** Exposes the record's current generic hierarchy as `preparedNested`, projected only when a reader asks for it. */
+function blockWithCurrentPreparedNested(map: NodeMap, record: NodeRecord, block: Block): Block {
+  const prepared = Object.defineProperties({}, {
+    props: { enumerable: true, get: () => nodePropsForSnapshot(record, inputSourceSnapshotForMap(map)) },
+    children: { enumerable: true, get: () => storePreparedNested(map, record, inputSourceSnapshotForMap(map)).children },
+  }) as PreparedNestedSnapshot;
+  const payloadDescriptors = Object.getOwnPropertyDescriptors(block.payload);
+  payloadDescriptors.meta = {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: { ...(block.payload.meta ?? {}), preparedNested: prepared },
+  };
+  return { ...block, payload: Object.defineProperties({}, payloadDescriptors) as Block["payload"] };
+}
+
+function parseSourceRange(value: unknown, sourceLength?: number): { from: number; to: number } | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value) || !("from" in value) || !("to" in value)) {
+    return null;
+  }
+  const { from, to } = value;
+  if (
+    typeof from !== "number" ||
+    typeof to !== "number" ||
+    !Number.isSafeInteger(from) ||
+    !Number.isSafeInteger(to) ||
+    from < 0 ||
+    to < from ||
+    (sourceLength !== undefined && (from > sourceLength || to > sourceLength))
+  ) {
+    return null;
+  }
+  return { from, to };
+}
+
+function blockWithSourceRange(
+  block: Block,
+  range: { readonly from: number; readonly to: number },
+  source?: SourceSnapshot,
+): Block {
+  const payloadDescriptors = Object.getOwnPropertyDescriptors(block.payload);
+  payloadDescriptors.range = {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: { from: range.from, to: range.to },
+  };
+  if (source) {
+    payloadDescriptors.raw = {
+      configurable: true,
+      enumerable: true,
+      get: () => source.read(range.from, range.to),
+    };
+  }
+  const payload = Object.defineProperties({}, payloadDescriptors) as Block["payload"];
+  return { ...block, payload };
+}
+
+function propsWithSourceRange(
+  props: Record<string, unknown>,
+  range: { readonly from: number; readonly to: number },
+  source: SourceSnapshot,
+): Record<string, unknown> {
+  const descriptors = Object.getOwnPropertyDescriptors(props);
+  if (Object.prototype.hasOwnProperty.call(props, "raw")) {
+    descriptors.raw = {
+      configurable: true,
+      enumerable: true,
+      get: () => source.read(range.from, range.to),
+    };
+  }
+  return Object.defineProperties({}, descriptors) as Record<string, unknown>;
+}
+
+function nativeContainerProjectionRoot(map: NodeMap, id: string): NodeRecord | undefined {
+  let record = map.get(id);
+  while (record && record.parentId && record.parentId !== PATCH_ROOT_ID) {
+    record = map.get(record.parentId);
+  }
+  return record && isNativeContainerType(record.type) ? record : undefined;
+}
+
+function invalidateNativeContainerProjection(map: NodeMap, id: string): void {
+  const root = nativeContainerProjectionRoot(map, id);
+  if (root) coldNativeContainerBlocks.delete(root);
+}
+
 const paragraphStateByRecord = new WeakMap<NodeRecord, ManagedParagraphViewState>();
 const retiredParagraphGenerationsByMap = new WeakMap<ReadonlyMap<string, NodeRecord>, Map<string, number>>();
 const coldParagraphBlocksByView = new WeakMap<ManagedParagraphViewState, Block>();
@@ -222,7 +682,6 @@ const paragraphNodeRecordViews = new WeakMap<NodeRecord, {
   readonly meta?: Record<string, unknown>;
   readonly view: NodeRecord;
 }>();
-const paragraphNodeRecordOrigin = new WeakMap<NodeRecord, NodeRecord>();
 
 function paragraphNodeBlock(record: NodeRecord, state: ManagedParagraphViewState): Block {
   const payload = Object.defineProperties(
@@ -255,18 +714,113 @@ function paragraphNodeBlock(record: NodeRecord, state: ManagedParagraphViewState
     payload,
   };
 }
+const canonicalBlockNodeRecordViews = new WeakMap<NodeRecord, {
+  readonly version: number;
+  readonly props: Record<string, unknown>;
+  readonly meta?: Record<string, unknown>;
+  readonly block: Block;
+  readonly view: NodeRecord;
+}>();
 
-function nodeRecordForRead(record: NodeRecord): NodeRecord {
-  const state = paragraphStateByRecord.get(record);
-  if (!state) return record;
-  const cached = paragraphNodeRecordViews.get(record);
-  if (cached && cached.version === record.version && cached.state === state && cached.meta === record.meta) {
-    return cached.view;
-  }
-  const view = { ...record, block: paragraphNodeBlock(record, state) };
-  paragraphNodeRecordViews.set(record, { version: record.version, state, meta: record.meta, view });
-  paragraphNodeRecordOrigin.set(view, record);
+function nodeRecordWithCanonicalBlock(record: NodeRecord): NodeRecord {
+  const block = record.block;
+  const props = record.props;
+  const meta = record.meta;
+  if (!block) return record;
+  const cached = canonicalBlockNodeRecordViews.get(record);
+  if (
+    cached?.version === record.version &&
+    cached.props === props &&
+    cached.meta === meta &&
+    cached.block === block
+  ) return cached.view;
+  const projectedBlock = blockWithCanonicalInline(
+    blockWithCanonicalMetadata(block, meta),
+    props.inline,
+  );
+  if (projectedBlock === block) return record;
+  const view = { ...record, block: projectedBlock };
+  canonicalBlockNodeRecordViews.set(record, { version: record.version, props, meta, block, view });
   return view;
+}
+
+
+function nodeRecordWithEffectiveEpoch(
+  record: NodeRecord,
+  view: NodeRecord,
+  effectiveEpoch: number,
+): NodeRecord {
+  const cached = effectiveEpochNodeRecordViews.get(record);
+  if (
+    cached?.version === record.version &&
+    cached.effectiveEpoch === effectiveEpoch &&
+    cached.baseView === view
+  ) return cached.view;
+  // Capture the epoch so later direct writes do not mutate an earlier published read.
+  const projected = { ...view, blockEpoch: effectiveEpoch };
+  effectiveEpochNodeRecordViews.set(record, {
+    version: record.version,
+    effectiveEpoch,
+    baseView: view,
+    view: projected,
+  });
+  return projected;
+}
+
+function nodeRecordForRead(map: NodeMap, record: NodeRecord): NodeRecord {
+  const effectiveEpoch = effectiveBlockEpoch(map, record);
+  let view: NodeRecord;
+  const state = paragraphStateByRecord.get(record);
+  if (state) {
+    const cached = paragraphNodeRecordViews.get(record);
+    if (cached && cached.version === record.version && cached.state === state && cached.meta === record.meta) {
+      view = cached.view;
+    } else {
+      view = { ...record, block: paragraphNodeBlock(record, state) };
+      paragraphNodeRecordViews.set(record, { version: record.version, state, meta: record.meta, view });
+    }
+  } else if (!isManagedSourceFamily(record.type) && !isNativeContainerType(record.type) && record.block && record.range) {
+    // An unmanaged leaf's admitted range is its physical source; live reads bind raw to the canonical input.
+    const source = inputSourceSnapshotForMap(map);
+    if (!source || record.range.to > source.length) {
+      view = record;
+    } else {
+      const cached = unmanagedLeafRecordViews.get(record);
+      if (cached?.version === record.version) {
+        view = cached.view;
+      } else {
+        const sourceBlock = blockWithSourceRange(record.block, record.range, source);
+        const projectedBlock = blockWithCanonicalInline(
+          blockWithCanonicalMetadata(sourceBlock, record.meta),
+          record.props.inline,
+        );
+        view = { ...record, block: projectedBlock };
+        unmanagedLeafRecordViews.set(record, { version: record.version, view });
+      }
+    }
+  } else if (!isNativeContainerType(record.type)) {
+    view = nodeRecordWithCanonicalBlock(record);
+  } else {
+    const exposesPreparedNested = nativePreparedLayoutByRecord.has(record) && record.block !== undefined;
+    if (!record.range && !exposesPreparedNested) {
+      view = record;
+    } else {
+      const cached = nativeContainerNodeRecordViews.get(record);
+      if (cached?.version === record.version) {
+        view = cached.view;
+      } else {
+        const source = inputSourceSnapshotForMap(map);
+        const range = record.range ? { ...record.range } : undefined;
+        const validSource = source && range && range.to <= source.length ? source : undefined;
+        let block = record.block && range ? blockWithSourceRange(record.block, range, validSource) : record.block;
+        if (block && exposesPreparedNested) block = blockWithCurrentPreparedNested(map, record, block);
+        const props = validSource && range ? propsWithSourceRange(record.props, range, validSource) : record.props;
+        view = { ...record, range, props, ...(block ? { block } : {}) };
+        nativeContainerNodeRecordViews.set(record, { version: record.version, view });
+      }
+    }
+  }
+  return nodeRecordWithEffectiveEpoch(record, view, effectiveEpoch);
 }
 
 function paragraphColdBlockBase(record: NodeRecord, state: ManagedParagraphViewState): Block {
@@ -841,6 +1395,9 @@ interface TableRowRangeSubscription {
   rows?: ReadonlyArray<TableRowRecord>;
   generation?: number;
 }
+interface CodeLineRangeSubscription {
+  readonly listeners: Set<() => void>;
+}
 
 function retiredCodeGenerations(map: NodeMap): Map<string, number> {
   let generations = retiredCodeGenerationsByMap.get(map);
@@ -1390,24 +1947,32 @@ function readPatchTx(patch: Patch): number | undefined {
   return readNumericEpoch(patch.meta?.tx);
 }
 
-function assignSubtreeBlockEpoch(map: NodeMap, rootId: string, blockEpoch: number, touched?: Set<string>) {
+const blockEpochWriteSerials = new WeakMap<NodeRecord, number>();
+let nextBlockEpochWriteSerial = 1;
+
+function effectiveBlockEpoch(map: NodeMap, record: NodeRecord): number {
+  let epoch = record.blockEpoch;
+  let latestSerial = blockEpochWriteSerials.get(record) ?? 0;
+  let ancestor = record.parentId ? map.get(record.parentId) : undefined;
+  while (ancestor) {
+    const serial = blockEpochWriteSerials.get(ancestor) ?? 0;
+    if (serial > latestSerial) {
+      epoch = ancestor.blockEpoch;
+      latestSerial = serial;
+    }
+    ancestor = ancestor.parentId ? map.get(ancestor.parentId) : undefined;
+  }
+  return epoch;
+}
+
+function assignBlockEpoch(map: NodeMap, rootId: string, blockEpoch: number, touched?: Set<string>) {
   const root = map.get(rootId);
   if (!root) return;
-  const stack = [root];
-  while (stack.length > 0) {
-    const node = stack.pop();
-    if (!node) continue;
-    if (node.blockEpoch !== blockEpoch) {
-      node.blockEpoch = blockEpoch;
-      bumpVersion(node);
-      touched?.add(node.id);
-    }
-    for (const childId of node.children) {
-      const child = map.get(childId);
-      if (child) {
-        stack.push(child);
-      }
-    }
+  blockEpochWriteSerials.set(root, nextBlockEpochWriteSerial++);
+  if (root.blockEpoch !== blockEpoch) {
+    root.blockEpoch = blockEpoch;
+    bumpVersion(root);
+    touched?.add(root.id);
   }
 }
 
@@ -1434,7 +1999,7 @@ function shallowEqualRecords(a?: Record<string, unknown>, b?: Record<string, unk
   return true;
 }
 
-function ensureUniqueChildren(parent: NodeRecord, touched?: Set<string>) {
+function ensureUniqueChildren(map: NodeMap, parent: NodeRecord, touched?: Set<string>) {
   if (!parent || parent.children.length <= 1) {
     return;
   }
@@ -1447,7 +2012,11 @@ function ensureUniqueChildren(parent: NodeRecord, touched?: Set<string>) {
       continue;
     }
     seen.add(childId);
+    // Count the explicit destination write, not JS Set or array backing-store growth.
     deduped.push(childId);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      paragraphCountersByMap!.get(map)?.recordRecordSlotsAllocated(1, "store");
+    }
   }
   if (mutated) {
     parent.children = deduped;
@@ -1860,7 +2429,13 @@ function normalizeNodeProps(snapshot: NodeSnapshot): Record<string, unknown> {
     return mergeInlineSegmentProps(undefined, incoming);
   }
 
-  return snapshot.props ? { ...snapshot.props } : {};
+  const normalized = snapshot.props ? { ...snapshot.props } : {};
+  if (isNativeContainerType(snapshot.type)) {
+    // `record.block` is the one block carrier and generic children own the hierarchy.
+    delete normalized.block;
+    delete normalized.range;
+  }
+  return normalized;
 }
 
 interface CodeBlockValidationIssue {
@@ -1935,6 +2510,12 @@ function rebuildCodeBlockFromSnapshot(nodes: NodeMap, parent: NodeRecord, touche
     return false;
   }
   const index = ancestor.children.indexOf(parent.id);
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    paragraphCountersByMap!.get(nodes)?.recordPrefixComparisons?.(
+      index === -1 ? ancestor.children.length : index + 1,
+      "store",
+    );
+  }
   if (index === -1) {
     return false;
   }
@@ -1956,6 +2537,10 @@ function rebuildCodeBlockFromSnapshot(nodes: NodeMap, parent: NodeRecord, touche
   return true;
 }
 
+function expectedCodeLineId(parentId: string, index: number): string {
+  return `${parentId}::line:${index}`;
+}
+
 function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): boolean {
   if (a === b) return true;
   if (a.length !== b.length) return false;
@@ -1965,57 +2550,6 @@ function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): boolean {
   return true;
 }
 
-function expectedCodeLineId(parentId: string, index: number): string {
-  return `${parentId}::line:${index}`;
-}
-function syncManagedCodeChildren(
-  nodes: NodeMap,
-  parent: NodeRecord,
-  state: StoredCodeBlockState,
-  touched: Set<string>,
-): void {
-  const previousChildren = parent.children;
-  const children: string[] = [];
-  const keep = new Set<string>();
-  for (let index = 0; index < state.view.lines.length; index += 1) {
-    const line = state.view.lines.get(index);
-    if (!line) continue;
-    const id = expectedCodeLineId(parent.id, index);
-    const previous = nodes.get(id);
-    const incoming: Record<string, unknown> = { index, text: line.text };
-    if (line.decoration) incoming.tokens = line.decoration.tokens as TokenLineV1;
-    const normalized = normalizeCodeLineProps(incoming, previous?.props);
-    const props = {
-      ...(previous?.props ?? {}),
-      ...normalized,
-      isProvisional: line.isProvisional,
-      ...(line.diffKind !== undefined ? { diffKind: line.diffKind } : {}),
-      ...(line.oldNo !== undefined ? { oldNo: line.oldNo } : {}),
-      ...(line.newNo !== undefined ? { newNo: line.newNo } : {}),
-    };
-    const child: NodeRecord = previous ?? {
-      id,
-      type: "code-line",
-      parentId: parent.id,
-      children: [],
-      props,
-      version: 0,
-      blockEpoch: parent.blockEpoch,
-    };
-    child.parentId = parent.id;
-    child.type = "code-line";
-    child.props = props;
-    if (previous) bumpVersion(child);
-    nodes.set(id, child);
-    touched.add(id);
-    keep.add(id);
-    children.push(id);
-  }
-  for (const id of previousChildren) {
-    if (!keep.has(id)) removeSubtree(nodes, id, touched);
-  }
-  parent.children = children;
-}
 
 
 function collectStoreInvariantViolations(nodes: NodeMap): string[] {
@@ -2076,6 +2610,12 @@ function buildNodeFromSnapshot(
   themes?: { light?: string; dark?: string },
   previous?: ReadonlyMap<string, NodeRecord>,
 ): NodeRecord {
+  if (
+    snapshot.range !== undefined &&
+    parseSourceRange(snapshot.range, inputSourceSnapshotForMap(map)?.length) === null
+  ) {
+    throw new RangeError("Node snapshot range must be an ordered UTF-16 interval inside canonical input");
+  }
   if (snapshot.inputSource !== undefined) {
     throw new TypeError("Input source baseline is only valid on the document root");
   }
@@ -2099,40 +2639,58 @@ function buildNodeFromSnapshot(
   }
   const prior = previous?.get(snapshot.id);
   const canonicalSource = inputSourceSnapshotForMap(map);
-  const tableCounters = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-    ? codeCountersByMap!.get(map)
-    : undefined;
-  const tableState = snapshot.table
-    ? createManagedTableState(
-      snapshot.table,
-      snapshot.id,
-      tableCounters ? { counters: tableCounters } as never : undefined,
-      canonicalSource,
-    )
-    : undefined;
-  const paragraphCounters = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-    ? paragraphCountersByMap!.get(map)
-    : undefined;
-  const paragraphState = snapshot.paragraph
-    ? createManagedParagraphState(
-      snapshot.paragraph,
-      snapshot.id,
-      paragraphCounters ? { counters: paragraphCounters, counterStage: "store" } : undefined,
-      canonicalSource,
-    )
-    : undefined;
+  let tableState: ManagedTableViewState | undefined;
+  if (snapshot.table) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      const tableCounters = codeCountersByMap!.get(map);
+      tableState = createManagedTableState(
+        snapshot.table,
+        snapshot.id,
+        tableCounters ? { counters: tableCounters } as never : undefined,
+        canonicalSource,
+      );
+    } else {
+      tableState = createManagedTableState(snapshot.table, snapshot.id, undefined, canonicalSource);
+    }
+  }
+  let paragraphState: ManagedParagraphViewState | undefined;
+  if (snapshot.paragraph) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      const paragraphCounters = paragraphCountersByMap!.get(map);
+      paragraphState = createManagedParagraphState(
+        snapshot.paragraph,
+        snapshot.id,
+        paragraphCounters ? { counters: paragraphCounters, counterStage: "store" } : undefined,
+        canonicalSource,
+      );
+    } else {
+      paragraphState = createManagedParagraphState(snapshot.paragraph, snapshot.id, undefined, canonicalSource);
+    }
+  }
+  const nativeContainer = isNativeContainerType(snapshot.type);
+  let admittedMeta = snapshot.meta;
+  const metaPrepared = nativeContainer && admittedMeta?.preparedNested !== undefined;
+  if (nativeContainer && admittedMeta && Object.prototype.hasOwnProperty.call(admittedMeta, "preparedNested")) {
+    const { preparedNested: _preparedNested, ...rest } = admittedMeta;
+    admittedMeta = rest;
+  }
   const record: NodeRecord = {
     id: snapshot.id,
     type: snapshot.type,
     parentId,
     children: [],
     props: snapshot.paragraph ? normalizeParagraphNodeProps(snapshot) : prior && codeLineSnapshotMatches(snapshot, prior) ? prior.props : normalizeNodeProps(snapshot),
-    meta: snapshot.paragraph ? normalizeParagraphNodeMeta(snapshot) : snapshot.meta ? { ...snapshot.meta } : undefined,
+    meta: snapshot.paragraph ? normalizeParagraphNodeMeta(snapshot) : admittedMeta ? { ...admittedMeta } : undefined,
     range: snapshot.range ? { ...snapshot.range } : undefined,
     version: 0,
     blockEpoch,
     block: snapshot.paragraph ? undefined : snapshotToBlock(snapshot) ?? undefined,
   };
+  const incomingBlock = snapshot.props?.block as Block | undefined;
+  const blockPrepared = nativeContainer && incomingBlock?.payload?.meta?.preparedNested !== undefined;
+  if (blockPrepared || metaPrepared) {
+    nativePreparedLayoutByRecord.set(record, { block: blockPrepared, meta: metaPrepared });
+  }
   if (tableState && record.block) record.block.isFinalized = tableState.source.state !== "open";
 
   let codeState: StoredCodeBlockState | undefined;
@@ -2141,7 +2699,9 @@ function buildNodeFromSnapshot(
     const codeCounters = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
       ? codeCountersByMap!.get(map)
       : undefined;
-    codeState = createStoredCodeBlockState(snapshot, record.block, codeCounters, canonicalSource);
+    codeState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? createStoredCodeBlockState(snapshot, record.block, canonicalSource, codeCounters)
+      : createStoredCodeBlockState(snapshot, record.block, canonicalSource);
   }
 
   map.set(record.id, record);
@@ -2160,6 +2720,11 @@ function buildNodeFromSnapshot(
   } else {
     const childSnapshots = tableState ? [] : ensureArray(snapshot.children);
     for (const child of childSnapshots) {
+      if (snapshot.code && child.type === "code-line") {
+        const index = typeof child.props?.index === "number" ? child.props.index : -1;
+        const line = Number.isSafeInteger(index) && index >= 0 ? snapshot.code.lines[index] : undefined;
+        if (line?.id === child.id && line.index === index) continue;
+      }
       const childRecord = buildNodeFromSnapshot(map, child, record.id, blockEpoch, themes, previous);
       record.children.push(childRecord.id);
     }
@@ -2168,6 +2733,7 @@ function buildNodeFromSnapshot(
   if (prior && previous && recordMatchesPrior(map, record, prior, previous)) {
     // Same derived content as the record being replaced: keep its identity so views bail out.
     prior.blockEpoch = blockEpoch;
+    forgetSourceProjections(prior);
     map.set(prior.id, prior);
     return prior;
   }
@@ -2245,6 +2811,7 @@ function recordMatchesPrior(map: NodeMap, record: NodeRecord, prior: NodeRecord,
   }
   if (!plainDataEqual(record.meta, prior.meta) || !plainDataEqual(record.range, prior.range)) return false;
   if (!plainDataEqual(record.block, prior.block)) return false;
+  if (!plainDataEqual(nativePreparedLayoutByRecord.get(record), nativePreparedLayoutByRecord.get(prior))) return false;
   if (record.type === "list" || record.type === "list-item") {
     const { depth: _priorDepth, ...priorProps } = prior.props;
     return plainDataEqual(record.props, priorProps);
@@ -2292,7 +2859,13 @@ function collectSubtreeRecords(map: NodeMap, rootId: string): Map<string, NodeRe
   return records;
 }
 
-function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
+function removeSubtree(
+  map: NodeMap,
+  id: string,
+  touched: Set<string>,
+  skipRootUnlink = false,
+  onRemovedNode?: (record: NodeRecord) => void,
+) {
   const record = map.get(id);
   if (!record) return;
   const stack = [record];
@@ -2302,12 +2875,20 @@ function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
     if (!node) {
       continue;
     }
-    if (node.parentId) {
+    if (node.parentId && !(skipRootUnlink && node === record)) {
       const parent = map.get(node.parentId);
       if (parent) {
         const idx = parent.children.indexOf(node.id);
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          paragraphCountersByMap!.get(map)?.recordPrefixComparisons?.(
+            idx === -1 ? parent.children.length : idx + 1,
+            "store",
+          );
+        }
         if (idx !== -1) {
-          parent.children.splice(idx, 1);
+          const children = parent.children.slice();
+          children.splice(idx, 1);
+          parent.children = children;
           bumpVersion(parent);
           touched.add(parent.id);
           affectedParents.add(parent.id);
@@ -2317,6 +2898,7 @@ function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
     rememberRetiredCodeOwner(map, node);
     rememberRetiredTableOwner(map, node);
     rememberRetiredParagraphOwner(map, node);
+    onRemovedNode?.(node);
     map.delete(node.id);
     deleteSnapshotCacheEntry(map, node.id);
     touched.add(node.id);
@@ -2344,8 +2926,160 @@ function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
 
 // Internal records are copy-on-write (every block change assigns a new `record.block`), so one public clone per
 // internal block object stays valid until that record changes; unchanged blocks keep their identity across reads.
+function nodePropsForSnapshot(record: NodeRecord, source?: SourceSnapshot): Record<string, unknown> {
+  const props = { ...record.props };
+  delete props.block;
+  delete props.range;
+  if (source && record.range && isNativeContainerType(record.type) && Object.prototype.hasOwnProperty.call(props, "raw")) {
+    props.raw = source.read(record.range.from, record.range.to);
+  }
+  return props;
+}
+
+function coldBlockForStoreNode(
+  map: NodeMap,
+  record: NodeRecord,
+  source?: SourceSnapshot,
+  legacyProjection = false,
+  inheritedListLayout?: LegacyListLayout,
+  primaryParagraph?: LegacyPrimaryParagraph,
+): Block | undefined {
+  const paragraphState = paragraphStateByRecord.get(record);
+  if (paragraphState) {
+    let block = coldParagraphBlocksByView.get(paragraphState);
+    if (!block) {
+      block = materializeManagedParagraphBlock(paragraphColdBlockBase(record, paragraphState), paragraphState);
+      coldParagraphBlocksByView.set(paragraphState, block);
+    }
+    return block;
+  }
+  const tableState = tableStateByRecord.get(record);
+  if (tableState) {
+    let block = coldTableBlocksByView.get(tableState);
+    if (!block) {
+      block = materializeManagedTableBlock(record.block ?? {
+        id: record.id,
+        type: "table",
+        isFinalized: true,
+        payload: { raw: "", range: { ...tableState.source.sourceRange }, meta: {} },
+      }, tableState);
+      coldTableBlocksByView.set(tableState, block);
+    }
+    return block;
+  }
+  const codeState = codeStateByRecord.get(record);
+  if (codeState) {
+    let block = coldCodeBlocksByView.get(codeState.view);
+    if (!block) {
+      block = materializeStoredCodeBlock(codeState, record.block, record.id, record.props, record.range);
+      coldCodeBlocksByView.set(codeState.view, block);
+    }
+    return block;
+  }
+  const base = record.block ?? snapshotToBlock({
+    id: record.id,
+    type: record.type,
+    props: record.props,
+    range: record.range,
+    meta: record.meta,
+  });
+  if (!base) return undefined;
+  const range = record.range ?? base.payload.range;
+  const sourceRange = source && range ? parseSourceRange(range, source.length) : null;
+  let projected = sourceRange
+    ? blockWithSourceRange(base, sourceRange, source)
+    : record.range
+      ? blockWithSourceRange(base, record.range)
+      : base;
+  if (!isNativeContainerType(record.type)) {
+    return blockWithCanonicalInline(
+      blockWithCanonicalMetadata(projected, record.meta),
+      record.props.inline,
+    );
+  }
+
+  const listLayout = record.type === "list" ? legacyListLayout(record) : inheritedListLayout;
+  const itemPrimary = legacyProjection && record.type === "list-item"
+    ? primaryParagraph ?? legacyPrimaryParagraph(map, record, source)
+    : undefined;
+  if (legacyProjection && record.type === "list-item" && itemPrimary) {
+    projected = projectLegacyListItemBlock(projected, itemPrimary.block, itemPrimary.inline);
+  }
+  const meta: Record<string, unknown> = {
+    ...(record.meta ?? {}),
+    ...(projected.payload.meta ?? {}),
+  };
+  if (record.type === "list") {
+    for (const key of ["ordered", "loose", "start", "items"] as const) {
+      if (!Object.prototype.hasOwnProperty.call(record.props, key)) continue;
+      const value = record.props[key];
+      if (value === undefined) delete meta[key];
+      else meta[key] = value;
+    }
+  }
+  const prepared = storePreparedNested(map, record, source, legacyProjection, listLayout, itemPrimary);
+  meta.preparedNested = prepared;
+  if (legacyProjection && record.type === "list" && hasManagedPrimaryListChild(map, record)) {
+    const existingItems = Array.isArray(meta.items) ? meta.items as InlineNode[][] : [];
+    const currentItems = prepared.children
+      .filter((child) => child.type === "list-item")
+      .map((child, index) => Array.isArray(child.props?.inline)
+        ? copyInlineNodes(child.props.inline as InlineNode[])
+        : copyInlineNodes(existingItems[index] ?? []));
+    meta.items = currentItems;
+    prepared.props.items = currentItems.map((item) => copyInlineNodes(item));
+  }
+  const payloadDescriptors = Object.getOwnPropertyDescriptors(projected.payload);
+  payloadDescriptors.meta = { configurable: true, enumerable: true, writable: true, value: meta };
+  const payload = Object.defineProperties({}, payloadDescriptors) as Block["payload"];
+  projected = { ...projected, payload };
+  return projected;
+}
+
+function storeNodeSnapshot(
+  map: NodeMap,
+  record: NodeRecord,
+  source?: SourceSnapshot,
+  legacyProjection = false,
+  inheritedListLayout?: LegacyListLayout,
+  primaryParagraph?: LegacyPrimaryParagraph,
+): NodeSnapshot | undefined {
+  const itemPrimary = legacyProjection && record.type === "list-item"
+    ? primaryParagraph ?? legacyPrimaryParagraph(map, record, source)
+    : undefined;
+  const block = coldBlockForStoreNode(map, record, source, legacyProjection, inheritedListLayout, itemPrimary);
+  if (!block) return undefined;
+  const snapshot = createBlockSnapshot(block);
+  snapshot.props = { ...snapshot.props, ...nodePropsForSnapshot(record, source) };
+  if (legacyProjection && record.type === "list-item") {
+    const layout = inheritedListLayout ?? { ordered: false, loose: false };
+    snapshot.props.ordered = layout.ordered;
+    snapshot.props.loose = layout.loose;
+    snapshot.props.start = layout.start;
+    if (itemPrimary) {
+      snapshot.props.inline = copyInlineNodes(itemPrimary.inline);
+      snapshot.props.text = legacyInlineText(itemPrimary.inline);
+    }
+  }
+  if (record.range) snapshot.range = { ...record.range };
+  if (record.meta) snapshot.meta = { ...record.meta, ...(snapshot.meta ?? {}) };
+  if (!isNativeContainerType(record.type) && record.children.length > 0 && !tableStateByRecord.has(record) && !paragraphStateByRecord.has(record)) {
+    snapshot.children = record.children.flatMap((childId) => {
+      const child = map.get(childId);
+      if (!child) return [];
+      const childSnapshot = storeNodeSnapshot(map, child, source, legacyProjection, inheritedListLayout);
+      return childSnapshot ? [childSnapshot] : [];
+    });
+  }
+  return snapshot;
+}
+
+
+// Internal records are copy-on-write (every block change assigns a new `record.block`), so one public clone per
+// internal block object stays valid until that record changes; unchanged blocks keep their identity across reads.
 function convertNodeToBlocks(map: NodeMap, root: NodeRecord, publicBlocks: WeakMap<Block, Block>): Block[] {
   const result: Block[] = [];
+  const source = inputSourceSnapshotForMap(map);
   for (const childId of root.children) {
     const child = map.get(childId);
     if (!child) continue;
@@ -2356,6 +3090,22 @@ function convertNodeToBlocks(map: NodeMap, root: NodeRecord, publicBlocks: WeakM
         materialized = materializeManagedParagraphBlock(paragraphColdBlockBase(child, paragraphState), paragraphState);
         coldParagraphBlocksByView.set(paragraphState, materialized);
       }
+      let block = publicBlocks.get(materialized);
+      if (!block) {
+        block = cloneBlock(materialized);
+        publicBlocks.set(materialized, block);
+      }
+      result.push(block);
+      continue;
+    }
+    if (isNativeContainerType(child.type)) {
+      const cachedCold = coldNativeContainerBlocks.get(child);
+      let materialized = cachedCold?.version === child.version ? cachedCold.block : undefined;
+      if (!materialized) {
+        materialized = coldBlockForStoreNode(map, child, source, true);
+        if (materialized) coldNativeContainerBlocks.set(child, { version: child.version, block: materialized });
+      }
+      if (!materialized) continue;
       let block = publicBlocks.get(materialized);
       if (!block) {
         block = cloneBlock(materialized);
@@ -2399,11 +3149,14 @@ function convertNodeToBlocks(map: NodeMap, root: NodeRecord, publicBlocks: WeakM
       result.push(block);
       continue;
     }
-    if (!child.block) continue;
-    let block = publicBlocks.get(child.block);
+    // Unmanaged blocks export the same canonical record projection live reads use; the public clone captures
+    // its raw as a plain value, so a published export keeps its historical window.
+    const exportedBlock = nodeRecordForRead(map, child).block;
+    if (!exportedBlock) continue;
+    let block = publicBlocks.get(exportedBlock);
     if (!block) {
-      block = cloneBlock(child.block);
-      publicBlocks.set(child.block, block);
+      block = cloneBlock(exportedBlock);
+      publicBlocks.set(exportedBlock, block);
     }
     result.push(block);
   }
@@ -2429,6 +3182,7 @@ function insertSnapshotAt(
   blockEpoch?: number,
   themes?: { light?: string; dark?: string },
   previous?: ReadonlyMap<string, NodeRecord>,
+  onCodeOwnerInserted?: (id: string) => void,
 ): { record: NodeRecord; insertedIds: string[] } | null {
   if (!parent) return null;
   const previousRecord = previous?.get(snapshot.id);
@@ -2461,7 +3215,14 @@ function insertSnapshotAt(
     if (previousRetiredParagraphGeneration < 0) generations.delete(snapshot.id);
     else generations.set(snapshot.id, previousRetiredParagraphGeneration);
   }
-  const existingIndex = parent.children.indexOf(snapshot.id);
+  const existingIndex = currentRecord ? parent.children.indexOf(snapshot.id) : -1;
+  // Search only when this ID already has a record; a new tail append cannot duplicate an existing child.
+  if (currentRecord && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    paragraphCountersByMap!.get(map)?.recordPrefixComparisons?.(
+      existingIndex === -1 ? parent.children.length : existingIndex + 1,
+      "store",
+    );
+  }
   if (existingIndex !== -1) {
     removeSubtree(map, parent.children[existingIndex], touched ?? new Set<string>());
   }
@@ -2478,6 +3239,7 @@ function insertSnapshotAt(
     const node = queue.pop();
     if (!node) continue;
     insertedIds.push(node.id);
+    if (node.type === "code" && previous?.get(node.id) !== node) onCodeOwnerInserted?.(node.id);
     for (const childId of node.children) {
       const child = map.get(childId);
       if (child) queue.push(child);
@@ -2494,9 +3256,20 @@ function insertSnapshotAt(
   }
 
   const clampedIndex = Math.min(Math.max(index, 0), parent.children.length);
-  parent.children.splice(clampedIndex, 0, record.id);
+  const tailAppend = currentRecord === undefined && clampedIndex === parent.children.length;
+  if (tailAppend) {
+    parent.children.push(record.id);
+  } else {
+    const children = parent.children.slice();
+    children.splice(clampedIndex, 0, record.id);
+    parent.children = children;
+  }
   bumpVersion(parent);
-  ensureUniqueChildren(parent, touched);
+  if (!tailAppend) ensureUniqueChildren(map, parent, touched);
+  // Count the inserted reference slot only; Array#splice relocation is runtime-internal.
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    paragraphCountersByMap!.get(map)?.recordRecordSlotsAllocated(1, "store");
+  }
   return { record, insertedIds };
 }
 
@@ -2509,6 +3282,7 @@ function replaceSnapshotAt(
   blockEpoch?: number,
   themes?: { light?: string; dark?: string },
   onParagraphOwnerReplaced?: (id: string) => void,
+  onCodeOwnerReplaced?: (id: string) => void,
 ) {
   if (!parent || index < 0 || index >= parent.children.length) return;
   const targetId = parent.children[index];
@@ -2550,8 +3324,10 @@ function replaceSnapshotAt(
     const childrenSnapshot = childrenSnapshots.get(id);
     if (childrenSnapshot) previousChildrenSnapshots.set(id, childrenSnapshot);
   }
-  parent.children.splice(index, 1);
-  removeSubtree(map, targetId, touched);
+  const parentChildren = parent.children.slice();
+  parentChildren.splice(index, 1);
+  parent.children = parentChildren;
+  removeSubtree(map, targetId, touched, true);
   if (replacesActiveTable) {
     const generations = retiredTableGenerations(map);
     if (retiredTableGeneration < 0) generations.delete(targetId);
@@ -2562,10 +3338,15 @@ function replaceSnapshotAt(
     if (retiredParagraphGeneration < 0) generations.delete(targetId);
     else generations.set(targetId, retiredParagraphGeneration);
   }
-  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous);
+  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous, onCodeOwnerReplaced);
   if (inserted && onParagraphOwnerReplaced && (currentParagraphState || snapshot.paragraph)) {
     onParagraphOwnerReplaced(targetId);
     if (snapshot.paragraph && snapshot.id !== targetId) onParagraphOwnerReplaced(snapshot.id);
+  }
+  if (inserted && onCodeOwnerReplaced) {
+    for (const [id, record] of previous) {
+      if (record.type === "code" && map.get(id) !== record) onCodeOwnerReplaced(id);
+    }
   }
   for (const [id, record] of previous) {
     if (map.get(id) !== record) continue;
@@ -2582,7 +3363,7 @@ function replaceSnapshotAt(
   if (parent.type === "code") {
     normalizeCodeBlockChildren(map, parent, touched);
   } else {
-    ensureUniqueChildren(parent, touched);
+    ensureUniqueChildren(map, parent, touched);
   }
 }
 
@@ -2664,9 +3445,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   const listeners = new Set<() => void>();
   const nodeListeners = new Map<string, Set<() => void>>();
   const tableRowRangesByBlock = new Map<string, Map<number, TableRowRangeSubscription>>();
+  const codeLineRangesByBlock = new Map<string, Map<number, CodeLineRangeSubscription>>();
   const paragraphSpanRangesByBlock = new Map<string, Map<number, ParagraphSpanRangeSubscription>>();
   let pendingChangedIds = new Set<string>();
   let pendingTableRowRanges = new Map<string, Set<number>>();
+  let pendingCodeLineRanges = new Map<string, Set<number>>();
   let pendingParagraphSpanRanges = new Map<string, Set<number>>();
   let notifyAllNodes = true;
   let notifyScheduled = false;
@@ -2754,10 +3537,12 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   function notify() {
     const changedIds = pendingChangedIds;
     const changedTableRanges = pendingTableRowRanges;
+    const changedCodeLineRanges = pendingCodeLineRanges;
     const changedParagraphRanges = pendingParagraphSpanRanges;
     const wakeAllNodes = notifyAllNodes;
     pendingChangedIds = new Set();
     pendingTableRowRanges = new Map();
+    pendingCodeLineRanges = new Map();
     pendingParagraphSpanRanges = new Map();
     notifyAllNodes = false;
     if (wakeAllNodes) {
@@ -2818,6 +3603,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           for (const listener of range.listeners) callListener(listener);
         }
       }
+      for (const ranges of codeLineRangesByBlock.values()) {
+        for (const range of ranges.values()) {
+          for (const listener of range.listeners) callListener(listener);
+        }
+      }
       return;
     }
     for (const [blockId, starts] of changedTableRanges) {
@@ -2838,6 +3628,15 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         for (const listener of range.listeners) callListener(listener);
       }
     }
+    for (const [blockId, starts] of changedCodeLineRanges) {
+      const ranges = codeLineRangesByBlock.get(blockId);
+      if (!ranges) continue;
+      for (const rangeStart of starts) {
+        const range = ranges.get(rangeStart);
+        if (!range) continue;
+        for (const listener of range.listeners) callListener(listener);
+      }
+    }
   }
 
   function queueTableRowRange(blockId: string, rangeStart: number): void {
@@ -2847,6 +3646,50 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       pendingTableRowRanges.set(blockId, starts);
     }
     starts.add(rangeStart);
+  }
+  function queueCodeLineRange(blockId: string, rangeStart: number): void {
+    let starts = pendingCodeLineRanges.get(blockId);
+    if (!starts) {
+      starts = new Set<number>();
+      pendingCodeLineRanges.set(blockId, starts);
+    }
+    starts.add(rangeStart);
+  }
+  function invalidateCodeLineRange(blockId: string, from: number, to: number): void {
+    if (from >= to) return;
+    const ranges = codeLineRangesByBlock.get(blockId);
+    if (!ranges) return;
+    const firstRange = Math.floor(from / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
+    const lastRange = Math.floor((to - 1) / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
+    for (let rangeStart = firstRange; rangeStart <= lastRange; rangeStart += CODE_LINE_RANGE_SIZE) {
+      if (ranges.has(rangeStart)) queueCodeLineRange(blockId, rangeStart);
+    }
+  }
+  function invalidateCodeLineIndex(blockId: string, index: number): void {
+    if (!Number.isSafeInteger(index) || index < 0) return;
+    const rangeStart = Math.floor(index / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
+    if (codeLineRangesByBlock.get(blockId)?.has(rangeStart)) queueCodeLineRange(blockId, rangeStart);
+  }
+  function invalidateCodeLineIndices(blockId: string, indices: Iterable<number>): void {
+    for (const index of indices) invalidateCodeLineIndex(blockId, index);
+  }
+  function invalidateAllCodeLineRanges(blockId: string): void {
+    const ranges = codeLineRangesByBlock.get(blockId);
+    if (!ranges) return;
+    for (const rangeStart of ranges.keys()) queueCodeLineRange(blockId, rangeStart);
+  }
+  function getOrCreateCodeLineRange(blockId: string, from: number): CodeLineRangeSubscription {
+    let ranges = codeLineRangesByBlock.get(blockId);
+    if (!ranges) {
+      ranges = new Map<number, CodeLineRangeSubscription>();
+      codeLineRangesByBlock.set(blockId, ranges);
+    }
+    let range = ranges.get(from);
+    if (!range) {
+      range = { listeners: new Set() };
+      ranges.set(from, range);
+    }
+    return range;
   }
   function queueParagraphSpanRange(blockId: string, rangeStart: number): void {
     let starts = pendingParagraphSpanRanges.get(blockId);
@@ -2952,6 +3795,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     }
     const previousNodes = nodes;
     clearSnapshotCaches(previousNodes);
+    for (const record of previousNodes.values()) blockEpochWriteSerials.delete(record);
     nodes = new Map();
     carryRetiredCodeGenerations(previousNodes, nodes);
     const root = createRootRecord();
@@ -3021,6 +3865,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       for (const child of snapshot.children ?? []) stack.push(child);
     }
     const previousNodes = nodes;
+    for (const record of previousNodes.values()) blockEpochWriteSerials.delete(record);
     const nextNodes: NodeMap = new Map();
     if (nextInputSource) inputSourceByNodeMap.set(nextNodes, nextInputSource);
     carryRetiredCodeGenerations(previousNodes, nextNodes);
@@ -3159,16 +4004,16 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           return false;
         }
         const target = resolveBlockEpochTarget(patch, at);
-        if (!target || target.blockEpoch === expectedBlockEpoch) {
-          return false;
-        }
+        if (!target) return false;
+        const actualBlockEpoch = effectiveBlockEpoch(nodes, target);
+        if (actualBlockEpoch === expectedBlockEpoch) return false;
         const txEpoch = at.blockId && patchTx !== undefined ? semanticTxEpochs.get(at.blockId) : undefined;
-        if (txEpoch && txEpoch.tx === patchTx && txEpoch.blockEpoch === target.blockEpoch) {
+        if (txEpoch && txEpoch.tx === patchTx && txEpoch.blockEpoch === actualBlockEpoch) {
           return false;
         }
         debugCounters.staleEpochRejected += 1;
         appendDiagnostic(
-          `stale epoch rejected:${patch.op}:${target.id}:expected=${expectedBlockEpoch}:actual=${target.blockEpoch}`,
+          `stale epoch rejected:${patch.op}:${target.id}:expected=${expectedBlockEpoch}:actual=${actualBlockEpoch}`,
         );
         return true;
       };
@@ -3187,7 +4032,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           return null;
         }
         const nextEpoch = allocateBlockEpoch(preferredEpoch);
-        assignSubtreeBlockEpoch(nodes, blockRoot.id, nextEpoch, touchedSet);
+        assignBlockEpoch(nodes, blockRoot.id, nextEpoch, touchedSet);
         if (tx !== undefined) {
           semanticTxEpochs.set(blockRoot.id, { tx, blockEpoch: nextEpoch });
         }
@@ -3206,6 +4051,77 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         if (!targetId) return;
         let target = nodes.get(targetId);
         if (!target) return;
+        const hasRangeUpdate = Object.prototype.hasOwnProperty.call(props ?? {}, "range");
+        const hasMetaUpdate = Object.prototype.hasOwnProperty.call(props ?? {}, "meta");
+        const sourceForRangeUpdate = hasRangeUpdate ? inputSourceSnapshotForMap(nodes) : undefined;
+        const rangeUpdate = hasRangeUpdate && sourceForRangeUpdate
+          ? parseSourceRange(props?.range, sourceForRangeUpdate.length)
+          : null;
+        let hasManagedSourceOwner = false;
+        if (hasRangeUpdate || hasMetaUpdate) {
+          let sourceOwner: NodeRecord | undefined = target;
+          while (sourceOwner) {
+            if (
+              paragraphStateByRecord.has(sourceOwner) ||
+              tableStateByRecord.has(sourceOwner) ||
+              codeStateByRecord.has(sourceOwner) ||
+              isManagedSourceFamily(sourceOwner.type)
+            ) {
+              hasManagedSourceOwner = true;
+              break;
+            }
+            sourceOwner = sourceOwner.parentId ? nodes.get(sourceOwner.parentId) : undefined;
+          }
+        }
+        const managedSourceFamily = isManagedSourceFamily(target.type);
+        if (hasRangeUpdate) {
+          const genericRangeTargetSupported =
+            !hasManagedSourceOwner &&
+            !managedSourceFamily &&
+            target.type !== "paragraph" &&
+            target.type !== "__root__";
+          const rangeTargetSupported = !hasManagedSourceOwner && (
+            isNativeContainerType(target.type) ||
+            target.type === "list-item-text" ||
+            target.type === "list-item-html" ||
+            target.type === "list-item-mdx" ||
+            (target.type === "paragraph" && !paragraphStateByRecord.has(target)) ||
+            genericRangeTargetSupported
+          );
+          if (!rangeTargetSupported || !rangeUpdate) return;
+        }
+        const metadataType =
+          props?.block && typeof props.block === "object" && typeof (props.block as Block).type === "string"
+            ? (props.block as Block).type
+            : target.type;
+        const canUpdateGenericMeta =
+          hasMetaUpdate &&
+          !hasManagedSourceOwner &&
+          !isManagedSourceFamily(metadataType);
+        let applyMetaUpdate = false;
+        let nextMeta: Record<string, unknown> | undefined;
+        if (canUpdateGenericMeta) {
+          const candidate = props?.meta;
+          if (candidate === null) {
+            applyMetaUpdate = true;
+          } else if (typeof candidate === "object" && candidate !== null && !Array.isArray(candidate)) {
+            nextMeta = { ...(candidate as Record<string, unknown>) };
+            if (isNativeContainerType(metadataType)) delete nextMeta.preparedNested;
+            applyMetaUpdate = true;
+          }
+        }
+        const metadataValue = nextMeta ? { ...nextMeta } : undefined;
+        const metaChanged = applyMetaUpdate && !plainDataEqual(target.meta, metadataValue);
+        if (metaChanged) {
+          target.meta = metadataValue;
+          mutatedBlocks = true;
+          blocksDirty = true;
+        }
+        const rangeChanged = Boolean(
+          rangeUpdate &&
+            (target.range?.from !== rangeUpdate.from || target.range?.to !== rangeUpdate.to),
+        );
+        if (rangeChanged && rangeUpdate) target.range = { ...rangeUpdate };
         const parentType = target.parentId ? nodes.get(target.parentId)?.type : undefined;
         if (debugListPatches && (isListRelated(target.type) || isListRelated(parentType))) {
           logListPatch("setProps", {
@@ -3231,6 +4147,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             incoming.isProvisional = (props as Record<string, unknown>).isProvisional;
           }
           const normalized = normalizeCodeLineProps(incoming, target.props);
+          const updatedLineIndex = typeof normalized.index === "number" ? normalized.index : Number.NaN;
           if (perfEnabled) {
             recordSetPropsStage("code-line:normalize-props", getPerfNow() - normalizeStart);
           }
@@ -3242,12 +4159,23 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               if (currentCodeState && !currentCodeState.managed) {
                 const updatedLine = {
                   id: target.id,
-                  index: typeof normalized.index === "number" ? normalized.index : Number.NaN,
+                  index: updatedLineIndex,
                   props: normalized,
                 };
                 nextLegacyCodeState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-                  ? updateLegacyCodeLineState(currentCodeState, updatedLine, codeCountersByMap!.get(nodes), semanticUpdate, inputSourceSnapshotForMap(nodes))
-                  : updateLegacyCodeLineState(currentCodeState, updatedLine, undefined, semanticUpdate, inputSourceSnapshotForMap(nodes));
+                  ? updateLegacyCodeLineState(
+                      currentCodeState,
+                      updatedLine,
+                      semanticUpdate,
+                      inputSourceSnapshotForMap(nodes),
+                      codeCountersByMap!.get(nodes),
+                    )
+                  : updateLegacyCodeLineState(
+                      currentCodeState,
+                      updatedLine,
+                      semanticUpdate,
+                      inputSourceSnapshotForMap(nodes),
+                    );
                 if (!nextLegacyCodeState) {
                   appendDiagnostic(`code line state update rejected:${parent.id}:${target.id}`);
                   return;
@@ -3274,6 +4202,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 }
                 if (nextLegacyCodeState) {
                   codeStateByRecord.set(parent, nextLegacyCodeState);
+                  invalidateCodeLineIndex(parent.id, updatedLineIndex);
                   mutatedBlocks = true;
                   blocksDirty = true;
                 }
@@ -3297,6 +4226,8 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         } else if (isInlineSegmentType(target.type)) {
           const mergeStart = perfEnabled ? getPerfNow() : 0;
           const nextProps = props ? { ...props } : {};
+          delete nextProps.range;
+          delete nextProps.meta;
           if ("block" in nextProps) {
             delete (nextProps as Record<string, unknown>).block;
           }
@@ -3311,6 +4242,8 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         } else {
           const mergeStart = perfEnabled ? getPerfNow() : 0;
           const nextProps = props ? { ...props } : {};
+          delete nextProps.range;
+          delete nextProps.meta;
           if ("block" in nextProps) {
             delete (nextProps as Record<string, unknown>).block;
           }
@@ -3318,6 +4251,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           let localChanged = false;
           if (Object.prototype.hasOwnProperty.call(base, "block")) {
             delete (base as Record<string, unknown>).block;
+            localChanged = true;
+          }
+          if (Object.prototype.hasOwnProperty.call(base, "range")) {
+            delete base.range;
             localChanged = true;
           }
           for (const [key, value] of Object.entries(nextProps)) {
@@ -3347,15 +4284,41 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         const incomingBlock = props?.block as Block | undefined;
         if (incomingBlock && typeof incomingBlock === "object") {
           const cloneStart = perfEnabled ? getPerfNow() : 0;
-          target.block = cloneBlock(incomingBlock as Block);
+          const incomingNativeContainer = isNativeContainerType(
+            typeof incomingBlock.type === "string" ? incomingBlock.type : target.type,
+          );
+          const incomingPrepared = incomingNativeContainer ? incomingBlock.payload?.meta?.preparedNested : undefined;
+          target.block = cloneBlock(incomingNativeContainer ? blockWithoutPreparedNested(incomingBlock) : incomingBlock);
+          const metaPrepared = incomingNativeContainer && nativePreparedLayoutByRecord.get(target)?.meta === true;
+          if (incomingPrepared !== undefined || metaPrepared) {
+            nativePreparedLayoutByRecord.set(target, { block: incomingPrepared !== undefined, meta: metaPrepared });
+          } else {
+            nativePreparedLayoutByRecord.delete(target);
+          }
+          if (rangeChanged && rangeUpdate) target.block = blockWithSourceRange(target.block, rangeUpdate);
+          if (applyMetaUpdate && target.block && !hasManagedSourceOwner && !isManagedSourceFamily(metadataType)) {
+            target.block = blockWithExactCanonicalMetadata(target.block, metadataValue);
+          }
           const existingCodeState = codeStateByRecord.get(target);
           if (target.type === "code" && existingCodeState && !existingCodeState.managed) {
             codeStateByRecord.set(
               target,
               typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-                ? refreshLegacyCodeSource(existingCodeState, target.block, codeCountersByMap!.get(nodes), inputSourceSnapshotForMap(nodes))
-                : refreshLegacyCodeSource(existingCodeState, target.block, undefined, inputSourceSnapshotForMap(nodes)),
+                ? refreshLegacyCodeSource(
+                    existingCodeState,
+                    target.block,
+                    inputSourceSnapshotForMap(nodes),
+                    codeCountersByMap!.get(nodes),
+                  )
+                : refreshLegacyCodeSource(
+                    existingCodeState,
+                    target.block,
+                    inputSourceSnapshotForMap(nodes),
+                  ),
             );
+            if (target.block?.isFinalized && existingCodeState.view.source.state !== "finalized") {
+              invalidateAllCodeLineRanges(target.id);
+            }
           }
           if (perfEnabled) {
             recordSetPropsStage(`${target.type || "unknown"}:clone-block`, getPerfNow() - cloneStart);
@@ -3390,9 +4353,23 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           if (shouldRebuildFinalizedTree) {
             const parent = target.parentId ? nodes.get(target.parentId) : undefined;
             const index = parent ? parent.children.indexOf(target.id) : -1;
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && parent) {
+              paragraphCountersByMap!.get(nodes)?.recordPrefixComparisons?.(
+                index === -1 ? parent.children.length : index + 1,
+                "store",
+              );
+            }
             if (parent && index !== -1) {
-              const snapshot = createBlockSnapshot(cloneBlock(target.block as Block));
-              replaceSnapshotAt(nodes, parent, index, snapshot, touched, target.blockEpoch, undefined, invalidateAllParagraphSpanRanges);
+              // The incoming producer tree seeds the rebuilt generic children; it is not retained on the record.
+              const finalizedBlock = target.block as Block;
+              const blockForRebuild: Block = incomingPrepared === undefined
+                ? cloneBlock(finalizedBlock)
+                : {
+                    ...finalizedBlock,
+                    payload: { ...finalizedBlock.payload, meta: { ...finalizedBlock.payload.meta, preparedNested: incomingPrepared } },
+                  };
+              const snapshot = createBlockSnapshot(blockForRebuild);
+              replaceSnapshotAt(nodes, parent, index, snapshot, touched, effectiveBlockEpoch(nodes, target), undefined, invalidateAllParagraphSpanRanges, invalidateAllCodeLineRanges);
               mutatedBlocks = true;
               blockChanged = true;
               rebuiltFromFinalizedBlock = true;
@@ -3405,13 +4382,34 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           }
           mutatedBlocks = true;
           blockChanged = true;
+        } else if (rangeChanged && rangeUpdate && target.block && !isNativeContainerType(target.type)) {
+          // A range-only update on an unmanaged generic leaf moves its block onto the admitted canonical source window.
+          target.block = blockWithSourceRange(target.block, rangeUpdate, sourceForRangeUpdate);
+          mutatedBlocks = true;
+          blockChanged = true;
+
+        }
+        if (applyMetaUpdate && target.block && !hasManagedSourceOwner && !isManagedSourceFamily(target.type)) {
+          const updatedBlock = blockWithExactCanonicalMetadata(target.block, metadataValue);
+          if (updatedBlock !== target.block) {
+            target.block = updatedBlock;
+            blockChanged = true;
+            mutatedBlocks = true;
+            blocksDirty = true;
+          }
         }
 
+        if (
+          (propsChanged || metaChanged || rangeChanged || blockChanged || typeChanged) &&
+          nativeContainerProjectionRoot(nodes, target.id)
+        ) {
+          mutatedBlocks = true;
+        }
         if (rebuiltFromFinalizedBlock) {
           return;
         }
 
-        if (propsChanged || blockChanged || typeChanged) {
+        if (propsChanged || metaChanged || blockChanged || typeChanged || rangeChanged) {
           if (semanticUpdate && !blockEpochAdvanced) {
             advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
             blockEpochAdvanced = true;
@@ -3516,6 +4514,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               patch.node,
               touched,
               allocateBlockEpoch(readPatchParseEpoch(patch) ?? readSnapshotBlockEpoch(patch.node)),
+              undefined,
+              undefined,
+              invalidateAllCodeLineRanges,
             );
             if (inserted) {
               if (parent?.id === PATCH_ROOT_ID) {
@@ -3527,9 +4528,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 previousParagraphRecord !== inserted.record &&
                 (paragraphStateByRecord.has(previousParagraphRecord) || paragraphStateByRecord.has(inserted.record))
               ) invalidateAllParagraphSpanRanges(patch.node.id);
-              for (const id of inserted.insertedIds) {
-                touched.add(id);
-              }
+              for (const id of inserted.insertedIds) touched.add(id);
               mutatedBlocks = true;
               advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
               if (isListRelated(inserted.record.type) || isListRelated(parent?.type)) {
@@ -3556,16 +4555,20 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             const parent = resolveParent(nodes, patch.at);
             if (!parent) break;
             if (patch.index < 0 || patch.index >= parent.children.length) break;
-            const childId = parent.children.splice(patch.index, 1)[0];
+            const parentChildren = parent.children.slice();
+            const childId = parentChildren.splice(patch.index, 1)[0];
+            parent.children = parentChildren;
             if (childId) {
               const removedNode = nodes.get(childId);
               if (parent.id === PATCH_ROOT_ID && isProvisionalRootBlock(removedNode)) {
                 provisionalBlockCount -= 1;
               }
-              removeSubtree(nodes, childId, touched);
+              removeSubtree(nodes, childId, touched, true, (record) => {
+                if (record.type === "code") invalidateAllCodeLineRanges(record.id);
+              });
               bumpVersion(parent);
               touched.add(parent.id);
-              ensureUniqueChildren(parent, touched);
+              ensureUniqueChildren(nodes, parent, touched);
               mutatedBlocks = true;
               advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
               if (isListRelated(parent.type) || isListRelated(removedNode?.type)) {
@@ -3600,6 +4603,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               allocateBlockEpoch(readPatchParseEpoch(patch) ?? readSnapshotBlockEpoch(patch.node)),
               undefined,
               invalidateAllParagraphSpanRanges,
+              invalidateAllCodeLineRanges,
             );
             if (parent.id === PATCH_ROOT_ID && nodes.get(parent.children[patch.index]) !== previousRecord) {
               if (previousWasProvisional) provisionalBlockCount -= 1;
@@ -3716,6 +4720,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             }
             if (codeState && codeState.view.source.state !== "finalized") {
               codeStateByRecord.set(target, finalizeStoredCodeState(codeState));
+              invalidateAllCodeLineRanges(target.id);
               changed = true;
             }
             if (!paragraphState && !tableState && target.block && !target.block.isFinalized) {
@@ -3729,12 +4734,27 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               touched.add(target.id);
               mutatedBlocks = true;
               blocksDirty = true;
-              if (!paragraphState && !patch.at.nodeId && target.id === patch.at.blockId && target.type !== "code" && target.block && target.parentId) {
+              // Containers admitted with a producer tree already own their current hierarchy as generic children.
+              if (
+                !paragraphState &&
+                !patch.at.nodeId &&
+                target.id === patch.at.blockId &&
+                target.type !== "code" &&
+                target.block &&
+                target.parentId &&
+                !nativePreparedLayoutByRecord.has(target)
+              ) {
                 const parent = nodes.get(target.parentId);
                 const index = parent ? parent.children.indexOf(target.id) : -1;
+                if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && parent) {
+                  paragraphCountersByMap!.get(nodes)?.recordPrefixComparisons?.(
+                    index === -1 ? parent.children.length : index + 1,
+                    "store",
+                  );
+                }
                 if (parent && index !== -1) {
                   const snapshot = createBlockSnapshot(cloneBlock(target.block));
-                  replaceSnapshotAt(nodes, parent, index, snapshot, touched, target.blockEpoch, undefined, invalidateAllParagraphSpanRanges);
+                  replaceSnapshotAt(nodes, parent, index, snapshot, touched, effectiveBlockEpoch(nodes, target), undefined, invalidateAllParagraphSpanRanges, invalidateAllCodeLineRanges);
                   if (isListRelated(target.type) || isListRelated(snapshot.type)) {
                     markListDepthDirty(target.id);
                   }
@@ -3765,10 +4785,13 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             if (to > from) {
               to = Math.max(0, to - count);
             }
-            const moved = parent.children.splice(from, count);
-            parent.children.splice(to, 0, ...moved);
+            const children = parent.children.slice();
+            const moved = children.splice(from, count);
+            children.splice(to, 0, ...moved);
+            parent.children = children;
             bumpVersion(parent);
             touched.add(parent.id);
+            mutatedBlocks = true;
             if (getPatchKind(patch) === "semantic") {
               advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
             }
@@ -3810,7 +4833,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               break;
             }
             codeStateByRecord.set(target, appended.state);
-            syncManagedCodeChildren(nodes, target, appended.state, touched);
+            if (appended.state.view.source.state === "finalized") {
+              invalidateAllCodeLineRanges(target.id);
+            } else {
+              invalidateCodeLineRange(target.id, patch.fromLine, appended.state.view.lines.length);
+            }
             updateRootProvisionalCount(target, wasProvisional);
             bumpVersion(target);
             touched.add(target.id);
@@ -4028,7 +5055,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             }
             if (!decorated.changed || !decorated.state) break;
             codeStateByRecord.set(target, decorated.state);
-            syncManagedCodeChildren(nodes, target, decorated.state, touched);
+            if (decorated.changedIndices) invalidateCodeLineIndices(target.id, decorated.changedIndices);
             bumpVersion(target);
             touched.add(target.id);
             mutatedBlocks = true;
@@ -4150,6 +5177,8 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
             if (nextLegacyCodeState && (parentChildrenChanged || codeLinesMutated)) {
               codeStateByRecord.set(parent, nextLegacyCodeState);
+              const changedFrom = previousTail?.isProvisional ? previousTail.index : startIndex;
+              invalidateCodeLineRange(parent.id, changedFrom, startIndex + lineCount);
               mutatedBlocks = true;
               blocksDirty = true;
             }
@@ -4213,6 +5242,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
       if (mutatedBlocks) {
         blocksDirty = true;
+        for (const id of touched) invalidateNativeContainerProjection(nodes, id);
       }
 
       if (listDepthDirty) {
@@ -4296,6 +5326,25 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       const record = nodes.get(id);
       const codeState = record?.type === "code" ? codeStateByRecord.get(record) : undefined;
       return codeState ? readStoredCodeLines(codeState, from, to) : EMPTY_CODE_LINES;
+    },
+    subscribeCodeLines(id: string, from: number, to: number, listener: () => void) {
+      if (
+        !Number.isSafeInteger(from) ||
+        from < 0 ||
+        !Number.isSafeInteger(from + CODE_LINE_RANGE_SIZE) ||
+        from % CODE_LINE_RANGE_SIZE !== 0 ||
+        to !== from + CODE_LINE_RANGE_SIZE
+      ) throw new RangeError("Code line subscriptions must use fixed aligned ranges");
+      const range = getOrCreateCodeLineRange(id, from);
+      range.listeners.add(listener);
+      return () => {
+        range.listeners.delete(listener);
+        if (range.listeners.size === 0) {
+          const ranges = codeLineRangesByBlock.get(id);
+          ranges?.delete(from);
+          if (ranges?.size === 0) codeLineRangesByBlock.delete(id);
+        }
+      };
     },
     getTableBlock(id: string) {
       const record = nodes.get(id);
@@ -4469,7 +5518,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
     getNode(id: string) {
       const record = nodes.get(id);
-      return record ? nodeRecordForRead(record) : undefined;
+      return record ? nodeRecordForRead(nodes, record) : undefined;
     },
 
     getNodeWithVersion(id: string) {
@@ -4479,13 +5528,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       }
       const nodeSnapshotCache = getNodeSnapshotCacheForMap(nodes);
       const cached = nodeSnapshotCache.get(id);
-      const cachedRecord = cached?.node
-        ? paragraphNodeRecordOrigin.get(cached.node) ?? cached.node
-        : undefined;
-      if (cached && cached.version === record.version && cachedRecord === record) {
+      const node = nodeRecordForRead(nodes, record);
+      if (cached && cached.version === record.version && cached.node === node) {
         return cached;
       }
-      const snapshot = { version: record.version, node: nodeRecordForRead(record) } as { version: number; node?: NodeRecord };
+      const snapshot = { version: record.version, node } as { version: number; node?: NodeRecord };
       nodeSnapshotCache.set(id, snapshot);
       pruneCache(nodeSnapshotCache, NODE_SNAPSHOT_CACHE_LIMIT, NODE_SNAPSHOT_CACHE_BUFFER);
       return snapshot;
@@ -4506,6 +5553,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       const cached = childrenSnapshotCache.get(id);
       if (cached && cached.version === record.version) {
         return cached;
+      }
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        (store as CampaignRendererStore).campaignCounters?.recordRecordSlotsAllocated?.(record.children.length, "store");
       }
       const snapshot = { version: record.version, children: record.children.slice() } as {
         version: number;

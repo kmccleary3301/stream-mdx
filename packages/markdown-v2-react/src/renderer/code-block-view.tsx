@@ -14,10 +14,129 @@ import { DefaultDiffRenderer } from "../components/diff-renderer";
 import type { CodeFenceRendererProps } from "../types";
 import { DeferredRenderContext } from "./deferred-render-context";
 import { useRendererNode } from "./hooks";
-import { CodeLineRangeView, CODE_LINE_RANGE_SIZE } from "./code-line-range";
+import { subscribeRendererNode } from "./node-subscriptions";
+import { CodeLineRangeView } from "./code-line-range";
+import { CODE_LINE_RANGE_SIZE } from "./code-state";
 import type { RendererStore } from "./store";
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, useVirtualizedCode } from "./virtualized-code";
+
+type CodeBlockViewCounters = {
+  recordRecordSlotsAllocated?(count: number, stage: "view"): void;
+  recordStoreRecordsTouched?(count: number, stage: "view"): void;
+};
+type CodeBlockViewCounterStore = RendererStore & { campaignCounters?: CodeBlockViewCounters };
+function recordCodeRangeSlots(store: RendererStore): void {
+  if (typeof __STREAM_MDX_COUNTERS__ === "undefined" || !__STREAM_MDX_COUNTERS__) return;
+  const counters = (store as CodeBlockViewCounterStore).campaignCounters;
+  counters?.recordStoreRecordsTouched?.(1, "view");
+  counters?.recordRecordSlotsAllocated?.(1, "view");
+}
+function recordCodeRangeRead(store: RendererStore): void {
+  if (typeof __STREAM_MDX_COUNTERS__ === "undefined" || !__STREAM_MDX_COUNTERS__) return;
+  (store as CodeBlockViewCounterStore).campaignCounters?.recordStoreRecordsTouched?.(1, "view");
+}
+
+const CodeLineRangeTail: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  generation: number;
+  configurationRevision: number;
+  chunkStart: number;
+}> = React.memo(({ store, blockId, generation, configurationRevision, chunkStart }) => {
+  const getFrontier = React.useCallback((): "ready" | "open" | "sealed" | "stale" => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      recordCodeRangeRead(store);
+    }
+    const current = store.getCodeBlock(blockId);
+    if (
+      !current ||
+      current.source.generation !== generation ||
+      current.configurationRevision !== configurationRevision
+    ) return "stale";
+    if (current.source.lineCount > chunkStart) return "ready";
+    return current.source.state === "open" ? "open" : "sealed";
+  }, [blockId, chunkStart, configurationRevision, generation, store]);
+  const subscribe = React.useCallback((listener: () => void) => {
+    let active = true;
+    let unsubscribeLines = () => {};
+    let unsubscribeNode = () => {};
+    const onOwnerChanged = () => {
+      if (!active || getFrontier() === "open") return;
+      active = false;
+      unsubscribeLines();
+      unsubscribeNode();
+      listener();
+    };
+    unsubscribeLines = store.subscribeCodeLines(
+      blockId,
+      chunkStart,
+      chunkStart + CODE_LINE_RANGE_SIZE,
+      onOwnerChanged,
+    );
+    unsubscribeNode = subscribeRendererNode(store, blockId, onOwnerChanged);
+    if (getFrontier() !== "open") {
+      active = false;
+      unsubscribeLines();
+      unsubscribeNode();
+    }
+    return () => {
+      active = false;
+      unsubscribeLines();
+      unsubscribeNode();
+    };
+  }, [blockId, chunkStart, getFrontier, store]);
+  const frontier = React.useSyncExternalStore(subscribe, getFrontier, getFrontier);
+  return frontier === "ready" ? (
+    <CodeLineRangeChain
+      store={store}
+      blockId={blockId}
+      generation={generation}
+      configurationRevision={configurationRevision}
+      chunkStart={chunkStart}
+    />
+  ) : null;
+});
+
+CodeLineRangeTail.displayName = "CodeLineRangeTail";
+
+const CodeLineRangeChain: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  generation: number;
+  configurationRevision: number;
+  chunkStart: number;
+}> = React.memo(({ store, blockId, generation, configurationRevision, chunkStart }) => {
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordCodeRangeSlots(store);
+  }
+  return (
+    <>
+      <CodeLineRangeView
+        key={`${generation}:${chunkStart}`}
+        store={store}
+        blockId={blockId}
+        generation={generation}
+        configurationRevision={configurationRevision}
+        chunkStart={chunkStart}
+        rangeStart={chunkStart}
+        rangeEnd={chunkStart + CODE_LINE_RANGE_SIZE}
+        visibleStart={chunkStart}
+        visibleEnd={chunkStart + CODE_LINE_RANGE_SIZE}
+      />
+      <CodeLineRangeTail
+        store={store}
+        blockId={blockId}
+        generation={generation}
+        configurationRevision={configurationRevision}
+        chunkStart={chunkStart + CODE_LINE_RANGE_SIZE}
+      />
+    </>
+  );
+});
+
+CodeLineRangeChain.displayName = "CodeLineRangeChain";
+
 
 // Private code-rendering owner; block dispatch and finalized wrappers remain in node-views.
 export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
@@ -102,24 +221,48 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     "data-code-window-size": String(virtualization.config.windowSize),
   };
 
-  const codeLineRanges: React.ReactElement[] = [];
-  const firstChunkStart = Math.floor(window.startIndex / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
-  for (let chunkStart = firstChunkStart; chunkStart < window.endIndex; chunkStart += CODE_LINE_RANGE_SIZE) {
-    const chunkEnd = chunkStart + CODE_LINE_RANGE_SIZE;
-    codeLineRanges.push(
-      <CodeLineRangeView
-        key={`${codeGeneration}:${chunkStart}`}
+  const useIncrementalRanges =
+    !shouldVirtualize &&
+    !registry.hasCustomBlockComponent("code") &&
+    !codeRenderer &&
+    !registry.hasElementFilters();
+  let codeLineRanges: React.ReactNode;
+  if (useIncrementalRanges) {
+    codeLineRanges = (
+      <CodeLineRangeTail
         store={store}
         blockId={blockId}
         generation={codeGeneration ?? -1}
         configurationRevision={configurationRevision}
-        chunkStart={chunkStart}
-        rangeStart={Math.max(window.startIndex, chunkStart)}
-        rangeEnd={Math.min(window.endIndex, chunkEnd)}
-        visibleStart={Math.max(window.visibleStart, chunkStart)}
-        visibleEnd={Math.min(window.visibleEnd, chunkEnd)}
-      />,
+        chunkStart={0}
+      />
     );
+  } else {
+    const ranges: React.ReactElement[] = [];
+    const firstChunkStart = Math.floor(window.startIndex / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
+    for (let chunkStart = firstChunkStart; chunkStart < window.endIndex; chunkStart += CODE_LINE_RANGE_SIZE) {
+      const chunkEnd = chunkStart + CODE_LINE_RANGE_SIZE;
+      ranges.push(
+        <CodeLineRangeView
+          key={`${codeGeneration}:${chunkStart}`}
+          store={store}
+          blockId={blockId}
+          generation={codeGeneration ?? -1}
+          configurationRevision={configurationRevision}
+          chunkStart={chunkStart}
+          rangeStart={Math.max(window.startIndex, chunkStart)}
+          rangeEnd={Math.min(window.endIndex, chunkEnd)}
+          visibleStart={Math.max(window.visibleStart, chunkStart)}
+          visibleEnd={Math.min(window.visibleEnd, chunkEnd)}
+        />,
+      );
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        const counters = (store as CodeBlockViewCounterStore).campaignCounters;
+        counters?.recordStoreRecordsTouched?.(1, "view");
+        counters?.recordRecordSlotsAllocated?.(1, "view");
+      }
+    }
+    codeLineRanges = ranges;
   }
   const nativeCodeProps: React.ComponentProps<typeof CodeComponent> = {
     html: "",

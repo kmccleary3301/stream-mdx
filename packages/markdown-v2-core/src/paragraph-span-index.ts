@@ -330,9 +330,12 @@ function replaceUpdatedNode(
   for (let slot = 0; slot < DIRECTORY_CAPACITY; slot += 1) {
     const childBasePage = basePage + slot * childPageCapacity;
     const childEndPage = childBasePage + childPageCapacity;
-    const first = lowerBoundPage(pageIndexes, childBasePage, firstUpdate, endUpdate, counters, counterStage);
-    const end = lowerBoundPage(pageIndexes, childEndPage, first, endUpdate, counters, counterStage);
-    if (first === end) continue;
+    const first = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters !== undefined
+      ? lowerBoundPage(pageIndexes, childBasePage, firstUpdate, endUpdate, counters, counterStage)
+      : lowerBoundPage(pageIndexes, childBasePage, firstUpdate, endUpdate);
+    const end = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters !== undefined
+      ? lowerBoundPage(pageIndexes, childEndPage, first, endUpdate, counters, counterStage)
+      : lowerBoundPage(pageIndexes, childEndPage, first, endUpdate);
     const child = children[slot];
     if (!child) throw new Error("Missing paragraph span child page for an update");
     children[slot] = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters !== undefined
@@ -425,6 +428,9 @@ class PersistentParagraphSpanIndex implements ParagraphSpanIndex {
     if (from === this.length && spans.length === 0) return this;
 
     const nextSpans = new Array<ParagraphSpanRecord>(spans.length);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters !== undefined) {
+      counters.recordRecordSlotsAllocated(nextSpans.length, counterStage);
+    }
     const replacedTail = from < this.length ? this.get(from) : undefined;
     let prior = from > 0 ? this.get(from - 1) : undefined;
     for (let offset = 0; offset < spans.length; offset += 1) {
@@ -464,7 +470,9 @@ class PersistentParagraphSpanIndex implements ParagraphSpanIndex {
     const rootHeight = Math.max(this.rootHeight, requestedHeight);
     let oldRoot = this.root;
     if (oldRoot !== undefined && oldRoot.height < rootHeight) {
-      oldRoot = growRoot(oldRoot, rootHeight, oldPageCount, counters, counterStage);
+      oldRoot = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters !== undefined
+        ? growRoot(oldRoot, rootHeight, oldPageCount, counters, counterStage)
+        : growRoot(oldRoot, rootHeight, oldPageCount);
     }
     const revision = nextRevision(this.revision);
     let root: ParagraphSpanTreeNode | undefined;

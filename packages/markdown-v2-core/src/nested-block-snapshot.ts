@@ -1,14 +1,17 @@
-import type { SyntaxNode } from "@lezer/common";
+import type { Input, SyntaxNode } from "@lezer/common";
 import type { MarkdownParser } from "@lezer/markdown";
 import { createBlockSnapshot, inlineNodesToPlainText } from "./block-snapshot";
 import type { InlineParser } from "./inline-parser";
 import { extractMixedContentSegments } from "./mixed-content";
+import { lowerNativeTableContent, type NativeSourceMapping, type NativeSourceReader } from "./native-table-lowering";
 import { normalizeFormatAnticipation, prepareInlineStreamingContent } from "./streaming/inline-streaming";
 import type { Block, FormatAnticipationConfig, InlineNode, NodeSnapshot, ProtectedRange } from "./types";
 import { parseCodeFenceInfo, removeHeadingMarkers } from "./utils";
-import type { SourceSnapshot } from "./source-document";
 
-type SourceText = string | SourceSnapshot;
+type SourceText = string | Input;
+type NativeNestedBlockSnapshotMapping = NativeSourceMapping & {
+  readonly knownListLoosenessForNode?: (node: SyntaxNode) => boolean | undefined;
+};
 
 function readSourceRange(source: SourceText, from: number, to: number): string {
   return typeof source === "string" ? source.slice(from, to) : source.read(from, to);
@@ -21,27 +24,147 @@ function sourceCharAt(source: SourceText, index: number): string {
 function lineStartAt(source: SourceText, before: number): number {
   if (typeof source === "string") return source.lastIndexOf("\n", before - 1) + 1;
   let cursor = Math.max(0, Math.min(source.length, before));
-  while (cursor > 0) {
-    const start = Math.max(0, cursor - 4096);
-    const window = source.read(start, cursor);
-    const newline = window.lastIndexOf("\n");
-    if (newline >= 0) return start + newline + 1;
-    cursor = start;
-  }
-  return 0;
+  while (cursor > 0 && source.read(cursor - 1, cursor) !== "\n") cursor -= 1;
+  return cursor;
 }
 
+class StringSourceInput implements Input {
+  readonly lineChunks = false;
+  readonly length: number;
 
-/** Serializable container structure prepared by the owning engine, not by renderers. */
+  constructor(private readonly source: string) {
+    this.length = source.length;
+  }
+
+  chunk(from: number): string {
+    return this.source.slice(from);
+  }
+
+  read(from: number, to: number): string {
+    return this.source.slice(from, to);
+  }
+}
+
 export interface PreparedNestedSnapshot {
   props: Record<string, unknown>;
   children: NodeSnapshot[];
 }
 
-export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlineParser, parser: MarkdownParser, streamingInline?: (text: string) => InlineNode[]): PreparedNestedSnapshot {
-  const source = block.payload.raw;
-  const tree = parser.parse(source);
-  const offset = block.payload.range?.from ?? 0;
+export type NativeNestedLeafKind = "code" | "table" | "paragraph";
+export type NativeNestedLeafFactory = (
+  node: SyntaxNode,
+  id: string,
+  kind: NativeNestedLeafKind,
+  range: { readonly from: number; readonly to: number },
+) => NodeSnapshot | undefined;
+export type NativeNestedChildRole = "item" | "block";
+/** Input slot is window-local; the returned slot is canonical and excludes omitted syntax marks. */
+export type NativeNestedChildIdentityFactory = (
+  parentId: string,
+  parentNode: SyntaxNode,
+  childNode: SyntaxNode,
+  semanticChildIndex: number,
+  role: NativeNestedChildRole,
+  defaultId: string,
+) => Readonly<{ id: string; semanticChildIndex: number }>;
+const OMITTED_NESTED_CHILDREN: Record<string, true> = {
+  QuoteMark: true,
+  ListMark: true,
+  LinkReference: true,
+};
+
+function sourceRange(mapping: NativeSourceMapping, from: number, to: number): { from: number; to: number } {
+  const range = mapping.mapRange?.(from, to) ?? { from: mapping.mapOffset(from), to: mapping.mapOffset(to) };
+  if (!Number.isSafeInteger(range.from) || !Number.isSafeInteger(range.to)
+    || range.from < 0 || range.to < range.from || range.to > mapping.source.length) {
+    throw new RangeError("Native nested source mapping produced an invalid authored range");
+  }
+  return { from: range.from, to: range.to };
+}
+
+function codeColumnAt(position: number, mapping?: NativeSourceMapping, localSource?: SourceText): number {
+  if (mapping) {
+    const physical = mapping.mapOffset(position);
+    let start = physical;
+    while (start > 0 && mapping.source.read(start - 1, start) !== "\n") start -= 1;
+    let columns = 0;
+    for (let cursor = start; cursor < physical; cursor += 1) {
+      columns += mapping.source.read(cursor, cursor + 1) === "\t" ? 4 - (columns % 4) : 1;
+    }
+    return columns;
+  }
+  if (!localSource) return 0;
+  const start = lineStartAt(localSource, position);
+  let columns = 0;
+  for (const char of readSourceRange(localSource, start, position)) {
+    columns += char === "\t" ? 4 - (columns % 4) : 1;
+  }
+  return columns;
+}
+
+
+function listItemContentIndent(node: SyntaxNode, source: SourceText): number {
+  const mark = node.getChild("ListMark");
+  if (!mark) return 0;
+  let end = mark.to;
+  while (sourceCharAt(source, end) === " " || sourceCharAt(source, end) === "\t") end += 1;
+  const afterMark = codeColumnAt(mark.to, undefined, source);
+  const spacing = codeColumnAt(end, undefined, source) - afterMark;
+  return codeColumnAt(mark.to, undefined, source) - codeColumnAt(mark.from, undefined, source)
+    + (spacing >= 1 && spacing <= 4 ? spacing : 1);
+}
+
+function stripLeadingColumns(line: string, requiredColumns: number): string {
+  let columns = 0;
+  let index = 0;
+  while (index < line.length && columns < requiredColumns) {
+    const char = line[index];
+    if (char === " ") {
+      columns += 1;
+      index += 1;
+    } else if (char === "\t") {
+      const nextColumns = columns + (4 - (columns % 4));
+      if (nextColumns > requiredColumns) {
+        return " ".repeat(nextColumns - requiredColumns) + line.slice(index + 1);
+      }
+      columns = nextColumns;
+      index += 1;
+    } else {
+      break;
+    }
+  }
+  return line.slice(index);
+}
+
+function stripListIndent(text: string, listIndent: number): string {
+  if (listIndent === 0 || text.length === 0) return text;
+  let result = "";
+  let from = 0;
+  let firstLine = true;
+  while (from < text.length) {
+    const newline = text.indexOf("\n", from);
+    const lineEnd = newline < 0 ? text.length : newline;
+    const line = text.slice(from, lineEnd);
+    result += firstLine ? line : stripLeadingColumns(line, listIndent);
+    if (newline >= 0) result += "\n";
+    from = newline < 0 ? text.length : newline + 1;
+    firstLine = false;
+  }
+  return result;
+}
+
+function lowerNestedBlockSnapshot(
+  block: Block,
+  root: SyntaxNode,
+  mapping: NativeNestedBlockSnapshotMapping,
+  inlineParser: InlineParser,
+  parser: MarkdownParser,
+  streamingInline: ((text: string) => InlineNode[]) | undefined,
+  nativeLeafFactory: NativeNestedLeafFactory | undefined,
+  identityForChild: NativeNestedChildIdentityFactory | undefined,
+  includeContainerRaw: boolean,
+): PreparedNestedSnapshot {
+  const input = mapping.input;
   const meta = block.payload.meta as { formatAnticipation?: FormatAnticipationConfig; mathEnabled?: boolean } | undefined;
   const parseInline = (text: string): InlineNode[] => {
     if (block.isFinalized) return inlineParser.parse(text);
@@ -57,8 +180,26 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
     for (let child = node.firstChild; child; child = child.nextSibling) children.push(child);
     return children;
   };
-  // Lezer includes continuation quote marks in leaf ranges. Remove exactly those marks,
-  // including every ancestor's mark on lazy continuation lines, rather than stripping text heuristically.
+  const defaultChildId = (
+    parentId: string,
+    parentNode: SyntaxNode,
+    child: SyntaxNode,
+    semanticChildIndex: number,
+    role: NativeNestedChildRole,
+  ): string => role === "item"
+    ? `${parentId}::item:${semanticChildIndex}`
+    : `${parentId}::${child.type.name.toLowerCase()}:${semanticChildIndex}`;
+  const childIdentity = (
+    parentId: string,
+    parentNode: SyntaxNode,
+    child: SyntaxNode,
+    semanticChildIndex: number,
+    role: NativeNestedChildRole,
+  ): Readonly<{ id: string; semanticChildIndex: number }> => {
+    const fallbackId = defaultChildId(parentId, parentNode, child, semanticChildIndex, role);
+    return identityForChild?.(parentId, parentNode, child, semanticChildIndex, role, fallbackId)
+      ?? { id: fallbackId, semanticChildIndex };
+  };
   const leafText = (node: SyntaxNode): string => {
     const marks: SyntaxNode[] = [];
     const visit = (child: SyntaxNode) => {
@@ -66,145 +207,353 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
       else for (const nested of childrenOf(child)) visit(nested);
     };
     visit(node);
+    marks.sort((left, right) => left.from - right.from);
     let result = "";
     let from = node.from;
-    for (const mark of marks.sort((a, b) => a.from - b.from)) {
-      result += source.slice(from, mark.from);
+    for (const mark of marks) {
+      result += input.read(from, mark.from);
       from = mark.to;
-      if (source[from] === " " || source[from] === "\t") from++;
+      if (sourceCharAt(input, from) === " " || sourceCharAt(input, from) === "\t") from += 1;
     }
-    const text = result + source.slice(from, node.to);
-    if (node.type.name !== "HTMLBlock") return text.split("\n").map((line) => line.trimStart()).join("\n");
+    result += input.read(from, node.to);
     let listIndent = 0;
     for (let parent = node.parent; parent; parent = parent.parent) {
-      if (parent.type.name !== "ListItem" && parent.type.name !== "EmptyListItem") continue;
-      const mark = parent.getChild("ListMark");
-      if (!mark) continue;
-      const spacing = source.slice(mark.to).match(/^[ \t]*/)?.[0].length ?? 0;
-      listIndent += mark.to - mark.from + (spacing >= 1 && spacing <= 4 ? spacing : 1);
+      if (parent.type.name === "ListItem" || parent.type.name === "EmptyListItem") {
+        listIndent += listItemContentIndent(parent, input);
+      }
     }
-    const prefix = new RegExp(`^ {0,${listIndent}}`);
-    return listIndent === 0 ? text : text.split("\n").map((line) => line.replace(prefix, "")).join("\n");
+    return stripListIndent(result, listIndent);
   };
   const looseList = (node: SyntaxNode): boolean => {
+    const knownLooseness = mapping.knownListLoosenessForNode?.(node);
+    if (knownLooseness !== undefined) return knownLooseness;
     const items = childrenOf(node).filter((child) => child.type.name === "ListItem" || child.type.name === "EmptyListItem");
-    const blankGap = (a: SyntaxNode, b: SyntaxNode) => /\n[ >\t]*\n/.test(source.slice(a.to, b.from));
-    return items.some((item, i) => {
-      if (i > 0 && blankGap(items[i - 1], item)) return true;
-      // Definitions are invisible, but remain blocks when deciding list looseness.
-      const children = childrenOf(item).filter((child) => !["ListMark", "QuoteMark"].includes(child.type.name));
-      return children.some((child, j) => j > 0 && blankGap(children[j - 1], child));
+    const blankGap = (from: number, to: number): boolean => {
+      if (to < from) return false;
+      return /\r?\n[ >\t]*\r?\n/.test(mapping.source.read(from, to));
+    };
+    const itemStart = (item: SyntaxNode): number => {
+      const marker = item.getChild("ListMark");
+      return marker
+        ? sourceRange(mapping, marker.from, marker.to).from
+        : sourceRange(mapping, item.from, item.to).from;
+    };
+    const itemContentEnd = (item: SyntaxNode): number => {
+      const marker = item.getChild("ListMark");
+      let end = marker
+        ? sourceRange(mapping, marker.from, marker.to).to
+        : sourceRange(mapping, item.from, item.to).from;
+      for (const child of childrenOf(item)) {
+        if (["ListMark", "QuoteMark", "LinkReference"].includes(child.type.name)) continue;
+        end = sourceRange(mapping, child.from, child.to).to;
+      }
+      return end;
+    };
+    return items.some((item, index) => {
+      const previous = items[index - 1];
+      if (previous && blankGap(itemContentEnd(previous), itemStart(item))) return true;
+      const children = childrenOf(item).filter((child) => !["ListMark", "QuoteMark", "LinkReference"].includes(child.type.name));
+      return children.some((child, childIndex) => {
+        if (childIndex === 0) return false;
+        const previousRange = sourceRange(mapping, children[childIndex - 1]!.from, children[childIndex - 1]!.to);
+        const childRange = sourceRange(mapping, child.from, child.to);
+        return blankGap(previousRange.to, childRange.from);
+      });
     });
+  };
+  const readRaw = (node: SyntaxNode): string => {
+    const range = sourceRange(mapping, node.from, node.to);
+    return mapping.source.read(range.from, range.to);
   };
   const build = (node: SyntaxNode, id: string, container: "list" | "blockquote"): NodeSnapshot | null => {
     const name = node.type.name;
-    if (["QuoteMark", "ListMark", "LinkReference"].includes(name)) return null;
-    const range = { from: offset + node.from, to: offset + node.to };
+    if (OMITTED_NESTED_CHILDREN[name]) return null;
+    const range = sourceRange(mapping, node.from, node.to);
     const baseMeta: Record<string, unknown> = { sourceContainer: container };
+    if (name === "Paragraph" || name === "Task") {
+      const owned = nativeLeafFactory?.(node, id, "paragraph", range);
+      if (owned) return owned;
+    }
     if (name === "BulletList" || name === "OrderedList") {
       const ordered = name === "OrderedList";
       const loose = looseList(node);
       const mark = node.firstChild?.getChild("ListMark");
-      const start = ordered && mark ? Number.parseInt(source.slice(mark.from, mark.to), 10) : undefined;
+      const start = ordered && mark ? Number.parseInt(input.read(mark.from, mark.to), 10) : undefined;
       const props = { ordered, loose, start: start === 1 ? undefined : start };
-      const children = childrenOf(node).filter((child) => child.type.name === "ListItem" || child.type.name === "EmptyListItem").map((item, index): NodeSnapshot => {
-        const itemId = `${id}::item:${index}`;
+      const items = childrenOf(node).filter((child) => child.type.name === "ListItem" || child.type.name === "EmptyListItem");
+      const children = items.map((item, semanticChildIndex): NodeSnapshot => {
+        const itemIdentity = childIdentity(id, node, item, semanticChildIndex, "item");
+        const itemId = itemIdentity.id;
         const content = childrenOf(item).filter((child) => !["ListMark", "QuoteMark", "LinkReference"].includes(child.type.name));
         const first = content[0];
         const primary = first && (first.type.name === "Paragraph" || first.type.name === "Task") ? first : undefined;
-        const text = primary ? leafText(primary) : "";
-        const task = primary?.type.name === "Task" ? text.match(/^\[([ xX])\][ \t]+/) : null;
-        const primaryText = task ? text.slice(task[0].length) : text;
-        const inline = parseInline(primaryText);
-        const baseOffset = offset + (primary?.from ?? item.from) + (task?.[0].length ?? 0);
-        const protectedRanges: ProtectedRange[] = [];
-        if (primaryText.includes("`")) {
-          const cursor = parser.parse(primaryText).cursor();
-          do {
-            if (cursor.name === "InlineCode") protectedRanges.push({ from: baseOffset + cursor.from, to: baseOffset + cursor.to, kind: "code-inline" });
-          } while (cursor.next());
+        const primarySemanticIndex = primary ? content.indexOf(primary) : -1;
+        const primaryRange = primary ? sourceRange(mapping, primary.from, primary.to) : undefined;
+        const taskMarker = primary?.type.name === "Task" ? primary.getChild("TaskMarker") : null;
+        const taskMarkerRange = taskMarker ? sourceRange(mapping, taskMarker.from, taskMarker.to) : undefined;
+        const taskValue = taskMarkerRange
+          ? /^\[([ xX])\]$/.exec(mapping.source.read(taskMarkerRange.from, taskMarkerRange.to))
+          : null;
+        const isTask = primary?.type.name === "Task";
+        const primaryId = primary
+          ? childIdentity(itemId, item, primary, primarySemanticIndex, "block").id
+          : undefined;
+        const primaryChild = primary && primaryRange && primaryId
+          ? nativeLeafFactory?.(primary, primaryId, "paragraph", primaryRange)
+          : undefined;
+        if (primaryChild) {
+          primaryChild.props = { ...(primaryChild.props ?? {}), listItemPrimary: true };
         }
-        const segments = primary ? extractMixedContentSegments(primaryText, baseOffset, parseInline, { protectedRanges }) : [];
-        const structured = segments.some((segment) => segment.kind === "mdx");
-        const children: NodeSnapshot[] = structured ? segments.map((segment, segmentIndex) => ({
-          id: `${itemId}::list-item:segment:${segmentIndex}`,
-          type: `list-item-${segment.kind}`,
-          props: segment.kind === "text" ? { inline: segment.inline, text: segment.value }
-            : segment.kind === "html" ? { raw: segment.value, html: segment.sanitized ?? segment.value }
-            : { raw: segment.value, status: segment.status ?? "pending", error: segment.error },
-          children: [],
-        })) : [];
-        content.forEach((child, childIndex) => {
-          if (child === primary) return;
-          const snapshot = build(child, `${itemId}::${child.type.name.toLowerCase()}:${childIndex}`, "list");
-          if (snapshot) {
-            if (snapshot.type === "paragraph") snapshot.props = { ...snapshot.props, tight: !loose };
-            children.push(snapshot);
+        let inline: InlineNode[] | undefined;
+        const segmentChildren: NodeSnapshot[] = [];
+        if (primary && !primaryChild) {
+          const text = leafText(primary);
+          const taskPrefix = isTask ? text.match(/^\[([ xX])\][ \t]+/) : null;
+          const primaryText = taskPrefix ? text.slice(taskPrefix[0].length) : text;
+          inline = parseInline(primaryText);
+          const baseOffset = primaryRange
+            ? sourceRange(
+                mapping,
+                primary.from + (taskPrefix?.[0].length ?? 0),
+                primary.from + (taskPrefix?.[0].length ?? 0),
+              ).from
+            : range.from;
+          const protectedRanges: ProtectedRange[] = [];
+          if (primaryText.includes("`")) {
+            const cursor = parser.parse(primaryText).cursor();
+            do {
+              if (cursor.name === "InlineCode") protectedRanges.push({ from: baseOffset + cursor.from, to: baseOffset + cursor.to, kind: "code-inline" });
+            } while (cursor.next());
           }
+          const segments = extractMixedContentSegments(primaryText, baseOffset, parseInline, { protectedRanges });
+          const structured = segments.some((segment) => segment.kind === "mdx");
+          if (structured) {
+            segmentChildren.push(...segments.map((segment, segmentIndex): NodeSnapshot => ({
+              id: `${itemId}::list-item:segment:${segmentIndex}`,
+              type: `list-item-${segment.kind}`,
+              props: segment.kind === "text" ? { inline: segment.inline, text: segment.value }
+                : segment.kind === "html" ? { raw: segment.value, html: segment.sanitized ?? segment.value }
+                : { raw: segment.value, status: segment.status ?? "pending", error: segment.error },
+              children: [],
+            })));
+          }
+        }
+        content.forEach((child, semanticChildIndex) => {
+          if (child === primary) return;
+          const identity = childIdentity(itemId, item, child, semanticChildIndex, "block");
+          const childSnapshot = build(child, identity.id, "list");
+          if (childSnapshot) segmentChildren.push(childSnapshot);
         });
-        const itemRange = { from: offset + item.from, to: offset + item.to };
-        const itemBlock: Block = { id: itemId, type: "list-item", isFinalized: block.isFinalized,
-          payload: { raw: source.slice(item.from, item.to), inline, range: itemRange, meta: { sourceContainer: "list" } } };
-        return { id: itemId, type: "list-item", range: itemRange,
-          props: { ...props, block: itemBlock, index, inline, text: inlineNodesToPlainText(inline), raw: itemBlock.payload.raw,
-            task: task ? true : undefined, checked: task ? task[1].toLowerCase() === "x" : undefined }, children };
+        const mappedItemRange = sourceRange(mapping, item.from, item.to);
+        const primaryOwnerRange = primaryChild?.paragraph?.sourceRange;
+        // A retained typed paragraph can outlive the bounded native context node for its list item.
+        const itemRange = primaryOwnerRange
+          && primaryOwnerRange.from >= mappedItemRange.from
+          && primaryOwnerRange.to > mappedItemRange.to
+          ? { from: mappedItemRange.from, to: primaryOwnerRange.to }
+          : mappedItemRange;
+        const itemRaw = includeContainerRaw ? readRaw(item) : "";
+        const itemBlock: Block = {
+          id: itemId,
+          type: "list-item",
+          isFinalized: block.isFinalized,
+          payload: {
+            raw: itemRaw,
+            ...(primaryChild ? {} : { inline: inline ?? [] }),
+            range: itemRange,
+            meta: { sourceContainer: "list" },
+          },
+        };
+        const itemChildren = primaryChild ? [primaryChild, ...segmentChildren] : segmentChildren;
+        return {
+          id: itemId,
+          type: "list-item",
+          range: itemRange,
+          props: {
+            ...(primaryChild ? {} : props),
+            block: itemBlock,
+            index: itemIdentity.semanticChildIndex,
+            ...(primaryChild ? {} : {
+              inline: inline ?? [],
+              text: inlineNodesToPlainText(inline ?? []),
+            }),
+            raw: itemRaw,
+            task: isTask ? true : undefined,
+            checked: isTask ? taskValue?.[1]?.toLowerCase() === "x" : undefined,
+          },
+          children: itemChildren,
+        };
       });
-      const nested: Block = { id, type: "list", isFinalized: block.isFinalized, payload: { raw: source.slice(node.from, node.to), range, meta: { ...baseMeta, ...props } } };
+      const nested: Block = {
+        id,
+        type: "list",
+        isFinalized: block.isFinalized,
+        payload: {
+          raw: includeContainerRaw ? readRaw(node) : "",
+          range,
+          meta: { ...baseMeta, ...props },
+        },
+      };
       return { id, type: "list", props: { block: nested, ...props }, range, children };
     }
     if (name === "Blockquote") {
-      const children = childrenOf(node).map((child, index) => build(child, `${id}::${child.type.name.toLowerCase()}:${index}`, "blockquote")).filter((child): child is NodeSnapshot => child !== null);
-      const nested: Block = { id, type: "blockquote", isFinalized: block.isFinalized, payload: { raw: source.slice(node.from, node.to), range, meta: baseMeta } };
+      const children: NodeSnapshot[] = [];
+      let semanticChildIndex = 0;
+      for (const child of childrenOf(node)) {
+        if (OMITTED_NESTED_CHILDREN[child.type.name]) continue;
+        const identity = childIdentity(id, node, child, semanticChildIndex, "block");
+        const childSnapshot = build(child, identity.id, "blockquote");
+        if (childSnapshot) children.push(childSnapshot);
+        // The native semantic slot advances even when lowering omits an empty snapshot.
+        semanticChildIndex += 1;
+      }
+      const nested: Block = {
+        id,
+        type: "blockquote",
+        isFinalized: block.isFinalized,
+        payload: { raw: includeContainerRaw ? readRaw(node) : "", range, meta: baseMeta },
+      };
       return { id, type: "blockquote", props: { block: nested }, range, children };
     }
+    if (name === "Table") {
+      const owned = nativeLeafFactory?.(node, id, "table", range);
+      if (owned) return owned;
+      const table = lowerNativeTableContent(node, mapping, inlineParser);
+      if (!table) return null;
+      const nested: Block = {
+        id,
+        type: "table",
+        isFinalized: block.isFinalized,
+        payload: {
+          raw: readRaw(node),
+          range,
+          meta: {
+            ...baseMeta,
+            lezerNodeType: name,
+            header: table.header,
+            align: table.align,
+            rows: table.rows,
+          },
+        },
+      };
+      return createBlockSnapshot(nested);
+    }
     let type: Block["type"] = "paragraph";
-    let raw = leafText(node);
-    if (name === "Paragraph" && !raw.trim()) return null;
+    let display = leafText(node);
     let inline: InlineNode[] | undefined;
+    if (name === "Paragraph" && !display.trim()) return null;
     if (name === "FencedCode" || name === "CodeBlock" || name === "IndentedCode") {
       type = "code";
-      const { code, info } = extractLezerCode(node, source);
+      const owned = nativeLeafFactory?.(node, id, "code", range);
+      if (owned) return owned;
+      const { code, info } = extractLezerCode(node, input, mapping);
       const fence = parseCodeFenceInfo(info);
       baseMeta.code = code;
       baseMeta.info = info;
-      if (fence.lang) {
-        baseMeta.lang = fence.lang;
-      }
+      if (fence.lang) baseMeta.lang = fence.lang;
       Object.assign(baseMeta, fence.meta);
-      raw = source.slice(node.from, node.to);
+      display = readRaw(node);
     } else if (name.startsWith("ATXHeading") || name.startsWith("SetextHeading")) {
       type = "heading";
       baseMeta.headingLevel = Number(name.slice(name.startsWith("ATX") ? 10 : 13)) || 1;
-      inline = parseInline(removeHeadingMarkers(raw));
+      inline = parseInline(removeHeadingMarkers(display));
     } else if (name === "HorizontalRule") {
       type = "hr";
     } else if (name === "HTMLBlock" || name === "CommentBlock" || name === "ProcessingInstructionBlock") {
       type = "html";
       baseMeta.lezerNodeType = name;
+      display = readRaw(node);
     } else {
-      inline = parseInline(raw);
+      inline = parseInline(display);
     }
-    const nested: Block = { id, type, isFinalized: block.isFinalized, payload: { raw, inline, range, meta: baseMeta } };
+    const nested: Block = {
+      id,
+      type,
+      isFinalized: block.isFinalized,
+      payload: { raw: readRaw(node), inline, range, meta: baseMeta },
+    };
     const snapshot = createBlockSnapshot(nested);
     if (type === "paragraph") snapshot.props = { ...snapshot.props, inline, text: inlineNodesToPlainText(inline ?? []) };
     return snapshot;
   };
-  const root = tree.topNode.firstChild;
-  if (!root) return { props: {}, children: [] };
+
   const snapshot = build(root, block.id, block.type === "list" ? "list" : "blockquote");
   if (!snapshot) return { props: {}, children: [] };
   const { block: _block, ...props } = snapshot.props ?? {};
   return { props, children: snapshot.children ?? [] };
 }
 
-/** CodeText ranges already exclude container indentation, unlike the enclosing raw block. */
-export function extractLezerCode(node: SyntaxNode, source: SourceText): { code: string; info: string } {
-  const columnAt = (position: number): number => {
-    const start = lineStartAt(source, position);
-    let columns = 0;
-    for (const char of readSourceRange(source, start, position)) columns += char === "\t" ? 4 - (columns % 4) : 1;
-    return columns;
+/** Direct lowering of a native container AST into generic nested snapshots. */
+export function prepareNestedBlockSnapshotFromNative(
+  block: Block,
+  root: SyntaxNode,
+  mapping: NativeSourceMapping,
+  inlineParser: InlineParser,
+  parser: MarkdownParser,
+  streamingInline?: (text: string) => InlineNode[],
+  nativeLeafFactory?: NativeNestedLeafFactory,
+  identityForChild?: NativeNestedChildIdentityFactory,
+): PreparedNestedSnapshot {
+  const preparedMapping: NativeNestedBlockSnapshotMapping = {
+    ...mapping,
+    mapRange: mapping.mapRange ?? ((from, to) => ({ from: mapping.mapOffset(from), to: mapping.mapOffset(to) })),
   };
+  return lowerNestedBlockSnapshot(
+    block,
+    root,
+    preparedMapping,
+    inlineParser,
+    parser,
+    streamingInline,
+    nativeLeafFactory,
+    identityForChild,
+    false,
+  );
+}
+
+/** Cold legacy preparation parses once, then delegates the existing native tree to the same lowerer. */
+export function prepareNestedBlockSnapshot(
+  block: Block,
+  inlineParser: InlineParser,
+  parser: MarkdownParser,
+  streamingInline?: (text: string) => InlineNode[],
+): PreparedNestedSnapshot {
+  const raw = block.payload.raw;
+  const input = new StringSourceInput(raw);
+  const tree = parser.parse(raw);
+  const offset = block.payload.range?.from ?? 0;
+  const source: NativeSourceReader = {
+    length: offset + raw.length,
+    read: (from, to) => raw.slice(from - offset, to - offset),
+  };
+  const mapping: NativeSourceMapping = {
+    input,
+    source,
+    mapOffset: (position) => offset + position,
+    mapRange: (from, to) => ({ from: offset + from, to: offset + to }),
+  };
+  const root = tree.topNode.firstChild;
+  if (!root) return { props: {}, children: [] };
+  return lowerNestedBlockSnapshot(
+    block,
+    root,
+    mapping,
+    inlineParser,
+    parser,
+    streamingInline,
+    undefined,
+    undefined,
+    true,
+  );
+}
+
+/** CodeText ranges already exclude container indentation, unlike the enclosing raw block. */
+export function extractLezerCode(
+  node: SyntaxNode,
+  source: SourceText,
+  mapping?: NativeSourceMapping,
+): { code: string; info: string } {
+  const columnAt = (position: number): number => codeColumnAt(position, mapping, source);
   let baseIndent = 0;
   const parents: SyntaxNode[] = [];
   for (let parent = node.parent; parent; parent = parent.parent) parents.unshift(parent);
@@ -213,7 +562,7 @@ export function extractLezerCode(node: SyntaxNode, source: SourceText): { code: 
       const mark = parent.getChild("ListMark");
       if (mark) {
         let end = mark.to;
-        while (sourceCharAt(source, end) === " " || sourceCharAt(source, end) === "\t") end++;
+        while (sourceCharAt(source, end) === " " || sourceCharAt(source, end) === "\t") end += 1;
         const afterMark = columnAt(mark.to);
         const spacing = columnAt(end) - afterMark;
         baseIndent = afterMark + (spacing >= 1 && spacing <= 4 ? spacing : 1);
@@ -238,7 +587,7 @@ export function extractLezerCode(node: SyntaxNode, source: SourceText): { code: 
         let columns = 0;
         while (position < child.from && columns < requiredColumns) {
           columns += sourceCharAt(source, position) === "\t" ? 4 - (columns % 4) : 1;
-          position++;
+          position += 1;
         }
         const remaining = readSourceRange(source, position, child.from);
         if (/^[ \t]*$/.test(remaining)) {
@@ -249,7 +598,7 @@ export function extractLezerCode(node: SyntaxNode, source: SourceText): { code: 
     if (!fenced && sourceCharAt(source, child.from) !== "\n" && sourceCharAt(source, child.from - 1) === "\t") {
       text = " ".repeat(Math.max(0, columnAt(child.from) - baseIndent - 4)) + text;
     }
-    if (fenceIndent > 0) text = text.split("\n").map((line) => line.replace(new RegExp(`^ {0,${fenceIndent}}`), "")).join("\n");
+    if (fenceIndent > 0) text = text.split("\n").map((line) => stripLeadingColumns(line, fenceIndent)).join("\n");
     code += text;
     previousCodeEnd = child.to;
   }

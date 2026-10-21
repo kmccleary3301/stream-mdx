@@ -10,6 +10,11 @@ export interface BlockRangeProjectionCounterSink {
   ): void;
 }
 
+export interface BlockRangeProjectionViewCounterSink {
+  recordStoreRecordsTouched?(count: number, stage: "view"): void;
+  recordRecordSlotsAllocated?(count: number, stage: "view"): void;
+}
+
 export interface BlockRangeProjectionRange {
   readonly chunkStart: number;
   readonly rangeStart: number;
@@ -30,6 +35,7 @@ export interface BlockRangeProjectionTreeProps {
   readonly fullContent?: boolean;
   readonly counterFamily?: "code" | "table";
   readonly counters?: BlockRangeProjectionCounterSink;
+  readonly viewCounters?: BlockRangeProjectionViewCounterSink;
 }
 
 export interface BlockRangeProjectionLeaf {
@@ -137,22 +143,34 @@ function allocatedRangeCount(node: BlockRangeProjectionNode): number {
   return capacity;
 }
 
-const BlockRangeProjectionTreeNode = React.memo(function BlockRangeProjectionTreeNode({
-  node,
-  nodeStart,
-  rangeSize,
-  rangeStart,
-  rangeEnd,
-  visibleStart,
-  visibleEnd,
-  renderRange,
-  fullContent = false,
-  counterFamily,
-  counters,
-}: BlockRangeProjectionTreeProps): React.ReactElement | null {
+const BlockRangeProjectionTreeNode = React.memo(function BlockRangeProjectionTreeNode(
+  props: BlockRangeProjectionTreeProps,
+): React.ReactElement | null {
+  const {
+    node,
+    nodeStart,
+    rangeSize,
+    rangeStart,
+    rangeEnd,
+    visibleStart,
+    visibleEnd,
+    renderRange,
+    fullContent = false,
+  } = props;
+  let counterFamily: BlockRangeProjectionTreeProps["counterFamily"];
+  let counters: BlockRangeProjectionTreeProps["counters"];
+  let viewCounters: BlockRangeProjectionTreeProps["viewCounters"];
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    counterFamily = props.counterFamily;
+    counters = props.counters;
+    viewCounters = props.viewCounters;
+  }
   const nodeEnd = nodeStart + (fullContent ? allocatedRangeCount(node) : node.rangeCount) * rangeSize;
   const localRangeStart = Math.max(rangeStart, nodeStart);
   const localRangeEnd = fullContent ? nodeEnd : Math.min(rangeEnd, nodeEnd);
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    viewCounters?.recordStoreRecordsTouched?.(1, "view");
+  }
   if (localRangeEnd <= localRangeStart) return null;
 
   const localVisibleStart = Math.max(visibleStart, nodeStart);
@@ -167,6 +185,9 @@ const BlockRangeProjectionTreeNode = React.memo(function BlockRangeProjectionTre
     }
     const ranges: React.ReactNode[] = [];
     for (const chunkStart of node.starts) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        viewCounters?.recordStoreRecordsTouched?.(1, "view");
+      }
       const chunkEnd = chunkStart + rangeSize;
       const mountedStart = Math.max(localRangeStart, chunkStart);
       const mountedEnd = Math.min(localRangeEnd, chunkEnd);
@@ -178,6 +199,9 @@ const BlockRangeProjectionTreeNode = React.memo(function BlockRangeProjectionTre
         visibleStart: Math.max(localVisibleStart, chunkStart),
         visibleEnd: Math.min(localVisibleEnd, chunkEnd),
       }));
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        viewCounters?.recordRecordSlotsAllocated?.(1, "view");
+      }
     }
     return React.createElement(React.Fragment, null, ...ranges);
   }
@@ -192,12 +216,15 @@ const BlockRangeProjectionTreeNode = React.memo(function BlockRangeProjectionTre
   const children: React.ReactElement[] = [];
   let childStart = nodeStart;
   for (const child of node.children) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      viewCounters?.recordStoreRecordsTouched?.(1, "view");
+    }
     const childRangeCount = fullContent ? prefixProjectionCapacity(child.level) : child.rangeCount;
     const childEnd = childStart + childRangeCount * rangeSize;
     const childRangeStart = Math.max(localRangeStart, childStart);
     const childRangeEnd = Math.min(localRangeEnd, childEnd);
     if (childRangeEnd > childRangeStart) {
-      const childProps: Omit<BlockRangeProjectionTreeProps, "counterFamily" | "counters"> = {
+      const childProps: Omit<BlockRangeProjectionTreeProps, "counterFamily" | "counters" | "viewCounters"> = {
         node: child,
         nodeStart: childStart,
         rangeSize,
@@ -212,6 +239,19 @@ const BlockRangeProjectionTreeNode = React.memo(function BlockRangeProjectionTre
       if (
         typeof __STREAM_MDX_COUNTERS__ !== "undefined" &&
         __STREAM_MDX_COUNTERS__ &&
+        counterFamily !== undefined &&
+        viewCounters !== undefined
+      ) {
+        children.push(React.createElement(BlockRangeProjectionTreeNode, {
+          ...childProps,
+          key,
+          counterFamily,
+          counters,
+          viewCounters,
+        }));
+      } else if (
+        typeof __STREAM_MDX_COUNTERS__ !== "undefined" &&
+        __STREAM_MDX_COUNTERS__ &&
         counterFamily !== undefined
       ) {
         children.push(React.createElement(BlockRangeProjectionTreeNode, {
@@ -220,8 +260,21 @@ const BlockRangeProjectionTreeNode = React.memo(function BlockRangeProjectionTre
           counterFamily,
           counters,
         }));
+      } else if (
+        typeof __STREAM_MDX_COUNTERS__ !== "undefined" &&
+        __STREAM_MDX_COUNTERS__ &&
+        viewCounters !== undefined
+      ) {
+        children.push(React.createElement(BlockRangeProjectionTreeNode, {
+          ...childProps,
+          key,
+          viewCounters,
+        }));
       } else {
         children.push(React.createElement(BlockRangeProjectionTreeNode, { ...childProps, key }));
+      }
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        viewCounters?.recordRecordSlotsAllocated?.(1, "view");
       }
     }
     childStart = childEnd;

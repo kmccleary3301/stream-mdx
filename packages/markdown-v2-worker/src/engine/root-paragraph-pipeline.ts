@@ -68,6 +68,13 @@ function isRootParagraph(node: SyntaxNode): boolean {
 // Keep plugin-owned footnote definitions on the ordinary block path.
 const FOOTNOTE_DEFINITION_START = /^\[\^[A-Za-z0-9_-]+\]:/;
 
+export function isRootFootnoteDefinitionStart(source: SourceSnapshot, sourceOffset: number): boolean {
+  if (sourceOffset < 0 || sourceOffset + 2 > source.length || source.read(sourceOffset, sourceOffset + 2) !== "[^") {
+    return false;
+  }
+  return FOOTNOTE_DEFINITION_START.test(source.chunk(sourceOffset));
+}
+
 
 /** Admit only native root Paragraph nodes; syntax-tree ranges remain the source authority. */
 export function createRootParagraphOwners(
@@ -83,8 +90,8 @@ export function createRootParagraphOwners(
   const sourceOffset = options.sourceOffset ?? 0;
   const owners: RootParagraphSourceOwner[] = [];
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
-    if (!isRootParagraph(node)
-      || FOOTNOTE_DEFINITION_START.test(sourceSnapshot.chunk(sourceOffset + node.from))) continue;
+    const from = sourceOffset + node.from;
+    if (!isRootParagraph(node) || isRootFootnoteDefinitionStart(sourceSnapshot, from)) continue;
     const tailParser = NativeParagraphTailParser.admit(
       options.parser,
       sourceSnapshot,
@@ -98,7 +105,6 @@ export function createRootParagraphOwners(
       : tailState.phase === "closed"
         ? "closed"
         : "open";
-    const from = sourceOffset + node.from;
     const to = sourceOffset + node.to;
     const id = generateBlockId(`${from}:paragraph`, "paragraph");
     const owner = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && options.counters !== undefined
@@ -146,8 +152,16 @@ export function advanceRootParagraphOwner(
   appendedText: string,
 ): ParagraphSourceChange | ParagraphOwnerReplacement {
   const tail = nativeTailByOwner.get(owner);
-  if (!tail) throw new Error("Native paragraph tail state is unavailable for this owner");
   const previous = owner.getMetadata();
+  if (appendedText.includes(":") && isRootFootnoteDefinitionStart(source, previous.sourceRange.from)) {
+    return {
+      ownerStart: previous.sourceRange.from,
+      expectedRevision: previous.revision,
+      mode: tail?.state.mode ?? "full-configured-context",
+      requiresOwnerReplacement: true,
+    };
+  }
+  if (!tail) throw new Error("Native paragraph tail state is unavailable for this owner");
   const nativeChange = tail.append(source, appendedText);
   return owner.accept(previous.processedTo, source.length, nativeChange);
 }

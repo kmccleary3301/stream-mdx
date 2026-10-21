@@ -49,6 +49,8 @@ export interface StoredCodeBlockState {
 export type AppendCodePatch = Extract<Patch, { op: "appendCode" }>;
 export type DecorateCodePatch = Extract<Patch, { op: "decorateCode" }>;
 
+export const CODE_LINE_RANGE_SIZE = 64;
+
 const CODE_RANGE_CACHE_LIMIT = 128;
 const TOKEN_FONT_STYLE_ITALIC = 1;
 const TOKEN_FONT_STYLE_BOLD = 2;
@@ -147,8 +149,8 @@ function sourceStateForRaw(
   raw: string,
   sourceFrom: number,
   sourceTo: number,
-  counters?: StoreCodeCounters,
   canonicalSource?: SourceSnapshot,
+  counters?: StoreCodeCounters,
 ): SourceStateForRaw {
   if (canonicalSource) {
     if (
@@ -384,8 +386,8 @@ function withLegacyDecoration(
 function legacyCodeState(
   snapshot: NodeSnapshot,
   block: Block | undefined,
-  counters?: StoreCodeCounters,
   canonicalSource?: SourceSnapshot,
+  counters?: StoreCodeCounters,
 ): StoredCodeBlockState {
   const raw = block?.payload.raw ?? (typeof snapshot.props?.raw === "string" ? snapshot.props.raw : typeof snapshot.props?.text === "string" ? snapshot.props.text : "");
   const sourceFrom = snapshot.range?.from ?? block?.payload.range?.from ?? 0;
@@ -449,7 +451,9 @@ function legacyCodeState(
     lineCount: index.length,
     sourceRange: { from: sourceFrom, to: sourceTo },
   };
-  const sourceState = sourceStateForRaw(raw, sourceFrom, sourceTo, counters, canonicalSource);
+  const sourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? sourceStateForRaw(raw, sourceFrom, sourceTo, canonicalSource, counters)
+    : sourceStateForRaw(raw, sourceFrom, sourceTo, canonicalSource);
   const view = createView(
     source,
     configurationRevision,
@@ -469,10 +473,14 @@ function legacyCodeState(
 export function createStoredCodeBlockState(
   snapshot: NodeSnapshot,
   block: Block | undefined,
-  counters?: StoreCodeCounters,
   canonicalSource?: SourceSnapshot,
+  counters?: StoreCodeCounters,
 ): StoredCodeBlockState {
-  if (snapshot.code === undefined) return legacyCodeState(snapshot, block, counters, canonicalSource);
+  if (snapshot.code === undefined) {
+    return typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? legacyCodeState(snapshot, block, canonicalSource, counters)
+      : legacyCodeState(snapshot, block, canonicalSource);
+  }
   const cold = snapshot.code as CodeBlockSnapshot;
   if (typeof cold.raw !== "string" || cold.codeOwnerId !== snapshot.id) {
     throw new TypeError("Code snapshot owner and raw source must match its node");
@@ -493,13 +501,15 @@ export function createStoredCodeBlockState(
       throw new RangeError("Code snapshot line ranges must be inside its source range");
     }
   }
-  const sourceState = sourceStateForRaw(
-    cold.raw,
-    cold.sourceRange.from,
-    cold.sourceRange.to,
-    counters,
-    canonicalSource,
-  );
+  const sourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? sourceStateForRaw(
+        cold.raw,
+        cold.sourceRange.from,
+        cold.sourceRange.to,
+        canonicalSource,
+        counters,
+      )
+    : sourceStateForRaw(cold.raw, cold.sourceRange.from, cold.sourceRange.to, canonicalSource);
   return {
     view: createView(cold, cold.configurationRevision, cold.info, cold.language, index),
     ...sourceState,
@@ -651,7 +661,7 @@ export function appendLegacyCodeState(
         sourceSnapshot: current.sourceSnapshot,
         document: current.document,
         managed: false,
-        ranges: nextRangesForAppend(current.ranges, patch.startIndex),
+        ranges: nextRangesForAppend(current.ranges, previousTail?.isProvisional ? previousTail.index : patch.startIndex),
       },
     };
   } catch (error) {
@@ -661,9 +671,9 @@ export function appendLegacyCodeState(
 export function updateLegacyCodeLineState(
   current: StoredCodeBlockState,
   line: { readonly id: string; readonly index: number; readonly props: Record<string, unknown> },
-  counters?: StoreCodeCounters,
   allowSemanticEdit = false,
   canonicalSource?: SourceSnapshot,
+  counters?: StoreCodeCounters,
 ): StoredCodeBlockState | undefined {
   if (current.managed || !Number.isSafeInteger(line.index) || line.index < 0) return undefined;
   const previous = current.view.lines.get(line.index);
@@ -724,14 +734,20 @@ export function updateLegacyCodeLineState(
     if (update === undefined && !provisionalChanged) return current;
     const decoratedLines = update === undefined ? current.view.lines : current.view.lines.decorate([update]);
     const updatedLine = decoratedLines.get(line.index) ?? previous;
-    const lines = provisionalChanged
-      ? (source.state === "open"
-          ? current.view.lines.replaceTail(line.index, [{ ...updatedLine, isProvisional }])
-          : createIndex([
-              ...current.view.lines.readRange(0, line.index),
-              { ...updatedLine, isProvisional },
-            ], counters))
-      : decoratedLines;
+    let lines = decoratedLines;
+    if (provisionalChanged) {
+      if (source.state === "open") {
+        lines = current.view.lines.replaceTail(line.index, [{ ...updatedLine, isProvisional }]);
+      } else {
+        const updatedLines = [
+          ...current.view.lines.readRange(0, line.index),
+          { ...updatedLine, isProvisional },
+        ];
+        lines = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+          ? createIndex(updatedLines, counters)
+          : createIndex(updatedLines);
+      }
+    }
     if (lines === current.view.lines) return current;
     const ranges = new Map<string, { readonly from: number; readonly to: number; readonly lines: readonly CodeLineRecord[] }>();
     for (const [key, range] of current.ranges) {
@@ -804,16 +820,22 @@ export function updateLegacyCodeLineState(
     line.index === current.view.lines.length - 1 &&
     previous.isProvisional &&
     line.index === current.view.lines.completeLineCount;
-  const lines = replacesOpenTail
-    ? current.view.lines.replaceTail(line.index, [updated])
-    : createIndex(allLines.map((record) => {
-        if (record.index < line.index || delta === 0) return record.index === line.index ? updated : record;
-        if (record.index === line.index) return updated;
-        return {
-          ...record,
-          sourceRange: { from: record.sourceRange.from + delta, to: record.sourceRange.to + delta },
-        };
-      }), counters);
+  let lines: CodeLineIndex;
+  if (replacesOpenTail) {
+    lines = current.view.lines.replaceTail(line.index, [updated]);
+  } else {
+    const updatedLines = allLines.map((record) => {
+      if (record.index < line.index || delta === 0) return record.index === line.index ? updated : record;
+      if (record.index === line.index) return updated;
+      return {
+        ...record,
+        sourceRange: { from: record.sourceRange.from + delta, to: record.sourceRange.to + delta },
+      };
+    });
+    lines = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? createIndex(updatedLines, counters)
+      : createIndex(updatedLines);
+  }
   const nextSource: CodeBlockSourceMetadata = {
     ...source,
     revision: ownerRevision,
@@ -824,7 +846,9 @@ export function updateLegacyCodeLineState(
   };
   let nextSourceState: SourceStateForRaw;
   try {
-    nextSourceState = sourceStateForRaw(nextRaw, nextSource.sourceRange.from, nextSourceTo, counters, canonicalSource);
+    nextSourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? sourceStateForRaw(nextRaw, nextSource.sourceRange.from, nextSourceTo, canonicalSource, counters)
+      : sourceStateForRaw(nextRaw, nextSource.sourceRange.from, nextSourceTo, canonicalSource);
   } catch {
     return undefined;
   }
@@ -845,8 +869,8 @@ export function updateLegacyCodeLineState(
 export function refreshLegacyCodeSource(
   current: StoredCodeBlockState,
   block: Block,
-  counters?: StoreCodeCounters,
   canonicalSource?: SourceSnapshot,
+  counters?: StoreCodeCounters,
 ): StoredCodeBlockState {
   if (current.managed) return current;
   const raw = block.payload.raw;
@@ -862,7 +886,9 @@ export function refreshLegacyCodeSource(
     lineCount: current.view.lines.length,
     sourceRange: { from: sourceFrom, to: sourceTo },
   };
-  const validatedSourceState = sourceStateForRaw(raw, sourceFrom, sourceTo, counters, canonicalSource);
+  const validatedSourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? sourceStateForRaw(raw, sourceFrom, sourceTo, canonicalSource, counters)
+    : sourceStateForRaw(raw, sourceFrom, sourceTo, canonicalSource);
   const sourceState = canonicalSource &&
     current.view.source.sourceRange.from === sourceFrom &&
     current.view.source.sourceRange.to === sourceTo
@@ -894,7 +920,12 @@ export function finalizeStoredCodeState(current: StoredCodeBlockState): StoredCo
 export function decorateStoredCodeState(
   current: StoredCodeBlockState,
   patch: DecorateCodePatch,
-): { readonly state?: StoredCodeBlockState; readonly changed: boolean; readonly reason?: string } {
+): {
+  readonly state?: StoredCodeBlockState;
+  readonly changed: boolean;
+  readonly changedIndices?: ReadonlySet<number>;
+  readonly reason?: string;
+} {
   const old = current.view.source;
   if (
     !current.managed ||
@@ -918,7 +949,11 @@ export function decorateStoredCodeState(
     const line = current.view.lines.get(decoration.index);
     if (!line || line.id !== decoration.lineId || line.sourceRevision !== decoration.sourceRevision) continue;
     valid.push(decoration);
-    changedIndices.add(decoration.index);
+    if (
+      decoration.tokens === null
+        ? line.decoration !== undefined && line.decoration.configurationRevision === decoration.configurationRevision
+        : line.decoration !== decoration
+    ) changedIndices.add(decoration.index);
   }
   if (valid.length === 0) return { state: current, changed: false };
   try {
@@ -944,6 +979,7 @@ export function decorateStoredCodeState(
         ranges,
       },
       changed: true,
+      changedIndices,
     };
   } catch (error) {
     return { changed: false, reason: error instanceof Error ? error.message : "decoration validation failed" };

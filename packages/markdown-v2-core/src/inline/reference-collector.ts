@@ -13,6 +13,30 @@ function sourceCharAt(source: SourceText, index: number): string {
   return typeof source === "string" ? (source[index] ?? "") : source.read(index, index + 1);
 }
 
+function hasUnparsedReferenceTail(source: SourceText, from: number): boolean {
+  for (let index = from; index < source.length; index++) {
+    const code = sourceCharAt(source, index).charCodeAt(0);
+    if (code === 10 || code === 13) return false;
+    if (code !== 9 && code !== 32) return true;
+  }
+  return false;
+}
+
+function isCompleteLinkTitle(raw: string): boolean {
+  const title = raw.trim();
+  if (title.length < 2) return false;
+  const opener = title.charCodeAt(0);
+  const closer = opener === 40 ? 41 : opener;
+  if ((opener !== 34 && opener !== 39 && opener !== 40) || title.charCodeAt(title.length - 1) !== closer) {
+    return false;
+  }
+
+  let escapes = 0;
+  for (let index = title.length - 2; index >= 0 && title.charCodeAt(index) === 92; index--) escapes++;
+  return escapes % 2 === 0;
+}
+
+
 export function normalizeLinkLabel(raw: string): string {
   return raw.trim().toLowerCase().replace(/ß|ẞ/g, "ss").replace(/\s+/g, " ");
 }
@@ -97,6 +121,8 @@ export function collectLinkReferences(tree: Tree, content: string | SourceSnapsh
         let rawLabel = "";
         let href: string | undefined;
         let title: string | undefined;
+        let rawTitle: string | undefined;
+        let lastChildTo = node.from;
 
         let child = node.node.firstChild;
         while (child) {
@@ -110,17 +136,23 @@ export function collectLinkReferences(tree: Tree, content: string | SourceSnapsh
               rawLabel = rawSlice;
               label = normalizeLinkLabel(rawSlice);
             }
+            lastChildTo = Math.max(lastChildTo, child.to);
           } else if (type === "URL") {
             const rawSlice = extractNodeText(child, content);
             href = cleanUrl(rawSlice);
+            lastChildTo = Math.max(lastChildTo, child.to);
           } else if (type === "LinkTitle") {
-            const rawSlice = extractNodeText(child, content);
-            title = cleanTitle(rawSlice);
+            rawTitle = extractNodeText(child, content);
+            title = cleanTitle(rawTitle);
+            lastChildTo = Math.max(lastChildTo, child.to);
           }
           child = child.nextSibling;
         }
 
-        if (label && href !== undefined && !references.has(label)) {
+        if (label && href !== undefined
+          && (rawTitle === undefined || isCompleteLinkTitle(rawTitle))
+          && !hasUnparsedReferenceTail(content, lastChildTo)
+          && !references.has(label)) {
           references.set(label, { href, title, label: rawLabel });
         }
         return false;

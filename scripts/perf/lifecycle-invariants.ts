@@ -14,7 +14,7 @@ import {
 } from "./diagnostic-dist/index.mjs";
 import type { StreamingMarkdownHandle } from "@stream-mdx/react";
 import { DENSE_FIXTURES, type ChunkingPlan, type DenseFixture } from "./replay-fixtures";
-import type { DivergenceReport } from "./scaling-diagnostics";
+import type { DivergenceReport } from "./replay-fixtures";
 
 const DOM_GLOBALS = [
   "window",
@@ -52,7 +52,7 @@ export function restoreDomGlobals(snapshot: DomGlobalSnapshot): void {
   }
 }
 
-const PARITY_INIT: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+const PARITY_INIT = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
 prewarmLangs: ["typescript", "javascript", "markdown"],
 docPlugins: {
   footnotes: true,
@@ -68,7 +68,7 @@ docPlugins: {
   emitDiffBlocks: false,
   themes: { dark: "github-dark", light: "github-light" },
 },
-mdx: { compileMode: "server" }, };
+mdx: { compileMode: "server" }, } satisfies Extract<WorkerIn, { type: "INIT" }>;
 
 function recordDivergence(
   divergences: DivergenceReport[],
@@ -134,26 +134,48 @@ export async function runGenerationAndResetInvariants(): Promise<DivergenceRepor
     // 1. Initial generation (Doc 1)
     await engine.handle({
       ...PARITY_INIT,
-      initialContent: "# Document 1 Alpha\n\nFirst paragraph text in generation 1.\n",
+      initialContent: fakeFixture.source,
     });
 
     const gen1Blocks = store.getBlocks();
     assert.strictEqual(gen1Blocks.length, 2, "Doc 1 must establish exactly 2 blocks (heading + paragraph)");
     assert.strictEqual(gen1Blocks[0].type, "heading", "Doc 1 block 0 must be heading");
-    assert.strictEqual(gen1Blocks[0].payload.raw, "Document 1 Alpha", "Doc 1 heading raw must match normalized text");
     assert.strictEqual(gen1Blocks[1].type, "paragraph", "Doc 1 block 1 must be paragraph");
     assert.strictEqual(gen1Blocks[1].payload.raw, "First paragraph text in generation 1.", "Doc 1 paragraph raw must match exactly");
 
-    // 2. Advance generation via INIT with complete semantic replacement (Doc 2)
+    const gen1HeadingRange = store.getNode(gen1Blocks[0].id)?.range;
+    assert.ok(gen1HeadingRange, "Doc 1 heading must retain its source range");
+    assert.strictEqual(
+      fakeFixture.source.slice(gen1HeadingRange.from, gen1HeadingRange.to),
+      "# Document 1 Alpha",
+      "Doc 1 heading range must match the authored source",
+    );
+    assert.strictEqual(
+      gen1Blocks[0].payload.meta?.headingText,
+      "Document 1 Alpha",
+      "Doc 1 heading semantic text must match",
+    );
+    const gen2Source = "# Document 2 Beta\n\nSecond paragraph text in generation 2.\n";
     await engine.handle({
       ...PARITY_INIT,
-      initialContent: "# Document 2 Beta\n\nSecond paragraph text in generation 2.\n",
+      initialContent: gen2Source,
     });
 
     const gen2Blocks = store.getBlocks();
     assert.strictEqual(gen2Blocks.length, 2, "Doc 2 must replace store with exactly 2 blocks");
     assert.strictEqual(gen2Blocks[0].type, "heading", "Doc 2 block 0 must be heading");
-    assert.strictEqual(gen2Blocks[0].payload.raw, "Document 2 Beta", "Doc 2 heading raw must match normalized text");
+    const gen2HeadingRange = store.getNode(gen2Blocks[0].id)?.range;
+    assert.ok(gen2HeadingRange, "Doc 2 heading must retain its source range");
+    assert.strictEqual(
+      gen2Source.slice(gen2HeadingRange.from, gen2HeadingRange.to),
+      "# Document 2 Beta",
+      "Doc 2 heading range must match the authored source",
+    );
+    assert.strictEqual(
+      gen2Blocks[0].payload.meta?.headingText,
+      "Document 2 Beta",
+      "Doc 2 heading semantic text must match",
+    );
     assert.strictEqual(gen2Blocks[1].type, "paragraph", "Doc 2 block 1 must be paragraph");
     assert.strictEqual(gen2Blocks[1].payload.raw, "Second paragraph text in generation 2.", "Doc 2 paragraph raw must match exactly");
 
@@ -306,36 +328,56 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
     assert.equal(completedRow.text, "interface User {");
     assert.equal(source.slice(completedRow.sourceRange.from, completedRow.sourceRange.to), `  ${completedRow.text}`);
     assert.equal(completedRow.ending, "\n");
-    const completedRowElement = container.querySelector<HTMLElement>(`[data-line-id="${completedRow.id}"]`);
+    const renderedCodeRow = (index: number): HTMLElement | null =>
+      container.querySelectorAll<HTMLElement>("pre code > .line").item(index);
+    const completedRowElement = renderedCodeRow(completedRow.index);
     assert.ok(completedRowElement, "native code renderer exposes the completed row");
+    assert.equal(
+      completedRowElement.textContent,
+      completedRow.text,
+      "native code renderer exposes the authored completed row text",
+    );
     assert.equal(container.querySelector("pre")?.textContent?.includes(completedRow.text), true);
     const generation = initialView.source.generation;
-    assert.equal(store.getNode(completedRow.id), undefined, "owned code row is not a per-line NodeRecord");
-    assert.equal(store.getChildren(rootCode.id).length, 0, "owned code block has no per-line node children");
 
     const tailUpdate = source.slice(stableLineStart, laterLineStart);
     const remainingOpenCode = source.slice(laterLineStart, closingFenceStart);
     const closeAndFollowingProse = source.slice(closingFenceStart);
     await idleAppend(tailUpdate);
+    assert.strictEqual(
+      store.getCodeLines(rootCode.id, 0, 1)[0]?.id,
+      completedRow.id,
+      "typed code owner retains the completed source row ID after tail updates",
+    );
     assert.strictEqual(store.getCodeLines(rootCode.id, 0, 1)[0], completedRow);
     assert.strictEqual(
-      container.querySelector(`[data-line-id="${completedRow.id}"]`),
+      renderedCodeRow(completedRow.index),
       completedRowElement,
       "completed row DOM identity survives tail updates",
     );
     assert.equal(store.getCodeBlock(rootCode.id)?.source.generation, generation);
     await idleAppend(remainingOpenCode);
+    assert.strictEqual(
+      store.getCodeLines(rootCode.id, 0, 1)[0]?.id,
+      completedRow.id,
+      "typed code owner retains the completed source row ID while appending rows",
+    );
     assert.strictEqual(store.getCodeLines(rootCode.id, 0, 1)[0], completedRow);
-    assert.strictEqual(container.querySelector(`[data-line-id="${completedRow.id}"]`), completedRowElement);
+    assert.strictEqual(renderedCodeRow(completedRow.index), completedRowElement);
     await idleAppend(closeAndFollowingProse);
     assert.equal(store.getCodeBlock(rootCode.id)?.source.state, "closed");
 
-    const authored = fixture.expectations.codeBlocks?.[0];
+    const authored = fixture.expectations?.codeBlocks?.[0];
     assert.ok(authored, "fixture includes independently specified CommonMark code expectations");
     const finalView = store.getCodeBlock(rootCode.id);
     assert.ok(finalView);
     const finalRows = store.getCodeLines(rootCode.id, 0, authored.codeLines.length);
     assert.deepStrictEqual(finalRows.map((row) => row.text), authored.codeLines);
+    assert.deepStrictEqual(
+      Array.from(container.querySelectorAll<HTMLElement>("pre code > .line"), (row) => row.textContent),
+      authored.codeLines,
+      "native code DOM rows must match the authored code lines",
+    );
     assert.equal(finalView.language, authored.lang);
     assert.equal(finalView.source.generation, generation);
     for (const row of finalRows) {
@@ -362,7 +404,7 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
     assert.equal(store.getCodeBlock(rootCode.id)?.source.state, "finalized");
     assert.equal(store.getCodeBlock(rootCode.id)?.source.generation, generation);
     assert.strictEqual(
-      container.querySelector(`[data-line-id="${completedRow.id}"]`),
+      renderedCodeRow(completedRow.index),
       completedRowElement,
       "completed row DOM identity survives finalization",
     );

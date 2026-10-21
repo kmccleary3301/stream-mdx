@@ -22,6 +22,7 @@ import {
   type NativeTableExtensionContext,
   type NativeTableRowClassifierChange,
   type NativeTableRowClassifierCounters,
+  type NativeTableRowSpan,
 } from "./native-table-row-classifier";
 import { createNativeTableRowRecord } from "./native-table-projection";
 
@@ -49,6 +50,7 @@ export interface RootTableSourceOpening {
 
 export interface RootTableSourceOwnerOptions {
   readonly id: string;
+  readonly containerId?: string;
   readonly generation: number;
   readonly source: AppendSourceDocument;
   readonly parser: MarkdownParser;
@@ -141,6 +143,7 @@ function cellInline(cell: TableCellRecord): InlineNode[] {
 
 export class RootTableSourceOwner {
   readonly id: string;
+  readonly containerId?: string;
   readonly generation: number;
   readonly columnCount: number;
 
@@ -179,6 +182,7 @@ export class RootTableSourceOwner {
     }
 
     this.id = id;
+    this.containerId = options.containerId;
     this.generation = generation;
     this.source = source;
     this.tableFrom = opening.from;
@@ -240,11 +244,39 @@ export class RootTableSourceOwner {
 
   accept(from: number, to: number): RootTableSourceChange {
     if (this.state !== "open") throw new Error(`Cannot accept source for a ${this.state} root table owner`);
+    this.validateAcceptanceRange(from, to);
+    return this.acceptClassifiedRows(this.classifier.accept(this.source.snapshot(), from, to));
+  }
+
+  admitNativeRows(
+    from: number,
+    to: number,
+    rows: readonly NativeTableRowSpan[],
+    state: RootTableSourceOwnerState,
+    actualInterruptFrom?: number,
+  ): RootTableSourceChange {
+    if (this.state !== "open") throw new Error(`Cannot accept source for a ${this.state} root table owner`);
+    this.validateAcceptanceRange(from, to);
+    const change = this.classifier.admitNativeRows(
+      this.source.snapshot(),
+      from,
+      to,
+      rows,
+      state,
+      actualInterruptFrom,
+    );
+    return this.acceptClassifiedRows(change);
+  }
+
+  private validateAcceptanceRange(from: number, to: number): void {
     if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to)
       || from !== this.processedTo || to < from || to > this.source.length) {
       throw new RangeError("Root table source acceptance must continue at processedTo within the source document");
     }
-    return this.consume(this.classifier.accept(this.source.snapshot(), from, to));
+  }
+
+  private acceptClassifiedRows(change: NativeTableRowClassifierChange): RootTableSourceChange {
+    return this.consume(change);
   }
 
   finalize(): RootTableSourceChange {

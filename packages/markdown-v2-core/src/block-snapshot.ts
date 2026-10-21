@@ -721,17 +721,52 @@ interface SnapshotCodeState {
 }
 
 
+/**
+ * Whether a generic container's cold export carries a `preparedNested` projection, and where. The tree itself is
+ * never retained: it is derived from the node's generic children at the cold export boundary.
+ */
+interface PreparedNestedExportShape {
+  readonly block: boolean;
+  readonly meta: boolean;
+}
+
 interface SnapshotNode {
   id: string;
   type: string;
   parentId: string | null;
   children: string[];
   props: Record<string, unknown>;
-  block?: Block;
+  meta?: Record<string, unknown>;
   range?: { from: number; to: number };
+  block?: Block;
+  preparedNestedExport?: PreparedNestedExportShape;
   codeState?: SnapshotCodeState;
   tableState?: ManagedTableViewState;
   paragraphState?: ManagedParagraphViewState;
+}
+
+function isGenericContainerType(type: string): boolean {
+  return type === "list" || type === "blockquote" || type === "list-item";
+}
+
+/** Drops a producer's prepared tree by shallow copy, so the tree is never cloned into private state. */
+function blockWithoutPreparedNested(block: Block): Block {
+  const meta = block.payload.meta;
+  if (!meta || !Object.prototype.hasOwnProperty.call(meta, "preparedNested")) return block;
+  const { preparedNested: _preparedNested, ...rest } = meta;
+  return { ...block, payload: { ...block.payload, meta: rest } };
+}
+
+function blockWithExactMeta(block: Block, meta: Record<string, unknown> | undefined): Block {
+  if (deepEqual(block.payload.meta, meta)) return block;
+  const payloadDescriptors = Object.getOwnPropertyDescriptors(block.payload);
+  payloadDescriptors.meta = {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: meta ? structuredCloneIfPossible(meta) : undefined,
+  };
+  return { ...block, payload: Object.defineProperties({}, payloadDescriptors) as Block["payload"] };
 }
 
 export interface DocumentSnapshot {
@@ -851,10 +886,10 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
         const parent = resolveParentNode(snapshot, patch.at);
         if (!parent) break;
         if (patch.index < 0 || patch.index >= parent.children.length) break;
-        const childId = parent.children.splice(patch.index, 1)[0];
-        if (childId) {
-          removeSubtree(snapshot, childId);
-        }
+        const children = parent.children.slice();
+        const childId = children.splice(patch.index, 1)[0];
+        parent.children = children;
+        if (childId) removeSubtree(snapshot, childId, undefined, undefined, undefined, true);
         break;
       }
       case "replaceChild": {
@@ -867,7 +902,7 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
       case "setProps": {
         const target = resolveTargetNode(snapshot, patch.at);
         if (!target) break;
-        applyPropsToNode(target, patch.props);
+        applyPropsToNode(snapshot, target, patch.props);
         break;
       }
       case "setPropsBatch": {
@@ -876,7 +911,7 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
           if (!entry?.at) continue;
           const target = resolveTargetNode(snapshot, entry.at);
           if (!target) continue;
-          applyPropsToNode(target, entry.props);
+          applyPropsToNode(snapshot, target, entry.props);
         }
         break;
       }
@@ -978,7 +1013,7 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
       }
       case "decorateCode": {
         const target = resolveTargetNode(snapshot, patch.at);
-        if (target) decorateCodeState(snapshot, target, patch);
+        if (target) decorateCodeState(target, patch);
         break;
       }
       case "appendLines": {
@@ -1009,7 +1044,7 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
         if (patch.block) {
           props.block = patch.block;
         }
-        applyPropsToNode(target, props);
+        applyPropsToNode(snapshot, target, props);
         break;
       }
       default:
@@ -1037,20 +1072,269 @@ function materializeBlocks(snapshot: DocumentSnapshot): Block[] {
 function buildBlocks(snapshot: DocumentSnapshot): Block[] {
   const root = snapshot.nodes.get(snapshot.rootId);
   if (!root) return [];
+  const source = inputSourceSnapshot(snapshot);
   const result: Block[] = [];
   for (const childId of root.children) {
     const child = snapshot.nodes.get(childId);
     if (!child) continue;
-    if (child.paragraphState && child.block) {
-      result.push(materializeManagedParagraphBlock(child.block, child.paragraphState));
-    } else if (child.tableState && child.block) {
-      result.push(materializeManagedTableBlock(child.block, child.tableState));
-    } else if (child.codeState) {
-      result.push(materializeCodeBlock(child));
-    } else if (child.block) {
-      result.push(cloneBlock(child.block));
+    const block = materializeSnapshotNodeBlock(snapshot, child, source);
+    if (block) result.push(block);
+  }
+  return result;
+}
+
+interface LegacyListLayout {
+  readonly ordered: boolean;
+  readonly loose: boolean;
+  readonly start?: number;
+}
+
+interface LegacyPreparedProjection {
+  readonly prepared: PreparedNestedSnapshot;
+  readonly primaryParagraph?: Block;
+  readonly primaryInline?: InlineNode[];
+}
+
+function legacyListLayout(node: SnapshotNode): LegacyListLayout {
+  const blockMeta = node.block?.payload.meta as Record<string, unknown> | undefined;
+  const value = (key: "ordered" | "loose" | "start"): unknown => {
+    if (Object.prototype.hasOwnProperty.call(node.props, key)) return node.props[key];
+    if (node.meta && Object.prototype.hasOwnProperty.call(node.meta, key)) return node.meta[key];
+    return blockMeta?.[key];
+  };
+  const ordered = Boolean(value("ordered"));
+  const start = value("start");
+  return {
+    ordered,
+    loose: Boolean(value("loose")),
+    start: ordered && typeof start === "number" && start !== 1 ? start : undefined,
+  };
+}
+
+function primaryListItemChild(snapshot: DocumentSnapshot, parent: SnapshotNode): SnapshotNode | undefined {
+  if (parent.type !== "list-item") return undefined;
+  for (const childId of parent.children) {
+    const child = snapshot.nodes.get(childId);
+    if (child?.props.listItemPrimary === true && child.paragraphState) return child;
+  }
+  return undefined;
+}
+
+function managedParagraphLegacyInline(paragraph: ParagraphBlockSnapshot): InlineNode[] {
+  const inline: InlineNode[] = [];
+  for (const span of paragraph.spans) {
+    if (!span.children?.length) {
+      inline.push(...cloneInlineNodes(span.nodes));
+      continue;
+    }
+    for (const child of span.children) {
+      const props = child.props ?? {};
+      if (child.type === "paragraph-text") {
+        if (Array.isArray(props.inline)) inline.push(...cloneInlineNodes(props.inline as InlineNode[]));
+        else if (typeof props.text === "string") inline.push({ kind: "text", text: props.text });
+      } else if (child.type === "paragraph-html" && typeof props.raw === "string") {
+        inline.push({
+          kind: "html",
+          raw: props.raw,
+          ...(child.meta?.sanitized === true && typeof props.html === "string" ? { sanitized: props.html } : {}),
+        });
+      }
     }
   }
+  return inline;
+}
+
+function materializeLegacyPreparedProjection(
+  snapshot: DocumentSnapshot,
+  parent: SnapshotNode,
+  source: SourceSnapshot | undefined,
+  inheritedListLayout?: LegacyListLayout,
+): LegacyPreparedProjection {
+  const currentListLayout = parent.type === "list" ? legacyListLayout(parent) : inheritedListLayout;
+  const listLayout = parent.type === "list-item"
+    ? currentListLayout ?? { ordered: false, loose: false }
+    : currentListLayout;
+  const props = materializeSnapshotNodeProps(parent, source);
+  const primary = primaryListItemChild(snapshot, parent);
+  let primarySnapshot: NodeSnapshot | undefined;
+  let primaryParagraph: Block | undefined;
+  let primaryInline: InlineNode[] | undefined;
+  if (primary) {
+    primarySnapshot = materializeSnapshotNode(snapshot, primary, source, listLayout);
+    const candidate = primarySnapshot.props?.block as Block | undefined;
+    if (candidate?.type === "paragraph" && primarySnapshot.paragraph) {
+      primaryParagraph = candidate;
+      primaryInline = managedParagraphLegacyInline(primarySnapshot.paragraph);
+    }
+  }
+  if (parent.type === "list-item" && listLayout) {
+    props.ordered = listLayout.ordered;
+    props.loose = listLayout.loose;
+    props.start = listLayout.start;
+  }
+  if (primaryParagraph && primaryInline) {
+    props.inline = cloneInlineNodes(primaryInline);
+    props.text = inlineNodesToPlainText(primaryInline);
+  }
+
+  const children: NodeSnapshot[] = [];
+  const mixedSegments = primaryParagraph?.payload.meta?.mixedSegments;
+  const mixedHtmlTrees = primaryParagraph?.payload.meta?.mixedHtmlTrees as Record<number, HtmlTreeNode[]> | undefined;
+  if (Array.isArray(mixedSegments)) {
+    for (let index = 0; index < mixedSegments.length; index += 1) {
+      const segment = mixedSegments[index];
+      if (segment) children.push(createSegmentSnapshot(parent.id, segment, index, "list-item", mixedHtmlTrees?.[index]));
+    }
+  }
+  for (const childId of parent.children) {
+    if (primaryParagraph && primary?.id === childId) continue;
+    const child = snapshot.nodes.get(childId);
+    if (!child) continue;
+    if (primaryParagraph && child.id.startsWith(`${parent.id}::list-item:segment:`)) continue;
+    const childSnapshot = materializeSnapshotNode(snapshot, child, source, listLayout);
+    if (parent.type === "list-item" && child.type === "paragraph") {
+      childSnapshot.props = { ...childSnapshot.props, tight: !listLayout?.loose };
+    }
+    children.push(childSnapshot);
+  }
+  return { prepared: { props: { ...props }, children }, primaryParagraph, primaryInline };
+}
+
+function projectLegacyListItemBlock(block: Block, paragraph: Block, inline: InlineNode[]): Block {
+  const meta = { ...(block.payload.meta ?? {}) };
+  delete meta.paragraph;
+  delete meta.mixedSegments;
+  delete meta.mixedHtmlTrees;
+  const paragraphMeta = paragraph.payload.meta;
+  if (Array.isArray(paragraphMeta?.mixedSegments)) {
+    meta.mixedSegments = paragraphMeta.mixedSegments;
+    if (paragraphMeta.mixedHtmlTrees !== undefined) meta.mixedHtmlTrees = paragraphMeta.mixedHtmlTrees;
+  }
+  return {
+    ...block,
+    payload: {
+      ...block.payload,
+      inline: cloneInlineNodes(inline),
+      meta,
+    },
+  };
+}
+
+function hasManagedPrimaryListChild(snapshot: DocumentSnapshot, list: SnapshotNode): boolean {
+  for (const itemId of list.children) {
+    const item = snapshot.nodes.get(itemId);
+    if (item?.type !== "list-item") continue;
+    if (primaryListItemChild(snapshot, item)) return true;
+  }
+  return false;
+}
+
+function materializeSnapshotNodeBlock(
+  snapshot: DocumentSnapshot,
+  node: SnapshotNode,
+  source: SourceSnapshot | undefined,
+  prepared?: PreparedNestedSnapshot,
+  primaryParagraph?: Block,
+  primaryInline?: InlineNode[],
+): Block | undefined {
+  let block: Block | undefined;
+  if (node.paragraphState && node.block) {
+    block = materializeManagedParagraphBlock(node.block, node.paragraphState);
+  } else if (node.tableState && node.block) {
+    block = materializeManagedTableBlock(node.block, node.tableState);
+  } else if (node.codeState) {
+    block = materializeCodeBlock(node);
+  } else if (node.block) {
+    block = cloneBlock(node.block);
+    const range = node.range;
+    if (source && range && isAdmittedAuthoredRange(range, source)) {
+      block.payload.raw = source.read(range.from, range.to);
+      block.payload.range = { from: range.from, to: range.to };
+    }
+    const projection = !prepared && !primaryParagraph && (node.type === "list-item" || node.preparedNestedExport?.block)
+      ? materializeLegacyPreparedProjection(snapshot, node, source)
+      : undefined;
+    const itemParagraph = primaryParagraph ?? projection?.primaryParagraph;
+    const itemInline = primaryInline ?? projection?.primaryInline;
+    if (node.type === "list-item" && itemParagraph && itemInline) {
+      block = projectLegacyListItemBlock(block, itemParagraph, itemInline);
+    }
+    if (node.preparedNestedExport?.block) {
+      const nested = prepared ?? projection?.prepared;
+      if (nested) {
+        const meta: NonNullable<Block["payload"]["meta"]> = {
+          ...(block.payload.meta ?? {}),
+          preparedNested: nested,
+        };
+        if (node.type === "list" && hasManagedPrimaryListChild(snapshot, node)) {
+          const existingItems = Array.isArray(meta.items) ? meta.items as InlineNode[][] : [];
+          meta.items = nested.children
+            .filter((child) => child.type === "list-item")
+            .map((child, index) => Array.isArray(child.props?.inline)
+              ? cloneInlineNodes(child.props.inline as InlineNode[])
+              : cloneInlineNodes(existingItems[index] ?? []));
+        }
+        block.payload.meta = meta;
+      }
+    }
+  }
+  return block;
+}
+
+function materializeSnapshotNodeProps(node: SnapshotNode, source: SourceSnapshot | undefined): Record<string, unknown> {
+  const props = structuredCloneIfPossible(node.props);
+  const range = node.range;
+  if (source && range && isAdmittedAuthoredRange(range, source) && typeof props.raw === "string") {
+    props.raw = source.read(range.from, range.to);
+  }
+  return props;
+}
+
+function materializeSnapshotNode(
+  snapshot: DocumentSnapshot,
+  node: SnapshotNode,
+  source: SourceSnapshot | undefined,
+  inheritedListLayout?: LegacyListLayout,
+): NodeSnapshot {
+  const projection = materializeLegacyPreparedProjection(snapshot, node, source, inheritedListLayout);
+  const children = node.codeState?.managed
+    ? [...materializeManagedCodeLineSnapshots(node), ...projection.prepared.children]
+    : projection.prepared.children;
+  const props = projection.prepared.props;
+  const range = node.range;
+  const exportShape = node.preparedNestedExport;
+  const prepared: PreparedNestedSnapshot | undefined = exportShape
+    ? projection.prepared
+    : undefined;
+  const block = materializeSnapshotNodeBlock(
+    snapshot,
+    node,
+    source,
+    prepared,
+    projection.primaryParagraph,
+    projection.primaryInline,
+  );
+
+  if (block) props.block = block;
+  const result: NodeSnapshot = { id: node.id, type: node.type, props, children };
+  if (node.meta || exportShape?.meta) {
+    const meta = node.meta ? structuredCloneIfPossible(node.meta) : {};
+    if (exportShape?.meta && prepared) meta.preparedNested = prepared;
+    result.meta = meta;
+  }
+  if (range) result.range = { from: range.from, to: range.to };
+  if (node.codeState) {
+    result.code = {
+      ...copyCodeSource(node.codeState.source),
+      configurationRevision: node.codeState.configurationRevision,
+      info: node.codeState.info,
+      language: node.codeState.language,
+      lines: node.codeState.lines.readRange(0, node.codeState.lines.length),
+      raw: node.codeState.sourceSnapshot.materialize(),
+    };
+  }
+  if (node.tableState) result.table = materializeManagedTableSnapshot(node.tableState);
+  if (node.paragraphState) result.paragraph = materializeManagedParagraphSnapshot(node.paragraphState);
   return result;
 }
 
@@ -1225,51 +1509,44 @@ function codeLineTokens(line: CodeLineRecord): TokenLineV1 | undefined {
   };
 }
 
-function syncManagedCodeChildren(snapshot: DocumentSnapshot, node: SnapshotNode): void {
-  const state = node.codeState;
-  if (!state?.managed) return;
-  const previousChildren = node.children;
-  const children: string[] = [];
-  for (let index = 0; index < state.lines.length; index++) {
+function managedCodeLineProjectionIndex(owner: SnapshotNode, child: NodeSnapshot): number | undefined {
+  const state = owner.codeState;
+  if (!state?.managed || child.type !== "code-line") return undefined;
+  const prefix = `${owner.id}::line:`;
+  if (!child.id.startsWith(prefix)) return undefined;
+  const index = Number(child.id.slice(prefix.length));
+  if (!Number.isSafeInteger(index) || index < 0 || `${prefix}${index}` !== child.id) return undefined;
+  return state.lines.get(index) ? index : undefined;
+}
+
+function materializeManagedCodeLineSnapshots(owner: SnapshotNode): NodeSnapshot[] {
+  const state = owner.codeState;
+  if (!state?.managed) return [];
+  const children: NodeSnapshot[] = [];
+  for (let index = 0; index < state.lines.length; index += 1) {
     const line = state.lines.get(index);
     if (!line) continue;
-    const id = previousChildren[index] ?? `${node.id}::line:${index}`;
-    const previous = snapshot.nodes.get(id);
     const props: Record<string, unknown> = {
-      ...(previous?.props ?? {}),
       index,
       text: line.text,
+      html: line.text,
       isProvisional: line.isProvisional,
     };
-    if (previous?.props.text !== line.text || typeof props.html !== "string") props.html = line.text;
     const tokens = codeLineTokens(line);
     if (tokens) props.tokens = tokens;
-    else delete props.tokens;
     if (line.diffKind !== undefined) props.diffKind = line.diffKind;
-    else delete props.diffKind;
     if (line.oldNo !== undefined) props.oldNo = line.oldNo;
-    else delete props.oldNo;
     if (line.newNo !== undefined) props.newNo = line.newNo;
-    else delete props.newNo;
-    const child: SnapshotNode = previous ?? {
-      id,
+    children.push({
+      id: `${owner.id}::line:${index}`,
       type: "code-line",
-      parentId: node.id,
-      children: [],
       props,
-    };
-    child.parentId = node.id;
-    child.type = "code-line";
-    child.props = props;
-    child.children = [];
-    snapshot.nodes.set(id, child);
-    children.push(id);
+      children: [],
+    });
   }
-  for (const id of previousChildren) {
-    if (!children.includes(id)) snapshot.nodes.delete(id);
-  }
-  node.children = children;
+  return children;
 }
+
 
 function appendCodeState(
   snapshot: DocumentSnapshot,
@@ -1343,11 +1620,9 @@ function appendCodeState(
     lines,
     sourceSnapshot,
   };
-  syncManagedCodeChildren(snapshot, node);
 }
 
 function decorateCodeState(
-  snapshot: DocumentSnapshot,
   node: SnapshotNode,
   patch: Extract<Patch, { op: "decorateCode" }>,
 ): void {
@@ -1376,10 +1651,7 @@ function decorateCodeState(
   }
   if (valid.length > 0) {
     const lines = current.lines.decorate(valid);
-    if (lines !== current.lines) {
-      node.codeState = { ...current, lines };
-      syncManagedCodeChildren(snapshot, node);
-    }
+    if (lines !== current.lines) node.codeState = { ...current, lines };
   }
 }
 
@@ -1548,6 +1820,36 @@ function sameCompletedParagraphSpanSources(
 }
 
 
+type AuthoredSourceRange = NonNullable<NodeSnapshot["range"]>;
+
+function isAuthoredSourceRange(value: unknown): value is AuthoredSourceRange {
+  if (!value || typeof value !== "object" || !("from" in value) || !("to" in value)) return false;
+  const { from, to } = value;
+  return typeof from === "number" &&
+    typeof to === "number" &&
+    Number.isSafeInteger(from) &&
+    Number.isSafeInteger(to) &&
+    from >= 0 &&
+    to >= from;
+}
+
+function isAdmittedAuthoredRange(
+  value: unknown,
+  source: SourceSnapshot | undefined,
+): value is AuthoredSourceRange {
+  return isAuthoredSourceRange(value) && (!source || value.to <= source.length);
+}
+
+function snapshotNodeRange(node: NodeSnapshot): unknown {
+  if (node.range !== undefined) return node.range;
+  const block = node.props?.block;
+  if (!block || typeof block !== "object" || !("payload" in block)) return undefined;
+  const payload = block.payload;
+  if (!payload || typeof payload !== "object" || !("range" in payload)) return undefined;
+  return payload.range;
+}
+
+
 function canInsertSnapshot(
   snapshot: DocumentSnapshot,
   root: NodeSnapshot,
@@ -1558,7 +1860,10 @@ function canInsertSnapshot(
   const retired = retiredCodeGenerationsBySnapshot.get(snapshot);
   const retiredTables = retiredTableGenerationsBySnapshot.get(snapshot);
   const retiredParagraphs = retiredParagraphGenerationsBySnapshot.get(snapshot);
+  const canonicalSource = inputSourceSnapshot(snapshot);
   const visit = (candidate: NodeSnapshot, isRoot: boolean): boolean => {
+    const range = snapshotNodeRange(candidate);
+    if (range !== undefined && !isAdmittedAuthoredRange(range, canonicalSource)) return false;
     if (candidate.code) {
       if (candidate.code.codeOwnerId !== candidate.id || !Number.isSafeInteger(candidate.code.generation) || candidate.code.generation < 0) {
         return false;
@@ -1698,7 +2003,13 @@ function commitSnapshotNode(
   removeSubtree(snapshot, prepared.node.id);
   for (const [id, node] of prepared.nodes) snapshot.nodes.set(id, node);
   const clamped = clamp(index, 0, parent.children.length);
-  parent.children.splice(clamped, 0, prepared.node.id);
+  if (clamped === parent.children.length) {
+    parent.children.push(prepared.node.id);
+  } else {
+    const children = parent.children.slice();
+    children.splice(clamped, 0, prepared.node.id);
+    parent.children = children;
+  }
   return prepared.node;
 }
 
@@ -1766,10 +2077,20 @@ function buildNodeFromSnapshot(
     throw new TypeError("Managed paragraph snapshots cannot carry a synthetic child tree");
   }
   const props = { ...(snapshotNode.props ?? {}) };
+  const genericContainer = isGenericContainerType(snapshotNode.type);
   let block: Block | undefined;
+  let blockExportsPreparedNested = false;
   if (props.block && typeof props.block === "object") {
-    block = cloneBlock(props.block as Block);
+    const incoming = props.block as Block;
+    blockExportsPreparedNested = genericContainer && incoming.payload.meta?.preparedNested !== undefined;
+    block = cloneBlock(genericContainer ? blockWithoutPreparedNested(incoming) : incoming);
     delete props.block;
+  }
+  let admittedMeta = snapshotNode.meta;
+  const metaExportsPreparedNested = genericContainer && admittedMeta?.preparedNested !== undefined;
+  if (metaExportsPreparedNested && admittedMeta) {
+    const { preparedNested: _preparedNested, ...rest } = admittedMeta;
+    admittedMeta = rest;
   }
   const canonicalSource = inputSourceSnapshot(snapshot);
   const tableState = snapshotNode.table
@@ -1796,14 +2117,30 @@ function buildNodeFromSnapshot(
     };
   }
   if (paragraphState && block) block.isFinalized = paragraphState.source.state !== "open";
+  const managedSourceNode =
+    Boolean(snapshotNode.code || snapshotNode.table || snapshotNode.paragraph) ||
+    isManagedSourceFamily(snapshotNode.type);
+  const range = snapshotNode.range
+    ? { ...snapshotNode.range }
+    : managedSourceNode && block?.payload.range
+      ? { ...block.payload.range }
+      : undefined;
+  if (block && !managedSourceNode) {
+    block.payload.range = range ? { ...range } : undefined;
+    block = blockWithExactMeta(block, admittedMeta ? structuredCloneIfPossible(admittedMeta) : undefined);
+  }
   const node: SnapshotNode = {
     id: snapshotNode.id,
     type: snapshotNode.type,
     parentId,
-    children: [],
     props,
-    range: snapshotNode.range ? { ...snapshotNode.range } : block?.payload.range ? { ...block.payload.range } : undefined,
+    children: [],
+    meta: admittedMeta ? structuredCloneIfPossible(admittedMeta) : undefined,
+    range,
     block,
+    preparedNestedExport: blockExportsPreparedNested || metaExportsPreparedNested
+      ? { block: blockExportsPreparedNested, meta: metaExportsPreparedNested }
+      : undefined,
     tableState,
     paragraphState,
   };
@@ -1812,12 +2149,13 @@ function buildNodeFromSnapshot(
     node.codeState = createManagedCodeState(snapshotNode.code, node.id, canonicalSource);
   }
   if (!tableState && !paragraphState) {
-    const childSnapshots = Array.isArray(snapshotNode.children) ? snapshotNode.children : [];
-    for (const child of childSnapshots) {
-      const built = buildNodeFromSnapshot(snapshot, child, node.id, targetNodes);
-      if (built) node.children.push(built.id);
+    if (snapshotNode.children) {
+      for (const child of snapshotNode.children) {
+        if (managedCodeLineProjectionIndex(node, child) !== undefined) continue;
+        const built = buildNodeFromSnapshot(snapshot, child, node.id, targetNodes);
+        if (built) node.children.push(built.id);
+      }
     }
-    if (snapshotNode.code) syncManagedCodeChildren(snapshot, node);
     if (node.type === "code" && node.block && !node.codeState) {
       node.codeState = createLegacyCodeState(node, targetNodes, snapshot);
     }
@@ -1831,7 +2169,8 @@ function removeSubtree(
   activeCodeReplacement?: ActiveCodeOwnerReplacement,
   activeTableReplacement?: ActiveTableOwnerReplacement,
   activeParagraphReplacement?: ActiveParagraphOwnerReplacement,
-) {
+  skipParentUnlink = false,
+){
   const node = snapshot.nodes.get(nodeId);
   if (!node) return;
   if (node.codeState?.managed) {
@@ -1867,14 +2206,15 @@ function removeSubtree(
       if (retired) retired.set(node.id, Math.max(retired.get(node.id) ?? -1, generation));
     }
   }
-  for (const childId of [...node.children]) {
+  for (const childId of node.children) {
     removeSubtree(snapshot, childId, activeCodeReplacement, activeTableReplacement, activeParagraphReplacement);
   }
   snapshot.nodes.delete(node.id);
-  if (node.parentId) {
+  if (node.parentId && !skipParentUnlink) {
     const parent = snapshot.nodes.get(node.parentId);
     if (parent) {
-      parent.children = parent.children.filter((id) => id !== node.id);
+      const children = parent.children.filter((id) => id !== node.id);
+      if (children.length !== parent.children.length) parent.children = children;
     }
   }
 }
@@ -1898,12 +2238,92 @@ function resolveTargetNode(snapshot: DocumentSnapshot, path: NodePath): Snapshot
   return snapshot.nodes.get(path.blockId) ?? null;
 }
 
-function applyPropsToNode(node: SnapshotNode, props: Record<string, unknown> | undefined) {
-  if (!node || !props) return;
+function isManagedSourceFamily(type: string): boolean {
+  return type === "code" ||
+    type.startsWith("code-") ||
+    type === "table" ||
+    type.startsWith("table-") ||
+    type.startsWith("paragraph-");
+}
+
+function hasManagedSourceOwner(snapshot: DocumentSnapshot, node: SnapshotNode): boolean {
+  let sourceOwner: SnapshotNode | undefined = node;
+  while (sourceOwner) {
+    if (
+      sourceOwner.codeState ||
+      sourceOwner.tableState ||
+      sourceOwner.paragraphState ||
+      isManagedSourceFamily(sourceOwner.type)
+    ) return true;
+    sourceOwner = sourceOwner.parentId ? snapshot.nodes.get(sourceOwner.parentId) : undefined;
+  }
+  return false;
+}
+
+function supportsGenericSourceRangeTarget(snapshot: DocumentSnapshot, node: SnapshotNode): boolean {
+  if (hasManagedSourceOwner(snapshot, node)) return false;
+  switch (node.type) {
+    case "paragraph":
+    case "list":
+    case "blockquote":
+    case "list-item":
+    case "list-item-text":
+    case "list-item-html":
+    case "list-item-mdx":
+      return true;
+    default:
+      return node.type !== "__root__";
+  }
+}
+
+function applyPropsToNode(snapshot: DocumentSnapshot, node: SnapshotNode, props: Record<string, unknown> | undefined) {
+  if (!props) return;
+  const hasRange = Object.prototype.hasOwnProperty.call(props, "range");
+  const hasMeta = Object.prototype.hasOwnProperty.call(props, "meta");
+  let range: { from: number; to: number } | undefined;
+  if (hasRange) {
+    const candidate = props.range;
+    const source = inputSourceSnapshot(snapshot);
+    if (
+      !source ||
+      !supportsGenericSourceRangeTarget(snapshot, node) ||
+      !isAdmittedAuthoredRange(candidate, source)
+    ) return;
+    range = { from: candidate.from, to: candidate.to };
+  }
+
+  let applyMetaUpdate = false;
+  let nextMeta: Record<string, unknown> | undefined;
+  const metadataType =
+    props?.block && typeof props.block === "object" && typeof (props.block as Block).type === "string"
+      ? (props.block as Block).type
+      : node.type;
+  if (hasMeta && !hasManagedSourceOwner(snapshot, node) && !isManagedSourceFamily(metadataType)) {
+    const candidate = props.meta;
+    if (candidate === null) {
+      applyMetaUpdate = true;
+    } else if (typeof candidate === "object" && candidate !== null && !Array.isArray(candidate)) {
+      nextMeta = { ...(candidate as Record<string, unknown>) };
+      if (isGenericContainerType(metadataType)) delete nextMeta.preparedNested;
+      applyMetaUpdate = true;
+    }
+  }
+
   const next = { ...node.props };
+  if (hasMeta) delete next.meta;
   for (const [key, value] of Object.entries(props)) {
+    if (key === "range" || key === "meta") continue;
     if (key === "block" && value && typeof value === "object") {
-      node.block = cloneBlock(value as Block);
+      const incoming = value as Block;
+      if (isGenericContainerType(node.type)) {
+        const blockExports = incoming.payload.meta?.preparedNested !== undefined;
+        const metaExports = node.preparedNestedExport?.meta === true;
+        node.preparedNestedExport = blockExports || metaExports ? { block: blockExports, meta: metaExports } : undefined;
+        node.block = cloneBlock(blockWithoutPreparedNested(incoming));
+      } else {
+        node.block = cloneBlock(incoming);
+      }
+      if (node.range) node.block.payload.range = { ...node.range };
       continue;
     }
     if (value === undefined) {
@@ -1912,8 +2332,17 @@ function applyPropsToNode(node: SnapshotNode, props: Record<string, unknown> | u
       next[key] = value;
     }
   }
+  if (range) {
+    node.range = range;
+    if (node.block) node.block.payload.range = { ...range };
+  }
+  if (applyMetaUpdate) {
+    node.meta = nextMeta ? structuredCloneIfPossible(nextMeta) : undefined;
+    if (node.block) node.block = blockWithExactMeta(node.block, node.meta);
+  }
   node.props = next;
 }
+
 
 function appendLinesToCodeNode(
   snapshot: DocumentSnapshot,

@@ -48,3 +48,4 @@ export * from "./perf/backpressure";
 export * from "./perf/patch-coalescing";
 export * from "./streaming/custom-matcher";
 export * from "./streaming/inline-streaming";
+export * from "./native-table-lowering";

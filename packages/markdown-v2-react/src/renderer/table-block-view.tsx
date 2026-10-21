@@ -17,6 +17,7 @@ import {
 import type { ComponentRegistry } from "../components";
 import type { TableControlsData } from "../components/controls";
 import { useRendererNode } from "./hooks";
+import { subscribeRendererNode } from "./node-subscriptions";
 import type { RendererStore } from "./store";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
 import { StreamingActivityContext } from "./streaming-activity-context";
@@ -24,6 +25,7 @@ import { useVirtualizedTable, type IndexedTableRows } from "./virtualized-table"
 
 type ReactTableViewCounterSink = {
   recordStoreRecordsTouched?(count: number, stage: "view"): void;
+  recordRecordSlotsAllocated?(count: number, stage: "view"): void;
   recordTableViewRows(count: number): void;
   recordTableViewCells(count: number): void;
 };
@@ -37,6 +39,13 @@ function recordViewRecords(store: RendererStore, count: number): void {
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     getTableViewCounterSink(store)?.recordStoreRecordsTouched?.(count, "view");
   }
+}
+
+function recordTableRangeDescriptor(store: RendererStore): void {
+  if (typeof __STREAM_MDX_COUNTERS__ === "undefined" || !__STREAM_MDX_COUNTERS__) return;
+  const counters = getTableViewCounterSink(store);
+  counters?.recordStoreRecordsTouched?.(1, "view");
+  counters?.recordRecordSlotsAllocated?.(1, "view");
 }
 
 function recordTableViewCallbacks(store: RendererStore, rows: number, cells: number): void {
@@ -101,26 +110,46 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
     "data-table-end-index": String(isVirtualized ? virtualWindow.endIndex : rowCount),
   };
 
-  const rowRanges: React.ReactNode[] = [];
-  for (
-    let chunkStart = Math.floor(startIndex / TABLE_ROW_RANGE_SIZE) * TABLE_ROW_RANGE_SIZE;
-    chunkStart < endIndex;
-    chunkStart += TABLE_ROW_RANGE_SIZE
-  ) {
-    rowRanges.push(
-      <ManagedTableRowRangeView
-        key={`${blockId}::rows:${chunkStart}`}
+  let rowRanges: React.ReactNode;
+  if (!isVirtualized && !registry.hasElementFilters()) {
+    rowRanges = (
+      <ManagedTableRowRangeTail
+        key={`${blockId}::rows:${tableState?.source.generation ?? -1}:tail`}
         store={store}
         blockId={blockId}
         generation={tableState?.source.generation ?? -1}
-        chunkStart={chunkStart}
-        visibleStart={Math.max(startIndex, chunkStart)}
-        visibleEnd={Math.min(endIndex, chunkStart + TABLE_ROW_RANGE_SIZE)}
+        chunkStart={0}
         align={header?.align}
         registry={registry}
         tableElements={tableElements}
-      />,
+      />
     );
+  } else {
+    const ranges: React.ReactNode[] = [];
+    for (
+      let chunkStart = Math.floor(startIndex / TABLE_ROW_RANGE_SIZE) * TABLE_ROW_RANGE_SIZE;
+      chunkStart < endIndex;
+      chunkStart += TABLE_ROW_RANGE_SIZE
+    ) {
+      ranges.push(
+        <ManagedTableRowRangeView
+          key={`${blockId}::rows:${chunkStart}`}
+          store={store}
+          blockId={blockId}
+          generation={tableState?.source.generation ?? -1}
+          chunkStart={chunkStart}
+          visibleStart={Math.max(startIndex, chunkStart)}
+          visibleEnd={Math.min(endIndex, chunkStart + TABLE_ROW_RANGE_SIZE)}
+          align={header?.align}
+          registry={registry}
+          tableElements={tableElements}
+        />,
+      );
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordTableRangeDescriptor(store);
+      }
+    }
+    rowRanges = ranges;
   }
 
   const renderSections = () => (
@@ -403,6 +432,111 @@ const ManagedTableRowRangeView: React.FC<{
   return <>{renderedRows}</>;
 });
 ManagedTableRowRangeView.displayName = "ManagedTableRowRangeView";
+
+const ManagedTableRowRangeTail: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  generation: number;
+  chunkStart: number;
+  align?: ReadonlyArray<"left" | "center" | "right" | null>;
+  registry: ComponentRegistry;
+  tableElements: TableElements;
+}> = React.memo(({ store, blockId, generation, chunkStart, align, registry, tableElements }) => {
+  const getFrontier = React.useCallback((): "ready" | "open" | "sealed" | "stale" => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      recordViewRecords(store, 1);
+    }
+    const current = store.getTableBlock(blockId);
+    if (!current || current.source.generation !== generation) return "stale";
+    if (current.rows.length > chunkStart) return "ready";
+    return current.source.state === "open" ? "open" : "sealed";
+  }, [blockId, chunkStart, generation, store]);
+  const subscribe = React.useCallback((listener: () => void) => {
+    let active = true;
+    let unsubscribeRows = () => {};
+    let unsubscribeNode = () => {};
+    const onOwnerChanged = () => {
+      if (!active || getFrontier() === "open") return;
+      active = false;
+      unsubscribeRows();
+      unsubscribeNode();
+      listener();
+    };
+    unsubscribeRows = store.subscribeTableRows(
+      blockId,
+      chunkStart,
+      chunkStart + TABLE_ROW_RANGE_SIZE,
+      onOwnerChanged,
+    );
+    unsubscribeNode = subscribeRendererNode(store, blockId, onOwnerChanged);
+    if (getFrontier() !== "open") {
+      active = false;
+      unsubscribeRows();
+      unsubscribeNode();
+    }
+    return () => {
+      active = false;
+      unsubscribeRows();
+      unsubscribeNode();
+    };
+  }, [blockId, chunkStart, getFrontier, store]);
+  const frontier = React.useSyncExternalStore(subscribe, getFrontier, getFrontier);
+  return frontier === "ready" ? (
+    <ManagedTableRowRangeChain
+      store={store}
+      blockId={blockId}
+      generation={generation}
+      chunkStart={chunkStart}
+      align={align}
+      registry={registry}
+      tableElements={tableElements}
+    />
+  ) : null;
+});
+
+ManagedTableRowRangeTail.displayName = "ManagedTableRowRangeTail";
+
+const ManagedTableRowRangeChain: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  generation: number;
+  chunkStart: number;
+  align?: ReadonlyArray<"left" | "center" | "right" | null>;
+  registry: ComponentRegistry;
+  tableElements: TableElements;
+}> = React.memo(({ store, blockId, generation, chunkStart, align, registry, tableElements }) => {
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordTableRangeDescriptor(store);
+  }
+  return (
+    <>
+      <ManagedTableRowRangeView
+        key={`${blockId}::rows:${chunkStart}`}
+        store={store}
+        blockId={blockId}
+        generation={generation}
+        chunkStart={chunkStart}
+        visibleStart={chunkStart}
+        visibleEnd={chunkStart + TABLE_ROW_RANGE_SIZE}
+        align={align}
+        registry={registry}
+        tableElements={tableElements}
+      />
+      <ManagedTableRowRangeTail
+        key={`${blockId}::rows:${chunkStart + TABLE_ROW_RANGE_SIZE}:tail`}
+        store={store}
+        blockId={blockId}
+        generation={generation}
+        chunkStart={chunkStart + TABLE_ROW_RANGE_SIZE}
+        align={align}
+        registry={registry}
+        tableElements={tableElements}
+      />
+    </>
+  );
+});
+
+ManagedTableRowRangeChain.displayName = "ManagedTableRowRangeChain";
 
 const ManagedTableCellView: React.FC<{
   cell: TableCellRecord;
