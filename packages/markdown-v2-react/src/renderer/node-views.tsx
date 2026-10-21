@@ -1,3 +1,5 @@
+declare const __STREAM_MDX_COUNTERS__: boolean;
+
 import { PATCH_ROOT_ID, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { InlineComponents, TableElements } from "../types";
@@ -154,6 +156,15 @@ function splitTrustedFlowNodes(
   return foundFlow ? segments : null;
 }
 
+function recordViewRecords(store: RendererStore, count: number): void {
+  const counterStore = store as RendererStore & {
+    campaignCounters?: {
+      recordStoreRecordsTouched?(count: number, stage: string): void;
+    };
+  };
+  counterStore.campaignCounters?.recordStoreRecordsTouched?.(count, "view");
+}
+
 export const BlockNodeRenderer: React.FC<{
   store: RendererStore;
   blockId: string;
@@ -239,6 +250,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
   if (!node || !block) {
     return null;
   }
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, 1);
+  }
 
   const includesTrustedMdx = hasTrustedMdxInline(block.payload.inline ?? []);
   const inlineComponents = registry.getInlineComponents();
@@ -313,6 +327,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
       if (!allowMixedStreaming) {
         return <p className="markdown-paragraph streaming-partial">{raw}</p>;
       }
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, segments.length);
+      }
       const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
       if (structured.length === 1) {
         const [single] = structured;
@@ -332,6 +349,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
             inline: inlineNodes,
           },
         ];
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          recordViewRecords(store, derivedSegments.length + inlineNodes.length);
+        }
         const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
         if (structured.length === 1) {
           const [single] = structured;
@@ -340,6 +360,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         return structured;
       }
 
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, inlineNodes.length);
+      }
       const partialInline = renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry, "p", registry.getRenderInlineContext(block.isFinalized, block.id));
       if (!registry.hasElementFilters()) {
         return <p className="markdown-paragraph streaming-partial">{partialInline}</p>;
@@ -386,6 +409,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     : undefined;
 
   if (segments && segments.length > 0 && !includesTrustedMdx) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      recordViewRecords(store, segments.length);
+    }
     const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
     if (structured.length === 1) {
       const [single] = structured;
@@ -404,6 +430,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         inline: inlineNodes,
       },
     ];
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      recordViewRecords(store, derivedSegments.length + inlineNodes.length);
+    }
     const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
     if (structured.length === 1) {
       const [single] = structured;
@@ -412,6 +441,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     return structured;
   }
 
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, block.payload.inline?.length ?? 0);
+  }
   const inlines = renderInlineNodes(block.payload.inline ?? [], inlineComponents, registry.getUrlTransform(), registry, "p");
   const ParagraphComponent = registry.getBlockComponent("paragraph");
   const baseElement = React.createElement(ParagraphComponent, {
@@ -423,6 +455,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
 
   const renderParagraph = () => {
     if (childIds.length > 0) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, childIds.length);
+      }
       const renderedChildren = childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="p" />);
       if (React.isValidElement(baseElement)) {
         const { children: _ignored, className = "markdown-paragraph", inlines: _inlines, raw: _raw, meta: _meta, ...rest } = (baseElement.props as Record<string, unknown>) ?? {};
@@ -440,6 +475,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
   }
   const renderChildren = () => {
     if (childIds.length > 0) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, childIds.length);
+      }
       return childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="p" />);
     }
     return inlines;
@@ -460,6 +498,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   const childIds = useRendererChildren(store, blockId);
   if (!node || !block) {
     return null;
+  }
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, 1);
   }
 
   const meta = (block.payload.meta ?? {}) as {
@@ -497,6 +538,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
 
   const renderInlineContent = (inline: InlineNode[] | undefined, keyPrefix: string) => {
     if (inline && inline.length > 0) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, inline.length);
+      }
       return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, "div", registry.getRenderInlineContext(block.isFinalized, `${block.id}:${keyPrefix}`));
     }
     return null;
@@ -507,6 +551,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
       return [] as React.ReactNode[];
     }
     const elements: React.ReactNode[] = [];
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      recordViewRecords(store, mixedSegments.length);
+    }
     mixedSegments.forEach((segment, segmentIndex) => {
       switch (segment.kind) {
         case "html": {
@@ -559,8 +606,14 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   const fallbackElements = normalizedText ? renderTextWithBreaks(normalizedText, `blockquote-fallback-${block.id}-`) : null;
 
   const inlineNodes = block.payload.inline ?? [];
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, inlineNodes.length);
+  }
   const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry, "blockquote", registry.getRenderInlineContext(block.isFinalized, block.id)) : null;
 
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, childIds.length);
+  }
   const childContent = childIds.map((childId) => {
     const childNode = store.getNode(childId);
     if (!childNode) return null;
@@ -669,6 +722,9 @@ const MixedSegmentView: React.FC<{
   const trustedSnapshot = React.useContext(TrustedMdxProjectionContext);
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, 1);
+  }
 
   switch (node.type) {
     case "paragraph-text":
@@ -676,6 +732,9 @@ const MixedSegmentView: React.FC<{
     case "list-item-text": {
       const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
       if (inline.length > 0) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          recordViewRecords(store, inline.length);
+        }
         return renderInlineNodes(inline, inlineComponents, urlTransform, registry, parentTagName);
       }
       const text = typeof node.props?.text === "string" ? (node.props?.text as string) : "";
@@ -870,6 +929,9 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     const listDebugEnabled = isListPatchDebugEnabled();
     const listItemIds = React.useMemo(() => {
       const ids: string[] = [];
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, childIds.length);
+      }
       for (const childId of childIds) {
         const childNode = store.getNode(childId);
         if (childNode?.type === "list-item") {
@@ -899,6 +961,9 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       }
       let maxDigits = 1;
       const startNum = typeof node?.props?.start === "number" ? node.props.start : 1;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, listItemIds.length);
+      }
       listItemIds.forEach((childId, index) => {
         const childNode = store.getNode(childId);
         const raw = typeof childNode?.block?.payload?.raw === "string" ? childNode.block.payload.raw : undefined;
@@ -923,22 +988,27 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     }, [ordered, listItemIds, store, depth]);
     if (listItemIds.length === 0) return null;
     const start = typeof node?.props?.start === "number" ? node.props.start : undefined;
-    const renderChildren = () => (
-      <>
-        {listItemIds.map((childId, index) => (
-          <ListItemView
-            key={childId}
-            store={store}
-            nodeId={childId}
-            inlineComponents={inlineComponents}
-            registry={registry}
-            ordered={ordered}
-            index={index}
-            depth={depth}
-          />
-        ))}
-      </>
-    );
+    const renderChildren = () => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, listItemIds.length);
+      }
+      return (
+        <>
+          {listItemIds.map((childId, index) => (
+            <ListItemView
+              key={childId}
+              store={store}
+              nodeId={childId}
+              inlineComponents={inlineComponents}
+              registry={registry}
+              ordered={ordered}
+              index={index}
+              depth={depth}
+            />
+          ))}
+        </>
+      );
+    };
     const renderElement = () => (
       <Tag
         className={`markdown-list ${ordered ? "ordered" : "unordered"}`}
@@ -997,6 +1067,9 @@ const ListItemView: React.FC<{
   const renderConfigVersion = React.useContext(RenderConfigVersionContext);
   const [segmentChildIds, contentChildIds] = React.useMemo(() => {
     const segments: string[] = [];
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      recordViewRecords(store, childIds.length);
+    }
     const structural: string[] = [];
     for (const childId of childIds) {
       const childNode = store.getNode(childId);
@@ -1011,24 +1084,38 @@ const ListItemView: React.FC<{
   }, [childIds, store]);
 
   const segmentElements = React.useMemo(() => {
-    return segmentChildIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="li" />);
+    return segmentChildIds.map((childId) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, 1);
+      }
+      return <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="li" />;
+    });
   }, [segmentChildIds, store, inlineComponents, registry]);
 
   const primaryContent = React.useMemo(() => {
     if (segmentChildIds.length > 0) {
       return segmentElements;
     }
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      recordViewRecords(store, inline.length);
+    }
     return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, "li", animCtx);
   }, [segmentChildIds, segmentElements, inline, inlineComponents, registry, renderConfigVersion]);
 
   const trailingChildren = React.useMemo(() => {
     return contentChildIds.map((childId) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, 1);
+      }
       const childNode = store.getNode(childId);
       if (!childNode) return null;
       switch (childNode.type) {
         case "paragraph": {
           const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
           const childAnimCtx = registry.getRenderInlineContext(Boolean(childNode.block?.isFinalized), childId);
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            recordViewRecords(store, childInline.length);
+          }
           const childInlines = renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform(), registry, "p", childAnimCtx);
           if (childNode.props?.tight) {
             return <React.Fragment key={childId}>{childInlines}</React.Fragment>;
@@ -1170,6 +1257,9 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
 
   const tbodyId = React.useMemo(() => {
     for (const childId of childIds) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, 1);
+      }
       const childNode = store.getNode(childId);
       if (childNode?.type === "table-body") {
         return childId;
@@ -1184,6 +1274,9 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   const theadId = React.useMemo(() => {
     for (const childId of childIds) {
       const childNode = store.getNode(childId);
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, 1);
+      }
       if (childNode?.type === "table-header") {
         return childId;
       }
@@ -1244,16 +1337,21 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
           {naturalLayout.columnWidths.map((width, index) => <col key={index} style={{ width }} />)}
         </colgroup>
       ) : null}
-      {childIds.map((sectionId) => (
-        <TableSectionView
-          key={sectionId}
-          store={store}
-          nodeId={sectionId}
-          registry={registry}
-          tableElements={tableElements}
-          virtualization={virtualizationProps}
-        />
-      ))}
+      {childIds.map((sectionId) => {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          recordViewRecords(store, 1);
+        }
+        return (
+          <TableSectionView
+            key={sectionId}
+            store={store}
+            nodeId={sectionId}
+            registry={registry}
+            tableElements={tableElements}
+            virtualization={virtualizationProps}
+          />
+        );
+      })}
     </tableElements.Table>
   );
 
@@ -1273,16 +1371,21 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
         () => tableElement,
         () => (
           <>
-            {childIds.map((sectionId) => (
-              <TableSectionView
-                key={sectionId}
-                store={store}
-                nodeId={sectionId}
-                registry={registry}
-                tableElements={tableElements}
-                virtualization={virtualizationProps}
-              />
-            ))}
+            {childIds.map((sectionId) => {
+              if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+                recordViewRecords(store, 1);
+              }
+              return (
+                <TableSectionView
+                  key={sectionId}
+                  store={store}
+                  nodeId={sectionId}
+                  registry={registry}
+                  tableElements={tableElements}
+                  virtualization={virtualizationProps}
+                />
+              );
+            })}
           </>
         ),
       )
@@ -1416,9 +1519,12 @@ const TableSectionView: React.FC<{
         } : undefined}
       >
         <tableElements.Tr>
-          {childIds.map((cellId) => (
-            <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />
-          ))}
+          {childIds.map((cellId) => {
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              recordViewRecords(store, 1);
+            }
+            return <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />;
+          })}
         </tableElements.Tr>
       </tableElements.Thead>
     );
@@ -1428,9 +1534,12 @@ const TableSectionView: React.FC<{
     if (!virtualization?.isVirtualized) {
       return (
         <tableElements.Tbody>
-          {rowIds.map((rowId) => (
-            <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} tableElements={tableElements} />
-          ))}
+          {rowIds.map((rowId) => {
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              recordViewRecords(store, 1);
+            }
+            return <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} tableElements={tableElements} />;
+          })}
         </tableElements.Tbody>
       );
     }
@@ -1453,13 +1562,21 @@ const TableSectionView: React.FC<{
             />
           </tableElements.Tr>
         )}
-        {visibleRowIds.map((rowId, offset) => (
-          <TableRowView key={rowId}
-          store={store}
-          nodeId={rowId}
-          registry={registry}
-          rowIndex={startIndex + offset} tableElements={tableElements} />
-        ))}
+        {visibleRowIds.map((rowId, offset) => {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            recordViewRecords(store, 1);
+          }
+          return (
+            <TableRowView
+              key={rowId}
+              store={store}
+              nodeId={rowId}
+              registry={registry}
+              rowIndex={startIndex + offset}
+              tableElements={tableElements}
+            />
+          );
+        })}
         {bottomSpacerHeight > 0 && (
           <tableElements.Tr
             key={`${nodeId}::spacer-bottom`}
@@ -1494,9 +1611,12 @@ const TableRowView: React.FC<{
       data-row-id={nodeId}
       {...(rowIndex !== undefined ? { "data-row-index": rowIndex } : {})}
     >
-      {cellIds.map((cellId) => (
-        <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />
-      ))}
+      {cellIds.map((cellId) => {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          recordViewRecords(store, 1);
+        }
+        return <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />;
+      })}
     </tableElements.Tr>
   );
 });
@@ -1513,6 +1633,9 @@ const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: 
   const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
   const align = node.props?.align as string | undefined;
   const animCtx = registry.getRenderInlineContext(Boolean(node.block?.isFinalized), nodeId);
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    recordViewRecords(store, inline.length);
+  }
   const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, tag, animCtx);
   const alignProps = align ? { align } : undefined;
   const renderElement = () => <Tag {...alignProps}>{content}</Tag>;

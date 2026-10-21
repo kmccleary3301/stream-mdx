@@ -24,11 +24,15 @@ export default defineConfig({
   splitting: false,
   sourcemap,
   clean: false,
+  minifySyntax: true,
   format: ["esm", "cjs"],
   outDir: join(__dirname, "dist"),
   target: "es2020",
   platform: "browser",
   tsconfig: join(__dirname, "tsconfig.build.json"),
+  define: {
+    __STREAM_MDX_COUNTERS__: "false",
+  },
   noExternal: workerMdxBundlePackages,
   esbuildOptions(options) {
     applyWorkerRealmAliases(options);

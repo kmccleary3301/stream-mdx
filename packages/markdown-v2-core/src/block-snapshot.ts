@@ -1,3 +1,5 @@
+declare const __STREAM_MDX_COUNTERS__: boolean;
+
 import { parser as baseMdParser, GFM } from "@lezer/markdown";
 import {
   extractCodeLines,
@@ -23,6 +25,7 @@ import type {
   TokenLineV1,
 } from "./types";
 import { PATCH_ROOT_ID } from "./types";
+
 export function cloneBlock(block: Block): Block {
   return {
     ...block,
@@ -51,7 +54,11 @@ export function blocksStructurallyEqual(a: Block, b: Block): boolean {
   return true;
 }
 
-export function createBlockSnapshot(block: Block): NodeSnapshot {
+export function createBlockSnapshot(block: Block): NodeSnapshot;
+export function createBlockSnapshot(
+  block: Block,
+  onNodeCreated?: (node: NodeSnapshot) => void,
+): NodeSnapshot {
   const base: NodeSnapshot = {
     id: block.id,
     type: block.type,
@@ -62,27 +69,57 @@ export function createBlockSnapshot(block: Block): NodeSnapshot {
     range: block.payload.range ? { ...block.payload.range } : undefined,
     children: [],
   };
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    onNodeCreated?.(base);
+  }
 
   switch (block.type) {
     case "paragraph":
-      return enrichParagraphSnapshot(block, base);
+      return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
+        ? enrichParagraphSnapshot(block, base, onNodeCreated)
+        : enrichParagraphSnapshot(block, base);
     case "blockquote":
-      return enrichContainerSnapshot(block, base);
+      return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
+        ? enrichContainerSnapshot(block, base, onNodeCreated)
+        : enrichContainerSnapshot(block, base);
     case "list":
-      return enrichContainerSnapshot(block, base);
+      return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
+        ? enrichContainerSnapshot(block, base, onNodeCreated)
+        : enrichContainerSnapshot(block, base);
     case "list-item":
-      if (block.payload.meta?.preparedNested) return enrichContainerSnapshot(block, base);
+      if (block.payload.meta?.preparedNested) {
+        return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
+          ? enrichContainerSnapshot(block, base, onNodeCreated)
+          : enrichContainerSnapshot(block, base);
+      }
       return base;
     case "table":
-      return enrichTableSnapshot(block, base);
+      return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
+        ? enrichTableSnapshot(block, base, onNodeCreated)
+        : enrichTableSnapshot(block, base);
     case "code":
-      return enrichCodeSnapshot(block, base);
+      return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
+        ? enrichCodeSnapshot(block, base, onNodeCreated)
+        : enrichCodeSnapshot(block, base);
     default:
       return base;
   }
 }
 
-function enrichContainerSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
+function countClonedDescendants(nodes: NodeSnapshot[], cb: (node: NodeSnapshot) => void): void {
+  for (const node of nodes) {
+    cb(node);
+    if (Array.isArray(node.children) && node.children.length > 0) {
+      countClonedDescendants(node.children, cb);
+    }
+  }
+}
+
+function enrichContainerSnapshot(
+  block: Block,
+  snapshot: NodeSnapshot,
+  onNodeCreated?: (node: NodeSnapshot) => void,
+): NodeSnapshot {
   const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
   const nested = prepared ?? prepareNestedBlockSnapshot(
     block,
@@ -90,18 +127,36 @@ function enrichContainerSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnap
     baseMdParser.configure([GFM, createBlockCompatibilityExtension()]),
   );
   snapshot.props = { ...snapshot.props, ...structuredCloneIfPossible(nested.props) };
-  snapshot.children = structuredCloneIfPossible(nested.children);
+  const clonedChildren = structuredCloneIfPossible(nested.children);
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    if (onNodeCreated && Array.isArray(clonedChildren)) {
+      countClonedDescendants(clonedChildren, onNodeCreated);
+    }
+  }
+  snapshot.children = clonedChildren;
   return snapshot;
 }
 
-function enrichParagraphSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
+function enrichParagraphSnapshot(
+  block: Block,
+  snapshot: NodeSnapshot,
+  onNodeCreated?: (node: NodeSnapshot) => void,
+): NodeSnapshot {
   const meta = block.payload.meta as { mixedSegments?: MixedContentSegment[]; mixedHtmlTrees?: Record<number, HtmlTreeNode[]> } | undefined;
   const segments = Array.isArray(meta?.mixedSegments) ? (meta?.mixedSegments ?? []) : [];
   if (!segments.length) {
     return snapshot;
   }
 
-  snapshot.children = segments.map((segment, index) => createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index]));
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && onNodeCreated) {
+    snapshot.children = segments.map((segment, index) => {
+      const segNode = createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index]);
+      onNodeCreated(segNode);
+      return segNode;
+    });
+  } else {
+    snapshot.children = segments.map((segment, index) => createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index]));
+  }
   return snapshot;
 }
 
@@ -154,7 +209,11 @@ function createSegmentSnapshot(
 }
 
 
-function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
+function enrichTableSnapshot(
+  block: Block,
+  snapshot: NodeSnapshot,
+  onNodeCreated?: (node: NodeSnapshot) => void,
+): NodeSnapshot {
   const meta = block.payload.meta as
     | {
         header?: InlineNode[][];
@@ -173,11 +232,8 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
   const children: NodeSnapshot[] = [];
 
   if (header.length > 0) {
-    children.push({
-      id: `${block.id}::thead`,
-      type: "table-header",
-      props: { columns: header.length },
-      children: header.map((cellInline, cellIndex) => ({
+    const headerCells = header.map((cellInline, cellIndex) => {
+      const cellNode: NodeSnapshot = {
         id: `${block.id}::th:${cellIndex}`,
         type: "table-header-cell",
         props: {
@@ -188,36 +244,57 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
         },
         ...(headerCellRanges[cellIndex] ? { range: { ...headerCellRanges[cellIndex]! } } : {}),
         children: [],
-      })),
+      };
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) onNodeCreated?.(cellNode);
+      return cellNode;
     });
+    const theadNode: NodeSnapshot = {
+      id: `${block.id}::thead`,
+      type: "table-header",
+      props: { columns: header.length },
+      children: headerCells,
+    };
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) onNodeCreated?.(theadNode);
+    children.push(theadNode);
   }
 
-  const bodyChildren = rows.map((rowCells, rowIndex) => ({
-    id: `${block.id}::row:${rowIndex}`,
-    type: "table-row",
-    props: { index: rowIndex },
-    children: rowCells.map((cellInline, cellIndex) => ({
-      id: `${block.id}::td:${rowIndex}:${cellIndex}`,
-      type: "table-cell",
-      props: {
-        rowIndex,
-        index: cellIndex,
-        align: align[cellIndex] ?? null,
-        inline: cloneInlineNodes(cellInline),
-        text: inlineNodesToPlainText(cellInline),
-      },
-      ...(rowCellRanges[rowIndex]?.[cellIndex] ? { range: { ...rowCellRanges[rowIndex][cellIndex]! } } : {}),
-      children: [],
-    })),
-  }));
+  const bodyChildren = rows.map((rowCells, rowIndex) => {
+    const rowChildCells = rowCells.map((cellInline, cellIndex) => {
+      const cellNode: NodeSnapshot = {
+        id: `${block.id}::td:${rowIndex}:${cellIndex}`,
+        type: "table-cell",
+        props: {
+          rowIndex,
+          index: cellIndex,
+          align: align[cellIndex] ?? null,
+          inline: cloneInlineNodes(cellInline),
+          text: inlineNodesToPlainText(cellInline),
+        },
+        ...(rowCellRanges[rowIndex]?.[cellIndex] ? { range: { ...rowCellRanges[rowIndex][cellIndex]! } } : {}),
+        children: [],
+      };
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) onNodeCreated?.(cellNode);
+      return cellNode;
+    });
+    const rowNode: NodeSnapshot = {
+      id: `${block.id}::row:${rowIndex}`,
+      type: "table-row",
+      props: { index: rowIndex },
+      children: rowChildCells,
+    };
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) onNodeCreated?.(rowNode);
+    return rowNode;
+  });
 
   if (bodyChildren.length > 0) {
-    children.push({
+    const tbodyNode: NodeSnapshot = {
       id: `${block.id}::tbody`,
       type: "table-body",
       props: { rows: rows.length },
       children: bodyChildren,
-    });
+    };
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) onNodeCreated?.(tbodyNode);
+    children.push(tbodyNode);
   }
 
   snapshot.children = children;
@@ -235,7 +312,11 @@ function trimProvisionalFenceTail(raw: string): string {
   return tail && tail[1][0] === opening[1][0] && tail[1].length < opening[1].length ? raw.slice(0, lastNewline) : raw;
 }
 
-function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
+function enrichCodeSnapshot(
+  block: Block,
+  snapshot: NodeSnapshot,
+  onNodeCreated?: (node: NodeSnapshot) => void,
+): NodeSnapshot {
   const metaCode = typeof block.payload.meta?.code === "string" ? (block.payload.meta?.code as string) : null;
   const source = (metaCode ?? (block.payload.raw ?? "")).replace(/\r\n?/g, "\n");
   // Worker-provided meta.code is already normalized code body (no fences),
@@ -296,12 +377,14 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
     if (newNoLines) {
       props.newNo = newNoLines[index] ?? null;
     }
-    return {
+    const lineNode: NodeSnapshot = {
       id: `${block.id}::line:${index}`,
       type: "code-line",
       props,
       children: [],
     };
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) onNodeCreated?.(lineNode);
+    return lineNode;
   });
   return snapshot;
 }

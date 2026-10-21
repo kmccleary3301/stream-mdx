@@ -6,6 +6,11 @@ import { execSync } from "node:child_process";
 
 import { chromium, type Page } from "@playwright/test";
 import type { GeneratedFootnoteLabel, SemanticDomRecords } from "./semantic-dom";
+import {
+  resolveCampaignObservation,
+  type CampaignObservationDef,
+  type CampaignObservationResult,
+} from "./campaign-portfolio";
 
 
 function getArg(flag: string): string | null {
@@ -29,19 +34,25 @@ function getNumArg(flag: string, envKey: string): number | null {
   const parsed = Number(envValue);
   return Number.isFinite(parsed) ? parsed : null;
 }
+const OBSERVATION_ARG = getArg("--observation") ?? process.env.STREAM_MDX_PERF_OBSERVATION ?? null;
+const CAMPAIGN_DEF: CampaignObservationDef | null =
+  resolveCampaignObservation(OBSERVATION_ARG) ?? resolveCampaignObservation(getArg("--fixture"));
+const CODE_HIGHLIGHTING =
+  getArg("--codeHighlighting") ?? process.env.STREAM_MDX_PERF_CODE_HIGHLIGHTING ?? "incremental";
+
 const BASE_URL =
   getArg("--baseUrl") ?? getArg("--url") ?? process.env.STREAM_MDX_PERF_BASE_URL ?? "http://localhost:3000";
 
 const RENDERER = getArg("--renderer") ?? process.env.STREAM_MDX_PERF_RENDERER ?? "streammdx";
-const PROFILE = getArg("--profile") ?? process.env.STREAM_MDX_PERF_PROFILE ?? "parity";
+const PROFILE = getArg("--profile") ?? process.env.STREAM_MDX_PERF_PROFILE ?? (CAMPAIGN_DEF ? "parity" : "parity");
 const WORKTREE = getArg("--worktree") ?? process.env.STREAM_MDX_PERF_WORKTREE ?? process.cwd();
-const FIXTURE = getArg("--fixture") ?? process.env.STREAM_MDX_PERF_FIXTURE ?? "naive-bayes";
+const FIXTURE = getArg("--fixture") ?? process.env.STREAM_MDX_PERF_FIXTURE ?? (CAMPAIGN_DEF ? CAMPAIGN_DEF.id : "naive-bayes");
 const P9_T2_FIXTURE_ID = "restricted-native-streaming";
-const SCENARIO = getArg("--scenario") ?? process.env.STREAM_MDX_PERF_SCENARIO ?? "S2_typical";
+const SCENARIO = getArg("--scenario") ?? process.env.STREAM_MDX_PERF_SCENARIO ?? (CAMPAIGN_DEF ? CAMPAIGN_DEF.scenario.id : "S2_typical");
 const SCHEDULING = getArg("--scheduling") ?? process.env.STREAM_MDX_PERF_SCHEDULING ?? "aggressive";
-const RUNS = getNumArg("--runs", "STREAM_MDX_PERF_RUNS") ?? 3;
-const WARMUP = getNumArg("--warmup", "STREAM_MDX_PERF_WARMUP") ?? 1;
-const TIMEOUT_MS = getNumArg("--timeout", "STREAM_MDX_PERF_TIMEOUT") ?? 180000;
+const RUNS = getNumArg("--runs", "STREAM_MDX_PERF_RUNS") ?? (CAMPAIGN_DEF ? 1 : 3);
+const WARMUP = getNumArg("--warmup", "STREAM_MDX_PERF_WARMUP") ?? (CAMPAIGN_DEF ? 0 : 1);
+const TIMEOUT_MS = getNumArg("--timeout", "STREAM_MDX_PERF_TIMEOUT") ?? (CAMPAIGN_DEF ? 60000 : 180000);
 const OUT_DIR = getArg("--out") ?? process.env.STREAM_MDX_PERF_OUT ?? "tmp/perf-runs";
 const HEADLESS = !(hasFlag("--headed") || process.env.STREAM_MDX_PERF_HEADED === "1");
 const CPU_THROTTLE = getNumArg("--cpuThrottle", "STREAM_MDX_PERF_CPU_THROTTLE");
@@ -129,11 +140,14 @@ type PerfReport = {
         elements: number;
         pre: number;
         code: number;
+        codeBlocks: number;
+        inlineCode: number;
         table: number;
         tr: number;
         li: number;
         math: number;
         katex: number;
+        headings: number;
       };
       semanticContent: {
         rawLength: number;
@@ -145,6 +159,8 @@ type PerfReport = {
         rawHtml: string;
       };
     };
+    resolvedFeatures?: Record<string, unknown>;
+    campaignObservation?: CampaignObservationResult | null;
   };
   samples: {
     flushes: Array<{
@@ -251,6 +267,11 @@ type DomCounters = {
 type PerfRun = {
   run: number;
   report: PerfReport;
+  diagnostics: {
+    consoleErrors: string[];
+    pageErrors: string[];
+    requestFailures: string[];
+  };
   cdp: {
     metrics: CdpMetrics | null;
     domStart: DomCounters | null;
@@ -276,6 +297,8 @@ type RunMetadata = {
   rendererVersion: string;
   profile: string;
   policy: Record<string, unknown>;
+  resolvedFeatures?: Record<string, unknown>;
+  campaignObservation?: CampaignObservationResult | null;
   fixtureHash: string;
   chunkTraceHash: string;
   chunkCount: number;
@@ -314,6 +337,7 @@ type LiveSubtreeCounts = {
   code: number;
   codeBlocks: number;
   inlineCode: number;
+  headings: number;
   table: number;
   tr: number;
   li: number;
@@ -337,6 +361,8 @@ type Summary = {
     scenario: string;
     scheduling: string;
     overrides: Record<string, string>;
+    observation?: string | null;
+    codeHighlighting?: string;
     runs: number;
     warmup: number;
     headless: boolean;
@@ -349,6 +375,7 @@ type Summary = {
     run: number;
     functionalObservations: P9T2FunctionalObservations | null;
     browserMessages: BrowserMessage[];
+    diagnostics: PerfRun["diagnostics"];
     durationMs: number;
     timeToFirstFlushMs: number | null;
     flushDuration: Stats | null;
@@ -381,6 +408,7 @@ type Summary = {
     patchPerfTopOp: { op: string; durationMs: number; count: number } | null;
     patchPerfTopSetPropsType: { type: string; durationMs: number; count: number } | null;
     patchPerfTopSetPropsStage: { stage: string; durationMs: number; count: number } | null;
+    campaignObservation?: CampaignObservationResult | null;
   }>;
   aggregate: {
     durationMs: Stats | null;
@@ -399,6 +427,7 @@ type Summary = {
     liveCodeBlocks: Stats | null;
     liveInlineCode: Stats | null;
     liveTable: Stats | null;
+    liveTr: Stats | null;
     liveLi: Stats | null;
     liveMath: Stats | null;
     semanticTextLength: Stats | null;
@@ -417,6 +446,7 @@ type Summary = {
     workerQueueDepth: Stats | null;
     patchPerfTotalMs: Stats | null;
     patchPerfApplyMs: Stats | null;
+    campaignObservation?: CampaignObservationResult | null;
   };
 };
 
@@ -595,6 +625,12 @@ function buildUrl(): string {
   for (const [key, value] of Object.entries(SCHEDULING_OVERRIDES)) {
     if (value) url.searchParams.set(key, value);
   }
+  if (OBSERVATION_ARG) {
+    url.searchParams.set("observation", OBSERVATION_ARG);
+  }
+  if (CODE_HIGHLIGHTING) {
+    url.searchParams.set("codeHighlighting", CODE_HIGHLIGHTING);
+  }
   if (PROFILER_ENABLED) {
     url.searchParams.set("profiler", "1");
   }
@@ -694,15 +730,27 @@ function assertP9T2FunctionalObservations(report: PerfReport): void {
   }
 }
 
-async function runOnce(pageId: number, page: Page, cpuProfilePath?: string, tracePath?: string) {
+async function runOnce(pageId: number, page: Page, cpuProfilePath?: string, tracePath?: string): Promise<PerfRun> {
   const browserMessages: BrowserMessage[] = [];
+  const diagnostics = {
+    consoleErrors: [] as string[],
+    pageErrors: [] as string[],
+    requestFailures: [] as string[],
+  };
   page.on("console", (message) => {
     const type = message.type();
     if (type === "warning" || type === "error") browserMessages.push({ type, text: message.text() });
+    if (type === "error") diagnostics.consoleErrors.push(message.text());
   });
-  page.on("pageerror", (error) => browserMessages.push({ type: "pageerror", text: error.message }));
+  page.on("pageerror", (error) => {
+    browserMessages.push({ type: "pageerror", text: error.message });
+    diagnostics.pageErrors.push(error.message);
+  });
+  page.on("requestfailed", (request) => {
+    diagnostics.requestFailures.push(`${request.method()} ${request.url()} (${request.failure()?.errorText ?? "unknown failure"})`);
+  });
   try {
-    return await runOnceCore(pageId, page, cpuProfilePath, tracePath, browserMessages);
+    return await runOnceCore(pageId, page, cpuProfilePath, tracePath, browserMessages, diagnostics);
   } catch (error) {
     if (browserMessages.length > 0) {
       console.error("browser warnings/errors:", JSON.stringify(browserMessages));
@@ -717,6 +765,7 @@ async function runOnceCore(
   cpuProfilePath: string | undefined,
   tracePath: string | undefined,
   browserMessages: BrowserMessage[],
+  diagnostics: NonNullable<PerfRun["diagnostics"]>,
 ) {
   const client = await page.context().newCDPSession(page);
   try {
@@ -732,11 +781,19 @@ async function runOnceCore(
     }
   }
   const target = buildUrl();
-  await page.goto(target, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
+
+  const readinessDeadline = Date.now() + 30000;
+  const remainingReadinessMs = () => {
+    const rem = readinessDeadline - Date.now();
+    if (rem <= 0) throw new Error("Incomplete measurement: total readiness deadline (30s) exceeded.");
+    return rem;
+  };
+
+  await page.goto(target, { waitUntil: "domcontentloaded", timeout: remainingReadinessMs() });
   await page.waitForFunction(
     () => Boolean(window.__streammdxPerfStart || window.__streammdxPerfError),
     null,
-    { timeout: TIMEOUT_MS },
+    { timeout: remainingReadinessMs() },
   );
   const startMetrics = await client
     .send("Performance.getMetrics")
@@ -761,6 +818,12 @@ async function runOnceCore(
   // Enter once before installing the traps. Playwright itself uses window.eval
   // for subsequent evaluate/waitForFunction calls, so keep the whole content
   // processing interval inside this invocation and restore before returning.
+  const observationDeadline = Date.now() + TIMEOUT_MS;
+  const remainingObservationMs = () => {
+    const rem = observationDeadline - Date.now();
+    if (rem <= 0) throw new Error(`Incomplete measurement: total observation deadline (${TIMEOUT_MS}ms) exceeded.`);
+    return rem;
+  };
   await page.evaluate(async ({ restricted, timeoutMs }) => {
     if (!window.__streammdxPerfStart) throw new Error(window.__streammdxPerfError ?? "Incomplete measurement: CDP start handshake missing.");
     const audit = (window as Window & { __streammdxP9T2Audit?: P9PageAudit }).__streammdxP9T2Audit;
@@ -779,11 +842,11 @@ async function runOnceCore(
     } finally {
       if (restricted) audit?.restoreTraps?.();
     }
-  }, { restricted: FIXTURE === P9_T2_FIXTURE_ID, timeoutMs: TIMEOUT_MS });
+  }, { restricted: FIXTURE === P9_T2_FIXTURE_ID, timeoutMs: remainingObservationMs() });
   await page.waitForFunction(
     () => typeof window.__streammdxPerfRunEnd === "number" || Boolean(window.__streammdxPerfError),
     null,
-    { timeout: TIMEOUT_MS },
+    { timeout: remainingObservationMs() },
   );
   const endMetrics = await client
     .send("Performance.getMetrics")
@@ -817,22 +880,29 @@ async function runOnceCore(
     pageWindow.__streammdxP9T2Audit?.restoreTraps?.();
     window.__streammdxPerfCollect();
   });
-  await page.waitForFunction(() => Boolean(window.__streammdxPerfReport || window.__streammdxPerfError), null, { timeout: TIMEOUT_MS });
-  const report = await page.evaluate(() => window.__streammdxPerfReport ?? null);
+  await page.waitForFunction(() => Boolean(window.__streammdxPerfReport || window.__streammdxPerfError), null, { timeout: remainingObservationMs() });
+  const report = (await page.evaluate(() => window.__streammdxPerfReport ?? null)) as unknown as PerfReport | null;
   if (!report) {
     const errorMessage = await page.evaluate(() => window.__streammdxPerfError ?? null);
-    throw new Error(errorMessage ? `Perf report missing: ${errorMessage}` : "Perf report missing.");
+    const diag = [
+      errorMessage ? `Perf report missing: ${errorMessage}` : "Perf report missing.",
+      diagnostics.pageErrors.length > 0 ? `Page errors: ${diagnostics.pageErrors.join("; ")}` : null,
+      diagnostics.consoleErrors.length > 0 ? `Console errors: ${diagnostics.consoleErrors.join("; ")}` : null,
+      diagnostics.requestFailures.length > 0 ? `Request failures: ${diagnostics.requestFailures.join("; ")}` : null,
+    ].filter(Boolean).join(" | ");
+    throw new Error(diag);
   }
   if (!Number.isFinite(report.meta.runStart) || !Number.isFinite(report.meta.runEnd) || report.meta.runEnd < report.meta.runStart) {
     throw new Error("Incomplete measurement: valid browser run boundaries are missing.");
   }
-  if (FIXTURE === P9_T2_FIXTURE_ID) assertP9T2FunctionalObservations(report as PerfReport);
+  if (FIXTURE === P9_T2_FIXTURE_ID) assertP9T2FunctionalObservations(report);
   const cdpMetrics = buildCdpMetrics(startMetrics, endMetrics);
   const domStart = startDom ?? null;
   const domEnd = endDom ?? null;
   return {
     run: pageId,
-    report: report as PerfReport,
+    report,
+    diagnostics,
     cdp: {
       metrics: cdpMetrics,
       domStart,
@@ -875,6 +945,7 @@ function summarizeRun(entry: PerfRun) {
     run,
     functionalObservations: report.meta.functionalObservations ?? null,
     browserMessages: entry.browserMessages,
+    diagnostics: entry.diagnostics,
     durationMs: report.meta.runDurationMs,
     timeToFirstFlushMs,
     flushDuration: stats(flushDurations),
@@ -915,6 +986,7 @@ function summarizeRun(entry: PerfRun) {
     patchPerfTopSetPropsStage: topSetPropsStage
       ? { stage: topSetPropsStage.key, durationMs: topSetPropsStage.durationMs, count: topSetPropsStage.count }
       : null,
+    campaignObservation: report.meta.campaignObservation ?? null,
   };
 }
 
@@ -1078,6 +1150,41 @@ function formatSummaryText(summary: Summary): string {
       );
     }
   }
+  if (summary.metadata?.campaignObservation) {
+    const obs = summary.metadata.campaignObservation;
+    lines.push("");
+    lines.push(`--- Campaign Observation: ${obs.observationId} (${obs.area}) ---`);
+    lines.push(`target units: ${obs.resolvedConfig.targetUnits} UTF-16 code units (${obs.resolvedConfig.decimalSizeLabel})`);
+    lines.push(`code highlighting: ${obs.resolvedConfig.codeHighlighting}`);
+    lines.push(`cold run: ${obs.resolvedConfig.isCold}`);
+    lines.push(`lifecycle:`);
+    lines.push(`  boot-to-initialized: ${obs.durations.timeToWorkerInitializedMs !== null ? `${obs.durations.timeToWorkerInitializedMs.toFixed(2)} ms` : "n/a"}`);
+    lines.push(`  initialized-to-first-append: ${obs.durations.timeFromInitializedToFirstAppendMs !== null ? `${obs.durations.timeFromInitializedToFirstAppendMs.toFixed(2)} ms` : "n/a"}`);
+    lines.push(`  time-to-first-semantic-commit: ${obs.durations.timeToFirstSemanticCommitMs !== null ? `${obs.durations.timeToFirstSemanticCommitMs.toFixed(2)} ms` : "n/a"}`);
+    if (obs.resolvedConfig.isCold) {
+      lines.push(`  cold-first-authored-text: ${obs.durations.coldFirstAuthoredTextMs !== null ? `${obs.durations.coldFirstAuthoredTextMs.toFixed(2)} ms` : "n/a"}`);
+      lines.push(`  post-ready-first-authored-text: ${obs.durations.postReadyFirstAuthoredTextMs !== null ? `${obs.durations.postReadyFirstAuthoredTextMs.toFixed(2)} ms` : "n/a"}`);
+    }
+    lines.push(`  fence-close-to-finalize: ${obs.durations.fenceCloseToFinalizeMs !== null ? `${obs.durations.fenceCloseToFinalizeMs.toFixed(2)} ms` : "n/a"}`);
+    lines.push(`  finalize-request-to-ack: ${obs.durations.finalizeRequestToAckDurationMs !== null ? `${obs.durations.finalizeRequestToAckDurationMs.toFixed(2)} ms` : "n/a"}`);
+    lines.push(`  worker-finalize-duration: ${obs.durations.workerFinalizeDuration.available ? "reported" : `UNAVAILABLE (${obs.durations.workerFinalizeDuration.reason})`}`);
+    lines.push(`  scheduler-drain: ${obs.durations.schedulerDrainDurationMs !== null ? `${obs.durations.schedulerDrainDurationMs.toFixed(2)} ms` : "n/a"}`);
+    lines.push(`  decoration-readiness: ${obs.durations.decorationReadinessDurationMs !== null ? `${obs.durations.decorationReadinessDurationMs.toFixed(2)} ms` : "n/a"}`);
+    lines.push(`frontier:`);
+    lines.push(`  offered: ${obs.frontier.offeredUnits}`);
+    lines.push(`  accepted: ${obs.frontier.acceptedUnits}`);
+    lines.push(`  dispatched: ${obs.frontier.dispatchedUnits}`);
+    lines.push(`  processed: ${obs.frontier.processedUnits.available ? String(obs.frontier.processedUnits.offset) : `UNAVAILABLE (${obs.frontier.processedUnits.reason})`}`);
+    lines.push(`  committed-source-frontier: ${obs.frontier.committedUnits.available ? String(obs.frontier.committedUnits.offset) : `UNAVAILABLE (${obs.frontier.committedUnits.reason})`}`);
+    lines.push(`  store-block-raw-chars-total: ${obs.frontier.storeBlockRawCharsTotal ?? "n/a"}`);
+    lines.push(`  mounted-dom-text-chars: ${obs.frontier.mountedDomTextChars ?? "n/a"}`);
+    lines.push(`schedule:`);
+    lines.push(`  nominal-duration: ${obs.frontier.producerSchedule.nominalTotalMs.toFixed(2)} ms`);
+    lines.push(`  actual-producer-duration: ${obs.frontier.producerSchedule.actualProducerDurationMs.toFixed(2)} ms`);
+    lines.push(`  max-delay: ${obs.frontier.producerSchedule.maxDelayMs.toFixed(2)} ms`);
+    lines.push(`  avg-delay: ${obs.frontier.producerSchedule.avgDelayMs.toFixed(2)} ms`);
+    lines.push(`  delayed-ticks: ${obs.frontier.producerSchedule.delayedTicksCount} / ${obs.frontier.producerSchedule.totalTicks}`);
+  }
   return `${lines.join("\n")}\n`;
 }
 
@@ -1102,6 +1209,7 @@ async function run(): Promise<void> {
   const browser = await chromium.launch({ headless: HEADLESS, executablePath });
   const context = await browser.newContext();
   const outputs: PerfRun[] = [];
+  let runError: unknown = null;
   try {
     for (let i = 0; i < WARMUP; i += 1) {
       const page = await context.newPage();
@@ -1120,10 +1228,25 @@ async function run(): Promise<void> {
       outputs.push(result);
       await page.close();
     }
-
+  } catch (err) {
+    runError = err;
+    throw err;
   } finally {
-    await context.close();
-    await browser.close();
+    if (outputs.length > 0 || runError) {
+      await fs.writeFile(
+        path.join(outRoot, "run.json"),
+        JSON.stringify(
+          {
+            outputs,
+            error: runError instanceof Error ? runError.message : runError ? String(runError) : null,
+          },
+          null,
+          2,
+        ),
+      );
+    }
+    await context.close().catch(() => {});
+    await browser.close().catch(() => {});
   }
 
   const runSummaries = outputs.map(summarizeRun);
@@ -1156,6 +1279,8 @@ async function run(): Promise<void> {
     rendererVersion: getRendererVersion(RENDERER, WORKTREE),
     profile: PROFILE,
     policy: outputs[0]?.report.meta.policy ?? {},
+    resolvedFeatures: outputs[0]?.report.meta.resolvedFeatures,
+    campaignObservation: outputs[0]?.report.meta.campaignObservation ?? null,
     fixtureHash: outputs[0].report.meta.fixtureHash,
     chunkTraceHash: outputs[0].report.meta.chunkTraceHash,
     chunkCount: outputs[0].report.meta.chunkCount,
@@ -1198,6 +1323,8 @@ async function run(): Promise<void> {
       scenario: SCENARIO,
       scheduling: SCHEDULING,
       overrides: SCHEDULING_OVERRIDES,
+      observation: OBSERVATION_ARG,
+      codeHighlighting: CODE_HIGHLIGHTING,
       runs: RUNS,
       warmup: WARMUP,
       headless: HEADLESS,
@@ -1243,6 +1370,7 @@ async function run(): Promise<void> {
       workerQueueDepth: statsFromRuns(runSummaries.map((run) => run.workerQueueDepth?.p95 ?? null)),
       patchPerfTotalMs: statsFromRuns(runSummaries.map((run) => run.patchPerfTotalMs)),
       patchPerfApplyMs: statsFromRuns(runSummaries.map((run) => run.patchPerfApplyMs)),
+      campaignObservation: outputs[0]?.report.meta.campaignObservation ?? null,
     },
   };
 

@@ -31,10 +31,14 @@ const sharedConfig = {
   dts: false,
   sourcemap,
   splitting: false,
+  minifySyntax: true,
   format: ["esm", "cjs"],
   outDir: join(__dirname, "dist"),
   target: "es2020",
   tsconfig: join(__dirname, "tsconfig.build.json"),
+  define: {
+    __STREAM_MDX_COUNTERS__: "false",
+  },
   external: [
     "react",
     "react-dom",

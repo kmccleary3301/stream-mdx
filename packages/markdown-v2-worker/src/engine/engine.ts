@@ -1,3 +1,36 @@
+declare const __STREAM_MDX_COUNTERS__: boolean;
+
+interface ProgressPublicationContext {
+  readonly generation: number;
+  readonly publicationId: number;
+  readonly sourceUnits: number;
+  nextOrdinal: number;
+}
+
+
+interface CampaignCounterSink {
+  recordTokenization(lines: number, units: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordInlineSourceUnits(units: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordSnapshotNodes(count?: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordPrefixComparisons(count?: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordPatchesEmitted(count: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordStoreRecordsTouched(count: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordBlockReprepared(cause?: string, blockId?: string, fields?: string[], stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordInvalidation(cause: string, blockId: string, fields?: string[]): void;
+  recordPublication(tx: number, frontier: number): void;
+  recordProcessedFrontier(frontier: number, tx?: number): void;
+  isProgressTraceEnabled?(): boolean;
+  beginProgressDocument?(generation: number): void;
+  recordEngineEntered?(generation: number, sourceUnits: number): void;
+  recordParsedPublication?(publication: {
+    readonly generation: number;
+    readonly publicationId: number;
+    readonly sourceUnits: number;
+    readonly semanticPatchCount: number;
+  }): void;
+  reset(): void;
+}
+
 import { type SyntaxNode, type Tree, TreeFragment } from "@lezer/common";
 import { GFM, Table, parser as mdParser } from "@lezer/markdown";
 import type {
@@ -136,6 +169,7 @@ import {
 } from "./parse-extract";
 import {
   countChangedBlocksFromPatches,
+  dedupeSetPropsByTargetKeepingLatest,
   diffNodeSnapshot,
   ensureAnnotatedPatchBatch,
   estimatePatchSize,
@@ -143,6 +177,7 @@ import {
   syncEmittedBlockEpochsFromPatches,
   withPatchKindBatch,
 } from "./patch-emit";
+import { getPatchKind } from "@stream-mdx/core/perf/patch-batching";
 import type {
   CodeHighlightingMode,
   ContentChangeRange,
@@ -332,10 +367,16 @@ export class MarkdownEngine {
   private inputPolicy: ContentPolicy = "restricted";
   private inputSealed = false;
   private disposed = false;
+  declare private campaignCounters?: CampaignCounterSink;
+  declare private progressPublicationId?: number;
+
 
   constructor(options: MarkdownEngineOptions) {
     this.postFn = options.post;
     this.extensions = options.extensions;
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters = (options as MarkdownEngineOptions & { campaignCounters?: CampaignCounterSink }).campaignCounters;
+    }
 
     this.buildMarkdownParser(true);
 
@@ -397,7 +438,11 @@ export class MarkdownEngine {
     this.emittedBlockEpochs.clear();
     this.tocHeadings = [];
     this.headingIdCounts.clear();
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.reset();
+    }
   }
+
 
   public handle(message: WorkerIn): Promise<void> {
     if (this.disposed) {
@@ -444,6 +489,52 @@ export class MarkdownEngine {
     });
   }
 
+  private createProgressPublication(sourceUnits: number): ProgressPublicationContext | undefined {
+    if (!(typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)) return undefined;
+    const publicationId = (this.progressPublicationId ?? 0) + 1;
+    this.progressPublicationId = publicationId;
+    return {
+      generation: this.documentGeneration,
+      publicationId,
+      sourceUnits,
+      nextOrdinal: 0,
+    };
+  }
+
+  private tagSemanticPatchesForProgress(
+    patches: Patch[],
+    publication: ProgressPublicationContext,
+    currentPatches?: Set<Patch>,
+  ): void {
+    if (!(typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)) return;
+    for (let index = 0; index < patches.length; index += 1) {
+      const patch = patches[index];
+      if (!patch || (currentPatches && !currentPatches.has(patch)) || getPatchKind(patch) !== "semantic") {
+        continue;
+      }
+      const taggedPatch = {
+        ...patch,
+        __streamMdxDiagnosticPatchTag: {
+          generation: publication.generation,
+          publicationId: publication.publicationId,
+          ordinal: publication.nextOrdinal,
+        },
+      };
+      patches[index] = taggedPatch;
+      publication.nextOrdinal += 1;
+    }
+  }
+
+  private recordParsedProgressPublication(publication: ProgressPublicationContext): void {
+    if (!(typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)) return;
+    this.campaignCounters?.recordParsedPublication?.({
+      generation: publication.generation,
+      publicationId: publication.publicationId,
+      sourceUnits: publication.sourceUnits,
+      semanticPatchCount: publication.nextOrdinal,
+    });
+  }
+
   private async processMessage(msg: WorkerIn): Promise<void> {
     switch (msg.type) {
       case "INIT":
@@ -459,6 +550,9 @@ export class MarkdownEngine {
         );
         return;
       case "APPEND":
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
+          this.campaignCounters.recordEngineEntered?.(this.documentGeneration, this.currentContent.length + msg.text.length);
+        }
         await this.handleAppend(msg.text);
         return;
       case "FINALIZE":
@@ -627,6 +721,11 @@ export class MarkdownEngine {
       }
     }
     this.documentGeneration += 1;
+    let initialProgressPublication: ProgressPublicationContext | undefined;
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
+      this.progressPublicationId = 0;
+      this.campaignCounters.beginProgressDocument?.(this.documentGeneration);
+    }
     this.performanceTimer = new PerformanceTimer();
     this.blocks = [];
     this.lastTree = null;
@@ -745,6 +844,9 @@ export class MarkdownEngine {
       const result = await this.parseAll(initialContent);
       this.blocks = result.blocks;
       this.lastTree = result.lastTree;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
+        initialProgressPublication = this.createProgressPublication(initialContent.length);
+      }
     }
 
     // Carry producer epochs on the initial wire projection, not in canonical semantic metadata.
@@ -765,7 +867,12 @@ export class MarkdownEngine {
     });
 
     if (this.blocks.length > 0) {
-      await this.emitDocumentPatch(this.blocks);
+      await this.emitDocumentPatch(this.blocks, initialProgressPublication);
+    } else if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && initialProgressPublication) {
+      await this.emitDocumentPatch(this.blocks, initialProgressPublication);
+    }
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && initialProgressPublication) {
+      this.recordParsedProgressPublication(initialProgressPublication);
     }
   }
 
@@ -894,6 +1001,9 @@ export class MarkdownEngine {
           }
         }
         if (matched) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordInvalidation("link_reference_definition", block.id, ["props.inline"]);
+          }
           const cloned = cloneBlock(block);
           await this.enrichBlock(cloned);
           changedBlocks[i] = cloned;
@@ -906,12 +1016,19 @@ export class MarkdownEngine {
     this.lastTree = newTree;
     this.currentContent = newContent;
     pruneLazyTokenizationStates(this.lazyTokenizationStates, this.blocks);
+    let progressPublication: ProgressPublicationContext | undefined;
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
+      progressPublication = this.createProgressPublication(newContent.length);
+    }
 
     this.performanceTimer.measure("incremental-parse");
     metrics?.markParseEnd();
     metrics?.setBlocksProduced(this.blocks.length);
 
-    await this.emitBlockDiffPatches(prevBlocks, changedBlocks, changeRanges, metrics);
+    await this.emitBlockDiffPatches(prevBlocks, changedBlocks, changeRanges, metrics, progressPublication);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
+      this.recordParsedProgressPublication(progressPublication);
+    }
   }
 
   private findTrustedMdxFlowRootEnd(raw: string): number | null {
@@ -1261,6 +1378,9 @@ export class MarkdownEngine {
   }
 
   private parseInlineStreaming(content: string, context: LookaheadContainerContext, existingInline?: InlineNode[]): InlineStreamingParseResult {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordInlineSourceUnits(content.length);
+    }
     const regexEnabled = this.formatAnticipationConfig.regex || this.syntaxRules.some((rule) => rule.anticipation);
     const orchestration = prepareInlineStreamingLookahead(content, {
       formatAnticipation: { ...this.formatAnticipationConfig, regex: regexEnabled },
@@ -1446,11 +1566,13 @@ export class MarkdownEngine {
 
   private async enrichBlockContent(block: Block, options?: ParseOptions, ancestorTypes: readonly string[] = [], nativeNode?: SyntaxNode): Promise<void> {
     this.performanceTimer.mark("enrich-block");
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordBlockReprepared(undefined, undefined, undefined, "engine");
+    }
     const metrics = this.activeMetricsCollector;
     metrics?.countBlockType(block.type);
     const rawLength = typeof block.payload.raw === "string" ? block.payload.raw.length : 0;
     metrics?.recordBlockSize(block.type, rawLength);
-
     const shouldTrackInline = this.tracksInlineStatus();
     const contentComponents = this.getActiveContentComponents();
     const allowMixed = this.formatAnticipationConfig.html || this.formatAnticipationConfig.mdx;
@@ -2145,7 +2267,11 @@ export class MarkdownEngine {
             if (wantsHtml || (wantsTokensNow && !diffEnabled)) {
               try {
                 const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
-                const tokens = this.highlighter?.codeToTokensWithThemes(completeLines.join("\n"), {
+                const tokenInput = completeLines.join("\n");
+                if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+                  this.campaignCounters?.recordTokenization(completeLines.length, tokenInput.length, "engine");
+                }
+                const tokens = this.highlighter?.codeToTokensWithThemes(tokenInput, {
                   lang: sharedLanguage as never,
                   themes: this.codeThemes,
                   grammarState: state.grammarState as never,
@@ -2396,6 +2522,9 @@ export class MarkdownEngine {
           tokenLines = cached.tokenLines;
         } else {
           try {
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              this.campaignCounters?.recordTokenization(codeLines.length, codeBody.length, "engine");
+            }
             const tokens = this.highlighter!.codeToTokensWithThemes(codeBody, {
               lang: resolvedTokenLanguage as never,
               themes: this.codeThemes,
@@ -2485,7 +2614,10 @@ export class MarkdownEngine {
     return filtered;
   }
 
-  private async emitDocumentPatch(currentBlocks: Block[]): Promise<void> {
+  private async emitDocumentPatch(
+    currentBlocks: Block[],
+    progressPublication?: ProgressPublicationContext,
+  ): Promise<void> {
     const patches: Patch[] = [];
     const { patch: tocPatch, nextHeadings, nextSignature } = maybeBuildTocPatch(currentBlocks, this.tocSignature);
     this.tocHeadings = nextHeadings;
@@ -2495,11 +2627,17 @@ export class MarkdownEngine {
     for (let index = 0; index < currentBlocks.length; index++) {
       const block = currentBlocks[index];
       if (!block) continue;
+      const nodeSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
+        ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+            block,
+            () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
+          )
+        : createBlockSnapshot(block);
       patches.push({
         op: "insertChild",
         at: { blockId: PATCH_ROOT_ID },
         index,
-        node: createBlockSnapshot(block),
+        node: nodeSnapshot,
       });
     }
     if (tocPatch) {
@@ -2520,6 +2658,13 @@ export class MarkdownEngine {
       this.parseEpochCounter = parseEpochCounterRef.value;
       this.patchStreamSeq = streamSeqCounterRef.value;
       syncEmittedBlockEpochsFromPatches(annotated, parseEpoch, this.emittedBlockEpochs);
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        if (progressPublication) {
+          this.tagSemanticPatchesForProgress(annotated, progressPublication);
+        }
+        this.campaignCounters?.recordPublication(tx, this.currentContent.length);
+        this.campaignCounters?.recordPatchesEmitted(annotated.length, "patch");
+      }
       this.post({
         type: "PATCH",
         tx,
@@ -2533,6 +2678,7 @@ export class MarkdownEngine {
     nextBlocks: Block[],
     changedRanges: ContentChangeRange[],
     metrics?: WorkerMetricsCollector | null,
+    progressPublication?: ProgressPublicationContext,
     parseEpoch?: number,
     extraPatches: Patch[] = [],
   ): Promise<void> {
@@ -2545,13 +2691,21 @@ export class MarkdownEngine {
 
     let prefix = 0;
     const maxPrefix = Math.min(previousBlocks.length, nextBlocks.length);
-    while (prefix < maxPrefix && previousBlocks[prefix].id === nextBlocks[prefix].id) {
+    while (prefix < maxPrefix) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordPrefixComparisons(1, "engine");
+      }
+      if (previousBlocks[prefix].id !== nextBlocks[prefix].id) break;
       prefix++;
     }
 
     let prevTail = previousBlocks.length - 1;
     let nextTail = nextBlocks.length - 1;
-    while (prevTail >= prefix && nextTail >= prefix && previousBlocks[prevTail].id === nextBlocks[nextTail].id) {
+    while (prevTail >= prefix && nextTail >= prefix) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordPrefixComparisons(1, "engine");
+      }
+      if (previousBlocks[prevTail].id !== nextBlocks[nextTail].id) break;
       prevTail--;
       nextTail--;
     }
@@ -2563,11 +2717,17 @@ export class MarkdownEngine {
     if (removeCount === addCount) {
       for (let offset = 0; offset < addCount; offset++) {
         const targetIndex = prefix + offset;
+        const nodeSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
+          ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+              nextBlocks[targetIndex],
+              () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
+            )
+          : createBlockSnapshot(nextBlocks[targetIndex]);
         patches.push({
           op: "replaceChild",
           at: { blockId: PATCH_ROOT_ID },
           index: targetIndex,
-          node: createBlockSnapshot(nextBlocks[targetIndex]),
+          node: nodeSnapshot,
         });
       }
     } else {
@@ -2582,15 +2742,20 @@ export class MarkdownEngine {
       for (let offset = 0; offset < addCount; offset++) {
         const insertIndex = prefix + offset;
         const block = cloneBlock(nextBlocks[insertIndex]);
+        const nodeSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
+          ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+              block,
+              () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
+            )
+          : createBlockSnapshot(block);
         patches.push({
           op: "insertChild",
           at: { blockId: PATCH_ROOT_ID },
           index: insertIndex,
-          node: createBlockSnapshot(block),
+          node: nodeSnapshot,
         });
       }
     }
-
     metrics?.markDiffStart();
     const { patches: contentPatches } = await this.diffBlockContent(previousBlocks, nextBlocks, changedRanges, metrics);
     metrics?.markDiffEnd();
@@ -2623,12 +2788,30 @@ export class MarkdownEngine {
     this.parseEpochCounter = parseEpochCounterRef.value;
     this.patchStreamSeq = streamSeqCounterRef.value;
 
-    const immediatePatches = partitionPatchesForCredits(
-      annotatedCombined,
-      this.workerCredits,
-      this.deferredPatchQueue,
-      paragraphLimit === null ? undefined : paragraphLimit,
-    );
+    let immediatePatches: Patch[];
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
+      const deferredQueue = this.deferredPatchQueue;
+      const currentPatchRefs = new Set(annotatedCombined);
+      const combinedWithDeferred = deferredQueue.length > 0
+        ? deferredQueue.concat(annotatedCombined)
+        : annotatedCombined;
+      const coalesced = dedupeSetPropsByTargetKeepingLatest(combinedWithDeferred);
+      this.tagSemanticPatchesForProgress(coalesced, progressPublication, currentPatchRefs);
+      deferredQueue.length = 0;
+      immediatePatches = partitionPatchesForCredits(
+        coalesced,
+        this.workerCredits,
+        deferredQueue,
+        paragraphLimit === null ? undefined : paragraphLimit,
+      );
+    } else {
+      immediatePatches = partitionPatchesForCredits(
+        annotatedCombined,
+        this.workerCredits,
+        this.deferredPatchQueue,
+        paragraphLimit === null ? undefined : paragraphLimit,
+      );
+    }
     if (this.deferredPatchQueue.length > this.maxDeferredQueueSize) {
       this.maxDeferredQueueSize = this.deferredPatchQueue.length;
     }
@@ -2712,9 +2895,24 @@ export class MarkdownEngine {
         continue;
       }
 
-      const prevSnapshot = createBlockSnapshot(prevBlock);
-      const nextSnapshot = createBlockSnapshot(nextBlock);
-      diffNodeSnapshot(nextBlock.id, prevSnapshot, nextSnapshot, patches, metrics);
+      const prevSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
+        ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+            prevBlock,
+            () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
+          )
+        : createBlockSnapshot(prevBlock);
+      const nextSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
+        ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+            nextBlock,
+            () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
+          )
+        : createBlockSnapshot(nextBlock);
+
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters) {
+        diffNodeSnapshot(nextBlock.id, prevSnapshot, nextSnapshot, patches, metrics, this.campaignCounters);
+      } else {
+        diffNodeSnapshot(nextBlock.id, prevSnapshot, nextSnapshot, patches, metrics);
+      }
     }
 
     return { patches, changedBlockCount: changedBlockIds.size };
@@ -2759,6 +2957,10 @@ export class MarkdownEngine {
 
     reportWorkerStructuralInvariantViolations("dispatchPatchBatch", this.blocks, this.lastWorkerInvariantSignature);
     metrics?.beginSerialize();
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordPublication(tx, this.currentContent.length);
+      this.campaignCounters?.recordPatchesEmitted(annotatedPatches.length, "patch");
+    }
     this.post(message);
     metrics?.endSerialize();
 
@@ -2794,6 +2996,10 @@ export class MarkdownEngine {
     this.lastTree = reparsedTree;
     this.treeFragments = TreeFragment.addTree(reparsedTree);
     metricsCollector.setBlocksProduced(this.blocks.length);
+    let progressPublication: ProgressPublicationContext | undefined;
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
+      progressPublication = this.createProgressPublication(this.currentContent.length);
+    }
 
     const fullRange = [
       {
@@ -2805,9 +3011,17 @@ export class MarkdownEngine {
     ];
     this.parseEpochCounter += 1;
     const finalParseEpoch = this.parseEpochCounter;
-    await this.emitBlockDiffPatches(prevBlocks, this.blocks, fullRange, metricsCollector, finalParseEpoch, finalizePatches);
+    await this.emitBlockDiffPatches(
+      prevBlocks,
+      this.blocks,
+      fullRange,
+      metricsCollector,
+      progressPublication,
+      finalParseEpoch,
+      finalizePatches,
+    );
     if (finalizePatches.length > 0) {
-      await this.dispatchFinalCanonicalSnapshot(this.blocks);
+      await this.dispatchFinalCanonicalSnapshot(this.blocks, progressPublication);
     }
 
     if (this.deferredPatchQueue.length > 0) {
@@ -2825,6 +3039,9 @@ export class MarkdownEngine {
 
       this.workerCredits = previousCredits;
     }
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
+      this.recordParsedProgressPublication(progressPublication);
+    }
 
     reportWorkerStructuralInvariantViolations("finalizeAllBlocks", this.blocks, this.lastWorkerInvariantSignature);
     this.post({
@@ -2836,7 +3053,10 @@ export class MarkdownEngine {
     }
   }
 
-  private async dispatchFinalCanonicalSnapshot(finalBlocks: Block[]): Promise<void> {
+  private async dispatchFinalCanonicalSnapshot(
+    finalBlocks: Block[],
+    progressPublication?: ProgressPublicationContext,
+  ): Promise<void> {
     const patches: Patch[] = [];
     
     for (let index = 0; index < finalBlocks.length; index++) {
@@ -2848,6 +3068,9 @@ export class MarkdownEngine {
         index,
         node: createBlockSnapshot(block),
       });
+    }
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
+      this.tagSemanticPatchesForProgress(patches, progressPublication);
     }
     this.dispatchPatchBatch(patches);
   }
@@ -3123,7 +3346,11 @@ export class MarkdownEngine {
       if (wantsHtml || (wantsTokens && !diffEnabled)) {
         try {
           const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
-          const tokens = this.highlighter.codeToTokensWithThemes(segmentLines.join("\n"), {
+          const segmentText = segmentLines.join("\n");
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordTokenization(segmentLines.length, segmentText.length, "engine");
+          }
+          const tokens = this.highlighter.codeToTokensWithThemes(segmentText, {
             lang: sharedLanguage as never,
             themes: this.codeThemes,
             grammarState: nextGrammarState as never,
@@ -3164,7 +3391,12 @@ export class MarkdownEngine {
       return;
     }
     const root = this.blocks[commitTarget.rootIndex];
-    const prevSnapshot = createBlockSnapshot(root);
+    const prevSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
+      ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+          root,
+          () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
+        )
+      : createBlockSnapshot(root);
     for (let i = 0; i < segmentLines.length; i++) {
       const index = state.processedLines + i;
       if (highlightedSegment) state.highlightedLines[index] = highlightedSegment[i] ?? null;
@@ -3219,14 +3451,22 @@ export class MarkdownEngine {
     updated.payload.meta = nextMeta;
     const updatedRoot = this.replacePreparedCode(root, updated);
     this.blocks[commitTarget.rootIndex] = updatedRoot;
-    const nextSnapshot = createBlockSnapshot(updatedRoot);
+    const nextSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
+      ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+          updatedRoot,
+          () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
+        )
+      : createBlockSnapshot(updatedRoot);
 
     const patches: Patch[] = [];
-    diffNodeSnapshot(updatedRoot.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters) {
+      diffNodeSnapshot(updatedRoot.id, prevSnapshot, nextSnapshot, patches, metricsCollector, this.campaignCounters);
+    } else {
+      diffNodeSnapshot(updatedRoot.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
+    }
     if (patches.length > 0) {
       this.dispatchPatchBatch(withPatchKindBatch(patches, "enrichment"), metricsCollector);
     } else {
-      if (metricsCollector) {
         const metrics = metricsCollector.toPerformanceMetrics();
         if (metrics) {
           this.post({ type: "METRICS", metrics });
@@ -3235,6 +3475,5 @@ export class MarkdownEngine {
       if (this.activeMetricsCollector === metricsCollector) {
         this.activeMetricsCollector = null;
       }
-    }
   }
 }
