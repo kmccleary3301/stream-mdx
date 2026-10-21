@@ -1,6 +1,6 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import { dedentIndentedCode, getDefaultCodeWrapperAttributes, stripCodeFence, type TokenLineV1 } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, dedentIndentedCode, getDefaultCodeWrapperAttributes, stripCodeFence, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { trimProvisionalFenceTail } from "../code-fence-streaming";
 import {
@@ -18,6 +18,7 @@ import { DeferredRenderContext } from "./deferred-render-context";
 import { useRendererChildren, useRendererNode } from "./hooks";
 import type { RendererStore } from "./store";
 import { useDeferredRender } from "./use-deferred-render";
+import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, type VirtualizedLine, useVirtualizedCode } from "./virtualized-code";
 
 // Private code-rendering owner; block dispatch and finalized wrappers remain in node-views.
@@ -108,6 +109,16 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     canVirtualize && !virtualizationDisabled && virtualizationConfig.enabled && lines.length >= virtualizationConfig.virtualizeThreshold;
   const virtualization = useVirtualizedCode(lines, shouldVirtualize ? virtualizationConfig : { ...virtualizationConfig, enabled: false });
   const highlightRequester = useCodeHighlightRequester();
+  useLazyCodeHighlightRequest({
+    blockId,
+    blockIsFinalized,
+    lazyEnabled,
+    lazyTokenizedUntil,
+    totalLazyLineCount,
+    shouldVirtualize,
+    documentIdentity: store.getNode(PATCH_ROOT_ID) ?? store,
+    blockEpoch: node.blockEpoch,
+  });
   const lastRangeRef = React.useRef<{
     visibleStart: number;
     visibleEnd: number;
@@ -205,48 +216,6 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     virtualization.window.startIndex,
     virtualization.window.endIndex,
   ]);
-
-  React.useEffect(() => {
-    if (shouldVirtualize || !blockIsFinalized || !lazyEnabled || !highlightRequester) return;
-    if (totalLazyLineCount <= 0 || lazyTokenizedUntil >= totalLazyLineCount) return;
-    const nextRange = {
-      visibleStart: 0,
-      visibleEnd: totalLazyLineCount,
-      prefetchStart: 0,
-      prefetchEnd: totalLazyLineCount,
-      tokenizedUntil: lazyTokenizedUntil,
-    };
-    const last = lastRangeRef.current;
-    if (
-      last &&
-      last.visibleStart === nextRange.visibleStart &&
-      last.visibleEnd === nextRange.visibleEnd &&
-      last.prefetchStart === nextRange.prefetchStart &&
-      last.prefetchEnd === nextRange.prefetchEnd &&
-      last.tokenizedUntil === nextRange.tokenizedUntil
-    ) {
-      return;
-    }
-    lastRangeRef.current = nextRange;
-    if (rafRef.current !== null && typeof cancelAnimationFrame === "function") {
-      cancelAnimationFrame(rafRef.current);
-    }
-    const requestFullHighlight = () => {
-      highlightRequester({
-        blockId,
-        startLine: 0,
-        endLine: totalLazyLineCount,
-        priority: "visible",
-        reason: "finalize-full",
-      });
-      rafRef.current = null;
-    };
-    if (typeof requestAnimationFrame === "function") {
-      rafRef.current = requestAnimationFrame(requestFullHighlight);
-    } else {
-      requestFullHighlight();
-    }
-  }, [blockId, blockIsFinalized, highlightRequester, lazyEnabled, lazyTokenizedUntil, shouldVirtualize, totalLazyLineCount]);
 
   // Render virtualized or non-virtualized code
   const highlightedHtml = React.useMemo(() => {

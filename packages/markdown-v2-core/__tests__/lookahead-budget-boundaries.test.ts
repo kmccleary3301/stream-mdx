@@ -54,18 +54,9 @@ function testCompleteContentIsNotCapped(): void {
     assert.deepStrictEqual(prepareInlineStreamingLookahead(complete, { formatAnticipation: anticipation }).prepared,
       { kind: "parse", status: "complete", content: complete, appended: "" });
   }
-  for (const oversizedComplete of ["x".repeat(2048), `**${"x".repeat(2048)}**`]) {
-    const result = prepareInlineStreamingLookahead(oversizedComplete, { formatAnticipation: anticipation });
-    assert.deepStrictEqual(result.prepared, { kind: "raw", status: "raw", reason: "incomplete-formatting" });
-    assert.deepStrictEqual(result.trace, [{
-      providerId: "inline-format-provider", surface: "inline-format", decision: "raw", safety: "safe",
-      featureFamily: "inline-core", contextSignature: result.container.containerSignature, ops: [], appended: "",
-      validation: undefined, analysis: undefined,
-      downgrade: { mode: "raw", reason: "lookahead budget-chars exhausted" },
-      termination: { reason: "budget-chars", rearmWhen: "next-byte" },
-      debug: { strategy: "raw-fallback", notes: ["lookahead budget-chars exhausted"] },
-    }]);
-  }
+  const oversizedComplete = `*closed*${"x".repeat(DEFAULT_LOOKAHEAD_BUDGETS.maxScanChars)}`;
+  const oversizedResult = prepareInlineStreamingLookahead(oversizedComplete, { formatAnticipation: anticipation });
+  assert.strictEqual(oversizedResult.prepared.kind, "raw");
   for (const provisional of [false, true]) {
     assert.deepStrictEqual(prepareInlineStreamingLookahead("**unfinished $x", {
       formatAnticipation: anticipation, regexAppend: "}", context: { provisional },

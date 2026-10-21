@@ -1,6 +1,6 @@
 # StreamMDX Release Checklist
 
-_Last updated: 2026-10-12_
+_Last updated: 2026-10-15_
 
 Use this checklist when cutting releases from `stream-mdx/`. This file is the operational release path, not a historical note.
 
@@ -69,6 +69,8 @@ These are the high-signal release gates and should be green before publishing.
    npm -ws --if-present pack --dry-run
    npm run ci:pack-smoke
    ```
+   The existing CI `npm run test` aggregate runs the `@stream-mdx/react` package suite, including its coalescing behavior tests. It keeps the 10% reduction minimum on the controlled case of 60 deliberately redundant title updates and asserts the exact final value `value-59`; the same suite separately replays raw, linear, and quadratic outputs through real consumer stores. Keep both checks in this aggregate rather than adding a duplicate CI invocation.
+
 
 6. CommonMark conformance against the committed baseline.
 

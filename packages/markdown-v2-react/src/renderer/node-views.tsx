@@ -1,6 +1,6 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import { normalizeBlockquoteText, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type UrlTransform } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { InlineComponents, TableElements } from "../types";
 import {
@@ -18,10 +18,54 @@ import {
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
 import { RenderConfigVersionContext, useRendererChildren, useRendererNode } from "./hooks";
-import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from "./store";
+import { createRendererStore, isListPatchDebugEnabled, type NodeRecord, type RendererStore } from "./store";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 import { StreamingActivityContext } from "./streaming-activity-context";
 import { CodeBlockView } from "./code-block-view";
+import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
+
+const CustomCodeBlockView: React.FC<{
+  block: Block;
+  registry: ComponentRegistry;
+  documentIdentity: NodeRecord | RendererStore;
+  blockEpoch: number;
+}> = React.memo(({ block, registry, documentIdentity, blockEpoch }) => {
+  const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
+  const lazyEnabled = Boolean(meta.lazyTokenization);
+  const lazyTokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? meta.lazyTokenizedUntil : 0;
+  const sourceLineCount = lazyEnabled ? getLazyCodeSourceLineCount(block, meta) : 0;
+  const highlightedLineCount = Array.isArray(meta.highlightedLines) ? meta.highlightedLines.length : 0;
+  const tokenLineCount = Array.isArray(meta.tokenLines) ? meta.tokenLines.length : 0;
+  const totalLazyLineCount = Math.max(sourceLineCount, highlightedLineCount, tokenLineCount);
+
+  useLazyCodeHighlightRequest({
+    blockId: block.id,
+    blockIsFinalized: block.isFinalized,
+    lazyEnabled,
+    lazyTokenizedUntil,
+    totalLazyLineCount,
+    shouldVirtualize: false,
+    documentIdentity,
+    blockEpoch,
+  });
+
+  return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
+});
+
+function getLazyCodeSourceLineCount(block: Block, meta: Record<string, unknown>): number {
+  const metaCode = typeof meta.code === "string" ? meta.code : null;
+  let sourceText: string;
+  if (metaCode !== null) {
+    sourceText = metaCode.replace(/\r\n?/g, "\n");
+  } else {
+    const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
+    if (raw.length === 0) return 0;
+    const normalized = raw.replace(/\r\n?/g, "\n");
+    const fenced = stripCodeFence(normalized);
+    sourceText = fenced.hadFence ? fenced.code : normalized;
+  }
+  return sourceText.length > 0 ? sourceText.split("\n").length : 0;
+}
 
 function recordViewRecords(store: RendererStore, count: number): void {
   const counterStore = store as RendererStore & {
@@ -46,6 +90,16 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
   const preparedQuote = block.type === "blockquote" && Boolean(block.payload.meta?.preparedNested);
   const mixedParagraph = block.type === "paragraph" && Array.isArray(block.payload.meta?.mixedSegments);
   if ((registry.hasCustomBlockComponent(block.type) || mixedParagraph) && !preparedQuote) {
+    if (block.type === "code") {
+      return (
+        <CustomCodeBlockView
+          block={block}
+          registry={registry}
+          documentIdentity={store.getNode(PATCH_ROOT_ID) ?? store}
+          blockEpoch={node.blockEpoch}
+        />
+      );
+    }
     return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
   }
 
