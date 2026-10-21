@@ -639,6 +639,7 @@ function normalizeFlushBatches(
 
   const batches: FlushBatchSample[] = [];
   const observedCounts = { input: 0, output: 0, coalesced: 0, appendLines: 0, setProps: 0, insertChild: 0 };
+  let retainedCoalescingDurationMs = 0;
   const invalid = (message: string): NormalizedFlushBatches => ({
     batches: null,
     validation: { valid: false, message },
@@ -675,6 +676,7 @@ function normalizeFlushBatches(
       observedCounts.appendLines += metrics.appendLinesCoalesced;
       observedCounts.setProps += metrics.setPropsCoalesced;
       observedCounts.insertChild += metrics.insertChildCoalesced;
+      retainedCoalescingDurationMs += metrics.durationMs;
     }
 
     const tx = candidate.tx === null ? null : finiteTelemetryNumber(candidate.tx);
@@ -720,6 +722,9 @@ function normalizeFlushBatches(
   ) {
     return invalid("Retained coalescing batch counters cannot be summed as finite non-negative integers");
   }
+  if (!isFiniteNonNegativeNumber(retainedCoalescingDurationMs)) {
+    return invalid("Retained coalescing batch durations cannot be summed as a finite non-negative duration");
+  }
   if (
     totals &&
     isNonNegativeInteger(totals.input) &&
@@ -736,6 +741,13 @@ function normalizeFlushBatches(
       observedCounts.insertChild > totals.insertChild)
   ) {
     return invalid("Retained coalescing batch counters exceed the reported aggregate totals");
+  }
+  if (
+    totals &&
+    isFiniteNonNegativeNumber(totals.durationMs) &&
+    retainedCoalescingDurationMs > totals.durationMs
+  ) {
+    return invalid("Retained coalescing batch duration exceeds the reported aggregate duration");
   }
 
   return { batches, validation: { valid: true } };

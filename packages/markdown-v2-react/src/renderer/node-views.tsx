@@ -16,7 +16,7 @@ import {
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
 import { RenderConfigVersionContext, useRendererChildren, useRendererNode } from "./hooks";
-import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from "./store";
+import { createRendererStore, isListPatchDebugEnabled, type NodeRecord, type RendererStore } from "./store";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 import { StreamingActivityContext } from "./streaming-activity-context";
 import { CodeBlockView } from "./code-block-view";
@@ -25,7 +25,7 @@ import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 const CustomCodeBlockView: React.FC<{
   block: Block;
   registry: ComponentRegistry;
-  documentIdentity: object;
+  documentIdentity: NodeRecord | RendererStore;
   blockEpoch: number;
 }> = React.memo(({ block, registry, documentIdentity, blockEpoch }) => {
   const meta = (block.payload.meta ?? {}) as Record<string, unknown>;

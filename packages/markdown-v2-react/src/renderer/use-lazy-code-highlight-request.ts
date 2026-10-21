@@ -1,10 +1,11 @@
 import React from "react";
 import { useCodeHighlightRequester } from "./code-highlight-context";
+import type { NodeRecord, RendererStore } from "./store";
 
 type LazyCodeHighlightRequestOptions = {
   blockId: string;
   // The store root is stable across patches and replaced by reset.
-  documentIdentity: object;
+  documentIdentity: NodeRecord | RendererStore;
   blockEpoch: number;
   blockIsFinalized: boolean;
   lazyEnabled: boolean;
@@ -28,7 +29,7 @@ export function useLazyCodeHighlightRequest({
     blockId: string;
     endLine: number;
     tokenizedUntil: number;
-    documentIdentity: object;
+    documentIdentity: NodeRecord | RendererStore;
     blockEpoch: number;
   } | null>(null);
   const rafRef = React.useRef<number | null>(null);
