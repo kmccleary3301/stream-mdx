@@ -194,7 +194,7 @@ Patch envelopes are deterministic and replayable:
   "protocol": "streammdx",
   "event": "patch",
   "tx": 42,
-  "patches": [{ "op": "appendLines", "at": ["__root__", 3] }]
+  "patches": [{ "op": "setProps", "at": { "blockId": "heading-1" }, "props": { "depth": 2 } }]
 }
 \`\`\`
 

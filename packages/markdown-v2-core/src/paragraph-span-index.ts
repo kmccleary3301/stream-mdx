@@ -336,6 +336,7 @@ function replaceUpdatedNode(
     const end = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters !== undefined
       ? lowerBoundPage(pageIndexes, childEndPage, first, endUpdate, counters, counterStage)
       : lowerBoundPage(pageIndexes, childEndPage, first, endUpdate);
+    if (first === end) continue;
     const child = children[slot];
     if (!child) throw new Error("Missing paragraph span child page for an update");
     children[slot] = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && counters !== undefined

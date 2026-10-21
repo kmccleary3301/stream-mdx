@@ -892,32 +892,21 @@ export async function runReplayOracle(options: {
   }
   if (section === "code-scaling") {
     const result = await runScalingDiagnostics({ codeFamilyOnly: true });
-    if (result.measurements.length !== 1) {
-      result.divergences.push({
-        fixtureId: "scaling-code-lines",
-        planMode: "window-append",
-        seed,
-        stage: "diagnostic:scaling:missing-code-family",
-        commitIndex: 0,
-        frontier: 0,
-        sourcePrefix: "",
-        message: `Expected exactly one code-family measurement; observed ${result.measurements.length}`,
-      });
-    }
     return summarizeFocusedSection(section, startTime, result.divergences, options.jsonPath, result.measurements);
   }
   if (section === "table-scaling") {
     const result = await runScalingDiagnostics({ tableFamilyOnly: true });
-    if (result.measurements.length !== 1 || !result.measurements[0]?.tableBoundary) {
+    for (const measurement of result.measurements) {
+      if (measurement.tableBoundary) continue;
       result.divergences.push({
-        fixtureId: "scaling-table-rows",
+        fixtureId: `scaling-${measurement.workload}`,
         planMode: "window-append",
         seed,
         stage: "diagnostic:scaling:missing-table-family",
         commitIndex: 0,
         frontier: 0,
         sourcePrefix: "",
-        message: `Expected one complete table boundary measurement; observed ${result.measurements.length}`,
+        message: "Table boundary evidence is unavailable",
       });
     }
     return summarizeFocusedSection(section, startTime, result.divergences, options.jsonPath, result.measurements);

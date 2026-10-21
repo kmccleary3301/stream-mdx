@@ -315,11 +315,6 @@ type TelemetrySnapshot = {
   summary: PerfSummary;
   samples: PerfSamples;
   worker?: WorkerPerfMetrics | null;
-  workerTotals?: {
-    appendLineBatches: number;
-    appendLineTotalLines: number;
-    appendLineMaxLines: number;
-  } | null;
   stream?: StreamMetrics | null;
   patchTotals?: {
     totalMessages: number;
@@ -330,7 +325,6 @@ type TelemetrySnapshot = {
     input: number;
     output: number;
     coalesced: number;
-    appendLines: number;
     setProps: number;
     insertChild: number;
     durationMs: number;
@@ -343,7 +337,6 @@ type RawTelemetrySnapshot = {
   summary: TelemetrySnapshot["summary"];
   samples: TelemetrySnapshot["samples"];
   worker: TelemetrySnapshot["worker"];
-  workerTotals: TelemetrySnapshot["workerTotals"];
   stream: TelemetrySnapshot["stream"];
   patchTotals: TelemetrySnapshot["patchTotals"];
   coalescingTotals: TelemetrySnapshot["coalescingTotals"];
@@ -372,7 +365,6 @@ type CoalescingBreakdown = {
   input: number;
   output: number;
   coalesced: number;
-  appendLinesMerged: number;
   setPropsMerged: number;
   insertChildMerged: number;
   durationMsTotal: number;
@@ -440,16 +432,10 @@ interface SnippetAnalysis {
       queueDepth: SummaryStats | null;
       stream?: StreamMetrics | null;
       worker?: WorkerPerfMetrics | null;
-      workerTotals?: {
-        appendLineBatches: number;
-        appendLineTotalLines: number;
-        appendLineMaxLines: number;
-      } | null;
       coalescingTotals?: {
         input: number;
         output: number;
         coalesced: number;
-        appendLines: number;
         setProps: number;
         insertChild: number;
         durationMs: number;
@@ -564,7 +550,6 @@ function normalizeCoalescingMetrics(value: unknown): CoalescingMetricsNormalizat
   const inputPatchCount = value.inputPatchCount;
   const outputPatchCount = value.outputPatchCount;
   const coalescedCount = value.coalescedCount;
-  const appendLinesCoalesced = value.appendLinesCoalesced;
   const setPropsCoalesced = value.setPropsCoalesced;
   const insertChildCoalesced = value.insertChildCoalesced;
   const durationMs = value.durationMs;
@@ -572,19 +557,18 @@ function normalizeCoalescingMetrics(value: unknown): CoalescingMetricsNormalizat
     !isNonNegativeInteger(inputPatchCount) ||
     !isNonNegativeInteger(outputPatchCount) ||
     !isNonNegativeInteger(coalescedCount) ||
-    !isNonNegativeInteger(appendLinesCoalesced) ||
     !isNonNegativeInteger(setPropsCoalesced) ||
     !isNonNegativeInteger(insertChildCoalesced) ||
     !isFiniteNonNegativeNumber(durationMs)
   ) {
     return {
       valid: false,
-      message: "metrics require six finite non-negative integer counters and a finite non-negative duration",
+      message: "metrics require five finite non-negative integer counters and a finite non-negative duration",
     };
   }
   if (
     inputPatchCount !== outputPatchCount + coalescedCount ||
-    appendLinesCoalesced + setPropsCoalesced + insertChildCoalesced > inputPatchCount
+    setPropsCoalesced + insertChildCoalesced > inputPatchCount
   ) {
     return { valid: false, message: "counter relationships do not reconcile or operation counts exceed input patches" };
   }
@@ -594,7 +578,6 @@ function normalizeCoalescingMetrics(value: unknown): CoalescingMetricsNormalizat
       inputPatchCount,
       outputPatchCount,
       coalescedCount,
-      appendLinesCoalesced,
       setPropsCoalesced,
       insertChildCoalesced,
       durationMs,
@@ -617,7 +600,6 @@ function normalizeFlushBatches(
     (totals.input !== 0 ||
       totals.output !== 0 ||
       totals.coalesced !== 0 ||
-      totals.appendLines !== 0 ||
       totals.setProps !== 0 ||
       totals.insertChild !== 0 ||
       totals.durationMs !== 0);
@@ -638,7 +620,7 @@ function normalizeFlushBatches(
   const rawBatchCandidates: unknown[] = rawBatches;
 
   const batches: FlushBatchSample[] = [];
-  const observedCounts = { input: 0, output: 0, coalesced: 0, appendLines: 0, setProps: 0, insertChild: 0 };
+  const observedCounts = { input: 0, output: 0, coalesced: 0, setProps: 0, insertChild: 0 };
   let retainedCoalescingDurationMs = 0;
   const invalid = (message: string): NormalizedFlushBatches => ({
     batches: null,
@@ -673,7 +655,6 @@ function normalizeFlushBatches(
       observedCounts.input += metrics.inputPatchCount;
       observedCounts.output += metrics.outputPatchCount;
       observedCounts.coalesced += metrics.coalescedCount;
-      observedCounts.appendLines += metrics.appendLinesCoalesced;
       observedCounts.setProps += metrics.setPropsCoalesced;
       observedCounts.insertChild += metrics.insertChildCoalesced;
       retainedCoalescingDurationMs += metrics.durationMs;
@@ -716,7 +697,6 @@ function normalizeFlushBatches(
     !isNonNegativeInteger(observedCounts.input) ||
     !isNonNegativeInteger(observedCounts.output) ||
     !isNonNegativeInteger(observedCounts.coalesced) ||
-    !isNonNegativeInteger(observedCounts.appendLines) ||
     !isNonNegativeInteger(observedCounts.setProps) ||
     !isNonNegativeInteger(observedCounts.insertChild)
   ) {
@@ -730,13 +710,11 @@ function normalizeFlushBatches(
     isNonNegativeInteger(totals.input) &&
     isNonNegativeInteger(totals.output) &&
     isNonNegativeInteger(totals.coalesced) &&
-    isNonNegativeInteger(totals.appendLines) &&
     isNonNegativeInteger(totals.setProps) &&
     isNonNegativeInteger(totals.insertChild) &&
     (observedCounts.input > totals.input ||
       observedCounts.output > totals.output ||
       observedCounts.coalesced > totals.coalesced ||
-      observedCounts.appendLines > totals.appendLines ||
       observedCounts.setProps > totals.setProps ||
       observedCounts.insertChild > totals.insertChild)
   ) {
@@ -781,7 +759,6 @@ function normalizeTelemetrySnapshot(raw: RawTelemetrySnapshot | null): Telemetry
       longTasksMs: ensureArray(raw.samples.longTasksMs),
     },
     worker: raw.worker ?? null,
-    workerTotals: raw.workerTotals ?? null,
     stream: raw.stream ?? null,
     patchTotals: raw.patchTotals ?? null,
     coalescingTotals: raw.coalescingTotals ?? null,
@@ -812,7 +789,6 @@ async function appendCoalescingCsvRows(snippetName: string, batches?: FlushBatch
       metrics.inputPatchCount,
       metrics.outputPatchCount,
       metrics.coalescedCount,
-      metrics.appendLinesCoalesced,
       metrics.setPropsCoalesced,
       metrics.insertChildCoalesced,
     ];
@@ -828,7 +804,6 @@ function computeCoalescingBreakdown(batches?: FlushBatchSample[] | null): Coales
   let input = 0;
   let output = 0;
   let coalesced = 0;
-  let appendLines = 0;
   let setProps = 0;
   let insertChild = 0;
   let durationTotal = 0;
@@ -840,7 +815,6 @@ function computeCoalescingBreakdown(batches?: FlushBatchSample[] | null): Coales
     input += metrics.inputPatchCount;
     output += metrics.outputPatchCount;
     coalesced += metrics.coalescedCount;
-    appendLines += metrics.appendLinesCoalesced;
     setProps += metrics.setPropsCoalesced;
     insertChild += metrics.insertChildCoalesced;
     durationTotal += metrics.durationMs;
@@ -854,7 +828,6 @@ function computeCoalescingBreakdown(batches?: FlushBatchSample[] | null): Coales
       input: 0,
       output: 0,
       coalesced: 0,
-      appendLinesMerged: 0,
       setPropsMerged: 0,
       insertChildMerged: 0,
       durationMsTotal: 0,
@@ -868,7 +841,6 @@ function computeCoalescingBreakdown(batches?: FlushBatchSample[] | null): Coales
     input,
     output,
     coalesced,
-    appendLinesMerged: appendLines,
     setPropsMerged: setProps,
     insertChildMerged: insertChild,
     durationMsTotal: durationTotal,
@@ -935,7 +907,7 @@ function evaluateCoalescingGuardrails(snippetName: string, analysis: SnippetAnal
       issues,
     );
   } else {
-    const counts = [totals.input, totals.output, totals.coalesced, totals.appendLines, totals.setProps, totals.insertChild];
+    const counts = [totals.input, totals.output, totals.coalesced, totals.setProps, totals.insertChild];
     const countsAreValid = counts.every(isNonNegativeInteger);
     const durationIsValid = isFiniteNonNegativeNumber(totals.durationMs);
     if (!countsAreValid || !durationIsValid) {
@@ -946,10 +918,7 @@ function evaluateCoalescingGuardrails(snippetName: string, analysis: SnippetAnal
         "Coalescing totals must contain non-negative integer counts and a finite non-negative duration",
         issues,
       );
-    } else if (
-      totals.input !== totals.output + totals.coalesced ||
-      totals.appendLines + totals.setProps + totals.insertChild > totals.input
-    ) {
+    } else if (totals.input !== totals.output + totals.coalesced || totals.setProps + totals.insertChild > totals.input) {
       recordCoalescingGuardrailResult(
         snippetName,
         "coalescing/totals/inconsistent",
@@ -977,7 +946,6 @@ function evaluateCoalescingGuardrails(snippetName: string, analysis: SnippetAnal
         totals?.input === 0 &&
         totals.output === 0 &&
         totals.coalesced === 0 &&
-        totals.appendLines === 0 &&
         totals.setProps === 0 &&
         totals.insertChild === 0 &&
         totals.durationMs === 0;
@@ -1617,7 +1585,6 @@ async function renderSnippet(
       summary: perf.summary,
       samples: perf.samples,
       worker: perf.worker ?? null,
-      workerTotals: perf.workerTotals ?? null,
       stream: perf.stream ?? null,
       patchTotals: state?.patchStats?.totals ?? null,
       coalescingTotals: perf.coalescingTotals ?? null,
@@ -2366,7 +2333,6 @@ function analyzeHtml(html: string, snippetContent: string, snippetName: string):
       queueDepth: null,
       stream: null,
       worker: null,
-      workerTotals: null,
       coalescingTotals: null,
       coalescingBreakdown: null,
     },
@@ -2415,7 +2381,6 @@ async function analyzeSnippet(browser: Browser, snippetName: string, workerLifec
       analysis.performance.queueDepth = cloneSummaryStats(perfSummary.queueDepth);
       analysis.performance.stream = telemetry.stream ? { ...telemetry.stream } : null;
       analysis.performance.worker = telemetry.worker ? { ...telemetry.worker } : null;
-      analysis.performance.workerTotals = telemetry.workerTotals ? { ...telemetry.workerTotals } : null;
       if (telemetry.coalescingTotals) {
         const totals = telemetry.coalescingTotals;
         const reductionPct = totals.input > 0 ? (totals.coalesced / totals.input) * 100 : null;
@@ -2424,7 +2389,6 @@ async function analyzeSnippet(browser: Browser, snippetName: string, workerLifec
           input: totals.input,
           output: totals.output,
           coalesced: totals.coalesced,
-          appendLines: totals.appendLines,
           setProps: totals.setProps,
           insertChild: totals.insertChild,
           durationMs: totals.durationMs,
@@ -2529,7 +2493,7 @@ async function main() {
 
   await fs.writeFile(
     COALESCING_CSV_PATH,
-    "snippet,tx,priority,queueDelayMs,durationMs,inputPatches,outputPatches,coalesced,appendLinesMerged,setPropsMerged,insertChildMerged\n",
+    "snippet,tx,priority,queueDelayMs,durationMs,inputPatches,outputPatches,coalesced,setPropsMerged,insertChildMerged\n",
     "utf-8",
   );
 
@@ -2596,7 +2560,6 @@ async function main() {
         worker: perf.worker ?? null,
         samples: result.telemetry?.samples ?? null,
         patchTotals: result.telemetry?.patchTotals ?? null,
-        workerTotals: result.telemetry?.workerTotals ?? null,
         coalescingTotals: result.telemetry?.coalescingTotals ?? null,
         flushBatches: result.telemetry?.flushBatches ?? null,
         coalescingBreakdown: perf.coalescingBreakdown ?? null,
@@ -2775,9 +2738,6 @@ async function generateMarkdownSummary(results: SnippetAnalysis[], outputPath: s
       const totals = perf.coalescingTotals;
       lines.push(
         `- Coalescing: input ${totals.input.toLocaleString()} → output ${totals.output.toLocaleString()} (reduction ${formatPercentValue(totals.reductionPct)}, applied ${formatPercentValue(totals.appliedPct)})`,
-      );
-      lines.push(
-        `  - AppendLines merged ${totals.appendLines.toLocaleString()}, setProps merged ${totals.setProps.toLocaleString()}, insertChild merged ${totals.insertChild.toLocaleString()}`,
       );
     }
     if (perf.coalescingBreakdown) {

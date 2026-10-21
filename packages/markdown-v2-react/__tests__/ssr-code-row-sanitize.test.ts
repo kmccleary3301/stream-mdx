@@ -1,16 +1,16 @@
-import assert from "node:assert";
+import assert from "node:assert/strict";
 
-import { sanitizeCodeHTML, type Block } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, STREAM_MDX_SCHEMA_VERSION, sanitizeCodeHTML, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { MarkdownBlocksRenderer, createRendererStore, type RendererStore } from "../src/server";
+import { MarkdownBlocksRenderer, createRendererStore } from "../src/server";
+import type { RendererStore } from "../src/renderer/store";
 
-// Node/SSR prerender has no DOM `window`, so the code-row sanitizer must use
-// the shared DOM-free pipeline (@stream-mdx/core worker-html-sanitizer) instead
-// of throwing. jsdom-based tests in this package create their own windows and
-// never read a global one, so toggling the global here is contained.
+// Native SSR is exercised without a global DOM. Direct sanitizer coverage below
+// compares its DOM-free path with the browser path using a contained window change.
 interface WindowCapableGlobal {
   window?: unknown;
 }
@@ -18,9 +18,7 @@ const globalScope = globalThis as WindowCapableGlobal;
 const previousWindow = globalScope.window;
 delete globalScope.window;
 
-// Real compiled output for `` ```tsx\n<StreamingMarkdown worker="/workers/markdown-worker.js" />\n``` ``
-// (apps/docs .generated snapshot docs/security-model.json): a small Shiki
-// github-dark/github-light fence carrying per-line html.
+// Source fixtures resemble JSX and hostile markup but must remain native code text.
 const REAL_SHIKI_FENCE_SOURCE = '<StreamingMarkdown worker="/workers/markdown-worker.js" />';
 const REAL_SHIKI_FENCE_HTML =
   '<pre class="shiki shiki-themes github-dark github-light" style="--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent" tabindex="undefined" data-language="tsx"><code data-language="tsx" data-theme="github-dark github-light" style="display: grid;"><span class="line" data-line="1"><span style="--shiki-dark:#E1E4E8;--shiki-light:#24292E">&#x3C;</span><span style="--shiki-dark:#79B8FF;--shiki-light:#005CC5">StreamingMarkdown</span><span style="--shiki-dark:#B392F0;--shiki-light:#6F42C1"> worker</span><span style="--shiki-dark:#F97583;--shiki-light:#D73A49">=</span><span style="--shiki-dark:#9ECBFF;--shiki-light:#032F62">"/workers/markdown-worker.js"</span><span style="--shiki-dark:#E1E4E8;--shiki-light:#24292E"> /></span></span></code></pre>';
@@ -28,36 +26,107 @@ const REAL_SHIKI_FENCE_HTML =
 const HOSTILE_CODE_ROW =
   '<span class="line" data-line="2"><script>alert(1)</script><img src="x" onerror="alert(1)"><span onclick="alert(1)">click</span><span style="background:url(javascript:alert(1))">urlstyle</span><a href="javascript:alert(1)">link</a><span style="color:#24292e">safe</span></span>';
 
-const realFenceBlock: Block = {
-  id: "ssr-shiki-fence",
-  type: "code",
-  isFinalized: true,
-  payload: {
-    raw: `\`\`\`tsx\n${REAL_SHIKI_FENCE_SOURCE}\n\`\`\``,
-    meta: { lang: "tsx", code: REAL_SHIKI_FENCE_SOURCE },
-    highlightedHtml: REAL_SHIKI_FENCE_HTML,
-  },
-};
+const HOSTILE_CODE_SOURCE =
+  `const hostile = '<script>alert(1)</script><img src="x" onerror="alert(1)"><span onclick="alert(1)">click</span><a href="javascript:alert(1)">link</a>';`;
 
-const hostileBlock: Block = {
-  id: "ssr-hostile-row",
-  type: "code",
-  isFinalized: true,
-  payload: {
-    raw: "```tsx\nalpha\nbeta\n```",
-    meta: { lang: "tsx", code: "alpha\nbeta" },
-    highlightedHtml: `<pre class="shiki"><code><span class="line" data-line="1">alpha</span>${HOSTILE_CODE_ROW}</code></pre>`,
-  },
-};
-
-function readLineHtml(store: RendererStore, id: string): string {
-  const node = store.getNode(id);
-  assert.ok(node, `expected rendered code row ${id}`);
-  const html = node?.props?.html;
-  if (typeof html !== "string") {
-    throw new Error(`expected html string for ${id}`);
+function currentCodeOwnerId(store: RendererStore): string | null {
+  for (const childId of store.getNode(PATCH_ROOT_ID)?.children ?? []) {
+    if (store.getCodeBlock(childId)) return childId;
   }
-  return html;
+  return null;
+}
+
+async function createHighlightedNativeCodeStore(
+  source: string,
+): Promise<{ store: RendererStore; blockId: string }> {
+  const store = createRendererStore();
+  const worker = createInlineEngineWorker();
+  let decorationPatch: Extract<Patch, { op: "decorateCode" }> | null = null;
+  const readDecorationPatch = (): Extract<Patch, { op: "decorateCode" }> | null => decorationPatch;
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+        const message = event.data;
+        if (message.type === "INITIALIZED") {
+          store.resetSnapshot(message.snapshot);
+          resolve();
+        } else if (message.type === "ERROR") {
+          reject(new Error(message.error.message));
+        }
+      };
+      worker.postMessage({
+        type: "INIT",
+        schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+        initialContent: "",
+        prewarmLangs: [],
+        docPlugins: {
+          html: false,
+          mdx: false,
+          tables: false,
+          math: false,
+          outputMode: "html",
+          lazyTokenization: { enabled: true, thresholdLines: 1 },
+        },
+      });
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+        const message = event.data;
+        if (message.type === "PATCH") {
+          store.applyPatches(message.patches);
+        } else if (message.type === "FINALIZED") {
+          resolve();
+        } else if (message.type === "ERROR") {
+          reject(new Error(message.error.message));
+        }
+      };
+      worker.postMessage({ type: "APPEND", text: `\`\`\`tsx\n${source}\n\`\`\`` });
+      worker.postMessage({ type: "FINALIZE" });
+    });
+
+    const blockId = currentCodeOwnerId(store);
+    assert.ok(blockId, "inline engine should publish an owned native code block");
+    const codeBlock = store.getCodeBlock(blockId);
+    assert.ok(codeBlock, "native code owner should expose its source and line records");
+    const lines = store.getCodeLines(blockId, 0, codeBlock.source.lineCount);
+    assert.equal(lines.map((line) => line.text).join("\n"), source);
+
+    await new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+        const message = event.data;
+        if (message.type === "PATCH") {
+          store.applyPatches(message.patches);
+          const decoration = message.patches.find(
+            (patch): patch is Extract<Patch, { op: "decorateCode" }> => patch.op === "decorateCode",
+          );
+          if (decoration) {
+            decorationPatch = decoration;
+            resolve();
+          }
+        } else if (message.type === "ERROR") {
+          reject(new Error(message.error.message));
+        }
+      };
+      worker.postMessage({
+        type: "TOKENIZE_RANGE",
+        blockId,
+        startLine: 0,
+        endLine: codeBlock.source.lineCount,
+        priority: "visible",
+      });
+    });
+    const actualDecorationPatch = readDecorationPatch();
+    assert.ok(actualDecorationPatch, "syntax highlighting should arrive through a real owned-code decoration");
+    assert.ok(
+      store.getCodeLines(blockId, 0, codeBlock.source.lineCount).some((line) => line.decoration?.tokens.spans.length),
+      "native source records should retain the worker's token styles",
+    );
+    return { store, blockId };
+  } finally {
+    worker.terminate();
+  }
 }
 
 /**
@@ -117,42 +186,38 @@ function restoreWindow(): void {
 async function main(): Promise<void> {
   assert.strictEqual(typeof globalScope.window, "undefined", "SSR phase requires no global window");
 
-  // 1. Store hydration of a real compiled Shiki fence keeps code rows and theme colors.
-  const realStore = createRendererStore([realFenceBlock]);
-  const realLine = readLineHtml(realStore, "ssr-shiki-fence::line:0");
-  assert.ok(realLine.includes("--shiki-dark:#E1E4E8"), "Shiki CSS variables must survive DOM-free sanitation");
-  assert.ok(realLine.includes("StreamingMarkdown"), "highlighted source text must survive");
-  assert.ok(realLine.includes("--shiki-light:#24292E"), "Shiki light-theme variables must survive");
-
-  // 2. Untrusted row markup is rejected at the consumer boundary, content kept.
-  const hostileStore = createRendererStore([hostileBlock]);
-  const hostileLine = readLineHtml(hostileStore, "ssr-hostile-row::line:1");
-  assert.ok(!/<script/i.test(hostileLine), "script tags must be rejected in SSR code rows");
-  assert.ok(!/<img/i.test(hostileLine), "non-code elements must be rejected in SSR code rows");
-  assert.ok(!/onerror/i.test(hostileLine), "event handler attributes must be rejected in SSR code rows");
-  assert.ok(!/onclick/i.test(hostileLine), "event handler attributes must be rejected in SSR code rows");
-  assert.ok(!/javascript:/i.test(hostileLine), "javascript: URLs and styles must be rejected in SSR code rows");
-  assert.ok(hostileLine.includes("color:#24292e"), "benign theme styles must survive");
-  for (const fragment of ["click", "link", "urlstyle", "safe"]) {
-    assert.ok(hostileLine.includes(fragment), `row content "${fragment}" must be retained`);
-  }
-
-  // 3. MarkdownBlocksRenderer SSR markup for the same blocks stays safe without a DOM.
-  const ssr = renderToStaticMarkup(
-    React.createElement(MarkdownBlocksRenderer, { blocks: [realFenceBlock, hostileBlock] }),
+  const nativeSource = `${REAL_SHIKI_FENCE_SOURCE}\n${HOSTILE_CODE_SOURCE}\nconst label = "safe";`;
+  const { store, blockId } = await createHighlightedNativeCodeStore(nativeSource);
+  const codeBlock = store.getCodeBlock(blockId);
+  assert.ok(codeBlock, "SSR fixture should retain its native code owner");
+  assert.equal(
+    store.getCodeLines(blockId, 0, codeBlock.source.lineCount).map((line) => line.text).join("\n"),
+    nativeSource,
+    "native source records should preserve the authored lines",
   );
-  assert.ok(ssr.includes("--shiki-dark:#E1E4E8"), "SSR code markup must retain Shiki colors");
-  assert.ok(!/<script/i.test(ssr), "SSR code markup must not contain scripts");
-  assert.ok(!/onerror/i.test(ssr), "SSR code markup must not contain event handlers");
-  assert.ok(!/onclick/i.test(ssr), "SSR code markup must not contain event handlers");
-  assert.ok(!/javascript:/i.test(ssr), "SSR code markup must not contain javascript: payloads");
-  const ssrDom = new JSDOM(ssr);
-  const codeText = Array.from(ssrDom.window.document.querySelectorAll("pre code"))
-    .map((node) => node.textContent ?? "")
-    .join("\n");
-  assert.ok(codeText.includes(REAL_SHIKI_FENCE_SOURCE), `SSR code text must retain the source: ${codeText}`);
 
-  // 3b. CSS backslash-escape / comment bypass attempts lose their styles DOM-free.
+  const ssr = renderToStaticMarkup(
+    React.createElement(MarkdownBlocksRenderer, { blocks: [], store }),
+  );
+  const ssrDom = new JSDOM(ssr);
+  const renderedCode = ssrDom.window.document.querySelector("pre code");
+  assert.ok(renderedCode, "SSR should render native code rows");
+  const renderedSource = renderedCode.textContent ?? "";
+  assert.ok(
+    renderedSource.includes(nativeSource),
+    "SSR code text should preserve JSX-like and hostile attribute-looking source literally",
+  );
+  assert.equal(
+    renderedCode.querySelector("script, img, svg, iframe, [onerror], [onclick], a[href^='javascript:']"),
+    null,
+    "native code source must not become executable elements or attributes",
+  );
+  const tokenStyles = Array.from(renderedCode.querySelectorAll("span[style]"))
+    .map((span) => span.getAttribute("style") ?? "");
+  assert.ok(tokenStyles.some((style) => style.includes("--shiki-dark")), "SSR token styles should retain approved dark-theme colors");
+  assert.ok(tokenStyles.some((style) => style.includes("--shiki-light")), "SSR token styles should retain approved light-theme colors");
+
+  // CSS bypass attempts lose their styles in the DOM-free sanitizer.
   for (const input of CSS_ESCAPE_BYPASSES) {
     const out = sanitizeCodeHTML(input);
     assert.ok(!/background-image/i.test(out), `DOM-free path must drop hostile styles: ${out}`);
@@ -160,8 +225,7 @@ async function main(): Promise<void> {
     assert.ok(/escaped|commented|urled/.test(out), `DOM-free path must keep row content: ${out}`);
   }
 
-  // 3c. Forbidden-content subtrees are removed with their contents (DOMPurify
-  // DEFAULT_FORBID_CONTENTS parity); other disallowed tags stay unwrapped.
+  // Forbidden-content subtrees lose their contents; other disallowed tags stay unwrapped.
   for (const tag of FORBIDDEN_SUBTREE_TAGS) {
     const out = sanitizeCodeHTML(`<span class="line">pre<${tag}>hidden</${tag}>post</span>`);
     assert.ok(!out.includes("hidden"), `forbidden subtree content must be removed (${tag}): ${out}`);
@@ -177,7 +241,7 @@ async function main(): Promise<void> {
   );
   assert.ok(!tableSubtree.includes("cell"), `table header subtree must be removed: ${tableSubtree}`);
 
-  // 4. Browser path (DOMPurify + template scrub) and Node path must agree per DOM semantics.
+  // Browser path (DOMPurify + template scrub) and Node path must agree by DOM semantics.
   const nodeOutputs = ALIGNMENT_MATRIX.map((input) => normalizeHtml(sanitizeCodeHTML(input)));
   const dom = new JSDOM("<!doctype html><html><body></body></html>");
   globalScope.window = dom.window;
@@ -205,12 +269,11 @@ async function main(): Promise<void> {
     restoreWindow();
   }
 
-  console.log("ssr-code-row-sanitize test passed");
 }
 
-main()
-  .catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  })
-  .finally(restoreWindow);
+try {
+  await main();
+} finally {
+  restoreWindow();
+}
+console.log("ssr-code-row-sanitize test passed");

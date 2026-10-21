@@ -251,13 +251,15 @@ export function rootCodeAppendChange(
 interface HighlightOwnerState {
   processedCompleteLines: number;
   grammarState?: unknown;
+  grammarStateLine: number;
   resolvedLanguage?: string;
   resolution?: Promise<string>;
   work: Promise<unknown>;
 }
 
 type HtmlCodeLineDecoration = CodeLineDecoration & { readonly html: string | null };
-/** One continuation state per prepared code lease; range requests never replay its prefix. */
+const GRAMMAR_STATE_ADVANCE_CHUNK_LINES = 64;
+/** One continuation state per prepared code lease; range requests reuse it in source order. */
 export class RootCodeHighlighter {
   private owners = new WeakMap<PreparedCodeLineOwner, HighlightOwnerState>();
 
@@ -277,18 +279,19 @@ export class RootCodeHighlighter {
       if (rows.length === 0) return [];
       const language = await this.resolveLanguage(owner, config, state);
       if (!isCurrent()) return [];
-
       const input = rows.map((row) => row.text).join("\n");
-      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-        config.counters?.recordTokenization(rows.length, input.length, "engine");
-      }
       try {
+        if (!this.alignGrammarState(index, from, language, config, state)) return [];
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          config.counters?.recordTokenization(rows.length, input.length, "engine");
+        }
         const tokenRows = config.highlighter.codeToTokensWithThemes(input, {
           lang: language as never,
           themes: config.themes,
           grammarState: state.grammarState as never,
         } as never) as ShikiThemedToken[][];
         state.grammarState = config.highlighter.getLastGrammarState(tokenRows as never);
+        state.grammarStateLine = to;
         const rendered = renderTokenLines(tokenRows);
         const html = renderShikiLines(tokenRows);
         const decorations = this.makeDecorations(rows, rendered, html, config.configurationRevision, "exact");
@@ -333,6 +336,7 @@ export class RootCodeHighlighter {
         const source = preparedCodeSourceOf(owner);
         const { lang, meta } = parseCodeFenceInfo(source.info);
         const diffInfo = detectDiffLanguage(lang, meta);
+        if (!diffInfo.isDiff && !this.alignGrammarState(index, from, language, config, state)) return [];
         let rendered: Array<TokenLineV1 | null>;
         let html: Array<string | null>;
         if (diffInfo.isDiff) {
@@ -345,8 +349,10 @@ export class RootCodeHighlighter {
           const tokenRows = config.highlighter.codeToTokensWithThemes(input, {
             lang: language as never,
             themes: config.themes,
+            grammarState: state.grammarState as never,
           } as never) as ShikiThemedToken[][];
           state.grammarState = config.highlighter.getLastGrammarState(tokenRows as never);
+          state.grammarStateLine = to;
           rendered = renderTokenLines(tokenRows);
           html = renderShikiLines(tokenRows);
         }
@@ -368,6 +374,39 @@ export class RootCodeHighlighter {
 
   clear(): void {
     this.owners = new WeakMap<PreparedCodeLineOwner, HighlightOwnerState>();
+  }
+
+  private alignGrammarState(
+    index: CodeLineIndex,
+    fromLine: number,
+    language: string,
+    config: RootCodeHighlightConfiguration,
+    state: HighlightOwnerState,
+  ): boolean {
+    const highlighter = config.highlighter;
+    if (!highlighter) return false;
+    if (fromLine < state.grammarStateLine) {
+      state.grammarState = undefined;
+      state.grammarStateLine = 0;
+    }
+    while (state.grammarStateLine < fromLine) {
+      const from = state.grammarStateLine;
+      const to = Math.min(fromLine, from + GRAMMAR_STATE_ADVANCE_CHUNK_LINES);
+      const rows = index.readRange(from, to);
+      if (rows.length === 0) return false;
+      const input = rows.map((row) => row.text).join("\n");
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        config.counters?.recordTokenization(rows.length, input.length, "engine");
+      }
+      const tokenRows = highlighter.codeToTokensWithThemes(input, {
+        lang: language as never,
+        themes: config.themes,
+        grammarState: state.grammarState as never,
+      } as never) as ShikiThemedToken[][];
+      state.grammarState = highlighter.getLastGrammarState(tokenRows as never);
+      state.grammarStateLine = to;
+    }
+    return true;
   }
 
   private makeDecorations(
@@ -398,7 +437,7 @@ export class RootCodeHighlighter {
   private state(owner: PreparedCodeLineOwner): HighlightOwnerState {
     let state = this.owners.get(owner);
     if (!state) {
-      state = { processedCompleteLines: 0, work: Promise.resolve() };
+      state = { processedCompleteLines: 0, grammarStateLine: 0, work: Promise.resolve() };
       this.owners.set(owner, state);
     }
     return state;

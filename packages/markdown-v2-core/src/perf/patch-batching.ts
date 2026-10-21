@@ -70,8 +70,6 @@ export function isHeavyPatch(patch: Patch): boolean {
   switch (patch.op) {
     case "setHTML":
       return true;
-    case "appendLines":
-      return (patch.lines?.length ?? LIGHT_APPEND_LINE_THRESHOLD + 1) > LIGHT_APPEND_LINE_THRESHOLD;
     case "appendCode":
       return patch.lines.length > LIGHT_APPEND_LINE_THRESHOLD;
     case "appendParagraph":
@@ -122,7 +120,6 @@ export function getPatchKind(patch: Patch): PatchKind {
     case "replaceChild":
     case "finalize":
     case "reorder":
-    case "appendLines":
     case "setHTML":
       return "semantic";
     case "setProps":

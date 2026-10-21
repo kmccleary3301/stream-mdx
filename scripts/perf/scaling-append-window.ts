@@ -248,6 +248,7 @@ export async function measureAppendWindowWork(
   ownerEvidence?: NativeListOwnerSetupEvidence;
   tableBoundary?: TableBoundaryEvidence;
 }> {
+  const codeSourceFrom = workload.codeSourceFrom ?? 0;
   const includeCodeSourceWork = mode === "code-source";
   const includeNativeListSourceWork = mode === "native-list-source";
   const includeListPrimaryParagraphWork =
@@ -391,6 +392,11 @@ export async function measureAppendWindowWork(
       assert.ok(codeBlock, "code-family workload must establish its managed root code block");
       const codeView = store.getCodeBlock(codeBlock.id);
       assert.ok(codeView, "code-family workload must expose its prepared code view");
+      assert.equal(
+        codeView.source.sourceRange.from,
+        codeSourceFrom,
+        "managed code source range starts at the test-owned authored code offset",
+      );
       assert.equal(codeView.source.state, "open", "code-family append window starts open");
       codeGeneration = codeView.source.generation;
     }
@@ -556,7 +562,7 @@ export async function measureAppendWindowWork(
     // Reset diagnostic counts AFTER baseline source setup and native mounting.
     sessionSink.reset();
 
-    let expectedCodeSource = prefix;
+    let expectedCodeSource = prefix.slice(codeSourceFrom);
     let expectedParagraphSuffix = "";
     let expectedListSuffix = "";
     let expectedTableSuffix = "";
@@ -605,6 +611,11 @@ export async function measureAppendWindowWork(
           expectedCodeSource += chunk;
           const afterAppend = store.getCodeBlock(codeBlock.id);
           assert.ok(afterAppend, "managed root code view remains available during the append window");
+          assert.equal(
+            afterAppend.source.sourceRange.from,
+            codeSourceFrom,
+            "managed code source range retains its test-owned authored origin",
+          );
           assert.equal(afterAppend.source.state, "open", "measured append window contains no close/finalize");
           assert.equal(afterAppend.source.generation, codeGeneration, "managed code generation stays fixed");
         }

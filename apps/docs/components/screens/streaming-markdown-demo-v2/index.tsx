@@ -639,17 +639,11 @@ export function StreamingMarkdownDemoV2({
     p95: null,
     sampleCount: 0,
   });
-  const workerTotalsRef = useRef({
-    appendLineBatches: 0,
-    appendLineTotalLines: 0,
-    appendLineMaxLines: 0,
-  });
   const streamTickAtRef = useRef<number | null>(null);
   const coalescingTotalsRef = useRef<{
     input: number;
     output: number;
     coalesced: number;
-    appendLines: number;
     setProps: number;
     insertChild: number;
     durationMs: number;
@@ -657,7 +651,6 @@ export function StreamingMarkdownDemoV2({
     input: 0,
     output: 0,
     coalesced: 0,
-    appendLines: 0,
     setProps: 0,
     insertChild: 0,
     durationMs: 0,
@@ -813,7 +806,6 @@ export function StreamingMarkdownDemoV2({
       input: 0,
       output: 0,
       coalesced: 0,
-      appendLines: 0,
       setProps: 0,
       insertChild: 0,
       durationMs: 0,
@@ -1028,7 +1020,6 @@ export function StreamingMarkdownDemoV2({
           totals.input += batch.coalescing.inputPatchCount;
           totals.output += batch.coalescing.outputPatchCount;
           totals.coalesced += batch.coalescing.coalescedCount;
-          totals.appendLines += batch.coalescing.appendLinesCoalesced;
           totals.setProps += batch.coalescing.setPropsCoalesced;
           totals.insertChild += batch.coalescing.insertChildCoalesced;
           totals.durationMs += batch.coalescing.durationMs;
@@ -1222,11 +1213,6 @@ export function StreamingMarkdownDemoV2({
     paintRef.current.length = 0;
     queueDepthRef.current.length = 0;
     flushBatchLogRef.current.length = 0;
-    workerTotalsRef.current = {
-      appendLineBatches: 0,
-      appendLineTotalLines: 0,
-      appendLineMaxLines: 0,
-    };
     resetWorkerReadyPromise();
     resetCoalescingStats();
     if (softDrainTimeoutRef.current) {
@@ -1264,11 +1250,6 @@ export function StreamingMarkdownDemoV2({
         paintRef.current.length = 0;
         queueDepthRef.current.length = 0;
         flushBatchLogRef.current.length = 0;
-        workerTotalsRef.current = {
-          appendLineBatches: 0,
-          appendLineTotalLines: 0,
-          appendLineMaxLines: 0,
-        };
         resetCoalescingStats();
         if (softDrainTimeoutRef.current) {
           clearTimeout(softDrainTimeoutRef.current);
@@ -1357,11 +1338,6 @@ export function StreamingMarkdownDemoV2({
           lastTx: 0,
         };
         lastPatchSummaryRef.current = null;
-        workerTotalsRef.current = {
-          appendLineBatches: 0,
-          appendLineTotalLines: 0,
-          appendLineMaxLines: 0,
-        };
         resetCoalescingStats();
         if (softDrainTimeoutRef.current) {
           clearTimeout(softDrainTimeoutRef.current);
@@ -1372,26 +1348,9 @@ export function StreamingMarkdownDemoV2({
 
       if (msg.type === "METRICS") {
         if (msg.metrics) {
-          const totals = workerTotalsRef.current;
-          const batchCount = msg.metrics.appendLineBatches ?? 0;
-          const batchLines = msg.metrics.appendLineTotalLines ?? 0;
-          const batchMax = msg.metrics.appendLineMaxLines ?? 0;
-          if (batchCount > 0 || batchLines > 0 || batchMax > 0) {
-            totals.appendLineBatches += batchCount;
-            totals.appendLineTotalLines += batchLines;
-            if (batchMax > totals.appendLineMaxLines) {
-              totals.appendLineMaxLines = batchMax;
-            }
-          }
-          const nextMetrics = {
-            ...msg.metrics,
-            appendLineBatchesTotal: totals.appendLineBatches,
-            appendLineTotalLinesTotal: totals.appendLineTotalLines,
-            appendLineMaxLinesTotal: totals.appendLineMaxLines,
-          };
-          lastMetricsRef.current = nextMetrics;
+          lastMetricsRef.current = msg.metrics;
           if (debugTimingRef.current) {
-            setLastMetrics(nextMetrics);
+            setLastMetrics(msg.metrics);
           }
         }
         return;
@@ -1675,11 +1634,6 @@ export function StreamingMarkdownDemoV2({
     paintRef.current.length = 0;
     queueDepthRef.current.length = 0;
     pendingCommitMeasuresRef.current.length = 0;
-    workerTotalsRef.current = {
-      appendLineBatches: 0,
-      appendLineTotalLines: 0,
-      appendLineMaxLines: 0,
-    };
     listDebugEventsRef.current = [];
     listDebugStartRef.current = null;
     listMismatchCountRef.current = 0;
@@ -1945,7 +1899,6 @@ export function StreamingMarkdownDemoV2({
         completionMs: completionMsRef.current,
       },
       patchTotals: patchTotalsRef.current,
-      workerTotals: { ...workerTotalsRef.current },
       coalescingTotals: { ...coalescingTotalsRef.current },
       mdxHydration: streamingRef.current?.getState?.().mdxHydration ?? null,
       scheduler: {
@@ -2124,7 +2077,6 @@ export function StreamingMarkdownDemoV2({
                   </div>
                   <div className="text-right text-muted text-xs">
                     <div>duration total {formatMs(coalescingTotalsSnapshot.durationMs, 2)}</div>
-                    <div>append lines {formatCount(coalescingTotalsSnapshot.appendLines, 0)}</div>
                     <Button size="sm" variant="ghost" className="mt-2" onClick={handleResetCoalescing}>
                       Reset
                     </Button>
@@ -2297,10 +2249,6 @@ export function StreamingMarkdownDemoV2({
                               <Fragment>
                                 <span>coalesced</span>
                                 <span className="text-right text-foreground/80">{formatCount(coalesced, 0)}</span>
-                              </Fragment>
-                              <Fragment>
-                                <span>appendLines merged</span>
-                                <span className="text-right text-foreground/80">{formatCount(totals.appendLines, 0)}</span>
                               </Fragment>
                               <Fragment>
                                 <span>setProps merged</span>

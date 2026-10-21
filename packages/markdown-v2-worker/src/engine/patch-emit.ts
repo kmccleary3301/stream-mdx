@@ -1,11 +1,9 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import type {
-  DiffLineKind,
   NodeSnapshot,
   Patch,
   PatchKind,
-  TokenLineV1,
 } from "@stream-mdx/core";
 import {
   PATCH_ROOT_ID,
@@ -337,39 +335,6 @@ export function haveSameMultiset(a: string[], b: string[]): boolean {
   return counts.size === 0;
 }
 
-export function expectedCodeLineSnapshotId(parentId: string, index: number): string {
-  return `${parentId}::line:${index}`;
-}
-
-export function isStrictCodeLineSnapshot(parentId: string, child: NodeSnapshot, index: number): boolean {
-  if (child.type !== "code-line") return false;
-  if (child.id !== expectedCodeLineSnapshotId(parentId, index)) return false;
-  const childIndex = typeof child.props?.index === "number" ? (child.props.index as number) : null;
-  return childIndex === index;
-}
-
-export function canEmitAppendLinesPatch(prevNode: NodeSnapshot, nextNode: NodeSnapshot, divergeIndex: number): boolean {
-  if (prevNode.type !== "code" || nextNode.type !== "code") return false;
-  const prevChildren = prevNode.children ?? [];
-  const nextChildren = nextNode.children ?? [];
-  if (divergeIndex !== prevChildren.length || nextChildren.length < prevChildren.length) {
-    return false;
-  }
-  for (let index = 0; index < prevChildren.length; index += 1) {
-    if (!isStrictCodeLineSnapshot(prevNode.id, prevChildren[index], index)) {
-      return false;
-    }
-    if (!isStrictCodeLineSnapshot(nextNode.id, nextChildren[index], index)) {
-      return false;
-    }
-  }
-  for (let index = divergeIndex; index < nextChildren.length; index += 1) {
-    if (!isStrictCodeLineSnapshot(nextNode.id, nextChildren[index], index)) {
-      return false;
-    }
-  }
-  return true;
-}
 
 export function diffListChildren(
   blockId: string,
@@ -636,74 +601,10 @@ function diffNodeSnapshotWithOwner(
   }
 
 
-  // Special handling for code blocks: detect pure append and emit appendLines.
-  // Defer the code-block setProps until after child mutations so the renderer
-  // store does not normalize the code subtree before an appendLines patch lands.
-  if (prevNode.type === "code" && nextNode.type === "code") {
-    const commonLength = Math.min(prevChildren.length, nextChildren.length);
-    let divergeIndex = 0;
-    while (divergeIndex < commonLength && prevChildren[divergeIndex].id === nextChildren[divergeIndex].id) {
-      diffNodeSnapshotWithOwner(blockId, prevChildren[divergeIndex], nextChildren[divergeIndex], patches, metrics, managedSourceOwner);
-      divergeIndex++;
-    }
-
-    const onlyAppend =
-      divergeIndex === prevChildren.length &&
-      nextChildren.length >= prevChildren.length &&
-      prevChildren.every((child, idx) => child.id === nextChildren[idx].id);
-
-    if (onlyAppend && nextChildren.length > prevChildren.length && canEmitAppendLinesPatch(prevNode, nextNode, divergeIndex)) {
-      const startIndex = prevChildren.length;
-      const appended = nextChildren.slice(startIndex);
-      const hasTokenLines = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens"));
-      const hasDiffKind = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind"));
-      const hasOldNo = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "oldNo"));
-      const hasNewNo = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "newNo"));
-      patches.push({
-        op: "appendLines",
-        at: { blockId, nodeId: prevNode.id },
-        startIndex,
-        lines: appended.map((child) => {
-          const text = typeof child.props?.text === "string" ? (child.props?.text as string) : "";
-          return text;
-        }),
-        highlight: appended.map((child) => (typeof child.props?.html === "string" ? (child.props?.html as string) : null)),
-        ...(hasTokenLines
-          ? {
-              tokens: appended.map((child) =>
-                Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens") ? (child.props?.tokens as TokenLineV1 | null) : null,
-              ),
-            }
-          : {}),
-        ...(hasDiffKind
-          ? {
-              diffKind: appended.map((child) =>
-                Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind") ? (child.props?.diffKind as DiffLineKind | null) : null,
-              ),
-            }
-          : {}),
-        ...(hasOldNo
-          ? {
-              oldNo: appended.map((child) =>
-                Object.prototype.hasOwnProperty.call(child.props ?? {}, "oldNo") ? (child.props?.oldNo as number | null) : null,
-              ),
-            }
-          : {}),
-        ...(hasNewNo
-          ? {
-              newNo: appended.map((child) =>
-                Object.prototype.hasOwnProperty.call(child.props ?? {}, "newNo") ? (child.props?.newNo as number | null) : null,
-              ),
-            }
-          : {}),
-      });
-      metrics?.recordAppendLines(appended.length);
-      emitSetProps();
-      return;
-    }
-
-    // Fall through to generic handling for other mutations (edits/deletes)
-  } else {
+  // Code snapshots use generic child operations; apply container props after
+  // their line structure is updated.
+  const isCodeNode = prevNode.type === "code" && nextNode.type === "code";
+  if (!isCodeNode) {
     emitSetProps();
   }
 
@@ -742,7 +643,7 @@ function diffNodeSnapshotWithOwner(
   const nextMid = nextChildren.slice(prefix, nextChildren.length - suffix);
 
   if (prevMid.length === 0 && nextMid.length === 0) {
-    if (prevNode.type === "code" && nextNode.type === "code") {
+    if (isCodeNode) {
       emitSetProps();
     }
     return;
@@ -786,6 +687,9 @@ function diffNodeSnapshotWithOwner(
           diffNodeSnapshotWithOwner(blockId, previous, child, patches, metrics, managedSourceOwner);
         }
       }
+      if (isCodeNode) {
+        emitSetProps();
+      }
       return;
     }
   }
@@ -807,7 +711,7 @@ function diffNodeSnapshotWithOwner(
     });
   }
 
-  if (prevNode.type === "code" && nextNode.type === "code") {
+  if (isCodeNode) {
     emitSetProps();
   }
 }

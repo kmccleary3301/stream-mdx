@@ -23,7 +23,8 @@ HTML/web pipeline.
 
 ## 4) Current State (Summary)
 - Worker emits `WorkerOut` messages with `PATCH` and `Patch[]`.
-- Patch protocol supports `appendLines` with `highlight` HTML line fragments.
+- Patch protocol uses source-owned `appendCode` and `decorateCode` for native
+  code updates and retains cold `Block[]` snapshots as initialization baselines.
 - Node snapshots are generic (`type: string`, `props: Record<string, unknown>`).
 - Incremental Shiki exists in `stream-mdx/packages/markdown-v2-worker/src/worker.ts`.
 - React store normalizes code-line props (`text`, `html`) and drops other props.
@@ -301,20 +302,14 @@ Native `sourceAppend` values are exact newly owned authored suffixes validated
 against the root input; a suffix may include an LF retained by an earlier root
 append.
 
-Extend `appendLines` patches to carry tokens and diff metadata:
-```ts
-type AppendLinesPatch = {
-  op: "appendLines";
-  at: NodePath;
-  startIndex: number;
-  lines: string[];
-  highlight?: (string | null)[];
-  tokens?: (TokenLineV1 | null)[];
-  diffKind?: ("add" | "del" | "context" | "hunk" | "meta" | null)[];
-  oldNo?: (number | null)[];
-  newNo?: (number | null)[];
-};
-```
+Managed code blocks use the shared `Patch` union's source-owned operations.
+`appendCode` atomically advances the owner revision, replaces the unfinished
+tail beginning at `fromLine`, and carries the exact `sourceAppend` suffix with
+updated code metadata and line records. `decorateCode` applies
+revision-matched decoration updates without changing source text, line
+topology, or lifecycle. Cold `Block[]` snapshots remain valid initialization
+and replacement baselines; their code-line text, styles, and diff metadata
+retain their static snapshot meaning.
 
 Managed GFM tables use the same versioned `Patch[]` transport:
 

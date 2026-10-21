@@ -533,18 +533,6 @@ export type Patch =
       meta?: PatchMeta;
     }
   | {
-      op: "appendLines";
-      at: NodePath;
-      startIndex: number;
-      lines: string[];
-      highlight?: Array<string | null>;
-      tokens?: Array<TokenLineV1 | null>;
-      diffKind?: Array<DiffLineKind | null>;
-      oldNo?: Array<number | null>;
-      newNo?: Array<number | null>;
-      meta?: PatchMeta;
-    }
-  | {
       op: "setHTML";
       at: NodePath;
       html: string;
@@ -579,7 +567,6 @@ export interface CoalescingMetrics {
   outputPatchCount: number;
   coalescedCount: number;
   durationMs: number;
-  appendLinesCoalesced: number;
   setPropsCoalesced: number;
   insertChildCoalesced: number;
 }

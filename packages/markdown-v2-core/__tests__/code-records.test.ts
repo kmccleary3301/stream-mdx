@@ -349,11 +349,28 @@ const decoratedProvisionalLine: CodeLineRecord = {
     tokens: tokenLine,
   },
 };
-const provisionalSnapshot = snapshotWithCode(
-  managedCodeNode("provisional-code", 5, 1, "pri", decoratedProvisionalLine),
-);
-const oldProvisionalNode = provisionalSnapshot.nodes.get("provisional-code::line:0");
-assert.ok(oldProvisionalNode?.props.tokens, "initial provisional line receives its token decoration");
+const provisionalCodeNode = managedCodeNode("provisional-code", 5, 1, "pri", decoratedProvisionalLine);
+const initialCodeSnapshot = provisionalCodeNode.code;
+assert.ok(initialCodeSnapshot);
+assert.strictEqual(initialCodeSnapshot.raw, "pri");
+assert.strictEqual(initialCodeSnapshot.lines[0], decoratedProvisionalLine);
+const initialCodeIndex = createCodeLineIndex({ lines: initialCodeSnapshot.lines });
+const provisionalSnapshot = snapshotWithCode(provisionalCodeNode);
+const initialProvisionalState = provisionalSnapshot.nodes.get("provisional-code")?.codeState;
+assert.ok(initialProvisionalState, "managed code retains its native owner state");
+assert.strictEqual(initialProvisionalState.managed, true);
+assert.strictEqual(initialProvisionalState.source.codeOwnerId, "provisional-code");
+assert.strictEqual(initialProvisionalState.source.state, "open");
+assert.strictEqual(initialProvisionalState.source.sourceRange.to, 3);
+const initialProvisionalLine = initialProvisionalState.lines.get(0);
+assert.ok(initialProvisionalLine);
+assert.strictEqual(initialProvisionalLine.text, "pri");
+assert.strictEqual(initialProvisionalLine.isProvisional, true);
+assert.strictEqual(initialProvisionalLine.decoration?.tokens, tokenLine);
+assert.strictEqual(initialProvisionalState.lines.materialize(), "pri");
+assert.strictEqual(provisionalSnapshot.getBlocks()[0]?.payload.raw, "pri");
+assert.strictEqual(initialProvisionalState.lines.get(0), initialCodeIndex.get(0),
+  "the native owner index retains the canonical `.code.lines` record");
 applyPatchBatch(provisionalSnapshot, [{
   op: "appendCode",
   at: { blockId: "provisional-code" },
@@ -373,7 +390,30 @@ applyPatchBatch(provisionalSnapshot, [{
   sourceAppend: "nt",
   meta: { kind: "semantic" },
 }]);
-const changedProvisionalNode = provisionalSnapshot.nodes.get("provisional-code::line:0");
-assert.strictEqual(changedProvisionalNode?.props.text, "print", "provisional replacement keeps the exact changed text");
-assert.strictEqual(Object.prototype.hasOwnProperty.call(changedProvisionalNode?.props ?? {}, "tokens"), false,
+const changedProvisionalState = provisionalSnapshot.nodes.get("provisional-code")?.codeState;
+assert.ok(changedProvisionalState);
+assert.strictEqual(changedProvisionalState.managed, true);
+assert.strictEqual(changedProvisionalState.source.codeOwnerId, "provisional-code");
+assert.strictEqual(changedProvisionalState.source.revision, 2);
+assert.strictEqual(changedProvisionalState.source.sourceRange.to, 5);
+const changedProvisionalLine = changedProvisionalState.lines.get(0);
+assert.ok(changedProvisionalLine);
+assert.strictEqual(changedProvisionalLine.text, "print", "provisional replacement keeps the exact changed text");
+assert.strictEqual(changedProvisionalLine.isProvisional, true);
+assert.strictEqual(changedProvisionalLine.sourceRevision, 4);
+assert.strictEqual(changedProvisionalLine.decoration, undefined,
   "provisional replacement clears tokens belonging to the previous text");
+assert.strictEqual(changedProvisionalState.lines.materialize(), "print");
+assert.strictEqual(provisionalSnapshot.getBlocks()[0]?.payload.raw, "print");
+applyPatchBatch(provisionalSnapshot, [{
+  op: "finalize",
+  at: { blockId: "provisional-code" },
+}]);
+const finalizedProvisionalState = provisionalSnapshot.nodes.get("provisional-code")?.codeState;
+assert.ok(finalizedProvisionalState);
+assert.strictEqual(finalizedProvisionalState.managed, true);
+assert.strictEqual(finalizedProvisionalState.source.state, "finalized");
+assert.strictEqual(finalizedProvisionalState.source.revision, 2);
+assert.strictEqual(finalizedProvisionalState.lines.materialize(), "print");
+assert.strictEqual(provisionalSnapshot.getBlocks()[0]?.isFinalized, true);
+assert.strictEqual(provisionalSnapshot.getBlocks()[0]?.payload.raw, "print");

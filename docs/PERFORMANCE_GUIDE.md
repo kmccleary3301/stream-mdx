@@ -11,7 +11,7 @@ Captured in `patchStats` (automation API + capture summaries):
 
 - `totalOps`, `totalMessages`
 - `opsPerKB`, `messagesPerKB` (normalized)
-- per‑op counts (appendLines, setProps, insertChild, etc.)
+- per-op counts for current patch operations (appendCode, decorateCode, setProps, insertChild, etc.)
 
 ### Paint cadence
 From the demo automation API and capture summary:
@@ -110,7 +110,7 @@ Patch coalescing reduces redundant patch applications (especially lists/tables).
 
 - Metrics available in capture summary: input/output counts, coalesced count, operation counts, reduction percentage, and coalescing duration.
 - Start the docs app with `npm run docs:dev`, then run `npm run test:snippets` (default URL `http://localhost:3000/regression/snippet-test`; override with `SNIPPET_TEST_URL`). The analyzer reports each real-snippet reduction in `tmp/snippet_analysis/performance-metrics.json` and `analysis-report.json`; no per-snippet percentage is a pass/fail threshold.
-- The analyzer requires complete totals: all six patch-count fields must be finite non-negative integers, duration must be finite and non-negative, `input = output + coalesced`, and the combined appendLines/setProps/insertChild counts cannot exceed `input`. Missing, invalid, or inconsistent totals fail analysis.
+- The analyzer requires complete totals: all five patch-count fields must be finite non-negative integers, duration must be finite and non-negative, `input = output + coalesced`, and the combined setProps/insertChild counts cannot exceed `input`. Missing, invalid, or inconsistent totals fail analysis.
 - The separate controlled React regression retains the 10% minimum for 60 deliberately redundant title updates and asserts the final consumer title is exactly `value-59`. Full consumer replay checks raw, linear, and quadratic results independently of real-snippet telemetry.
 
 The existing default coalescing-duration p95 guard remains 8 ms: a higher p95 fails. It uses all eligible samples in the demo's retained flush-batch window (300 in production, 1,000 otherwise), not all-ever batches or a minimum sample quota. The scheduler intentionally skips coalescing for singleton patch batches; every retained multi-patch batch must include a finite, non-negative coalescing duration. Missing or invalid duration data fails the guard. With no duration samples, true no-work telemetry warns as not applicable; otherwise the guard fails. Unsuppressed warnings also make the analyzer exit non-zero.

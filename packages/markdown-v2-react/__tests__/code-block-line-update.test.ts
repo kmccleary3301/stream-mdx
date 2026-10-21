@@ -1,114 +1,242 @@
-import assert from "node:assert";
+import assert from "node:assert/strict";
 
-import type { Patch, TokenLineV1 } from "@stream-mdx/core";
-import type { Block } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, STREAM_MDX_SCHEMA_VERSION, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
 import { JSDOM } from "jsdom";
-import React from "react";
-import { createRoot } from "react-dom/client";
+import React, { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
 
 import { ComponentRegistry } from "../src/components";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
-import { createRendererStore } from "../src/renderer/store";
+import { createRendererStore, type RendererStore } from "../src/renderer/store";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+function currentCodeOwnerId(store: RendererStore): string | null {
+  for (const childId of store.getNode(PATCH_ROOT_ID)?.children ?? []) {
+    if (store.getCodeBlock(childId)) return childId;
+  }
+  return null;
+}
+function assertMountedCodeLineOrder(container: Element, firstLine: string, appendedLine: string): void {
+  const renderedCode = container.querySelector("pre code");
+  assert.ok(renderedCode, "native code presentation should render semantic code content");
+  const renderedSource = renderedCode.textContent ?? "";
+  const firstLinePosition = renderedSource.indexOf(firstLine);
+  const appendedLinePosition = renderedSource.indexOf(appendedLine);
+  assert.notEqual(firstLinePosition, -1, "mounted code should contain the first authored line");
+  assert.notEqual(appendedLinePosition, -1, "mounted code should contain the appended authored line");
+  assert.ok(firstLinePosition < appendedLinePosition, "mounted code should preserve authored line order");
+}
 
-async function runCodeBlockLineUpdateTest(): Promise<void> {
+async function flushRendererFrame(): Promise<void> {
+  await act(async () => {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  });
+}
+
+
+async function runNativeCodeLineUpdateTest(): Promise<void> {
+  const worker = createInlineEngineWorker();
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     pretendToBeVisual: true,
   });
   const { window } = dom;
-  (globalThis as any).window = window;
-  (globalThis as any).document = window.document;
-  (globalThis as any).HTMLElement = window.HTMLElement;
-  (globalThis as any).Node = window.Node;
-  (globalThis as any).requestAnimationFrame = window.requestAnimationFrame.bind(window);
-  (globalThis as any).cancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+  const globalKeys = [
+    "window",
+    "document",
+    "HTMLElement",
+    "Node",
+    "requestAnimationFrame",
+    "cancelAnimationFrame",
+    "ResizeObserver",
+    "IS_REACT_ACT_ENVIRONMENT",
+  ] as const;
+  const previousGlobals = Object.fromEntries(
+    globalKeys.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
+  ) as Record<(typeof globalKeys)[number], PropertyDescriptor | undefined>;
+  Object.assign(globalThis, {
+    window,
+    document: window.document,
+    HTMLElement: window.HTMLElement,
+    Node: window.Node,
+    requestAnimationFrame: window.requestAnimationFrame.bind(window),
+    cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
+    ResizeObserver: ResizeObserverStub,
+    IS_REACT_ACT_ENVIRONMENT: true,
+  });
 
-  const block: Block = {
-    id: "code-block",
-    type: "code",
-    isFinalized: true,
-    payload: {
-      raw: 'print("old")',
-      meta: { lang: "python" },
-    },
-  };
-  const store = createRendererStore([block]);
+  const store = createRendererStore();
   const registry = new ComponentRegistry();
+  const root: { current: Root | null } = { current: null };
+  try {
+    const container = window.document.getElementById("root");
+    assert.ok(container, "missing test root container");
 
-  const container = window.document.getElementById("root");
-  assert.ok(container, "missing test root container");
+    await new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+        const message = event.data;
+        if (message.type === "INITIALIZED") {
+          store.resetSnapshot(message.snapshot);
+          resolve();
+        } else if (message.type === "ERROR") {
+          reject(new Error(message.error.message));
+        }
+      };
+      worker.postMessage({
+        type: "INIT",
+        schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+        initialContent: "",
+        prewarmLangs: [],
+        docPlugins: {
+          html: false,
+          mdx: false,
+          tables: false,
+          math: false,
+          outputMode: "html",
+          lazyTokenization: { enabled: true, thresholdLines: 1 },
+        },
+      });
+    });
 
-  const root = createRoot(container);
-  root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-  await sleep(30);
+    await new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+        const message = event.data;
+        if (message.type === "PATCH") {
+          act(() => store.applyPatches(message.patches));
+          const blockId = currentCodeOwnerId(store);
+          if (blockId && store.getCodeLines(blockId, 0, 1)[0]?.text === "const before = 1;") {
+            resolve();
+          }
+        } else if (message.type === "ERROR") {
+          reject(new Error(message.error.message));
+        }
+      };
+      worker.postMessage({ type: "APPEND", text: "```ts\nconst before = 1;\n" });
+    });
 
-  assert.ok(container.textContent?.includes('print("old")'), "expected initial code line to render");
+    const blockId = currentCodeOwnerId(store);
+    assert.ok(blockId, "inline engine should publish a native code owner");
+    const firstRecord = store.getCodeLines(blockId, 0, 1)[0];
+    assert.ok(firstRecord, "native code owner should expose its first source line");
+    assert.equal(firstRecord.text, "const before = 1;");
+    assert.equal(firstRecord.ending, "\n", "the authored line ending belongs to the native source record");
 
-  store.applyPatches(
-    [
-      {
-        op: "setProps",
-        at: { blockId: block.id, nodeId: `${block.id}::line:0` },
-        props: { text: 'print("new")' },
-      } satisfies Patch,
-    ],
-    { captureMetrics: false },
-  );
-  await sleep(30);
+    await act(async () => {
+      const rendererRoot = createRoot(container);
+      root.current = rendererRoot;
+      rendererRoot.render(React.createElement(BlockNodeRenderer, { store, blockId, registry }));
+    });
+    assert.ok(
+      container.textContent?.includes("const before = 1;"),
+      "native code row should render the initial authored source",
+    );
 
-  assert.ok(container.textContent?.includes('print("new")'), "expected updated code line to render");
-  assert.ok(!container.textContent?.includes('print("old")'), "expected old code line to be replaced");
+    await new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+        const message = event.data;
+        if (message.type === "PATCH") {
+          act(() => store.applyPatches(message.patches));
+        } else if (message.type === "FINALIZED") {
+          resolve();
+        } else if (message.type === "ERROR") {
+          reject(new Error(message.error.message));
+        }
+      };
+      worker.postMessage({ type: "APPEND", text: "const after = 2;\n```" });
+      worker.postMessage({ type: "FINALIZE" });
+    });
+    await flushRendererFrame();
 
-  root.unmount();
+    const lines = store.getCodeLines(blockId, 0, 2);
+    assert.deepEqual(
+      lines.map((line) => line.text),
+      ["const before = 1;", "const after = 2;"],
+      "native source records should preserve both authored lines",
+    );
+    assert.equal(lines[0]?.ending, "\n", "native source should retain the newline between authored lines");
+    assertMountedCodeLineOrder(container, "const before = 1;", "const after = 2;");
+
+    let highlightPatch: Extract<Patch, { op: "decorateCode" }> | null = null;
+    const readHighlightPatch = (): Extract<Patch, { op: "decorateCode" }> | null => highlightPatch;
+    await new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+        const message = event.data;
+        if (message.type === "PATCH") {
+          act(() => store.applyPatches(message.patches));
+          const decoration = message.patches.find(
+            (patch): patch is Extract<Patch, { op: "decorateCode" }> => patch.op === "decorateCode",
+          );
+          if (decoration) {
+            highlightPatch = decoration;
+            resolve();
+          }
+        } else if (message.type === "ERROR") {
+          reject(new Error(message.error.message));
+        }
+      };
+      worker.postMessage({
+        type: "TOKENIZE_RANGE",
+        blockId,
+        startLine: 0,
+        endLine: lines.length,
+        priority: "visible",
+      });
+    });
+    await flushRendererFrame();
+    const actualDecorationPatch = readHighlightPatch();
+    assert.ok(actualDecorationPatch, "worker should supply a decoration with its real owner and source revisions");
+    assert.ok(
+      container.querySelector("pre code span[style]"),
+      "real worker decoration should render styled native token spans",
+    );
+
+    const clearDecorationPatch: Extract<Patch, { op: "decorateCode" }> = {
+      ...actualDecorationPatch,
+      decorations: actualDecorationPatch.decorations.map((decoration) => ({
+        index: decoration.index,
+        lineId: decoration.lineId,
+        sourceRevision: decoration.sourceRevision,
+        configurationRevision: decoration.configurationRevision,
+        tokens: null,
+      })),
+    };
+    act(() => store.applyPatches([clearDecorationPatch], { captureMetrics: false }));
+    await flushRendererFrame();
+    assert.equal(
+      container.querySelector("pre code span[style]"),
+      null,
+      "a valid owner-matched decoration clear should remove native token styles",
+    );
+    assert.ok(
+      store.getCodeLines(blockId, 0, lines.length).every((line) => line.decoration === undefined),
+      "clearing decorations should leave the native source records intact",
+    );
+    assertMountedCodeLineOrder(container, "const before = 1;", "const after = 2;");
+  } finally {
+    try {
+      if (root.current) act(() => root.current?.unmount());
+    } finally {
+      try {
+        worker.terminate();
+      } finally {
+        try {
+          window.close();
+        } finally {
+          for (const key of globalKeys) {
+            const descriptor = previousGlobals[key];
+            if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+            else Reflect.deleteProperty(globalThis, key);
+          }
+        }
+      }
+    }
+  }
 }
 
-function runCodeLineHtmlClearTest(): void {
-  const text = "const value = 1;";
-  const block: Block = {
-    id: "lazy-code",
-    type: "code",
-    isFinalized: true,
-    payload: {
-      raw: ["```js", text, "```"].join("\n"),
-      meta: { lang: "js", code: text, tokenLines: [null] },
-    },
-  };
-  const store = createRendererStore([block]);
-  const lineId = `${block.id}::line:0`;
-  const update = (props: Record<string, unknown>) => store.applyPatches(
-    [{ op: "setProps", at: { blockId: block.id, nodeId: lineId }, props }],
-    { captureMetrics: false },
-  );
-  const tokens: TokenLineV1 = {
-    spans: [{ t: text, v: { dark: { fg: "#ff0000" }, light: { fg: "#0000ff" } } }],
-  };
-  assert.strictEqual(store.getNode(lineId)?.props?.html, text, "untokenized rows retain a plain fallback");
-  const plainProps = store.getNode(lineId)?.props;
-  update({ index: 0, text, html: null, tokens: null });
-  assert.strictEqual(store.getNode(lineId)?.props, plainProps, "equivalent plain fallback must retain props identity");
-  update({ index: 0, text, html: null, tokens });
-  assert.strictEqual(store.getNode(lineId)?.props?.html, null, "explicit null must clear stale fallback HTML for token-only enrichment");
-  assert.deepStrictEqual(store.getNode(lineId)?.props?.tokens, tokens);
-  const tokenProps = store.getNode(lineId)?.props;
-  update({ index: 0, text, html: null, tokens });
-  assert.strictEqual(store.getNode(lineId)?.props, tokenProps, "repeated token-only normalization must retain props identity");
-
-  const highlightedHtml = `<span style="color:#ff0000">${text}</span>`;
-  update({ html: highlightedHtml, tokens });
-  const retainedHtml = store.getNode(lineId)?.props?.html;
-  assert.ok(typeof retainedHtml === "string" && retainedHtml.includes("<span"), "both-mode rows retain actual highlight HTML");
-  const nextTokens: TokenLineV1 = { spans: [{ t: text, s: { fg: "#00ff00" } }] };
-  update({ tokens: nextTokens });
-  assert.strictEqual(store.getNode(lineId)?.props?.html, retainedHtml, "omitted HTML must preserve an existing highlight");
-  update({ html: undefined, tokens });
-  assert.strictEqual(store.getNode(lineId)?.props?.html, retainedHtml, "undefined HTML must preserve an existing highlight");
-  update({ html: null, tokens });
-  assert.strictEqual(store.getNode(lineId)?.props?.html, null, "explicit null must also clear an actual highlight");
-  assert.deepStrictEqual(store.getInvariantViolations(), []);
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 }
 
-await runCodeBlockLineUpdateTest();
-runCodeLineHtmlClearTest();
+await runNativeCodeLineUpdateTest();
 console.log("code-block-line-update test passed");
-

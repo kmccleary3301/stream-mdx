@@ -52,10 +52,17 @@ async function main() {
   assert.ok(codeBlock, "expected code block");
   const lazyFlag = (codeBlock.payload.meta as Record<string, unknown> | undefined)?.lazyTokenization;
   assert.strictEqual(lazyFlag, true, "lazy tokenization flag should be set");
+  const codeState = store.getCodeBlock(codeBlock.id);
+  assert.ok(codeState, "expected a native code owner");
+  assert.strictEqual(codeState.source.lineCount, 220);
+  const sourceLines = store.getCodeLines(codeBlock.id, 0, codeState.source.lineCount);
+  assert.deepStrictEqual(sourceLines.map((line) => line.text), snippet.split("\n").slice(1, -1));
+  assert.ok(sourceLines.every((line) => line.decoration === undefined), "source lines should start without highlight decorations");
 
-  const line0Before = store.getNode(`${codeBlock.id}::line:0`)?.props?.html as string | undefined;
+  const line0Before = sourceLines[0];
   assert.ok(line0Before, "line 0 missing before tokenization");
-  assert.ok(!line0Before.includes("<span"), "line 0 should not be highlighted before tokenization");
+  assert.strictEqual(line0Before.text, "line-0 value");
+  assert.strictEqual(line0Before.decoration, undefined, "line 0 should not be highlighted before tokenization");
 
   const rangeMessages = await harness.send({
     type: "TOKENIZE_RANGE",
@@ -68,13 +75,16 @@ async function main() {
     .filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH")
     .forEach((msg) => store.applyPatches(msg.patches as Patch[], { captureMetrics: false }));
 
-  const line0After = store.getNode(`${codeBlock.id}::line:0`)?.props?.html as string | undefined;
+  const line0After = store.getCodeLines(codeBlock.id, 0, 1)[0];
   assert.ok(line0After, "line 0 missing after tokenization");
-  assert.ok(line0After.includes("<span"), "line 0 should be highlighted after tokenization");
+  assert.strictEqual(line0After.text, "line-0 value");
+  assert.ok(line0After.decoration, "line 0 should be highlighted after tokenization");
+  assert.strictEqual(line0After.decoration.tokens.spans.map((span) => span.t).join(""), line0After.text);
 
-  const line25 = store.getNode(`${codeBlock.id}::line:25`)?.props?.html as string | undefined;
+  const line25 = store.getCodeLines(codeBlock.id, 25, 26)[0];
   assert.ok(line25, "line 25 missing after tokenization");
-  assert.ok(!line25.includes("<span"), "line 25 should remain unhighlighted outside requested range");
+  assert.strictEqual(line25.text, "line-25 value");
+  assert.strictEqual(line25.decoration, undefined, "line 25 should remain unhighlighted outside requested range");
 
   const updatedBlock = store.getBlocks().find((block) => block.id === codeBlock.id);
   const tokenizedUntil = (updatedBlock?.payload.meta as Record<string, unknown> | undefined)?.lazyTokenizedUntil as number | undefined;

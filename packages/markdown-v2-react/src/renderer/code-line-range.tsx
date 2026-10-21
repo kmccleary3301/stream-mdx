@@ -6,6 +6,7 @@ import { CODE_LINE_RANGE_SIZE } from "./code-state";
 import { useCodeHighlightRequester } from "./code-highlight-context";
 import type { RendererStore } from "./store";
 import { NativeCodeLineGroup } from "./native-code-line";
+import { getStoreResetVersion } from "./store-reset-version";
 
 
 const EMPTY_CODE_LINES: readonly CodeLineRecord[] = Object.freeze([]);
@@ -27,6 +28,7 @@ type DirtyCodeLineRange = {
 type PreviousHighlightDemand = {
   readonly blockId: string;
   readonly generation: number;
+  readonly resetVersion: number;
   readonly configurationRevision: number;
   readonly visibleStart: number;
   readonly visibleEnd: number;
@@ -37,6 +39,7 @@ type CodeLineRangeViewProps = {
   store: RendererStore;
   blockId: string;
   generation: number;
+  resetVersion: number;
   configurationRevision: number;
   chunkStart: number;
   rangeStart: number;
@@ -50,6 +53,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
   store,
   blockId,
   generation,
+  resetVersion,
   configurationRevision,
   chunkStart,
   rangeStart,
@@ -61,6 +65,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       (store as CodeLineRangeCounterStore).campaignCounters?.recordStoreRecordsTouched?.(1, "view");
     }
+    if (getStoreResetVersion(store) !== resetVersion) return EMPTY_CODE_LINES;
     const current = store.getCodeBlock(blockId);
     if (
       !current ||
@@ -73,7 +78,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       (store as CodeLineRangeCounterStore).campaignCounters?.recordStoreRecordsTouched?.(1, "view");
     }
     return store.getCodeLines(blockId, chunkStart, chunkStart + CODE_LINE_RANGE_SIZE);
-  }, [blockId, chunkStart, configurationRevision, generation, store]);
+  }, [blockId, chunkStart, configurationRevision, generation, resetVersion, store]);
   const subscribe = React.useCallback(
     (listener: () => void) => store.subscribeCodeLines(
       blockId,
@@ -105,7 +110,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       (store as CodeLineRangeCounterStore).campaignCounters?.recordRecordSlotsAllocated?.(mappedRows.length, "view");
     }
     return mappedRows;
-  }, [blockId, chunkStart, configurationRevision, generation, lines, rangeEnd, rangeStart, store]);
+  }, [blockId, chunkStart, configurationRevision, generation, lines, rangeEnd, rangeStart, resetVersion, store]);
 
   React.useEffect(() => {
     const previous = previousDemandRef.current;
@@ -118,6 +123,10 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
 
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       (store as CodeLineRangeCounterStore).campaignCounters?.recordStoreRecordsTouched?.(1, "view");
+    }
+    if (getStoreResetVersion(store) !== resetVersion) {
+      previousDemandRef.current = null;
+      return;
     }
     const current = store.getCodeBlock(blockId);
     if (
@@ -179,6 +188,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
     const isDuplicate =
       previous?.blockId === blockId &&
       previous.generation === generation &&
+      previous.resetVersion === resetVersion &&
       previous.configurationRevision === configurationRevision &&
       previous.visibleStart === demandStart &&
       previous.visibleEnd === demandEnd &&
@@ -195,6 +205,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
     previousDemandRef.current = {
       blockId,
       generation,
+      resetVersion,
       configurationRevision,
       visibleStart: demandStart,
       visibleEnd: demandEnd,
@@ -214,6 +225,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
     chunkStart,
     configurationRevision,
     generation,
+    resetVersion,
     highlightRequester,
     lines,
     rangeEnd,

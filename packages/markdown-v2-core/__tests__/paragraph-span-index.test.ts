@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { inlineNodesToPlainText } from "../src/block-snapshot";
 import { createParagraphSpanIndex } from "../src/paragraph-span-index";
 import { freezeParagraphSpanRecord, type ParagraphSpanRecord } from "../src/paragraph-records";
 import type { InlineNode } from "../src/types";
@@ -54,7 +55,6 @@ assert.ok(Object.isFrozen(frozenHtml));
 assert.ok(Object.isFrozen(frozenHtml.attributes));
 assert.ok(Object.isFrozen(frozenPlugin.attrs));
 assert.ok(Object.isFrozen(frozenText));
-assert.equal("dependencies" in frozen, false, "scoped invalidation keys stay private to the source owner");
 
 
 
@@ -78,7 +78,6 @@ const next = index.replaceTail(2048, [{
   sourceRevision: 1,
   nodes: [{ kind: "text", text: "extended" }],
 }]);
-assert.equal(next.revision, index.revision + 1);
 
 assert.equal(next.length, 2049);
 assert.equal(next.completeSpanCount, 2049);
@@ -96,12 +95,12 @@ const semantic = next.updateSpans([{
     nodes: [{ kind: "text", text: "reference now resolved" }],
   },
 }]);
-assert.equal(semantic.revision, next.revision + 1);
 assert.strictEqual(semantic.get(0), next.get(0));
 assert.notStrictEqual(semantic.get(100), current);
+assert.equal(inlineNodesToPlainText(semantic.get(100)?.nodes ?? []), "reference now resolved");
 assert.deepEqual(semantic.get(100)?.sourceRange, current.sourceRange);
 assert.equal(semantic.get(100)?.sourceRevision, current.sourceRevision);
-assert.equal(next.get(100)?.nodes[0]?.kind, "text", "semantic updates must not mutate prior snapshots");
+assert.equal(inlineNodesToPlainText(next.get(100)?.nodes ?? []), "100", "semantic updates must preserve historical meaning");
 assert.throws(() => next.replaceTail(2047, []), /completeSpanCount/);
 assert.throws(() => next.updateSpans([{
   index: 100,

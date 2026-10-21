@@ -253,8 +253,10 @@ store.applyPatches([
   },
 ]);
 assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.revision, revisionBeforeStaleOwner);
-assert.throws(() => store.resetSnapshot(rootSnapshot(6)));
-assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.generation, 7, "stale reset cannot revive an older owner");
+assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.generation, 7, "stale decoration cannot replace the current owner");
+store.resetSnapshot(rootSnapshot(6));
+assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.generation, 6, "an explicit snapshot reset starts a fresh document baseline");
+assert.strictEqual(store.getBlocks()[0]?.payload.raw, INITIAL_RAW, "a fresh baseline restores its own authored source");
 store.applyPatches([{ op: "finalize", at: { blockId: OWNER_ID } }]);
 assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.state, "finalized");
 store.resetSnapshot(rootSnapshot(8));
@@ -416,10 +418,13 @@ const initialRangeRows: CodeLineRecord[] = rangeBodyRows.map((text, index) => {
     isProvisional: index === 64,
   };
 });
+const rangeDocument = `${"x".repeat(rangeSourceFrom)}${rangeRaw}`;
 const rangeStore = createRendererStore();
 rangeStore.resetSnapshot({
   id: "__root__",
   type: "__root__",
+  range: { from: 0, to: rangeDocument.length },
+  inputSource: { generation: INPUT_GENERATION, raw: rangeDocument },
   children: [{
     id: rangeOwnerId,
     type: "code",
@@ -461,6 +466,15 @@ const completedBoundaryRow: CodeLineRecord = {
   sourceRevision: provisionalBoundaryRow.sourceRevision + 1,
   isProvisional: false,
 };
+const oldRangeBlocks = rangeStore.getBlocks();
+assert.strictEqual(oldRangeBlocks[0]?.payload.raw, rangeRaw, "native code source begins with its exact authored text");
+rangeStore.applyPatches([{
+  op: "appendInputSource",
+  at: { blockId: "__root__" },
+  generation: INPUT_GENERATION,
+  from: rangeDocument.length,
+  text: rangeSourceAppend,
+}]);
 rangeStore.applyPatches([
   {
     op: "appendCode",
@@ -482,35 +496,21 @@ rangeStore.applyPatches([
     meta: { kind: "semantic" },
   },
 ]);
+const rangeAfter = rangeStore.getCodeBlock(rangeOwnerId);
+assert.ok(rangeAfter);
+assert.strictEqual(rangeAfter.source.state, "closed");
+assert.strictEqual(rangeAfter.source.revision, rangeBefore.source.revision + 1);
+assert.strictEqual(rangeAfter.source.sourceRange.to, rangeDocument.length + rangeSourceAppend.length);
+assert.strictEqual(rangeStore.getBlocks()[0]?.payload.raw, `${rangeRaw}${rangeSourceAppend}`,
+  "native code source retains the exact known tail append");
+assert.strictEqual(oldRangeBlocks[0]?.payload.raw, rangeRaw, "earlier source snapshots remain unchanged");
 assert.strictEqual(rangeStore.getCodeLines(rangeOwnerId, 0, 64), completedRange, "the completed first 64-row snapshot survives a tail append");
 const completedTailRange = rangeStore.getCodeLines(rangeOwnerId, 64, 128);
 assert.notStrictEqual(completedTailRange, provisionalRange, "the tail range refreshes when its provisional row closes");
 assert.strictEqual(completedTailRange[0]?.isProvisional, false);
 assert.strictEqual(completedTailRange[0]?.ending, "\r\n");
-const legacyBoundaryId = "legacy-code-range-boundary";
-const legacyBoundaryBlock: Block = {
-  id: legacyBoundaryId,
-  type: "code",
-  isFinalized: false,
-  payload: {
-    raw: Array.from({ length: 64 }, (_, index) => `line-${index}`).join("\n"),
-    meta: { lang: "ts" },
-  },
-};
-const legacyBoundaryStore = createRendererStore([legacyBoundaryBlock]);
-const provisionalBoundaryRange = legacyBoundaryStore.getCodeLines(legacyBoundaryId, 0, 64);
-assert.strictEqual(provisionalBoundaryRange.length, 64);
-assert.ok(provisionalBoundaryRange[63]?.isProvisional);
-legacyBoundaryStore.applyPatches([{
-  op: "appendLines",
-  at: { blockId: legacyBoundaryId, nodeId: legacyBoundaryId },
-  startIndex: 64,
-  lines: ["line-64"],
-} satisfies Patch]);
-const finalizedBoundaryRange = legacyBoundaryStore.getCodeLines(legacyBoundaryId, 0, 64);
-assert.notStrictEqual(finalizedBoundaryRange, provisionalBoundaryRange, "legacy tail completion refreshes the prior boundary range");
-assert.strictEqual(finalizedBoundaryRange[63]?.isProvisional, false);
-assert.strictEqual(legacyBoundaryStore.getCodeLines(legacyBoundaryId, 64, 128)[0]?.text, "line-64");
+assert.strictEqual(completedTailRange[0]?.text, rangeTailText);
+assert.strictEqual(completedTailRange[0], completedBoundaryRow, "the refreshed range exposes the exact appended line record");
 const atomicStore = createRendererStore();
 atomicStore.resetSnapshot(rootSnapshot(9));
 const preservedBlocks = atomicStore.getBlocks();

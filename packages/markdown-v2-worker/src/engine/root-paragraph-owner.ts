@@ -219,7 +219,7 @@ export class RootParagraphSourceOwner {
   private counters?: RootParagraphSourceOwnerCounters;
   private cachedSnapshot: { readonly revision: number; readonly snapshot: ParagraphBlockSnapshot } | undefined;
 
-  constructor(options: RootParagraphSourceOwnerOptions) {
+  constructor(options: RootParagraphSourceOwnerOptions, copyFrom?: RootParagraphSourceOwner) {
     const { id, generation, source, inlineParser, opening, inlineSettlement, prepareProvisionalInline, prepareSpanChildren, sourceTextReader } = options;
     if (!Number.isSafeInteger(generation) || generation < 0) {
       throw new RangeError("Root paragraph owner generation must be a non-negative safe integer");
@@ -245,7 +245,26 @@ export class RootParagraphSourceOwner {
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       this.counters = options.counters;
     }
-
+    if (copyFrom) {
+      if (copyFrom.id !== id
+        || copyFrom.source !== source
+        || copyFrom.ownerStart !== opening.from
+        || copyFrom.rawEnd !== opening.to
+        || copyFrom.state !== opening.state
+        || copyFrom.inlineParser !== inlineParser
+        || copyFrom.inlineSettlement !== inlineSettlement) {
+        throw new RangeError("Paragraph generation transfer must preserve its canonical owner and source range");
+      }
+      this.revision = copyFrom.revision;
+      this.processedTo = copyFrom.processedTo;
+      this.rawEnd = copyFrom.rawEnd;
+      this.state = copyFrom.state;
+      this.spanIndex = copyFrom.spanIndex;
+      for (const [dependency, indices] of copyFrom.spansByDependency) {
+        this.spansByDependency.set(dependency, new Set(indices));
+      }
+      return;
+    }
     const reader = source.snapshot();
     const initialSourceText = this.readParagraphSourceText(reader, opening.from, opening.to);
     const initialRaw = initialSourceText.text;
@@ -278,6 +297,24 @@ export class RootParagraphSourceOwner {
       this.spanIndex = createParagraphSpanIndex({ spans: initialSpans });
     }
     for (const span of this.spanIndex.materialize()) this.installDependencies(span);
+  }
+
+  rehomeForGeneration(generation: number): RootParagraphSourceOwner {
+    if (!Number.isSafeInteger(generation) || generation <= this.generation) {
+      throw new RangeError("Rehomed paragraph owner generation must advance its native lease");
+    }
+    return new RootParagraphSourceOwner({
+      id: this.id,
+      generation,
+      source: this.source,
+      inlineParser: this.inlineParser,
+      opening: { from: this.ownerStart, to: this.rawEnd, state: this.state },
+      inlineSettlement: this.inlineSettlement,
+      sourceTextReader: this.sourceTextReader,
+      ...(this.counters ? { counters: this.counters } : {}),
+      ...(this.prepareProvisionalInline ? { prepareProvisionalInline: this.prepareProvisionalInline } : {}),
+      ...(this.prepareSpanChildren ? { prepareSpanChildren: this.prepareSpanChildren } : {}),
+    }, this);
   }
 
   getMetadata(): ParagraphBlockSourceMetadata {

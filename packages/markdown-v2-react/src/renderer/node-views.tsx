@@ -1,6 +1,6 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import { PATCH_ROOT_ID, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type UrlTransform } from "@stream-mdx/core";
+import { normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { InlineComponents, TableElements } from "../types";
 import {
@@ -25,19 +25,21 @@ import {
 } from "./hooks";
 import { subscribeRendererNode } from "./node-subscriptions";
 import { StreamingActivityContext } from "./streaming-activity-context";
-import { createRendererStore, isListPatchDebugEnabled, type NodeRecord, type RendererStore } from "./store";
+import { isListPatchDebugEnabled, type RendererStore } from "./store";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 import { CodeBlockView } from "./code-block-view";
 import { ManagedParagraphBlockView, ManagedParagraphContentView } from "./paragraph-block-view";
 import { ManagedTableBlockView } from "./table-block-view";
 import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
+import { getStoreResetVersion } from "./store-reset-version";
 
 const CustomCodeBlockView: React.FC<{
+  store: RendererStore;
   block: Block;
   registry: ComponentRegistry;
-  documentIdentity: NodeRecord | RendererStore;
+  resetVersion: number;
   blockEpoch: number;
-}> = React.memo(({ block, registry, documentIdentity, blockEpoch }) => {
+}> = React.memo(({ store, block, registry, resetVersion, blockEpoch }) => {
   const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
   const lazyEnabled = Boolean(meta.lazyTokenization);
   const lazyTokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? meta.lazyTokenizedUntil : 0;
@@ -47,13 +49,14 @@ const CustomCodeBlockView: React.FC<{
   const totalLazyLineCount = Math.max(sourceLineCount, highlightedLineCount, tokenLineCount);
 
   useLazyCodeHighlightRequest({
+    store,
     blockId: block.id,
     blockIsFinalized: block.isFinalized,
     lazyEnabled,
     lazyTokenizedUntil,
     totalLazyLineCount,
     shouldVirtualize: false,
-    documentIdentity,
+    resetVersion,
     blockEpoch,
   });
 
@@ -192,9 +195,10 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
     if (block.type === "code") {
       return (
         <CustomCodeBlockView
+          store={store}
           block={block}
           registry={registry}
-          documentIdentity={store.getNode(PATCH_ROOT_ID) ?? store}
+          resetVersion={getStoreResetVersion(store)}
           blockEpoch={node.blockEpoch}
         />
       );
@@ -684,7 +688,8 @@ const MixedSegmentView: React.FC<{
       const htmlTree = node.props?.htmlTree as HtmlTreeNode[] | undefined;
       if (registry && htmlTree !== undefined) {
         return <>{renderHtmlOwnershipTree(
-          htmlTree, registry.getHtmlElements(), (block) => registry.renderBlock(block),
+          htmlTree, registry.getHtmlElements(), (block) =>
+            <OwnedHtmlBlock key={block.id} block={block} registry={registry} store={store} />,
           (nodes, parentTag) => renderInlineNodes(nodes, inlineComponents, urlTransform, registry, parentTag),
           undefined, undefined, urlTransform,
           registry.hasElementFilters() ? (element, context, renderElement, renderChildren) => registry.filterElement(element, context, renderElement, renderChildren) : undefined,
@@ -742,15 +747,17 @@ const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   const tree = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
   if (tree) {
     return <>{registry.renderHtmlTree(tree, (block) =>
-      <OwnedHtmlBlock key={block.id} block={block} registry={registry} />)}</>;
+      <OwnedHtmlBlock key={block.id} block={block} registry={registry} store={store} />)}</>;
   }
   return registry.renderBlock(node.block);
 });
 
 HtmlBlockView.displayName = "HtmlBlockView";
 
-const OwnedHtmlBlock: React.FC<{ block: Block; registry: ComponentRegistry }> = ({ block, registry }) => {
-  const store = React.useMemo(() => createRendererStore([block]), [block]);
+const OwnedHtmlBlock: React.FC<{ store: RendererStore; block: Block; registry: ComponentRegistry }> = ({ store, block, registry }) => {
+  if (!store.getNode(block.id)) {
+    throw new Error(`HTML tree block "${block.id}" has no admitted renderer node`);
+  }
   return <BlockNodeRenderer store={store} blockId={block.id} registry={registry} />;
 };
 

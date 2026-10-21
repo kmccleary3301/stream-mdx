@@ -352,7 +352,7 @@ export function HtmlRegressionHarness(): JSX.Element {
       if (!data || typeof data !== "object") return;
       if (data.type === "INITIALIZED") {
         lifecycle.initialized = true;
-        pushEvent("INITIALIZED", `blocks=${Array.isArray(data.blocks) ? data.blocks.length : 0}`);
+        pushEvent("INITIALIZED", `rootChildren=${Array.isArray(data.snapshot?.children) ? data.snapshot.children.length : 0}`);
       } else if (data.type === "FINALIZED") {
         lifecycle.finalized = true;
         pushEvent("FINALIZED");

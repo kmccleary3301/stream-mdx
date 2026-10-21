@@ -1,6 +1,6 @@
 # Streaming Correctness Contract
 
-_Last updated: 2026-10-20_
+_Last updated: 2026-10-21_
 
 This document defines the correctness rules for StreamMDX's streaming renderer.
 
@@ -264,11 +264,16 @@ If the system is unsure, the tail remains provisional.
 - Configured row virtualization remains available while the table is streaming; streaming state alone does not disable it.
 ### Code blocks
 
-- Append-only line fast paths are allowed only when append safety is provable.
-- Any non-tail mutation or ordering ambiguity falls back to semantic replace.
-- Owned code uses semantic `appendCode` changed-tail transactions and decoration-only `decorateCode`.
-- Owner generation and semantic source revision are separate from each line's last source-change revision. Unchanged completed rows and historical readers remain immutable.
-- Exact authored raw source is retained independently of dedented display lines. Full source, HTML and cold snapshots are explicit O(N) reads, not routine append payloads or finalize repairs.
+- Live schema-2 native code uses `NodeSnapshot.code` (`CodeBlockSnapshot`) with
+  typed `CodeLineRecord`s.
+- `appendCode` commits semantic changed-tail source updates; `decorateCode`
+  carries decoration-only row updates.
+- Owner generation and semantic source revision are distinct from each row's
+  last source-change revision. Unchanged completed rows and historical readers
+  remain immutable.
+- Exact authored raw source is retained independently of dedented display lines.
+  Full source, HTML and cold snapshots are explicit O(N) reads, not routine
+  append payloads or finalize repairs.
 
 ## 8) Lookahead Rules
 

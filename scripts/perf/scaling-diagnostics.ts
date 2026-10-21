@@ -101,6 +101,7 @@ export interface ScalingWorkloadDef {
   fourNPrefixUnits: number;
   appendChunks: string[];
   windowUnits: number;
+  codeSourceFrom?: number;
 }
 
 export function createScalingWorkloads(): ScalingWorkloadDef[] {
@@ -115,6 +116,9 @@ export function createScalingWorkloads(): ScalingWorkloadDef[] {
   const cSetup4N =
     "```typescript\n" +
     Array.from({ length: 80 }, (_, i) => `  const code_prefix_${i} = ${i};\n`).join("");
+  const htmlCodeProlog = "<div>\n\n";
+  const htmlCodeSetupN = htmlCodeProlog + cSetupN;
+  const htmlCodeSetup4N = htmlCodeProlog + cSetup4N;
 
   const tChunks = Array.from({ length: 10 }, (_, i) => `| app_a_${i} | app_b_${i} | app_c_${i} |\n`);
   const tSetupN =
@@ -164,6 +168,17 @@ export function createScalingWorkloads(): ScalingWorkloadDef[] {
       windowUnits: cChunks.reduce((acc, c) => acc + c.length, 0),
     },
     {
+      name: "html-code-lines",
+      expectedBlockType: "code",
+      setupPrefixN: htmlCodeSetupN,
+      setupPrefix4N: htmlCodeSetup4N,
+      nPrefixUnits: htmlCodeSetupN.length,
+      fourNPrefixUnits: htmlCodeSetup4N.length,
+      appendChunks: cChunks,
+      windowUnits: cChunks.reduce((acc, c) => acc + c.length, 0),
+      codeSourceFrom: htmlCodeProlog.length,
+    },
+    {
       name: "table-rows",
       expectedBlockType: "table",
       setupPrefixN: tSetupN,
@@ -210,13 +225,13 @@ export async function runScalingDiagnostics(options: {
   }
   const measurements: ScalingMeasurement[] = [];
   const divergences: DivergenceReport[] = [];
-  const selectedWorkload = options.codeFamilyOnly
-    ? "code-lines"
+  const selectedBlockType = options.codeFamilyOnly
+    ? "code"
     : options.tableFamilyOnly
-      ? "table-rows"
+      ? "table"
       : undefined;
   const workloads = createScalingWorkloads().filter(
-    (workload) => selectedWorkload === undefined || workload.name === selectedWorkload,
+    (workload) => selectedBlockType === undefined || workload.expectedBlockType === selectedBlockType,
   );
 
   for (const wl of workloads) {

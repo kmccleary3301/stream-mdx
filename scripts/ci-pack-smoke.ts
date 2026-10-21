@@ -437,19 +437,30 @@ module.exports = async function verify(load, format) {
     protocol: STREAM_MDX_PROTOCOL_ID, schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     streamId: "pack-smoke-" + format,
   };
+  const expectedSourceRange = (source, raw) => {
+    const from = source.indexOf(raw);
+    assert.notEqual(from, -1, "Expected authored block source in its supplied Markdown");
+    return { from, to: from + raw.length };
+  };
+  const assertAuthoredBlock = (block, source, raw) => {
+    const range = expectedSourceRange(source, raw);
+    assert.deepEqual(block.payload.range, range);
+    assert.equal(block.payload.raw, source.slice(range.from, range.to));
+    assert.equal(block.payload.raw, raw);
+  };
 
   const { compileMarkdownSnapshot } = await load("@stream-mdx/worker/node");
   // Default worker ownership exercises the installed hosted bundle and thread asset,
   // and lets the public compiler clean up its own physical worker.
-  const physicalResult = await compileMarkdownSnapshot({
-    text: "# Hosted asset smoke\\n\\nPhysical worker body.\\n",
-  });
+  const physicalMarkdown = "# Hosted asset smoke\\n\\nPhysical worker body.\\n";
+  const physicalResult = await compileMarkdownSnapshot({ text: physicalMarkdown });
   assert.equal(physicalResult.fromCache, false);
   assert.equal(physicalResult.blocks.length, 2);
   assert.equal(physicalResult.blocks[0].type, "heading");
-  assert.equal(physicalResult.blocks[0].payload.raw.trim(), "Hosted asset smoke");
+  assertAuthoredBlock(physicalResult.blocks[0], physicalMarkdown, "# Hosted asset smoke");
+  assert.equal(physicalResult.blocks[0].payload.meta.headingText, "Hosted asset smoke");
   assert.equal(physicalResult.blocks[1].type, "paragraph");
-  assert.equal(physicalResult.blocks[1].payload.raw.trim(), "Physical worker body.");
+  assertAuthoredBlock(physicalResult.blocks[1], physicalMarkdown, "Physical worker body.");
   assert(physicalResult.blocks.every((block) => block.isFinalized),
     "The installed physical worker must finalize every compiled block");
   assert.deepEqual(physicalResult.snapshot.getBlocks(), physicalResult.blocks);
@@ -464,13 +475,14 @@ module.exports = async function verify(load, format) {
     if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
     if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
   };
-  const assertBlocks = (store) => {
+  const assertBlocks = (store, source) => {
     const blocks = store.getBlocks();
     assert.equal(blocks.length, 2, "Engine must parse heading and paragraph");
     assert.equal(blocks[0].type, "heading");
-    assert.equal(blocks[0].payload.raw.trim(), "Installed engine");
+    assertAuthoredBlock(blocks[0], source, "# Installed engine");
+    assert.equal(blocks[0].payload.meta.headingText, "Installed engine");
     assert.equal(blocks[1].type, "paragraph");
-    assert.match(blocks[1].payload.raw, /Engine body/);
+    assertAuthoredBlock(blocks[1], source, "Engine body.");
     assert(blocks.every((block) => block.isFinalized), "Engine must finalize every block");
   };
 
@@ -497,7 +509,7 @@ module.exports = async function verify(load, format) {
       assert.deepEqual(events[1].snapshot.children, []);
       await engine.handle(append);
       await engine.handle({ type: "FINALIZE" });
-      assertBlocks(store);
+      assertBlocks(store, append.text);
       let replacementSnapshot;
       const replacementEngine = new MarkdownEngine({ post: (message) => {
         if (message.type === "INITIALIZED") replacementSnapshot = message.snapshot;
@@ -509,6 +521,10 @@ module.exports = async function verify(load, format) {
         replacementEngine.dispose();
       }
       assert.ok(replacementSnapshot, "engine must publish a root snapshot for replacement");
+      assert.equal(replacementSnapshot.children.length, 2);
+      assert.deepEqual(replacementSnapshot.children[0].range, expectedSourceRange(append.text, "# Installed engine"));
+      assert.equal(replacementSnapshot.children[0].meta?.headingText, "Installed engine");
+      assert.deepEqual(replacementSnapshot.children[1].range, expectedSourceRange(append.text, "Engine body."));
       const patches = events.filter((event) => event.event === "patch");
       assert(patches.length > 0, "TUI replay must consume actual engine patches");
       const finalTx = patches[patches.length - 1].tx;
@@ -530,7 +546,7 @@ module.exports = async function verify(load, format) {
       }
       assert.equal(tuiStore.getMeta().done, undefined);
       tuiStore.applyEvents(decoder.flush());
-      assertBlocks(tuiStore);
+      assertBlocks(tuiStore, append.text);
       assert.equal(tuiStore.getMeta().lastTx, finalTx);
       assert.deepEqual(tuiStore.getMeta().done, events[events.length - 1]);
       assert.deepEqual(tuiStore.getBlocks(), store.getBlocks(),
@@ -541,10 +557,7 @@ module.exports = async function verify(load, format) {
       tuiStore.applyEvent({ ...envelope, event: "snapshot", snapshot: events[1].snapshot });
       assert.deepEqual(tuiStore.getBlocks(), [], "A snapshot must replace previous engine state");
       tuiStore.applyEvent({ ...envelope, event: "snapshot", snapshot: replacementSnapshot });
-      const replacementBlocks = tuiStore.getBlocks();
-      assert.equal(replacementBlocks.length, 2);
-      assert.equal(replacementBlocks[0].payload.raw.trim(), "Installed engine");
-      assert.match(replacementBlocks[1].payload.raw, /Engine body/);
+      assertBlocks(tuiStore, append.text);
       console.log("[pack-smoke:" + format + "] " + specifier +
         " protocol envelope and TUI chunked NDJSON patch replay/snapshot replacement passed");
     } finally {
@@ -563,7 +576,7 @@ module.exports = async function verify(load, format) {
             apply(inlineStore, data);
             const blocks = inlineStore.getBlocks();
             if (blocks.length === 2 && blocks.every((block) => block.isFinalized)) {
-              assertBlocks(inlineStore);
+              assertBlocks(inlineStore, append.text);
               clearTimeout(timeout);
               resolve();
             }

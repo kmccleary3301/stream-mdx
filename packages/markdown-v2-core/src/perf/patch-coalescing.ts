@@ -1,7 +1,6 @@
 import type { CoalescingMetrics, NodePath, NodeSnapshot, Patch, SetPropsBatchEntry } from "../types";
 export type { CoalescingMetrics } from "../types";
 
-type AppendLinesPatch = Extract<Patch, { op: "appendLines" }>;
 
 export interface CoalesceConfig {
   enabled: boolean;
@@ -12,11 +11,10 @@ export interface CoalesceConfig {
 export const DEFAULT_COALESCE_CONFIG: CoalesceConfig = {
   enabled: true,
   maxCoalesceWindow: 50, // Look at up to 50 patches for coalescing opportunities
-  coalesceableOps: new Set(["appendLines", "insertChild", "setProps"]),
+  coalesceableOps: new Set(["insertChild", "setProps"]),
 };
 
 const MAX_BATCHED_SET_PROPS = 24;
-const APPEND_MERGE_LIMIT = 10;
 const INSERT_MERGE_LIMIT = 20;
 const SET_PROPS_MERGE_LIMIT = 10;
 const USE_LINEAR_COALESCING = typeof process === "undefined" ? true : process.env.V2_USE_LINEAR_COALESCING !== "false" && process.env.NODE_ENV !== "test";
@@ -35,22 +33,6 @@ function nodePathKey(path: NodePath): string {
   return `${path.blockId}::${nodePart}${indexPart}`;
 }
 
-// An owned metadata array affects every line in its patch; mixed ownership cannot be merged losslessly.
-const APPEND_LINE_METADATA_KEYS = ["tokens", "diffKind", "oldNo", "newNo"] as const;
-
-function hasSameAppendLineMetadataPresence(base: AppendLinesPatch, next: AppendLinesPatch): boolean {
-  return APPEND_LINE_METADATA_KEYS.every(
-    (key) =>
-      Object.prototype.hasOwnProperty.call(base, key) === Object.prototype.hasOwnProperty.call(next, key),
-  );
-}
-function alignAppendLineMetadata<T>(values: ReadonlyArray<T | null>, lineCount: number): Array<T | null> {
-  const aligned = new Array<T | null>(lineCount);
-  for (let index = 0; index < lineCount; index++) {
-    aligned[index] = values[index] ?? null;
-  }
-  return aligned;
-}
 
 function runCoalescer(patches: Patch[], config: CoalesceConfig = DEFAULT_COALESCE_CONFIG): Patch[] {
   if (USE_LINEAR_COALESCING) {
@@ -80,7 +62,6 @@ export function coalescePatchesWithMetrics(
     outputPatchCount: output.length,
     coalescedCount: Math.max(0, patches.length - output.length),
     durationMs,
-    appendLinesCoalesced: Math.max(0, (inputCounts.appendLines ?? 0) - (outputCounts.appendLines ?? 0)),
     setPropsCoalesced: Math.max(0, (inputCounts.setProps ?? 0) - (outputCounts.setProps ?? 0)),
     insertChildCoalesced: Math.max(0, (inputCounts.insertChild ?? 0) - (outputCounts.insertChild ?? 0)),
   };
@@ -108,12 +89,6 @@ export function coalescePatchesLinear(patches: Patch[], config: CoalesceConfig =
       continue;
     }
 
-    if (patch.op === "appendLines") {
-      const merged = mergeAppendLines(window, i);
-      result.push(merged.patch);
-      i = merged.nextIndex;
-      continue;
-    }
 
     if (patch.op === "insertChild") {
       const merged = collectInsertChildren(window, i);
@@ -137,114 +112,6 @@ export function coalescePatchesLinear(patches: Patch[], config: CoalesceConfig =
   return [...result, ...rest];
 }
 
-function mergeAppendLines(window: Patch[], startIndex: number): { patch: Patch; nextIndex: number } {
-  const base = window[startIndex];
-  if (!base || base.op !== "appendLines") {
-    return { patch: base, nextIndex: startIndex + 1 };
-  }
-
-  const lines = [...(base.lines ?? [])];
-  const highlight: Array<string | null> = Array.isArray(base.highlight)
-    ? alignAppendLineMetadata(base.highlight, lines.length)
-    : [];
-  const tokens: Array<unknown> = Array.isArray(base.tokens) ? alignAppendLineMetadata(base.tokens, lines.length) : [];
-  const diffKind: Array<unknown> = Array.isArray(base.diffKind) ? alignAppendLineMetadata(base.diffKind, lines.length) : [];
-  const oldNo: Array<unknown> = Array.isArray(base.oldNo) ? alignAppendLineMetadata(base.oldNo, lines.length) : [];
-  const newNo: Array<unknown> = Array.isArray(base.newNo) ? alignAppendLineMetadata(base.newNo, lines.length) : [];
-  let includeTokens = Array.isArray(base.tokens);
-  let includeDiffKind = Array.isArray(base.diffKind);
-  let includeOldNo = Array.isArray(base.oldNo);
-  let includeNewNo = Array.isArray(base.newNo);
-  const baseStart = base.startIndex;
-  let expectedStart = baseStart + lines.length;
-  let j = startIndex + 1;
-  let mergedCount = 0;
-
-  while (j < window.length && mergedCount < APPEND_MERGE_LIMIT) {
-    const next = window[j];
-    if (
-      next.op === "appendLines" &&
-      hasSameAppendLineMetadataPresence(base, next) &&
-      next.at.blockId === base.at.blockId &&
-      next.at.nodeId === base.at.nodeId &&
-      typeof next.startIndex === "number" &&
-      next.startIndex === expectedStart
-    ) {
-      const priorLineCount = lines.length;
-      lines.push(...(next.lines ?? []));
-      const nextHighlights = Array.isArray(next.highlight) ? next.highlight : [];
-      const appendedCount = next.lines?.length ?? 0;
-      while (highlight.length < priorLineCount) {
-        highlight.push(null);
-      }
-      for (let idx = 0; idx < appendedCount; idx++) {
-        highlight.push(idx < nextHighlights.length ? (nextHighlights[idx] ?? null) : null);
-      }
-      if (Array.isArray(next.tokens)) {
-        if (!includeTokens) {
-          tokens.push(...new Array(priorLineCount).fill(null));
-          includeTokens = true;
-        }
-        for (let idx = 0; idx < appendedCount; idx++) {
-          tokens.push(idx < next.tokens.length ? (next.tokens[idx] ?? null) : null);
-        }
-      } else if (includeTokens) {
-        tokens.push(...new Array(appendedCount).fill(null));
-      }
-      if (Array.isArray(next.diffKind)) {
-        if (!includeDiffKind) {
-          diffKind.push(...new Array(priorLineCount).fill(null));
-          includeDiffKind = true;
-        }
-        for (let idx = 0; idx < appendedCount; idx++) {
-          diffKind.push(idx < next.diffKind.length ? (next.diffKind[idx] ?? null) : null);
-        }
-      } else if (includeDiffKind) {
-        diffKind.push(...new Array(appendedCount).fill(null));
-      }
-      if (Array.isArray(next.oldNo)) {
-        if (!includeOldNo) {
-          oldNo.push(...new Array(priorLineCount).fill(null));
-          includeOldNo = true;
-        }
-        for (let idx = 0; idx < appendedCount; idx++) {
-          oldNo.push(idx < next.oldNo.length ? (next.oldNo[idx] ?? null) : null);
-        }
-      } else if (includeOldNo) {
-        oldNo.push(...new Array(appendedCount).fill(null));
-      }
-      if (Array.isArray(next.newNo)) {
-        if (!includeNewNo) {
-          newNo.push(...new Array(priorLineCount).fill(null));
-          includeNewNo = true;
-        }
-        for (let idx = 0; idx < appendedCount; idx++) {
-          newNo.push(idx < next.newNo.length ? (next.newNo[idx] ?? null) : null);
-        }
-      } else if (includeNewNo) {
-        newNo.push(...new Array(appendedCount).fill(null));
-      }
-      expectedStart = baseStart + lines.length;
-      mergedCount++;
-      j++;
-      continue;
-    }
-    break;
-  }
-
-  const combined: AppendLinesPatch = {
-    ...base,
-    lines,
-    highlight: highlight.length > 0 ? highlight : undefined,
-  };
-  // Preserve absent keys: the renderer treats an owned `tokens` field as explicit null per line.
-  if (includeTokens && tokens.length > 0) combined.tokens = tokens as AppendLinesPatch["tokens"];
-  if (includeDiffKind && diffKind.length > 0) combined.diffKind = diffKind as AppendLinesPatch["diffKind"];
-  if (includeOldNo && oldNo.length > 0) combined.oldNo = oldNo as AppendLinesPatch["oldNo"];
-  if (includeNewNo && newNo.length > 0) combined.newNo = newNo as AppendLinesPatch["newNo"];
-
-  return { patch: combined, nextIndex: j };
-}
 
 function collectInsertChildren(window: Patch[], startIndex: number): { patches: Patch[]; nextIndex: number } {
   const base = window[startIndex];
@@ -361,7 +228,6 @@ function countOps(patches: Patch[]): Record<string, number> {
  * Coalesce adjacent compatible patches without moving operations across barriers.
  *
  * Currently coalesces:
- * - Consecutive `appendLines` for the same code block into one patch with combined lines
  * - Consecutive `insertChild` operations for the same parent at consecutive indices, while preserving
  *   individual inserts because the patch protocol has no batch-insert operation
  * - Consecutive `setProps` operations for the same node into one merged update or `setPropsBatch`
@@ -390,17 +256,7 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
     // Try to coalesce current patch with following patches
     let coalescedCount = 0;
 
-    if (current.op === "appendLines") {
-      const merged = mergeAppendLines(window, i);
-      if (merged.nextIndex > i + 1) {
-        coalesced.push(merged.patch);
-        i = merged.nextIndex;
-      } else {
-        coalesced.push(current);
-        i++;
-      }
-      continue;
-    } else if (current.op === "insertChild") {
+    if (current.op === "insertChild") {
       // Coalesce multiple insertChild for the same parent at consecutive indices
       const inserts: Array<{ index: number; node: typeof current.node }> = [{ index: current.index, node: current.node }];
       let j = i + 1;

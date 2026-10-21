@@ -92,6 +92,7 @@ interface PendingNativeCodeLine {
 }
 
 const EMPTY_CODE_LINES: readonly CodeLineRecord[] = Object.freeze([]);
+const NON_WHITESPACE = /\S/;
 
 
 function nextRevision(revision: number): number {
@@ -569,6 +570,7 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
   private revision = 0;
   private codeLines: CodeLineIndex;
   private pendingCRAt: number | undefined;
+  private highlightableLineCount = 0;
   private emptyPlaceholder: boolean;
   private cachedWindow: { readonly from: number; readonly to: number; readonly source: SourceSnapshot } | undefined;
 
@@ -614,6 +616,10 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
       ? initial.lines
       : [{ text: "", from: range.to, to: range.to, ending: "" as const, isProvisional: options.closure === "open" }];
     this.emptyPlaceholder = initial.lines.length === 0;
+    this.highlightableLineCount = initialDrafts.reduce(
+      (count, draft) => count + (NON_WHITESPACE.test(draft.text) ? 1 : 0),
+      0,
+    );
     this.codeLines = createCodeLineIndex({ lines: initialDrafts.map((draft, index) => recordFromDraft(this.id, index, draft, 0)) });
     registerPreparedCodeLineSource(this, { info, ...(parsedInfo.lang ? { language: parsedInfo.lang } : {}) });
   }
@@ -629,6 +635,9 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
 
   getLines(): CodeLineIndex {
     return this.codeLines;
+  }
+  get hasHighlightableContent(): boolean {
+    return this.highlightableLineCount > 0;
   }
 
   decorateLines(decorations: readonly CodeLineDecoration[]): CodeLineIndex {
@@ -779,6 +788,15 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
       if (prior && draft && sameProjection(prior, draft, index, this.id)) reusable[offset] = prior;
       else rowsChanged = true;
     }
+    let highlightableLineCount = this.highlightableLineCount;
+    if (rowsChanged) {
+      for (const line of oldTail) {
+        if (NON_WHITESPACE.test(line.text)) highlightableLineCount -= 1;
+      }
+      for (const line of nextTail) {
+        if (NON_WHITESPACE.test(line.text)) highlightableLineCount += 1;
+      }
+    }
 
     const nextState = update.closure;
     const rangeChanged = previousRange.to !== update.sourceRange.to;
@@ -789,6 +807,7 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     const revision = semanticChanged ? nextRevision(this.revision) : this.revision;
     const records = nextTail.map((draft, offset) => reusable[offset] ?? recordFromDraft(this.id, oldComplete + offset, draft, revision));
     if (rowsChanged) this.codeLines = this.codeLines.replaceTail(oldComplete, records);
+    if (rowsChanged) this.highlightableLineCount = highlightableLineCount;
     this.sourceState = nextState;
     this.revision = revision;
     this.sourceRange = Object.freeze({ from: update.sourceRange.from, to: update.sourceRange.to });

@@ -11,6 +11,8 @@ import { parseCodeFenceInfo, removeHeadingMarkers } from "./utils";
 type SourceText = string | Input;
 type NativeNestedBlockSnapshotMapping = NativeSourceMapping & {
   readonly knownListLoosenessForNode?: (node: SyntaxNode) => boolean | undefined;
+  readonly coldSourceOffset?: number;
+  readonly coldLineEndings?: boolean;
 };
 
 function readSourceRange(source: SourceText, from: number, to: number): string {
@@ -44,6 +46,43 @@ class StringSourceInput implements Input {
     return this.source.slice(from, to);
   }
 }
+
+interface ColdSourceProjection {
+  readonly input: StringSourceInput;
+  readonly mapOffset: (offset: number) => number;
+}
+
+function projectColdLineEndings(raw: string): ColdSourceProjection | undefined {
+  if (!raw.includes("\r")) return undefined;
+
+  let crlfOffsets: number[] | undefined;
+  let normalizedOffset = 0;
+  for (let physicalOffset = 0; physicalOffset < raw.length; normalizedOffset += 1) {
+    if (raw.charCodeAt(physicalOffset) === 13 && raw.charCodeAt(physicalOffset + 1) === 10) {
+      (crlfOffsets ??= []).push(normalizedOffset);
+      physicalOffset += 2;
+    } else {
+      physicalOffset += 1;
+    }
+  }
+
+  const input = new StringSourceInput(raw.replace(/\r\n?/g, "\n"));
+  const offsets = crlfOffsets;
+  const mapOffset = offsets
+    ? (offset: number): number => {
+      let low = 0;
+      let high = offsets.length;
+      while (low < high) {
+        const middle = (low + high) >>> 1;
+        if (offsets[middle]! < offset) low = middle + 1;
+        else high = middle;
+      }
+      return offset + low;
+    }
+    : (offset: number): number => offset;
+  return { input, mapOffset };
+}
+
 
 export interface PreparedNestedSnapshot {
   props: Record<string, unknown>;
@@ -84,9 +123,15 @@ function sourceRange(mapping: NativeSourceMapping, from: number, to: number): { 
 
 function codeColumnAt(position: number, mapping?: NativeSourceMapping, localSource?: SourceText): number {
   if (mapping) {
+    const coldMapping = mapping as NativeNestedBlockSnapshotMapping;
     const physical = mapping.mapOffset(position);
     let start = physical;
-    while (start > 0 && mapping.source.read(start - 1, start) !== "\n") start -= 1;
+    const sourceStart = coldMapping.coldSourceOffset ?? 0;
+    while (start > sourceStart) {
+      const previous = mapping.source.read(start - 1, start);
+      if (previous === "\n" || (coldMapping.coldLineEndings && previous === "\r")) break;
+      start -= 1;
+    }
     let columns = 0;
     for (let cursor = start; cursor < physical; cursor += 1) {
       columns += mapping.source.read(cursor, cursor + 1) === "\t" ? 4 - (columns % 4) : 1;
@@ -209,19 +254,29 @@ function lowerNestedBlockSnapshot(
     visit(node);
     marks.sort((left, right) => left.from - right.from);
     let result = "";
+    const readSource = (from: number, to: number): string => {
+      const range = sourceRange(mapping, from, to);
+      return mapping.source.read(range.from, range.to);
+    };
+    const sourceCharAtInputOffset = (offset: number): string => {
+      const range = sourceRange(mapping, offset, offset);
+      return range.from < mapping.source.length ? mapping.source.read(range.from, range.from + 1) : "";
+    };
     let from = node.from;
     for (const mark of marks) {
-      result += input.read(from, mark.from);
+      result += readSource(from, mark.from);
       from = mark.to;
-      if (sourceCharAt(input, from) === " " || sourceCharAt(input, from) === "\t") from += 1;
+      const next = sourceCharAtInputOffset(from);
+      if (next === " " || next === "\t") from += 1;
     }
-    result += input.read(from, node.to);
+    result += readSource(from, node.to);
     let listIndent = 0;
     for (let parent = node.parent; parent; parent = parent.parent) {
       if (parent.type.name === "ListItem" || parent.type.name === "EmptyListItem") {
         listIndent += listItemContentIndent(parent, input);
       }
     }
+    if (result.includes("\r")) result = result.replace(/\r\n?/g, "\n");
     return stripListIndent(result, listIndent);
   };
   const looseList = (node: SyntaxNode): boolean => {
@@ -230,7 +285,10 @@ function lowerNestedBlockSnapshot(
     const items = childrenOf(node).filter((child) => child.type.name === "ListItem" || child.type.name === "EmptyListItem");
     const blankGap = (from: number, to: number): boolean => {
       if (to < from) return false;
-      return /\r?\n[ >\t]*\r?\n/.test(mapping.source.read(from, to));
+      const rawGap = mapping.source.read(from, to);
+      return mapping.coldLineEndings
+        ? /(?:\r\n|\r|\n)[ >\t]*(?:\r\n|\r|\n)/.test(rawGap)
+        : /\r?\n[ >\t]*\r?\n/.test(rawGap);
     };
     const itemStart = (item: SyntaxNode): number => {
       const marker = item.getChild("ListMark");
@@ -519,18 +577,25 @@ export function prepareNestedBlockSnapshot(
   streamingInline?: (text: string) => InlineNode[],
 ): PreparedNestedSnapshot {
   const raw = block.payload.raw;
-  const input = new StringSourceInput(raw);
-  const tree = parser.parse(raw);
+  const projection = projectColdLineEndings(raw);
+  const input = projection?.input ?? new StringSourceInput(raw);
+  const tree = parser.parse(projection ? input : raw);
   const offset = block.payload.range?.from ?? 0;
   const source: NativeSourceReader = {
     length: offset + raw.length,
     read: (from, to) => raw.slice(from - offset, to - offset),
   };
-  const mapping: NativeSourceMapping = {
+  const mapColdOffset = projection?.mapOffset;
+  const mapping: NativeNestedBlockSnapshotMapping = {
     input,
     source,
-    mapOffset: (position) => offset + position,
-    mapRange: (from, to) => ({ from: offset + from, to: offset + to }),
+    coldSourceOffset: offset,
+    coldLineEndings: projection !== undefined,
+    mapOffset: (position) => offset + (mapColdOffset ? mapColdOffset(position) : position),
+    mapRange: (from, to) => ({
+      from: offset + (mapColdOffset ? mapColdOffset(from) : from),
+      to: offset + (mapColdOffset ? mapColdOffset(to) : to),
+    }),
   };
   const root = tree.topNode.firstChild;
   if (!root) return { props: {}, children: [] };

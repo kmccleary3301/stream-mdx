@@ -76,6 +76,92 @@ export function isRootFootnoteDefinitionStart(source: SourceSnapshot, sourceOffs
 }
 
 
+function createRootParagraphOwnerFromSnapshot(
+  node: SyntaxNode,
+  source: AppendSourceDocument,
+  sourceSnapshot: SourceSnapshot,
+  generation: number,
+  options: RootParagraphPipelineOptions,
+): RootParagraphSourceOwner | undefined {
+  const sourceOffset = options.sourceOffset ?? 0;
+  const from = sourceOffset + node.from;
+  if (!isRootParagraph(node) || isRootFootnoteDefinitionStart(sourceSnapshot, from)) return undefined;
+  const tailParser = NativeParagraphTailParser.admit(
+    options.parser,
+    sourceSnapshot,
+    node,
+    sourceOffset,
+    options.attestation,
+  );
+  const state = options.finalized
+    ? "finalized"
+    : tailParser.state.phase === "closed"
+      ? "closed"
+      : "open";
+  const to = sourceOffset + node.to;
+  const id = generateBlockId(`${from}:paragraph`, "paragraph");
+  const owner = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && options.counters !== undefined
+    ? new RootParagraphSourceOwner({
+        id,
+        generation,
+        source,
+        inlineParser: options.inlineParser,
+        opening: { from, to, state },
+        inlineSettlement: options.inlineSettlement,
+        ...(options.prepareProvisionalInline ? { prepareProvisionalInline: options.prepareProvisionalInline } : {}),
+        ...(options.prepareSpanChildren ? { prepareSpanChildren: options.prepareSpanChildren } : {}),
+        counters: options.counters,
+      })
+    : new RootParagraphSourceOwner({
+        id,
+        generation,
+        source,
+        inlineParser: options.inlineParser,
+        opening: { from, to, state },
+        inlineSettlement: options.inlineSettlement,
+        ...(options.prepareProvisionalInline ? { prepareProvisionalInline: options.prepareProvisionalInline } : {}),
+        ...(options.prepareSpanChildren ? { prepareSpanChildren: options.prepareSpanChildren } : {}),
+      });
+  nativeTailByOwner.set(owner, tailParser);
+  return owner;
+}
+
+/** Admit one parser-owned root paragraph with a caller-selected native lease generation. */
+export function createRootParagraphOwnerForNode(
+  node: SyntaxNode,
+  source: AppendSourceDocument,
+  generation: number,
+  options: RootParagraphPipelineOptions,
+): RootParagraphSourceOwner | undefined {
+  if (options.attestation && options.attestation.parser !== options.parser) {
+    throw new TypeError("Root paragraph window attestation belongs to a different MarkdownParser");
+  }
+  return createRootParagraphOwnerFromSnapshot(node, source, source.snapshot(), generation, options);
+}
+
+export function rootParagraphTailParser(owner: RootParagraphSourceOwner): NativeParagraphTailParser {
+  const tailParser = nativeTailByOwner.get(owner);
+  if (!tailParser) throw new Error("Native paragraph tail state is unavailable for this owner");
+  return tailParser;
+}
+
+export function rehomeRootParagraphOwner(
+  owner: RootParagraphSourceOwner,
+  generation: number,
+  tailParser: NativeParagraphTailParser,
+): RootParagraphSourceOwner {
+  const metadata = owner.getMetadata();
+  const tail = tailParser.state;
+  if (tail.ownerStart !== metadata.sourceRange.from
+    || tail.ownerEnd !== metadata.sourceRange.to
+    || tail.processedTo !== metadata.processedTo) {
+    throw new Error("Native paragraph tail does not match its canonical source owner");
+  }
+  const rehomed = owner.rehomeForGeneration(generation);
+  nativeTailByOwner.set(rehomed, tailParser);
+  return rehomed;
+}
+
 /** Admit only native root Paragraph nodes; syntax-tree ranges remain the source authority. */
 export function createRootParagraphOwners(
   tree: Tree,
@@ -87,50 +173,10 @@ export function createRootParagraphOwners(
     throw new TypeError("Root paragraph window attestation belongs to a different MarkdownParser");
   }
   const sourceSnapshot = source.snapshot();
-  const sourceOffset = options.sourceOffset ?? 0;
   const owners: RootParagraphSourceOwner[] = [];
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
-    const from = sourceOffset + node.from;
-    if (!isRootParagraph(node) || isRootFootnoteDefinitionStart(sourceSnapshot, from)) continue;
-    const tailParser = NativeParagraphTailParser.admit(
-      options.parser,
-      sourceSnapshot,
-      node,
-      sourceOffset,
-      options.attestation,
-    );
-    const tailState = tailParser.state;
-    const state = options.finalized
-      ? "finalized"
-      : tailState.phase === "closed"
-        ? "closed"
-        : "open";
-    const to = sourceOffset + node.to;
-    const id = generateBlockId(`${from}:paragraph`, "paragraph");
-    const owner = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && options.counters !== undefined
-      ? new RootParagraphSourceOwner({
-          id,
-          generation,
-          source,
-          inlineParser: options.inlineParser,
-          opening: { from, to, state },
-          inlineSettlement: options.inlineSettlement,
-          ...(options.prepareProvisionalInline ? { prepareProvisionalInline: options.prepareProvisionalInline } : {}),
-          ...(options.prepareSpanChildren ? { prepareSpanChildren: options.prepareSpanChildren } : {}),
-          counters: options.counters,
-        })
-      : new RootParagraphSourceOwner({
-          id,
-          generation,
-          source,
-          inlineParser: options.inlineParser,
-          opening: { from, to, state },
-          inlineSettlement: options.inlineSettlement,
-          ...(options.prepareProvisionalInline ? { prepareProvisionalInline: options.prepareProvisionalInline } : {}),
-          ...(options.prepareSpanChildren ? { prepareSpanChildren: options.prepareSpanChildren } : {}),
-        });
-    nativeTailByOwner.set(owner, tailParser);
-    owners.push(owner);
+    const owner = createRootParagraphOwnerFromSnapshot(node, source, sourceSnapshot, generation, options);
+    if (owner) owners.push(owner);
   }
   return owners;
 }

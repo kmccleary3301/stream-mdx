@@ -1,6 +1,6 @@
 # Patch Classification Ledger
 
-_Last updated: 2026-10-20_
+_Last updated: 2026-10-21_
 
 This ledger is the canonical semantic/enrichment map for the `Patch` union in
 `packages/markdown-v2-core/src/types.ts`.
@@ -31,7 +31,6 @@ Ambiguous work defaults to `semantic`.
 | `setPropsBatch` | `semantic` | Yes | Same rule as `setProps`; the batch-level patch meta owns classification |
 | `finalize` | `semantic` | No | Changes finalized visible state |
 | `reorder` | `semantic` | No | Changes committed ordering |
-| `appendLines` | `semantic` | No | Changes committed code-line structure and visible content |
 | `appendInputSource` | `semantic` | No | Retains exactly the newly admitted root input bytes at a UTF-16 offset; ordered and non-coalescable |
 | `appendCode` | `semantic` | No | Atomically replaces the unfinished code tail and advances its exact authored-source frontier; never carries completed-prefix records |
 | `appendParagraph` | `semantic` | No | Replaces only the changed paragraph span tail and carries the exact authored source suffix under owner generation and expected revision guards |
@@ -40,6 +39,12 @@ Ambiguous work defaults to `semantic`.
 | `updateTableRows` | `semantic` | No | Applies dependency-targeted inline meaning changes to unchanged row/header source identities under one atomic owner revision gate |
 | `decorateCode` | `enrichment` | Only | Revision-matched line decoration; cannot change source, line topology or lifecycle |
 | `setHTML` | `semantic` | Reserved only | `setHTML` carries `patchMeta`; explicit enrichment is reserved and currently not used by the worker |
+
+Historical note (superseded): earlier versions of this ledger listed
+`appendLines` as a semantic code-line fast path. That entry is retained only as
+history, not as an active native-code contract. Native source-managed code uses
+semantic changed-tail `appendCode` patches and decoration-only `decorateCode`
+patches.
 
 ## Allowed Explicit Enrichment Families
 
@@ -79,11 +84,6 @@ default semantic classification or expand the audited enrichment allowlist.
 `finalize` changes block lifecycle state and therefore visible semantics. It is
 always semantic and epoch-guarded.
 
-### `appendLines`
-
-`appendLines` is an optimization for code blocks, but it still mutates visible
-line structure. It is semantic and only allowed when append safety is provable.
-Any ambiguity falls back to semantic replace.
 
 ### `appendInputSource`
 

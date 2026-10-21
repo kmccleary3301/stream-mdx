@@ -168,9 +168,7 @@ function extractCodeLanguage(node: Nodes): string | undefined {
   const el = node as Element;
   const classNames = Array.isArray(el.properties?.className)
     ? el.properties.className.map(String)
-    : typeof el.properties?.className === "string"
-      ? el.properties.className.split(/\s+/)
-      : [];
+    : [];
   for (const cls of classNames) {
     if (cls.startsWith("language-") && cls.length > "language-".length) {
       return cls;

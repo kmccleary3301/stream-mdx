@@ -300,6 +300,20 @@ export function createBlockSnapshot(
       return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
         ? enrichTableSnapshot(block, base, onNodeCreated)
         : enrichTableSnapshot(block, base);
+    case "html": {
+      if (block.payload.meta?.preparedNested) {
+        return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
+          ? enrichContainerSnapshot(block, base, onNodeCreated)
+          : enrichContainerSnapshot(block, base);
+      }
+      const htmlTree = block.payload.meta?.htmlTree;
+      if (Array.isArray(htmlTree)) {
+        base.children = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
+          ? createHtmlTreeBlockSnapshots(htmlTree, onNodeCreated)
+          : createHtmlTreeBlockSnapshots(htmlTree);
+      }
+      return base;
+    }
     case "code":
       return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
         ? enrichCodeSnapshot(block, base, onNodeCreated)
@@ -339,6 +353,28 @@ function enrichContainerSnapshot(
   snapshot.children = clonedChildren;
   return snapshot;
 }
+function createHtmlTreeBlockSnapshots(
+  nodes: readonly HtmlTreeNode[],
+  onNodeCreated?: (node: NodeSnapshot) => void,
+): NodeSnapshot[] {
+  const snapshots: NodeSnapshot[] = [];
+  const append = (tree: readonly HtmlTreeNode[]): void => {
+    for (const node of tree) {
+      if (node.kind === "block") {
+        const snapshot = createBlockSnapshot(node.block);
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && onNodeCreated) {
+          countClonedDescendants([snapshot], onNodeCreated);
+        }
+        snapshots.push(snapshot);
+      } else if (node.kind === "element") {
+        append(node.children);
+      }
+    }
+  };
+  append(nodes);
+  return snapshots;
+}
+
 
 function enrichParagraphSnapshot(
   block: Block,
@@ -353,12 +389,13 @@ function enrichParagraphSnapshot(
 
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && onNodeCreated) {
     snapshot.children = segments.map((segment, index) => {
-      const segNode = createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index]);
+      const segNode = createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index], onNodeCreated);
       onNodeCreated(segNode);
       return segNode;
     });
   } else {
-    snapshot.children = segments.map((segment, index) => createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index]));
+    snapshot.children = segments.map((segment, index) =>
+      createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index], onNodeCreated));
   }
   return snapshot;
 }
@@ -370,6 +407,7 @@ function createSegmentSnapshot(
   index: number,
   parentType: "paragraph" | "blockquote" | "list-item",
   htmlTree?: HtmlTreeNode[],
+  onNodeCreated?: (node: NodeSnapshot) => void,
 ): NodeSnapshot {
   const id = `${parentId}::${parentType}:segment:${index}`;
   const range = segment.range ? { ...segment.range } : undefined;
@@ -385,7 +423,7 @@ function createSegmentSnapshot(
         },
         meta: segment.sanitized ? { sanitized: true } : undefined,
         range,
-        children: [],
+        children: htmlTree === undefined ? [] : createHtmlTreeBlockSnapshots(htmlTree, onNodeCreated),
       };
     case "mdx":
       return {
@@ -622,7 +660,7 @@ function cloneInlineNodes(nodes: readonly InlineNode[]): InlineNode[] {
   });
 }
 
-export function inlineNodesToPlainText(nodes: InlineNode[]): string {
+export function inlineNodesToPlainText(nodes: readonly InlineNode[]): string {
   let result = "";
   for (const node of nodes) {
     switch (node.kind) {
@@ -746,7 +784,7 @@ interface SnapshotNode {
 }
 
 function isGenericContainerType(type: string): boolean {
-  return type === "list" || type === "blockquote" || type === "list-item";
+  return type === "list" || type === "blockquote" || type === "list-item" || type === "html";
 }
 
 /** Drops a producer's prepared tree by shallow copy, so the tree is never cloned into private state. */
@@ -1014,23 +1052,6 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
       case "decorateCode": {
         const target = resolveTargetNode(snapshot, patch.at);
         if (target) decorateCodeState(target, patch);
-        break;
-      }
-      case "appendLines": {
-        const parent = resolveTargetNode(snapshot, patch.at);
-        if (!parent) break;
-        appendLinesToCodeNode(
-          snapshot,
-          parent,
-          patch.startIndex,
-          patch.lines ?? [],
-          patch.highlight ?? [],
-          patch.tokens,
-          patch.diffKind,
-          patch.oldNo,
-          patch.newNo,
-        );
-        refreshLegacyCodeTail(snapshot, parent, patch.startIndex);
         break;
       }
       case "setHTML": {
@@ -2344,85 +2365,6 @@ function applyPropsToNode(snapshot: DocumentSnapshot, node: SnapshotNode, props:
 }
 
 
-function appendLinesToCodeNode(
-  snapshot: DocumentSnapshot,
-  parent: SnapshotNode,
-  startIndex: number,
-  lines: string[],
-  highlights: Array<string | null>,
-  tokens?: Array<TokenLineV1 | null>,
-  diffKind?: Array<DiffLineKind | null>,
-  oldNo?: Array<number | null>,
-  newNo?: Array<number | null>,
-) {
-  if (parent.type !== "code") return;
-  const insertionIndex = Math.max(0, Math.min(startIndex, parent.children.length));
-  let currentIndex = insertionIndex;
-  for (let i = 0; i < lines.length; i++) {
-    const lineId = `${parent.id}::line:${currentIndex}`;
-    removeSubtree(snapshot, lineId);
-    const child: SnapshotNode = {
-      id: lineId,
-      type: "code-line",
-      parentId: parent.id,
-      children: [],
-      props: {
-        index: currentIndex,
-        text: lines[i] ?? "",
-        html: highlights[i] ?? null,
-      },
-    };
-    if (tokens && Object.prototype.hasOwnProperty.call(tokens, i)) {
-      child.props.tokens = tokens[i] ?? null;
-    }
-    if (diffKind && Object.prototype.hasOwnProperty.call(diffKind, i)) {
-      child.props.diffKind = diffKind[i] ?? null;
-    }
-    if (oldNo && Object.prototype.hasOwnProperty.call(oldNo, i)) {
-      child.props.oldNo = oldNo[i] ?? null;
-    }
-    if (newNo && Object.prototype.hasOwnProperty.call(newNo, i)) {
-      child.props.newNo = newNo[i] ?? null;
-    }
-    snapshot.nodes.set(child.id, child);
-    parent.children.splice(currentIndex, 0, child.id);
-    currentIndex++;
-  }
-}
-
-function refreshLegacyCodeTail(snapshot: DocumentSnapshot, parent: SnapshotNode, fromLine: number): void {
-  const current = parent.codeState;
-  if (parent.type !== "code" || !current || current.managed) return;
-  const start = clamp(fromLine, 0, current.lines.length);
-  const sourceOffset = current.source.sourceRange.to;
-  const tail = parent.children.slice(start).map((id, offset) => {
-    const child = snapshot.nodes.get(id);
-    const index = start + offset;
-    return {
-      id: child?.id ?? `${parent.id}::line:${index}`,
-      index,
-      text: typeof child?.props.text === "string" ? child.props.text : "",
-      ending: "" as const,
-      sourceRange: { from: sourceOffset, to: sourceOffset },
-      sourceRevision: current.source.revision + 1,
-      isProvisional: child?.props.isProvisional === true,
-      diffKind: child?.props.diffKind as CodeLineRecord["diffKind"],
-      oldNo: child?.props.oldNo as CodeLineRecord["oldNo"],
-      newNo: child?.props.newNo as CodeLineRecord["newNo"],
-    };
-  });
-  const lines = current.lines.replaceTail(start, tail);
-  parent.codeState = {
-    ...current,
-    source: {
-      ...current.source,
-      revision: current.source.revision + 1,
-      lineCount: lines.length,
-      completeLineCount: lines.completeLineCount,
-    },
-    lines,
-  };
-}
 
 function clamp(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;

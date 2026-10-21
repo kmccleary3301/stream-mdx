@@ -18,6 +18,7 @@ import { subscribeRendererNode } from "./node-subscriptions";
 import { CodeLineRangeView } from "./code-line-range";
 import { CODE_LINE_RANGE_SIZE } from "./code-state";
 import type { RendererStore } from "./store";
+import { getStoreResetVersion } from "./store-reset-version";
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, useVirtualizedCode } from "./virtualized-code";
 
@@ -41,13 +42,15 @@ const CodeLineRangeTail: React.FC<{
   store: RendererStore;
   blockId: string;
   generation: number;
+  resetVersion: number;
   configurationRevision: number;
   chunkStart: number;
-}> = React.memo(({ store, blockId, generation, configurationRevision, chunkStart }) => {
+}> = React.memo(({ store, blockId, generation, resetVersion, configurationRevision, chunkStart }) => {
   const getFrontier = React.useCallback((): "ready" | "open" | "sealed" | "stale" => {
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       recordCodeRangeRead(store);
     }
+    if (getStoreResetVersion(store) !== resetVersion) return "stale";
     const current = store.getCodeBlock(blockId);
     if (
       !current ||
@@ -56,7 +59,7 @@ const CodeLineRangeTail: React.FC<{
     ) return "stale";
     if (current.source.lineCount > chunkStart) return "ready";
     return current.source.state === "open" ? "open" : "sealed";
-  }, [blockId, chunkStart, configurationRevision, generation, store]);
+  }, [blockId, chunkStart, configurationRevision, generation, resetVersion, store]);
   const subscribe = React.useCallback((listener: () => void) => {
     let active = true;
     let unsubscribeLines = () => {};
@@ -92,6 +95,7 @@ const CodeLineRangeTail: React.FC<{
       store={store}
       blockId={blockId}
       generation={generation}
+      resetVersion={resetVersion}
       configurationRevision={configurationRevision}
       chunkStart={chunkStart}
     />
@@ -104,19 +108,21 @@ const CodeLineRangeChain: React.FC<{
   store: RendererStore;
   blockId: string;
   generation: number;
+  resetVersion: number;
   configurationRevision: number;
   chunkStart: number;
-}> = React.memo(({ store, blockId, generation, configurationRevision, chunkStart }) => {
+}> = React.memo(({ store, blockId, generation, resetVersion, configurationRevision, chunkStart }) => {
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     recordCodeRangeSlots(store);
   }
   return (
     <>
       <CodeLineRangeView
-        key={`${generation}:${chunkStart}`}
+        key={`${resetVersion}:${generation}:${chunkStart}`}
         store={store}
         blockId={blockId}
         generation={generation}
+        resetVersion={resetVersion}
         configurationRevision={configurationRevision}
         chunkStart={chunkStart}
         rangeStart={chunkStart}
@@ -128,6 +134,7 @@ const CodeLineRangeChain: React.FC<{
         store={store}
         blockId={blockId}
         generation={generation}
+        resetVersion={resetVersion}
         configurationRevision={configurationRevision}
         chunkStart={chunkStart + CODE_LINE_RANGE_SIZE}
       />
@@ -143,6 +150,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   const node = useRendererNode(store, blockId);
   const codeBlock = store.getCodeBlock(blockId);
   const codeGeneration = codeBlock?.source.generation ?? null;
+  const resetVersion = getStoreResetVersion(store);
   const lineCount = codeBlock?.source.lineCount ?? 0;
   const configurationRevision = codeBlock?.configurationRevision ?? 0;
   const blockMeta = (node?.block?.payload.meta as Record<string, unknown> | undefined) ?? undefined;
@@ -175,11 +183,11 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     (typeof node?.props?.lang === "string" ? node.props.lang : undefined) ??
     (typeof blockMeta?.lang === "string" ? blockMeta.lang : undefined);
   const readCurrentCodeSource = React.useCallback((): string | null => {
-    if (codeGeneration === null) return null;
+    if (getStoreResetVersion(store) !== resetVersion || codeGeneration === null) return null;
     const current = store.getCodeBlock(blockId);
     if (!current || current.source.generation !== codeGeneration) return null;
     return current.lines.materialize().replace(/\r\n?/g, "\n").replace(/\n$/, "");
-  }, [blockId, codeGeneration, store]);
+  }, [blockId, codeGeneration, resetVersion, store]);
   const copyCurrentCode = React.useCallback(async (): Promise<boolean> => {
     const code = readCurrentCodeSource();
     return code === null ? false : copyToClipboard(code);
@@ -233,6 +241,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
         store={store}
         blockId={blockId}
         generation={codeGeneration ?? -1}
+        resetVersion={resetVersion}
         configurationRevision={configurationRevision}
         chunkStart={0}
       />
@@ -244,10 +253,11 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
       const chunkEnd = chunkStart + CODE_LINE_RANGE_SIZE;
       ranges.push(
         <CodeLineRangeView
-          key={`${codeGeneration}:${chunkStart}`}
+          key={`${resetVersion}:${codeGeneration}:${chunkStart}`}
           store={store}
           blockId={blockId}
           generation={codeGeneration ?? -1}
+          resetVersion={resetVersion}
           configurationRevision={configurationRevision}
           chunkStart={chunkStart}
           rangeStart={Math.max(window.startIndex, chunkStart)}

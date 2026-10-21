@@ -154,7 +154,7 @@ function paragraphText(node: NodeSnapshot): string | undefined {
           if (typeof text === "string") parts.push(text);
         }
       } else {
-        parts.push(inlineNodesToPlainText([...span.nodes]));
+        parts.push(inlineNodesToPlainText(span.nodes));
       }
     }
     return parts.join("");
