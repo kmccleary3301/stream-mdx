@@ -164,6 +164,17 @@ try {
   // Six 40px visible rows plus two overscan rows. Measured 80px rows reduce the window.
   Object.defineProperty(viewport, "clientHeight", { configurable: true, value: 240 });
   Object.defineProperty(viewport, "clientWidth", { configurable: true, get: () => availableWidth });
+  // jsdom has no layout, so scrollHeight is 0. Model it from the rendered spacers and rows so the
+  // bottom-anchoring effect sees the same geometry a browser would after late row measurement.
+  Object.defineProperty(viewport, "scrollHeight", {
+    configurable: true,
+    get: () => {
+      let height = 0;
+      for (const spacer of viewport.querySelectorAll<HTMLElement>("tr.markdown-table-spacer")) height += Number.parseFloat(spacer.style.height) || 0;
+      for (const row of rows()) height += row.getBoundingClientRect().height || 40;
+      return height;
+    },
+  });
   for (const row of rows()) {
     row.getBoundingClientRect = () => new dom.window.DOMRect(0, 0, 800, 80);
   }

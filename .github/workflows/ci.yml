@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-test-pack:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
           if-no-files-found: ignore
 
   docs-seeded-regression:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
