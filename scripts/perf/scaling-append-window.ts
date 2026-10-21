@@ -311,9 +311,11 @@ export async function measureAppendWindowWork(
   } as RendererStoreOptions & { campaignCounters?: SessionCounterSink });
 
   let dumpedCodeRaw: string | undefined;
+  let documentGeneration: number | undefined;
   const engine = new MarkdownEngine({
     post: (msg: WorkerOut) => {
       if (msg.type === "INITIALIZED") {
+        documentGeneration = msg.generation;
         store.resetSnapshot(msg.snapshot);
       } else if (msg.type === "PATCH") {
         if (observingInputSourceWindow) {
@@ -567,11 +569,9 @@ export async function measureAppendWindowWork(
     let expectedListSuffix = "";
     let expectedTableSuffix = "";
     let expectedInputSuffix = "";
-    const appendSourceGeneration = codeGeneration ??
-      initialParagraphState?.source.generation ??
-      initialTableState?.source.generation ??
-      nativeListOwnerInspection?.owners[0]?.state.source.generation;
-    assert.ok(appendSourceGeneration !== undefined, "append window has an actual managed source generation");
+    // Input barriers carry the document generation. HTML-dependent code is base-path code with no managed
+    // generation of its own, so the managed view generation is not the reference.
+    assert.ok(documentGeneration !== undefined, "append window follows an initialized document generation");
     let observedInputSourcePatchIndex = 0;
     let inputSourceFrontier = prefix.length;
     let nativeDomRows = 0;
@@ -595,7 +595,7 @@ export async function measureAppendWindowWork(
           assert.equal(patch.at.nodeId, undefined, "canonical appendInputSource has no node target");
           assert.equal(patch.at.indexPath, undefined, "canonical appendInputSource has no child index path");
           assert.equal(patch.meta?.kind, "semantic", "canonical appendInputSource is a semantic barrier");
-          assert.equal(patch.generation, appendSourceGeneration, "input-source barrier retains the managed generation");
+          assert.equal(patch.generation, documentGeneration, "input-source barrier retains the document generation");
           assert.equal(patch.from, inputSourceFrontier, "input-source barrier starts at the exact current source frontier");
           inputSourceFrontier += patch.text.length;
           inputParts.push(patch.text);
