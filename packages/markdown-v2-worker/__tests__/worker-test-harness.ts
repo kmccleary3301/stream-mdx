@@ -4,14 +4,19 @@ import type { Block, HtmlTreeNode, InlineNode, NodeSnapshot } from "@stream-mdx/
 
 class FakeWorkerGlobal extends EventEmitter {
   onmessage: ((event: MessageEvent<WorkerIn>) => void | Promise<void>) | null = null;
+  /** Messages tied to this scope's in-flight dispatch; late emissions outside a dispatch are dropped. */
+  activeQueue: WorkerOut[] | null = null;
+
+  // The worker transport posts through its own scope, so an earlier harness's late emissions never
+  // reach a later harness's queue.
+  postMessage(message: WorkerOut): void {
+    this.activeQueue?.push(message);
+  }
 
   async dispatch(event: WorkerIn): Promise<void> {
     await this.onmessage?.({ data: event } as MessageEvent<WorkerIn>);
   }
 }
-
-let workerScope: FakeWorkerGlobal | null = null;
-let activeQueue: WorkerOut[] | null = null;
 
 async function waitForAsyncWorkerMessages(queue: WorkerOut[], maxWaitMs = 50): Promise<void> {
   const deadline = Date.now() + maxWaitMs;
@@ -32,15 +37,8 @@ async function waitForAsyncWorkerMessages(queue: WorkerOut[], maxWaitMs = 50): P
 }
 
 async function ensureWorkerLoaded(): Promise<FakeWorkerGlobal> {
-  workerScope = new FakeWorkerGlobal();
+  const workerScope = new FakeWorkerGlobal();
   (globalThis as any).self = workerScope;
-  (globalThis as any).postMessage = (msg: WorkerOut) => {
-    if (activeQueue) {
-      activeQueue.push(msg);
-      return;
-    }
-    // Tests only care about messages tied to the active dispatch; drop late emissions.
-  };
 
   // Force a fresh worker module instance so each test file can own its worker scope.
   await import(`../src/worker?testHarness=${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -60,14 +58,14 @@ export async function createWorkerHarness(): Promise<WorkerHarness> {
       // per sanitize) keeps every sanitized document alive until the job ends.
       await new Promise<void>((resolve) => setImmediate(resolve));
       const queue: WorkerOut[] = [];
-      activeQueue = queue;
+      scope.activeQueue = queue;
       try {
         await scope.dispatch(message);
         if (message.type === "TOKENIZE_RANGE") {
           await waitForAsyncWorkerMessages(queue);
         }
       } finally {
-        activeQueue = null;
+        scope.activeQueue = null;
       }
       return queue;
     },
