@@ -333,6 +333,38 @@ async function runClosedQuoteHtmlChildTest(): Promise<void> {
   );
 }
 
+// A blank line between two blocks of one item makes the list loose, and a loose list renders its items' paragraphs.
+// Streamed, the earlier block can lie before the native window (CommonMark 254, 319, 325).
+async function runItemBlockGapLoosenessTest(): Promise<void> {
+  const looseness = (blocks: readonly Block[]): unknown[] => {
+    const nested = (node: NodeSnapshot): unknown[] => [
+      ...(node.type === "list" ? [[node.range, node.props?.loose ?? false]] : []),
+      ...node.children.flatMap(nested),
+    ];
+    return blocks.map((block) => [
+      block.type,
+      block.payload.meta?.loose ?? false,
+      ((block.payload.meta?.preparedNested as { children?: NodeSnapshot[] } | undefined)?.children ?? []).flatMap(nested),
+    ]);
+  };
+  const sources = [
+    "* foo\n  * bar\n\n  baz\n",
+    "- a\n  - b\n\n    c\n- d\n",
+    "1.  A paragraph\n    with two lines.\n\n        indented code\n\n    > A block quote.\n",
+  ];
+  const harness = await createWorkerHarness();
+  for (const source of sources) {
+    const expected = looseness((await runSession(harness, [source])).getBlocks());
+    for (const size of [1, 7]) {
+      assert.deepEqual(
+        looseness((await runSession(harness, chunksOfSize(source, size))).getBlocks()),
+        expected,
+        `${JSON.stringify(source)} in chunks of ${size} must keep single-shot looseness`,
+      );
+    }
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -350,4 +382,5 @@ await runParagraphBecomesListItemTest();
 await runLinkReferenceDefinitionSplitTest();
 await runIndentedQuoteWindowTest();
 await runClosedQuoteHtmlChildTest();
+await runItemBlockGapLoosenessTest();
 console.log("Native container streaming regressions passed");

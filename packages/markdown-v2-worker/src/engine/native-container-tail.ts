@@ -538,6 +538,15 @@ function deriveActivePath(
       previousSiblingEnd = kind === "list"
         ? prior.activeListItemContentEnd ?? prior.activeChildSourceEnd
         : prior.activeChildSourceEnd;
+      // The previous sibling may have grown in this append before the selected child began; the window holds its tail.
+      const siblings = childrenOf(node);
+      const before = siblings[siblings.findIndex((child) => sameNativeSyntaxNode(child, selected)) - 1];
+      if (before) {
+        const beforeEnd = kind === "list"
+          ? listItemContentEnd(before, window.mapping.mapRange)
+          : window.mapping.mapRange(before.from, before.to).to;
+        if (beforeEnd > previousSiblingEnd && beforeEnd <= selectedRange.from) previousSiblingEnd = beforeEnd;
+      }
       separatingSiblingFrom = separatingSiblingStart(kind, prior.activeChildTypeName, prior.sourceFrontier);
     }
     let firstMarker = prior?.firstMarker;
@@ -592,6 +601,15 @@ function deriveActivePath(
         window.prefixLength,
         previousSiblingEnd,
       );
+    }
+    // A blank line between two blocks of one item makes its list loose. The earlier block may lie before the window,
+    // where the list's own scan of whole items cannot see it.
+    if (kind === "item" && selected && previousSiblingEnd !== undefined && previousSiblingEnd <= selectedRange.from
+      && blankLineBetween(source, previousSiblingEnd, selectedRange.from)) {
+      const list = frames[frames.length - 1];
+      if (list?.kind === "list" && list.listProperties && !list.listProperties.loose) {
+        frames[frames.length - 1] = { ...list, listProperties: Object.freeze({ ...list.listProperties, loose: true }) };
+      }
     }
     const nextChildIndex = selected && selectedIsActual
       && selected.to < window.input.length - 1
