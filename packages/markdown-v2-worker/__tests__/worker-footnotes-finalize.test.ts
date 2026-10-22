@@ -76,15 +76,15 @@ async function runFootnotesFinalizeTest(): Promise<void> {
 
   const quoteBlock = blocksAfterFinalize.find((block) => block.type === "blockquote");
   assert.ok(quoteBlock, "expected blockquote to be present after finalize");
-  const quoteMeta = (quoteBlock.payload.meta ?? {}) as { mixedSegments?: Array<{ inline?: InlineNode[] }> };
-  const segments = Array.isArray(quoteMeta.mixedSegments) ? quoteMeta.mixedSegments : [];
-  const segmentInline = segments.flatMap((segment) => (Array.isArray(segment.inline) ? segment.inline : []));
-  const numberFromSegments = findInlineFootnoteNumber(segmentInline, "1");
-  const numberFromInline = Array.isArray(quoteBlock.payload.inline) ? findInlineFootnoteNumber(quoteBlock.payload.inline, "1") : undefined;
+  const preparedNested = quoteBlock.payload.meta?.preparedNested as { children?: NodeSnapshot[] } | undefined;
+  const nestedParagraph = preparedNested?.children?.find((child) => child.type === "paragraph");
+  const nestedBlock = nestedParagraph?.props?.block as Block | undefined;
+  assert.ok(nestedBlock, "expected nested paragraph block in the cold export");
+  const nestedInline = Array.isArray(nestedBlock.payload.inline) ? nestedBlock.payload.inline : [];
   assert.strictEqual(
-    numberFromSegments ?? numberFromInline,
+    findInlineFootnoteNumber(nestedInline, "1"),
     1,
-    "footnote number should be assigned in the finalized blockquote inline representation",
+    "footnote number should be assigned in the finalized nested paragraph inline representation",
   );
 }
 
@@ -92,13 +92,13 @@ async function runFootnotesFinalizeTest(): Promise<void> {
 async function runPreparedFootnoteConsumerTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
-  const document = createInitialSnapshot();
+  let document = createInitialSnapshot();
   const consume = (messages: WorkerOut[]) => {
     for (const emitted of messages) {
       const message = structuredClone(emitted);
       if (message.type === "INITIALIZED") {
         store.resetSnapshot(message.snapshot);
-        Object.assign(document, createInitialSnapshot(message.snapshot));
+        document = createInitialSnapshot(message.snapshot);
       } else if (message.type === "PATCH") {
         applyPatchBatch(document, message.patches);
         store.applyPatches(message.patches, { captureMetrics: false });

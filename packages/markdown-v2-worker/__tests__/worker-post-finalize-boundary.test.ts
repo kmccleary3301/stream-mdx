@@ -127,7 +127,11 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
           assert.ok(!JSON.stringify(store.getBlocks()).includes("oldOnlySentinel"), "old asynchronous work must never overwrite a replacement document");
         }
       } else if (message.type === "ERROR") throw new Error(message.error.message);
-      assert.ok(JSON.stringify(document.getBlocks()) === JSON.stringify(store.getBlocks()), "serialized core and React consumers must remain equivalent");
+      assert.deepStrictEqual(
+        document.getBlocks(),
+        store.getBlocks(),
+        "serialized core and React consumers must remain equivalent",
+      );
       assert.deepStrictEqual(store.getInvariantViolations(), []);
     } });
     await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: oldMarkdown, prewarmLangs: [], docPlugins });

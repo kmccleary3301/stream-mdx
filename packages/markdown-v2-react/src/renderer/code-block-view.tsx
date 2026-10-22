@@ -276,6 +276,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   }
   const nativeCodeProps: React.ComponentProps<typeof CodeComponent> = {
     html: "",
+    lines: registry.hasCustomBlockComponent("code") ? store.getCodeLines(blockId, 0, lineCount) : undefined,
     children: codeLineRanges,
     lang,
     preAttrs: composedPreAttrs,
