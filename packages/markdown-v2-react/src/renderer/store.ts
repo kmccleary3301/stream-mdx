@@ -3204,12 +3204,30 @@ function storeNodeSnapshot(
     !paragraphStateByRecord.has(record) &&
     (!codeState || codeState.managed)
   ) {
-    snapshot.children = record.children.flatMap((childId) => {
+    const children = record.children.flatMap((childId) => {
       const child = map.get(childId);
       if (!child) return [];
       const childSnapshot = storeNodeSnapshot(map, child, source, legacyProjection, inheritedListLayout);
       return childSnapshot ? [childSnapshot] : [];
     });
+    // Keep block-derived HTML descendants until they have standalone store records.
+    if (
+      record.type === "html" &&
+      Array.isArray(snapshotBlock.payload.meta?.htmlTree) &&
+      children.length === 0
+    ) {
+      const pending = [...(snapshot.children ?? [])];
+      while (pending.length > 0) {
+        const childSnapshot = pending.pop();
+        if (!childSnapshot) continue;
+        for (const key of Object.keys(childSnapshot)) {
+          if (Reflect.get(childSnapshot, key) === undefined) Reflect.deleteProperty(childSnapshot, key);
+        }
+        for (const descendant of childSnapshot.children ?? []) pending.push(descendant);
+      }
+    } else {
+      snapshot.children = children;
+    }
   } else if (record.type === "code" && !codeState?.managed) {
     snapshot.children = [];
   }
@@ -4445,6 +4463,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           );
           const incomingPrepared = incomingNativeContainer ? incomingBlock.payload?.meta?.preparedNested : undefined;
           target.block = cloneBlock(incomingNativeContainer ? blockWithoutPreparedNested(incomingBlock) : incomingBlock);
+          (target as NodeRecordWithSerializedBlock)[serializedBlockOwnership] = true;
           const paragraphState = paragraphStateByRecord.get(target);
           if (paragraphState) coldParagraphBlocksByView.delete(paragraphState);
           const metaPrepared = incomingNativeContainer && nativePreparedLayoutByRecord.get(target)?.meta === true;
