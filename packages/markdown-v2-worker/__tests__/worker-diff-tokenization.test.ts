@@ -83,5 +83,46 @@ async function runDiffTokenizationTest(): Promise<void> {
   assert.ok(additionAnsi.startsWith("\u001b[42m"), "the same consumer must keep addition background distinct");
 }
 
+type DiffRow = { text: string; diffKind: DiffLineKind | undefined; oldNo: number | null; newNo: number | null };
+
+async function streamDiffRows(source: string, chunkSize: number): Promise<DiffRow[]> {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: { footnotes: false, html: false, mdx: false, tables: false, callouts: false },
+  }));
+  for (let index = 0; index < source.length; index += chunkSize) {
+    applyMessages(store, await harness.send({ type: "APPEND", text: source.slice(index, index + chunkSize) }));
+  }
+  applyMessages(store, await harness.send({ type: "FINALIZE" }));
+  const code = store.getBlocks().find((block) => block.type === "code");
+  assert.ok(code, "expected the diff fence in the cold export");
+  return store.getCodeLines(code.id, 0, 64).map((line) => ({
+    text: line.text,
+    diffKind: line.diffKind,
+    oldNo: line.oldNo ?? null,
+    newNo: line.newNo ?? null,
+  }));
+}
+
+// Diff numbering depends on every earlier row, so any chunking must yield the single-shot rows.
+async function runChunkedDiffNumberingTest(): Promise<void> {
+  const source = ["```diff", "@@ -3,2 +3,3 @@", " ctx", "-old", "+new1", "+new2", "@@ -10 +11 @@", "-x", "+y", "```", ""].join("\n");
+  const whole = await streamDiffRows(source, source.length);
+  const byText = new Map(whole.map((row) => [row.text, row]));
+  assert.deepStrictEqual(byText.get(" ctx"), { text: " ctx", diffKind: "context", oldNo: 3, newNo: 3 });
+  assert.deepStrictEqual(byText.get("+new2"), { text: "+new2", diffKind: "add", oldNo: null, newNo: 5 });
+  assert.deepStrictEqual(byText.get("-x"), { text: "-x", diffKind: "del", oldNo: 10, newNo: null });
+  assert.deepStrictEqual(byText.get("+y"), { text: "+y", diffKind: "add", oldNo: null, newNo: 11 });
+  for (const chunkSize of [1, 5]) {
+    assert.deepStrictEqual(await streamDiffRows(source, chunkSize), whole, `chunk size ${chunkSize} must match single-shot diff rows`);
+  }
+}
+
 await runDiffTokenizationTest();
+await runChunkedDiffNumberingTest();
 console.log("worker-diff-tokenization test passed");
