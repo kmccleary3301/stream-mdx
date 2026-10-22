@@ -65,5 +65,129 @@
       10,
       17
     ]
+  },
+  {
+    "name": "shrunk-010",
+    "source": "~~~ts\nconst value = \"a\";\n~~~\n\n~~~js\nconst tail = \"a\";",
+    "mode": "per-line",
+    "splitPoints": [
+      6,
+      25,
+      29,
+      30,
+      36
+    ]
+  },
+  {
+    "name": "shrunk-011",
+    "source": "| key | value |\n| :--- | ---: |\n| row0 | a |\n\n~~~ts\nconst value = \"a\";\n~~~",
+    "mode": "arbitrary",
+    "splitPoints": [
+      1,
+      7,
+      17,
+      20,
+      21,
+      24,
+      26,
+      27,
+      33,
+      40,
+      47,
+      48,
+      72,
+      73
+    ]
+  },
+  {
+    "name": "shrunk-012",
+    "source": "1. parent a\n   - nested\n\n     loose continuation\n2. sibling\n\nUnclosed <kbd>a",
+    "mode": "arbitrary",
+    "splitPoints": [
+      71,
+      74
+    ]
+  },
+  {
+    "name": "shrunk-013",
+    "source": "Footnote[^note]\n\n[^note]: a\n\n1. parent a\n   - nested\n\n     loose continuation\n2. sibling",
+    "mode": "per-line",
+    "splitPoints": [
+      16,
+      17,
+      28,
+      29,
+      41,
+      53,
+      54,
+      78
+    ]
+  },
+  {
+    "name": "shrunk-014",
+    "source": "Inline 𠮷𠮷a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\r\n[late]: /target\r\n[^note]: 𠮷𠮷a\n\nParagraph 🚀bx\n\nUnclosed <kbd>xxxa",
+    "mode": "arbitrary",
+    "splitPoints": [
+      8,
+      10,
+      19,
+      27,
+      71,
+      74,
+      79,
+      83,
+      86,
+      89,
+      92,
+      96,
+      98,
+      115,
+      126,
+      128,
+      131,
+      143,
+      158,
+      161
+    ]
+  },
+  {
+    "name": "shrunk-015",
+    "source": "Footnote[^note]\n\n[^note]: a\n\nInline a𠮷a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\r\n[late]: /target\r\n[^note]: a𠮷a\n\nParagraph 🚀aa\n\nUnclosed <kbd>aaaa",
+    "mode": "arbitrary",
+    "splitPoints": [
+      38,
+      47,
+      55,
+      99,
+      102,
+      107,
+      111,
+      114,
+      117,
+      120,
+      124,
+      126,
+      143,
+      144,
+      155,
+      170,
+      185,
+      188
+    ]
+  },
+  {
+    "name": "shrunk-016",
+    "source": "Footnote[^note]\n\n[^note]: a\n\nInline 𠮷𠮷a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\r\n[late]: /target\r\n[^note]: 𠮷𠮷a\n\nParagraph a",
+    "mode": "per-line",
+    "splitPoints": [
+      16,
+      17,
+      28,
+      29,
+      128,
+      145,
+      160,
+      161
+    ]
   }
 ]

@@ -110,11 +110,11 @@ export function semanticBlockProjection(block: Block): SemanticBlockComparison {
       delete meta.inline;
       delete meta.text;
     }
-    // Code-line decorations are owned and checked through the public code-line view after readiness.
+    // Code-line decorations are owned and checked through the public code-line view after readiness. The resolved
+    // highlighter grammar arrives with them (no renderer reads it), so a closed fence may publish before it.
     if (block.type === "code") {
       delete meta.tokenLines;
-      // An identical override does not change the effective language.
-      if (typeof meta.lang === "string" && meta.highlightLang === meta.lang) delete meta.highlightLang;
+      delete meta.highlightLang;
     }
     // A typed paragraph snapshot is a cold source-state mirror, not block semantics.
     if (hasManagedParagraphMirror(block, meta)) delete meta.paragraph;
