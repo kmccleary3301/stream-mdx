@@ -74,6 +74,32 @@ export function isRootFootnoteDefinitionStart(source: SourceSnapshot, sourceOffs
   return FOOTNOTE_DEFINITION_START.test(source.chunk(sourceOffset));
 }
 
+const LINK_LABEL_LIMIT = 999;
+
+/**
+ * A paragraph that may still become, or fold into, a link reference definition stays on the ordinary block path:
+ * only a parse from the definition's start decides it, and the native paragraph tail reads a bounded window.
+ * That is a paragraph opening with a label not yet ruled out (`[\nfoo\n]: /url`, `[foo]: /url '\ntitle`), or a title
+ * line right after an untitled definition (`[foo]:\n<url>\n'title'`).
+ */
+function mayJoinLinkReferenceDefinition(node: SyntaxNode, source: SourceSnapshot, sourceOffset: number): boolean {
+  const from = sourceOffset + node.from;
+  const text = source.read(from, Math.min(sourceOffset + node.to, from + LINK_LABEL_LIMIT + 3));
+  const previous = node.prevSibling;
+  if (previous?.type.name === "LinkReference" && !previous.getChild("LinkTitle") && /^['"(]/.test(text)) {
+    const between = source.read(sourceOffset + previous.to, from);
+    if (between.indexOf("\n") === between.lastIndexOf("\n")) return true;
+  }
+  if (!text.startsWith("[")) return false;
+  for (let index = 1; index < text.length && index <= LINK_LABEL_LIMIT + 1; index += 1) {
+    const character = text[index];
+    if (character === "\\") index += 1;
+    else if (character === "[") return false;
+    else if (character === "]") return index + 1 === text.length || text[index + 1] === ":";
+  }
+  return text.length <= LINK_LABEL_LIMIT + 1;
+}
+
 
 function createRootParagraphOwnerFromSnapshot(
   node: SyntaxNode,
@@ -84,7 +110,9 @@ function createRootParagraphOwnerFromSnapshot(
 ): RootParagraphSourceOwner | undefined {
   const sourceOffset = options.sourceOffset ?? 0;
   const from = sourceOffset + node.from;
-  if (!isRootParagraph(node) || isRootFootnoteDefinitionStart(sourceSnapshot, from)) return undefined;
+  if (!isRootParagraph(node)
+    || isRootFootnoteDefinitionStart(sourceSnapshot, from)
+    || mayJoinLinkReferenceDefinition(node, sourceSnapshot, sourceOffset)) return undefined;
   const tailParser = NativeParagraphTailParser.admit(
     options.parser,
     sourceSnapshot,

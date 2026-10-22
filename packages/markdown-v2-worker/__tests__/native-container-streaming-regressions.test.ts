@@ -279,6 +279,29 @@ async function runParagraphBecomesListItemTest(): Promise<void> {
   }
 }
 
+// A paragraph that can still become part of a link reference definition renders as single-shot once the
+// definition completes: a title line after the destination (CommonMark 195, 217), a multi-line title (196), or a
+// multi-line label (208).
+async function runLinkReferenceDefinitionSplitTest(): Promise<void> {
+  const cases: Array<[string, number]> = [
+    ["[Foo bar]:\n<my url>\n'title'\n\n[Foo bar]\n", 22],
+    ["[foo]: /url '\ntitle\nline1\nline2\n'\n\n[foo]\n", 20],
+    ["[\nfoo\n]: /url\nbar\n", 6],
+    ["[foo]: /foo-url \"foo\"\n[bar]: /bar-url\n  \"bar\"\n[baz]: /baz-url\n\n[foo],\n[bar],\n[baz]\n", 41],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, cut] of cases) {
+    const expected = projectConsumerBlocks((await runSession(harness, [source])).getBlocks());
+    for (const chunks of [[source.slice(0, cut), source.slice(cut)], chunksOfSize(source, 1)]) {
+      assert.deepEqual(
+        projectConsumerBlocks((await runSession(harness, chunks)).getBlocks()),
+        expected,
+        `${JSON.stringify(source)} must match single-shot (chunks ${JSON.stringify(chunks.slice(0, 2))})`,
+      );
+    }
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -293,4 +316,5 @@ await runSiblingBeforeActiveParagraphTest();
 await runEmptyQuoteTest();
 await runQuotedTabIndentedCodeTest();
 await runParagraphBecomesListItemTest();
+await runLinkReferenceDefinitionSplitTest();
 console.log("Native container streaming regressions passed");
