@@ -129,11 +129,12 @@ async function runPluginReplacedBlockAfterParagraphAppendTest(): Promise<void> {
 // CommonMark: a `> >` line after a blank quote line opens a quote nested in the outer one.
 async function runNestedQuoteAfterBlankQuoteLineTest(): Promise<void> {
   const chunks = ["Intro\n\n> W", " w.\n>\n> > q"];
+  const source = chunks.join("");
   const harness = await createWorkerHarness();
-  for (const session of [[chunks.join("")], chunks]) {
+  for (const session of [[source], chunks]) {
     const quote = projectConsumerBlocks((await runSession(harness, session)).getBlocks())[1];
     assert.deepEqual(
-      quote?.children.map((child) => (child.type === "blockquote" ? [child.type, child.raw] : [child.type])),
+      quote?.children.map((child) => (child.type === "blockquote" ? [child.type, source.slice(child.range.from, child.range.to)] : [child.type])),
       [["paragraph"], ["blockquote", "> q"]],
       `nested quote after a blank quote line (${session.length} chunks)`,
     );

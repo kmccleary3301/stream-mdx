@@ -117,6 +117,10 @@ export function projectConsumerBlocks(blocks: readonly Block[]): unknown[] {
   }
 
   function projectNode(node: NodeSnapshot): unknown[] {
+    // A nested list or quote level is rendered structure; whether its snapshot also carries a `block` is patch history.
+    if (node.type === "list" || node.type === "blockquote") {
+      return [{ type: node.type, range: node.range, children: node.children.flatMap(projectNode) }];
+    }
     const block = node.props?.block as Block | undefined;
     if (block) return [projectBlock(block)];
     return node.children.flatMap(projectNode);
