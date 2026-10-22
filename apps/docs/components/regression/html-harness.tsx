@@ -286,6 +286,7 @@ export function HtmlRegressionHarness(): JSX.Element {
     finalized: boolean;
     errors: string[];
     events: Array<{ type: string; details?: string; timestamp: number }>;
+    /** PATCH events that change store content. Input-source-only PATCHes never bump the renderer version. */
     patchEventCount: number;
   };
 
@@ -348,7 +349,9 @@ export function HtmlRegressionHarness(): JSX.Element {
         lifecycle.finalized = true;
         pushEvent("FINALIZED");
       } else if (data.type === "PATCH") {
-        lifecycle.patchEventCount += 1;
+        if (Array.isArray(data.patches) && data.patches.some((patch: { op?: unknown }) => patch.op !== "appendInputSource")) {
+          lifecycle.patchEventCount += 1;
+        }
         pushEvent("PATCH", `tx=${data.tx} patches=${Array.isArray(data.patches) ? data.patches.length : 0}`);
       } else if (data.type === "METRICS") {
         pushEvent("METRICS", `parseMs=${data.metrics?.parseMs ?? 0}`);
