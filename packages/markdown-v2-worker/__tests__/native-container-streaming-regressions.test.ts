@@ -1,7 +1,11 @@
 import { type Block, type NodeSnapshot, STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "@stream-mdx/core";
 
 import assert from "node:assert/strict";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ComponentRegistry } from "../../markdown-v2-react/src/components";
 import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
+import { MarkdownBlocksRenderer } from "../../markdown-v2-react/src/server";
 import { createWorkerHarness, projectConsumerBlocks, projectConsumerRoots, type WorkerHarness } from "./worker-test-harness";
 
 
@@ -367,6 +371,33 @@ async function runLinkReferenceDefinitionSplitTest(): Promise<void> {
   }
 }
 
+// A paragraph that carries a footnote reference resolves a link whose definition arrives split across appends, and
+// keeps its footnote number.
+async function runFootnoteParagraphLateDefinitionTest(): Promise<void> {
+  const render = (store: RendererStore): string =>
+    renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: [], store, componentRegistry: new ComponentRegistry() }));
+  const definition = "[ref1]: https://example.com/one\n";
+  const sources = [
+    `First [link one][ref1] x[^fn1].\n\n${definition}[^fn1]: note\n`,
+    `> First [link one][ref1] x[^fn1].\n\n${definition}[^fn1]: note\n`,
+    `- First [link one][ref1] x[^fn1].\n\n${definition}[^fn1]: note\n`,
+  ];
+  const harness = await createWorkerHarness();
+  for (const source of sources) {
+    const expected = render(await runSession(harness, [source]));
+    assert.match(expected, /<a href="https:\/\/example\.com\/one"[^>]*>link one<\/a> x<sup class="footnote-ref">/, `${JSON.stringify(source)} single-shot`);
+    const definitionStart = source.indexOf(definition);
+    for (let offset = 1; offset < definition.length; offset += 1) {
+      const cut = definitionStart + offset;
+      assert.equal(
+        render(await runSession(harness, [source.slice(0, cut), source.slice(cut)])),
+        expected,
+        `${JSON.stringify(source)} cut ${offset} characters into the definition`,
+      );
+    }
+  }
+}
+
 // An indented quote starts mid-line; a window that re-reads its first line must include the indentation, or the
 // quote marker is read twice (CommonMark 230, 259).
 async function runIndentedQuoteWindowTest(): Promise<void> {
@@ -495,6 +526,7 @@ await runQuotedTabIndentedCodeTest();
 await runParagraphBecomesListItemTest();
 await runThematicBreakRetractsProvisionalListItemTest();
 await runLinkReferenceDefinitionSplitTest();
+await runFootnoteParagraphLateDefinitionTest();
 await runIndentedQuoteWindowTest();
 await runClosedQuoteHtmlChildTest();
 await runItemBlockGapLoosenessTest();

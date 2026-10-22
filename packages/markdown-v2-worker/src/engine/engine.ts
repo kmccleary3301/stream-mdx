@@ -2639,27 +2639,38 @@ export class MarkdownEngine {
     return deltas;
   }
 
+  // Changed spans also go back to the footnote bridge: its targets hold the pre-invalidation nodes, so numbering would
+  // otherwise be dropped from the new nodes or republished over them from the stale ones.
   private invalidateLinkReferenceOwners(
     labels: ReadonlySet<string>,
     rootParagraphCount = this.rootParagraphOwners.length,
     rootTableCount = this.rootTableOwners.length,
-  ): { readonly paragraphPatches: Patch[]; readonly tablePatches: Patch[] } {
+  ): {
+    readonly paragraphPatches: Patch[];
+    readonly tablePatches: Patch[];
+    readonly paragraphTargets: FootnoteParagraphTargetDelta[];
+  } {
     const paragraphPatches: Patch[] = [];
     const tablePatches: Patch[] = [];
-    if (labels.size === 0) return { paragraphPatches, tablePatches };
+    const paragraphTargets: FootnoteParagraphTargetDelta[] = [];
+    if (labels.size === 0) return { paragraphPatches, tablePatches, paragraphTargets };
 
     for (let index = 0; index < rootParagraphCount; index += 1) {
       const owner = this.rootParagraphOwners[index];
       if (!owner) continue;
       this.publishParagraphLinkReferences(owner);
-      const patch = rootParagraphSemanticPatch(owner, owner.invalidateLinkReferences(labels));
+      const change = owner.invalidateLinkReferences(labels);
+      if (change) paragraphTargets.push(this.rootParagraphFootnoteTargetDelta(owner, change.updates.map((update) => update.span)));
+      const patch = rootParagraphSemanticPatch(owner, change);
       if (patch && this.emittedRootParagraphIds.has(owner.id)) paragraphPatches.push(patch);
     }
     for (const owner of this.nestedParagraphOwners.values()) {
       const target = this.findNestedParagraphSnapshot(owner.id);
       if (target?.snapshot.paragraph?.generation !== owner.getMetadata().generation) continue;
       this.publishParagraphLinkReferences(owner);
-      const patch = rootParagraphSemanticPatch(owner, owner.invalidateLinkReferences(labels));
+      const change = owner.invalidateLinkReferences(labels);
+      if (change) paragraphTargets.push(this.rootParagraphFootnoteTargetDelta(owner, change.updates.map((update) => update.span)));
+      const patch = rootParagraphSemanticPatch(owner, change);
       if (patch) {
         paragraphPatches.push({ ...patch, at: { blockId: target.blockId, nodeId: owner.id } });
       }
@@ -2678,7 +2689,7 @@ export class MarkdownEngine {
         tablePatches.push({ ...patch, at: { blockId: target.blockId, nodeId: owner.id } });
       }
     }
-    return { paragraphPatches, tablePatches };
+    return { paragraphPatches, tablePatches, paragraphTargets };
   }
 
 
@@ -3387,6 +3398,7 @@ export class MarkdownEngine {
     );
     const rootParagraphSemanticPatches: Patch[] = [];
     const tableSemanticPatches: Patch[] = [];
+    const linkReferenceTargets: FootnoteParagraphTargetDelta[] = [];
     if (changedLabels.size > 0) {
       const linkReferencePatches = this.invalidateLinkReferenceOwners(
         changedLabels,
@@ -3395,6 +3407,7 @@ export class MarkdownEngine {
       );
       rootParagraphSemanticPatches.push(...linkReferencePatches.paragraphPatches);
       tableSemanticPatches.push(...linkReferencePatches.tablePatches);
+      linkReferenceTargets.push(...linkReferencePatches.paragraphTargets);
     }
 
     // Tail headings dedupe against the retained prefix, as a single-shot parse would.
@@ -3475,7 +3488,8 @@ export class MarkdownEngine {
     const previouslyProvisionalIds = new Set(this.blocks.filter((block) => !block.isFinalized).map((block) => block.id));
     const nativeFootnotesChanged = tailBlocks.some((block) =>
       this.footnoteSourceNeedsNumbering(block, oldLength, previouslyProvisionalIds));
-    const paragraphDeltas = [...(footnoteTargets.deltas ?? []), ...createdParagraphTargets];
+    // Invalidated spans follow the caller's append deltas, which can predate them.
+    const paragraphDeltas = [...(footnoteTargets.deltas ?? []), ...linkReferenceTargets, ...createdParagraphTargets];
     const rebuildParagraphTargets = Boolean(footnoteTargets.rebuild)
       || nativeFootnotesChanged
       || removedOwnerIds.length > 0
@@ -3918,15 +3932,18 @@ export class MarkdownEngine {
       this.rootTableOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner);
     let activeCreatedRootParagraphOwners = createdRootParagraphOwners.filter((owner) =>
       this.rootParagraphOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner);
-    const paragraphTargets = activeCreatedRootParagraphOwners
-      .map((owner) => this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize()));
+    const paragraphTargets = [
+      ...(linkReferencePatches?.paragraphTargets ?? []),
+      ...activeCreatedRootParagraphOwners
+        .map((owner) => this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize())),
+    ];
     const linkReferencesRefreshed = changedLabels.size > 0
       && await this.refreshLinkReferenceDependents(documentContextBlocks, changedLabels);
     this.pendingRootParagraphPatches = [];
     changedBlocks = this.runDocumentPlugins(
       documentContextBlocks,
       source,
-      createdRootParagraphOwners.length > 0
+      paragraphTargets.length > 0
       || removedParagraphOwnerIds.length > 0
       || this.nestedParagraphOwners.size > 0
       || this.nestedTableOwners.size > 0
