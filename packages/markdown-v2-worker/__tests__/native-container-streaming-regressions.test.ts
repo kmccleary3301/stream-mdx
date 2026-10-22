@@ -227,6 +227,7 @@ async function runEmptyQuoteTest(): Promise<void> {
   for (const [source, expected] of cases) {
     for (const chunkSize of [source.length, 1, 2]) {
       const blocks = (await runSession(harness, chunksOfSize(source, chunkSize))).getBlocks();
+      assert.equal(blocks[0]?.type, "blockquote", `${JSON.stringify(source)} keeps its quote (chunk size ${chunkSize})`);
       const nested = blocks[0]?.payload.meta?.preparedNested as { children?: readonly NodeSnapshot[] } | undefined;
       assert.deepEqual(
         (nested?.children ?? []).map((child) => child.type),
@@ -382,20 +383,28 @@ async function runNestedTableRowsTest(): Promise<void> {
     walk("__root__");
     return found;
   };
-  const sources = [
-    "> | a |\n> | - |\n> | b c |\n",
-    "> | a |\n> | - |\n> | b c |",
-    "- | a |\n  | - |\n  | b |\n  | c |\n\nafter\n",
-    "> | a |\n> | - |\n> | x |\n> # z\n",
-    "- x\n\n  | a |\n  | - |\n  | b |\n  | c |\n",
+  const cellText = (nodes: unknown): string => Array.isArray(nodes)
+    ? nodes.map(cellText).join("")
+    : typeof nodes === "object" && nodes !== null
+      ? "text" in nodes && typeof nodes.text === "string"
+        ? nodes.text
+        : cellText((nodes as { children?: unknown }).children)
+      : "";
+  const tableText = (table: unknown) => {
+    const { header, rows } = table as { header?: unknown[]; rows?: unknown[][] };
+    return { header: (header ?? []).map(cellText), rows: (rows ?? []).map((row) => row.map(cellText)) };
+  };
+  const cases: Array<[string, { header: string[]; rows: string[][] }]> = [
+    ["> | a |\n> | - |\n> | b c |\n", { header: ["a"], rows: [["b c"]] }],
+    ["> | a |\n> | - |\n> | b c |", { header: ["a"], rows: [["b c"]] }],
+    ["- | a |\n  | - |\n  | b |\n  | c |\n\nafter\n", { header: ["a"], rows: [["b"], ["c"]] }],
+    ["> | a |\n> | - |\n> | x |\n> # z\n", { header: ["a"], rows: [["x"]] }],
+    ["- x\n\n  | a |\n  | - |\n  | b |\n  | c |\n", { header: ["a"], rows: [["b"], ["c"]] }],
   ];
   const harness = await createWorkerHarness();
-  for (const source of sources) {
+  for (const [source, table] of cases) {
     const expected = tables(await runSession(harness, [source]));
-    assert.ok(
-      expected.length === 1 && ((expected[0] as { rows?: unknown[] }).rows?.length ?? 0) > 0,
-      `${JSON.stringify(source)} single-shot must hold one table with body rows`,
-    );
+    assert.deepEqual(expected.map(tableText), [table], `${JSON.stringify(source)} single-shot table`);
     for (const size of [1, 7]) {
       assert.deepEqual(
         tables(await runSession(harness, chunksOfSize(source, size))),
