@@ -561,6 +561,31 @@ function trimProvisionalFenceTail(raw: string): string {
   return tail && tail[1][0] === opening[1][0] && tail[1].length < opening[1].length ? raw.slice(0, lastNewline) : raw;
 }
 
+function codeSnapshotProps(block: Block, previous: Record<string, unknown>): Record<string, unknown> {
+  const meta = block.payload.meta;
+  const lang = typeof meta?.lang === "string"
+    ? meta.lang
+    : typeof previous.language === "string"
+      ? previous.language
+      : previous.lang;
+  const highlightedHtml = block.payload.highlightedHtml ?? "";
+  let { preAttrs, codeAttrs } = extractCodeWrapperAttributes(highlightedHtml);
+  const existingPreAttrs = previous.preAttrs && typeof previous.preAttrs === "object"
+    ? previous.preAttrs as Record<string, string>
+    : undefined;
+  const existingCodeAttrs = previous.codeAttrs && typeof previous.codeAttrs === "object"
+    ? previous.codeAttrs as Record<string, string>
+    : undefined;
+  preAttrs = preAttrs ?? existingPreAttrs;
+  codeAttrs = codeAttrs ?? existingCodeAttrs;
+  if (!preAttrs || !codeAttrs) {
+    const defaults = getDefaultCodeWrapperAttributes(typeof lang === "string" ? lang : undefined);
+    preAttrs = preAttrs ?? defaults.preAttrs;
+    codeAttrs = codeAttrs ?? defaults.codeAttrs;
+  }
+  return { ...previous, lang, preAttrs, codeAttrs };
+}
+
 function enrichCodeSnapshot(
   block: Block,
   snapshot: NodeSnapshot,
@@ -595,19 +620,7 @@ function enrichCodeSnapshot(
   const oldNoLines = metaOldNo ? normalizeOptionalArray(metaOldNo, lines.length) : null;
   const metaNewNo = Array.isArray(meta?.newNo) ? (meta?.newNo as Array<number | null>) : null;
   const newNoLines = metaNewNo ? normalizeOptionalArray(metaNewNo, lines.length) : null;
-  const lang = typeof meta?.lang === "string" ? String(meta.lang) : undefined;
-  let { preAttrs, codeAttrs } = extractCodeWrapperAttributes(highlightedHtml);
-  if (!preAttrs || !codeAttrs) {
-    const defaults = getDefaultCodeWrapperAttributes(lang);
-    preAttrs = preAttrs ?? defaults.preAttrs;
-    codeAttrs = codeAttrs ?? defaults.codeAttrs;
-  }
-  snapshot.props = {
-    ...(snapshot.props ?? {}),
-    lang,
-    preAttrs,
-    codeAttrs,
-  };
+  snapshot.props = codeSnapshotProps(block, snapshot.props ?? {});
   snapshot.children = lines.map((line, index) => {
     const props: Record<string, unknown> = {
       index,
@@ -1298,9 +1311,17 @@ function materializeSnapshotNodeBlock(
   return block;
 }
 
+function materializedSnapshotNodeRange(node: SnapshotNode): NodeSnapshot["range"] {
+  const range = node.paragraphState?.source.sourceRange
+    ?? node.tableState?.source.sourceRange
+    ?? node.codeState?.source.sourceRange
+    ?? node.range;
+  return range ? { from: range.from, to: range.to } : undefined;
+}
+
 function materializeSnapshotNodeProps(node: SnapshotNode, source: SourceSnapshot | undefined): Record<string, unknown> {
   const props = structuredCloneIfPossible(node.props);
-  const range = node.range;
+  const range = materializedSnapshotNodeRange(node);
   if (source && range && isAdmittedAuthoredRange(range, source) && typeof props.raw === "string") {
     props.raw = source.read(range.from, range.to);
   }
@@ -1314,13 +1335,15 @@ function materializeSnapshotNode(
   inheritedListLayout?: LegacyListLayout,
 ): NodeSnapshot {
   const projection = materializeLegacyPreparedProjection(snapshot, node, source, inheritedListLayout);
-  const children = node.codeState?.managed
-    ? [...materializeManagedCodeLineSnapshots(node), ...projection.prepared.children]
+  const children = node.codeState
+    ? node.codeState.managed
+      ? [...materializeManagedCodeLineSnapshots(node), ...projection.prepared.children]
+      : []
     : projection.prepared.children;
   // The exported projection owns its props; the node's props gain `block`, which would make the block's
   // `preparedNested` reach itself if the two shared one object.
-  const props = { ...projection.prepared.props };
-  const range = node.range;
+  const preparedProps = { ...projection.prepared.props };
+  const range = materializedSnapshotNodeRange(node);
   const exportShape = node.preparedNestedExport;
   const prepared: PreparedNestedSnapshot | undefined = exportShape
     ? projection.prepared
@@ -1333,11 +1356,28 @@ function materializeSnapshotNode(
     projection.primaryParagraph,
     projection.primaryInline,
   );
+  let props = preparedProps;
+  if (node.type === "code" && block) {
+    props = node.codeState ? { ...preparedProps } : codeSnapshotProps(block, preparedProps);
+    if (node.codeState) {
+      delete props.lang;
+      delete props.preAttrs;
+      delete props.codeAttrs;
+    }
+  }
 
   if (block) props.block = block;
   const result: NodeSnapshot = { id: node.id, type: node.type, props, children };
+  const blockMeta = block?.payload.meta;
   if (node.meta || exportShape?.meta) {
     const meta = node.meta ? structuredCloneIfPossible(node.meta) : {};
+    if (node.meta && blockMeta) {
+      for (const key of Object.keys(meta)) {
+        if (Object.prototype.hasOwnProperty.call(blockMeta, key)) {
+          meta[key] = structuredCloneIfPossible(blockMeta[key]);
+        }
+      }
+    }
     if (exportShape?.meta && prepared) meta.preparedNested = prepared;
     result.meta = meta;
   }
@@ -1453,6 +1493,204 @@ function createManagedCodeState(
   };
 }
 
+interface LegacyCodeLinePosition {
+  readonly from: number;
+  readonly to: number;
+  readonly ending: CodeLineRecord["ending"];
+}
+
+function physicalCodeLines(raw: string): LegacyCodeLinePosition[] {
+  if (raw.length === 0) return [];
+  const lines: LegacyCodeLinePosition[] = [];
+  let start = 0;
+  while (start < raw.length) {
+    let end = start;
+    while (end < raw.length && raw[end] !== "\n" && raw[end] !== "\r") end += 1;
+    let ending: CodeLineRecord["ending"] = "";
+    if (end < raw.length) {
+      ending = raw[end] === "\r" && raw[end + 1] === "\n" ? "\r\n" : raw[end] as "\n" | "\r";
+    }
+    lines.push({ from: start, to: end, ending });
+    start = end + ending.length;
+  }
+  if (raw.endsWith("\n") || raw.endsWith("\r")) lines.push({ from: raw.length, to: raw.length, ending: "" });
+  return lines;
+}
+
+function codeBodyLinePositions(raw: string): LegacyCodeLinePosition[] {
+  const physical = physicalCodeLines(raw);
+  const opening = physical.length > 0
+    ? raw.slice(physical[0]!.from, physical[0]!.to).match(/^( {0,3})(`{3,}|~{3,})/)
+    : null;
+  if (!opening) {
+    if (!/^ {4}/m.test(raw)) return physical;
+    return physical.map((line) => {
+      const row = raw.slice(line.from, line.to);
+      let removed = 0;
+      while (removed < 4 && row[removed] === " ") removed += 1;
+      return removed === 4 ? { ...line, from: line.from + removed } : line;
+    });
+  }
+  const marker = opening[2][0];
+  const width = opening[2].length;
+  let closeIndex = -1;
+  for (let index = physical.length - 1; index > 0; index -= 1) {
+    const close = raw.slice(physical[index]!.from, physical[index]!.to).match(/^ {0,3}(`+|~+)[\t ]*$/);
+    if (close && close[1][0] === marker && close[1].length >= width) {
+      closeIndex = index;
+      break;
+    }
+  }
+  const end = closeIndex === -1 ? physical.length : closeIndex;
+  return physical.slice(1, end).map((line) => {
+    const row = raw.slice(line.from, line.to);
+    let removed = 0;
+    while (removed < opening[1].length && row[removed] === " ") removed += 1;
+    return removed === 0 ? line : { ...line, from: line.from + removed };
+  });
+}
+
+type LegacyTokenStyle = { fg?: string; bg?: string; fs?: number };
+type LegacyParsedTokenStyle = {
+  dark?: LegacyTokenStyle;
+  light?: LegacyTokenStyle;
+  single?: LegacyTokenStyle;
+};
+
+function decodeLegacyCodeHtml(value: string): string {
+  return value
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (_match, decimal: string) => String.fromCodePoint(Number(decimal)))
+    .replace(/&#x([\da-f]+);/gi, (_match, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)));
+}
+
+function legacyCodeColor(value: string | undefined): string | undefined {
+  const color = value?.trim() ?? "";
+  return color && !/[<>"'`]/.test(color) && (/^#[\da-f]{3,8}$/i.test(color) || /^(?:rgb|rgba|hsl|hsla)\([\d\s.,%/+-]+\)$/i.test(color) || /^[a-z]{1,24}$/i.test(color))
+    ? color
+    : undefined;
+}
+
+function legacyCodeStyleFromTag(tag: string): LegacyParsedTokenStyle {
+  const match = tag.match(/\bstyle\s*=\s*(["'])(.*?)\1/i);
+  if (!match) return {};
+  const values = new Map<string, string>();
+  for (const declaration of match[2].split(";")) {
+    const colon = declaration.indexOf(":");
+    if (colon !== -1) values.set(declaration.slice(0, colon).trim().toLowerCase(), decodeLegacyCodeHtml(declaration.slice(colon + 1).trim()));
+  }
+  const dark: LegacyTokenStyle = {};
+  const light: LegacyTokenStyle = {};
+  const single: LegacyTokenStyle = {};
+  const darkFg = legacyCodeColor(values.get("--shiki-dark"));
+  const lightFg = legacyCodeColor(values.get("--shiki-light"));
+  const darkBg = legacyCodeColor(values.get("--shiki-dark-bg"));
+  const lightBg = legacyCodeColor(values.get("--shiki-light-bg"));
+  const fg = legacyCodeColor(values.get("color"));
+  const bg = legacyCodeColor(values.get("background-color"));
+  if (darkFg) dark.fg = darkFg;
+  if (lightFg) light.fg = lightFg;
+  if (darkBg) dark.bg = darkBg;
+  if (lightBg) light.bg = lightBg;
+  if (fg) single.fg = fg;
+  if (bg) single.bg = bg;
+  let fontStyle = 0;
+  if (values.get("font-style")?.toLowerCase().includes("italic")) fontStyle |= 1;
+  const weight = values.get("font-weight")?.toLowerCase();
+  if (weight === "bold" || (Number(weight) >= 600 && Number(weight) <= 900)) fontStyle |= 2;
+  const decorations = values.get("text-decoration")?.toLowerCase() ?? "";
+  if (decorations.includes("underline")) fontStyle |= 4;
+  if (decorations.includes("line-through")) fontStyle |= 8;
+  if (fontStyle > 0) {
+    dark.fs = fontStyle;
+    light.fs = fontStyle;
+    single.fs = fontStyle;
+  }
+  return {
+    dark: Object.keys(dark).length > 0 ? dark : undefined,
+    light: Object.keys(light).length > 0 ? light : undefined,
+    single: Object.keys(single).length > 0 ? single : undefined,
+  };
+}
+
+function legacyCodeTokensFromHtml(html: string, expectedText: string): TokenLineV1 | undefined {
+  const spans: TokenLineV1["spans"] = [];
+  const styles: Array<LegacyParsedTokenStyle | undefined> = [];
+  let text = "";
+  for (const part of html.match(/<[^>]*>|[^<]+/g) ?? []) {
+    if (part[0] === "<") {
+      if (/^<\s*\//.test(part)) {
+        if (styles.length > 0) styles.pop();
+      } else if (!/^<\s*!/.test(part) && !/^<\s*\?/.test(part) && !/\/\s*>$/.test(part)) {
+        const own = legacyCodeStyleFromTag(part);
+        const parent = styles[styles.length - 1];
+        styles.push({
+          dark: parent?.dark || own.dark ? { ...parent?.dark, ...own.dark } : undefined,
+          light: parent?.light || own.light ? { ...parent?.light, ...own.light } : undefined,
+          single: parent?.single || own.single ? { ...parent?.single, ...own.single } : undefined,
+        });
+      }
+      continue;
+    }
+    const value = decodeLegacyCodeHtml(part);
+    if (!value) continue;
+    text += value;
+    const active = styles[styles.length - 1];
+    const span: TokenLineV1["spans"][number] = {
+      t: value,
+      ...(active?.dark || active?.light ? { v: { dark: active.dark, light: active.light } } : {}),
+      ...(active?.single ? { s: active.single } : {}),
+    };
+    const previous = spans[spans.length - 1];
+    if (previous && JSON.stringify({ v: previous.v, s: previous.s }) === JSON.stringify({ v: span.v, s: span.s })) {
+      spans[spans.length - 1] = { ...previous, t: previous.t + span.t };
+    } else {
+      spans.push(span);
+    }
+  }
+  return text === expectedText && spans.length > 0 ? { spans } : undefined;
+}
+
+function legacyCodeLineRecord(
+  line: SnapshotNode,
+  index: number,
+  sourceFrom: number,
+  position: LegacyCodeLinePosition | undefined,
+  metadataTokenLines: unknown,
+): CodeLineRecord {
+  const text = typeof line.props.text === "string" ? line.props.text : "";
+  const lineTokens = line.props.tokens;
+  const tokenLine = lineTokens && typeof lineTokens === "object" && Array.isArray((lineTokens as TokenLineV1).spans)
+    ? lineTokens as TokenLineV1
+    : Array.isArray(metadataTokenLines)
+      ? (metadataTokenLines[index] as TokenLineV1 | null | undefined) ?? undefined
+      : undefined;
+  const tokens = tokenLine ?? (typeof line.props.html === "string" && line.props.html.includes("<")
+    ? legacyCodeTokensFromHtml(line.props.html, text)
+    : undefined);
+  return {
+    id: line.id,
+    index,
+    text,
+    ending: position?.ending ?? "",
+    sourceRange: position
+      ? { from: sourceFrom + position.from, to: sourceFrom + position.to }
+      : { from: sourceFrom, to: sourceFrom },
+    sourceRevision: 0,
+    isProvisional: line.props.isProvisional === true,
+    decoration: tokens
+      ? { index, lineId: line.id, sourceRevision: 0, configurationRevision: 0, exactness: "exact", tokens }
+      : undefined,
+    diffKind: line.props.diffKind as CodeLineRecord["diffKind"],
+    oldNo: line.props.oldNo as CodeLineRecord["oldNo"],
+    newNo: line.props.newNo as CodeLineRecord["newNo"],
+  };
+}
+
 function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, SnapshotNode>, snapshot: DocumentSnapshot): SnapshotCodeState {
   const block = node.block;
   if (!block) throw new Error("Legacy code block is missing");
@@ -1462,10 +1700,11 @@ function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, Sn
     block.payload.range && block.payload.range.to - block.payload.range.from === raw.length
       ? { from: block.payload.range.from, to: block.payload.range.to }
       : { from: fallbackFrom, to: fallbackFrom + raw.length };
+  const bodyPositions = codeBodyLinePositions(raw);
   const lineNodes = node.children
     .map((id) => nodes.get(id))
     .filter((line): line is SnapshotNode => Boolean(line))
-    .map((line, index) => nodeSnapshotLineRecord(line, index, sourceRange.from));
+    .map((line, index) => legacyCodeLineRecord(line, index, sourceRange.from, bodyPositions[index], block.payload.meta?.tokenLines));
   const lines = createCodeLineIndex({ lines: lineNodes });
   const canonicalSource = inputSourceSnapshot(snapshot);
   let document: AppendSourceDocument | undefined;
@@ -1501,17 +1740,6 @@ function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, Sn
   };
 }
 
-function nodeSnapshotLineRecord(line: SnapshotNode, index: number, sourceFrom: number): CodeLineRecord {
-  return {
-    id: line.id,
-    index,
-    text: typeof line.props.text === "string" ? line.props.text : "",
-    ending: "",
-    sourceRange: { from: sourceFrom, to: sourceFrom },
-    sourceRevision: 0,
-    isProvisional: line.props.isProvisional === true,
-  };
-}
 
 function codeLineTokens(line: CodeLineRecord): TokenLineV1 | undefined {
   const decoration = line.decoration;
@@ -1677,7 +1905,6 @@ function decorateCodeState(
 function materializeCodeBlock(node: SnapshotNode): Block {
   const state = node.codeState;
   if (!state) throw new Error("Code state is missing");
-  if (!state.managed && node.block) return cloneBlock(node.block);
   const raw = state.sourceSnapshot.materialize();
   const block: Block = node.block
     ? cloneBlock(node.block)
@@ -1693,19 +1920,21 @@ function materializeCodeBlock(node: SnapshotNode): Block {
   block.payload.raw = raw;
   block.payload.range = { ...state.source.sourceRange };
   const meta = { ...(block.payload.meta ?? {}) };
-  meta.code = state.lines.materialize().replace(/\r\n?/g, "\n").replace(/\n$/, "");
-  meta.info = state.info;
-  if (state.language !== undefined) meta.lang = state.language;
-  const tokenLines = new Array<TokenLineV1 | null>(state.lines.length).fill(null);
-  let hasTokens = false;
-  for (let index = 0; index < tokenLines.length; index++) {
-    const line = state.lines.get(index);
-    const tokens = line ? codeLineTokens(line) : undefined;
-    if (!tokens) continue;
-    tokenLines[index] = tokens;
-    hasTokens = true;
+  if (state.managed || typeof meta.code === "string" || node.block === undefined) {
+    meta.code = state.lines.materialize().replace(/\r\n?/g, "\n").replace(/\n$/, "");
   }
-  if (hasTokens) meta.tokenLines = tokenLines;
+  if (state.info.length > 0) meta.info = state.info;
+  if (state.language !== undefined) meta.lang = state.language;
+  const rows = state.lines.readRange(0, state.lines.length);
+  const tokenLines = rows.map((line) => line.decoration ? codeLineTokens(line) ?? null : null);
+  if (tokenLines.some((line) => line !== null)) meta.tokenLines = tokenLines;
+  else delete meta.tokenLines;
+  const diffKind = rows.map((line) => line.diffKind ?? null);
+  const oldNo = rows.map((line) => line.oldNo ?? null);
+  const newNo = rows.map((line) => line.newNo ?? null);
+  if (diffKind.some((line) => line !== null)) meta.diffKind = diffKind;
+  if (oldNo.some((line) => line !== null)) meta.oldNo = oldNo;
+  if (newNo.some((line) => line !== null)) meta.newNo = newNo;
   block.payload.meta = meta;
   return block;
 }
