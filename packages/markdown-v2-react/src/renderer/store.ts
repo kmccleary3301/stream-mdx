@@ -4948,6 +4948,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 }
               }
             }
+            // Like every semantic op, finalize moves the block to the patch's epoch; the worker counts it as emitted.
+            if (getPatchKind(patch) === "semantic") {
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
+            }
             if (isListRelated(target.type)) {
               markListDepthDirty(target.id);
             }

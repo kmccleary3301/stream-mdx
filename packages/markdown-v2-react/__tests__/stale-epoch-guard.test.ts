@@ -333,6 +333,29 @@ async function main() {
     inheritedStore.getChildrenWithVersion("epoch-parent").children,
     ["epoch-child", "epoch-appended-child"],
   );
+
+  // The worker records a finalize as the block's emitted epoch, so the next patch to that block expects it.
+  const finalizeStore = createRendererStore([createParagraphBlock("alpha")]);
+  const openEpoch = finalizeStore.getNode("paragraph-block")?.blockEpoch ?? 0;
+  const finalizeEpoch = openEpoch + 5;
+  finalizeStore.applyPatches([
+    {
+      op: "finalize",
+      at: { blockId: "paragraph-block" },
+      meta: { kind: "semantic", blockEpoch: openEpoch, parseEpoch: finalizeEpoch, tx: 301 },
+    } satisfies Patch,
+  ]);
+  finalizeStore.applyPatches([
+    {
+      op: "setProps",
+      at: { blockId: "paragraph-block" },
+      props: { afterFinalize: true },
+      meta: { kind: "semantic", blockEpoch: finalizeEpoch, parseEpoch: finalizeEpoch + 1, tx: 302 },
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(finalizeStore.getNode("paragraph-block")?.block?.isFinalized, true);
+  assert.strictEqual(finalizeStore.getNode("paragraph-block")?.props.afterFinalize, true, "a patch after finalize must not be stale");
+  assert.strictEqual(finalizeStore.getDebugCounters().staleEpochRejected, 0);
 }
 
 await main();
