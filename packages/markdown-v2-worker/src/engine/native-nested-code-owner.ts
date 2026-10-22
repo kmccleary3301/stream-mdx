@@ -265,7 +265,11 @@ function displayLineText(
   baseIndent: number,
   requiredIndent: number,
 ): string {
-  const prefixIndent = Math.max(0, columnAt(source, lineStartAt(source, from), from) - baseIndent);
+  const lineStart = lineStartAt(source, from);
+  if (sourceCharacterAt(source, lineStart) === ">") {
+    return nativeCodeLine(source, lineStart, from + raw.length, baseIndent, requiredIndent, "").text;
+  }
+  const prefixIndent = Math.max(0, columnAt(source, lineStart, from) - baseIndent);
   if (prefixIndent >= requiredIndent) return " ".repeat(prefixIndent - requiredIndent) + raw;
   return stripColumns(raw, requiredIndent - prefixIndent);
 }
@@ -408,7 +412,7 @@ function readNativeCodeLines(
   const lines: NativeCodeLineDraft[] = [];
   let pending: PendingNativeCodeLine | undefined;
   let pendingCRAt: number | undefined;
-
+  let previousEventTo: number | undefined;
   const append = (raw: string, from: number, to: number): void => {
     if (!pending) pending = { raw: "", from, to: from };
     pending.raw += raw;
@@ -439,19 +443,17 @@ function readNativeCodeLines(
   };
 
   const finishAcrossGap = (nextFrom: number): void => {
-    if (!pending || nextFrom <= pending.to) return;
-    let cursor = pending.to;
+    const cursorStart = pending?.to ?? previousEventTo;
+    if (cursorStart === undefined || nextFrom <= cursorStart) return;
+    let cursor = cursorStart;
     const firstGap = source.read(cursor, nextFrom);
     const boundary = firstLineEnding(firstGap, source, cursor);
     if (!boundary) {
-      if (firstGap.length > 0) throw new TypeError("Native CodeText nodes do not map a continuous authored code line");
+      if (pending && firstGap.length > 0) throw new TypeError("Native CodeText nodes do not map a continuous authored code line");
       return;
     }
-    if (boundary.ending === "\r" && boundary.from + 1 === source.length && closure === "open") {
-      pendingCRAt = boundary.from;
-      return;
-    }
-    finish(boundary.ending);
+    if (pending) finish(boundary.ending);
+    else lines.push(blankNativeCodeLine(source, cursor, boundary.from, baseIndent, requiredIndent, boundary.ending));
     cursor = boundary.from + boundary.ending.length;
     while (cursor < nextFrom) {
       const gap = source.read(cursor, nextFrom);
@@ -469,6 +471,7 @@ function readNativeCodeLines(
       const ending = lineEndingAt(source, event.to);
       if (ending && !(ending === "\r" && event.to + 1 === source.length && closure === "open")) finish(ending);
       else if (ending === "\r" && event.to + 1 === source.length && closure === "open") pendingCRAt = event.to;
+      previousEventTo = Math.max(previousEventTo ?? event.to, event.to);
       continue;
     }
 
@@ -502,6 +505,7 @@ function readNativeCodeLines(
       // A CRLF can consume one source unit past this 4096-unit chunk.
       cursor += offset;
     }
+    previousEventTo = Math.max(previousEventTo ?? event.to, event.to);
   }
 
   if (pending) {
