@@ -612,7 +612,7 @@ function activeTailStart(
   codeContext?: NativeContainerCodeOpening,
   counters?: NativeContainerTailDiagnosticCounters,
 ): number {
-  if (leaf.type.name === "FencedCode" && codeContext) {
+  if ((leaf.type.name === "FencedCode" || leaf.type.name === "CodeBlock") && codeContext) {
     if (codeContext.openingContextText === "") return codeContext.openingLineFrom;
     return lastPhysicalLineStart(source, codeContext.openingLineTo, fallbackTo);
   }
@@ -729,12 +729,13 @@ function codeOpening(
     const openingLineFrom = lineStartAt(source, textRange.from);
     const openingTextFrom = textRange.from;
     const openingLineTo = lineEndAt(source, openingLineFrom);
+    const openingContextText = source.read(openingLineFrom, openingLineTo);
     return Object.freeze({
       kind: "indented",
       openingLineFrom,
       openingTextFrom,
       openingLineTo,
-      openingContextText: source.read(openingLineFrom, openingTextFrom),
+      openingContextText,
     });
   }
   return undefined;
@@ -763,7 +764,7 @@ function changedCodeNodes(leaf: SyntaxNode, prefixLength: number): readonly Synt
   const stack: SyntaxNode[] = [leaf];
   while (stack.length > 0) {
     const node = stack.pop()!;
-    if (node.from >= prefixLength && (node.type.name === "CodeText" || node.type.name === "CodeMark")) nodes.push(node);
+    if (node.to >= prefixLength && (node.type.name === "CodeText" || node.type.name === "CodeMark")) nodes.push(node);
     for (let child = node.firstChild; child; child = child.nextSibling) stack.push(child);
   }
   return Object.freeze(nodes);

@@ -530,7 +530,7 @@ function nativeCodeEventsInTail(root: SyntaxNode, prefixLength: number): readonl
   const stack: SyntaxNode[] = [root];
   while (stack.length > 0) {
     const node = stack.pop()!;
-    if (node.from >= prefixLength && (node.type.name === "CodeText" || node.type.name === "CodeMark")) {
+    if (node.to >= prefixLength && (node.type.name === "CodeText" || node.type.name === "CodeMark")) {
       events.push(node);
     }
     for (let child = node.firstChild; child; child = child.nextSibling) stack.push(child);
@@ -782,7 +782,30 @@ function replaceNativeSnapshotById(
       next = replacement;
     } else if (child.children) {
       const nested = replaceNativeSnapshotById(child.children, targetId, replacement);
-      if (nested !== child.children) next = { ...child, children: nested };
+      if (nested !== child.children) {
+        let childTo = child.range?.to;
+        if (child.range) {
+          for (const nestedChild of nested) {
+            if (nestedChild.range && nestedChild.range.from >= child.range.from) {
+              childTo = Math.max(childTo ?? child.range.to, nestedChild.range.to);
+            }
+          }
+        }
+        const range = child.range && childTo !== undefined && childTo > child.range.to
+          ? { ...child.range, to: childTo }
+          : child.range;
+        const nestedBlock = child.props?.block as Block | undefined;
+        const nestedBlockRange = nestedBlock?.payload.range;
+        const props = range && nestedBlock && nestedBlockRange && range.to > nestedBlockRange.to
+          ? { ...child.props, block: { ...nestedBlock, payload: { ...nestedBlock.payload, range: { ...nestedBlockRange, to: range.to } } } }
+          : child.props;
+        next = {
+          ...child,
+          children: nested,
+          ...(range !== child.range ? { range } : {}),
+          ...(props !== child.props ? { props } : {}),
+        };
+      }
     }
     if (next !== child) {
       if (result === children) result = children.slice();
@@ -5421,7 +5444,13 @@ export class MarkdownEngine {
       const codeHasClosingFence = kind === "code"
         && node.type.name === "FencedCode"
         && node.lastChild?.type.name === "CodeMark";
-      const nodeEnded = node.nextSibling !== null || hasSourceAfterRange(source, range.to) || codeHasClosingFence;
+      let nextSibling = node.nextSibling;
+      if (kind === "code") {
+        while (nextSibling && (nextSibling.type.name === "QuoteMark" || nextSibling.type.name === "ListMark")) {
+          nextSibling = nextSibling.nextSibling;
+        }
+      }
+      const nodeEnded = nextSibling !== null || (kind !== "code" && hasSourceAfterRange(source, range.to)) || codeHasClosingFence;
       const nodeClosure = options?.forceFinalize
         ? "finalized"
         : isActive && closure === "finalized"
@@ -5462,13 +5491,14 @@ export class MarkdownEngine {
             }
             return false;
           });
+          const previousRange = owner.getMetadata().sourceRange;
           const update = owner.acceptNativeTail({
             nodes: ownedEvents,
             mapping,
             inputGeneration: this.documentGeneration,
             sourceDocument: this.sourceDocument,
             closure: nodeClosure,
-            sourceRange: range,
+            sourceRange: { from: previousRange.from, to: Math.max(previousRange.to, range.to) },
           });
           if (update.revision !== update.expectedRevision || update.sourceAppend.length > 0) {
             this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(update));
@@ -5506,7 +5536,8 @@ export class MarkdownEngine {
         }
         const current = this.nativeContainerActiveSnapshots.get(block.id);
         if (current?.id === id) {
-          current.range = { ...range };
+          const sourceRange = owner.getMetadata().sourceRange;
+          current.range = { from: sourceRange.from, to: Math.max(sourceRange.to, range.to) };
           return current;
         }
         const previousSnapshot = previousPrepared
@@ -7592,9 +7623,31 @@ export class MarkdownEngine {
     for (const nextBlock of nextBlocks) {
       if (rootReplacedTableIds?.has(nextBlock.id)) continue;
       const prevBlock = prevMap.get(nextBlock.id);
-      if (this.nativeContainerActivePathSnapshots.has(nextBlock.id)
-        && (nextBlock.type === "list" || nextBlock.type === "blockquote")) continue;
       if (!prevBlock) continue;
+      if (this.nativeContainerActivePathSnapshots.has(nextBlock.id)
+        && (nextBlock.type === "list" || nextBlock.type === "blockquote")) {
+        const previousRange = prevBlock.payload.range;
+        const nextRange = nextBlock.payload.range;
+        const rangeChanged = Boolean(previousRange && nextRange
+          && (previousRange.from !== nextRange.from || previousRange.to !== nextRange.to));
+        const props: Record<string, unknown> = {};
+        if (rangeChanged && nextRange) props.range = { ...nextRange };
+        const previousMeta = prevBlock.payload.meta;
+        const nextMeta = nextBlock.payload.meta;
+        if (nextMeta?.loose !== undefined
+          && (rangeChanged || previousMeta?.loose !== nextMeta.loose)) {
+          props.loose = nextMeta.loose;
+        }
+        if (Object.keys(props).length > 0) {
+          patches.push({
+            op: "setProps",
+            at: { blockId: nextBlock.id },
+            props,
+            meta: { kind: "semantic" },
+          });
+        }
+        continue;
+      }
       if (changedBlockIds.size > 0 && !changedBlockIds.has(nextBlock.id) && blocksStructurallyEqual(prevBlock, nextBlock)) {
         continue;
       }
