@@ -210,6 +210,20 @@ async function runMountedListPrimaryParagraphRegression(): Promise<void> {
     assert.equal(directParagraph(outerItem), undefined, "the tight outer primary stays unwrapped");
     assert.equal(directParagraph(nestedItem)?.textContent?.trim(), "nested one", "the loose nested primary gets its own paragraph");
 
+    // A nested list grows while its top-level container stays open; nested nodes carry no finalization of their own.
+    for (const [source, append, selector] of [
+      ["> - first\n", "> - second", "blockquote li"],
+      ["- outer\n  - first\n", "  - second", "li li"],
+    ] as const) {
+      const growing = await mountNativeList(dom, roots, source);
+      await handleAndApply(dom, growing.engine, growing.store, growing.emitted, { type: "APPEND", text: append });
+      assert.deepEqual(
+        Array.from(growing.container.querySelectorAll(selector), (item) => item.textContent?.trim()),
+        ["first", "second"],
+        `a mounted nested list must render an item appended inside its open container: ${JSON.stringify(source)}`,
+      );
+    }
+
     const tasks = await mountNativeList(dom, roots, "- [x] done\n- [ ] ");
     const taskItems = tasks.container.querySelectorAll("li");
     assert.equal(taskItems.length, 2);

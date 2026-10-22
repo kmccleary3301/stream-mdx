@@ -1,6 +1,6 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import { normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
+import { normalizeBlockquoteText, PATCH_ROOT_ID, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { InlineComponents, TableElements } from "../types";
 import {
@@ -105,12 +105,20 @@ function recordViewSlots(store: RendererStore, count: number): void {
 }
 const LIST_PROJECTION_CHUNK_SIZE = 64;
 
+/** Null once the list can no longer grow: a nested node's block is synthesized, so only its top-level owner records finalization. */
 function readListProjectionFrontier(store: RendererStore, parentId: string): number | null {
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     recordViewRecords(store, 1);
   }
   const parent = store.getNode(parentId);
-  if (!parent || parent.block?.isFinalized) return null;
+  let owner = parent;
+  while (owner?.parentId && owner.parentId !== PATCH_ROOT_ID) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      recordViewRecords(store, 1);
+    }
+    owner = store.getNode(owner.parentId);
+  }
+  if (!parent || !owner || owner.block?.isFinalized) return null;
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     recordViewRecords(store, 1);
   }
