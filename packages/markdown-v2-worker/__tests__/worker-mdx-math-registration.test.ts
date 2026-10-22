@@ -132,8 +132,9 @@ async function testNestedNegativeMathFallback(): Promise<void> {
       assert.ok(segments?.some((segment) => segment.kind === "mdx" && segment.value === mdxSource), "the component must remain a separate inline projection");
     } else {
       // Check the observed native inline projection, not expression evaluation
-      // or the DOM produced by the separate MDX compilation path.
-      assert.ok(paragraph.payload.inline?.some((node) => node.kind === "text" && node.text.includes(mdxSource)), "expression source must remain in the inline projection");
+      // or the DOM produced by the separate MDX compilation path. Text-node splitting is not meaning.
+      const inlineText = (paragraph.payload.inline ?? []).map((node) => (node.kind === "text" ? node.text : "\u0000")).join("");
+      assert.ok(inlineText.includes(mdxSource), "expression source must remain in the inline projection");
     }
   }
 }
