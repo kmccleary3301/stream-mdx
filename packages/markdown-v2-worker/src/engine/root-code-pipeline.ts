@@ -118,6 +118,8 @@ function openingFor(node: SyntaxNode, source: SourceSnapshot, sourceOffset: numb
   }
   const endingFrom = lineStart + endingAt;
   const ending = source.read(endingFrom, Math.min(source.length, endingFrom + 2));
+  // A CR at the frontier may still become CRLF; like an unterminated opening line, it waits for the next append.
+  if (ending === "\r") return undefined;
   const bodyFrom = endingFrom + (ending.startsWith("\r\n") ? 2 : 1);
   const infoNode = node.getChild("CodeInfo");
   const info = infoNode ? source.read(infoNode.from + sourceOffset, infoNode.to + sourceOffset) : "";

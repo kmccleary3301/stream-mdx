@@ -553,7 +553,8 @@ export class RootCodeSourceOwner {
       this.counters?.recordCodeSourceUnitsPrepared(preparedUnits);
     }
 
-    const changedLines = rowsChanged
+    // Every new revision restates the open tail: consumers replace lines from the completed prefix.
+    const changedLines = semanticChanged
       ? Object.freeze(this.codeLines.readRange(oldCompleteLineCount, this.codeLines.length))
       : EMPTY_CHANGED_LINES;
     const splitsInput = closeBoundary !== undefined && closeBoundary < to;
