@@ -43,6 +43,7 @@
     "perf:harness": "tsx scripts/perf/run-perf-harness.ts",
     "perf:sync-fixtures": "tsx scripts/perf/sync-perf-fixtures.ts",
     "perf:property-oracle": "tsx scripts/perf/property-oracle.ts",
+    "perf:finalize-scaling": "tsx scripts/perf/finalize-scaling.ts",
     "test:benchmarks:methodology": "tsx scripts/check-benchmark-methodology.ts",
     "test:conformance": "tsx scripts/conformance/run-commonmark.mts --check",
     "test:conformance:update": "tsx scripts/conformance/run-commonmark.mts --update-baseline",
