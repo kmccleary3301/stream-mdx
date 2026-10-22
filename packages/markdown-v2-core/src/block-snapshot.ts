@@ -1298,9 +1298,17 @@ function materializeSnapshotNodeBlock(
   return block;
 }
 
+function materializedSnapshotNodeRange(node: SnapshotNode): NodeSnapshot["range"] {
+  const range = node.paragraphState?.source.sourceRange
+    ?? node.tableState?.source.sourceRange
+    ?? node.codeState?.source.sourceRange
+    ?? node.range;
+  return range ? { from: range.from, to: range.to } : undefined;
+}
+
 function materializeSnapshotNodeProps(node: SnapshotNode, source: SourceSnapshot | undefined): Record<string, unknown> {
   const props = structuredCloneIfPossible(node.props);
-  const range = node.range;
+  const range = materializedSnapshotNodeRange(node);
   if (source && range && isAdmittedAuthoredRange(range, source) && typeof props.raw === "string") {
     props.raw = source.read(range.from, range.to);
   }
@@ -1320,7 +1328,7 @@ function materializeSnapshotNode(
   // The exported projection owns its props; the node's props gain `block`, which would make the block's
   // `preparedNested` reach itself if the two shared one object.
   const props = { ...projection.prepared.props };
-  const range = node.range;
+  const range = materializedSnapshotNodeRange(node);
   const exportShape = node.preparedNestedExport;
   const prepared: PreparedNestedSnapshot | undefined = exportShape
     ? projection.prepared
