@@ -302,6 +302,25 @@ async function runLinkReferenceDefinitionSplitTest(): Promise<void> {
   }
 }
 
+// An indented quote starts mid-line; a window that re-reads its first line must include the indentation, or the
+// quote marker is read twice (CommonMark 230, 259).
+async function runIndentedQuoteWindowTest(): Promise<void> {
+  const cases: Array<[string, number]> = [
+    ["   > # Foo\n   > bar\n > baz\n", 8],
+    ["  > # Foo\n  > bar\n", 6],
+    ["   > > 1.  one\n>>\n>>     two\n", 10],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, cut] of cases) {
+    const expected = projectConsumerBlocks((await runSession(harness, [source])).getBlocks());
+    assert.deepEqual(
+      projectConsumerBlocks((await runSession(harness, [source.slice(0, cut), source.slice(cut)])).getBlocks()),
+      expected,
+      `${JSON.stringify(source)} cut ${cut} must match single-shot`,
+    );
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -317,4 +336,5 @@ await runEmptyQuoteTest();
 await runQuotedTabIndentedCodeTest();
 await runParagraphBecomesListItemTest();
 await runLinkReferenceDefinitionSplitTest();
+await runIndentedQuoteWindowTest();
 console.log("Native container streaming regressions passed");

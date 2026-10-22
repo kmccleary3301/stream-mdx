@@ -728,7 +728,8 @@ function boundedTailStart(
         )
       : lineStartAt(source, physicalRange.from);
   }
-  return lastPhysicalLineStart(source, ownerStart, fallbackTo);
+  // An indented container starts mid-line; the window re-reads its indentation so the marker is not duplicated.
+  return lastPhysicalLineStart(source, lineStartAt(source, ownerStart), fallbackTo);
 }
 function openingLineHasEnding(source: SourceSnapshot, lineTo: number): boolean {
   if (lineTo >= source.length) return false;
