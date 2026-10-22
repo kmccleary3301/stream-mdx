@@ -10,6 +10,7 @@ import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot, type Block, type FootnoteItem, type InlineNode, type NodeSnapshot, type Patch, type WorkerIn, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
+import { projectConsumerBlocks } from "./consumer-block-projection";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createWorkerThread } from "@stream-mdx/worker/node";
 
@@ -377,7 +378,8 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
           for (const message of input) worker.postMessage(message);
         });
         const actual = JSON.parse(JSON.stringify(store.getBlocks())) as Block[];
-        assert.deepStrictEqual(actual, expected, `${name}/${mode} final IR must match a fresh complete compile`);
+        // Owner lease generations are per-engine fencing tokens; the cold export contract is the consumer projection.
+        assert.deepStrictEqual(projectConsumerBlocks(actual), projectConsumerBlocks(expected), `${name}/${mode} final IR must match a fresh complete compile`);
         const html = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: actual, store }));
         assert.strictEqual(html, expectedHtml, `${name}/${mode} final SSR must not depend on chunk history`);
         const dom = new JSDOM(html);

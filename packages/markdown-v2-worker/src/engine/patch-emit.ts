@@ -300,13 +300,12 @@ export function shallowEqual(a: Record<string, unknown>, b: Record<string, unkno
   }
   return true;
 }
+// Owner records carry their own source updates, as do the owner-internal child types. A bare paragraph,
+// code or table node has no owner channel, so its range and metadata travel in setProps.
 function isManagedSourceSnapshot(node: NodeSnapshot): boolean {
   return Boolean(node.code || node.table || node.paragraph) ||
-    node.type === "code" ||
     node.type.startsWith("code-") ||
-    node.type === "table" ||
     node.type.startsWith("table-") ||
-    node.type === "paragraph" ||
     node.type.startsWith("paragraph-");
 }
 
