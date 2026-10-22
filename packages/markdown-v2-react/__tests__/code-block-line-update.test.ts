@@ -232,6 +232,52 @@ async function runNativeCodeLineUpdateTest(): Promise<void> {
   }
 }
 
+async function runBasePathOpeningFenceTest(): Promise<void> {
+  const worker = createInlineEngineWorker();
+  const store = createRendererStore();
+  const settle = (input: Parameters<typeof worker.postMessage>[0], done: (message: WorkerOut) => boolean): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+        const message = event.data;
+        if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
+        else if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
+        else if (message.type === "ERROR") reject(new Error(message.error.message));
+        if (done(message)) resolve();
+      };
+      worker.postMessage(input);
+    });
+  const codeLines = () => {
+    const codeId = store.getChildren(PATCH_ROOT_ID).find((id) => store.getNode(id)?.type === "code");
+    return codeId ? store.getCodeLines(codeId, 0, Number.MAX_SAFE_INTEGER).map((line) => line.text) : undefined;
+  };
+  try {
+    await settle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "",
+      prewarmLangs: [],
+      contentPolicy: "trusted-mdx",
+      docPlugins: { html: true, mdx: true, tables: true, math: true, footnotes: true, callouts: true },
+    }, (message) => message.type === "INITIALIZED");
+    // The info string is still streaming, so the opening line has not ended and the body has no complete line yet.
+    await settle({ type: "APPEND", text: "Intro.\n\n```te" }, () => codeLines() !== undefined);
+    const rejectedLineUpdates = () =>
+      store.getInvariantViolations().filter((violation) => violation.startsWith("code line state update rejected"));
+    await settle(
+      { type: "APPEND", text: "xt\nStability note:\n" },
+      () => codeLines()?.[0] === "Stability note:" || rejectedLineUpdates().length > 0,
+    );
+    assert.deepEqual(
+      rejectedLineUpdates(),
+      [],
+      "a base-path code line that was open while its opening fence streamed must accept its authored text",
+    );
+    assert.equal(codeLines()?.[0], "Stability note:", "the code body renders its authored first line");
+  } finally {
+    worker.terminate();
+  }
+}
+
 class ResizeObserverStub {
   observe() {}
   unobserve() {}
@@ -239,4 +285,5 @@ class ResizeObserverStub {
 }
 
 await runNativeCodeLineUpdateTest();
+await runBasePathOpeningFenceTest();
 console.log("code-block-line-update test passed");

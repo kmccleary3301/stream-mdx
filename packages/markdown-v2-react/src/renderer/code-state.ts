@@ -426,7 +426,8 @@ function legacyCodeState(
         ? { from: sourceFrom + rawLine.from, to: sourceFrom + rawLine.to }
         : { from: sourceTo, to: sourceTo },
       sourceRevision: 0,
-      isProvisional: !block?.isFinalized && !body.hasClosingFence && index === extracted.length - 1 && rawLine?.ending === "",
+      // A last line without an authored body line yet (the opening fence is still streaming) is the open tail too.
+      isProvisional: !block?.isFinalized && !body.hasClosingFence && index === extracted.length - 1 && (rawLine === undefined || rawLine.ending === ""),
       decoration,
       diffKind: childLines[index]?.props?.diffKind as CodeLineRecord["diffKind"],
       oldNo: childLines[index]?.props?.oldNo as CodeLineRecord["oldNo"],
@@ -747,6 +748,25 @@ export function updateLegacyCodeLineState(
     ))
   ) {
     return undefined;
+  }
+  // A record created before its line was authored (the opener arrived alone) has no source to edit yet. The
+  // container props that follow its line patches carry the raw that places it (refreshLegacyCodeSource).
+  if (sourceBodyLines(raw).lines.length <= line.index) {
+    if (line.index !== current.view.lines.length - 1 || line.index < current.view.lines.completeLineCount) return undefined;
+    const lines = current.view.lines.replaceTail(line.index, [
+      withLegacyDecoration({ ...previous, text, sourceRevision, isProvisional, diffKind, oldNo, newNo }, decoration),
+    ]);
+    return {
+      ...current,
+      view: createView(
+        { ...source, revision: ownerRevision, completeLineCount: lines.completeLineCount, lineCount: lines.length },
+        current.view.configurationRevision,
+        current.view.info,
+        current.view.language,
+        lines,
+      ),
+      ranges: nextRangesForAppend(current.ranges, line.index),
+    };
   }
   const authored = canonicalSource
     ? authoredCodeLine(text, previous.sourceRange.from, canonicalSource)
