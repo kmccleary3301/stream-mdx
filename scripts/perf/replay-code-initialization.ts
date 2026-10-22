@@ -219,7 +219,7 @@ export async function runRootCodeInitializationTrace(
       if (
         codeView.source.codeOwnerId !== block.id ||
         codeView.source.generation !== initializedGeneration ||
-        codeView.source.state !== "closed"
+        codeView.source.state !== "finalized"
       ) {
         recordDivergence(
           divergences,
@@ -348,7 +348,7 @@ export async function runRootCodeInitializationTrace(
       if (
         !view ||
         view.source.generation !== initializedGeneration ||
-        view.source.state !== "closed" ||
+        view.source.state !== "finalized" ||
         rows.length !== initialRows.length ||
         rows.some((row, index) => row !== initialRows[index])
       ) {

@@ -365,7 +365,7 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
     assert.strictEqual(store.getCodeLines(rootCode.id, 0, 1)[0], completedRow);
     assert.strictEqual(renderedCodeRow(completedRow.index), completedRowElement);
     await idleAppend(closeAndFollowingProse);
-    assert.equal(store.getCodeBlock(rootCode.id)?.source.state, "closed");
+    assert.equal(store.getCodeBlock(rootCode.id)?.source.state, "finalized", "a complete closing fence settles the code owner");
 
     const authored = fixture.expectations?.codeBlocks?.[0];
     assert.ok(authored, "fixture includes independently specified CommonMark code expectations");

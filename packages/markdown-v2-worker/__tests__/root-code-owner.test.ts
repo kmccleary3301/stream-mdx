@@ -80,7 +80,7 @@ function main(): void {
   const closingChange = appendAndAccept(source, owner, followingMarkdown);
   const processedTo = source.length - "# following native markdown\n".length;
   const nativeBlockEnd = processedTo - 1;
-  assert.strictEqual(closingChange.state, "closed");
+  assert.strictEqual(closingChange.state, "finalized", "a complete closing fence is terminal");
   assert.strictEqual(closingChange.processedTo, processedTo, "the code owner consumes the closing-line CRLF before yielding the remainder");
   assert.strictEqual(closingChange.remainingTailFrom, processedTo, "the rest of the accepted chunk is left to native Markdown");
   assert.strictEqual(owner.getMetadata().sourceRange.to, nativeBlockEnd);
@@ -91,6 +91,10 @@ function main(): void {
   assert.strictEqual(block.payload.raw, source.snapshot().read(2, nativeBlockEnd), "cold raw block materialization matches the native authored range");
   assert.strictEqual(block.payload.meta?.info, "ts");
   assert.strictEqual(block.payload.meta?.lang, "ts");
+  const closedRevision = owner.getMetadata().revision;
+  const sealChange = owner.finalize();
+  assert.strictEqual(owner.getMetadata().revision, closedRevision, "FINALIZE leaves a fence closed while streaming untouched");
+  assert.deepStrictEqual(sealChange.lines, []);
 
   const emptySource = new AppendSourceDocument();
   const emptyOpening = "```js\n";

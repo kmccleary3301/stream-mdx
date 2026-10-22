@@ -16,7 +16,8 @@ declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
 const SOURCE_SCAN_WINDOW_UNITS = 4096;
 const EMPTY_CHANGED_LINES: readonly CodeLineRecord[] = Object.freeze([]);
 
-export type RootCodeSourceOwnerState = "open" | "closed" | "finalized";
+/** A complete closing fence is terminal, so a closed fence is already finalized. */
+export type RootCodeSourceOwnerState = "open" | "finalized";
 
 export interface RootCodeSourceOpening {
   /** Native FencedCode node start at the marker; its opening indentation precedes this offset. */
@@ -303,16 +304,9 @@ export class RootCodeSourceOwner {
     });
   }
 
-  /** Seal the owner, finishing only its pending line (and unaccepted suffix, if any). */
+  /** Seal an open owner, finishing only its pending line (and unaccepted suffix, if any). */
   finalize(): CodeSourceChange {
     if (this.state === "finalized") return this.noChange(this.codeLines.completeLineCount);
-    if (this.state === "closed") {
-      const expectedRevision = this.revision;
-      this.state = "finalized";
-      this.revision = nextOwnerRevision(this.revision);
-      this.cachedBlock = undefined;
-      return this.change(expectedRevision, this.codeLines.completeLineCount, EMPTY_CHANGED_LINES);
-    }
 
     const from = this.processedTo;
     const to = this.source.length;
@@ -456,7 +450,7 @@ export class RootCodeSourceOwner {
     let finalTail: DraftCodeLine | undefined;
 
     if (closeBoundary !== undefined) {
-      nextState = finalizeAtEnd ? "finalized" : "closed";
+      nextState = "finalized";
       nextRawEnd = closeRawEnd ?? closeBoundary;
       pendingCR = false;
     } else if (finalizeAtEnd) {
