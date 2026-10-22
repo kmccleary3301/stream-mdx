@@ -617,7 +617,10 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
       Input: defineContentComponent({ component: () => React.createElement("input") }),
     };
     const store = createRendererStore();
-    store.reset(initialized.blocks);
+    const initializedMessage = findMessage(messages, "INITIALIZED");
+    assert.ok(initializedMessage);
+    // Seed like the renderer: the snapshot carries the input baseline that later range patches address.
+    store.resetSnapshot(initializedMessage.snapshot);
     for (const message of messages) {
       if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
     }
