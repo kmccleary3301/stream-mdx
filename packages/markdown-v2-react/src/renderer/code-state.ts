@@ -831,6 +831,24 @@ export function refreshLegacyCodeSource(
   const sourceFrom = block.payload.range?.from ?? current.view.source.sourceRange.from;
   const sourceTo = sourceFrom + raw.length;
   const body = sourceBodyLines(raw);
+  // Line ranges derive from the raw as at creation. A record created before its line was authored (the
+  // opener arrived alone) holds a placeholder range until the raw places it; updates read that range.
+  let rebound: CodeLineRecord[] | undefined;
+  const boundCount = Math.min(current.view.lines.length, body.lines.length);
+  for (let index = 0; index < boundCount; index += 1) {
+    const record = current.view.lines.get(index)!;
+    const rawLine = body.lines[index]!;
+    const from = sourceFrom + rawLine.from;
+    const to = sourceFrom + rawLine.to;
+    if (record.sourceRange.from === from && record.sourceRange.to === to && record.ending === rawLine.ending) continue;
+    rebound ??= [...current.view.lines.readRange(0, current.view.lines.length)];
+    rebound[index] = { ...record, sourceRange: { from, to }, ending: rawLine.ending };
+  }
+  const lines = rebound === undefined
+    ? current.view.lines
+    : typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? createIndex(rebound, counters)
+      : createIndex(rebound);
   const metadata = block.payload.meta;
   const source: CodeBlockSourceMetadata = {
     ...current.view.source,
@@ -854,11 +872,11 @@ export function refreshLegacyCodeSource(
       current.view.configurationRevision,
       typeof metadata?.info === "string" ? metadata.info : current.view.info,
       typeof metadata?.lang === "string" ? metadata.lang : current.view.language,
-      current.view.lines,
+      lines,
     ),
     ...sourceState,
     managed: false,
-    ranges: current.ranges,
+    ranges: rebound === undefined ? current.ranges : new Map(),
   };
 }
 export function finalizeStoredCodeState(current: StoredCodeBlockState): StoredCodeBlockState {

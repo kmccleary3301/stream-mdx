@@ -774,6 +774,8 @@ export function extractLezerCode(
     code += text;
     previousCodeEnd = child.to;
   }
+  // An unclosed fence's final line ending terminates its last line, as a closer would; it is not an empty line.
+  if (fenced && node.getChildren("CodeMark").length < 2) code = code.replace(/(?:\r\n|\n|\r)$/, "");
   const infoNode = node.getChild("CodeInfo");
   return { code, info: infoNode ? readSourceRange(source, infoNode.from, infoNode.to) : "" };
 }
