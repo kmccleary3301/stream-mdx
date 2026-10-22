@@ -32,10 +32,14 @@ const sharedConfig = {
   dts: true,
   sourcemap,
   splitting: false,
+  minifySyntax: true,
   format: ["esm", "cjs"],
   outDir: join(__dirname, "dist"),
   target: "es2020",
   tsconfig: join(__dirname, "tsconfig.build.json"),
+  define: {
+    __STREAM_MDX_COUNTERS__: "false",
+  },
   external: ["react", "react-dom", "@stream-mdx/core", "@stream-mdx/worker", "katex"],
   outExtension({ format }: { format: "cjs" | "esm" }) {
     return {

@@ -1,3 +1,5 @@
+declare const __STREAM_MDX_COUNTERS__: boolean;
+
 import type {
   DiffLineKind,
   NodeSnapshot,
@@ -97,7 +99,7 @@ export function withPatchKind(patch: Patch, kind: PatchKind): Patch {
   return {
     ...patch,
     meta: {
-      ...((patch as { meta?: Record<string, unknown> }).meta || {}),
+      ...(patch.meta || {}),
       kind,
     },
   };
@@ -355,6 +357,7 @@ export function diffListChildren(
   nextChildren: NodeSnapshot[],
   patches: Patch[],
   metrics?: WorkerMetricsCollector | null,
+  counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
 ): void {
   const prevLength = prevChildren.length;
   const nextLength = nextChildren.length;
@@ -367,8 +370,12 @@ export function diffListChildren(
 
   // Diff shared prefix first to propagate nested updates.
   let prefix = 0;
-  while (prefix < commonLength && prevChildren[prefix].id === nextChildren[prefix].id) {
-    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
+  while (prefix < commonLength) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "patch");
+    }
+    if (prevChildren[prefix].id !== nextChildren[prefix].id) break;
+    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
     prefix++;
   }
 
@@ -403,10 +410,14 @@ export function diffListChildren(
 
   // Compute suffix after trimming already handled prefix.
   let suffix = 0;
-  while (suffix < commonLength - prefix && prevChildren[prevLength - 1 - suffix].id === nextChildren[nextLength - 1 - suffix].id) {
+  while (suffix < commonLength - prefix) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "patch");
+    }
     const prevIdx = prevLength - 1 - suffix;
     const nextIdx = nextLength - 1 - suffix;
-    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
+    if (prevChildren[prevIdx].id !== nextChildren[nextIdx].id) break;
+    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
     suffix++;
   }
 
@@ -518,6 +529,7 @@ export function diffNodeSnapshot(
   nextNode: NodeSnapshot,
   patches: Patch[],
   metrics?: WorkerMetricsCollector | null,
+  counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
 ): void {
   const prevProps = prevNode.props ?? {};
   const nextProps = nextNode.props ?? {};
@@ -537,7 +549,7 @@ export function diffNodeSnapshot(
 
   if (prevNode.type === "list" && nextNode.type === "list") {
     emitSetProps();
-    diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics);
+    diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics, counters);
     return;
   }
 
@@ -614,16 +626,24 @@ export function diffNodeSnapshot(
 
   const minLen = Math.min(prevChildren.length, nextChildren.length);
   let prefix = 0;
-  while (prefix < minLen && prevChildren[prefix].id === nextChildren[prefix].id) {
-    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
+  while (prefix < minLen) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "patch");
+    }
+    if (prevChildren[prefix].id !== nextChildren[prefix].id) break;
+    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
     prefix++;
   }
 
   let suffix = 0;
-  while (suffix < minLen - prefix && prevChildren[prevChildren.length - 1 - suffix].id === nextChildren[nextChildren.length - 1 - suffix].id) {
+  while (suffix < minLen - prefix) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "patch");
+    }
     const prevIdx = prevChildren.length - 1 - suffix;
     const nextIdx = nextChildren.length - 1 - suffix;
-    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
+    if (prevChildren[prevIdx].id !== nextChildren[nextIdx].id) break;
+    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
     suffix++;
   }
 

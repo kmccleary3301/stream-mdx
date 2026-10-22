@@ -1,3 +1,5 @@
+declare const __STREAM_MDX_COUNTERS__: boolean;
+
 import {
   cloneBlock,
   createBlockSnapshot,
@@ -1307,6 +1309,16 @@ function replaceSnapshotAt(
   }
 }
 
+// Only the counter-enabled diagnostic entry supplies this sink; normal builds erase its guarded accesses.
+interface RendererCampaignCounters {
+  recordPrefixComparisons?(count?: number, stage?: string): void;
+  recordStoreRecordsTouched?(count?: number, stage?: string): void;
+  recordSnapshotNodes?(count?: number, stage?: string): void;
+  reset?(): void;
+}
+
+type CampaignRendererStore = RendererStore & { campaignCounters?: RendererCampaignCounters };
+
 export function createRendererStore(initialBlocks: Block[] = [], options?: RendererStoreOptions): RendererStore {
   let currentThemes = options?.themes;
   let nodes: NodeMap = new Map();
@@ -1401,6 +1413,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   }
 
   function rebuildFromBlocks(blocks: Block[]) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      (store as CampaignRendererStore).campaignCounters?.reset?.();
+    }
     clearSnapshotCaches(nodes);
     nodes = new Map();
     const root = createRootRecord();
@@ -1423,7 +1438,6 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     scheduleNotify();
   }
 
-  rebuildFromBlocks(initialBlocks);
 
   const store: RendererStore = {
     reset(nextBlocks: Block[]) {
@@ -2006,6 +2020,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             const lineCount = patch.lines?.length ?? 0;
             if (lineCount === 0) break;
 
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              const campaignCounters = (store as CampaignRendererStore).campaignCounters;
+              campaignCounters?.recordPrefixComparisons?.(parent.children.length, "store");
+              campaignCounters?.recordStoreRecordsTouched?.(parent.children.length, "store");
+            }
             const prefixMatches = parent.children.every((childId, index) => childId === expectedCodeLineId(parent.id, index));
             const isStrictTailAppend = requestedStartIndex === parent.children.length;
             if (!isStrictTailAppend || !prefixMatches) {
@@ -2249,6 +2268,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         });
       }
 
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        (store as CampaignRendererStore).campaignCounters?.recordStoreRecordsTouched?.(touched.size, "store");
+      }
       return touched;
     },
 
@@ -2362,5 +2384,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     };
   });
 
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    const internalStore = store as CampaignRendererStore;
+    internalStore.campaignCounters = (options as RendererStoreOptions & { campaignCounters?: RendererCampaignCounters })?.campaignCounters;
+  }
+  rebuildFromBlocks(initialBlocks);
   return store;
 }
