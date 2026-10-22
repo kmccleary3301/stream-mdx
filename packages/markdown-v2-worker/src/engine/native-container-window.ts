@@ -31,8 +31,8 @@ export interface NativeContainerWindowFrame {
   readonly parentTo: number;
   readonly firstMarker?: NativeContainerMarkerAnchor;
   readonly activeMarker?: NativeContainerMarkerAnchor;
-  /** Marker of the list item just before the active one; its width bounds the active item's indentation. */
-  readonly priorMarker?: NativeContainerMarkerAnchor;
+  /** Sibling item markers retained between the first and active items; see `listMarkerChain`. */
+  readonly listChain?: readonly NativeContainerMarkerAnchor[];
   readonly quoteMarker?: NativeContainerMarkerAnchor;
   readonly firstQuoteMarker?: NativeContainerMarkerAnchor;
   /** Quote marks on retained list-item or code-opening context lines. */
@@ -162,12 +162,46 @@ function physicalLineEnd(source: SourceSnapshot, lineEnd: number, limit: number)
   return lineEnd;
 }
 
-/** A list item before the active one replaces the first item as indentation context: intermediate wider markers
- * are omitted from the window, so the first item's content column could otherwise capture later siblings. */
-function priorListItemMarker(frame: NativeContainerWindowFrame): NativeContainerMarkerAnchor | undefined {
-  if (frame.kind !== "list" || !frame.priorMarker) return undefined;
-  if (frame.priorMarker.from === frame.firstMarker?.from || frame.priorMarker.from === frame.activeMarker?.from) return undefined;
-  return frame.priorMarker;
+function markerIndent(source: SourceSnapshot, marker: NativeContainerMarkerAnchor): number {
+  return marker.from - lineStartAt(source, marker.from);
+}
+
+function markerContentColumn(source: SourceSnapshot, marker: NativeContainerMarkerAnchor): number {
+  const lineEnd = lineEndAt(source, marker.to, source.length);
+  let spaces = 0;
+  while (marker.to + spaces < lineEnd && source.read(marker.to + spaces, marker.to + spaces + 1) === " ") spaces += 1;
+  const width = marker.to + spaces >= lineEnd || spaces === 0 || spaces > 4 ? 1 : spaces;
+  return marker.to - lineStartAt(source, marker.from) + width;
+}
+
+/**
+ * Item marker lines a list window keeps between its first and active items. A line is a sibling item only if it
+ * starts left of the content column of the item line before it, so omitting wider intermediate markers could nest
+ * a later sibling under an earlier item. Each candidate is pushed in source order, dropping the previous kept line
+ * when the candidate is already a sibling of the line before that one.
+ */
+export function listMarkerChain(
+  source: SourceSnapshot,
+  first: NativeContainerMarkerAnchor | undefined,
+  candidates: readonly NativeContainerMarkerAnchor[],
+  active: NativeContainerMarkerAnchor | undefined,
+): readonly NativeContainerMarkerAnchor[] {
+  const kept: NativeContainerMarkerAnchor[] = first ? [first] : [];
+  const push = (marker: NativeContainerMarkerAnchor): void => {
+    while (kept.length >= 2 && markerIndent(source, marker) < markerContentColumn(source, kept[kept.length - 2]!)) kept.pop();
+    kept.push(marker);
+  };
+  for (const candidate of candidates) {
+    if (candidate.from !== first?.from && candidate.from !== active?.from) push(candidate);
+  }
+  if (active && active.from !== first?.from) push(active);
+  const chain = kept.slice(first ? 1 : 0);
+  if (active && chain[chain.length - 1]?.from === active.from) chain.pop();
+  return Object.freeze(chain);
+}
+
+function listChainMarkers(frame: NativeContainerWindowFrame): readonly NativeContainerMarkerAnchor[] {
+  return frame.kind === "list" ? frame.listChain ?? [] : [];
 }
 
 function markerOpenings(frames: readonly NativeContainerWindowFrame[]): NativeContainerMarkerAnchor[] {
@@ -179,9 +213,8 @@ function markerOpenings(frames: readonly NativeContainerWindowFrame[]): NativeCo
   };
   for (const frame of frames) {
     if (frame.kind === "list") {
-      const priorMarker = priorListItemMarker(frame);
-      if (priorMarker) append({ ...priorMarker, globalChildIndex: frame.fromChild - 1 });
-      else if (frame.firstMarker) append({ ...frame.firstMarker, globalChildIndex: 0 });
+      if (frame.firstMarker) append({ ...frame.firstMarker, globalChildIndex: 0 });
+      for (const marker of listChainMarkers(frame)) append(marker);
       if (frame.activeMarker && frame.activeMarker.from !== frame.firstMarker?.from) {
         append({ ...frame.activeMarker, globalChildIndex: frame.fromChild });
       }
@@ -336,14 +369,14 @@ export class NativeContainerWindowCache {
     const from = Math.max(0, Math.min(source.length, tailFrom));
     const to = Math.max(from, Math.min(source.length, tailTo));
     const openings = markerOpenings(frames);
-    // A retained prior item line inside a quote carries its own quote marks before the list marker.
+    // Retained chain lines inside a quote carry their own quote marks before the list marker.
     for (const frame of frames) {
-      const priorMarker = priorListItemMarker(frame);
-      if (!priorMarker) continue;
-      for (let offset = lineStartAt(source, priorMarker.from); offset < priorMarker.from; offset += 1) {
-        if (source.read(offset, offset + 1) !== ">") continue;
-        if (openings.some((opening) => opening.from === offset)) continue;
-        openings.push({ typeName: "QuoteMark", from: offset, to: offset + 1 });
+      for (const marker of listChainMarkers(frame)) {
+        for (let offset = lineStartAt(source, marker.from); offset < marker.from; offset += 1) {
+          if (source.read(offset, offset + 1) !== ">") continue;
+          if (openings.some((opening) => opening.from === offset)) continue;
+          openings.push({ typeName: "QuoteMark", from: offset, to: offset + 1 });
+        }
       }
     }
     const codeOpeningFrom = code && code.openingLineFrom < from ? code.openingLineFrom : undefined;
@@ -355,12 +388,10 @@ export class NativeContainerWindowCache {
     );
     const contextLines = new Map<number, NativeContainerContextLine>();
     for (const frame of frames) {
-      const priorMarker = priorListItemMarker(frame);
-      if (priorMarker) {
-        const lineFrom = lineStartAt(source, priorMarker.from);
+      for (const marker of listChainMarkers(frame)) {
+        const lineFrom = lineStartAt(source, marker.from);
         const lineTo = lineEndAt(source, lineFrom, to);
         if (lineFrom < contextEnd && lineTo > lineFrom) contextLines.set(lineFrom, { from: lineFrom, to: lineTo, text: source.read(lineFrom, lineTo) });
-        continue;
       }
       const line = frame.firstContextLine;
       if (line && frame.firstContextLineComplete !== false && line.from < contextEnd) {

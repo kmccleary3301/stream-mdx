@@ -8,6 +8,7 @@ import {
   lastPhysicalLineStart,
   lineEndAt,
   lineStartAt,
+  listMarkerChain,
   type NativeContainerCodeOpening,
   type NativeContainerContextLine,
   type NativeContainerMarkerAnchor,
@@ -272,7 +273,7 @@ function publicFrame(frame: NativeContainerFrame): NativeContainerWindowFrame {
     activeChildTypeName: _activeChildTypeName,
     activeListItemContentEnd: _activeListItemContentEnd,
     contextQuoteMarkers: _contextQuoteMarkers,
-    priorMarker: _priorMarker,
+    listChain: _listChain,
     firstContextLineComplete: _firstContextLineComplete,
     ...visible
   } = frame;
@@ -280,7 +281,7 @@ function publicFrame(frame: NativeContainerFrame): NativeContainerWindowFrame {
   void _activeListItemContentEnd;
   void _contextQuoteMarkers;
   void _firstContextLineComplete;
-  void _priorMarker;
+  void _listChain;
   return Object.freeze(visible);
 }
 
@@ -459,14 +460,9 @@ function deriveActivePath(
     const selected = nodes[index + 1];
     const parentRange = window.mapping.mapRange(node.from, node.to);
     const priorCandidate = previousFrames[frames.length];
-    // A window that retains only the prior item line starts its list there; it is still the same list.
-    const startsAtPriorItemLine = priorCandidate?.kind === "list"
-      && priorCandidate.priorMarker !== undefined
-      && parentRange.from >= lineStartAt(source, priorCandidate.priorMarker.from)
-      && parentRange.from <= priorCandidate.priorMarker.from;
     const prior = priorCandidate
       && priorCandidate.typeName === node.type.name
-      && (priorCandidate.parentFrom === parentRange.from || startsAtPriorItemLine)
+      && priorCandidate.parentFrom === parentRange.from
       ? priorCandidate
       : undefined;
     const selectedRange = selected
@@ -536,7 +532,7 @@ function deriveActivePath(
     }
     let firstMarker = prior?.firstMarker;
     let activeMarker = prior?.activeMarker;
-    let priorMarker = prior?.priorMarker;
+    let listChain = prior?.listChain;
     let quoteMarker = prior?.quoteMarker;
     let firstQuoteMarker = prior?.firstQuoteMarker;
     let contextQuoteMarkers = prior?.contextQuoteMarkers;
@@ -544,15 +540,18 @@ function deriveActivePath(
       const listChildren = childrenOf(node);
       firstMarker ??= listChildren[0] ? markerForItem(listChildren[0], window.mapping.mapRange) : undefined;
       const marker = selected ? markerForItem(selected, window.mapping.mapRange) : undefined;
-      const before = selectedActualIndex > 0 ? actualChildren[selectedActualIndex - 1] : undefined;
-      if (before) {
-        priorMarker = markerForItem(before, window.mapping.mapRange) ?? priorMarker;
-      } else if (selectedIsActual && prior && selectedRange.from > prior.sourceFrontier) {
-        priorMarker = prior.activeMarker ?? priorMarker;
-      }
       activeMarker = marker
         ? { ...marker, globalChildIndex: selectedIndex }
         : activeMarker;
+      const priorActive = prior?.activeMarker;
+      const candidates: NativeContainerMarkerAnchor[] = [...(prior?.listChain ?? [])];
+      if (priorActive && selectedIsActual && prior && selectedRange.from > prior.sourceFrontier) candidates.push(priorActive);
+      for (let childIndex = 0; childIndex < selectedActualIndex; childIndex += 1) {
+        const child = markerForItem(actualChildren[childIndex]!, window.mapping.mapRange);
+        if (!child || child.from <= (priorActive?.from ?? -1)) continue;
+        candidates.push({ ...child, globalChildIndex: selectedIndex - (selectedActualIndex - childIndex) });
+      }
+      listChain = listMarkerChain(source, firstMarker, candidates, activeMarker);
     } else if (kind === "item") {
       activeMarker = markerForItem(node, window.mapping.mapRange) ?? activeMarker;
     } else {
@@ -605,7 +604,7 @@ function deriveActivePath(
       ...(previousSiblingEnd !== undefined ? { childToBeforeFrontier: previousSiblingEnd } : {}),
       ...(firstMarker ? { firstMarker } : {}),
       ...(activeMarker ? { activeMarker } : {}),
-      ...(kind === "list" && priorMarker ? { priorMarker } : {}),
+      ...(kind === "list" && listChain && listChain.length > 0 ? { listChain } : {}),
       ...(quoteMarker ? { quoteMarker } : {}),
       ...(firstQuoteMarker ? { firstQuoteMarker } : {}),
       ...(contextQuoteMarkers ? { contextQuoteMarkers } : {}),
@@ -1021,8 +1020,7 @@ export class NativeContainerTailParser {
       window,
       pathNodes: Object.freeze(path.nodes.slice()),
       frames: Object.freeze(path.frames.map(publicFrame)),
-      // The window may retain only a later item line; the container still starts at its owner.
-      sourceRange: Object.freeze({ from: this.ownerStart, to: range.to }),
+      sourceRange: Object.freeze(range),
       sourceAppend,
       closure,
       ...(nextCodeOpening ? { codeOpening: nextCodeOpening } : {}),
@@ -1083,14 +1081,23 @@ export class NativeContainerTailParser {
         : priorRange?.to;
       let firstMarker: NativeContainerMarkerAnchor | undefined;
       let activeMarker: NativeContainerMarkerAnchor | undefined;
-      let priorMarker: NativeContainerMarkerAnchor | undefined;
+      let listChain: readonly NativeContainerMarkerAnchor[] | undefined;
       let quoteMarker: NativeContainerMarkerAnchor | undefined;
       let firstQuoteMarker: NativeContainerMarkerAnchor | undefined;
       let contextQuoteMarkers: readonly NativeContainerMarkerAnchor[] | undefined;
       if (kind === "list") {
         firstMarker = children[0] ? markerForItem(children[0], mapping.mapRange) : undefined;
         activeMarker = selected ? markerForItem(selected, mapping.mapRange) : undefined;
-        priorMarker = priorChild ? markerForItem(priorChild, mapping.mapRange) : undefined;
+        const candidates: NativeContainerMarkerAnchor[] = [];
+        let childSlot = 0;
+        for (const child of children) {
+          if (child === selected) break;
+          if (!isSemanticChild(node, child)) continue;
+          const marker = markerForItem(child, mapping.mapRange);
+          if (marker) candidates.push({ ...marker, globalChildIndex: childSlot });
+          childSlot += 1;
+        }
+        listChain = listMarkerChain(source, firstMarker, candidates, activeMarker);
       } else if (kind === "item") {
         activeMarker = markerForItem(node, mapping.mapRange);
       } else {
@@ -1121,7 +1128,7 @@ export class NativeContainerTailParser {
           : {}),
         ...(firstMarker ? { firstMarker } : {}),
         ...(activeMarker ? { activeMarker } : {}),
-        ...(priorMarker ? { priorMarker } : {}),
+        ...(listChain && listChain.length > 0 ? { listChain } : {}),
         ...(quoteMarker ? { quoteMarker } : {}),
         ...(firstQuoteMarker ? { firstQuoteMarker } : {}),
         ...(contextQuoteMarkers ? { contextQuoteMarkers } : {}),
