@@ -616,8 +616,13 @@ function sameNativeSyntaxNode(
 function stripNativeBlockProps(snapshot: NodeSnapshot): void {
   const props = snapshot.props;
   if (props && "block" in props) {
-    const { block: _block, ...retained } = props;
-    snapshot.props = Object.keys(retained).length > 0 ? retained : undefined;
+    const block = props.block as Block | undefined;
+    // A closed code owner's presentation (diff blocks, lazy state) is consumer output; open code keeps its lines only.
+    const ownsClosedCodePresentation = snapshot.type === "code" && block?.type === "code" && block.isFinalized;
+    if (!ownsClosedCodePresentation) {
+      const { block: _block, ...retained } = props;
+      snapshot.props = Object.keys(retained).length > 0 ? retained : undefined;
+    }
   }
   for (const child of snapshot.children ?? []) stripNativeBlockProps(child);
 }
@@ -1797,9 +1802,19 @@ export class MarkdownEngine {
               && configurationRevision === this.rootCodeConfigurationRevision
               && this.nestedCodeOwners.get(nestedOwner.id) === nestedOwner,
           );
-          if (this.nestedCodeOwners.get(nestedOwner.id) !== nestedOwner) return;
+          const patches: Patch[] = [];
+          const block = decorations.length > 0 ? this.refreshNativeNestedCodePresentation(nestedOwner) : undefined;
+          if (block) {
+            patches.push({
+              op: "setProps",
+              at: { blockId: nestedOwner.containerId, nodeId: nestedOwner.id },
+              props: { block },
+              meta: { kind: "enrichment" },
+            });
+          }
           const patch = nestedOwner.decoratePatch(configurationRevision, decorations);
-          if (patch) this.dispatchPatchBatch([patch]);
+          if (patch) patches.push(patch);
+          if (patches.length > 0) this.dispatchPatchBatch(patches);
           return;
         }
         const priority: LazyTokenizationPriority = msg.priority === "prefetch" ? "prefetch" : "visible";
@@ -2783,6 +2798,60 @@ export class MarkdownEngine {
     );
   }
 
+  /** Closed nested code presentation, derived from the owner's current lines so lazy and eager highlighting converge. */
+  private refreshNativeNestedCodePresentation(owner: NativeNestedCodeSourceOwner): Block | undefined {
+    if (owner.state === "open") return undefined;
+    const wantsHtml = this.highlightOutputMode === "html" || this.highlightOutputMode === "both";
+    const wantsTokens = (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both") && this.emitHighlightTokens;
+    const lazy = (wantsHtml || wantsTokens) && this.shouldDeferNativeNestedCodeHighlight(owner);
+    const code = owner.snapshot(this.rootCodeConfigurationRevision).code;
+    if (!code) return undefined;
+    const { lang, meta: fenceMeta } = parseCodeFenceInfo(code.info);
+    const diffInfo = detectDiffLanguage(lang, fenceMeta);
+    const diff = this.emitDiffBlocks && diffInfo.isDiff;
+    const presentation = owner.getPresentation();
+    if (!presentation && !lazy && !diff) return undefined;
+
+    const rows = owner.getLines().readRange(0, owner.getLines().length);
+    const meta: NonNullable<Block["payload"]["meta"]> = {
+      ...(presentation?.meta ?? {}),
+      code: owner.getLines().materialize().replace(/\r\n?/g, "\n").replace(/\n$/, ""),
+      info: code.info,
+      ...(code.language ? { lang: code.language } : {}),
+    };
+    if (lazy) {
+      let tokenizedUntil = 0;
+      while (rows[tokenizedUntil]?.decoration?.configurationRevision === this.rootCodeConfigurationRevision) tokenizedUntil += 1;
+      meta.lazyTokenization = true;
+      meta.lazyTokenizedUntil = tokenizedUntil;
+    }
+    if (diff) {
+      const codeLines = rows.map((row) => row.text);
+      const cursor: DiffCursorState = { oldLine: null, newLine: null };
+      meta.diffBlocks = buildDiffBlocksFromLines(
+        codeLines.map((line) => parseUnifiedDiffLine(line, cursor)),
+        codeLines,
+        wantsTokens ? rows.map((row) => (row.decoration?.tokens ?? null) as TokenLineV1 | null) : null,
+        diffInfo.baseLang ?? null,
+      );
+    }
+    const block: Block = {
+      id: owner.id,
+      type: "code",
+      isFinalized: true,
+      payload: {
+        raw: code.raw,
+        meta,
+        range: { ...code.sourceRange },
+        inline: undefined,
+        highlightedHtml: presentation?.highlightedHtml,
+        sanitizedHtml: undefined,
+      },
+    };
+    owner.setPresentation(block);
+    return block;
+  }
+
   private async decorateRootCode(
     owner: RootCodeSourceOwner,
     finalizing = false,
@@ -3279,11 +3348,20 @@ export class MarkdownEngine {
       tableSemanticPatches.push(...linkReferencePatches.tablePatches);
     }
 
+    // Tail headings dedupe against the retained prefix, as a single-shot parse would.
+    this.headingIdCounts = new Map<string, number>();
+    for (const block of previousBlocks) {
+      if (block.type !== "heading" || (block.payload.range?.from ?? tailOffset) >= tailOffset) continue;
+      const headingText = (block.payload.meta as { headingText?: string } | undefined)?.headingText ?? block.payload.raw;
+      const baseSlug = slugifyHeading(headingText) || "heading";
+      this.headingIdCounts.set(baseSlug, (this.headingIdCounts.get(baseSlug) ?? 0) + 1);
+    }
     const parsedTailBlocks = await this.extractBlocks(
       tree,
       sourceInput,
       {
         sourceOffset: tailOffset,
+        continueHeadingIds: true,
         ...(forceFinalize ? { forceFinalize: true } : {}),
       },
       nestedNativeContainerStarts,
@@ -5255,6 +5333,7 @@ export class MarkdownEngine {
         continue;
       }
       await this.enrichBlockContent(nested, options, childAncestors);
+      if (nested.type === "code") this.nestedCodeOwners.get(snapshot.id)?.setPresentation(nested);
       const updated = createBlockSnapshot(nested);
       const { block: _block, ...props } = updated.props ?? {};
       snapshot.type = updated.type;
@@ -5544,6 +5623,7 @@ export class MarkdownEngine {
             range,
           });
           this.nestedCodeOwners.set(id, owner);
+          this.refreshNativeNestedCodePresentation(owner);
           if (owner.state !== "open" && !this.shouldDeferNativeNestedCodeHighlight(owner)) {
             nestedCodeOwnersToDecorate.add(owner);
           }
@@ -5551,6 +5631,7 @@ export class MarkdownEngine {
           if (isActive) this.nativeContainerActiveSnapshots.set(block.id, snapshot);
           return snapshot;
         }
+        this.refreshNativeNestedCodePresentation(owner);
         if (owner.state !== "open" && !this.shouldDeferNativeNestedCodeHighlight(owner)) {
           nestedCodeOwnersToDecorate.add(owner);
         }
@@ -5927,6 +6008,7 @@ export class MarkdownEngine {
             this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(finalized));
           }
         }
+        this.refreshNativeNestedCodePresentation(owner);
         if (!this.shouldDeferNativeNestedCodeHighlight(owner)) nestedCodeOwnersToDecorate.add(owner);
       }
     }
@@ -5960,18 +6042,36 @@ export class MarkdownEngine {
       }
     }
     for (const owner of nestedCodeOwnersToDecorate) {
-      const decorations = await this.rootCodeHighlighter.decorateAvailable(
-        owner,
-        this.rootCodeHighlightConfiguration(owner.state === "finalized"),
-        () => !this.disposed,
-      );
+      // Closed diff fences use the diff-aware range tokenizer, matching root code and lazy completion.
+      const decorations = owner.isDiff && owner.state !== "open" && this.highlightOutputMode !== "html"
+        ? await this.rootCodeHighlighter.tokenizeRange(
+            owner,
+            0,
+            owner.getLines().length,
+            this.rootCodeHighlightConfiguration(true),
+            () => !this.disposed,
+          )
+        : await this.rootCodeHighlighter.decorateAvailable(
+            owner,
+            this.rootCodeHighlightConfiguration(owner.state !== "open"),
+            () => !this.disposed,
+          );
       if (decorations.length === 0) continue;
+      const presentation = this.refreshNativeNestedCodePresentation(owner);
       const previousCode = previousPrepared
         ? preparedSnapshotAtId(previousPrepared.children, owner.id)?.code
         : undefined;
       if (previousCode?.codeOwnerId === owner.id && previousCode.generation === owner.generation) {
         const patch = owner.decoratePatch(this.rootCodeConfigurationRevision, decorations);
         if (patch) this.pendingNativeNestedOwnerPatches.push(patch);
+        if (presentation) {
+          this.pendingNativeNestedOwnerPatches.push({
+            op: "setProps",
+            at: { blockId: owner.containerId, nodeId: owner.id },
+            props: { block: presentation },
+            meta: { kind: "enrichment" },
+          });
+        }
       } else {
         const snapshot = mutableNativeOwnerSnapshot(
           owner.snapshot(this.rootCodeConfigurationRevision),
@@ -7668,6 +7768,12 @@ export class MarkdownEngine {
         if (nextMeta?.loose !== undefined
           && (rangeChanged || previousMeta?.loose !== nextMeta.loose)) {
           props.loose = nextMeta.loose;
+        }
+        // Nested children travel as structural patches; other meta (document plugin output included) is published whole.
+        const { preparedNested: _previousNested, ...previousConsumerMeta } = previousMeta ?? {};
+        const { preparedNested: _nextNested, ...nextConsumerMeta } = nextMeta ?? {};
+        if (JSON.stringify(previousConsumerMeta) !== JSON.stringify(nextConsumerMeta)) {
+          props.meta = nextConsumerMeta;
         }
         if (Object.keys(props).length > 0) {
           patches.push({
