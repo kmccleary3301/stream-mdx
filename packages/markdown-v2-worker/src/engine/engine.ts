@@ -216,6 +216,7 @@ import {
 } from "./native-paragraph-source";
 import { NativeMarkdownInput } from "./native-markdown-input";
 import {
+  advanceNativeNestedTableOwner,
   createNativeNestedTableOwner,
   createRootTableOwners,
   rootTableAppendChange,
@@ -384,6 +385,23 @@ function hasSourceAfterRange(source: SourceText, to: number): boolean {
   const remaining = sourceLength(source) - to;
   return remaining > 1
     && !(remaining === 2 && sourceCharAt(source, to) === "\r" && sourceCharAt(source, to + 1) === "\n");
+}
+
+/**
+ * A table ends only at a complete following line. Until that line's ending arrives it may still become a row: a
+ * bare `>` or indent reads as a blank line, `-` or `#` as a block start.
+ */
+function hasCompleteLineAfterRange(source: SourceText, to: number): boolean {
+  const length = sourceLength(source);
+  let cursor = to;
+  while (cursor < length && sourceCharAt(source, cursor) !== "\n" && sourceCharAt(source, cursor) !== "\r") cursor += 1;
+  if (cursor >= length) return false;
+  cursor += sourceCharAt(source, cursor) === "\r" && sourceCharAt(source, cursor + 1) === "\n" ? 2 : 1;
+  for (; cursor < length; cursor += 1) {
+    const char = sourceCharAt(source, cursor);
+    if (char === "\n" || char === "\r") return true;
+  }
+  return false;
 }
 
 function managedTableSourceFrontierChanged(previous: Block, next: Block): boolean {
@@ -5578,7 +5596,9 @@ export class MarkdownEngine {
           nextSibling = nextSibling.nextSibling;
         }
       }
-      const nodeEnded = nextSibling !== null || (kind !== "code" && hasSourceAfterRange(source, range.to)) || codeHasClosingFence;
+      const nodeEnded = kind === "table"
+        ? hasCompleteLineAfterRange(source, range.to)
+        : nextSibling !== null || (kind !== "code" && hasSourceAfterRange(source, range.to)) || codeHasClosingFence;
       const nodeClosure = options?.forceFinalize
         ? "finalized"
         : isActive && closure === "finalized"
@@ -5682,23 +5702,10 @@ export class MarkdownEngine {
         let owner = this.nestedTableOwners.get(id);
         if (owner?.getMetadata().state === "open") {
           const before = owner.getMetadata();
-          if (source.length > before.processedTo) {
-            const accepted = owner.accept(before.processedTo, source.length);
-            const appendChange = rootTableAppendChange(source, before, accepted);
-            this.pendingNativeNestedOwnerPatches.push(rootTableAppendPatch(owner, appendChange));
-          }
-          if (!isActive || nodeClosure !== "open") {
-            const beforeClose = owner.getMetadata();
-            if (beforeClose.state === "open") {
-              const closed = owner.admitNativeRows(
-                beforeClose.processedTo,
-                beforeClose.processedTo,
-                [],
-                nodeClosure === "finalized" ? "finalized" : "closed",
-              );
-              const closeChange = rootTableAppendChange(source, beforeClose, closed);
-              this.pendingNativeNestedOwnerPatches.push(rootTableAppendPatch(owner, closeChange));
-            }
+          const state = isActive && nodeClosure === "open" ? "open" : nodeClosure === "finalized" ? "finalized" : "closed";
+          const advanced = advanceNativeNestedTableOwner(owner, node, this.sourceDocument, mapping, state);
+          if (advanced) {
+            this.pendingNativeNestedOwnerPatches.push(rootTableAppendPatch(owner, rootTableAppendChange(source, before, advanced)));
           }
         }
         if (!owner) {

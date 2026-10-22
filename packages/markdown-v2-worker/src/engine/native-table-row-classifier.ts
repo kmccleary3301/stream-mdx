@@ -282,6 +282,8 @@ export class NativeTableRowClassifier {
   private state: NativeTableRowClassifierState = "open";
   private acceptedTo: number;
   private tailFrom: number;
+  /** End of the last complete row: a re-admitted provisional row may start here, before acceptedTo. */
+  private completeTo: number;
   private nextRowIndex = 0;
   private interruptFrom: number | undefined;
 
@@ -307,6 +309,7 @@ export class NativeTableRowClassifier {
     this.prefix = options.extensionContext === "header-independent" ? makeSyntheticPrefix(options.columnCount) : "";
     this.acceptedTo = options.bodyFrom;
     this.tailFrom = options.bodyFrom;
+    this.completeTo = options.bodyFrom;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       this.counters = options.counters;
     }
@@ -334,7 +337,7 @@ export class NativeTableRowClassifier {
     for (let index = 0; index < normalizedRows.length; index += 1) {
       const row = normalizedRows[index]!;
       if (row.index !== this.nextRowIndex + index
-        || row.sourceRange.from < from || row.sourceRange.to < row.sourceRange.from || row.sourceRange.to > to
+        || row.sourceRange.from < this.completeTo || row.sourceRange.to < row.sourceRange.from || row.sourceRange.to > to
         || row.cells.some((cell) => cell.sourceRange.from < row.sourceRange.from
           || cell.sourceRange.to < cell.sourceRange.from
           || cell.sourceRange.to > row.sourceRange.to)) {
@@ -350,6 +353,7 @@ export class NativeTableRowClassifier {
     const provisionalRow = normalizedRows[completeCount];
     const previousRow = completeRows[completeRows.length - 1];
     this.nextRowIndex += completeRows.length;
+    if (previousRow) this.completeTo = previousRow.sourceRange.to;
     this.acceptedTo = to;
     this.state = admittedState;
     this.interruptFrom = actualInterruptFrom;
@@ -536,6 +540,8 @@ export class NativeTableRowClassifier {
     }
 
     this.acceptedTo = to;
+    const lastCompleteRow = completeRows[completeRows.length - 1];
+    if (lastCompleteRow) this.completeTo = lastCompleteRow.sourceRange.to;
     this.nextRowIndex = completeRowCount;
     return {
       completeRows,

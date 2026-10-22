@@ -143,6 +143,36 @@ export function createNativeNestedTableOwner(
   return owner;
 }
 
+/**
+ * Advance an open nested table from its container's current native Table node. Its later rows sit under the
+ * container's prefixes, which the root row classifier cannot read. Returns undefined when nothing changed.
+ */
+export function advanceNativeNestedTableOwner(
+  owner: RootTableSourceOwner,
+  node: SyntaxNode,
+  source: AppendSourceDocument,
+  mapping: NativeSourceMapping,
+  state: RootTableSourceOwnerState,
+): RootTableSourceChange | undefined {
+  const before = owner.getMetadata();
+  const snapshot = source.snapshot();
+  const tableRange = mappedNativeRange(mapping, node.from, node.to);
+  const acceptedTo = Math.max(before.processedTo, delimiterLineBoundary(snapshot, tableRange.to, true) ?? tableRange.to);
+  // The container may parse a spliced window holding only the table's opening and its active tail, so row indexes
+  // are window-local. Rows past the last complete row continue the owner's index.
+  const completeTo = before.completeRowCount > 0
+    ? owner.getRows().get(before.completeRowCount - 1)?.sourceRange.to ?? before.processedTo
+    : undefined;
+  const rows = nativeTableRowsFromNode(node, mapping.input, (from, to) => mappedNativeRange(mapping, from, to), state !== "open")
+    .filter((row) => completeTo === undefined || row.sourceRange.from > completeTo)
+    .map((row, offset) => {
+      const index = before.completeRowCount + offset;
+      return row.index === index ? row : { ...row, index };
+    });
+  const change = owner.admitNativeRows(before.processedTo, acceptedTo, rows, state);
+  return owner.getMetadata().revision === before.revision ? undefined : change;
+}
+
 function rootTableOwnerTarget(owner: RootTableSourceOwner): NodePath {
   return owner.containerId
     ? { blockId: owner.containerId, nodeId: owner.id }

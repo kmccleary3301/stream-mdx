@@ -365,6 +365,45 @@ async function runItemBlockGapLoosenessTest(): Promise<void> {
   }
 }
 
+// A table nested in a quote or list item keeps its body rows when streamed. Later rows arrive under the container's
+// prefix, and finalize seals an unterminated last row instead of dropping it.
+async function runNestedTableRowsTest(): Promise<void> {
+  const tables = (store: RendererStore): unknown[] => {
+    const found: unknown[] = [];
+    const walk = (id: string): void => {
+      const node = store.getNode(id);
+      if (!node) return;
+      if (node.type === "table") {
+        const meta = store.getTableColdBlock(id)?.payload.meta;
+        found.push({ header: meta?.header, rows: meta?.rows });
+      }
+      for (const child of node.children ?? []) walk(child);
+    };
+    walk("__root__");
+    return found;
+  };
+  const sources = [
+    "> | a |\n> | - |\n> | b c |\n",
+    "> | a |\n> | - |\n> | b c |",
+    "- | a |\n  | - |\n  | b |\n  | c |\n\nafter\n",
+  ];
+  const harness = await createWorkerHarness();
+  for (const source of sources) {
+    const expected = tables(await runSession(harness, [source]));
+    assert.ok(
+      expected.length === 1 && ((expected[0] as { rows?: unknown[] }).rows?.length ?? 0) > 0,
+      `${JSON.stringify(source)} single-shot must hold one table with body rows`,
+    );
+    for (const size of [1, 7]) {
+      assert.deepEqual(
+        tables(await runSession(harness, chunksOfSize(source, size))),
+        expected,
+        `${JSON.stringify(source)} in chunks of ${size} must keep the nested table's rows`,
+      );
+    }
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -383,4 +422,5 @@ await runLinkReferenceDefinitionSplitTest();
 await runIndentedQuoteWindowTest();
 await runClosedQuoteHtmlChildTest();
 await runItemBlockGapLoosenessTest();
+await runNestedTableRowsTest();
 console.log("Native container streaming regressions passed");
