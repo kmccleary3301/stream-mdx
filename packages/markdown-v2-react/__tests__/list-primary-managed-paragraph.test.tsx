@@ -224,6 +224,20 @@ async function runMountedListPrimaryParagraphRegression(): Promise<void> {
       );
     }
 
+    // A registered blockquote wraps a quote nested in a list item; the nested node has no content of its own,
+    // so the wrapper must receive the quote's rendered children.
+    const customQuoteRegistry = new ComponentRegistry();
+    customQuoteRegistry.setBlockComponents({
+      blockquote: ({ renderedContent }) => createElement("blockquote", { className: "custom-quote" }, renderedContent),
+    });
+    const quoted = await mountNativeList(dom, roots, "- item\n  > first", customQuoteRegistry);
+    await handleAndApply(dom, quoted.engine, quoted.store, quoted.emitted, { type: "APPEND", text: " quoted line" });
+    assert.equal(
+      quoted.container.querySelector("li blockquote.custom-quote")?.textContent?.trim(),
+      "first quoted line",
+      "a custom blockquote nested in a list item must render its quoted content",
+    );
+
     const tasks = await mountNativeList(dom, roots, "- [x] done\n- [ ] ");
     const taskItems = tasks.container.querySelectorAll("li");
     assert.equal(taskItems.length, 2);

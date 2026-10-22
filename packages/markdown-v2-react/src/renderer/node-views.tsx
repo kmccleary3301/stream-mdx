@@ -309,8 +309,10 @@ export const BlockNodeRenderer: React.FC<{
     return <MixedSegmentView store={store} nodeId={blockId} inlineComponents={registry.getInlineComponents()} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName={parentTagName} />;
   }
 
-  // The native quote view still invokes the registered wrapper, but supplies its prepared children.
-  const preparedQuote = block.type === "blockquote" && Boolean(block.payload.meta?.preparedNested);
+  // The native quote view still invokes the registered wrapper, but supplies its prepared children. A nested
+  // quote's block is synthesized from its node and carries no content, so its children are its only content.
+  const preparedQuote = block.type === "blockquote" &&
+    (Boolean(block.payload.meta?.preparedNested) || node.parentId !== PATCH_ROOT_ID);
   const hasPreparedMdxInline = block.type === "paragraph" && hasTrustedMdxInline(block.payload.inline ?? []);
   const mixedParagraph = block.type === "paragraph" && Array.isArray(block.payload.meta?.mixedSegments) && !hasPreparedMdxInline;
   if ((registry.hasCustomBlockComponent(block.type) || mixedParagraph) && !preparedQuote) {
