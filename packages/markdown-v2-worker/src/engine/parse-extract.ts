@@ -10,6 +10,7 @@ import type {
   TocHeading,
 } from "@stream-mdx/core";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
+import { parseTableCellInline } from "./table-cell-inline";
 import type { ContentChangeRange } from "./types";
 
 /** Withhold only an unfinished matching fence marker from provisional code. */
@@ -494,7 +495,7 @@ export function parseGfmTableFromTree(
 
   const parseCell = (cell: (typeof headerCells)[number]): InlineNode[] => {
     const sourceOffset = cell.range?.from;
-    return inlineParser.parse(cell.value, sourceOffset === undefined ? {} : { sourceOffset });
+    return parseTableCellInline(inlineParser, cell.value, sourceOffset === undefined ? {} : { sourceOffset });
   };
   const header = headerCells.map(parseCell);
   const colCount = header.length;
