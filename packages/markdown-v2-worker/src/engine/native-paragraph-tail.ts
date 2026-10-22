@@ -1,6 +1,7 @@
 import type { SyntaxNode } from "@lezer/common";
 import type { MarkdownExtension, MarkdownParser } from "@lezer/markdown";
 import type { SourceSnapshot } from "@stream-mdx/core";
+import { lineStartAt } from "./native-container-window";
 import { NativeMarkdownInput } from "./native-markdown-input";
 import { SourceRangeInput } from "./root-code-pipeline";
 
@@ -55,6 +56,11 @@ export interface NativeParagraphRootCandidate {
   readonly node: SyntaxNode;
   readonly sourceOffset: number;
   readonly readiness: NativeParagraphReadiness;
+  /**
+   * Source line start of the root. A root parse resumes here, never at `node.from`: Lezer starts indented code at
+   * its content column, and reparsing from there reads the code text as a paragraph.
+   */
+  readonly lineFrom: number;
 }
 
 export interface NativeParagraphTailState {
@@ -257,6 +263,7 @@ function followingRoots(
       node,
       sourceOffset,
       readiness: finalizing ? "finalized" : node.to < inputLength - 1 || terminalReference ? "stable" : "provisional",
+      lineFrom: lineStartAt(source, sourceOffset + node.from, sourceOffset),
     });
   }
   return result;
@@ -580,9 +587,7 @@ export class NativeParagraphTailParser {
       : closure === "open"
         ? this.following.find((root) => root.readiness === "provisional")
         : undefined;
-    const rootResumeFrom = resumeFollowingRoot
-      ? resumeFollowingRoot.sourceOffset + resumeFollowingRoot.node.from
-      : undefined;
+    const rootResumeFrom = resumeFollowingRoot?.lineFrom;
     return {
       ownerStart: this.ownerStart,
       ownerEnd,

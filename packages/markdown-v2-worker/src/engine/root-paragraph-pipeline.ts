@@ -221,9 +221,7 @@ export function finalizeRootParagraphOwner(
   const change = owner.finalize(nativeChange);
   if (change.requiresOwnerReplacement || change.rootResumeFrom !== undefined) return change;
   const following = nativeChange.followingRootNodes[0];
-  return following
-    ? { ...change, rootResumeFrom: following.sourceOffset + following.node.from }
-    : change;
+  return following ? { ...change, rootResumeFrom: following.lineFrom } : change;
 }
 
 export function releaseRootParagraphOwner(owner: RootParagraphSourceOwner): void {

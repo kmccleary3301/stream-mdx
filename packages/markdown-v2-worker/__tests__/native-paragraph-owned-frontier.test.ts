@@ -13,6 +13,7 @@ import {
   probeFinalizedRootParagraphAppend,
 } from "../src/engine/root-paragraph-pipeline";
 import { attestNativeParagraphWindowGrammar } from "../src/engine/native-paragraph-tail";
+import { SourceRangeInput } from "../src/engine/root-code-pipeline";
 
 const markdownParser = parser.configure([GFM, createBlockCompatibilityExtension(), HtmlContinuationExtension]);
 
@@ -39,6 +40,13 @@ function createOwner(
   return owners[0]!;
 }
 
+/** The root parse that resumes after a paragraph must read the following root exactly as a cold parse does. */
+function assertResumeReadsRoot(source: AppendSourceDocument, resumeFrom: number | undefined, expectedType: string): void {
+  assert.ok(resumeFrom !== undefined, "a following root must give the root parser a resume point");
+  const resumed = new NativeMarkdownInput(new SourceRangeInput(source.snapshot(), resumeFrom)).parse(markdownParser);
+  assert.equal(resumed.topNode.firstChild?.type.name, expectedType, `resuming at ${resumeFrom} must reparse the following root`);
+}
+
 
 function assertFinalizedFollowingRoot(initialSource: string, appendedText: string, expectedType: string): void {
   const source = new AppendSourceDocument();
@@ -58,7 +66,7 @@ function assertFinalizedFollowingRoot(initialSource: string, appendedText: strin
   assert.ok(firstFollowing);
   assert.equal(firstFollowing.node.type.name, expectedType);
   assert.equal(firstFollowing.readiness, "provisional", "a provisional native root still closes the preceding paragraph");
-  assert.equal(change.rootResumeFrom, firstFollowing.sourceOffset + firstFollowing.node.from);
+  assertResumeReadsRoot(source, change.rootResumeFrom, expectedType);
 }
 
 function assertFinalizedBodyGrowth(initialSource: string, appendedText: string): void {
@@ -186,6 +194,15 @@ assertFinalizedFollowingRoot("retained body", "\n\n[destination]: /guide", "Link
 assertFinalizedFollowingRoot("retained body\n", "\n[destination]: /guide", "LinkReference");
 assertFinalizedFollowingRoot("retained body", "\n \n[destination]: /guide", "LinkReference");
 assertFinalizedFollowingRoot("retained body\r\n", "\r\n> nested", "Blockquote");
+// Lezer starts indented code at its content column; resuming there would read the code text as a paragraph.
+assertFinalizedFollowingRoot("retained body", "\n\n    code", "CodeBlock");
+{
+  const source = new AppendSourceDocument();
+  source.append("retained body\n\n    code\n");
+  const finalized = finalizeRootParagraphOwner(createOwner(source), source.snapshot());
+  assert.equal(rootParagraphChangeNeedsReplacement(finalized), false);
+  assertResumeReadsRoot(source, finalized.rootResumeFrom, "CodeBlock");
+}
 for (const [initialSource, appendedText] of [
   ["unfinished body", " continued"],
   ["unfinished body", "\ncontinued"],
