@@ -369,6 +369,8 @@ npm run test:regression:seeded-smoke:server
 npm run docs:dev
 ```
 
+Managed seeded smoke writes static-server output to `tmp/seeded-smoke/docs-server.log`. The server logs directly to that file, so synchronous replay commands cannot stall HTTP responses by filling a log pipe.
+
 ## Architecture Summary
 
 1. **Worker-first parsing**

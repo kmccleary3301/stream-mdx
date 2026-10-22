@@ -474,7 +474,7 @@ export interface LookaheadTraceStep {
     blockIdsChanged: string[];
     firstDecisionChangeBlockId: string | null;
   };
-  state?: Record<string, unknown>;
+  state?: Record<string, unknown> | null;
   blocks?: Array<{
     id: string;
     type: string;
