@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type { Block, HtmlTreeNode, InlineNode, NodeSnapshot } from "@stream-mdx/core";
 
 class FakeWorkerGlobal extends EventEmitter {
   onmessage: ((event: MessageEvent<WorkerIn>) => void | Promise<void>) | null = null;
@@ -71,4 +72,71 @@ export async function createWorkerHarness(): Promise<WorkerHarness> {
       return queue;
     },
   };
+}
+
+function mergeAdjacentText(nodes: readonly InlineNode[]): unknown[] {
+  const merged: Array<Record<string, unknown>> = [];
+  for (const node of nodes) {
+    const projected: Record<string, unknown> = { ...node };
+    if ("children" in node && Array.isArray(node.children)) {
+      projected.children = mergeAdjacentText(node.children);
+    }
+    const previous = merged.at(-1);
+    if (node.kind === "text" && previous?.kind === "text") {
+      previous.text = `${String(previous.text)}${node.text}`;
+      const previousRange = previous.sourceRange as { from: number; to: number } | undefined;
+      const nextRange = node.sourceRange;
+      if (previousRange && nextRange) previous.sourceRange = { from: previousRange.from, to: nextRange.to };
+      else delete previous.sourceRange;
+    } else {
+      merged.push(projected);
+    }
+  }
+  return merged;
+}
+
+/** Stable authored fields exposed by the cold RendererStore export. */
+export function projectConsumerBlocks(blocks: readonly Block[]): unknown[] {
+  function projectBlock(block: Block): unknown {
+    const meta = block.payload.meta;
+    const children: unknown[] = [];
+    const prepared = meta?.preparedNested as { children?: readonly NodeSnapshot[] } | undefined;
+    if (prepared?.children) children.push(...prepared.children.flatMap(projectNode));
+    for (const key of ["htmlTree", "htmlParagraphTree"]) {
+      const tree = meta?.[key] as HtmlTreeNode[] | undefined;
+      if (Array.isArray(tree)) children.push(...tree.flatMap(projectHtmlTreeNode));
+    }
+    return {
+      type: block.type,
+      raw: block.payload.raw,
+      range: block.payload.range,
+      isFinalized: block.isFinalized,
+      inline: mergeAdjacentText(block.payload.inline ?? []),
+      children,
+    };
+  }
+
+  function projectNode(node: NodeSnapshot): unknown[] {
+    const block = node.props?.block as Block | undefined;
+    if (block) return [projectBlock(block)];
+    return node.children.flatMap(projectNode);
+  }
+
+  function projectHtmlTreeNode(node: HtmlTreeNode): unknown[] {
+    if (node.kind === "block") return [projectBlock(node.block)];
+    return node.kind === "element" || node.kind === "component" ? node.children.flatMap(projectHtmlTreeNode) : [];
+  }
+
+  return blocks.map(projectBlock);
+}
+
+/** Root-only variant for failures owned by the nested cold exporter. */
+export function projectConsumerRoots(blocks: readonly Block[]): unknown[] {
+  return blocks.map((block) => ({
+    type: block.type,
+    raw: block.payload.raw,
+    range: block.payload.range,
+    isFinalized: block.isFinalized,
+    inline: mergeAdjacentText(block.payload.inline ?? []),
+  }));
 }

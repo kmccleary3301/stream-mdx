@@ -1,5 +1,6 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
+import type { CodeBlockSnapshot } from "@stream-mdx/core";
 import {
   AppendSourceDocument,
   appendManagedParagraphSpans,
@@ -118,6 +119,11 @@ export interface NodeRecord {
   blockEpoch: number;
   block?: Block;
 }
+const serializedBlockOwnership = Symbol("serializedBlockOwnership");
+type NodeRecordWithSerializedBlock = NodeRecord & { [serializedBlockOwnership]?: boolean };
+function hasSerializedBlock(record: NodeRecord): boolean {
+  return (record as NodeRecordWithSerializedBlock)[serializedBlockOwnership] === true;
+}
 
 export interface ApplyPatchesOptions {
   coalesced?: boolean;
@@ -202,10 +208,12 @@ function normalizeParagraphNodeProps(snapshot: NodeSnapshot): Record<string, unk
   const { block: _block, raw: _raw, inline: _inline, ...paragraphProps } = props;
   return paragraphProps;
 }
-function normalizeParagraphNodeMeta(snapshot: NodeSnapshot): Record<string, unknown> {
-  const block = snapshot.props?.block as Block | undefined;
-  const meta = block?.payload?.meta ?? snapshot.meta ?? normalizeParagraphNodeProps(snapshot);
-  return { ...meta };
+function normalizeParagraphNodeMeta(snapshot: NodeSnapshot): Record<string, unknown> | undefined {
+  const blockMeta = (snapshot.props?.block as Block | undefined)?.payload?.meta;
+  if (snapshot.meta !== undefined) return { ...snapshot.meta };
+  if (blockMeta !== undefined) return Object.keys(blockMeta).length > 0 ? { ...blockMeta } : undefined;
+  const props = normalizeParagraphNodeProps(snapshot);
+  return Object.keys(props).length > 0 ? props : undefined;
 }
 
 
@@ -2396,7 +2404,12 @@ function mergeInlineSegmentProps(previous: Record<string, unknown> | undefined, 
 function applyCodeBlockMetadata(record: NodeRecord, themes?: { light?: string; dark?: string }) {
   const block = record.block;
   const highlightedHtml = block?.payload.highlightedHtml ?? "";
-  const lang = typeof block?.payload.meta?.lang === "string" ? (block?.payload.meta?.lang as string) : record.props?.lang;
+  const lang =
+    typeof block?.payload.meta?.lang === "string"
+      ? block.payload.meta.lang
+      : typeof record.props?.language === "string"
+        ? record.props.language
+        : record.props?.lang;
   const wrapperProbe =
     highlightedHtml.length > CODE_WRAPPER_ATTR_PROBE_CHARS
       ? highlightedHtml.slice(0, CODE_WRAPPER_ATTR_PROBE_CHARS)
@@ -2691,6 +2704,8 @@ function buildNodeFromSnapshot(
     blockEpoch,
     block: snapshot.paragraph ? undefined : snapshotToBlock(snapshot) ?? undefined,
   };
+  (record as NodeRecordWithSerializedBlock)[serializedBlockOwnership] =
+    typeof snapshot.props?.block === "object" && snapshot.props.block !== null;
   const incomingBlock = snapshot.props?.block as Block | undefined;
   const blockPrepared = nativeContainer && incomingBlock?.payload?.meta?.preparedNested !== undefined;
   if (blockPrepared || metaPrepared) {
@@ -2820,6 +2835,7 @@ function codeLineSnapshotMatches(snapshot: NodeSnapshot, prior: NodeRecord): boo
  */
 function recordMatchesPrior(map: NodeMap, record: NodeRecord, prior: NodeRecord, previous: ReadonlyMap<string, NodeRecord>): boolean {
   if (prior.type !== record.type || prior.parentId !== record.parentId) return false;
+  if (hasSerializedBlock(record) !== hasSerializedBlock(prior)) return false;
   if (record.type === "code") return false;
   if (tableStateByRecord.has(record)) return false;
   if (paragraphStateByRecord.has(record)) return false;
@@ -2944,13 +2960,79 @@ function removeSubtree(
 
 // Internal records are copy-on-write (every block change assigns a new `record.block`), so one public clone per
 // internal block object stays valid until that record changes; unchanged blocks keep their identity across reads.
+function codeLineTokensForSnapshot(line: CodeLineRecord): TokenLineV1 | undefined {
+  const decoration = line.decoration;
+  if (!decoration) return undefined;
+  return {
+    spans: decoration.tokens.spans.map((span) => ({
+      t: span.t,
+      ...(span.v ? { v: {
+        ...(span.v.dark ? { dark: { ...span.v.dark } } : {}),
+        ...(span.v.light ? { light: { ...span.v.light } } : {}),
+      } } : {}),
+      ...(span.s ? { s: { ...span.s } } : {}),
+    })),
+  };
+}
+
+function managedCodeLineSnapshots(ownerId: string, lines: readonly CodeLineRecord[]): NodeSnapshot[] {
+  const children: NodeSnapshot[] = [];
+  for (const line of lines) {
+    const props: Record<string, unknown> = {
+      index: line.index,
+      text: line.text,
+      html: line.text,
+      isProvisional: line.isProvisional,
+    };
+    const tokens = codeLineTokensForSnapshot(line);
+    if (tokens) props.tokens = tokens;
+    if (line.diffKind !== undefined) props.diffKind = line.diffKind;
+    if (line.oldNo !== undefined) props.oldNo = line.oldNo;
+    if (line.newNo !== undefined) props.newNo = line.newNo;
+    children.push({
+      id: `${ownerId}::line:${line.index}`,
+      type: "code-line",
+      props,
+      children: [],
+    });
+  }
+  return children;
+}
+function blockWithCodeTokenLines(block: Block, lines: readonly CodeLineRecord[]): Block {
+  const tokenLines: (TokenLineV1 | null)[] = [];
+  let hasTokens = false;
+  for (const line of lines) {
+    const tokens = codeLineTokensForSnapshot(line);
+    tokenLines.push(tokens ?? null);
+    hasTokens = hasTokens || tokens !== undefined;
+  }
+  const blockMeta = block.payload.meta;
+  if (!hasTokens && !blockMeta?.tokenLines) return block;
+  const payloadDescriptors = Object.getOwnPropertyDescriptors(block.payload);
+  const meta = { ...(blockMeta ?? {}) };
+  if (hasTokens) meta.tokenLines = tokenLines;
+  else delete meta.tokenLines;
+  payloadDescriptors.meta = { configurable: true, enumerable: true, writable: true, value: meta };
+  return { ...block, payload: Object.defineProperties({}, payloadDescriptors) as Block["payload"] };
+}
+
 function nodePropsForSnapshot(record: NodeRecord, source?: SourceSnapshot): Record<string, unknown> {
   const props = { ...record.props };
+  const codeState = codeStateByRecord.get(record);
   delete props.block;
   delete props.range;
-  if (source && record.range && isNativeContainerType(record.type) && Object.prototype.hasOwnProperty.call(props, "raw")) {
-    props.raw = source.read(record.range.from, record.range.to);
+  const codeRange = codeState?.managed ? codeState.view.source.sourceRange : undefined;
+  const range = paragraphStateByRecord.get(record)?.source.sourceRange
+    ?? tableStateByRecord.get(record)?.source.sourceRange
+    ?? codeRange
+    ?? (source && record.range ? parseSourceRange(record.range, source.length) : null);
+  if (source && range && typeof props.raw === "string") props.raw = source.read(range.from, range.to);
+  if (codeState) {
+    delete props.lang;
+    delete props.preAttrs;
+    delete props.codeAttrs;
   }
+  if (record.type === "list" || record.type === "list-item") delete props.depth;
   return props;
 }
 
@@ -3015,14 +3097,6 @@ function coldBlockForStoreNode(
     ...(record.meta ?? {}),
     ...(projected.payload.meta ?? {}),
   };
-  if (record.type === "list") {
-    for (const key of ["ordered", "loose", "start", "items"] as const) {
-      if (!Object.prototype.hasOwnProperty.call(record.props, key)) continue;
-      const value = record.props[key];
-      if (value === undefined) delete meta[key];
-      else meta[key] = value;
-    }
-  }
   const prepared = storePreparedNested(map, record, source, legacyProjection, listLayout, itemPrimary);
   meta.preparedNested = prepared;
   if (legacyProjection && record.type === "list" && hasManagedPrimaryListChild(map, record)) {
@@ -3033,7 +3107,6 @@ function coldBlockForStoreNode(
         ? copyInlineNodes(child.props.inline as InlineNode[])
         : copyInlineNodes(existingItems[index] ?? []));
     meta.items = currentItems;
-    prepared.props.items = currentItems.map((item) => copyInlineNodes(item));
   }
   const payloadDescriptors = Object.getOwnPropertyDescriptors(projected.payload);
   payloadDescriptors.meta = { configurable: true, enumerable: true, writable: true, value: meta };
@@ -3055,27 +3128,78 @@ function storeNodeSnapshot(
     : undefined;
   const block = coldBlockForStoreNode(map, record, source, legacyProjection, inheritedListLayout, itemPrimary);
   if (!block) return undefined;
-  const snapshot = createBlockSnapshot(block);
-  snapshot.props = { ...snapshot.props, ...nodePropsForSnapshot(record, source) };
+  const codeState = codeStateByRecord.get(record);
+  const codeLines = codeState ? readStoredCodeLines(codeState, 0, codeState.view.lines.length) : undefined;
+  const snapshotBlock = codeState?.managed && codeLines ? blockWithCodeTokenLines(block, codeLines) : block;
+  const snapshot = createBlockSnapshot(snapshotBlock);
+  const paragraphState = paragraphStateByRecord.get(record);
+  const tableState = tableStateByRecord.get(record);
+  const props = nodePropsForSnapshot(record, source);
   if (legacyProjection && record.type === "list-item") {
     const layout = inheritedListLayout ?? { ordered: false, loose: false };
-    snapshot.props.ordered = layout.ordered;
-    snapshot.props.loose = layout.loose;
-    snapshot.props.start = layout.start;
+    props.ordered = layout.ordered;
+    props.loose = layout.loose;
+    props.start = layout.start;
     if (itemPrimary) {
-      snapshot.props.inline = copyInlineNodes(itemPrimary.inline);
-      snapshot.props.text = legacyInlineText(itemPrimary.inline);
+      props.inline = copyInlineNodes(itemPrimary.inline);
+      props.text = legacyInlineText(itemPrimary.inline);
     }
   }
-  if (record.range) snapshot.range = { ...record.range };
-  if (record.meta) snapshot.meta = { ...record.meta, ...(snapshot.meta ?? {}) };
-  if (!isNativeContainerType(record.type) && record.children.length > 0 && !tableStateByRecord.has(record) && !paragraphStateByRecord.has(record)) {
+  snapshot.props = props;
+  if (hasSerializedBlock(record) || paragraphState || tableState || codeState?.managed) {
+    snapshot.props.block = snapshotBlock;
+  }
+  if (codeState && (codeState.managed || hasSerializedBlock(record))) {
+    const view = codeState.view;
+    const lines = codeLines ?? readStoredCodeLines(codeState, 0, view.lines.length);
+    const code: CodeBlockSnapshot = {
+      ...view.source,
+      configurationRevision: view.configurationRevision,
+      info: view.info,
+      language: view.language,
+      lines,
+      raw: codeState.sourceSnapshot.materialize(),
+    };
+    snapshot.code = code;
+    if (codeState.managed) snapshot.children = managedCodeLineSnapshots(record.id, lines);
+  } else {
+    delete snapshot.code;
+  }
+  if (!paragraphState) delete snapshot.paragraph;
+  if (!tableState) delete snapshot.table;
+  const range = paragraphState?.source.sourceRange
+    ?? tableState?.source.sourceRange
+    ?? (codeState?.managed ? codeState.view.source.sourceRange : undefined)
+    ?? record.range;
+  if (range) snapshot.range = { from: range.from, to: range.to };
+  else delete snapshot.range;
+  const preparedLayout = nativePreparedLayoutByRecord.get(record);
+  const preparedNested = preparedLayout?.meta
+    ? block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined
+    : undefined;
+  if (record.meta || preparedNested) {
+    const meta = { ...(record.meta ?? {}) };
+    if (preparedNested) meta.preparedNested = preparedNested;
+    snapshot.meta = meta;
+  } else {
+    delete snapshot.meta;
+  }
+  if (
+    record.type !== "code" &&
+    !isNativeContainerType(record.type) &&
+    record.children.length > 0 &&
+    !tableStateByRecord.has(record) &&
+    !paragraphStateByRecord.has(record) &&
+    (!codeState || codeState.managed)
+  ) {
     snapshot.children = record.children.flatMap((childId) => {
       const child = map.get(childId);
       if (!child) return [];
       const childSnapshot = storeNodeSnapshot(map, child, source, legacyProjection, inheritedListLayout);
       return childSnapshot ? [childSnapshot] : [];
     });
+  } else if (record.type === "code" && !codeState?.managed) {
+    snapshot.children = [];
   }
   return snapshot;
 }

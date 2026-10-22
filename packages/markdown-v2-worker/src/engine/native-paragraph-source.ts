@@ -578,17 +578,25 @@ export function nativeParagraphSourceContext(
   }
   const taskMarkerNode = paragraph.type.name === "Task" ? paragraph.getChild("TaskMarker") : null;
   const taskMarker = taskMarkerNode ? mapMarker(taskMarkerNode) : undefined;
+  markers.sort((left, right) =>
+    left.range.from - right.range.from
+      || left.range.to - right.range.to
+      || left.typeName.localeCompare(right.typeName));
+  let uniqueMarkerCount = 0;
+  for (const marker of markers) {
+    const previous = markers[uniqueMarkerCount - 1];
+    if (previous
+      && previous.range.from === marker.range.from
+      && previous.range.to === marker.range.to
+      && previous.typeName === marker.typeName) continue;
+    markers[uniqueMarkerCount] = marker;
+    uniqueMarkerCount += 1;
+  }
+  markers.length = uniqueMarkerCount;
   return Object.freeze({
     sourceRange: Object.freeze({ from: sourceRange.from, to: sourceRange.to }),
     textRange: Object.freeze({ from: textRange.from, to: textRange.to }),
-    markers: Object.freeze(markers.filter((marker) => {
-      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-        counters?.recordPrefixComparisons?.(1, "engine");
-      }
-      return marker.range.from < sourceRange.to
-        && marker.range.to > sourceRange.from
-        && marker.range.to > minimumSourceOffset;
-    })),
+    markers: Object.freeze(markers),
     ...(taskMarker ? { taskMarker: Object.freeze({ from: taskMarker.from, to: taskMarker.to }) } : {}),
     indentationRanges: Object.freeze(Array.from(extraIndentationRanges)),
   });
