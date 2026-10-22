@@ -33,6 +33,18 @@ function nodePathKey(path: NodePath): string {
   return `${path.blockId}::${nodePart}${indexPart}`;
 }
 
+/**
+ * The store applies a `setProps` carrying `range` all-or-nothing: an unadmitted range rejects the whole patch.
+ * Merging it with another update to the same node would let that rejection discard the other update too.
+ */
+function carriesRange(patch: Patch): boolean {
+  return patch.op === "setProps" && patch.props !== undefined && Object.prototype.hasOwnProperty.call(patch.props, "range");
+}
+
+function canMergeSetProps(base: Patch, next: Patch): boolean {
+  return !carriesRange(base) && !carriesRange(next);
+}
+
 
 function runCoalescer(patches: Patch[], config: CoalesceConfig = DEFAULT_COALESCE_CONFIG): Patch[] {
   if (USE_LINEAR_COALESCING) {
@@ -175,7 +187,7 @@ function collectSetProps(window: Patch[], startIndex: number): { patches: Patch[
 
     while (k < window.length && mergedCount < SET_PROPS_MERGE_LIMIT) {
       const next = window[k];
-      if (next.op === "setProps" && nodePathKey(next.at) === nodePathKey(current.at)) {
+      if (next.op === "setProps" && nodePathKey(next.at) === nodePathKey(current.at) && canMergeSetProps(current, next)) {
         Object.assign(mergedProps, next.props ?? {});
         mergedCount++;
         k++;
@@ -292,7 +304,12 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
 
       while (j < window.length && coalescedCount < 10) {
         const next = window[j];
-        if (next.op === "setProps" && next.at.blockId === current.at.blockId && next.at.nodeId === current.at.nodeId) {
+        if (
+          next.op === "setProps" &&
+          next.at.blockId === current.at.blockId &&
+          next.at.nodeId === current.at.nodeId &&
+          canMergeSetProps(current, next)
+        ) {
           Object.assign(mergedProps, next.props ?? {});
           coalescedCount++;
           j++;
@@ -322,7 +339,7 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
 
         while (m < window.length && localMerged < 10) {
           const follow = window[m];
-          if (follow.op === "setProps" && nodePathKey(follow.at) === nodePathKey(candidate.at)) {
+          if (follow.op === "setProps" && nodePathKey(follow.at) === nodePathKey(candidate.at) && canMergeSetProps(candidate, follow)) {
             Object.assign(candidateMergedProps, follow.props ?? {});
             m++;
             localMerged++;
