@@ -480,12 +480,19 @@ function lowerNestedBlockSnapshot(
           if (childSnapshot) segmentChildren.push(childSnapshot);
         });
         const mappedItemRange = sourceRange(mapping, item.from, item.to);
+        let itemTo = mappedItemRange.to;
         const primaryOwnerRange = primaryChild?.paragraph?.sourceRange;
-        // A retained typed paragraph can outlive the bounded native context node for its list item.
-        const itemRange = primaryOwnerRange
-          && primaryOwnerRange.from >= mappedItemRange.from
-          && primaryOwnerRange.to > mappedItemRange.to
-          ? { from: mappedItemRange.from, to: primaryOwnerRange.to }
+        // A retained source owner or nested child can outlive the bounded parser context for its list item.
+        if (primaryOwnerRange?.from !== undefined && primaryOwnerRange.from >= mappedItemRange.from) {
+          itemTo = Math.max(itemTo, primaryOwnerRange.to);
+        }
+        for (const child of segmentChildren) {
+          if (child.range && child.range.from >= mappedItemRange.from) {
+            itemTo = Math.max(itemTo, child.range.to);
+          }
+        }
+        const itemRange = itemTo > mappedItemRange.to
+          ? { from: mappedItemRange.from, to: itemTo }
           : mappedItemRange;
         const itemRaw = includeContainerRaw ? readRaw(item) : "";
         const itemBlock: Block = {
