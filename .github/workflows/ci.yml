@@ -52,6 +52,13 @@ jobs:
       - name: HTML parity (server blocks renderer vs browser final DOM)
         run: npm run determinism:html-parity
 
+      # Fails when a baseline-passing spec example stops passing on any StreamMDX path (static, streamed at chunk
+      # sizes 1/7/64, SSR).
+      - name: CommonMark/GFM conformance ratchet
+        run: |
+          npm run worker:build
+          npm run test:conformance
+
       - name: Benchmark methodology contract
         run: npm run test:benchmarks:methodology
 
