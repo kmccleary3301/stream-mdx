@@ -210,8 +210,10 @@ function normalizeParagraphNodeProps(snapshot: NodeSnapshot): Record<string, unk
 }
 function normalizeParagraphNodeMeta(snapshot: NodeSnapshot): Record<string, unknown> | undefined {
   const blockMeta = (snapshot.props?.block as Block | undefined)?.payload?.meta;
-  if (snapshot.meta !== undefined) return { ...snapshot.meta };
-  if (blockMeta !== undefined) return Object.keys(blockMeta).length > 0 ? { ...blockMeta } : undefined;
+  if (snapshot.meta !== undefined || blockMeta !== undefined) {
+    const meta = { ...(snapshot.meta ?? {}), ...(blockMeta ?? {}) };
+    return snapshot.meta !== undefined || Object.keys(meta).length > 0 ? meta : undefined;
+  }
   const props = normalizeParagraphNodeProps(snapshot);
   return Object.keys(props).length > 0 ? props : undefined;
 }
@@ -840,7 +842,7 @@ function paragraphColdBlockBase(record: NodeRecord, state: ManagedParagraphViewS
     payload: {
       raw: state.sourceSnapshot.materialize(),
       range: { ...state.source.sourceRange },
-      meta: record.meta as Block["payload"]["meta"],
+      meta: (record.block?.payload.meta ?? record.meta) as Block["payload"]["meta"],
     },
   };
 }
@@ -2702,7 +2704,11 @@ function buildNodeFromSnapshot(
     range: snapshot.range ? { ...snapshot.range } : undefined,
     version: 0,
     blockEpoch,
-    block: snapshot.paragraph ? undefined : snapshotToBlock(snapshot) ?? undefined,
+    block: snapshot.paragraph
+      ? snapshot.props?.block && typeof snapshot.props.block === "object"
+        ? snapshotToBlock(snapshot) ?? undefined
+        : undefined
+      : snapshotToBlock(snapshot) ?? undefined,
   };
   (record as NodeRecordWithSerializedBlock)[serializedBlockOwnership] =
     typeof snapshot.props?.block === "object" && snapshot.props.block !== null;
@@ -3179,6 +3185,12 @@ function storeNodeSnapshot(
     : undefined;
   if (record.meta || preparedNested) {
     const meta = { ...(record.meta ?? {}) };
+    const blockMeta = snapshotBlock.payload.meta;
+    if (record.meta && blockMeta) {
+      for (const key of Object.keys(meta)) {
+        if (Object.prototype.hasOwnProperty.call(blockMeta, key)) meta[key] = blockMeta[key];
+      }
+    }
     if (preparedNested) meta.preparedNested = preparedNested;
     snapshot.meta = meta;
   } else {
@@ -4433,6 +4445,8 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           );
           const incomingPrepared = incomingNativeContainer ? incomingBlock.payload?.meta?.preparedNested : undefined;
           target.block = cloneBlock(incomingNativeContainer ? blockWithoutPreparedNested(incomingBlock) : incomingBlock);
+          const paragraphState = paragraphStateByRecord.get(target);
+          if (paragraphState) coldParagraphBlocksByView.delete(paragraphState);
           const metaPrepared = incomingNativeContainer && nativePreparedLayoutByRecord.get(target)?.meta === true;
           if (incomingPrepared !== undefined || metaPrepared) {
             nativePreparedLayoutByRecord.set(target, { block: incomingPrepared !== undefined, meta: metaPrepared });

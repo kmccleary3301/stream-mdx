@@ -1368,8 +1368,16 @@ function materializeSnapshotNode(
 
   if (block) props.block = block;
   const result: NodeSnapshot = { id: node.id, type: node.type, props, children };
+  const blockMeta = block?.payload.meta;
   if (node.meta || exportShape?.meta) {
     const meta = node.meta ? structuredCloneIfPossible(node.meta) : {};
+    if (node.meta && blockMeta) {
+      for (const key of Object.keys(meta)) {
+        if (Object.prototype.hasOwnProperty.call(blockMeta, key)) {
+          meta[key] = structuredCloneIfPossible(blockMeta[key]);
+        }
+      }
+    }
     if (exportShape?.meta && prepared) meta.preparedNested = prepared;
     result.meta = meta;
   }

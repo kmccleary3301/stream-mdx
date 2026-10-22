@@ -90,7 +90,9 @@ async function run(): Promise<void> {
   const htmlFromPatches = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store, componentRegistry: registry }));
   const htmlFromSerialized = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: resetStore.getBlocks(), store: resetStore, componentRegistry: registry }));
   assert.equal(htmlFromSerialized, htmlFromPatches);
-  assert.ok(htmlFromSerialized.includes("const nested = 1;"), "nested code content must survive JSON reset");
+  const serializedDom = new JSDOM(htmlFromSerialized);
+  assert.equal(serializedDom.window.document.querySelector("pre code")?.textContent, "const nested = 1;\n", "nested code content must survive JSON reset");
+  serializedDom.window.close();
   assert.ok(htmlFromSerialized.includes("first-instance"));
   assert.ok(htmlFromSerialized.includes('href="/resolved"'));
   engine.dispose();
