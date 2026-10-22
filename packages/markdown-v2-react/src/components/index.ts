@@ -999,6 +999,10 @@ export class ComponentRegistry {
     this.blockRenderer = renderer;
   }
 
+  hasBlockRenderer(): boolean {
+    return this.blockRenderer !== undefined;
+  }
+
   /** Finalized blocks go through the `blockRenderer` override (e.g. block transform adapters); streaming blocks never do. */
   renderFinalizedBlock(block: Block, defaultElement: React.ReactElement): React.ReactNode {
     if (block.isFinalized && this.animationTimeline) {

@@ -217,6 +217,8 @@ export function materializeManagedParagraphBlock(block: Block, state: ManagedPar
   result.payload.inline = mixed ? mixedParagraphInline(mixed.segments) : paragraph.spans.flatMap((span) => cloneInlineNodes(span.nodes));
   result.payload.range = { ...paragraph.sourceRange };
   const meta: NonNullable<Block["payload"]["meta"]> = { ...(result.payload.meta ?? {}), paragraph };
+  if (paragraph.linkReferences?.length) meta.linkReferences = paragraph.linkReferences.map((reference) => ({ ...reference }));
+  else delete meta.linkReferences;
   if (mixed) {
     meta.mixedSegments = mixed.segments;
     if (Object.keys(mixed.htmlTrees).length > 0) meta.mixedHtmlTrees = mixed.htmlTrees;

@@ -1,4 +1,4 @@
-import type { Block, HtmlTreeNode, InlineNode, NodeSnapshot } from "./types";
+import type { Block, BlockResolvedLinkReference, HtmlTreeNode, InlineNode, NodeSnapshot } from "./types";
 
 
 export type ParagraphBlockState = "open" | "closed" | "finalized";
@@ -13,6 +13,7 @@ export interface ParagraphBlockSourceMetadata {
   readonly completeSpanCount: number;
   readonly spanCount: number;
   readonly sourceRange: { readonly from: number; readonly to: number };
+  readonly linkReferences?: readonly BlockResolvedLinkReference[];
 }
 
 /** Cold snapshot only; routine append patches carry changed span records and source suffixes. */
