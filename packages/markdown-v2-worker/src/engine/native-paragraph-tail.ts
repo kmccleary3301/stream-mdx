@@ -349,11 +349,13 @@ export class NativeParagraphTailParser {
     this.ownerEnd = sourceOffset + nativeParagraph.to;
     this.sourceLength = source.length;
     this.attested = attestation !== undefined;
-    const coordinates = lineCoordinatesAtEnd(source, this.ownerStart, this.ownerEnd);
-    this.currentLineStart = coordinates.currentLineStart;
-    this.lastLineStart = lastPhysicalLineStart(source, this.ownerStart, this.ownerEnd);
-    this.pendingCR = coordinates.pendingCR;
     const following = followingRoots(nativeParagraph.nextSibling, source, sourceOffset, source.length - sourceOffset, false);
+    // Same coordinates as `append` keeps: the line being typed and the one before it, so the first append's window
+    // still holds a table header or Setext text line above the line it completes.
+    const coordinates = lineCoordinatesAtEnd(source, this.ownerStart, following.length > 0 ? this.ownerEnd : source.length);
+    this.currentLineStart = coordinates.currentLineStart;
+    this.lastLineStart = coordinates.lastLineStart;
+    this.pendingCR = coordinates.pendingCR;
     this.following = following;
     this.finalizedAppendCandidate = following.length === 0
       && hasOnlyOptionalFinalLineEnding(source, this.ownerEnd, this.sourceLength);
