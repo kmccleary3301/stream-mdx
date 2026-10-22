@@ -289,6 +289,8 @@ const MIN_APPEND_CHUNK_SIZE = 256;
 const MAX_APPEND_CHUNK_SIZE = 12000;
 const MIN_APPEND_BATCH_MS = 4;
 const MAX_APPEND_BATCH_MS = 50;
+/** A CommonMark list item marker at the start of a line's content. */
+const LIST_ITEM_START = /^(?:[-+*]|\d{1,9}[.)])(?:[ \t\r\n]|$)/;
 const LINK_REFERENCE_FREE_BLOCKS = new Set([
   "Paragraph",
   "ATXHeading1",
@@ -3118,7 +3120,7 @@ export class MarkdownEngine {
       this.rootNativeFragmentOffset = null;
       this.treeFragments = [];
       await this.parseRootNativeTail(
-        previous.sourceRange.from,
+        this.rootListContinuationStart(source, previous.sourceRange.from) ?? previous.sourceRange.from,
         oldLength,
         newLength,
         metrics,
@@ -3186,6 +3188,16 @@ export class MarkdownEngine {
     const oldLength = this.sourceDocument.length;
     this.sourceDocument.append(appendedText);
     await this.parseRootNativeTail(tailOffset, oldLength, this.sourceDocument.length, metrics);
+  }
+  /** A root paragraph that becomes a list item may join the root list right before it, so reparse from that list. */
+  private rootListContinuationStart(source: SourceSnapshot, paragraphFrom: number): number | undefined {
+    if (!LIST_ITEM_START.test(source.read(paragraphFrom, Math.min(source.length, paragraphFrom + 12)))) return undefined;
+    for (let index = this.blocks.length - 1; index >= 0; index -= 1) {
+      const range = this.blocks[index]?.payload.range;
+      if (!range || range.from >= paragraphFrom) continue;
+      return this.blocks[index]?.type === "list" ? range.from : undefined;
+    }
+    return undefined;
   }
   private rootQuoteContinuationStart(
     source: SourceSnapshot,

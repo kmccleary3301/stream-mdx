@@ -256,6 +256,26 @@ async function runQuotedTabIndentedCodeTest(): Promise<void> {
   }
 }
 
+// CommonMark 283/311: a root paragraph that ends a list ("3", "  2") and later becomes an item joins that list.
+async function runParagraphBecomesListItemTest(): Promise<void> {
+  const cases: Array<[string, number]> = [
+    ["1. foo\n2.\n3. bar\n", 11],
+    ["1. a\n\n  2. b\n\n   3. c\n", 9],
+    ["- a\nb\n- c\n", 7],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, cut] of cases) {
+    for (const chunks of [[source.slice(0, cut), source.slice(cut)], chunksOfSize(source, 1)]) {
+      const blocks = (await runSession(harness, chunks)).getBlocks();
+      assert.deepEqual(
+        blocks.map((block) => block.type),
+        ["list"],
+        `${JSON.stringify(source)} is one list (chunks ${JSON.stringify(chunks.slice(0, 2))})`,
+      );
+    }
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -269,4 +289,5 @@ await runFenceBodyAfterOpeningLineBoundaryTest();
 await runSiblingBeforeActiveParagraphTest();
 await runEmptyQuoteTest();
 await runQuotedTabIndentedCodeTest();
+await runParagraphBecomesListItemTest();
 console.log("Native container streaming regressions passed");
