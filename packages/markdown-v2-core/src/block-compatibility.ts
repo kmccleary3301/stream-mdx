@@ -1,3 +1,4 @@
+import { createNativeTableCompatibilityRule } from "./native-table-compatibility";
 import type { BlockContext, Element, LeafBlock, LeafBlockParser, Line, MarkdownConfig } from "@lezer/markdown";
 import { parseRestrictedTag, type RestrictedComponentDescriptor } from "./admission";
 
@@ -192,7 +193,7 @@ function createRegisteredHeaderBlockParser(getRegisteredComponents: RegisteredCo
 }
 
 
-/** CommonMark block rules missing from Lezer's container HTML, empty-item, and tab-heading parsing. */
+/** Native CommonMark/GFM compatibility for tables, container HTML, empty items and tab headings. */
 export function createBlockCompatibilityExtension(registeredComponents?: RegisteredComponents): MarkdownConfig {
   const activeEmptyItems = new WeakMap<BlockContext, Set<number>>();
   return {
@@ -208,7 +209,7 @@ export function createBlockCompatibilityExtension(registeredComponents?: Registe
         return true;
       },
     }],
-    parseBlock: [{
+    parseBlock: [createNativeTableCompatibilityRule(), {
       name: "ContainerHTMLBlock",
       before: "HTMLBlock",
       parse(cx, line) {

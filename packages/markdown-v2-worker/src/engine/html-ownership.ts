@@ -1,5 +1,5 @@
 import type { MarkdownParser } from "@lezer/markdown";
-import { dedentIndentedCode, removeHeadingMarkers, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type ContentPolicy, type HtmlOptions, type HtmlTreeNode, type InlineNode, type RestrictedComponentDescriptor } from "@stream-mdx/core";
+import { dedentIndentedCode, removeHeadingMarkers, sanitizeHtmlInWorker, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type ContentPolicy, type HtmlOptions, type HtmlTreeNode, type InlineNode, type RestrictedComponentDescriptor, type SourceSnapshot } from "@stream-mdx/core";
 import { trimProvisionalFenceTail } from "./parse-extract";
 import { buildRestrictedComponentInlineTree, buildRestrictedComponentTree, buildRestrictedHtmlComponentTree, isRegisteredRestrictedComponent, scanRegisteredRestrictedTags, type RestrictedInlineElement } from "./restricted-component-ownership";
 import { escapeHtml, inlineHtml, normalizeNativeInlineParagraph } from "./native-inline-normalization";
@@ -133,6 +133,127 @@ function codeCompileSource(block: Block): string {
   return `${fence}${info}\n${content}\n${fence}`;
 }
 
+/**
+ * Open type-6/7 HTML blocks own physical source through the next blank line,
+ * even when an incremental Lezer fragment retained only an earlier line.
+ */
+/**
+ * Component boundaries own these HTML blocks: the registered header boundary ends a restricted
+ * opening at its header line, and trusted MDX flow roots end at their compiler-authored close.
+ */
+function opensComponent(
+  block: Block,
+  contentComponents: ReadonlyMap<string, RestrictedComponentDescriptor> | undefined,
+  mdxComponents: boolean,
+): boolean {
+  if (block.type !== "html" || (!contentComponents && !mdxComponents)) return false;
+  const name = /^[ \t]*<\s*([A-Za-z][\w-]*)/.exec(block.payload.raw ?? "")?.[1];
+  if (name === undefined) return false;
+  return (mdxComponents && /^[A-Z]/.test(name)) || contentComponents?.has(name) === true;
+}
+
+function recoverHtmlPhysicalSourceRange(
+  block: Block,
+  content: string | SourceSnapshot,
+  sourceOffset: number,
+  options?: HtmlOptions,
+  parseInline?: (text: string) => InlineNode[],
+): Block {
+  const range = block.payload.range;
+  const meta = block.payload.meta;
+  if (block.type !== "html" || meta?.lezerNodeType !== "HTMLBlock" || !range) return block;
+  const rawSource = block.payload.raw ?? "";
+  if (
+    !/^[ \t]*<\/?[A-Za-z][\w-]*(?=[ \t/>]|$)/.test(rawSource) ||
+    /^[ \t]*<(?:script|pre|style|textarea)(?:\s|>|$)/i.test(rawSource)
+  ) {
+    return block;
+  }
+
+  const localFrom = range.from - sourceOffset;
+  const sourceLength = content.length;
+  if (localFrom < 0 || localFrom >= sourceLength) return block;
+
+  let lineStart = localFrom;
+  let lastLineEnd = localFrom;
+  let firstLine = true;
+  while (lineStart <= sourceLength) {
+    let lineEnd = sourceLength;
+    let lineBreakCode = 0;
+    let blank = true;
+    if (typeof content === "string") {
+      for (let index = lineStart; index < sourceLength; index++) {
+        const code = content.charCodeAt(index);
+        if (code === 10 || code === 13) {
+          lineEnd = index;
+          lineBreakCode = code;
+          break;
+        }
+        if (code !== 9 && code !== 32) blank = false;
+      }
+    } else {
+      let cursor = lineStart;
+      while (cursor < sourceLength) {
+        const chunkEnd = Math.min(cursor + 1024, sourceLength);
+        const chunk = content.read(cursor, chunkEnd);
+        let foundLineBreak = false;
+        for (let index = 0; index < chunk.length; index++) {
+          const code = chunk.charCodeAt(index);
+          if (code === 10 || code === 13) {
+            lineEnd = cursor + index;
+            lineBreakCode = code;
+            foundLineBreak = true;
+            break;
+          }
+          if (code !== 9 && code !== 32) blank = false;
+        }
+        if (foundLineBreak) break;
+        cursor = chunkEnd;
+      }
+    }
+    if (blank) {
+      if (firstLine) return block;
+      break;
+    }
+
+    lastLineEnd = lineEnd;
+    firstLine = false;
+    if (lineEnd === sourceLength) break;
+    lineStart = lineEnd + 1;
+    if (lineBreakCode === 13 && lineStart < sourceLength) {
+      const nextCode = typeof content === "string"
+        ? content.charCodeAt(lineStart)
+        : content.read(lineStart, lineStart + 1).charCodeAt(0);
+      if (nextCode === 10) lineStart++;
+    }
+  }
+
+  const sourceTo = sourceOffset + lastLineEnd;
+  if (sourceTo <= range.to) return block;
+  const raw = typeof content === "string" ? content.slice(localFrom, lastLineEnd) : content.read(localFrom, lastLineEnd);
+  const existingProtected = Array.isArray(meta.protectedRanges) ? meta.protectedRanges as unknown[] : [];
+  const protectedRanges = existingProtected.filter((candidate) => {
+    if (!candidate || typeof candidate !== "object" || !("kind" in candidate)) return true;
+    return candidate.kind !== "html-block";
+  });
+  protectedRanges.push({ from: 0, to: raw.length, kind: "html-block" });
+  return {
+    ...block,
+    payload: {
+      ...block.payload,
+      raw,
+      sanitizedHtml: sanitizeHtmlInWorker(raw, options),
+      range: { ...range, to: sourceTo },
+      meta: {
+        ...meta,
+        sanitized: true,
+        htmlTree: sanitizeHtmlTreeInWorker(raw, options, undefined, parseInline),
+        protectedRanges,
+      },
+    },
+  };
+}
+
 function applyRestrictedComponentTagBalance(
   raw: string,
   parser: MarkdownParser,
@@ -168,7 +289,7 @@ function withHtmlOwnership(
 }
 
 /** Own balanced HTML regions across native block boundaries, retaining pending MDX roots. */
-export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean; contentPolicy?: ContentPolicy; contentComponents?: ReadonlyMap<string, RestrictedComponentDescriptor> }): Block[] {
+export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string | SourceSnapshot, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean; contentPolicy?: ContentPolicy; contentComponents?: ReadonlyMap<string, RestrictedComponentDescriptor> }): Block[] {
   const contentComponents = regionOptions?.contentPolicy === "markdown" || regionOptions?.contentPolicy === "trusted-mdx"
     ? undefined
     : regionOptions?.contentComponents;
@@ -269,7 +390,9 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         : undefined;
       const raw = rawParts
         ? rawParts.join("\n\n")
-        : content.slice((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset);
+        : typeof content === "string"
+          ? content.slice((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset)
+          : content.read((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset);
       const childrenBlocks = stack.length === 0 ? region.slice(1, region.length - 1) : region.slice(1);
       const firstSourceOffset = first.payload.range?.from ?? sourceOffset;
       let childBlockRanges: { block: Block; from: number; to: number }[] | undefined;
@@ -333,7 +456,10 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     stack = [];
     pendingComponent = false;
   };
-  for (let block of blocks) {
+  for (const inputBlock of blocks) {
+    let block = regionOptions?.joinLeafRaws || opensComponent(inputBlock, contentComponents, regionOptions?.mdxComponents === true)
+      ? inputBlock
+      : recoverHtmlPhysicalSourceRange(inputBlock, content, sourceOffset, options, parseInline);
     if (block.type !== "code") {
       if (region.length > 0 || block.type === "html") {
         applyHtmlTagBalance(
@@ -374,6 +500,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
   flush();
   return result;
 }
+
 
 /**
  * Browser reconstruction owns the entire paragraph, not independently auto-closed tag fragments.

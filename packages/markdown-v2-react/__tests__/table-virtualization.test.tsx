@@ -1,12 +1,17 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert/strict";
 import { Worker as NodeWorker } from "node:worker_threads";
 import type { Block, InlineNode, WorkerOut } from "@stream-mdx/core";
 import { StreamingMarkdown, type StreamingMarkdownHandle, type TableElements, type TableVirtualizationOptions } from "@stream-mdx/react";
-import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore } from "@stream-mdx/react/server";
+import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { MarkdownBlocksRenderer as SourceMarkdownBlocksRenderer } from "../src/renderer/blocks-renderer";
+import { StreamingActivityContext } from "../src/renderer/streaming-activity-context";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const text = (value: string): InlineNode => ({ kind: "text", text: value });
@@ -28,6 +33,18 @@ assert.equal((ssr.match(/data-row-id=/g) ?? []).length, 120, "public SSR rendere
 assert.ok(ssr.includes("Row-119"));
 assert.ok(!ssr.includes("markdown-table-spacer"));
 assert.ok(!ssr.includes('data-table-virtualized="true"'));
+// GFM 205: a table without body rows has no <tbody>, through the store path and the SSR blocks path.
+const headerOnly = await compileMarkdownSnapshotDirect({
+  text: "| abc | def |\n| --- | --- |\n",
+  init: { schemaVersion: STREAM_MDX_SCHEMA_VERSION, docPlugins: { tables: true } },
+});
+for (const headerOnlySsr of [
+  renderToStaticMarkup(<MarkdownBlocksRenderer blocks={[]} store={createRendererStore(headerOnly.blocks)} componentRegistry={new ComponentRegistry()} />),
+  renderToStaticMarkup(<MarkdownBlocksRenderer blocks={headerOnly.blocks} componentRegistry={new ComponentRegistry()} />),
+]) {
+  assert.ok(headerOnlySsr.includes("<th"), "the header still renders");
+  assert.ok(!headerOnlySsr.includes("<tbody"), "a table without rows has no body section");
+}
 
 // This implements the browser observation boundary, not a renderer collaborator.
 class TestResizeObserver implements ResizeObserver {
@@ -280,6 +297,27 @@ try {
   assert.equal(scrollContainer(), null, "unfinished table snapshots do not virtualize");
   assert.equal(container.querySelector(".markdown-table-spacer"), null);
   unfinishedRoot.unmount();
+  const activeLegacyRoot = createRoot(container);
+  activeLegacyRoot.render(
+    <StreamingActivityContext.Provider value={true}>
+      <SourceMarkdownBlocksRenderer blocks={[block]} componentRegistry={registry} />
+    </StreamingActivityContext.Provider>,
+  );
+  await waitFor(() => rows().length === 120, "active legacy table mounts all rows before effect settlement");
+  await new Promise<void>((resolve) => setTimeout(resolve, 50));
+  assert.equal(scrollContainer(), null, "legacy finalized tables stay unvirtualized during active sessions");
+  assert.equal(rows().length, 120);
+  activeLegacyRoot.unmount();
+
+  const inactiveLegacyRoot = createRoot(container);
+  inactiveLegacyRoot.render(
+    <StreamingActivityContext.Provider value={false}>
+      <SourceMarkdownBlocksRenderer blocks={[block]} componentRegistry={registry} />
+    </StreamingActivityContext.Provider>,
+  );
+  await waitFor(() => Boolean(scrollContainer()), "inactive finalized legacy tables remain eligible for windowing");
+  assert.ok(rows().length < 120);
+  inactiveLegacyRoot.unmount();
   const streamingRoot = createRoot(container);
   const { promise: streamFinished, resolve: finishStream } = deferred<void>();
   const stream = (async function* () {
@@ -367,7 +405,7 @@ try {
     managedRoot.render(<StreamingMarkdown ref={handle} engine="worker" worker={externalFactory} managedWorker
       stream={unconsumedStream} features={features} tableVirtualization={true} caret={false} />);
     await waitFor(() => handle.current?.getState().workerReady ?? false, "real caller-owned worker attaches");
-    externalWorker.postMessage({ type: "INIT", initialContent: `${markdown}\n\nCaller-owned tail`, docPlugins: features });
+    externalWorker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: `${markdown}\n\nCaller-owned tail`, docPlugins: features });
     externalWorker.postMessage({ type: "FINALIZE" });
     await waitFor(() => Boolean(scrollContainer()), "caller initialization renders the managed table");
     assert.equal(externalInitializations, 1, "attachWorker skipInit preserves caller-owned initialization");

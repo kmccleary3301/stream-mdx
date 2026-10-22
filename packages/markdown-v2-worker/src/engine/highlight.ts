@@ -163,7 +163,18 @@ export async function getSharedHighlighter(prewarmLangs: string[] = []): Promise
       langs: initialLangs,
       themes: ["github-dark", "github-light"],
     }).then(
-      (h) => {
+      (created) => {
+        // Shiki stops a line after 500 ms by default and emits its rest as one token, so a cold or loaded
+        // thread would change colors. Highlighting through the shared highlighter is never time-limited.
+        const h: SharedHighlighter = {
+          ...created,
+          codeToTokensWithThemes: (code, options) => {
+            // Shiki 1.29 forwards tokenizer options to each theme pass; its multi-theme declaration omits them.
+            const unbounded = { ...options, tokenizeTimeLimit: 0 };
+            return created.codeToTokensWithThemes(code, unbounded);
+          },
+          codeToHtml: (code, options) => created.codeToHtml(code, { ...options, tokenizeTimeLimit: 0 }),
+        };
         sharedHighlighter = h;
         return h;
       },

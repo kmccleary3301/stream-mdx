@@ -144,6 +144,14 @@ async function runRoundTripTest(): Promise<void> {
       assert.ok(text.includes("const value = 1;"), "nested TypeScript fence content must be retained");
       assert.ok(text.includes('echo "nested"'), "nested shell fence content must be retained");
       assert.ok(text.includes("export const answer = 42;"), "nested JavaScript fence content must be retained");
+      // A custom code component written against `html` receives the highlighted markup of nested fences.
+      await waitFor(
+        () => Array.from(container.querySelectorAll("pre[data-custom-code]")).every(
+          (pre) => pre.querySelector('span.line span[style*="--shiki-"]') !== null,
+        ),
+        "highlighted html for every nested code block rendered through the custom code component",
+      );
+      assert.ok(text.includes("const value = 1;"), "highlighted html keeps the authored code text");
     } finally {
       root.unmount();
     }

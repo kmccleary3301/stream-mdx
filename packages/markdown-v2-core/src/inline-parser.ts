@@ -4,6 +4,7 @@ import { createMathExtension } from "./inline/math-extension";
 import { HtmlCommentCompatibility } from "./inline/html-extension";
 import { FtpAutolink } from "./inline/ftp-autolink-extension";
 import { compileRegexPluginToExtension, compileSyntaxRuleToExtension, createDefaultRegexPlugins } from "./inline/plugin-adapter";
+import { finalizeNativeInlineBoundary, parseNativeInlineSettlement, type InlineParserSettlement } from "./inline/native-inline-state";
 import type { InlineExtension, InlineParseOptions, InlineParserOptions, LinkReferenceMap, MarkdownElement } from "./inline/types";
 import { normalizeLinkLabel } from "./inline/reference-collector";
 import {
@@ -66,6 +67,7 @@ export class InlineParser {
   private astPlugins: ASTInlinePlugin[] = [];
   private extensions: InlineExtension[] = [];
   private syntaxRules: SyntaxRuleSpec[] = [];
+  private syntaxRuleExtensions = new WeakMap<InlineExtension, SyntaxRuleSpec>();
   private cache = new Map<string, { nodes: InlineNode[]; attemptedReferences: string[] }>();
   private activeAttemptedReferenceCollector: Set<string> | null = null;
   private lastAttemptedReferences = new Set<string>();
@@ -75,6 +77,9 @@ export class InlineParser {
   private html?: HtmlOptions;
   private lezerParser!: MarkdownParser;
   private converter!: LezerInlineConverter;
+  private customInlineParserNames = new Set<string>();
+  private inlineSettlements = new Map<string, InlineParserSettlement>();
+  private defaultInlineExtensions = new WeakSet<InlineExtension>();
 
   constructor(options: InlineParserOptions = {}) {
     this.maxCacheEntries = Number.isFinite(options.maxCacheEntries ?? Number.NaN)
@@ -90,13 +95,17 @@ export class InlineParser {
     if (options.syntax) {
       for (const rule of options.syntax) {
         this.syntaxRules.push(rule);
-        this.extensions.push(compileSyntaxRuleToExtension(rule));
+        const extension = compileSyntaxRuleToExtension(rule);
+        this.syntaxRuleExtensions.set(extension, rule);
+        this.extensions.push(extension);
       }
     }
 
     // Register default mention and citation plugins
     for (const plugin of createDefaultRegexPlugins()) {
       this.registerPlugin(plugin);
+      const extension = this.extensions[this.extensions.length - 1];
+      if (extension) this.defaultInlineExtensions.add(extension);
     }
 
     this.rebuildParser();
@@ -177,7 +186,9 @@ export class InlineParser {
    */
   registerSyntaxRule(rule: SyntaxRuleSpec): void {
     this.syntaxRules.push(rule);
-    this.extensions.push(compileSyntaxRuleToExtension(rule));
+    const extension = compileSyntaxRuleToExtension(rule);
+    this.syntaxRuleExtensions.set(extension, rule);
+    this.extensions.push(extension);
     this.rebuildParser();
   }
 
@@ -193,13 +204,43 @@ export class InlineParser {
       lezerConfigs.push(createMathExtension());
     }
     const extensionsByName: Record<string, InlineExtension> = {};
+    this.customInlineParserNames.clear();
+    this.inlineSettlements.clear();
+    const unsupportedInlineParserNames = new Set<string>();
     for (const ext of this.extensions) {
       lezerConfigs.push(ext.lezer);
       const nodeNames = ext.lezer.defineNodes;
+      const settlementNodeNames = new Set<string>();
       if (nodeNames) {
         for (const node of nodeNames) {
           const name = typeof node === "string" ? node : node.name;
           extensionsByName[name] = ext;
+          settlementNodeNames.add(name);
+        }
+      }
+
+      for (const inlineParser of ext.lezer.parseInline ?? []) {
+        const name = inlineParser.name;
+        this.customInlineParserNames.add(name);
+        let settlement: InlineParserSettlement | undefined;
+        if (this.defaultInlineExtensions.has(ext)) {
+          settlement = {
+            nodeNames: settlementNodeNames,
+            extendsAtEOF: ext.name === "mentions",
+          };
+        } else {
+          const rule = this.syntaxRuleExtensions.get(ext);
+          if (rule?.anticipation && rule.anticipation.open.length > 0 &&
+              rule.anticipation.close.length > 0 && rule.content === undefined) {
+            settlement = { nodeNames: settlementNodeNames, extendsAtEOF: true };
+          }
+        }
+
+        if (unsupportedInlineParserNames.has(name)) continue;
+        if (settlement) this.inlineSettlements.set(name, settlement);
+        else {
+          this.inlineSettlements.delete(name);
+          unsupportedInlineParserNames.add(name);
         }
       }
     }
@@ -302,6 +343,49 @@ export class InlineParser {
     }
 
     return result;
+  }
+
+  /** Parses once with native inline tokens and converts only a safe source prefix. */
+  parseSettledPrefix(content: string): {
+    settledTo: number;
+    nodes: InlineNode[];
+    attemptedReferences: ReadonlySet<string>;
+  } {
+    const attemptedReferences = new Set<string>();
+    if (this.astPlugins.length > 0) {
+      this.lastAttemptedReferences = attemptedReferences;
+      return { settledTo: 0, nodes: [], attemptedReferences };
+    }
+
+    const previousPredicate = getActiveReferencePredicate();
+    setActiveReferencePredicate((rawLabel: string) => {
+      const key = normalizeLinkLabel(rawLabel);
+      if (!this.references) return false;
+      if (this.references instanceof Map) return this.references.has(key);
+      return Object.prototype.hasOwnProperty.call(this.references, key);
+    });
+
+    try {
+      const native = parseNativeInlineSettlement(
+        this.lezerParser,
+        content,
+        this.customInlineParserNames,
+        this.inlineSettlements,
+      );
+      const htmlSafeTo = this.converter.findUnsettledHtmlScopeStart(native.elements, content, native.settledTo);
+      const settledTo = finalizeNativeInlineBoundary(content, native.elements, htmlSafeTo);
+      for (const attempt of native.referenceAttempts) {
+        if (attempt.to > settledTo) continue;
+        const key = normalizeLinkLabel(attempt.label);
+        attemptedReferences.add(key);
+        this.activeAttemptedReferenceCollector?.add(key);
+      }
+      const nodes = settledTo > 0 ? this.converter.convert(native.elements, content, 0, settledTo) : [];
+      this.lastAttemptedReferences = attemptedReferences;
+      return { settledTo, nodes, attemptedReferences };
+    } finally {
+      setActiveReferencePredicate(previousPredicate);
+    }
   }
 
   /**

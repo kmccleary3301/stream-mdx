@@ -76,12 +76,24 @@ This is the smallest useful architecture for a Node-based TUI.
 ```ts
 import { createWorkerThread } from "stream-mdx/worker/node";
 import { createSnapshotStore } from "@stream-mdx/tui";
-import type { WorkerOut } from "stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "stream-mdx/core";
 
 const worker = createWorkerThread({ stdout: true, stderr: true });
 const store = createSnapshotStore();
 
 worker.on("message", (msg: WorkerOut) => {
+  if (msg.type === "INITIALIZED") {
+    const inputSource = msg.snapshot.inputSource;
+    if (
+      msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+      !Number.isSafeInteger(msg.generation) ||
+      inputSource?.generation !== msg.generation ||
+      typeof inputSource?.raw !== "string"
+    ) throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
+    store.setSnapshot(msg.snapshot);
+    return;
+  }
+
   if (msg.type === "PATCH") {
     store.applyPatches(msg.patches);
     const blocks = store.getBlocks();
@@ -96,6 +108,7 @@ worker.on("message", (msg: WorkerOut) => {
 
 worker.postMessage({
   type: "INIT",
+  schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   prewarmLangs: ["typescript"],
   docPlugins: {
@@ -122,6 +135,12 @@ function renderToTerminal(blocks: ReturnType<typeof store.getBlocks>) {
 }
 ```
 
+The live `INITIALIZED` baseline is required even when its raw text is empty.
+Later `appendInputSource` patches are applied in order by the snapshot store;
+they retain worker-admitted input without rebuilding semantic children or
+completing owner progress. A standalone `Block[]` reset may omit the baseline
+and retains only honest per-block source slices.
+
 ## Runnable Repo Example
 
 If you want a concrete starting point instead of only architecture notes, use the minimal example path first:
@@ -135,6 +154,7 @@ Run it from the repo root:
 ```bash
 npm install
 npm run build:packages
+npm run worker:build
 npm run example:tui-minimal
 ```
 
@@ -163,10 +183,22 @@ const blocks = store.getBlocks();
 import { applyPatchBatch, createInitialSnapshot } from "stream-mdx/core";
 
 const snapshot = createInitialSnapshot();
-snapshot.blocks = applyPatchBatch(snapshot, patches);
+applyPatchBatch(snapshot, patches);
+const blocks = snapshot.getBlocks();
 ```
 
 Use the core path only when you need direct access to `DocumentSnapshot` internals. For most terminal apps, the TUI store is the cleaner choice.
+
+Live protocol snapshot events require the canonical root input baseline.
+`setSnapshot()` also supports cold standalone snapshots; that path must not be
+used to reconstruct missing live input from block payloads.
+
+The snapshot store applies the complete Core `Patch` union, including managed
+table tail appends and dependency-targeted row/header updates. Do not interpret
+table patch operations as ordinary child-tree edits: use `applyPatchBatch()` or
+`createSnapshotStore()` so owner revisions and atomic stale-command guards are
+preserved. `getBlocks()` returns the cold materialized `Block[]` view for
+terminal rendering.
 
 ## Rendering Strategy In A Terminal
 
@@ -252,20 +284,21 @@ If your terminal consumer lives in a different process, machine, or transport bo
 
 Recommended pattern:
 
-1. producer emits `StreamMdxEventV1`
+1. producer emits `StreamMdxEvent`
 2. transport carries NDJSON
 3. consumer decodes NDJSON with `NdjsonDecoder`
 4. consumer applies events to `createSnapshotStore()`
 
 ```ts
 import { NdjsonDecoder, createSnapshotStore } from "@stream-mdx/tui";
-import type { StreamMdxEventV1 } from "@stream-mdx/protocol";
+import type { StreamMdxEvent } from "@stream-mdx/protocol";
 
-const decoder = new NdjsonDecoder<StreamMdxEventV1>();
+const decoder = new NdjsonDecoder<StreamMdxEvent>();
 const store = createSnapshotStore();
 
 for (const event of decoder.push(chunk)) {
   store.applyEvent(event);
+  // Render from store.getBlocks() at the TUI presentation checkpoint.
 }
 ```
 

@@ -1,6 +1,9 @@
 import type { CSSProperties, ComponentType, FC, ReactNode } from "react";
 import React from "react";
 
+type MermaidBindingResult = void | (() => void);
+type MermaidBinding = (element: Element) => MermaidBindingResult;
+
 export type MermaidModule = {
   initialize?: (config: Record<string, unknown>) => void;
   render?: (
@@ -10,7 +13,7 @@ export type MermaidModule = {
     | string
     | {
         svg?: string;
-        bindFunctions?: (element: Element) => void;
+        bindFunctions?: MermaidBinding;
       }
   >;
 };
@@ -57,6 +60,24 @@ export interface MermaidBlockComponent extends FC<MermaidBlockProps> {
 }
 
 type MermaidExport = MermaidModule & { default?: MermaidModule };
+type MermaidRenderOwner = {
+  code: string;
+  blockId?: string;
+  config: MermaidConfig | undefined;
+  provider: MermaidModuleLoader | undefined;
+  factory: CreateMermaidBlockOptions;
+};
+
+type MermaidArtifact = MermaidRenderOwner & {
+  svg: string;
+  bindFunctions?: MermaidBinding;
+};
+
+type MermaidRenderError = MermaidRenderOwner & {
+  message: string;
+};
+
+const obsoleteRender = Symbol("obsolete Mermaid render");
 
 let defaultMermaidPromise: Promise<MermaidModule> | null = null;
 let mermaidIdCounter = 0;
@@ -111,18 +132,17 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
     const {
       code,
       renderCode,
+      blockId,
       defaultView = options.defaultView ?? "diagram",
       debounceMs = options.debounceMs ?? 200,
       controls,
       copy,
     } = props;
     const [view, setView] = React.useState<"diagram" | "code">(defaultView);
-    const [svg, setSvg] = React.useState<string>("");
-    const [error, setError] = React.useState<string | null>(null);
+    const [artifact, setArtifact] = React.useState<MermaidArtifact | null>(null);
+    const [error, setError] = React.useState<MermaidRenderError | null>(null);
     const [retryNonce, setRetryNonce] = React.useState(0);
     const containerRef = React.useRef<HTMLDivElement | null>(null);
-    const bindRef = React.useRef<((element: Element) => void) | undefined>(undefined);
-    const lastValidSvgRef = React.useRef<string>("");
     const generationRef = React.useRef(0);
     const retryRef = React.useRef(false);
 
@@ -149,27 +169,41 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
     }, []);
 
     React.useEffect(() => {
-      if (view !== "diagram") return;
-
-      const trimmed = typeof code === "string" ? code.trim() : "";
-      if (!trimmed) {
-        setError(null);
-        setSvg("");
-        lastValidSvgRef.current = "";
-        return;
-      }
-
       generationRef.current += 1;
       const generation = generationRef.current;
+      let active = true;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      const isCurrent = () => active && generationRef.current === generation;
+      const trimmed = typeof code === "string" ? code.trim() : "";
+
+      if (view !== "diagram") {
+        return () => {
+          active = false;
+        };
+      }
+
+      if (!trimmed) {
+        setError(null);
+        setArtifact(null);
+        return () => {
+          active = false;
+        };
+      }
+
       const isRetry = retryRef.current;
       retryRef.current = false;
       const delay = isRetry ? 0 : Math.max(0, debounceMs);
 
-      const timeout = setTimeout(async () => {
+      timeout = setTimeout(async () => {
         try {
           const result = await enqueueRender(async () => {
+            if (!isCurrent()) return obsoleteRender;
+
             const mermaid = await resolveMermaid();
+            if (!isCurrent()) return obsoleteRender;
+
             if (typeof mermaid.initialize === "function") {
+              if (!isCurrent()) return obsoleteRender;
               mermaid.initialize({
                 securityLevel: "strict",
                 ...options.config,
@@ -177,6 +211,8 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
                 suppressErrorRendering: true,
               });
             }
+
+            if (!isCurrent()) return obsoleteRender;
             if (typeof mermaid.render !== "function") {
               throw new Error("Mermaid runtime missing render()");
             }
@@ -189,7 +225,7 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
             }
           });
 
-          if (generation !== generationRef.current) return;
+          if (!isCurrent() || result === obsoleteRender) return;
 
           const svgText = typeof result === "string" ? result : (result?.svg ?? "");
           const bindFunctions = typeof result === "string" ? undefined : result?.bindFunctions;
@@ -197,35 +233,67 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
             throw new Error("Mermaid render returned empty SVG");
           }
 
-          lastValidSvgRef.current = svgText;
-          bindRef.current = typeof bindFunctions === "function" ? bindFunctions : undefined;
-          setSvg(svgText);
+          setArtifact({
+            code,
+            blockId,
+            config: options.config,
+            provider: options.mermaid,
+            factory: options,
+            svg: svgText,
+            bindFunctions: typeof bindFunctions === "function" ? bindFunctions : undefined,
+          });
           setError(null);
         } catch (err) {
-          if (generation !== generationRef.current) return;
-          const message = err instanceof Error ? err.message : String(err);
-          setError(message);
-          if (lastValidSvgRef.current) {
-            setSvg(lastValidSvgRef.current);
-          }
+          if (!isCurrent()) return;
+          setError({
+            code,
+            blockId,
+            config: options.config,
+            provider: options.mermaid,
+            factory: options,
+            message: err instanceof Error ? err.message : String(err),
+          });
         }
       }, delay);
 
-      return () => clearTimeout(timeout);
-    }, [code, debounceMs, view, retryNonce]);
+      return () => {
+        active = false;
+        if (timeout !== undefined) clearTimeout(timeout);
+      };
+    }, [blockId, code, debounceMs, options.config, options.mermaid, retryNonce, view]);
 
     React.useEffect(() => {
-      if (view !== "diagram") return;
-      if (!svg) return;
-      const bind = bindRef.current;
+      if (view !== "diagram" || !artifact) return;
+      const bind = artifact.bindFunctions;
       const el = containerRef.current;
       if (!el || typeof bind !== "function") return;
+
+      let dispose: (() => void) | undefined;
       try {
-        bind(el);
+        const result = bind(el);
+        if (typeof result === "function") dispose = result;
       } catch {
         // ignore bind errors
       }
-    }, [svg, view]);
+      return () => dispose?.();
+    }, [artifact, view]);
+
+    const currentError =
+      error &&
+      error.code === code &&
+      error.blockId === blockId &&
+      error.config === options.config &&
+      error.provider === options.mermaid &&
+      error.factory === options
+        ? error.message
+        : null;
+    const isPreviousArtifact =
+      artifact !== null &&
+      (artifact.code !== code ||
+        artifact.blockId !== blockId ||
+        artifact.config !== options.config ||
+        artifact.provider !== options.mermaid ||
+        artifact.factory !== options);
 
     const toolbarStyle: CSSProperties = {
       display: "flex",
@@ -314,24 +382,33 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
     return (
       <div style={wrapperStyle} className="stream-mdx-mermaid-block">
         {toolbar}
-        {error ? (
+        {currentError ? (
           ErrorComponent ? (
-            <ErrorComponent error={error} code={code} chart={code} retry={retry} />
+            <ErrorComponent error={currentError} code={code} chart={code} retry={retry} />
           ) : (
             <div style={{ fontSize: 12, padding: "6px 10px", opacity: 0.8 }} className="stream-mdx-mermaid-error">
-              {error}
+              {currentError}
             </div>
           )
         ) : null}
-        {svg ? (
+        {isPreviousArtifact ? (
+          <div
+            style={{ fontSize: 12, padding: "6px 10px", opacity: 0.7 }}
+            className="stream-mdx-mermaid-stale"
+            role="status"
+          >
+            Showing the last valid diagram from an earlier source.
+          </div>
+        ) : null}
+        {artifact ? (
           <div
             ref={containerRef}
             className="stream-mdx-mermaid-diagram"
             style={{ overflowX: "auto", padding: 10 }}
             /* biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is produced by mermaid */
-            dangerouslySetInnerHTML={{ __html: svg }}
+            dangerouslySetInnerHTML={{ __html: artifact.svg }}
           />
-        ) : !error || !ErrorComponent ? (
+        ) : !currentError || !ErrorComponent ? (
           <div style={{ fontSize: 12, padding: "10px", opacity: 0.7 }} className="stream-mdx-mermaid-placeholder">
             Waiting for a valid diagram…
           </div>

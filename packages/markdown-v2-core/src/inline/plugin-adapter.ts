@@ -1,5 +1,6 @@
 import type { InlineNode, RegexInlinePlugin, SyntaxRuleSpec } from "../types";
 import type { InlineExtension } from "./types";
+import { reportIncompleteNativeCandidate } from "./native-inline-state";
 
 function ensureSticky(re: RegExp): RegExp {
   if (re.sticky) return re;
@@ -48,6 +49,11 @@ export function compileRegexPluginToExtension(plugin: RegexInlinePlugin): Inline
             stickyRe.lastIndex = pos;
             const match = stickyRe.exec(cx.text);
             if (!match || match.index !== pos || match[0].length === 0) {
+              if (plugin.id === "citations") {
+                if (_next === 64) reportIncompleteNativeCandidate(cx, pos, "@cite{", "}", true);
+                else if (_next === 123) reportIncompleteNativeCandidate(cx, pos, "{cite:", "}", true);
+                else if (_next === 91) reportIncompleteNativeCandidate(cx, pos, "[^", "]", true);
+              }
               return -1;
             }
             const end = pos + match[0].length;
@@ -129,6 +135,9 @@ export function compileSyntaxRuleToExtension(rule: SyntaxRuleSpec): InlineExtens
             stickyRe.lastIndex = localPos;
             const match = stickyRe.exec(cx.text);
             if (!match || match.index !== localPos || match[0].length === 0) {
+              if (rule.anticipation) {
+                reportIncompleteNativeCandidate(cx, pos, rule.anticipation.open, rule.anticipation.close);
+              }
               return -1;
             }
             const end = pos + match[0].length;

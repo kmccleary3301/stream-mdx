@@ -1,6 +1,8 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 import type { Block, HtmlTreeNode, WorkerOut } from "@stream-mdx/core";
+import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { MarkdownEngine } from "../src/engine/engine";
 
 const registeredComponents = [{ name: "Preview", renderWhen: "closed" as const }];
@@ -12,6 +14,7 @@ async function parseRegistered(content: string): Promise<Block[]> {
   const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
   await engine.handle({
     type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     initialContent: content,
     prewarmLangs: [],
     contentPolicy: "restricted",
@@ -20,7 +23,9 @@ async function parseRegistered(content: string): Promise<Block[]> {
   engine.dispose();
   const initialized = messages.find((message) => message.type === "INITIALIZED");
   assert.ok(initialized && initialized.type === "INITIALIZED", "the Worker must expose initialized blocks");
-  return initialized.blocks;
+  const store = createRendererStore();
+  store.resetSnapshot(initialized.snapshot);
+  return [...store.getBlocks()];
 }
 
 function componentsIn(blocks: readonly Block[]): ComponentNode[] {

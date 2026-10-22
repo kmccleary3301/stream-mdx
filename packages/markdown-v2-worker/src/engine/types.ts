@@ -105,4 +105,10 @@ export interface ParseOptions {
   forceFinalize?: boolean;
   firstChangedPos?: number;
   previousBlocks?: Block[];
+  sourceOffset?: number;
+  /** Nested reparses of one document keep the document's heading slug counts. */
+  continueHeadingIds?: boolean;
+  admitRootCodeOwners?: boolean;
+  admitRootTableOwners?: boolean;
+  admitRootParagraphOwners?: boolean;
 }

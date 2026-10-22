@@ -1,32 +1,41 @@
 #!/usr/bin/env tsx
+
 /**
- * P1 Dense Replay Oracle
- * Implements validation-plan.md §2, baseline-protocol.md, and P1 repair contract.
- * Runs in-process under Node (>=20), targeting < 60s.
+ * P2 Streaming Replay Oracle
+ * Verifies the current dense semantic replay and P2 source-aware scaling paths.
+ * Runs in-process under Node (>=20).
  *
  * Imports directly from ./diagnostic-dist/index.mjs to execute with __STREAM_MDX_COUNTERS__ = true.
  *
  * Verifies:
  * 1. Committed-prefix equality against cold non-finalizing parse at every actual PATCH publication frontier
  * 2. Final semantic store equality against cold canonical finalize
- * 3. Independent pinned Shiki validation for completed-line code tokens (with deferred TOKENIZE_RANGE resolution)
- * 4. Independent CommonMark/GFM syntax expectations (fence indent dedent, table escaping/alignment, footnotes, looseness)
- * 5. FIFO monotonic tx, atomic patch application, and generation reset/disposal invariants
- * 6. Live React mounted createRoot append, update, unmount, exact DOM content, and ambient global cleanup
- * 7. Bounded equal-append N-vs-4N scaling diagnostic using SessionCounterSink with real view consumer work
+ * 3. Independent pinned Shiki validation from bounded prepared code-line records
+ * 4. Independent CommonMark/GFM syntax expectations, including distinct opening/closing fence indents
+ * 5. INITIALIZED root reset, source-owner generation and append/decorate wire invariants
+ * 6. Live mounted native root-code append, update, finalize, unmount and disposal behavior (mdx:false)
+ * 7. Bounded equal-append N-vs-4N scaling with the actual private counter sink
  *
  * Usage:
- *   npx tsx scripts/perf/replay-oracle.ts [--fixture <id>] [--seed <number>] [--bail] [--json <path>]
+ *   npx tsx scripts/perf/replay-oracle.ts
+ *   npx tsx scripts/perf/replay-oracle.ts --section engine-fixture --fixture fence-indent-multiline --json /tmp/stream-mdx-p2-engine.json
+ *   npx tsx scripts/perf/replay-oracle.ts --section mounted-code --json /tmp/stream-mdx-p2-mounted-code.json
+ *   npx tsx scripts/perf/replay-oracle.ts --section code-scaling --json /tmp/stream-mdx-p2-code-scaling.json
+ *   node --import tsx scripts/perf/replay-oracle.ts --section table-scaling --json /tmp/stream-mdx-p2-table-scaling.json
+ *
+ * The aggregate command runs the complete dense replay and every current P2 scaling family.
+ * Section selection focuses only the named proof; engine-fixture defaults to the root-code fixture.
  */
 
 import fs from "node:fs";
+import { isDeepStrictEqual } from "node:util";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import { createHighlighter, type Highlighter } from "shiki";
 
-import type { Block, FootnoteItem, InlineNode, Patch, TokenLineV1, WorkerIn, WorkerOut } from "@stream-mdx/core";
-import { blocksStructurallyEqual, cloneBlock } from "@stream-mdx/core";
-import type { RendererStore, RendererStoreOptions } from "@stream-mdx/react/renderer/store";
+import type { Block, WorkerOut } from "@stream-mdx/core";
+import { cloneBlock } from "@stream-mdx/core";
 import type { MarkdownEngineOptions } from "../../packages/markdown-v2-worker/src/engine/types";
+import type { RendererStore, RendererStoreOptions } from "../../packages/markdown-v2-react/src/renderer/store";
 import {
   MarkdownEngine,
   createRendererStore,
@@ -34,41 +43,26 @@ import {
 } from "./diagnostic-dist/index.mjs";
 
 import { projectFootnotePublication, publishedFootnoteLabels } from "../../packages/markdown-v2-worker/__tests__/footnote-publication";
-import { DENSE_FIXTURES, type DenseFixture, type ChunkingPlan, generateChunkingPlans } from "./replay-fixtures";
+import { DENSE_FIXTURES, type DenseFixture, generateChunkingPlans } from "./replay-fixtures";
 import { runGenerationAndResetInvariants, runLiveReactLayer } from "./lifecycle-invariants";
-import {
-  runScalingDiagnostics,
-  type DivergenceReport,
-  type ScalingMeasurement,
-} from "./scaling-diagnostics";
-import {
-  getCodeBlockLang,
-  verifyCompletedLineTokens,
-} from "./replay-code-parity";
+import { runScalingDiagnostics, type ScalingMeasurement } from "./scaling-diagnostics";
+import { verifyCompletedLineTokens } from "./replay-code-parity";
 
 import { verifyRenderedExpectations } from "./replay-semantic-expectations";
-// --- Configuration & Constants ---
+import {
+  blocksSemanticallyEqual,
+  describeBlockSemanticDifference,
+  describeProvisionalTailSemanticDifference,
+  normalizeSemanticDtoValue,
+  provisionalTailBlocksSemanticallyEqual,
+  semanticBlockProjection,
+  type SemanticBlockComparison,
+} from "./semantic-block-comparison";
+import { PARITY_INIT, runRootCodeInitializationTrace } from "./replay-code-initialization";
+import { capturePriorCodeOwners, verifyCodeWirePatches } from "./replay-code-parity";
+import { collectBlocksRecursively, verifyIndependentExpectations } from "./replay-semantic-expectations";
+import { recordDivergence, type DivergenceReport } from "./replay-fixtures";
 
-const PARITY_INIT: WorkerIn = {
-  type: "INIT",
-  initialContent: "",
-  prewarmLangs: ["typescript", "javascript", "markdown"],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: false,
-    tables: true,
-    callouts: false,
-    math: true,
-    formatAnticipation: { inline: true, mathInline: true, mathBlock: true, html: true, mdx: false, regex: false },
-    codeHighlighting: "incremental",
-    outputMode: "both",
-    emitHighlightTokens: true,
-    emitDiffBlocks: false,
-    themes: { dark: "github-dark", light: "github-light" },
-  },
-  mdx: { compileMode: "server" },
-};
 
 export interface OracleSummary {
   passed: boolean;
@@ -86,105 +80,188 @@ function delay(ms: number): Promise<void> {
 }
 
 function blockSignature(block: Block): string {
-  return JSON.stringify({
-    id: block.id,
-    type: block.type,
-    isFinalized: block.isFinalized,
-    raw: block.payload.raw ?? "",
-    meta: block.payload.meta ?? null,
-  });
+  return JSON.stringify(block);
+}
+interface SemanticStoreNodeSnapshot {
+  readonly id: string;
+  readonly type: string;
+  readonly range: { readonly from: number; readonly to: number } | undefined;
+  readonly props: unknown;
+  readonly meta: unknown;
+  readonly block: SemanticBlockComparison | null;
+  readonly children: SemanticStoreNode[];
+}
+type SemanticStoreNode = SemanticStoreNodeSnapshot | { readonly id: string; readonly missing: true };
+interface SemanticStoreForest {
+  roots: Array<{ id: string; value: SemanticStoreNode }>;
+  missingNodeIds: string[];
+  missingCanonicalBlockIds: string[];
 }
 
-function recordDivergence(
-  divergences: DivergenceReport[],
-  fixture: DenseFixture,
-  plan: ChunkingPlan,
-  stage: string,
-  tx: number,
-  frontier: number,
-  message: string,
-): void {
-  divergences.push({
-    fixtureId: fixture.id,
-    planMode: plan.mode,
-    seed: plan.seed,
-    stage,
-    commitIndex: tx,
-    frontier,
-    sourcePrefix: fixture.source.slice(0, Math.min(frontier, 80)),
-    message,
-  });
+function captureSemanticStoreForest(
+  store: RendererStore,
+  blocks: ReadonlyArray<Block>,
+  publishedLabels: Set<string>,
+): SemanticStoreForest {
+  const missingNodeIds: string[] = [];
+  const missingCanonicalBlockIds: string[] = [];
+  const canonicalBlocks = new Map(
+    collectBlocksRecursively(blocks)
+      .filter((block) => block.type === "code" || block.type === "table" || block.type === "list")
+      .map((block) => [block.id, block] as const),
+  );
+  const rootIds = new Set(blocks.map((block) => block.id));
+  const visit = (id: string): SemanticStoreNode => {
+    const node = store.getNode(id);
+    if (!node) {
+      missingNodeIds.push(id);
+      return { id, missing: true };
+    }
+    const usesTypedBlockProjection = node.type === "code" || node.type === "table";
+    const semanticProps = { ...node.props };
+    // List depth is a store view cache; rendering derives it from the compared child hierarchy.
+    if (node.type === "list" || node.type === "list-item") {
+      delete semanticProps.depth;
+    }
+    const hasCanonicalListLayout = node.type === "list" && typeof semanticProps.loose === "boolean";
+    // Root code, table and list layout come from the exported root block. Whether a nested snapshot carries a
+    // block is patch history, so nested code and tables project their owners and nested lists their own layout
+    // props and children.
+    const isRoot = rootIds.has(id);
+    const usesCanonicalBlockProjection = isRoot && (usesTypedBlockProjection || hasCanonicalListLayout);
+    const coldBlock = semanticProps.block;
+    // Generic code-node block DTOs are stale mirrors; code meaning comes from the canonical exported block.
+    if (node.type === "code") {
+      delete semanticProps.block;
+      // Generated pre/code wrapper attributes differ between native and cold HTML projections.
+      // Source semantics and ready token styles are checked through their public code owners.
+      delete semanticProps.preAttrs;
+      delete semanticProps.codeAttrs;
+    } else if (
+      coldBlock !== null && typeof coldBlock === "object" &&
+      "id" in coldBlock && coldBlock.id === node.id &&
+      "type" in coldBlock && coldBlock.type === node.type &&
+      "payload" in coldBlock && coldBlock.payload !== null && typeof coldBlock.payload === "object" &&
+      "raw" in coldBlock.payload && typeof coldBlock.payload.raw === "string"
+    ) {
+      // The cold DTO bridge is consumed on update; its meaning is compared through node.block below.
+      delete semanticProps.block;
+    }
+    const canonicalBlock = usesCanonicalBlockProjection
+      ? canonicalBlocks.get(id)
+      : !isRoot && node.type === "table"
+        ? store.getTableColdBlock(id)
+        : usesTypedBlockProjection || hasCanonicalListLayout ? undefined : node.block;
+    if (usesCanonicalBlockProjection && !canonicalBlock) missingCanonicalBlockIds.push(id);
+    const nestedCode = !isRoot && node.type === "code" ? store.getCodeBlock(id) : undefined;
+    // Block HTML reads its canonical Block, not setHTML's duplicate transport props.
+    if (node.type === "html" && canonicalBlock?.type === "html" && canonicalBlock.id === node.id) {
+      delete semanticProps.html;
+      delete semanticProps.policy;
+      delete semanticProps.meta;
+    }
+    const isFinalized = nestedCode ? nestedCode.source.state === "finalized" : canonicalBlock?.isFinalized ?? true;
+    const props = projectFootnotePublication({
+      id: node.id,
+      type: node.type,
+      isFinalized,
+      payload: { raw: "", meta: semanticProps },
+    }, publishedLabels).payload.meta;
+    const meta = node.type === "code"
+      ? undefined
+      : projectFootnotePublication({
+          id: node.id,
+          type: node.type,
+          isFinalized,
+          payload: { raw: "", meta: node.meta },
+        }, publishedLabels).payload.meta;
+    const semanticMeta = normalizeSemanticDtoValue(meta);
+    // Native list props and canonical exports own layout; this metadata is an initial snapshot mirror.
+    if (hasCanonicalListLayout && semanticMeta && typeof semanticMeta === "object" && !Array.isArray(semanticMeta)) {
+      delete (semanticMeta as Record<string, unknown>).loose;
+    }
+    return {
+      id: node.id,
+      type: node.type,
+      // Typed code/table source and rows come from owned exports, not cached generic range/block values.
+      range: usesTypedBlockProjection ? undefined : node.range ? { ...node.range } : undefined,
+      props: normalizeSemanticDtoValue(props),
+      meta: semanticMeta,
+      block: canonicalBlock
+        ? semanticBlockProjection(projectFootnotePublication(canonicalBlock, publishedLabels))
+        : nestedCode
+          ? {
+              id: node.id,
+              type: node.type,
+              isFinalized,
+              raw: "",
+              range: undefined,
+              inline: null,
+              meta: {
+                info: nestedCode.info,
+                language: nestedCode.language,
+                lines: store.getCodeLines(id, 0, nestedCode.lines.length).map((line) => line.text),
+              },
+            }
+          : null,
+      // Native code lines/table rows live outside generic children and are compared through their owned exports.
+      children: usesTypedBlockProjection ? [] : store.getChildren(id).map(visit),
+    };
+  };
+  return {
+    roots: blocks.map((block) => ({ id: block.id, value: visit(block.id) })),
+    missingNodeIds,
+    missingCanonicalBlockIds,
+  };
 }
-function diffBlockFields(curr: Block, other: Block): string {
-  const diffs: string[] = [];
-  if (curr.type !== other.type) {
-    diffs.push(`type (${curr.type} vs ${other.type})`);
-  }
-  if (curr.isFinalized !== other.isFinalized) {
-    diffs.push(`isFinalized (${curr.isFinalized} vs ${other.isFinalized})`);
-  }
-  if ((curr.payload.raw ?? "") !== (other.payload.raw ?? "")) {
-    diffs.push(`raw (len ${(curr.payload.raw ?? "").length} vs ${(other.payload.raw ?? "").length})`);
-  }
-  const currInlineStr = JSON.stringify(curr.payload.inline ?? []);
-  const otherInlineStr = JSON.stringify(other.payload.inline ?? []);
-  if (currInlineStr !== otherInlineStr) {
-    diffs.push(`inline mismatch (curr=${currInlineStr.slice(0, 50)} other=${otherInlineStr.slice(0, 50)})`);
-  }
-  const currMetaStr = JSON.stringify(curr.payload.meta ?? null);
-  const otherMetaStr = JSON.stringify(other.payload.meta ?? null);
-  if (currMetaStr !== otherMetaStr) {
-    const currKeys = Object.keys((curr.payload.meta as Record<string, unknown>) ?? {});
-    const otherKeys = Object.keys((other.payload.meta as Record<string, unknown>) ?? {});
-    const diffKeys = new Set(
-      [...currKeys, ...otherKeys].filter(
-        (k) =>
-          JSON.stringify((curr.payload.meta as Record<string, unknown>)?.[k]) !==
-          JSON.stringify((other.payload.meta as Record<string, unknown>)?.[k]),
-      ),
-    );
-    diffs.push(`meta mismatch on keys [${Array.from(diffKeys).join(", ")}]`);
-  }
-  return diffs.length > 0 ? diffs.join("; ") : "payload structural difference";
+
+function blockSourceMatches(block: Block, source: string): boolean {
+  const range = block.payload.range;
+  return range !== undefined &&
+    Number.isSafeInteger(range.from) &&
+    Number.isSafeInteger(range.to) &&
+    range.from >= 0 &&
+    range.to >= range.from &&
+    range.to <= source.length &&
+    block.payload.raw === source.slice(range.from, range.to);
 }
+function semanticTreeDifference(
+  current: SemanticStoreForest,
+  baseline: SemanticStoreForest,
+  index: number,
+  openTailLifecycleDifference = false,
+): string | undefined {
+  if (current.missingNodeIds.length > 0 || baseline.missingNodeIds.length > 0) {
+    return `missing public store nodes (current=${current.missingNodeIds.join(",")} baseline=${baseline.missingNodeIds.join(",")})`;
+  }
+  if (current.missingCanonicalBlockIds.length > 0 || baseline.missingCanonicalBlockIds.length > 0) {
+    return `missing canonical code/table/list block exports (current=${current.missingCanonicalBlockIds.join(",")} baseline=${baseline.missingCanonicalBlockIds.join(",")})`;
+  }
+  const currentRoot = current.roots[index];
+  const baselineRoot = baseline.roots[index];
+  if (!currentRoot || !baselineRoot) return "semantic store root is missing";
+  if (currentRoot.id !== baselineRoot.id) {
+    return `semantic store root ID mismatch (${currentRoot.id} vs ${baselineRoot.id})`;
+  }
+  if ("missing" in currentRoot.value || "missing" in baselineRoot.value) return "semantic store root is missing";
 
-function collectBlocksRecursively(blocks: ReadonlyArray<Block>): Block[] {
-  const result: Block[] = [];
-  const seen = new Set<string>();
-
-  function visitBlock(b: Block) {
-    if (seen.has(b.id)) return;
-    seen.add(b.id);
-    result.push(b);
-
-    const meta = b.payload.meta as Record<string, unknown> | undefined;
-    const prepared = meta?.preparedNested as
-      | { children?: Array<{ props?: { block?: Block }; type?: string; children?: unknown[] }> }
-      | undefined;
-    if (prepared?.children) {
-      for (const child of prepared.children) {
-        visitNode(child);
+  // Only the open tail root's duplicated block lifecycle bit can differ; compared props,
+  // canonical block meaning, non-code metadata/range and every descendant remain strict.
+  const currentValue = openTailLifecycleDifference
+    ? {
+        ...currentRoot.value,
+        block: currentRoot.value.block ? { ...currentRoot.value.block, isFinalized: false } : null,
       }
-    }
-  }
-
-  function visitNode(node: { props?: { block?: Block }; type?: string; children?: unknown[] }) {
-    if (node.props?.block) {
-      visitBlock(node.props.block);
-    }
-    if (Array.isArray(node.children)) {
-      for (const child of node.children) {
-        if (child && typeof child === "object") {
-          visitNode(child as { props?: { block?: Block }; type?: string; children?: unknown[] });
-        }
+    : currentRoot.value;
+  const baselineValue = openTailLifecycleDifference
+    ? {
+        ...baselineRoot.value,
+        block: baselineRoot.value.block ? { ...baselineRoot.value.block, isFinalized: false } : null,
       }
-    }
-  }
-
-  for (const b of blocks) {
-    visitBlock(b);
-  }
-  return result;
+    : baselineRoot.value;
+  return isDeepStrictEqual(currentValue, baselineValue)
+    ? undefined
+    : "nested semantic store topology or payload differs";
 }
 
 
@@ -205,14 +282,17 @@ async function getHighlighter(): Promise<Highlighter> {
 
 // --- Cold Parse Helpers ---
 
-async function coldNonFinalizingParse(prefixSource: string): Promise<ReadonlyArray<Block>> {
+/** Fresh INIT + APPEND only: this is the open-prefix oracle and deliberately sends no FINALIZE. */
+async function coldNonFinalizingParse(
+  prefixSource: string,
+): Promise<{ blocks: ReadonlyArray<Block>; store: RendererStore }> {
   const store = createRendererStore();
   const engine = new MarkdownEngine({
     post: (msg: WorkerOut) => {
       if (msg.type === "INITIALIZED") {
-        store.reset(msg.blocks);
+        store.resetSnapshot(msg.snapshot);
       } else if (msg.type === "PATCH") {
-        store.applyPatches(msg.patches as Patch[]);
+        store.applyPatches(msg.patches);
       }
     },
   });
@@ -221,20 +301,23 @@ async function coldNonFinalizingParse(prefixSource: string): Promise<ReadonlyArr
     if (prefixSource.length > 0) {
       await engine.handle({ type: "APPEND", text: prefixSource });
     }
-    return store.getBlocks();
+    return { blocks: store.getBlocks(), store };
   } finally {
     engine.dispose();
   }
 }
 
-async function coldFinalizeParse(fullSource: string): Promise<ReadonlyArray<Block>> {
+/** Full-source canonical baseline: unlike the prefix oracle, this always sends FINALIZE. */
+async function coldFinalizeParse(
+  fullSource: string,
+): Promise<{ blocks: ReadonlyArray<Block>; store: RendererStore }> {
   const store = createRendererStore();
   const engine = new MarkdownEngine({
     post: (msg: WorkerOut) => {
       if (msg.type === "INITIALIZED") {
-        store.reset(msg.blocks);
+        store.resetSnapshot(msg.snapshot);
       } else if (msg.type === "PATCH") {
-        store.applyPatches(msg.patches as Patch[]);
+        store.applyPatches(msg.patches);
       }
     },
   });
@@ -244,156 +327,13 @@ async function coldFinalizeParse(fullSource: string): Promise<ReadonlyArray<Bloc
       await engine.handle({ type: "APPEND", text: fullSource });
     }
     await engine.handle({ type: "FINALIZE" });
-    return store.getBlocks();
+    return { blocks: store.getBlocks(), store };
   } finally {
     engine.dispose();
   }
 }
 
 
-function collectCodeLinesFromStore(store: RendererStore | undefined, blockId: string): string[] {
-  if (!store) return [];
-  const lineIds = store.getChildren(blockId);
-  const lines: Array<{ index: number; text: string }> = [];
-  for (const lineId of lineIds) {
-    const lineNode = store.getNode(lineId);
-    if (!lineNode || lineNode.type !== "code-line") continue;
-    const index = typeof lineNode.props?.index === "number" ? (lineNode.props.index as number) : lines.length;
-    const text = typeof lineNode.props?.text === "string" ? (lineNode.props.text as string) : "";
-    lines.push({ index, text });
-  }
-  lines.sort((a, b) => a.index - b.index);
-  return lines.map((l) => l.text);
-}
-
-// --- Independent CommonMark/GFM Expectations ---
-
-function extractInlineText(node: InlineNode): string {
-  if (node.kind === "text") return node.text;
-  if ("children" in node && Array.isArray(node.children)) {
-    const children = node.children;
-    return children.map(extractInlineText).join("");
-  }
-  if ("raw" in node && typeof node.raw === "string") {
-    return node.raw;
-  }
-  return "";
-}
-
-function extractFootnoteItemText(item: FootnoteItem): string {
-  if (!Array.isArray(item.inlines)) return "";
-  return item.inlines.map(extractInlineText).join("");
-}
-
-function verifyIndependentExpectations(
-  blocks: ReadonlyArray<Block>,
-  fixture: DenseFixture,
-  store?: RendererStore,
-): { ok: boolean; message?: string } {
-  const exp = fixture.expectations;
-  if (!exp) return { ok: true };
-
-  const allBlocks = collectBlocksRecursively(blocks);
-  const codeBlocks = allBlocks.filter((b) => b.type === "code");
-  const listBlock = allBlocks.find((b) => b.type === "list");
-
-  if (exp.codeBlocks) {
-    for (const expCb of exp.codeBlocks) {
-      const match = codeBlocks.find((cb) => {
-        const meta = cb.payload.meta as Record<string, unknown> | undefined;
-        return getCodeBlockLang(meta) === expCb.lang;
-      });
-      if (!match) {
-        return {
-          ok: false,
-          message: `Missing expected code block with lang='${expCb.lang}' (observed code langs: [${codeBlocks
-            .map((c) => getCodeBlockLang(c.payload.meta as Record<string, unknown> | undefined))
-            .filter(Boolean)
-            .join(", ")}])`,
-        };
-      }
-
-      // Explicit code fixture expectations compare exact ordered prepared/emitted code lines (not raw.includes)
-      let actualLines: string[] = [];
-      if (store) {
-        actualLines = collectCodeLinesFromStore(store, match.id);
-      }
-      if (actualLines.length === 0 && typeof match.payload.meta?.code === "string") {
-        actualLines = (match.payload.meta.code as string).split("\n");
-      }
-      if (actualLines.length === 0 && Array.isArray(match.payload.meta?.tokenLines)) {
-        actualLines = (match.payload.meta.tokenLines as TokenLineV1[]).map((tl) =>
-          tl ? tl.spans.map((s) => s.t).join("").replace(/\r$/, "") : ""
-        );
-      }
-
-      if (actualLines.length !== expCb.codeLines.length) {
-        return {
-          ok: false,
-          message: `Code block lang='${expCb.lang}' line count mismatch: actual=${actualLines.length} expected=${expCb.codeLines.length}`,
-        };
-      }
-
-      for (let l = 0; l < expCb.codeLines.length; l++) {
-        const expectedLine = expCb.codeLines[l];
-        const actualLine = actualLines[l]?.replace(/\r$/, "");
-        if (actualLine !== expectedLine) {
-          return {
-            ok: false,
-            message: `Code block lang='${expCb.lang}' line ${l} mismatch: actual=${JSON.stringify(actualLine)} expected=${JSON.stringify(expectedLine)}`,
-          };
-        }
-      }
-    }
-  }
-
-
-  if (exp.footnotes) {
-    const fnFooter = allBlocks.find((b) => b.type === "footnotes");
-    if (!fnFooter) {
-      return { ok: false, message: "Missing expected footnotes footer block" };
-    }
-    const items = (fnFooter.payload.meta?.items as FootnoteItem[] | undefined) ?? [];
-    for (const expFn of exp.footnotes) {
-      const item = items.find((it) => it.label === expFn.label);
-      if (!item) {
-        return { ok: false, message: `Footnotes footer missing definition for '${expFn.label}'` };
-      }
-      if (item.number !== expFn.number) {
-        return {
-          ok: false,
-          message: `Footnote '${expFn.label}' expected number ${expFn.number} but got ${item.number}`,
-        };
-      }
-      if (typeof item.refCount === "number" && item.refCount < 1) {
-        return {
-          ok: false,
-          message: `Footnote '${expFn.label}' has zero occurrence count`,
-        };
-      }
-      if (expFn.textSnippet) {
-        const itemText = extractFootnoteItemText(item);
-        if (!itemText.includes(expFn.textSnippet)) {
-          return {
-            ok: false,
-            message: `Footnote '${expFn.label}' body text ${JSON.stringify(itemText)} missing expected snippet: ${JSON.stringify(expFn.textSnippet)}`,
-          };
-        }
-      }
-    }
-  }
-
-  if (exp.listLooseness) {
-    if (listBlock) {
-      const isLoose = Boolean(listBlock.payload.meta?.loose);
-      if (!isLoose) {
-        return { ok: false, message: "Inherited red: list with blank-line separated item not marked loose" };
-      }
-    }
-  }
-
-  return { ok: true };
-}
 
 // --- Engine Layer Replay ---
 
@@ -402,6 +342,7 @@ interface CapturedPublication {
   frontier: number;
   storeBlocks: Block[];
   signatures: Map<string, string>;
+  semanticTree: SemanticStoreForest;
 }
 
 async function runEngineLayerFixture(
@@ -419,11 +360,70 @@ async function runEngineLayerFixture(
     } as RendererStoreOptions & { campaignCounters?: SessionCounterSink });
     const capturedPublications: CapturedPublication[] = [];
     let lastTx = -1;
+    let initializedGeneration: number | undefined;
+    let initializationCount = 0;
     let stopChunking = false;
+    let offeredFrontier = 0;
 
     const engine = new MarkdownEngine({
       post: (msg: WorkerOut) => {
+        if (msg.type === "ERROR") {
+          if (!stopChunking) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "engine:error",
+              lastTx,
+              offeredFrontier,
+              `Worker ERROR after offering ${offeredFrontier} UTF-16 units: ${JSON.stringify(msg.error)}`,
+            );
+          }
+          stopChunking = true;
+          return;
+        }
+        if (msg.type === "INITIALIZED") {
+          if (initializationCount > 0) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "invariant:initialized",
+              msg.generation,
+              sessionSink.processed_frontier,
+              `Unexpected additional INITIALIZED message for generation ${msg.generation}`,
+            );
+          }
+          initializationCount += 1;
+          initializedGeneration = msg.generation;
+          try {
+            store.resetSnapshot(msg.snapshot);
+          } catch (error) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "invariant:initialized-root",
+              msg.generation,
+              0,
+              `INITIALIZED root snapshot could not reset the renderer store: ${String(error)}`,
+            );
+            stopChunking = true;
+          }
+          return;
+        }
         if (msg.type === "PATCH") {
+          if (initializedGeneration === undefined) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "invariant:initialized-order",
+              msg.tx,
+              sessionSink.processed_frontier,
+              "PATCH arrived before the store consumed INITIALIZED.snapshot",
+            );
+          }
           // FIFO invariant check
           if (msg.tx <= lastTx) {
             recordDivergence(
@@ -439,10 +439,11 @@ async function runEngineLayerFixture(
             return;
           }
           lastTx = msg.tx;
+          const priorCodeOwners = capturePriorCodeOwners(msg.patches, store);
 
           // Atomic store mutation
           try {
-            store.applyPatches(msg.patches as Patch[]);
+            store.applyPatches(msg.patches);
           } catch (err) {
             recordDivergence(
               divergences,
@@ -455,6 +456,22 @@ async function runEngineLayerFixture(
             );
             stopChunking = true;
             return;
+          }
+          for (const failure of verifyCodeWirePatches(
+            msg.patches,
+            priorCodeOwners,
+            store,
+            fixture.source,
+          )) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              failure.stage,
+              msg.tx,
+              sessionSink.processed_frontier,
+              failure.message,
+            );
           }
 
           const violations = store.getInvariantViolations();
@@ -475,11 +492,13 @@ async function runEngineLayerFixture(
           // Capture immutable publication snapshot at actual processed publication frontier
           const pubFrontier = sessionSink.publications.at(-1)?.frontier ?? sessionSink.processed_frontier;
           const currentBlocks = store.getBlocks().map(cloneBlock);
+          const published = publishedFootnoteLabels(currentBlocks);
           capturedPublications.push({
             tx: msg.tx,
             frontier: pubFrontier,
             storeBlocks: currentBlocks,
             signatures: new Map(currentBlocks.map((b) => [b.id, blockSignature(b)])),
+            semanticTree: captureSemanticStoreForest(store, currentBlocks, published),
           });
         }
       },
@@ -488,26 +507,68 @@ async function runEngineLayerFixture(
 
     try {
       await engine.handle(PARITY_INIT);
+      if (initializationCount !== 1 || initializedGeneration === undefined) {
+        recordDivergence(
+          divergences,
+          fixture,
+          chunking,
+          "invariant:initialized",
+          initializationCount,
+          0,
+          `Expected one INITIALIZED root reset before streaming; observed ${initializationCount}`,
+        );
+        stopChunking = true;
+      }
 
       // Stream chunks
       for (let c = 0; c < chunking.chunks.length; c++) {
         if (stopChunking) break;
+        offeredFrontier += chunking.chunks[c].length;
         await engine.handle({ type: "APPEND", text: chunking.chunks[c] });
       }
 
-      // Check captured publications at their actual frontiers
+      // Check captured publications at their actual frontiers.
       for (const pub of capturedPublications) {
         if (stopChunking) break;
+        const historyChanged = pub.signatures.size !== pub.storeBlocks.length ||
+          pub.storeBlocks.some((block) => pub.signatures.get(block.id) !== blockSignature(block));
+        if (historyChanged) {
+          recordDivergence(
+            divergences,
+            fixture,
+            chunking,
+            "engine:history",
+            pub.tx,
+            pub.frontier,
+            "A captured publication block changed after its publication frontier",
+          );
+          stopChunking = true;
+          break;
+        }
+
         const prefixSource = fixture.source.slice(0, pub.frontier);
-        const coldBlocks = await coldNonFinalizingParse(prefixSource);
-
+        const coldParse = await coldNonFinalizingParse(prefixSource);
+        const coldBlocks = coldParse.blocks;
         const published = publishedFootnoteLabels(pub.storeBlocks);
-        const coldFinalized = coldBlocks.filter((b) => b.isFinalized);
+        const coldTree = captureSemanticStoreForest(coldParse.store, coldBlocks, published);
+        if (pub.semanticTree.missingNodeIds.length > 0 || coldTree.missingNodeIds.length > 0) {
+          recordDivergence(
+            divergences,
+            fixture,
+            chunking,
+            "engine:prefix",
+            pub.tx,
+            pub.frontier,
+            `Missing public semantic store nodes (current=${pub.semanticTree.missingNodeIds.join(",")} cold=${coldTree.missingNodeIds.join(",")})`,
+          );
+          stopChunking = true;
+          break;
+        }
 
-        for (let i = 0; i < coldFinalized.length; i++) {
-          const coldBlock = coldFinalized[i];
+        for (let i = 0; i < Math.max(pub.storeBlocks.length, coldBlocks.length); i++) {
           const curr = pub.storeBlocks[i];
-          if (!curr) {
+          const coldBlock = coldBlocks[i];
+          if (!curr || !coldBlock) {
             recordDivergence(
               divergences,
               fixture,
@@ -515,15 +576,68 @@ async function runEngineLayerFixture(
               "engine:prefix",
               pub.tx,
               pub.frontier,
-              `Finalized block ${coldBlock.id} (index ${i}) missing in non-finalizing baseline`,
+              curr
+                ? `Cold non-finalizing baseline is missing current block ${curr.id} at index ${i}`
+                : `Current store is missing cold block ${coldBlock!.id} at index ${i}`,
             );
             stopChunking = true;
             break;
           }
 
-          const projectedCold = projectFootnotePublication(coldBlock, published);
-          if (!blocksStructurallyEqual(curr, projectedCold)) {
-            const fieldDiff = diffBlockFields(curr, projectedCold);
+          if (curr.isFinalized) {
+            if (!coldBlock.isFinalized) {
+              recordDivergence(
+                divergences,
+                fixture,
+                chunking,
+                "engine:prefix",
+                pub.tx,
+                pub.frontier,
+                `Finalized block ${curr.id} is provisional in the cold non-finalizing baseline`,
+              );
+              stopChunking = true;
+              break;
+            }
+            const projectedCold = projectFootnotePublication(coldBlock, published);
+            if (!blocksSemanticallyEqual(curr, projectedCold)) {
+              recordDivergence(
+                divergences,
+                fixture,
+                chunking,
+                "engine:prefix",
+                pub.tx,
+                pub.frontier,
+                `Prefix divergence at index ${i} (${curr.id}) [curr=${curr.type} cold=${coldBlock.type}]: ${describeBlockSemanticDifference(curr, projectedCold)}`,
+                {
+                  current: { block: curr, tree: pub.semanticTree.roots[i] },
+                  cold: { block: coldBlock, tree: coldTree.roots[i] },
+                },
+              );
+              stopChunking = true;
+              break;
+            }
+            const treeDiff = semanticTreeDifference(pub.semanticTree, coldTree, i);
+            if (treeDiff) {
+              recordDivergence(
+                divergences,
+                fixture,
+                chunking,
+                "engine:prefix",
+                pub.tx,
+                pub.frontier,
+                `Prefix semantic store divergence at index ${i} (${curr.id}): ${treeDiff}`,
+                {
+                  current: { block: curr, tree: pub.semanticTree.roots[i] },
+                  cold: { block: coldBlock, tree: coldTree.roots[i] },
+                },
+              );
+              stopChunking = true;
+              break;
+            }
+            continue;
+          }
+
+          if (i !== pub.storeBlocks.length - 1) {
             recordDivergence(
               divergences,
               fixture,
@@ -531,20 +645,86 @@ async function runEngineLayerFixture(
               "engine:prefix",
               pub.tx,
               pub.frontier,
-              `Prefix divergence at index ${i} (${curr.id}) [curr=${curr.type} cold=${coldBlock.type}]: ${fieldDiff}`,
+              `Provisional block ${curr.id} is not the current source tail`,
+              {
+                current: { block: curr, tree: pub.semanticTree.roots[i] },
+                cold: { block: coldBlock, tree: coldTree.roots[i] },
+              },
+            );
+            stopChunking = true;
+            break;
+          }
+          if (!blockSourceMatches(curr, prefixSource) || !blockSourceMatches(coldBlock, prefixSource) ||
+              curr.id !== coldBlock.id || curr.type !== coldBlock.type ||
+              !isDeepStrictEqual(curr.payload.range, coldBlock.payload.range) ||
+              curr.payload.raw !== coldBlock.payload.raw) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "engine:prefix",
+              pub.tx,
+              pub.frontier,
+              `Provisional tail ${curr.id} does not retain the same exact authored source range in the current and cold stores`,
+              {
+                current: { block: curr, tree: pub.semanticTree.roots[i] },
+                cold: { block: coldBlock, tree: coldTree.roots[i] },
+              },
+            );
+            stopChunking = true;
+            break;
+          }
+          const openTailLifecycleDifference = !curr.isFinalized && coldBlock.isFinalized;
+          const projectedCold = projectFootnotePublication(coldBlock, published);
+          if (!provisionalTailBlocksSemanticallyEqual(curr, projectedCold)) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "engine:prefix",
+              pub.tx,
+              pub.frontier,
+              `Provisional tail semantic divergence at index ${i} (${curr.id}): ${describeProvisionalTailSemanticDifference(curr, projectedCold)}`,
+              {
+                current: { block: curr, tree: pub.semanticTree.roots[i] },
+                cold: { block: coldBlock, tree: coldTree.roots[i] },
+              },
+            );
+            stopChunking = true;
+            break;
+          }
+          const treeDiff = semanticTreeDifference(
+            pub.semanticTree,
+            coldTree,
+            i,
+            openTailLifecycleDifference,
+          );
+          if (treeDiff) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "engine:prefix",
+              pub.tx,
+              pub.frontier,
+              `Provisional tail store divergence at index ${i} (${curr.id}): ${treeDiff}`,
+              {
+                current: { block: curr, tree: pub.semanticTree.roots[i] },
+                cold: { block: coldBlock, tree: coldTree.roots[i] },
+              },
             );
             stopChunking = true;
             break;
           }
         }
       }
-
       if (stopChunking) continue;
 
-      // Finalize and verify final semantic store equality against cold finalize
+      // Finalize and verify final semantic store equality against cold finalize.
       await engine.handle({ type: "FINALIZE" });
       const finalStoreBlocks = store.getBlocks();
-      const coldCanonicalBlocks = await coldFinalizeParse(fixture.source);
+      const coldFinalize = await coldFinalizeParse(fixture.source);
+      const coldCanonicalBlocks = coldFinalize.blocks;
 
       if (finalStoreBlocks.length !== coldCanonicalBlocks.length) {
         recordDivergence(
@@ -560,6 +740,19 @@ async function runEngineLayerFixture(
       }
 
       const published = publishedFootnoteLabels(finalStoreBlocks);
+      const currentTree = captureSemanticStoreForest(store, finalStoreBlocks, published);
+      const coldTree = captureSemanticStoreForest(coldFinalize.store, coldCanonicalBlocks, published);
+      if (currentTree.missingNodeIds.length > 0 || coldTree.missingNodeIds.length > 0) {
+        recordDivergence(
+          divergences,
+          fixture,
+          chunking,
+          "engine:final",
+          374,
+          fixture.source.length,
+          `Missing public semantic store nodes (current=${currentTree.missingNodeIds.join(",")} cold=${coldTree.missingNodeIds.join(",")})`,
+        );
+      }
       for (let i = 0; i < finalStoreBlocks.length; i++) {
         const curr = finalStoreBlocks[i];
         const base = coldCanonicalBlocks[i];
@@ -578,8 +771,7 @@ async function runEngineLayerFixture(
         }
 
         const projectedBase = projectFootnotePublication(base, published);
-        if (!blocksStructurallyEqual(curr, projectedBase)) {
-          const fieldDiff = diffBlockFields(curr, projectedBase);
+        if (!blocksSemanticallyEqual(curr, projectedBase)) {
           recordDivergence(
             divergences,
             fixture,
@@ -587,7 +779,28 @@ async function runEngineLayerFixture(
             "engine:final",
             386,
             fixture.source.length,
-            `Final block drift at index ${i} (${curr.id}) [curr=${curr.type} base=${base.type}]: ${fieldDiff}`,
+            `Final block drift at index ${i} (${curr.id}) [curr=${curr.type} base=${base.type}]: ${describeBlockSemanticDifference(curr, projectedBase)}`,
+            {
+              current: { block: curr, tree: currentTree.roots[i] },
+              cold: { block: base, tree: coldTree.roots[i] },
+            },
+          );
+          break;
+        }
+        const treeDiff = semanticTreeDifference(currentTree, coldTree, i);
+        if (treeDiff) {
+          recordDivergence(
+            divergences,
+            fixture,
+            chunking,
+            "engine:final",
+            387,
+            fixture.source.length,
+            `Final semantic store divergence at index ${i} (${curr.id}): ${treeDiff}`,
+            {
+              current: { block: curr, tree: currentTree.roots[i] },
+              cold: { block: base, tree: coldTree.roots[i] },
+            },
           );
           break;
         }
@@ -595,7 +808,13 @@ async function runEngineLayerFixture(
 
       // Shiki token validation on completed lines (including nested blocks)
       const allFinalBlocks = collectBlocksRecursively(finalStoreBlocks);
-      const tokenResult = await verifyCompletedLineTokens(allFinalBlocks, highlighter, engine, store, fixture.source);
+      const tokenResult = await verifyCompletedLineTokens(
+        allFinalBlocks,
+        highlighter,
+        engine,
+        store,
+        fixture.source,
+      );
       if (!tokenResult.ok) {
         recordDivergence(
           divergences,
@@ -641,9 +860,43 @@ async function runEngineLayerFixture(
   return divergences;
 }
 
+
 // --- Main Oracle Runner ---
 
+type ReplaySection = "all" | "engine-fixture" | "mounted-code" | "code-scaling" | "table-scaling";
+
+function summarizeFocusedSection(
+  section: Exclude<ReplaySection, "all">,
+  startedAt: number,
+  divergences: DivergenceReport[],
+  jsonPath: string | undefined,
+  scalingMeasurements?: ScalingMeasurement[],
+): OracleSummary {
+  const passed = divergences.length === 0;
+  const summary: OracleSummary = {
+    passed,
+    totalFixtures: 1,
+    passedFixtures: passed ? 1 : 0,
+    failedFixtures: passed ? 0 : 1,
+    divergenceCount: divergences.length,
+    divergences,
+    scalingMeasurements,
+    durationMs: Date.now() - startedAt,
+  };
+  console.log(`\n=== P2 scoped proof: ${section} ===`);
+  console.log(`${passed ? "PASS" : "FAIL"} | divergences: ${divergences.length} | ${summary.durationMs}ms`);
+  for (const divergence of divergences) {
+    console.log(`  - [${divergence.stage}] ${divergence.message}`);
+  }
+  if (jsonPath) {
+    fs.writeFileSync(jsonPath, JSON.stringify(summary, null, 2), "utf8");
+    console.log(`Evidence report saved to: ${jsonPath}`);
+  }
+  return summary;
+}
+
 export async function runReplayOracle(options: {
+  section?: ReplaySection;
   fixtureId?: string;
   seed?: number;
   bail?: boolean;
@@ -651,21 +904,47 @@ export async function runReplayOracle(options: {
 } = {}): Promise<OracleSummary> {
   const startTime = Date.now();
   const seed = options.seed ?? 42;
-  const highlighter = await getHighlighter();
-
-  const targetFixtures = options.fixtureId
-    ? DENSE_FIXTURES.filter((f) => f.id === options.fixtureId)
-    : DENSE_FIXTURES;
-
-  if (targetFixtures.length === 0) {
-    throw new Error(`Fixture not found: ${options.fixtureId}`);
+  const section = options.section ?? "all";
+  if (section === "mounted-code") {
+    return summarizeFocusedSection(section, startTime, await runLiveReactLayer(), options.jsonPath);
   }
+  if (section === "code-scaling") {
+    const result = await runScalingDiagnostics({ codeFamilyOnly: true });
+    return summarizeFocusedSection(section, startTime, result.divergences, options.jsonPath, result.measurements);
+  }
+  if (section === "table-scaling") {
+    const result = await runScalingDiagnostics({ tableFamilyOnly: true });
+    for (const measurement of result.measurements) {
+      if (measurement.tableBoundary) continue;
+      result.divergences.push({
+        fixtureId: `scaling-${measurement.workload}`,
+        planMode: "window-append",
+        seed,
+        stage: "diagnostic:scaling:missing-table-family",
+        commitIndex: 0,
+        frontier: 0,
+        sourcePrefix: "",
+        message: "Table boundary evidence is unavailable",
+      });
+    }
+    return summarizeFocusedSection(section, startTime, result.divergences, options.jsonPath, result.measurements);
+  }
+  const selectedFixtureId =
+    section === "engine-fixture" ? (options.fixtureId ?? "fence-indent-multiline") : options.fixtureId;
+  const targetFixtures = selectedFixtureId
+    ? DENSE_FIXTURES.filter((fixture) => fixture.id === selectedFixtureId)
+    : DENSE_FIXTURES;
+  if (targetFixtures.length === 0) {
+    throw new Error(`Fixture not found: ${selectedFixtureId}`);
+  }
+  const highlighter = await getHighlighter();
 
   const allDivergences: DivergenceReport[] = [];
   let passedFixtures = 0;
   let failedFixtures = 0;
+  let rootTraceFixtures = 0;
 
-  console.log(`\n=== StreamMDX P1 Dense Replay Oracle ===`);
+  console.log(`\n=== StreamMDX ${section === "all" ? "Dense Replay" : "P2 Engine Fixture"} Oracle ===`);
   console.log(`Fixtures: ${targetFixtures.length} | Seed: ${seed} | Environment: In-Process Node`);
 
   // Phase 1: Engine Layer Replay across seeded chunkings
@@ -705,8 +984,22 @@ export async function runReplayOracle(options: {
     }
   }
 
+  const initializedRootFixture = targetFixtures.find((fixture) => fixture.id === "fence-indent-multiline");
+  if (initializedRootFixture) {
+    rootTraceFixtures = 1;
+    const rootTraceDivergences = await runRootCodeInitializationTrace(initializedRootFixture, highlighter);
+    if (rootTraceDivergences.length === 0) {
+      passedFixtures += 1;
+      console.log("  ✓ [PASS] initialized-root-code-trace");
+    } else {
+      failedFixtures += 1;
+      console.log(`  ✗ [FAIL] initialized-root-code-trace - ${rootTraceDivergences.length} divergence(s)`);
+      allDivergences.push(...rootTraceDivergences);
+    }
+  }
+
   // Phase 2: Generation, Reset, and Disposal Invariants
-  if (!options.bail || allDivergences.length === 0) {
+  if (section === "all" && (!options.bail || allDivergences.length === 0)) {
     console.log(`\n=== Generation & Reset Invariant Proofs ===`);
     try {
       const genDivergences = await runGenerationAndResetInvariants();
@@ -736,7 +1029,7 @@ export async function runReplayOracle(options: {
   }
 
   // Phase 3: Live Mounted React Layer under JSDOM createRoot
-  if (!options.bail || allDivergences.length === 0) {
+  if (section === "all" && (!options.bail || allDivergences.length === 0)) {
     console.log(`\n=== Live React Layer (JSDOM createRoot) ===`);
     try {
       const reactDivergences = await runLiveReactLayer();
@@ -767,14 +1060,14 @@ export async function runReplayOracle(options: {
 
   // Phase 4: Diagnostic Path: N-vs-4N Bounded Equal-Append Scaling
   let scalingMeasurements: ScalingMeasurement[] | undefined;
-  if (!options.bail || allDivergences.length === 0) {
+  if (section === "all" && (!options.bail || allDivergences.length === 0)) {
     console.log(`\n=== Diagnostic Path: N-vs-4N Bounded Equal-Append Scaling ===`);
     try {
       const scalingResult = await runScalingDiagnostics();
       scalingMeasurements = scalingResult.measurements;
 
       for (const m of scalingMeasurements) {
-        const status = m.gatePassed ? "✓ [PASS]" : "✗ [INHERITED RED]";
+        const status = m.gatePassed ? "✓ [PASS]" : "✗ [CURRENT SCOPED RED]";
         console.log(
           `  ${status} ${m.workload} (block: ${m.expectedBlockType}): total work/unit N=${m.workPerUnitN.toFixed(4)} 4N=${m.workPerUnit4N.toFixed(4)} (ratio: ${m.totalRatio.toFixed(2)}x, gate <= 1.25x)`,
         );
@@ -809,12 +1102,12 @@ export async function runReplayOracle(options: {
 
   console.log(`\n=== Replay Oracle Summary ===`);
   console.log(`Total Duration: ${durationMs}ms (target < 60,000ms)`);
-  console.log(`Fixtures: ${passedFixtures}/${targetFixtures.length} passed`);
+  console.log(`Fixtures: ${passedFixtures}/${targetFixtures.length + rootTraceFixtures} passed`);
   console.log(`Divergences: ${allDivergences.length}`);
 
   const summary: OracleSummary = {
     passed,
-    totalFixtures: targetFixtures.length,
+    totalFixtures: targetFixtures.length + rootTraceFixtures,
     passedFixtures,
     failedFixtures,
     divergenceCount: allDivergences.length,
@@ -834,16 +1127,23 @@ export async function runReplayOracle(options: {
 // --- CLI Execution ---
 
 function parseCliArgs(): {
+  section?: ReplaySection;
   fixtureId?: string;
   seed?: number;
   bail?: boolean;
   jsonPath?: string;
 } {
   const args = process.argv.slice(2);
-  const options: { fixtureId?: string; seed?: number; bail?: boolean; jsonPath?: string } = {};
+  const options: { section?: ReplaySection; fixtureId?: string; seed?: number; bail?: boolean; jsonPath?: string } = {};
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--fixture" && args[i + 1]) {
+    if (args[i] === "--section" && args[i + 1]) {
+      const section = args[++i];
+      if (section !== "all" && section !== "engine-fixture" && section !== "mounted-code" && section !== "code-scaling" && section !== "table-scaling") {
+        throw new Error(`Unknown replay section: ${section}`);
+      }
+      options.section = section;
+    } else if (args[i] === "--fixture" && args[i + 1]) {
       options.fixtureId = args[++i];
     } else if (args[i] === "--seed" && args[i + 1]) {
       options.seed = Number.parseInt(args[++i], 10);

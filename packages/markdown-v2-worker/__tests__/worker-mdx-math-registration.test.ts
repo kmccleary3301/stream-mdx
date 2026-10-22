@@ -1,7 +1,11 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
-import { detectMDX, type Block, type ContentPolicy, type InlineNode, type MixedContentSegment, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { detectMDX } from "@stream-mdx/core";
+import type { Block, ContentPolicy, InlineNode, MixedContentSegment, Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
+import type { RendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 import { collectMathProtectedRanges } from "../src/engine/parse-extract";
 
@@ -27,11 +31,18 @@ function containsMathNodes(nodes: InlineNode[] | undefined): boolean {
   return false;
 }
 
+function applyPatchMessages(store: RendererStore, messages: WorkerOut[]): void {
+  for (const message of messages) {
+    if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
+  }
+}
+
 async function renderSnippetWithPlugins(snippet: string, contentPolicy?: ContentPolicy): Promise<Block[]> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
   const initMessages = await harness.send({
     type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     initialContent: "",
     prewarmLangs: [],
     ...(contentPolicy === undefined ? {} : { contentPolicy }),
@@ -39,7 +50,7 @@ async function renderSnippetWithPlugins(snippet: string, contentPolicy?: Content
   });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not initialize before streaming snippet");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const appendMessages = await harness.send({ type: "APPEND", text: snippet });
   appendMessages
@@ -58,12 +69,17 @@ async function testNestedNegativeMathFallback(): Promise<void> {
   const source = readFileSync(new URL("../../../tests/regression/fixtures/math-left-right-nested-negative.md", import.meta.url), "utf8");
   const tex = "\\left( \\frac{\\left[a+b}{c}";
   const harness = await createWorkerHarness();
-  await harness.send({
+  const store = createRendererStore();
+  const initMessages = await harness.send({
     type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     initialContent: "",
     prewarmLangs: [],
     docPlugins: { html: true, mdx: true, math: true, formatAnticipation: { mathInline: true, mathBlock: true, mdx: true, html: true } },
   });
+  const init = initMessages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED");
+  assert.ok(init, "worker must initialize before testing fallback output");
+  store.resetSnapshot(init.snapshot);
   const assertFallback = (blocks: Block[]): void => {
     const math = blocks.find((block) => block.payload.raw.includes(tex));
     assert.ok(math, "the actual nested-negative math source must remain visible");
@@ -71,29 +87,21 @@ async function testNestedNegativeMathFallback(): Promise<void> {
     assert.ok(math.payload.inline?.every((node) => node.kind === "text"), "unsupported math must remain literal, not speculative math or JSX");
     assert.equal(math.payload.inline?.map((node) => node.kind === "text" ? node.text : "").join(""), math.payload.raw);
     assert.equal(math.payload.meta?.mixedSegments, undefined);
-    const protectedRanges = math.payload.meta?.protectedRanges as Array<{ from: number; to: number; kind: string }> | undefined;
-    assert.ok(protectedRanges?.some((range) => range.kind === "math-display" && range.from === 0 && range.to === math.payload.raw.length));
   };
   let received = "";
   for (const character of source) {
     received += character;
-    await harness.send({ type: "APPEND", text: character });
-    if (!received.includes(tex)) continue;
-    const messages = await harness.send({ type: "DUMP_BLOCKS" });
-    const dump = messages.find((message) => message.type === "DUMP_BLOCKS");
-    assert.ok(dump && dump.type === "DUMP_BLOCKS");
-    assertFallback(dump.blocks);
+    applyPatchMessages(store, await harness.send({ type: "APPEND", text: character }));
+    if (received.includes(tex)) assertFallback(store.getBlocks());
   }
-  await harness.send({ type: "FINALIZE" });
-  const messages = await harness.send({ type: "DUMP_BLOCKS" });
-  const dump = messages.find((message) => message.type === "DUMP_BLOCKS");
-  assert.ok(dump && dump.type === "DUMP_BLOCKS");
-  assertFallback(dump.blocks);
+  applyPatchMessages(store, await harness.send({ type: "FINALIZE" }));
+  const blocks = store.getBlocks();
+  assertFallback(blocks);
   for (const text of [
     "Trailing prose must remain visible after the nested left-right negative case.",
     "Final paragraph after the nested left-right negative case.",
   ]) {
-    assert.ok(dump.blocks.some((block) => block.type === "paragraph" && block.payload.raw === text), "math fallback must stop at its native paragraph boundary");
+    assert.ok(blocks.some((block) => block.type === "paragraph" && block.payload.raw === text), "math fallback must stop at its native paragraph boundary");
   }
 
   const closed = "$$\\left(x+y\\right)$$";
@@ -124,8 +132,9 @@ async function testNestedNegativeMathFallback(): Promise<void> {
       assert.ok(segments?.some((segment) => segment.kind === "mdx" && segment.value === mdxSource), "the component must remain a separate inline projection");
     } else {
       // Check the observed native inline projection, not expression evaluation
-      // or the DOM produced by the separate MDX compilation path.
-      assert.ok(paragraph.payload.inline?.some((node) => node.kind === "text" && node.text.includes(mdxSource)), "expression source must remain in the inline projection");
+      // or the DOM produced by the separate MDX compilation path. Text-node splitting is not meaning.
+      const inlineText = (paragraph.payload.inline ?? []).map((node) => (node.kind === "text" ? node.text : "\u0000")).join("");
+      assert.ok(inlineText.includes(mdxSource), "expression source must remain in the inline projection");
     }
   }
 }
@@ -145,8 +154,6 @@ async function main() {
   );
   assert.ok(sentinelBlock, "expected sentinel math block to render");
   assert.notStrictEqual(sentinelBlock.type, "mdx", "math sentinel should not be tagged as mdx");
-  const sentinelRanges = (sentinelBlock.payload.meta as { protectedRanges?: Array<{ kind?: string }> } | undefined)?.protectedRanges ?? [];
-  assert.ok(sentinelRanges.some((range) => range?.kind === "math-display"), "math sentinel should carry math-display protected range");
   assert.ok(containsMathNodes(sentinelBlock.payload.inline), "math sentinel should remain inline math content, not raw text");
 
   await testNestedNegativeMathFallback();

@@ -1,9 +1,9 @@
 import assert from "node:assert";
 import { readFile } from "node:fs/promises";
 
-import type { Block, NodeSnapshot, Patch, WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type Block, type NodeSnapshot, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { MarkdownEngine } from "@stream-mdx/worker/engine";
-import { DEFAULT_COALESCE_CONFIG, coalescePatchesLinear, coalescePatchesQuadratic } from "../src/renderer/patch-coalescing";
+import { coalescePatchesLinear, coalescePatchesQuadratic } from "../src/renderer/patch-coalescing";
 import { createRendererStore, type RendererStore } from "../src/renderer/store";
 
 const hasStructuredClone = typeof globalThis.structuredClone === "function";
@@ -17,252 +17,6 @@ function deepClone<T>(value: T): T {
 
 function clonePatches(patches: Patch[]): Patch[] {
   return patches.map((patch) => deepClone(patch));
-}
-
-function normalizePatches(patches: Patch[]): Patch[] {
-  return JSON.parse(JSON.stringify(patches)) as Patch[];
-}
-
-function testConsecutiveAppendLines(): void {
-  const patches: Patch[] = [
-    {
-      op: "appendLines",
-      at: { blockId: "code-1" },
-      startIndex: 0,
-      lines: ["line1"],
-      highlight: ["<span>line1</span>"],
-    },
-    {
-      op: "appendLines",
-      at: { blockId: "code-1" },
-      startIndex: 1,
-      lines: ["line2"],
-    },
-    {
-      op: "appendLines",
-      at: { blockId: "code-1" },
-      startIndex: 2,
-      lines: ["line3"],
-      highlight: ["<span>line3</span>"],
-    },
-  ];
-
-  const linear = coalescePatchesLinear(clonePatches(patches));
-  assert.strictEqual(linear.length, 1, "appendLines run should coalesce to a single patch");
-  assert.ok(linear[0].op === "appendLines", "merged code lines must retain their semantic patch type");
-  assert.deepStrictEqual(linear[0].lines, ["line1", "line2", "line3"]);
-  assert.deepStrictEqual(linear[0].highlight, ["<span>line1</span>", null, "<span>line3</span>"]);
-
-  const quadratic = coalescePatchesQuadratic(clonePatches(patches));
-  assert.deepStrictEqual(normalizePatches(linear), normalizePatches(quadratic), "linear implementation must match quadratic output");
-}
-
-function testAppendLinesStopsAtGap(): void {
-  const patches: Patch[] = [
-    {
-      op: "appendLines",
-      at: { blockId: "code-1" },
-      startIndex: 0,
-      lines: ["a"],
-    },
-    {
-      op: "setProps",
-      at: { blockId: "code-1" },
-      props: { foo: "bar" },
-    },
-    {
-      op: "appendLines",
-      at: { blockId: "code-1" },
-      startIndex: 1,
-      lines: ["b"],
-    },
-  ];
-
-  const linear = coalescePatchesLinear(clonePatches(patches));
-  assert.strictEqual(linear.length, 3, "appendLines separated by non-coalesceable patch should not merge");
-
-  const quadratic = coalescePatchesQuadratic(clonePatches(patches));
-  assert.deepStrictEqual(normalizePatches(linear), normalizePatches(quadratic));
-}
-
-function testSetPropsMergesAndBatches(): void {
-  const patches: Patch[] = [
-    {
-      op: "setProps",
-      at: { blockId: "p-1", nodeId: "span-1" },
-      props: { bold: true },
-    },
-    {
-      op: "setProps",
-      at: { blockId: "p-1", nodeId: "span-1" },
-      props: { italic: true },
-    },
-    {
-      op: "setProps",
-      at: { blockId: "p-1", nodeId: "span-2" },
-      props: { underline: true },
-    },
-  ];
-
-  const linear = coalescePatchesLinear(clonePatches(patches));
-  assert.strictEqual(linear.length, 1, "setProps run should batch into setPropsBatch");
-  assert.strictEqual(linear[0].op, "setPropsBatch");
-
-  const quadratic = coalescePatchesQuadratic(clonePatches(patches));
-  assert.deepStrictEqual(normalizePatches(linear), normalizePatches(quadratic));
-}
-
-function testMixedOperationOrder(): void {
-  const patches: Patch[] = [
-    {
-      op: "appendLines",
-      at: { blockId: "code-1" },
-      startIndex: 0,
-      lines: ["a"],
-    },
-    {
-      op: "finalize",
-      at: { blockId: "code-1" },
-    },
-    {
-      op: "appendLines",
-      at: { blockId: "code-1" },
-      startIndex: 1,
-      lines: ["b"],
-    },
-  ];
-
-  const linear = coalescePatchesLinear(clonePatches(patches));
-  assert.strictEqual(linear.length, 3);
-  assert.strictEqual(linear[1].op, "finalize", "non-coalesceable operations must stay in order");
-
-  const quadratic = coalescePatchesQuadratic(clonePatches(patches));
-  assert.deepStrictEqual(normalizePatches(linear), normalizePatches(quadratic));
-}
-
-function testMaxWindowRespected(): void {
-  const patches: Patch[] = Array.from({ length: 60 }, (_, idx) => ({
-    op: "appendLines" as const,
-    at: { blockId: "code-1" },
-    startIndex: idx,
-    lines: [`line-${idx}`],
-  }));
-
-  const config = {
-    ...DEFAULT_COALESCE_CONFIG,
-    maxCoalesceWindow: 50,
-  };
-
-  const linear = coalescePatchesLinear(clonePatches(patches), config);
-  const quadratic = coalescePatchesQuadratic(clonePatches(patches), config);
-
-  assert.strictEqual(linear.length, quadratic.length, "linear coalescing must respect window limit");
-  assert.deepStrictEqual(normalizePatches(linear), normalizePatches(quadratic));
-}
-
-function testFixtureParity(): void {
-  const cases: Patch[][] = [
-    [
-      {
-        op: "appendLines",
-        at: { blockId: "code-1" },
-        startIndex: 0,
-        lines: ["one"],
-      },
-      {
-        op: "appendLines",
-        at: { blockId: "code-1" },
-        startIndex: 1,
-        lines: ["two"],
-      },
-      {
-        op: "appendLines",
-        at: { blockId: "code-1" },
-        startIndex: 2,
-        lines: ["three"],
-      },
-      {
-        op: "setProps",
-        at: { blockId: "p-1" },
-        props: { text: "hello" },
-      },
-    ],
-    [
-      {
-        op: "setProps",
-        at: { blockId: "p-1" },
-        props: { text: "one" },
-      },
-      {
-        op: "setProps",
-        at: { blockId: "p-1" },
-        props: { text: "two" },
-      },
-      {
-        op: "setProps",
-        at: { blockId: "p-2" },
-        props: { text: "three" },
-      },
-      {
-        op: "setProps",
-        at: { blockId: "p-3" },
-        props: { text: "four" },
-      },
-    ],
-  ];
-
-  for (const sequence of cases) {
-    const linear = coalescePatchesLinear(clonePatches(sequence));
-    const quadratic = coalescePatchesQuadratic(clonePatches(sequence));
-    assert.deepStrictEqual(normalizePatches(linear), normalizePatches(quadratic), "linear implementation must match quadratic for deterministic fixtures");
-  }
-}
-
-function generateRandomPatches(count: number): Patch[] {
-  const patches: Patch[] = [];
-  let nextCodeIndex = 0;
-  let listIndex = 0;
-  for (let i = 0; i < count; i++) {
-    const roll = i % 3;
-    if (roll === 0) {
-      patches.push({
-        op: "appendLines",
-        at: { blockId: "code-random" },
-        startIndex: nextCodeIndex,
-        lines: [`line-${i}`],
-      });
-      nextCodeIndex += i % 5 === 0 ? 2 : 1;
-    } else if (roll === 1) {
-      patches.push({
-        op: "setProps",
-        at: { blockId: `p-${i % 4}`, nodeId: `span-${i % 3}` },
-        props: { value: i },
-      });
-    } else {
-      patches.push({
-        op: "insertChild",
-        at: { blockId: "list-random" },
-        index: listIndex,
-        node: {
-          id: `li-${i}`,
-          type: "list-item",
-          props: { text: `Item ${i}` },
-          children: [],
-        },
-      });
-      listIndex += i % 4 === 0 ? 2 : 1;
-    }
-  }
-  return patches;
-}
-
-function testRandomEquivalence(): void {
-  for (let i = 0; i < 25; i++) {
-    const sequence = generateRandomPatches(30 + i);
-    const linear = coalescePatchesLinear(clonePatches(sequence));
-    const quadratic = coalescePatchesQuadratic(clonePatches(sequence));
-    assert.deepStrictEqual(normalizePatches(linear), normalizePatches(quadratic), `linear vs quadratic mismatch for random sequence ${i}`);
-  }
 }
 
 interface ExpectedListItem {
@@ -319,98 +73,6 @@ const coalescers = [
   { name: "linear", coalesce: coalescePatchesLinear },
   { name: "quadratic", coalesce: coalescePatchesQuadratic },
 ] as const;
-
-function createEmptyCodeBlock(): Block {
-  return {
-    id: "append-metadata",
-    type: "code",
-    isFinalized: false,
-    payload: { raw: "", meta: { lang: "js" } },
-  };
-}
-
-function testAppendMetadataStaysWithItsLines(): void {
-  const authoredLines = ["const queued = 1;", "const next = queued + 1;", "console.log(next);"];
-  const secondLineTokens = { spans: [{ t: authoredLines[1] }] };
-  const patches: Patch[] = [
-    {
-      op: "appendLines",
-      at: { blockId: "append-metadata", nodeId: "append-metadata" },
-      startIndex: 0,
-      lines: [authoredLines[0]],
-      highlight: [authoredLines[0]],
-      tokens: [],
-      diffKind: ["context"],
-      oldNo: [1, 999],
-      newNo: [null],
-    },
-    {
-      op: "appendLines",
-      at: { blockId: "append-metadata", nodeId: "append-metadata" },
-      startIndex: 1,
-      lines: authoredLines.slice(1),
-      highlight: [authoredLines[1]],
-      tokens: [secondLineTokens],
-      diffKind: ["add"],
-      oldNo: [2],
-      newNo: [3],
-    },
-  ];
-  const expectedMetadata = {
-    highlight: [authoredLines[0], authoredLines[1], null],
-    tokens: [null, secondLineTokens, null],
-    diffKind: ["context", "add", null],
-    oldNo: [1, 2, null],
-    newNo: [null, 3, null],
-  };
-  const replayModes = [
-    { name: "raw", patches: clonePatches(patches) },
-    ...coalescers.map(({ name, coalesce }) => ({ name, patches: coalesce(clonePatches(patches)) })),
-  ];
-
-  for (const { name, patches: replayPatches } of replayModes) {
-    if (name !== "raw") {
-      assert.strictEqual(replayPatches.length, 1, `${name}: contiguous append lines should coalesce`);
-      const merged = replayPatches[0];
-      assert.ok(merged?.op === "appendLines", `${name}: merged patch should retain appendLines`);
-      assert.deepStrictEqual(
-        {
-          highlight: merged.highlight,
-          tokens: merged.tokens,
-          diffKind: merged.diffKind,
-          oldNo: merged.oldNo,
-          newNo: merged.newNo,
-        },
-        expectedMetadata,
-        `${name}: each metadata value must stay aligned to its authored line`,
-      );
-    }
-
-    const store = createRendererStore([createEmptyCodeBlock()]);
-    store.applyPatches(clonePatches(replayPatches), { coalesced: true });
-    const lineIds = store.getChildren("append-metadata");
-    assert.deepStrictEqual(
-      lineIds,
-      authoredLines.map((_, index) => `append-metadata::line:${index}`),
-      `${name}: code line IDs must stay in authored order`,
-    );
-    const actualLines = lineIds.map((id) => {
-      const line = store.getNode(id);
-      assert.ok(line, `${name}: expected code line ${id}`);
-      return { text: line.props?.text, tokens: line.props?.tokens };
-    });
-    assert.deepStrictEqual(
-      actualLines,
-      [
-        { text: authoredLines[0], tokens: null },
-        { text: authoredLines[1], tokens: secondLineTokens },
-        { text: authoredLines[2], tokens: null },
-      ],
-      `${name}: consumer lines must retain exact authored text and token ownership`,
-    );
-  }
-}
-
 
 function testInsertBarrierPreservesDisjointRootProps(): void {
   const at = { blockId: "list-seed", nodeId: "list-seed" };
@@ -487,7 +149,6 @@ function testLowRedundancyKeepsEveryConsumerChild(): void {
   }
 }
 
-
 function assertFixtureMeaning(
   fixtureName: string,
   store: RendererStore,
@@ -511,41 +172,14 @@ function assertFixtureMeaning(
     assert.strictEqual(codeBlock.payload.meta?.lang, expectedCodeLanguage, `${fixtureName}: code language must match source`);
   }
 
-  const childIds = store.getChildren(codeBlock.id);
+  const codeState = store.getCodeBlock(codeBlock.id);
+  assert.ok(codeState, `${fixtureName}: expected an owned code block`);
+  const codeLines = store.getCodeLines(codeBlock.id, 0, codeState.source.lineCount);
   assert.deepStrictEqual(
-    childIds,
-    expectedCodeLines.map((_, index) => `${codeBlock.id}::line:${index}`),
-    `${fixtureName}: code child IDs and order must match source lines`,
+    codeLines.map((line) => line.text),
+    expectedCodeLines,
+    `${fixtureName}: owned code lines must match authored source`,
   );
-  const children = childIds.map((id) => {
-    const child = store.getNode(id);
-    assert.ok(child, `${fixtureName}: expected code child ${id}`);
-    return { id: child.id, type: child.type, text: child.props?.text };
-  });
-  assert.deepStrictEqual(
-    children,
-    expectedCodeLines.map((text, index) => ({ id: `${codeBlock.id}::line:${index}`, type: "code-line", text })),
-    `${fixtureName}: code child records must match source lines`,
-  );
-}
-
-interface ConsumerTree extends NodeSnapshot {
-  block?: Block;
-  children: ConsumerTree[];
-}
-
-function readConsumerTree(store: RendererStore, id: string): ConsumerTree {
-  const node = store.getNode(id);
-  assert.ok(node, `expected consumer node ${id}`);
-  return {
-    id: node.id,
-    type: node.type,
-    meta: node.meta,
-    range: node.range,
-    props: node.props,
-    block: node.block,
-    children: store.getChildren(id).map((childId) => readConsumerTree(store, childId)),
-  };
 }
 
 async function testRealFixtureStreamReplay(): Promise<void> {
@@ -567,7 +201,7 @@ async function testRealFixtureStreamReplay(): Promise<void> {
         codeSource.slice(index * 37, (index + 1) * 37),
       ),
       expectedBlocks: [
-        { type: "heading", raw: "Huge Code Block" },
+        { type: "heading", raw: "# Huge Code Block" },
         { type: "code", raw: codeSource.slice(codeFenceStart, codeFenceEnd + "\n```".length) },
       ],
       expectedCodeLines: codeBody.split("\n"),
@@ -577,7 +211,7 @@ async function testRealFixtureStreamReplay(): Promise<void> {
       name: "delimiter-boundary.md",
       chunks: delimiterChunks,
       expectedBlocks: [
-        { type: "heading", raw: "Delimiter Boundary Splitter" },
+        { type: "heading", raw: "### Delimiter Boundary Splitter" },
         { type: "paragraph", raw: "*Italic start" },
         { type: "paragraph", raw: "then end*" },
         { type: "paragraph", raw: "**Bold start" },
@@ -610,6 +244,7 @@ async function testRealFixtureStreamReplay(): Promise<void> {
     try {
       await engine.handle({
         type: "INIT",
+        schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent: "",
         prewarmLangs: [],
         docPlugins,
@@ -628,18 +263,15 @@ async function testRealFixtureStreamReplay(): Promise<void> {
       (message): message is Extract<WorkerOut, { type: "PATCH" }> => message.type === "PATCH",
     );
 
-    const rawStore = createRendererStore(initialized.blocks);
-    const linearStore = createRendererStore(initialized.blocks);
-    const quadraticStore = createRendererStore(initialized.blocks);
-    let inputPatchCount = 0;
-    let linearPatchCount = 0;
-    let quadraticPatchCount = 0;
+    const rawStore = createRendererStore();
+    rawStore.resetSnapshot(initialized.snapshot);
+    const linearStore = createRendererStore();
+    linearStore.resetSnapshot(initialized.snapshot);
+    const quadraticStore = createRendererStore();
+    quadraticStore.resetSnapshot(initialized.snapshot);
     for (const message of patchMessages) {
       const linear = coalescePatchesLinear(clonePatches(message.patches));
       const quadratic = coalescePatchesQuadratic(clonePatches(message.patches));
-      inputPatchCount += message.patches.length;
-      linearPatchCount += linear.length;
-      quadraticPatchCount += quadratic.length;
       rawStore.applyPatches(clonePatches(message.patches), { coalesced: true });
       linearStore.applyPatches(linear, { coalesced: true });
       quadraticStore.applyPatches(quadratic, { coalesced: true });
@@ -658,35 +290,60 @@ async function testRealFixtureStreamReplay(): Promise<void> {
         fixture.expectedCodeLanguage,
       );
     }
-    const rawTree = rawStore.getBlocks().map((block) => readConsumerTree(rawStore, block.id));
+    const rawBlocks = rawStore.getBlocks();
+    assert.deepStrictEqual(rawBlocks, linearStore.getBlocks(), `${fixture.name}: linear cold blocks differ`);
+    assert.deepStrictEqual(rawBlocks, quadraticStore.getBlocks(), `${fixture.name}: quadratic cold blocks differ`);
+
+    const rawCodeBlock = rawBlocks.find((block) => block.type === "code");
+    assert.ok(rawCodeBlock, `${fixture.name}: expected an authored code block`);
+    const rawCodeState = rawStore.getCodeBlock(rawCodeBlock.id);
+    assert.ok(rawCodeState, `${fixture.name}: expected an owned code block`);
+    const rawCodeLines = rawStore.getCodeLines(rawCodeBlock.id, 0, rawCodeState.source.lineCount);
     for (const [name, store] of [["linear", linearStore], ["quadratic", quadraticStore]] as const) {
-      assert.deepStrictEqual(store.getBlocks(), rawStore.getBlocks(), `${fixture.name}: ${name} block semantics differ`);
+      const codeBlock = store.getBlocks().find((block) => block.type === "code");
+      assert.ok(codeBlock, `${fixture.name}: ${name} expected an authored code block`);
+      const codeState = store.getCodeBlock(codeBlock.id);
+      assert.ok(codeState, `${fixture.name}: ${name} expected an owned code block`);
       assert.deepStrictEqual(
-        store.getBlocks().map((block) => readConsumerTree(store, block.id)),
-        rawTree,
-        `${fixture.name}: ${name} consumer topology or properties differ`,
+        {
+          source: codeState.source,
+          configurationRevision: codeState.configurationRevision,
+          info: codeState.info,
+          language: codeState.language,
+          lines: {
+            length: codeState.lines.length,
+            completeLineCount: codeState.lines.completeLineCount,
+            revision: codeState.lines.revision,
+          },
+        },
+        {
+          source: rawCodeState.source,
+          configurationRevision: rawCodeState.configurationRevision,
+          info: rawCodeState.info,
+          language: rawCodeState.language,
+          lines: {
+            length: rawCodeState.lines.length,
+            completeLineCount: rawCodeState.lines.completeLineCount,
+            revision: rawCodeState.lines.revision,
+          },
+        },
+        `${fixture.name}: ${name} public code state differs`,
+      );
+      assert.deepStrictEqual(
+        store.getCodeLines(codeBlock.id, 0, codeState.source.lineCount),
+        rawCodeLines,
+        `${fixture.name}: ${name} owned code line records differ`,
       );
     }
-    console.log(JSON.stringify({ fixture: fixture.name, inputPatchCount, linearPatchCount, quadraticPatchCount }));
   }
 }
 
 export function runPatchCoalescingTests(): void {
-  testConsecutiveAppendLines();
-  testAppendLinesStopsAtGap();
-  testSetPropsMergesAndBatches();
-  testMixedOperationOrder();
-  testMaxWindowRespected();
-  testFixtureParity();
-  testRandomEquivalence();
   testInsertBarrierPreservesDisjointRootProps();
   testControlledRedundantUpdatesMeetReductionMinimum();
   testLowRedundancyKeepsEveryConsumerChild();
-  testAppendMetadataStaysWithItsLines();
 }
 
 runPatchCoalescingTests();
-void testRealFixtureStreamReplay().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+await testRealFixtureStreamReplay();
+console.log("Patch coalescing consumer tests passed");

@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import React from "react";
 import { JSDOM } from "jsdom";
@@ -82,15 +84,12 @@ async function testInvalidRegexYieldsErrorMessage(): Promise<void> {
     },
   });
 
-  await engine.handle({
-    type: "INIT",
-    syntax: [
-      {
-        name: "invalidRule",
-        pattern: { source: "[unclosed-bracket(" },
-      },
-    ],
-  });
+  await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, syntax: [
+    {
+      name: "invalidRule",
+      pattern: { source: "[unclosed-bracket(" },
+    },
+  ], });
 
   assert.ok(errors.length > 0, "expected an ERROR message for invalid regex pattern");
   const firstError = errors[0];
@@ -470,16 +469,13 @@ async function testAnticipationOverlapAndStreamingStatus(): Promise<void> {
     },
   });
 
-  await engine.handle({
-    type: "INIT",
-    syntax: [
-      {
-        name: "wiki",
-        pattern: { source: "\\[\\[([^\\]]+)\\]\\]" },
-        anticipation: { open: "[[", close: "]]" },
-      },
-    ],
-  });
+  await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, syntax: [
+    {
+      name: "wiki",
+      pattern: { source: "\\[\\[([^\\]]+)\\]\\]" },
+      anticipation: { open: "[[", close: "]]" },
+    },
+  ], });
 
   // Stream unclosed anticipation open
   await engine.handle({
@@ -569,20 +565,17 @@ async function testInvalidRegexRecoveryWithValidRule(): Promise<void> {
     },
   });
 
-  await engine.handle({
-    type: "INIT",
-    syntax: [
-      {
-        name: "badRule",
-        pattern: { source: "[invalid(regex" },
-      },
-      {
-        name: "ticket",
-        pattern: { source: "#([A-Z]+-\\d+)" },
-        attrs: { id: 1 },
-      },
-    ],
-  });
+  await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, syntax: [
+    {
+      name: "badRule",
+      pattern: { source: "[invalid(regex" },
+    },
+    {
+      name: "ticket",
+      pattern: { source: "#([A-Z]+-\\d+)" },
+      attrs: { id: 1 },
+    },
+  ], });
 
   assert.ok(errors.length > 0, "should report error for badRule");
 

@@ -11,6 +11,7 @@ import { gfm, gfmHtml } from "micromark-extension-gfm";
 import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore, type RendererStore } from "@stream-mdx/react/server";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createWorkerThread } from "@stream-mdx/worker/node";
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 
 import { normalizeHtmlSemantics, type NormalizerOptions } from "../../tests/conformance/normalizer.mts";
 type SpecExample = {
@@ -184,6 +185,7 @@ async function main(): Promise<void> {
   });
   const examples = await loadExamples();
   const initConfig = {
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     docPlugins: { html: true, tables: true, footnotes: true, math: true, callouts: true, mdx: false },
     mdx: { compileMode: "server" as const },
     prewarmLangs: [],
@@ -203,7 +205,8 @@ async function main(): Promise<void> {
 
   streamingWorker.on("message", (msg) => {
     if (msg.type === "INITIALIZED") {
-      streamingStore = createRendererStore(msg.blocks);
+      streamingStore = createRendererStore();
+      streamingStore.resetSnapshot(msg.snapshot);
     } else if (msg.type === "PATCH" && streamingStore) {
       streamingStore.applyPatches(msg.patches);
     } else if (msg.type === "FINALIZED") {

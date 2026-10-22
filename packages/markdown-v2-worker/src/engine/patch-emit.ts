@@ -1,11 +1,9 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import type {
-  DiffLineKind,
   NodeSnapshot,
   Patch,
   PatchKind,
-  TokenLineV1,
 } from "@stream-mdx/core";
 import {
   PATCH_ROOT_ID,
@@ -199,7 +197,9 @@ export function dedupeSetPropsByTargetKeepingLatest(patches: Patch[]): Patch[] {
   const dedupedReversed: Patch[] = [];
   for (let i = patches.length - 1; i >= 0; i--) {
     const patch = patches[i];
-    if (patch.op === "setProps") {
+    if (patch.op === "appendInputSource") {
+      seen.clear();
+    } else if (patch.op === "setProps") {
       const target = patch.at.nodeId ?? patch.at.blockId;
       const key = `${patch.at.blockId}::${target}`;
       if (seen.has(key)) {
@@ -290,6 +290,8 @@ export function shallowEqual(a: Record<string, unknown>, b: Record<string, unkno
   const keysB = Object.keys(b);
   if (keysA.length !== keysB.length) return false;
   for (const key of keysA) {
+    // Same-size records with different keys differ even when the missing key would read as undefined.
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
     const valA = a[key];
     const valB = b[key];
     if (typeof valA === "object" || typeof valB === "object") {
@@ -299,6 +301,57 @@ export function shallowEqual(a: Record<string, unknown>, b: Record<string, unkno
     }
   }
   return true;
+}
+// Owner records carry their own source updates, as do the code and table families, which consumers refuse
+// generic range/meta updates for. A bare paragraph has no owner channel, so its range and metadata travel in setProps.
+function isManagedSourceSnapshot(node: NodeSnapshot): boolean {
+  return Boolean(node.code || node.table || node.paragraph) ||
+    node.type === "code" ||
+    node.type === "table" ||
+    node.type.startsWith("code-") ||
+    node.type.startsWith("table-") ||
+    node.type.startsWith("paragraph-");
+}
+
+// A child that gains, loses, or changes its source owner record cannot be patched in place: the consumer
+// keys owner state to the record, so the node must be replaced.
+function sourceOwnershipChanged(prev: NodeSnapshot, next: NodeSnapshot): boolean {
+  return Boolean(prev.code) !== Boolean(next.code) ||
+    Boolean(prev.table) !== Boolean(next.table) ||
+    prev.paragraph?.paragraphOwnerId !== next.paragraph?.paragraphOwnerId ||
+    Boolean(prev.paragraph) !== Boolean(next.paragraph);
+}
+
+function diffOrReplaceChild(
+  blockId: string,
+  parent: NodeSnapshot,
+  index: number,
+  prevChild: NodeSnapshot,
+  nextChild: NodeSnapshot,
+  patches: Patch[],
+  metrics: WorkerMetricsCollector | null | undefined,
+  managedSourceOwner: boolean,
+  counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
+): void {
+  if (sourceOwnershipChanged(prevChild, nextChild)) {
+    patches.push({ op: "replaceChild", at: { blockId, nodeId: parent.id }, index, node: nextChild });
+    return;
+  }
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    diffNodeSnapshotWithOwner(blockId, prevChild, nextChild, patches, metrics, managedSourceOwner, counters);
+  } else {
+    diffNodeSnapshotWithOwner(blockId, prevChild, nextChild, patches, metrics, managedSourceOwner);
+  }
+}
+
+function canonicalSnapshotMeta(node: NodeSnapshot): Record<string, unknown> | undefined {
+  const meta = node.meta;
+  const nativeContainer = node.type === "list" || node.type === "blockquote" || node.type === "list-item";
+  if (!meta || !nativeContainer || !Object.prototype.hasOwnProperty.call(meta, "preparedNested")) {
+    return meta;
+  }
+  const { preparedNested: _preparedNested, ...canonicalMeta } = meta;
+  return canonicalMeta;
 }
 
 export function haveSameMultiset(a: string[], b: string[]): boolean {
@@ -316,39 +369,6 @@ export function haveSameMultiset(a: string[], b: string[]): boolean {
   return counts.size === 0;
 }
 
-export function expectedCodeLineSnapshotId(parentId: string, index: number): string {
-  return `${parentId}::line:${index}`;
-}
-
-export function isStrictCodeLineSnapshot(parentId: string, child: NodeSnapshot, index: number): boolean {
-  if (child.type !== "code-line") return false;
-  if (child.id !== expectedCodeLineSnapshotId(parentId, index)) return false;
-  const childIndex = typeof child.props?.index === "number" ? (child.props.index as number) : null;
-  return childIndex === index;
-}
-
-export function canEmitAppendLinesPatch(prevNode: NodeSnapshot, nextNode: NodeSnapshot, divergeIndex: number): boolean {
-  if (prevNode.type !== "code" || nextNode.type !== "code") return false;
-  const prevChildren = prevNode.children ?? [];
-  const nextChildren = nextNode.children ?? [];
-  if (divergeIndex !== prevChildren.length || nextChildren.length < prevChildren.length) {
-    return false;
-  }
-  for (let index = 0; index < prevChildren.length; index += 1) {
-    if (!isStrictCodeLineSnapshot(prevNode.id, prevChildren[index], index)) {
-      return false;
-    }
-    if (!isStrictCodeLineSnapshot(nextNode.id, nextChildren[index], index)) {
-      return false;
-    }
-  }
-  for (let index = divergeIndex; index < nextChildren.length; index += 1) {
-    if (!isStrictCodeLineSnapshot(nextNode.id, nextChildren[index], index)) {
-      return false;
-    }
-  }
-  return true;
-}
 
 export function diffListChildren(
   blockId: string,
@@ -357,6 +377,23 @@ export function diffListChildren(
   nextChildren: NodeSnapshot[],
   patches: Patch[],
   metrics?: WorkerMetricsCollector | null,
+  counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
+): void {
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    diffListChildrenWithOwner(blockId, listNode, prevChildren, nextChildren, patches, metrics, false, counters);
+  } else {
+    diffListChildrenWithOwner(blockId, listNode, prevChildren, nextChildren, patches, metrics, false);
+  }
+}
+
+function diffListChildrenWithOwner(
+  blockId: string,
+  listNode: NodeSnapshot,
+  prevChildren: NodeSnapshot[],
+  nextChildren: NodeSnapshot[],
+  patches: Patch[],
+  metrics: WorkerMetricsCollector | null | undefined,
+  managedSourceOwner: boolean,
   counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
 ): void {
   const prevLength = prevChildren.length;
@@ -375,7 +412,11 @@ export function diffListChildren(
       counters?.recordPrefixComparisons?.(1, "patch");
     }
     if (prevChildren[prefix].id !== nextChildren[prefix].id) break;
-    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner, counters);
+    } else {
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner);
+    }
     prefix++;
   }
 
@@ -417,7 +458,11 @@ export function diffListChildren(
     const prevIdx = prevLength - 1 - suffix;
     const nextIdx = nextLength - 1 - suffix;
     if (prevChildren[prevIdx].id !== nextChildren[nextIdx].id) break;
-    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner, counters);
+    } else {
+      diffNodeSnapshotWithOwner(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner);
+    }
     suffix++;
   }
 
@@ -463,7 +508,7 @@ export function diffListChildren(
   const sharedMid = Math.min(prevMid.length, nextMid.length);
   let midPrefix = 0;
   while (midPrefix < sharedMid && prevMid[midPrefix].id === nextMid[midPrefix].id) {
-    diffNodeSnapshot(blockId, prevMid[midPrefix], nextMid[midPrefix], patches, metrics);
+    diffNodeSnapshotWithOwner(blockId, prevMid[midPrefix], nextMid[midPrefix], patches, metrics, managedSourceOwner);
     midPrefix++;
   }
 
@@ -499,7 +544,7 @@ export function diffListChildren(
 
   if (remainingPrevMid.length === remainingNextMid.length && remainingPrevMid.every((child, idx) => child.id === remainingNextMid[idx].id)) {
     for (let idx = 0; idx < remainingPrevMid.length; idx++) {
-      diffNodeSnapshot(blockId, remainingPrevMid[idx], remainingNextMid[idx], patches, metrics);
+      diffNodeSnapshotWithOwner(blockId, remainingPrevMid[idx], remainingNextMid[idx], patches, metrics, managedSourceOwner);
     }
     return;
   }
@@ -531,16 +576,48 @@ export function diffNodeSnapshot(
   metrics?: WorkerMetricsCollector | null,
   counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
 ): void {
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    diffNodeSnapshotWithOwner(blockId, prevNode, nextNode, patches, metrics, false, counters);
+  } else {
+    diffNodeSnapshotWithOwner(blockId, prevNode, nextNode, patches, metrics, false);
+  }
+}
+
+function diffNodeSnapshotWithOwner(
+  blockId: string,
+  prevNode: NodeSnapshot,
+  nextNode: NodeSnapshot,
+  patches: Patch[],
+  metrics: WorkerMetricsCollector | null | undefined,
+  inheritedManagedSourceOwner: boolean,
+  counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
+): void {
+  const managedSourceOwner = inheritedManagedSourceOwner || isManagedSourceSnapshot(prevNode) || isManagedSourceSnapshot(nextNode);
   const prevProps = prevNode.props ?? {};
   const nextProps = nextNode.props ?? {};
   const propsChanged = !shallowEqual(prevProps, nextProps);
+  const prevMeta = managedSourceOwner ? undefined : canonicalSnapshotMeta(prevNode);
+  const nextMeta = managedSourceOwner ? undefined : canonicalSnapshotMeta(nextNode);
+  const metadataChanged = !managedSourceOwner &&
+    ((prevMeta === undefined) !== (nextMeta === undefined) ||
+      (prevMeta !== undefined && nextMeta !== undefined && !shallowEqual(prevMeta, nextMeta)));
+  const rangeChanged = !managedSourceOwner && nextNode.range !== undefined &&
+    (prevNode.range?.from !== nextNode.range.from || prevNode.range?.to !== nextNode.range.to);
 
   const emitSetProps = () => {
-    if (!propsChanged) return;
+    if (!propsChanged && (managedSourceOwner || (!metadataChanged && !rangeChanged))) return;
+    const patchProps: Record<string, unknown> = propsChanged ? { ...nextProps } : {};
+    if (managedSourceOwner) {
+      delete patchProps.meta;
+      delete patchProps.range;
+    } else {
+      if (nextNode.range) patchProps.range = { ...nextNode.range };
+      patchProps.meta = nextMeta ?? null;
+    }
     patches.push({
       op: "setProps",
       at: { blockId, nodeId: prevNode.id },
-      props: nextProps ?? {},
+      props: patchProps,
     });
   };
 
@@ -549,78 +626,19 @@ export function diffNodeSnapshot(
 
   if (prevNode.type === "list" && nextNode.type === "list") {
     emitSetProps();
-    diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics, counters);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      diffListChildrenWithOwner(blockId, prevNode, prevChildren, nextChildren, patches, metrics, managedSourceOwner, counters);
+    } else {
+      diffListChildrenWithOwner(blockId, prevNode, prevChildren, nextChildren, patches, metrics, managedSourceOwner);
+    }
     return;
   }
 
-  // Special handling for code blocks: detect pure append and emit appendLines.
-  // Defer the code-block setProps until after child mutations so the renderer
-  // store does not normalize the code subtree before an appendLines patch lands.
-  if (prevNode.type === "code" && nextNode.type === "code") {
-    const commonLength = Math.min(prevChildren.length, nextChildren.length);
-    let divergeIndex = 0;
-    while (divergeIndex < commonLength && prevChildren[divergeIndex].id === nextChildren[divergeIndex].id) {
-      diffNodeSnapshot(blockId, prevChildren[divergeIndex], nextChildren[divergeIndex], patches, metrics);
-      divergeIndex++;
-    }
 
-    const onlyAppend =
-      divergeIndex === prevChildren.length &&
-      nextChildren.length >= prevChildren.length &&
-      prevChildren.every((child, idx) => child.id === nextChildren[idx].id);
-
-    if (onlyAppend && nextChildren.length > prevChildren.length && canEmitAppendLinesPatch(prevNode, nextNode, divergeIndex)) {
-      const startIndex = prevChildren.length;
-      const appended = nextChildren.slice(startIndex);
-      const hasTokenLines = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens"));
-      const hasDiffKind = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind"));
-      const hasOldNo = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "oldNo"));
-      const hasNewNo = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "newNo"));
-      patches.push({
-        op: "appendLines",
-        at: { blockId, nodeId: prevNode.id },
-        startIndex,
-        lines: appended.map((child) => {
-          const text = typeof child.props?.text === "string" ? (child.props?.text as string) : "";
-          return text;
-        }),
-        highlight: appended.map((child) => (typeof child.props?.html === "string" ? (child.props?.html as string) : null)),
-        ...(hasTokenLines
-          ? {
-              tokens: appended.map((child) =>
-                Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens") ? (child.props?.tokens as TokenLineV1 | null) : null,
-              ),
-            }
-          : {}),
-        ...(hasDiffKind
-          ? {
-              diffKind: appended.map((child) =>
-                Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind") ? (child.props?.diffKind as DiffLineKind | null) : null,
-              ),
-            }
-          : {}),
-        ...(hasOldNo
-          ? {
-              oldNo: appended.map((child) =>
-                Object.prototype.hasOwnProperty.call(child.props ?? {}, "oldNo") ? (child.props?.oldNo as number | null) : null,
-              ),
-            }
-          : {}),
-        ...(hasNewNo
-          ? {
-              newNo: appended.map((child) =>
-                Object.prototype.hasOwnProperty.call(child.props ?? {}, "newNo") ? (child.props?.newNo as number | null) : null,
-              ),
-            }
-          : {}),
-      });
-      metrics?.recordAppendLines(appended.length);
-      emitSetProps();
-      return;
-    }
-
-    // Fall through to generic handling for other mutations (edits/deletes)
-  } else {
+  // Code snapshots use generic child operations; apply container props after
+  // their line structure is updated.
+  const isCodeNode = prevNode.type === "code" && nextNode.type === "code";
+  if (!isCodeNode) {
     emitSetProps();
   }
 
@@ -631,7 +649,7 @@ export function diffNodeSnapshot(
       counters?.recordPrefixComparisons?.(1, "patch");
     }
     if (prevChildren[prefix].id !== nextChildren[prefix].id) break;
-    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
+    diffOrReplaceChild(blockId, prevNode, prefix, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner, counters);
     prefix++;
   }
 
@@ -643,7 +661,7 @@ export function diffNodeSnapshot(
     const prevIdx = prevChildren.length - 1 - suffix;
     const nextIdx = nextChildren.length - 1 - suffix;
     if (prevChildren[prevIdx].id !== nextChildren[nextIdx].id) break;
-    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
+    diffOrReplaceChild(blockId, prevNode, prevIdx, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner, counters);
     suffix++;
   }
 
@@ -651,7 +669,7 @@ export function diffNodeSnapshot(
   const nextMid = nextChildren.slice(prefix, nextChildren.length - suffix);
 
   if (prevMid.length === 0 && nextMid.length === 0) {
-    if (prevNode.type === "code" && nextNode.type === "code") {
+    if (isCodeNode) {
       emitSetProps();
     }
     return;
@@ -689,11 +707,15 @@ export function diffNodeSnapshot(
       }
 
       const prevMap = new Map(prevMid.map((child) => [child.id, child]));
-      for (const child of nextMid) {
+      for (let index = 0; index < nextMid.length; index++) {
+        const child = nextMid[index];
         const previous = prevMap.get(child.id);
         if (previous) {
-          diffNodeSnapshot(blockId, previous, child, patches, metrics);
+          diffOrReplaceChild(blockId, prevNode, prefix + index, previous, child, patches, metrics, managedSourceOwner, counters);
         }
+      }
+      if (isCodeNode) {
+        emitSetProps();
       }
       return;
     }
@@ -716,7 +738,7 @@ export function diffNodeSnapshot(
     });
   }
 
-  if (prevNode.type === "code" && nextNode.type === "code") {
+  if (isCodeNode) {
     emitSetProps();
   }
 }

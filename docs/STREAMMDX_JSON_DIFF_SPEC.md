@@ -23,7 +23,8 @@ HTML/web pipeline.
 
 ## 4) Current State (Summary)
 - Worker emits `WorkerOut` messages with `PATCH` and `Patch[]`.
-- Patch protocol supports `appendLines` with `highlight` HTML line fragments.
+- Patch protocol uses source-owned `appendCode` and `decorateCode` for native
+  code updates and retains cold `Block[]` snapshots as initialization baselines.
 - Node snapshots are generic (`type: string`, `props: Record<string, unknown>`).
 - Incremental Shiki exists in `stream-mdx/packages/markdown-v2-worker/src/worker.ts`.
 - React store normalizes code-line props (`text`, `html`) and drops other props.
@@ -40,11 +41,11 @@ HTML/web pipeline.
 - Bounded performance under streaming loads.
 - Backwards compatibility with existing web pipeline.
 
-## 6) Protocol v1
+## 6) Protocol v2
 ### 6.1 Event Envelope
 All events must include:
 - `protocol`: `"streammdx"`
-- `schemaVersion`: `"1.0"`
+- `schemaVersion`: `"2.0"`
 - `streamId`: string (uuid)
 - `event`: `"init" | "snapshot" | "patch" | "metrics" | "error" | "done"`
 - `tx`: number (monotonic for `patch` events; optional otherwise)
@@ -53,7 +54,7 @@ Example:
 ```json
 {
   "protocol": "streammdx",
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "streamId": "a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a",
   "event": "patch",
   "tx": 42,
@@ -65,6 +66,9 @@ Example:
 Include capability negotiation and theme metadata.
 ```json
 {
+  "protocol": "streammdx",
+  "schemaVersion": "2.0",
+  "streamId": "a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a",
   "event": "init",
   "capabilities": {
     "tokens": "v1",
@@ -76,22 +80,49 @@ Include capability negotiation and theme metadata.
 }
 ```
 
-### 6.3 Done Event
+### 6.3 Snapshot Event
+Snapshot events publish the root `NodeSnapshot` used to establish or replace
+the live document:
+```json
+{
+  "protocol": "streammdx",
+  "schemaVersion": "2.0",
+  "streamId": "a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a",
+  "event": "snapshot",
+  "snapshot": {
+    "id": "__root__",
+    "type": "__root__",
+    "range": { "from": 0, "to": 0 },
+    "inputSource": { "generation": 7, "raw": "" },
+    "props": {},
+    "children": []
+  }
+}
+```
+
+Live snapshot events must include the complete root `inputSource` baseline,
+including when `raw` is empty. A worker `INITIALIZED` message also carries a
+generation, which must equal the baseline generation. Live consumers reject a
+missing or mismatched baseline before replacing prior state. Cold standalone
+snapshots may omit this field and retain only honest per-block source slices.
+
+### 6.4 Done Event
 Explicit end-of-stream semantics:
 ```json
 { "event": "done", "finalTx": 128, "status": "ok" }
 ```
 
-### 6.4 Compatibility Rules
+### 6.5 Compatibility Rules
 - New fields are additive only in minor versions.
 - Consumers must ignore unknown fields and unknown node types.
 - Breaking changes require a major schema version bump.
+- Missing or mismatched live `inputSource` is an incompatible producer, not a reason to reconstruct the document from block snapshots.
 
 ## 7) Node Taxonomy and Props
 ### 7.1 Root
 - `id`: `"__root__"`
-- `type`: `"root"`
-- `children`: block ids
+- `type`: `"__root__"`
+- `children`: `NodeSnapshot` children
 
 ### 7.2 Core Block Types (Minimum)
 - `paragraph`, `heading`, `blockquote`
@@ -246,20 +277,75 @@ If the code fence is `diff` without a base language, treat as text and apply
 diff markers only. Optional base language can be inferred from file headers.
 
 ## 10) Patch Extensions
-Extend `appendLines` patches to carry tokens and diff metadata:
+### Root Input Retention
+
+Live initialization carries the full root input baseline. Each later worker
+admission emits one ordered semantic root operation:
+
 ```ts
-type AppendLinesPatchV1 = {
-  op: "appendLines";
-  at: NodePath;
-  startIndex: number;
-  lines: string[];
-  highlight?: (string | null)[];
-  tokens?: (TokenLineV1 | null)[];
-  diffKind?: ("add" | "del" | "context" | "hunk" | "meta" | null)[];
-  oldNo?: (number | null)[];
-  newNo?: (number | null)[];
+type AppendInputSourcePatch = {
+  op: "appendInputSource";
+  at: { blockId: "__root__" };
+  generation: number;
+  from: number;
+  text: string;
+  meta?: PatchMeta;
 };
 ```
+
+`from` is the current UTF-16 input length and `text` contains only newly
+admitted bytes. Consumers validate both before appending. This operation is not
+coalesced or reordered, but it does not rebuild semantic children or prove
+owner progress. Owner generations are independent from root input generation.
+Native `sourceAppend` values are exact newly owned authored suffixes validated
+against the root input; a suffix may include an LF retained by an earlier root
+append.
+
+Managed code blocks use the shared `Patch` union's source-owned operations.
+`appendCode` atomically advances the owner revision, replaces the unfinished
+tail beginning at `fromLine`, and carries the exact `sourceAppend` suffix with
+updated code metadata and line records. `decorateCode` applies
+revision-matched decoration updates without changing source text, line
+topology, or lifecycle. Cold `Block[]` snapshots remain valid initialization
+and replacement baselines; their code-line text, styles, and diff metadata
+retain their static snapshot meaning.
+
+Managed GFM tables use the same versioned `Patch[]` transport:
+
+```ts
+type AppendTableRowsPatch = {
+  op: "appendTableRows";
+  at: NodePath;
+  table: TableBlockSourceMetadata;
+  expectedRevision: number;
+  fromRow: number;
+  rows: readonly TableRowRecord[];
+  sourceAppend: string;
+  meta?: PatchMeta;
+};
+
+type UpdateTableRowsPatch = {
+  op: "updateTableRows";
+  at: NodePath;
+  tableOwnerId: string;
+  generation: number;
+  expectedRevision: number;
+  revision: number;
+  updates: readonly { index: number; expectedSourceRevision: number; row: TableRowRecord }[];
+  header?: TableHeaderRecord;
+  meta?: PatchMeta;
+};
+```
+
+`appendTableRows` is an atomic semantic tail transaction. `updateTableRows` is
+an atomic semantic dependency update; only inline meaning may change, while
+row/header source identities, raw slices and ranges remain stable. The optional
+header supports a header-only invalidation with `updates: []`. Managed table
+source and rows travel on `NodeSnapshot.table`; routine patches do not resend
+completed rows. The Core `applyPatchBatch` reducer and TUI snapshot store consume
+the declared `Patch` union directly.
+The Core reducer derives native headers, rows, alignment and exact authored raw from this record. `TableHeaderRecord.sourceRange` spans native header start through delimiter end, excluding the delimiter EOL. The table view keeps a bounded immutable source prefix over a private append-only log; retraction never deletes logged bytes, and re-extension validates only unfinished-tail overlap. It does not build a synthetic table child tree.
+`closed` table blocks are committed while document input may continue; this is distinct from worker `FINALIZED`. Same-generation `updateTableRows` is rejected for finalized owners.
 
 ## 11) Transport
 ### 11.1 Default Transport

@@ -66,8 +66,11 @@ Notes:
 If you are not using `<StreamingMarkdown />` (e.g. you build a custom renderer loop), initialize the worker with matching flags:
 
 ```ts
+import { STREAM_MDX_SCHEMA_VERSION } from "stream-mdx/core";
+
 worker.postMessage({
   type: "INIT",
+  schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   prewarmLangs: ["typescript", "bash"],
   docPlugins: {

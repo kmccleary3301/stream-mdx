@@ -68,7 +68,8 @@ export function makeEngine(
   });
 }
 
-export function workerFactory(onTokenizeRange?: (blockId: string) => void): Worker {
+/** `onTokenizeRange` may return a gate; the request reaches the worker once it settles. */
+export function workerFactory(onTokenizeRange?: (blockId: string) => void | Promise<void>): Worker {
   const worker = createInlineEngineWorker() as unknown as Worker;
   if (onTokenizeRange) {
     const postMessage = worker.postMessage.bind(worker);
@@ -83,7 +84,11 @@ export function workerFactory(onTokenizeRange?: (blockId: string) => void): Work
           "blockId" in message &&
           typeof message.blockId === "string"
         ) {
-          onTokenizeRange(message.blockId);
+          const gate = onTokenizeRange(message.blockId);
+          if (gate) {
+            void gate.then(() => postMessage(message as Parameters<typeof worker.postMessage>[0]));
+            return;
+          }
         }
         postMessage(message as Parameters<typeof worker.postMessage>[0]);
       },

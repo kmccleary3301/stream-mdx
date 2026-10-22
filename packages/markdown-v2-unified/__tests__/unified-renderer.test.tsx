@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import React from "react";
 import ReactDOMServer from "react-dom/server";
@@ -33,18 +35,49 @@ async function compileBlocks(text: string): Promise<ReadonlyArray<Block>> {
   let finalized = false;
   const engine = new MarkdownEngine({
     post(message) {
-      if (message.type === "INITIALIZED") store.reset(message.blocks);
+      if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
       if (message.type === "PATCH") store.applyPatches(message.patches);
       if (message.type === "ERROR") throw new Error(message.error.message);
       if (message.type === "FINALIZED") finalized = true;
     },
   });
   try {
-    await engine.handle({ type: "INIT", initialContent: text, prewarmLangs: [] });
+    await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: text, prewarmLangs: [] });
     await engine.handle({ type: "SET_CREDITS", credits: 10000 });
     await engine.handle({ type: "FINALIZE" });
     assert.ok(finalized, "Compiler must reach terminal FINALIZED");
     return store.getBlocks();
+  } finally {
+    engine.dispose();
+  }
+}
+async function compileBlocksWithAppend(
+  initialContent: string,
+  appendedContent: string,
+): Promise<{
+  readonly beforeDefinition: ReadonlyArray<Block>;
+  readonly afterDefinition: ReadonlyArray<Block>;
+  readonly blocks: ReadonlyArray<Block>;
+}> {
+  const store = createRendererStore();
+  let finalized = false;
+  const engine = new MarkdownEngine({
+    post(message) {
+      if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
+      if (message.type === "PATCH") store.applyPatches(message.patches);
+      if (message.type === "ERROR") throw new Error(message.error.message);
+      if (message.type === "FINALIZED") finalized = true;
+    },
+  });
+  try {
+    await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent, prewarmLangs: [] });
+    await engine.handle({ type: "SET_CREDITS", credits: 10000 });
+    const beforeDefinition = store.getBlocks();
+    await engine.handle({ type: "APPEND", text: appendedContent });
+    const afterDefinition = store.getBlocks();
+    await engine.handle({ type: "FINALIZE" });
+    assert.ok(finalized, "Compiler must reach terminal FINALIZED");
+    return { beforeDefinition, afterDefinition, blocks: store.getBlocks() };
   } finally {
     engine.dispose();
   }
@@ -72,7 +105,7 @@ async function runTests() {
       "## Quick Start Guide\n\nSetext **heading**\n===\n\n###### *emphasis*\n\nFoo **bold**\nbar *soft*\n===\n\nSecond *heading*\nwith **continuation**\n---\n\n## # literal **heading**\n\n\\# literal *start*\ncontinued **body**\n---",
     );
     const heading = blocks.find((block) => block.type === "heading");
-    assert.strictEqual(heading?.payload.raw, "Quick Start Guide");
+    assert.strictEqual(heading?.payload.raw, "## Quick Start Guide");
     assert.strictEqual(heading?.payload.meta?.headingLevel, 2);
     const html = ReactDOMServer.renderToStaticMarkup(
       React.createElement(MarkdownBlocksRenderer, { blocks, blockRenderer: unifiedRenderer }),
@@ -100,18 +133,33 @@ async function runTests() {
     console.log("✓ Test 1 passed: Finalized heading received id attribute from rehype-slug synchronously");
   }
 
-  // Test 3: reference links resolve inside a routed paragraph using meta.linkReferences
+  // Test 3: late reference definitions reach the cold export and unified renderer
   {
-    console.log("Test 3: reference links resolve inside a routed paragraph...");
+    console.log("Test 3: late reference definitions reach the cold export...");
     const unifiedRenderer = createUnifiedRenderer({
       components: {
         a: (props) => React.createElement("a", { ...props, className: "custom-ref-link" }),
       },
     });
 
-    const blocks = await compileBlocks(
-      'Visit [stream-docs] for more.\n\n[stream-docs]: https://stream-mdx.dev "Official Docs"',
+    const { beforeDefinition, afterDefinition, blocks } = await compileBlocksWithAppend(
+      "Visit [stream-docs] for more.\n\n",
+      '[stream-docs]: https://stream-mdx.dev "Official Docs"\n',
     );
+    const beforeParagraph = beforeDefinition.find((block) => block.type === "paragraph");
+    assert.ok(beforeParagraph, "Cold export contains the paragraph owner before its definition");
+    assert.strictEqual(beforeParagraph.payload.meta?.linkReferences, undefined,
+      "The unresolved source does not publish a definition that has not arrived");
+    const updatedParagraph = afterDefinition.find((block) => block.type === "paragraph");
+    assert.ok(updatedParagraph, "Cold export retains the paragraph after its definition arrives");
+    assert.deepStrictEqual(updatedParagraph.payload.meta?.linkReferences, [
+      { label: "stream-docs", href: "https://stream-mdx.dev", title: "Official Docs" },
+    ], "The definition must reach the paragraph through the PATCH export");
+    const paragraph = blocks.find((block) => block.type === "paragraph");
+    assert.ok(paragraph, "Final cold export contains the paragraph owner");
+    assert.ok(paragraph.payload.inline?.some((node) =>
+      node.kind === "link" && node.href === "https://stream-mdx.dev" && node.title === "Official Docs",
+    ), "Cold export also carries the resolved reference in inline owner data");
     const html = ReactDOMServer.renderToStaticMarkup(
       React.createElement(MarkdownBlocksRenderer, { blocks, blockRenderer: unifiedRenderer }),
     );
@@ -130,7 +178,7 @@ async function runTests() {
       /class="custom-ref-link"/,
       "Custom component mapping should be applied to resolved link",
     );
-    console.log("✓ Test 3 passed: Reference links resolve properly using block.payload.meta.linkReferences");
+    console.log("✓ Test 3 passed: Late references remain available to unified through the cold export");
   }
 
   // Real one-character transport updates reach the store and mounted consumer.
@@ -166,7 +214,7 @@ async function runTests() {
     worker.onmessage = (event: MessageEvent<WorkerOut>) => {
       const message = event.data;
       if (message.type === "INITIALIZED") {
-        store.reset(message.blocks);
+        store.resetSnapshot(message.snapshot);
         initialized = true;
       } else if (message.type === "PATCH") {
         store.applyPatches(message.patches);
@@ -184,22 +232,21 @@ async function runTests() {
         store,
         blockRenderer: createUnifiedRenderer(options),
       }));
-      worker.postMessage({ type: "INIT", initialContent: "", prewarmLangs: [] });
+      worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", prewarmLangs: [] });
       await waitUntil(() => initialized || failure !== undefined, "INITIALIZED");
       if (failure) throw failure;
       worker.postMessage({ type: "SET_CREDITS", credits: 10000 });
       for (const character of text) worker.postMessage({ type: "APPEND", text: character });
+      // The unfinished tail renders closed inline spans through the normal streaming renderer.
       await waitUntil(
-        () => failure !== undefined || container.querySelector(".markdown-renderer > p:last-child")?.textContent === "Tail **text**",
+        () => failure !== undefined || container.querySelector(".markdown-renderer > p:last-child")?.textContent === "Tail text",
         "provisional tail DOM",
       );
       if (failure) throw failure;
       assert.ok(patchCount > 1, "Character APPEND messages must produce incremental patches");
       assert.ok(store.getBlocks().some((block) => !block.isFinalized), "Tail must remain provisional");
-      assert.ok(container.querySelector(".markdown-renderer > p:last-child")?.classList.contains("streaming-partial"),
+      assert.strictEqual(container.querySelector(".markdown-renderer > p:last-child strong")?.textContent, "text",
         "Provisional DOM must use the normal streaming renderer, not the uppercase plugin");
-      assert.strictEqual(container.querySelector(".markdown-renderer > p:last-child strong"), null,
-        "Default renderer without format anticipation retains provisional markdown markers");
       assert.ok(!finalized, "Provisional assertion must precede terminal finalization");
       worker.postMessage({ type: "FINALIZE" });
       await waitUntil(() => finalized || failure !== undefined, "FINALIZED");

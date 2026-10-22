@@ -46,20 +46,22 @@ This is the preferred deployment path for explicit CSP control and predictable s
 
 ```ts
 import { MarkdownEngine } from "@stream-mdx/worker/engine";
-import type { WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "@stream-mdx/core";
 
 const messages: WorkerOut[] = [];
 const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
-await engine.handle({ type: "INIT" });
+await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION });
 await engine.handle({ type: "APPEND", text: "# Hello" });
 await engine.handle({ type: "FINALIZE" });
-await engine.handle({ type: "INIT", initialContent: "A new document" });
+await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "A new document" });
 engine.dispose();
 ```
 
 Each engine owns document state and emits protocol messages through `post`. A new `INIT` resets the document while retaining instance extensions. Constructor options are `{ post, extensions? }`; flags and HTML settings belong in `INIT`.
 
 Provisional paragraph, heading, and native list/blockquote owners retain `inlineContainerSignature`, `inlineLookahead`, and `mixedLookahead` metadata. Nested decisions identify their actual ancestor containers; list and blockquote metadata summarize descendant decisions without changing those decision signatures. Re-enrichment marks changed signatures with `inlineLookaheadInvalidated`, and finalization removes provisional lookahead metadata. These decisions use each engine's document configuration and reset on `INIT`.
+
+Open native list and blockquote dumps and Core cold exports preserve their current nested children. Nested code, table, and paragraph leaves update through their existing owner patch families and generic child patches; authored container ranges remain physical UTF-16 offsets in the canonical input document.
 
 Bundle native functions with `serveMarkdownWorker({ extensions })`. For in-process use, `createInlineEngineWorker({ extensions })` returns a Worker-compatible adapter with microtask delivery and `terminate()`. Extensions accept `markdown`, `inline`, `documentPlugins`, and serializable `syntax` arrays. See the [complete custom worker entry](../../docs/PLUGIN_ABI.md#3-custom-bundled-worker-entry). The published engine entry is pre-built for the worker realm with DOM-free MDX dependencies, so browser-targeted bundlers (the documented esbuild `--platform=browser` command) produce a worker that boots without `document`/`DOMParser` shims, aliases, or extra configuration.
 

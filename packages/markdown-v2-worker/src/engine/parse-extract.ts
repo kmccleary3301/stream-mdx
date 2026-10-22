@@ -1,18 +1,22 @@
 import type { SyntaxNode } from "@lezer/common";
 import { parser as nativeParser, type MarkdownParser } from "@lezer/markdown";
-import type {
-  Block,
-  InlineNode,
-  InlineParser,
-  MixedContentSegment,
-  Patch,
-  ProtectedRange,
-  TocHeading,
+import {
+  freezeTableBlockSnapshot,
+  PATCH_ROOT_ID,
+  type Block,
+  type InlineNode,
+  type InlineParser,
+  type MixedContentSegment,
+  type Patch,
+  type ProtectedRange,
+  type SourceSnapshot,
+  type TableBlockSnapshot,
+  type TableRowRecord,
+  type TocHeading,
 } from "@stream-mdx/core";
-import { PATCH_ROOT_ID } from "@stream-mdx/core";
-import { parseTableCellInline } from "./table-cell-inline";
+import { createNativeTableHeaderRecord, createNativeTableRowRecordFromNode, isNativeTableRowTerminated } from "./native-table-projection";
+import type { TableCellAttemptRecorder } from "./native-table-projection";
 import type { ContentChangeRange } from "./types";
-
 /** Withhold only an unfinished matching fence marker from provisional code. */
 export function trimProvisionalFenceTail(raw: string): string {
   const normalized = raw.replace(/\r\n?/g, "\n");
@@ -408,115 +412,101 @@ export function collectChangedBlockIds(previousBlocks: Block[], nextBlocks: Bloc
 }
 
 export function parseGfmTableFromTree(
-  raw: string,
+  tableNode: SyntaxNode,
+  source: SourceSnapshot,
+  sourceOffset: number,
+  tableOwnerId: string,
+  generation: number,
   inlineParser: InlineParser,
-  baseOffset?: number,
+  state: "open" | "closed" | "finalized",
+  finalizing: boolean,
+  recordAttempts?: TableCellAttemptRecorder,
 ): {
   header: InlineNode[][];
   align: ("left" | "center" | "right" | null)[];
   rows: InlineNode[][][];
-  headerCellSources?: string[];
-  rowCellSources?: string[][];
-  headerCellRanges?: Array<{ from: number; to: number } | undefined>;
-  rowCellRanges?: Array<Array<{ from: number; to: number } | undefined>>;
+  table: TableBlockSnapshot;
 } | null {
-  const lines: Array<{ value: string; from: number }> = [];
-  let lineFrom = 0;
-  for (const value of raw.split("\n")) {
-    if (value.trim().length > 0) lines.push({ value, from: lineFrom });
-    lineFrom += value.length + 1;
+  let headerNode: SyntaxNode | undefined;
+  let delimiterNode: SyntaxNode | undefined;
+  const children = tableNode.cursor();
+  if (!children.firstChild()) return null;
+  do {
+    if (children.type.name === "TableHeader") headerNode = children.node;
+    else if (children.type.name === "TableDelimiter") delimiterNode = children.node;
+  } while (children.nextSibling());
+  if (!headerNode || !delimiterNode) return null;
+
+  const header = createNativeTableHeaderRecord(
+    headerNode,
+    delimiterNode,
+    tableOwnerId,
+    source,
+    sourceOffset,
+    inlineParser,
+    recordAttempts,
+  );
+  const rowRecords: TableRowRecord[] = [];
+  const rowsCursor = tableNode.cursor();
+  if (rowsCursor.firstChild()) {
+    do {
+      if (rowsCursor.type.name !== "TableRow") continue;
+      const rowNode = rowsCursor.node;
+      const rowTo = rowNode.to + sourceOffset;
+      const isProvisional = state === "open" && !isNativeTableRowTerminated(source, rowTo, finalizing);
+      rowRecords.push(createNativeTableRowRecordFromNode(
+        rowNode,
+        sourceOffset,
+        rowRecords.length,
+        tableOwnerId,
+        header.cells.length,
+        source,
+        inlineParser,
+        isProvisional,
+        undefined,
+        recordAttempts,
+      ));
+    } while (rowsCursor.nextSibling());
   }
-  if (lines.length < 2) return null;
-  const headerLine = lines[0];
-  const delimLine = lines[1];
-  const bodyLines = lines.slice(2);
-  const hasSourceOffset = Number.isSafeInteger(baseOffset) && (baseOffset as number) >= 0;
 
-  const splitCells = (line: { value: string; from: number }): Array<{ value: string; range?: { from: number; to: number } }> => {
-    let trimmed = line.value.trim();
-    let sourceFrom = line.from + line.value.length - line.value.trimStart().length;
-    if (trimmed.startsWith("|")) {
-      trimmed = trimmed.slice(1);
-      sourceFrom++;
+  const sourceRange = { from: tableNode.from + sourceOffset, to: tableNode.to + sourceOffset };
+  let processedTo = rowRecords[rowRecords.length - 1]?.sourceRange.to ?? delimiterNode.to + sourceOffset;
+  while (processedTo < source.length) {
+    const unit = source.read(processedTo, processedTo + 1);
+    if (unit === " " || unit === "\t") {
+      processedTo += 1;
+      continue;
     }
-    if (trimmed.endsWith("|")) {
-      let count = 0;
-      let j = trimmed.length - 2;
-      while (j >= 0 && trimmed[j] === "\\") {
-        count++;
-        j--;
-      }
-      if (count % 2 === 0) {
-        trimmed = trimmed.slice(0, -1);
-      }
+    if (unit === "\n") {
+      processedTo += 1;
+      break;
     }
-
-    const cells: Array<{ value: string; range?: { from: number; to: number } }> = [];
-    let cellStart = 0;
-    let inCode = false;
-    const pushCell = (end: number) => {
-      const rawCell = trimmed.slice(cellStart, end);
-      const value = rawCell.trim();
-      const localFrom = sourceFrom + cellStart + rawCell.length - rawCell.trimStart().length;
-      cells.push({
-        value,
-        ...(hasSourceOffset && value.length > 0
-          ? { range: { from: (baseOffset as number) + localFrom, to: (baseOffset as number) + localFrom + value.length } }
-          : {}),
-      });
-    };
-    for (let i = 0; i < trimmed.length; i++) {
-      const ch = trimmed[i];
-      if (ch === "`") {
-        inCode = !inCode;
-      } else if (ch === "\\" && i + 1 < trimmed.length) {
-        i++;
-      } else if (ch === "|" && !inCode) {
-        pushCell(i);
-        cellStart = i + 1;
-      }
+    if (unit === "\r") {
+      if (processedTo + 1 < source.length && source.read(processedTo + 1, processedTo + 2) === "\n") processedTo += 2;
+      else if (processedTo + 1 < source.length || finalizing) processedTo += 1;
+      break;
     }
-    pushCell(trimmed.length);
-    return cells;
-  };
-
-  const headerCells = splitCells(headerLine);
-  const delimCells = splitCells(delimLine);
-  if (headerCells.length === 0 || delimCells.length === 0) return null;
-
-  const align: ("left" | "center" | "right" | null)[] = delimCells.map((cell) => {
-    const left = cell.value.startsWith(":");
-    const right = cell.value.endsWith(":");
-    if (left && right) return "center";
-    if (left) return "left";
-    if (right) return "right";
-    return null;
-  });
-
-  const parseCell = (cell: (typeof headerCells)[number]): InlineNode[] => {
-    const sourceOffset = cell.range?.from;
-    return parseTableCellInline(inlineParser, cell.value, sourceOffset === undefined ? {} : { sourceOffset });
-  };
-  const header = headerCells.map(parseCell);
-  const colCount = header.length;
-  const parsedRows = bodyLines.map((line) => {
-    const cells = splitCells(line);
-    while (cells.length < colCount) cells.push({ value: "" });
-    return cells.slice(0, colCount);
-  });
-  const rows = parsedRows.map((cells) => cells.map(parseCell));
-  const headerCellRanges = hasSourceOffset ? headerCells.map((cell) => cell.range) : undefined;
-  const rowCellRanges = hasSourceOffset ? parsedRows.map((row) => row.map((cell) => cell.range)) : undefined;
-
-  return {
+    break;
+  }
+  if (finalizing && processedTo === sourceRange.to && sourceRange.to === source.length) processedTo = source.length;
+  const frozenRows = Object.freeze(rowRecords);
+  const snapshot = freezeTableBlockSnapshot({
+    tableOwnerId,
+    generation,
+    revision: 0,
+    state,
+    processedTo,
+    completeRowCount: frozenRows.filter((row) => !row.isProvisional).length,
+    rowCount: frozenRows.length,
+    sourceRange,
     header,
-    align: align.slice(0, colCount),
-    rows,
-    ...(hasSourceOffset ? {
-      headerCellSources: headerCells.slice(0, colCount).map((cell) => cell.value),
-      rowCellSources: parsedRows.map((row) => row.slice(0, colCount).map((cell) => cell.value)),
-    } : {}),
-    ...(headerCellRanges ? { headerCellRanges } : {}),
-    ...(rowCellRanges ? { rowCellRanges } : {}),
+    rows: frozenRows,
+    raw: source.read(sourceRange.from, sourceRange.to),
+  });
+  return {
+    header: header.cells.map((cell) => cell.inline as InlineNode[]),
+    align: header.align.slice(),
+    rows: frozenRows.map((row) => row.cells.map((cell) => cell.inline as InlineNode[])),
+    table: snapshot,
   };
 }

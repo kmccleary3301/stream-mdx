@@ -1,87 +1,81 @@
-import { applyPatchBatch, createInitialSnapshot, type Block, type DocumentSnapshot, type Patch, type PatchMetrics } from "@stream-mdx/core";
-import type {
-  StreamMdxDoneEventV1,
-  StreamMdxErrorEventV1,
-  StreamMdxEventV1,
-  StreamMdxInitEventV1,
-  StreamMdxMetricsEventV1,
-  StreamMdxPatchEventV1,
-  StreamMdxSnapshotEventV1,
-} from "@stream-mdx/protocol";
+import { applyPatchBatch, createInitialSnapshot, type Block, type DocumentSnapshot, type NodeSnapshot, type Patch, type PatchMetrics } from "@stream-mdx/core";
+import { STREAM_MDX_PROTOCOL_ID, STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/protocol";
+import type { StreamMdxDoneEvent, StreamMdxErrorEvent, StreamMdxEvent, StreamMdxInitEvent } from "@stream-mdx/protocol";
 
 export type StreamMdxStoreMeta = {
-  init?: StreamMdxInitEventV1;
+  init?: StreamMdxInitEvent;
   lastTx?: number;
   metrics?: PatchMetrics;
-  error?: StreamMdxErrorEventV1;
-  done?: StreamMdxDoneEventV1;
+  error?: StreamMdxErrorEvent;
+  done?: StreamMdxDoneEvent;
 };
 
 export type StreamMdxSnapshotStore = {
   getSnapshot(): DocumentSnapshot;
   getBlocks(): Block[];
   getMeta(): StreamMdxStoreMeta;
-  setSnapshot(blocks: Block[]): Block[];
-  applyPatches(patches: Patch[]): Block[];
-  applyEvent(event: StreamMdxEventV1): Block[];
-  applyEvents(events: StreamMdxEventV1[]): Block[];
+  setSnapshot(input: Block[] | NodeSnapshot): void;
+  applyPatches(patches: Patch[]): void;
+  applyEvent(event: StreamMdxEvent): void;
+  applyEvents(events: StreamMdxEvent[]): void;
 };
 
-export function createSnapshotStore(initialBlocks: Block[] = []): StreamMdxSnapshotStore {
-  let snapshot = createInitialSnapshot(initialBlocks);
+const snapshotFrom = (input: Block[] | NodeSnapshot): DocumentSnapshot =>
+  Array.isArray(input) ? createInitialSnapshot(input) : createInitialSnapshot(input);
+
+export function createSnapshotStore(initial: Block[] | NodeSnapshot = []): StreamMdxSnapshotStore {
+  let snapshot = snapshotFrom(initial);
   const meta: StreamMdxStoreMeta = {};
 
-  const setSnapshot = (blocks: Block[]): Block[] => {
-    snapshot = createInitialSnapshot(blocks ?? []);
-    return snapshot.blocks;
+  const setSnapshot = (input: Block[] | NodeSnapshot): void => {
+    snapshot = snapshotFrom(input);
   };
 
-  const applyPatches = (patches: Patch[]): Block[] => {
-    return applyPatchBatch(snapshot, patches ?? []);
+  const applyPatches = (patches: Patch[]): void => {
+    applyPatchBatch(snapshot, patches);
   };
 
-  const applyEvent = (event: StreamMdxEventV1): Block[] => {
-    if (!event || typeof event !== "object") {
-      return snapshot.blocks;
+  const applyEvent = (event: StreamMdxEvent): void => {
+    if (event.protocol !== STREAM_MDX_PROTOCOL_ID || event.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
+      throw new Error(`Unsupported stream-mdx wire identity: ${event.protocol}/${event.schemaVersion}`);
     }
     switch (event.event) {
       case "init":
-        meta.init = event as StreamMdxInitEventV1;
-        return snapshot.blocks;
-      case "snapshot":
-        return setSnapshot((event as StreamMdxSnapshotEventV1).blocks ?? []);
-      case "patch": {
-        const patchEvent = event as StreamMdxPatchEventV1;
-        if (typeof patchEvent.tx === "number") {
-          meta.lastTx = patchEvent.tx;
-        }
-        return applyPatches(patchEvent.patches ?? []);
+        meta.init = event;
+        break;
+      case "snapshot": {
+        const inputSource = event.snapshot.inputSource;
+        if (
+          !Number.isSafeInteger(inputSource?.generation) ||
+          (inputSource?.generation ?? -1) < 0 ||
+          typeof inputSource?.raw !== "string"
+        ) throw new Error("Incompatible stream-mdx snapshot: canonical input baseline is missing or invalid");
+        setSnapshot(event.snapshot);
+        break;
       }
+      case "patch":
+        applyPatches(event.patches);
+        meta.lastTx = event.tx;
+        break;
       case "metrics":
-        meta.metrics = (event as StreamMdxMetricsEventV1).metrics;
-        return snapshot.blocks;
+        meta.metrics = event.metrics;
+        break;
       case "error":
-        meta.error = event as StreamMdxErrorEventV1;
-        return snapshot.blocks;
+        meta.error = event;
+        break;
       case "done":
-        meta.done = event as StreamMdxDoneEventV1;
-        return snapshot.blocks;
-      default:
-        return snapshot.blocks;
+        meta.done = event;
+        break;
     }
   };
 
-  const applyEvents = (events: StreamMdxEventV1[]): Block[] => {
-    let blocks = snapshot.blocks;
-    for (const event of events) {
-      blocks = applyEvent(event);
-    }
-    return blocks;
+  const applyEvents = (events: StreamMdxEvent[]): void => {
+    for (const event of events) applyEvent(event);
   };
 
   return {
     getSnapshot: () => snapshot,
-    getBlocks: () => snapshot.blocks,
+    getBlocks: () => snapshot.getBlocks(),
     getMeta: () => ({ ...meta }),
     setSnapshot,
     applyPatches,
@@ -102,7 +96,7 @@ export function encodeNdjsonEvents<T>(events: Iterable<T>): string {
   return output;
 }
 
-export function decodeNdjson<T = StreamMdxEventV1>(input: string): T[] {
+export function decodeNdjson<T = StreamMdxEvent>(input: string): T[] {
   if (!input) return [];
   const lines = input.split(/\r?\n/);
   const result: T[] = [];
@@ -114,7 +108,7 @@ export function decodeNdjson<T = StreamMdxEventV1>(input: string): T[] {
   return result;
 }
 
-export class NdjsonDecoder<T = StreamMdxEventV1> {
+export class NdjsonDecoder<T = StreamMdxEvent> {
   private buffer = "";
   private decoder: TextDecoder | null;
 

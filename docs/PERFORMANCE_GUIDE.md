@@ -11,7 +11,7 @@ Captured in `patchStats` (automation API + capture summaries):
 
 - `totalOps`, `totalMessages`
 - `opsPerKB`, `messagesPerKB` (normalized)
-- per‑op counts (appendLines, setProps, insertChild, etc.)
+- per-op counts for current patch operations (appendCode, decorateCode, setProps, insertChild, etc.)
 
 ### Paint cadence
 From the demo automation API and capture summary:
@@ -30,6 +30,12 @@ Worker boot/parse/highlighter timings and fingerprints:
 
 - `bootMs`, `parseMs`, `highlighterMs`
 - dev fingerprints in worker bundle are captured by `dump-browser-html.ts`
+
+### Diagnostic work counters
+
+Use `scripts/perf/build-diagnostic-bundle.ts` for private campaign work counters, not the normal package build. Normal builds fold out counter reads, sink calls, diagnostic options and extra forwarded counter arguments. Inert private parameter names may remain in emitted JavaScript; a string-marker match alone does not prove executed bookkeeping.
+
+Work counts describe inspected source, records and prepared rows, not elapsed CPU time. Keep their source/artifact identities separate from production timing evidence.
 
 ---
 
@@ -83,16 +89,18 @@ Use `liveCodeHighlighting` sparingly; it can spike CPU on large blocks.
 
 ## 4) Code Virtualization
 
-Large code blocks are windowed to reduce DOM cost.
+Large code blocks are windowed to limit mounted DOM rows. Geometry and native row preparation are separate owners:
 
+- `useVirtualizedCode` in `packages/markdown-v2-react/src/renderer/virtualized-code.tsx` owns viewport geometry and scroll behavior only.
+- `CodeLineRangeView` in `packages/markdown-v2-react/src/renderer/code-line-range.tsx` subscribes to fixed 64-row store ranges and prepares native rows. Completed range snapshots remain stable across tail appends.
+- Below the virtualization threshold, or when virtualization is explicitly disabled, the geometry range covers the full code block; native rendering still includes every row.
 - Config: `DEFAULT_VIRTUALIZED_CODE_CONFIG` in `packages/markdown-v2-react/src/renderer/virtualized-code.tsx`
 - Metrics emitted in capture summaries:
   - `virtualized`, `totalLines`, `mountedLines`, `windowSize`
 
-**Guidance**
+This owner split does not change the virtualization threshold or establish an efficiency claim. Compare actual mapped-row counters on the original campaign before making such a claim.
 
-- For documents with 500+ line blocks, keep virtualization enabled.
-- If you must disable it, set `STREAM_MDX_DISABLE_VIRTUALIZED_CODE=true`.
+The outer code frame is a `div`; native prepared rows render inside one semantic `pre`/`code` pair. Copy and download materialize the complete code body only when invoked. They use the same LF and closing-separator normalization as cold code metadata, while authored source exports retain original line endings. A language engine or legacy controls component that explicitly requests a full code string still pays that cold-read cost.
 
 ---
 
@@ -102,7 +110,7 @@ Patch coalescing reduces redundant patch applications (especially lists/tables).
 
 - Metrics available in capture summary: input/output counts, coalesced count, operation counts, reduction percentage, and coalescing duration.
 - Start the docs app with `npm run docs:dev`, then run `npm run test:snippets` (default URL `http://localhost:3000/regression/snippet-test`; override with `SNIPPET_TEST_URL`). The analyzer reports each real-snippet reduction in `tmp/snippet_analysis/performance-metrics.json` and `analysis-report.json`; no per-snippet percentage is a pass/fail threshold.
-- The analyzer requires complete totals: all six patch-count fields must be finite non-negative integers, duration must be finite and non-negative, `input = output + coalesced`, and the combined appendLines/setProps/insertChild counts cannot exceed `input`. Missing, invalid, or inconsistent totals fail analysis.
+- The analyzer requires complete totals: all five patch-count fields must be finite non-negative integers, duration must be finite and non-negative, `input = output + coalesced`, and the combined setProps/insertChild counts cannot exceed `input`. Missing, invalid, or inconsistent totals fail analysis.
 - The separate controlled React regression retains the 10% minimum for 60 deliberately redundant title updates and asserts the final consumer title is exactly `value-59`. Full consumer replay checks raw, linear, and quadratic results independently of real-snippet telemetry.
 
 The existing default coalescing-duration p95 guard remains 8 ms: a higher p95 fails. It uses all eligible samples in the demo's retained flush-batch window (300 in production, 1,000 otherwise), not all-ever batches or a minimum sample quota. The scheduler intentionally skips coalescing for singleton patch batches; every retained multi-patch batch must include a finite, non-negative coalescing duration. Missing or invalid duration data fails the guard. With no duration samples, true no-work telemetry warns as not applicable; otherwise the guard fails. Unsuppressed warnings also make the analyzer exit non-zero.

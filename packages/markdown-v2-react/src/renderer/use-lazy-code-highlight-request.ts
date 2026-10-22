@@ -1,11 +1,12 @@
 import React from "react";
 import { useCodeHighlightRequester } from "./code-highlight-context";
-import type { NodeRecord, RendererStore } from "./store";
+import type { RendererStore } from "./store";
+import { getStoreResetVersion } from "./store-reset-version";
 
 type LazyCodeHighlightRequestOptions = {
+  store: RendererStore;
   blockId: string;
-  // The store root is stable across patches and replaced by reset.
-  documentIdentity: NodeRecord | RendererStore;
+  resetVersion: number;
   blockEpoch: number;
   blockIsFinalized: boolean;
   lazyEnabled: boolean;
@@ -15,8 +16,9 @@ type LazyCodeHighlightRequestOptions = {
 };
 
 export function useLazyCodeHighlightRequest({
+  store,
   blockId,
-  documentIdentity,
+  resetVersion,
   blockEpoch,
   blockIsFinalized,
   lazyEnabled,
@@ -29,7 +31,7 @@ export function useLazyCodeHighlightRequest({
     blockId: string;
     endLine: number;
     tokenizedUntil: number;
-    documentIdentity: NodeRecord | RendererStore;
+    resetVersion: number;
     blockEpoch: number;
   } | null>(null);
   const rafRef = React.useRef<number | null>(null);
@@ -40,7 +42,7 @@ export function useLazyCodeHighlightRequest({
 
     const last = lastRangeRef.current;
     if (
-      last?.documentIdentity === documentIdentity &&
+      last?.resetVersion === resetVersion &&
       last.blockEpoch === blockEpoch &&
       last.blockId === blockId &&
       last.endLine === totalLazyLineCount &&
@@ -52,13 +54,14 @@ export function useLazyCodeHighlightRequest({
       blockId,
       endLine: totalLazyLineCount,
       tokenizedUntil: lazyTokenizedUntil,
-      documentIdentity,
+      resetVersion,
       blockEpoch,
     };
     lastRangeRef.current = nextRange;
 
     const requestFullHighlight = () => {
       rafRef.current = null;
+      if (getStoreResetVersion(store) !== resetVersion) return;
       highlightRequester({
         blockId,
         startLine: 0,
@@ -82,11 +85,12 @@ export function useLazyCodeHighlightRequest({
     blockId,
     blockIsFinalized,
     blockEpoch,
-    documentIdentity,
+    resetVersion,
     highlightRequester,
     lazyEnabled,
     lazyTokenizedUntil,
     shouldVirtualize,
+    store,
     totalLazyLineCount,
   ]);
 }

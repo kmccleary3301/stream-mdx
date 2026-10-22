@@ -43,7 +43,7 @@ Final HTML remains byte-for-byte compared outside canonicalizable inline style d
 ### Source-owned release boundaries
 
 - `packages/markdown-v2-core/__tests__/lookahead-budget-boundaries.test.ts` covers provisional size limits and finalized-content preservation. Oversized provisional input falls back to literal source before token scanning; finalized complete content still renders its formatting.
-- `packages/markdown-v2-react/__tests__/virtualized-code-streaming-guard.test.ts` uses a real inline worker and mounted custom code consumer. Identical-source `INIT` with reused code IDs starts a fresh lazy-request lifetime; held replacement work leaves the new document unhighlighted, and releasing its real request renders the authored token rows. Pending requests remain cancellable on detach.
+- `packages/markdown-v2-react/__tests__/native-code-highlight-lifecycle.test.ts` mounts the native code owner with a language-specific `CodeFenceRenderer` and two real inline workers. Identical source reuses the code ID; a delayed highlight from the first engine must not decorate the replacement, while the replacement engine's real range request renders every authored styled row.
 - The snippet analyzer validates every retained coalescing batch before breakdown or release guardrails: six finite nonnegative integer counters, finite nonnegative duration, reconciled input/output counts, and operation counts bounded by input. Retained counter sums and coalescing-duration sums cannot exceed their respective aggregate totals; either may be lower because retained history is capped. A singleton may omit coalescing metrics because the scheduler skips that work. Missing counters never become zero observations, and reported coalescing work without retained samples fails.
 
 ### Seed coverage and eligibility
@@ -55,6 +55,27 @@ Unseeded S5 still uses the authored fixed split boundaries. Seeded S5 does not r
 HTML and style runners fail when eligibility filters execute no cases. Explicit fixture/scenario filters also cannot silently skip every case for a matched requested fixture or scenario. Missing ordinary baselines remain failures; seeded replays also require their final-output oracle. Do not exclude missing S1/S3/S4 entries from the ordinary matrix or copy S2 snapshots into those slots.
 
 The style runner honors `waitForMdxCompiled: false`, just like the HTML runner. Fixtures for bounded inline shells or unsupported MDX do not wait for an unsupported compiled-inline state.
+
+## Native source replay
+
+The Node replay checks committed source, child hierarchy and stable identity against a cold parse. Code checks use current exported blocks and owned source/line views. Independent Shiki checks token styles after decoration readiness, not between `appendCode` and its following `decorateCode`.
+
+Build the diagnostic runtime once after a frozen source change, then select the failing fixture:
+
+```bash
+node --import tsx scripts/perf/build-diagnostic-bundle.ts
+node --import tsx scripts/perf/replay-oracle.ts --section engine-fixture --fixture fence-indent-multiline --json /tmp/stream-mdx-fence.json
+```
+
+This path needs no docs build or browser. The complete `--section all` run also includes mounted consumers and all current scaling families; reserve it for the coherent packet proof rather than each small repair.
+
+Failure JSON retains the first differing current/cold block and tree plus its source prefix. Own-undefined property paths are recorded separately because JSON would omit those keys. A Worker `ERROR` stops that chunking plan and records the offered UTF-16 prefix needed to reproduce it; that error prefix is not a semantic-commit claim.
+
+Do not compare private generic code-node mirrors, derived list-depth caches, pending token decoration or generated pre/code wrapper attributes as semantic source. Authored text, physical ranges, IDs, child nesting, language and distinct metadata remain strict. Actual wrapper CSS/background behavior still requires the style and physical-view guards above.
+
+Cumulative insertion counts do not prove duplicate ownership across removals or reclassification. Check the current hierarchy and actual source/owner transitions; retain the separate INITIALIZED source-baseline contract.
+
+For built-in lists only, missing and own-undefined `start`, or list-item `task`/`checked`, are the same optional value. Actual numbers and booleans remain strict; custom props are not exempt.
 
 ## CI vs local
 

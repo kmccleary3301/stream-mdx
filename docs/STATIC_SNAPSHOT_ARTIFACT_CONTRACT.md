@@ -55,9 +55,68 @@ JSON serialization. Nested blocks retain `sourceContainer` metadata, absolute
 source ranges, and their container's finalization state. Reference-definition
 updates re-enrich the container, including nested headings and list items.
 
-Nested code contains normalized `meta.code`, normal highlight metadata, and
-`code-line` children before patch emission. Renderers do not need to reparse code
-or repair a line-count mismatch to reconstruct a static snapshot.
+The cold static artifact remains the version-1 materialized `Block[]` format;
+Code blocks retain authored `payload.raw` and any existing highlighting data
+in each cold `Block` payload.
+This is separate from the live schema-2 worker protocol. Live snapshots retain
+prepared descendant topology in `NodeSnapshot.children` and represent managed
+code in `NodeSnapshot.code` (`CodeBlockSnapshot` with `CodeLineRecord` rows).
+Native source changes use semantic changed-tail `appendCode` patches; row
+decoration uses `decorateCode`. These typed records and patches describe live
+owner state without replacing serialized prepared descendants.
+
+HTML block slots render through the owning renderer Store, including their
+native code records and requested decorations. A view never reconstructs a
+second Store from an embedded cold Block. For a version-1 HTML Block with only
+`htmlTree` slots, cold initialization projects those embedded Blocks once into
+the canonical children. Supplied `preparedNested.children` remains authoritative,
+including an empty collection.
+
+Managed native tables travel as `NodeSnapshot.table` metadata, not synthetic
+row/cell children. The cold `Block` projection retains exact authored raw and
+native header, body-row, and alignment records. Header `sourceRange` spans the
+native header through delimiter end (excluding its physical line ending); cell
+and body-row ranges retain their own authored UTF-16 slices.
+
+Live consumers retain one root-owned append-only input document. Managed table
+source values are immutable zero-copy windows into that document, capped to each
+owner's current authored range. Retraction and re-extension change the owner
+window only after validating the exact source suffix; they do not truncate or
+duplicate the consumer's input.
+
+Cold `Block[]` and standalone snapshots retain honest per-block source slices.
+Full source and row materialization remains a cold `getBlocks()` operation.
+
+
+### Native paragraph ownership
+
+Managed root paragraphs retain owner-scoped `ParagraphBlockSourceMetadata` and
+immutable `ParagraphSpanRecord`s. `appendParagraph` carries the required
+`sourceAppend` for only newly owned authored bytes and the changed span tail;
+`updateParagraphSpans` carries only source-stable prepared meaning changes.
+Owner generation and expected revision guard both operations. Typed
+`ParagraphSpanChildSnapshot`s preserve prepared `paragraph-text`,
+`paragraph-html`, or `paragraph-mdx` children at absolute source ranges.
+
+Live `INITIALIZED` root snapshots carry `inputSource: { generation, raw }`, with
+the baseline generation matching the worker message. Empty raw input is valid.
+Each admitted chunk then produces an ordered semantic `appendInputSource` at
+the root, using the exact UTF-16 start offset and newly admitted bytes. Input
+retention is not semantic completion or owner progress. Native owners keep
+independent generations, and their `sourceAppend` contains exactly the newly
+owned authored suffix, which may include an LF retained by an earlier root
+append.
+
+This cutover does not change static artifact `version: 1`, `schemaId`, or the
+serialized `blocks: Block[]` format. The live worker protocol remains schema
+version 2.0 and transports `NodeSnapshot` trees; live native code appends do not
+materialize a complete `Block`. An explicit cold `getParagraphColdBlock()` or
+`getBlocks()` request may materialize authored `payload.raw`, current inline or
+mixed-segment data, the source range, and `meta.paragraph` from the current owner
+state. Until the separate approved P6 API migration, legacy custom paragraph
+`raw` and `inlines` props use this truthful full-source projection, so that path
+is cold work; native prepared children remain the rendering authority.
+
 
 Nested lazy highlight requests use the code descendant ID on the existing
 `TOKENIZE_RANGE` transport. The owning engine resolves that prepared leaf,
@@ -79,9 +138,10 @@ Public token spans use `fg` and `fs` in their compact style records. Theme varia
 remain in `v.dark` and `v.light`; the legacy themed-line bridge converts these
 fields to `color` and `fontStyle` rather than exposing those legacy keys in token IR.
 
-Serialized code rows and `appendLines.diffKind` use the public `DiffLineKind`
-discriminants (`add`, `del`, `context`, `hunk`, `meta`). Parser-only `DiffKind`
-uses `remove` internally; full and lazy highlighting normalize it before publication.
+Native `CodeLineRecord.diffKind` and cold `Block.payload.meta.diffKind` use the
+public `DiffLineKind` discriminants (`add`, `del`, `context`, `hunk`, `meta`).
+Parser-only `DiffKind` uses `remove` internally; full and lazy highlighting
+normalize it before publication.
 
 Patch control metadata uses the existing `semantic` and `enrichment` classes.
 `setHTML` reads control fields from `patchMeta`, separately from HTML content

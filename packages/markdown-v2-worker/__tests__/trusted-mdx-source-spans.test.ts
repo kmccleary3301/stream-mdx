@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 import type { TrustedMdxFlowChildSpan, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 import { compileTrustedMdxDocument } from "../src/mdx-compile";
@@ -116,6 +117,7 @@ describe("trusted MDX source-only spans", () => {
     const source = "<Panel>\n\n{unfinished expression\n\n</Panel>";
     const initMessages = await harness.send({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: "",
       prewarmLangs: [],
       contentPolicy: "trusted-mdx",
@@ -127,7 +129,7 @@ describe("trusted MDX source-only spans", () => {
     assert.ok(initialized, "worker initializes before trusted syntax recognition");
 
     const store = createRendererStore();
-    store.reset(initialized.blocks);
+    store.resetSnapshot(initialized.snapshot);
     const appendMessages = await harness.send({ type: "APPEND", text: source });
     const finalizeMessages = await harness.send({ type: "FINALIZE" });
     const finalized = finalizeMessages.find((message) => message.type === "FINALIZED");

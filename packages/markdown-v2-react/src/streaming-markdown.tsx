@@ -10,7 +10,7 @@ import type { TrustedMdxEngine } from "./trusted-mdx-contract";
 import type { Block, CodeHighlightingMode, ContentPolicy, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
-import { useRendererBlocks } from "./renderer/hooks";
+import { useRendererHasProvisionalBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import { capturePreparedRendererStore, type RendererStore } from "./renderer/store";
 import { useWorkerSession } from "./worker-session";
@@ -362,7 +362,7 @@ function StreamingMarkdownComponent(
     [renderer],
   );
   const store = renderer.getStore();
-  const blocks = useRendererBlocks(store);
+  const hasActiveBlocks = useRendererHasProvisionalBlocks(store);
   const adaptiveSwitchedRef = useRef(false);
   const adaptiveFirstFlushRef = useRef(false);
   const imperativeActivityRef = useRef(false);
@@ -578,12 +578,12 @@ function StreamingMarkdownComponent(
   }, [historyLimit]);
 
 
-  const { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationError, readyRendererRef } = useWorkerSession({
+  const { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationEpoch, initializationError, readyRendererRef } = useWorkerSession({
     renderer, workerSource, engine, session, managedWorker, onErrorRef, debug: DEBUG_WORKER,
   });
   const { streamStatus, setStreamStatus, activeIteratorRef } = useStreamInputSession({
-    renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationError, session, managedWorker, readyRendererRef,
-    imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
+    renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationEpoch, initializationError, session, managedWorker,
+    readyRendererRef, imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
   });
   const flushPendingCommands = useCallback(() => {
     const pending = pendingCommandsRef.current;
@@ -696,7 +696,6 @@ function StreamingMarkdownComponent(
     [renderer, store, flushPendingCommands, queuePendingCommand, workerReadyRef, inputReadyRef, activeIteratorRef, imperativeActivityRef, setStreamStatus, sessionRef, setSession],
   );
 
-  const hasActiveBlocks = useMemo(() => blocks.some((block) => !block.isFinalized), [blocks]);
   const caretValue = useMemo(() => {
     if (!caret) {
       return null;

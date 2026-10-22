@@ -1,148 +1,151 @@
 import type React from "react";
-import type { TokenLineV1 } from "@stream-mdx/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface VirtualizedCodeConfig {
   enabled: boolean;
-  windowSize: number; // Number of visible lines
-  bufferSize: number; // Buffer lines above/below visible window
-  virtualizeThreshold: number; // Minimum lines to trigger virtualization
+  windowSize: number;
+  bufferSize: number;
+  virtualizeThreshold: number;
 }
 
 export const DEFAULT_VIRTUALIZED_CODE_CONFIG: VirtualizedCodeConfig = {
   enabled: true,
-  windowSize: 100, // Render 100 lines at a time
-  bufferSize: 50, // +50 lines buffer above/below
-  virtualizeThreshold: 200, // Only virtualize if 200+ lines
+  windowSize: 100,
+  bufferSize: 50,
+  virtualizeThreshold: 200,
 };
 
-export interface VirtualizedLine {
-  id: string;
-  index: number;
-  text: string;
-  html?: string | null;
-  tokens?: TokenLineV1 | null;
-}
-
-export interface VirtualizedCodeWindow {
+export interface VirtualizedCodeRange {
   startIndex: number;
   endIndex: number;
   visibleStart: number;
   visibleEnd: number;
-  visibleLines: VirtualizedLine[];
   totalLines: number;
   mountedLines: number;
 }
 
-/**
- * Calculate which lines should be rendered based on scroll position
- */
+
+
 export function calculateCodeWindow(
-  lines: ReadonlyArray<VirtualizedLine>,
+  totalLines: number,
   scrollTop: number,
   containerHeight: number,
   lineHeight: number,
   config: VirtualizedCodeConfig,
-): VirtualizedCodeWindow {
-  const totalLines = lines.length;
-  if (!config.enabled || totalLines < config.virtualizeThreshold) {
-    // Render all lines if virtualization disabled or below threshold
+): VirtualizedCodeRange {
+  const lineCount = Math.max(0, totalLines);
+  if (!config.enabled || lineCount < config.virtualizeThreshold) {
     return {
       startIndex: 0,
-      endIndex: totalLines,
+      endIndex: lineCount,
       visibleStart: 0,
-      visibleEnd: totalLines,
-      visibleLines: lines as VirtualizedLine[],
-      totalLines,
-      mountedLines: totalLines,
+      visibleEnd: lineCount,
+      totalLines: lineCount,
+      mountedLines: lineCount,
     };
   }
 
-  // Calculate visible range
-  const firstVisibleLine = Math.floor(scrollTop / lineHeight);
-  const lastVisibleLine = Math.ceil((scrollTop + containerHeight) / lineHeight);
-  const visibleStart = Math.max(0, firstVisibleLine);
-  const visibleEnd = Math.min(totalLines, Math.max(visibleStart, lastVisibleLine));
-
-  // Apply buffer
-  const startIndex = Math.max(0, visibleStart - config.bufferSize);
-  const endIndex = Math.min(totalLines, visibleEnd + config.bufferSize);
+  const measuredLineHeight = lineHeight > 0 ? lineHeight : 20;
+  const firstVisibleLine = Math.floor(Math.max(0, scrollTop) / measuredLineHeight);
+  const visibleLineCount =
+    containerHeight > 0 ? Math.max(1, Math.ceil(containerHeight / measuredLineHeight)) : Math.max(1, config.windowSize);
+  const visibleStart = Math.min(lineCount, firstVisibleLine);
+  const visibleEnd = Math.min(lineCount, visibleStart + visibleLineCount);
+  const bufferSize = Math.max(0, config.bufferSize);
+  const startIndex = Math.max(0, visibleStart - bufferSize);
+  const endIndex = Math.min(lineCount, visibleEnd + bufferSize);
 
   return {
     startIndex,
     endIndex,
     visibleStart,
     visibleEnd,
-    visibleLines: lines.slice(startIndex, endIndex) as VirtualizedLine[],
-    totalLines,
+    totalLines: lineCount,
     mountedLines: endIndex - startIndex,
   };
 }
 
-/**
- * Hook for virtualized code block scrolling
- */
-export function useVirtualizedCode(lines: ReadonlyArray<VirtualizedLine>, config: VirtualizedCodeConfig = DEFAULT_VIRTUALIZED_CODE_CONFIG) {
+/** Owns viewport geometry and scroll position only; record ranges subscribe separately. */
+export function useVirtualizedCode(
+  totalLines: number,
+  generation: number,
+  config: VirtualizedCodeConfig = DEFAULT_VIRTUALIZED_CODE_CONFIG,
+) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
-  const lineHeightRef = useRef<number>(20); // Default line height, will be measured
+  const [lineHeight, setLineHeight] = useState(20);
+  const followTailRef = useRef(false);
+  const previousOwnerRef = useRef({ generation, totalLines });
 
-  // Measure line height on mount or when lines change
+  const range = useMemo(
+    () => calculateCodeWindow(totalLines, scrollTop, containerHeight, lineHeight, config),
+    [config, containerHeight, lineHeight, scrollTop, totalLines],
+  );
+
   useEffect(() => {
-    if (!containerRef.current || lines.length === 0) return;
-    // Wait for next frame to ensure DOM is rendered
     const timeoutId = setTimeout(() => {
-      if (!containerRef.current) return;
-      const firstLine = containerRef.current.querySelector<HTMLElement>(".line");
-      if (firstLine) {
-        const measuredHeight = firstLine.offsetHeight || 20;
-        if (measuredHeight !== lineHeightRef.current) {
-          lineHeightRef.current = measuredHeight;
-        }
-      }
+      const container = containerRef.current;
+      const firstLine = container?.querySelector<HTMLElement>(".line");
+      if (!firstLine) return;
+      const measuredHeight = firstLine.offsetHeight || 20;
+      setLineHeight((current) => current === measuredHeight ? current : measuredHeight);
     }, 0);
     return () => clearTimeout(timeoutId);
-  }, [lines.length]);
+  }, [generation, range.endIndex, range.startIndex]);
 
-  // Handle scroll
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget;
     setScrollTop(target.scrollTop);
     setContainerHeight(target.clientHeight);
-  }, []);
+    followTailRef.current = target.scrollHeight - target.clientHeight - target.scrollTop <= lineHeight;
+  }, [lineHeight]);
 
-  // Measure container height on resize
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === "undefined") return;
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setContainerHeight(entry.contentRect.height);
+        const nextHeight = Math.ceil(entry.contentRect.height);
+        setContainerHeight((current) => current === nextHeight ? current : nextHeight);
       }
     });
-    resizeObserver.observe(containerRef.current);
+    resizeObserver.observe(container);
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Calculate window
-  const window = useMemo(() => {
-    return calculateCodeWindow(lines, scrollTop, containerHeight, lineHeightRef.current, config);
-  }, [lines, scrollTop, containerHeight, config]);
+  useEffect(() => {
+    const previousOwner = previousOwnerRef.current;
+    previousOwnerRef.current = { generation, totalLines };
+    const container = containerRef.current;
+    if (previousOwner.generation !== generation) {
+      followTailRef.current = false;
+      if (container && container.scrollTop !== 0) container.scrollTop = 0;
+      setScrollTop(0);
+      return;
+    }
+    if (previousOwner.totalLines === totalLines || !container || !followTailRef.current) return;
+    const nextScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+    if (container.scrollTop !== nextScrollTop) {
+      container.scrollTop = nextScrollTop;
+      setScrollTop(nextScrollTop);
+    }
+  }, [generation, totalLines]);
 
-  // Scroll to line helper
   const scrollToLine = useCallback((lineIndex: number) => {
-    if (!containerRef.current) return;
-    const targetScrollTop = lineIndex * lineHeightRef.current;
-    containerRef.current.scrollTop = targetScrollTop;
+    const container = containerRef.current;
+    if (!container) return;
+    const targetScrollTop = Math.max(0, Math.min(lineIndex, totalLines - 1)) * lineHeight;
+    container.scrollTop = targetScrollTop;
     setScrollTop(targetScrollTop);
-  }, []);
+  }, [lineHeight, totalLines]);
 
   return {
     containerRef,
-    window,
+    window: range,
     handleScroll,
     scrollToLine,
-    lineHeight: lineHeightRef.current,
+    lineHeight,
     config,
   };
 }

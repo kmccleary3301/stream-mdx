@@ -17,19 +17,29 @@ Use the Node helper, which spawns a `worker_threads` worker and installs WebWork
 
 ```ts
 import { createWorkerThread } from "stream-mdx/worker/node";
-import { applyPatchBatch, createInitialSnapshot, type WorkerOut } from "stream-mdx/core";
+import { applyPatchBatch, createInitialSnapshot, STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "stream-mdx/core";
 
 const worker = createWorkerThread({ stdout: true, stderr: true });
 let snapshot = createInitialSnapshot();
 
 worker.on("message", (msg: WorkerOut) => {
-  if (msg.type === "PATCH") {
-    snapshot.blocks = applyPatchBatch(snapshot, msg.patches);
+  if (msg.type === "INITIALIZED") {
+    const inputSource = msg.snapshot.inputSource;
+    if (
+      msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+      !Number.isSafeInteger(msg.generation) ||
+      inputSource?.generation !== msg.generation ||
+      typeof inputSource?.raw !== "string"
+    ) throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
+    snapshot = createInitialSnapshot(msg.snapshot);
+    return;
   }
+  if (msg.type === "PATCH") applyPatchBatch(snapshot, msg.patches);
 });
 
 worker.postMessage({
   type: "INIT",
+  schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   prewarmLangs: ["typescript"],
   docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
@@ -41,8 +51,9 @@ worker.postMessage({ type: "FINALIZE" });
 
 Notes:
 
-- `snapshot.blocks` is an ordered `Block[]` representation suitable for rendering in a TUI.
-- If you want to render the full node tree (not just blocks), inspect `snapshot.nodes` from `createInitialSnapshot()` / `applyPatchBatch()`.
+- `snapshot.getBlocks()` materializes the ordered `Block[]` representation at a rendering/export checkpoint.
+- If you want the full node tree rather than blocks, inspect `snapshot.nodes` from `createInitialSnapshot()` / `applyPatchBatch()`.
+- A live `INITIALIZED` snapshot requires a matching `inputSource` baseline, including when its raw text is empty. Cold standalone `Block[]` snapshots may omit the baseline.
 
 ## 1b) Static compile helper (snapshot artifact)
 
@@ -121,7 +132,7 @@ At a high level:
 
 1. Create and own a `DocumentSnapshot` (`createInitialSnapshot()`).
 2. Apply each `PATCH` batch (`applyPatchBatch()`).
-3. Render `snapshot.blocks` into your terminal UI.
+3. Render `snapshot.getBlocks()` into your terminal UI.
 
 For streaming, treat the markdown input as append-only and send `APPEND` messages as chunks arrive.
 
@@ -136,7 +147,8 @@ Messages sent **to** the worker (`WorkerIn`) include:
 
 Messages received **from** the worker (`WorkerOut`) include:
 
-- `PATCH` (apply these patches to your snapshot)
+- `INITIALIZED` (root snapshot with the canonical input baseline)
+- `PATCH` (apply these patches to your snapshot; may include ordered root `appendInputSource` operations before native owner patches)
 - `METRICS` (optional performance telemetry)
 - `ERROR` (worker-side errors; treat as fatal or surface to logs)
 

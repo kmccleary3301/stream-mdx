@@ -2,6 +2,7 @@
  * Private per-session counter sink for deterministic work observation.
  * Follows the CounterSeams contract in local://counter-seams-contract.md.
  */
+import type { SourceSnapshot } from "@stream-mdx/core";
 import type { ProgressObservationEvent, Publication } from "./progress-observation";
 
 export interface SessionCounterSinkOptions {
@@ -43,10 +44,17 @@ export interface StageCounters {
   lines_tokenized: number;
   units_tokenized: number;
   inline_source_units_prepared: number;
+  source_units_read: number;
+  source_units_materialized: number;
+  source_directory_entries_copied: number;
+  record_slots_allocated: number;
+  code_source_units_prepared: number;
   snapshot_nodes_built: number;
   prefix_comparisons: number;
   patches_emitted: number;
   store_records_touched: number;
+  table_rows_rendered: number;
+  table_cells_rendered: number;
   blocks_reprepared: number;
 }
 
@@ -54,6 +62,11 @@ export interface SessionCountersSnapshot {
   lines_tokenized: number;
   units_tokenized: number;
   inline_source_units_prepared: number;
+  source_units_read: number;
+  source_units_materialized: number;
+  source_directory_entries_copied: number;
+  record_slots_allocated: number;
+  code_source_units_prepared: number;
   snapshot_nodes_built: number;
   prefix_comparisons: number;
   patches_emitted: number;
@@ -71,10 +84,17 @@ function createEmptyStageCounters(): StageCounters {
     lines_tokenized: 0,
     units_tokenized: 0,
     inline_source_units_prepared: 0,
+    source_units_read: 0,
+    source_units_materialized: 0,
+    source_directory_entries_copied: 0,
+    record_slots_allocated: 0,
+    code_source_units_prepared: 0,
     snapshot_nodes_built: 0,
     prefix_comparisons: 0,
     patches_emitted: 0,
     store_records_touched: 0,
+    table_rows_rendered: 0,
+    table_cells_rendered: 0,
     blocks_reprepared: 0,
   };
 }
@@ -93,6 +113,11 @@ export class SessionCounterSink {
   lines_tokenized = 0;
   units_tokenized = 0;
   inline_source_units_prepared = 0;
+  source_units_read = 0;
+  source_units_materialized = 0;
+  source_directory_entries_copied = 0;
+  record_slots_allocated = 0;
+  code_source_units_prepared = 0;
   snapshot_nodes_built = 0;
   prefix_comparisons = 0;
   patches_emitted = 0;
@@ -105,11 +130,21 @@ export class SessionCounterSink {
   last_tx = 0;
 
   private progressTraceCallback?: (event: ProgressObservationEvent) => void;
+  private sourceSnapshotReader?: () => SourceSnapshot;
 
   constructor(options: SessionCounterSinkOptions = {}) {
     if (options.enableProgressTrace) {
       this.progressTraceCallback = options.onProgressTrace;
     }
+  }
+  attachSourceSnapshotReader(reader: () => SourceSnapshot): void {
+    this.sourceSnapshotReader = reader;
+  }
+
+  readSourceSnapshot(): SourceSnapshot {
+    const reader = this.sourceSnapshotReader;
+    if (!reader) throw new Error("The diagnostic source snapshot reader is not attached.");
+    return reader();
   }
 
   isProgressTraceEnabled(): boolean {
@@ -142,6 +177,36 @@ export class SessionCounterSink {
     this.inline_source_units_prepared += units;
     this.stages[stage].inline_source_units_prepared += units;
   }
+  recordSourceUnitsRead(units: number, stage: CounterStage = "engine"): void {
+    this.source_units_read += units;
+    const s = this.stages[stage];
+    if (s) s.source_units_read += units;
+  }
+
+  recordSourceUnitsMaterialized(units: number, stage: CounterStage = "snapshot"): void {
+    this.source_units_materialized += units;
+    const s = this.stages[stage];
+    if (s) s.source_units_materialized += units;
+  }
+
+  recordSourceDirectoryEntriesCopied(count: number, stage: CounterStage = "engine"): void {
+    this.source_directory_entries_copied += count;
+    const s = this.stages[stage];
+    if (s) s.source_directory_entries_copied += count;
+  }
+
+  recordRecordSlotsAllocated(count: number, stage: CounterStage = "engine"): void {
+    this.record_slots_allocated += count;
+    const s = this.stages[stage];
+    if (s) s.record_slots_allocated += count;
+  }
+
+  recordCodeSourceUnitsPrepared(units: number, stage: CounterStage = "engine"): void {
+    this.code_source_units_prepared += units;
+    const s = this.stages[stage];
+    if (s) s.code_source_units_prepared += units;
+  }
+
 
   recordSnapshotNodes(count = 1, stage: CounterStage = "snapshot"): void {
     this.snapshot_nodes_built += count;
@@ -173,6 +238,13 @@ export class SessionCounterSink {
     if (s) {
       s.store_records_touched += count;
     }
+  }
+  recordTableViewRows(count: number): void {
+    this.stages.view.table_rows_rendered += count;
+  }
+
+  recordTableViewCells(count: number): void {
+    this.stages.view.table_cells_rendered += count;
   }
 
 
@@ -216,6 +288,11 @@ export class SessionCounterSink {
       lines_tokenized: this.lines_tokenized,
       units_tokenized: this.units_tokenized,
       inline_source_units_prepared: this.inline_source_units_prepared,
+      source_units_read: this.source_units_read,
+      source_units_materialized: this.source_units_materialized,
+      source_directory_entries_copied: this.source_directory_entries_copied,
+      record_slots_allocated: this.record_slots_allocated,
+      code_source_units_prepared: this.code_source_units_prepared,
       snapshot_nodes_built: this.snapshot_nodes_built,
       prefix_comparisons: this.prefix_comparisons,
       patches_emitted: this.patches_emitted,
@@ -239,6 +316,11 @@ export class SessionCounterSink {
     this.lines_tokenized = 0;
     this.units_tokenized = 0;
     this.inline_source_units_prepared = 0;
+    this.source_units_read = 0;
+    this.source_units_materialized = 0;
+    this.source_directory_entries_copied = 0;
+    this.record_slots_allocated = 0;
+    this.code_source_units_prepared = 0;
     this.snapshot_nodes_built = 0;
     this.prefix_comparisons = 0;
     this.patches_emitted = 0;
@@ -253,10 +335,17 @@ export class SessionCounterSink {
       s.lines_tokenized = 0;
       s.units_tokenized = 0;
       s.inline_source_units_prepared = 0;
+      s.source_units_read = 0;
+      s.source_units_materialized = 0;
+      s.source_directory_entries_copied = 0;
+      s.record_slots_allocated = 0;
+      s.code_source_units_prepared = 0;
       s.snapshot_nodes_built = 0;
       s.prefix_comparisons = 0;
       s.patches_emitted = 0;
       s.store_records_touched = 0;
+      s.table_rows_rendered = 0;
+      s.table_cells_rendered = 0;
       s.blocks_reprepared = 0;
     }
   }

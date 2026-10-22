@@ -67,34 +67,34 @@ async function ownershipLifecycle(kind: "url" | "factory" | "default" | "inline"
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
-  let ready = false;
+  // A render can still carry the previous session's ready state, so wait for the attached renderer itself.
+  let attached: { readonly current: MarkdownRenderer | null } | null = null;
   let unmounted = false;
-  let committedSession = -1;
   const errors: Error[] = [];
   function Session({ session, renderer }: { session: number; renderer: MarkdownRenderer }) {
     const onErrorRef = useRef((error: Error) => { errors.push(error); });
     const state = useWorkerSession({ renderer, workerSource: source, engine, session, managedWorker,
       onErrorRef, debug: false, factories });
-    ready = state.workerReady;
-    committedSession = session;
+    attached = state.readyRendererRef;
     return null;
   }
   try {
-    root.render(<Session session={0} renderer={new MarkdownRenderer({})} />);
+    const firstRenderer = new MarkdownRenderer({});
+    root.render(<Session session={0} renderer={firstRenderer} />);
     if (kind === "inline") {
       await waitFor(() => inlineCalls === 1, "inline setup starts");
       const worker = new FakeWorker(); created.push(worker); completeInline?.(worker);
     }
-    await waitFor(() => ready, "session attaches worker");
+    await waitFor(() => attached?.current === firstRenderer, "session attaches worker");
     const first = kind === "borrowed" ? borrowed : created[0];
     assert.equal(first.commands, managedWorker ? 0 : 1, "management controls INIT, not lifetime");
-    ready = false;
-    root.render(<Session session={1} renderer={new MarkdownRenderer({})} />);
+    const nextRenderer = new MarkdownRenderer({});
+    root.render(<Session session={1} renderer={nextRenderer} />);
     if (kind === "inline" && !managedWorker) {
       await waitFor(() => inlineCalls === 2, "unmanaged restart creates a fresh inline worker");
       const worker = new FakeWorker(); created.push(worker); completeInline?.(worker);
     }
-    await waitFor(() => committedSession === 1 && ready, "restart attaches the next renderer");
+    await waitFor(() => attached?.current === nextRenderer, "restart attaches the next renderer");
     assert.equal(first.terminations, kind === "borrowed" || managedWorker ? 0 : 1,
       "managed restart reuses its worker; unmanaged restart disposes owned workers");
     root.unmount();

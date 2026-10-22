@@ -1,9 +1,11 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
-import { createElement, createRef } from "react";
-import { createRoot } from "react-dom/client";
+import { act, createElement, createRef } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { JSDOM } from "jsdom";
 
-import type { Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { cloneBlock } from "@stream-mdx/core";
 import {
   MarkdownEngine,
@@ -11,8 +13,8 @@ import {
   StreamingMarkdown,
 } from "./diagnostic-dist/index.mjs";
 import type { StreamingMarkdownHandle } from "@stream-mdx/react";
-import type { ChunkingPlan, DenseFixture } from "./replay-fixtures";
-import type { DivergenceReport } from "./scaling-diagnostics";
+import { DENSE_FIXTURES, type ChunkingPlan, type DenseFixture } from "./replay-fixtures";
+import type { DivergenceReport } from "./replay-fixtures";
 
 const DOM_GLOBALS = [
   "window",
@@ -22,6 +24,7 @@ const DOM_GLOBALS = [
   "requestAnimationFrame",
   "cancelAnimationFrame",
   "navigator",
+  "IS_REACT_ACT_ENVIRONMENT",
 ] as const;
 
 type DomGlobalSnapshot = {
@@ -49,26 +52,23 @@ export function restoreDomGlobals(snapshot: DomGlobalSnapshot): void {
   }
 }
 
-const PARITY_INIT: WorkerIn = {
-  type: "INIT",
-  initialContent: "",
-  prewarmLangs: ["typescript", "javascript", "markdown"],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: false,
-    tables: true,
-    callouts: false,
-    math: true,
-    formatAnticipation: { inline: true, mathInline: true, mathBlock: true, html: true, mdx: false, regex: false },
-    codeHighlighting: "incremental",
-    outputMode: "both",
-    emitHighlightTokens: true,
-    emitDiffBlocks: false,
-    themes: { dark: "github-dark", light: "github-light" },
-  },
-  mdx: { compileMode: "server" },
-};
+const PARITY_INIT = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+prewarmLangs: ["typescript", "javascript", "markdown"],
+docPlugins: {
+  footnotes: true,
+  html: true,
+  mdx: false,
+  tables: true,
+  callouts: false,
+  math: true,
+  formatAnticipation: { inline: true, mathInline: true, mathBlock: true, html: true, mdx: false, regex: false },
+  codeHighlighting: "incremental",
+  outputMode: "both",
+  emitHighlightTokens: true,
+  emitDiffBlocks: false,
+  themes: { dark: "github-dark", light: "github-light" },
+},
+mdx: { compileMode: "server" }, } satisfies Extract<WorkerIn, { type: "INIT" }>;
 
 function recordDivergence(
   divergences: DivergenceReport[],
@@ -123,9 +123,9 @@ export async function runGenerationAndResetInvariants(): Promise<DivergenceRepor
   const engine = new MarkdownEngine({
     post: (msg: WorkerOut) => {
       if (msg.type === "INITIALIZED") {
-        store.reset(msg.blocks);
+        store.resetSnapshot(msg.snapshot);
       } else if (msg.type === "PATCH") {
-        store.applyPatches(msg.patches as Patch[]);
+        store.applyPatches(msg.patches);
       }
     },
   });
@@ -134,26 +134,48 @@ export async function runGenerationAndResetInvariants(): Promise<DivergenceRepor
     // 1. Initial generation (Doc 1)
     await engine.handle({
       ...PARITY_INIT,
-      initialContent: "# Document 1 Alpha\n\nFirst paragraph text in generation 1.\n",
+      initialContent: fakeFixture.source,
     });
 
     const gen1Blocks = store.getBlocks();
     assert.strictEqual(gen1Blocks.length, 2, "Doc 1 must establish exactly 2 blocks (heading + paragraph)");
     assert.strictEqual(gen1Blocks[0].type, "heading", "Doc 1 block 0 must be heading");
-    assert.strictEqual(gen1Blocks[0].payload.raw, "Document 1 Alpha", "Doc 1 heading raw must match normalized text");
     assert.strictEqual(gen1Blocks[1].type, "paragraph", "Doc 1 block 1 must be paragraph");
     assert.strictEqual(gen1Blocks[1].payload.raw, "First paragraph text in generation 1.", "Doc 1 paragraph raw must match exactly");
 
-    // 2. Advance generation via INIT with complete semantic replacement (Doc 2)
+    const gen1HeadingRange = store.getNode(gen1Blocks[0].id)?.range;
+    assert.ok(gen1HeadingRange, "Doc 1 heading must retain its source range");
+    assert.strictEqual(
+      fakeFixture.source.slice(gen1HeadingRange.from, gen1HeadingRange.to),
+      "# Document 1 Alpha",
+      "Doc 1 heading range must match the authored source",
+    );
+    assert.strictEqual(
+      gen1Blocks[0].payload.meta?.headingText,
+      "Document 1 Alpha",
+      "Doc 1 heading semantic text must match",
+    );
+    const gen2Source = "# Document 2 Beta\n\nSecond paragraph text in generation 2.\n";
     await engine.handle({
       ...PARITY_INIT,
-      initialContent: "# Document 2 Beta\n\nSecond paragraph text in generation 2.\n",
+      initialContent: gen2Source,
     });
 
     const gen2Blocks = store.getBlocks();
     assert.strictEqual(gen2Blocks.length, 2, "Doc 2 must replace store with exactly 2 blocks");
     assert.strictEqual(gen2Blocks[0].type, "heading", "Doc 2 block 0 must be heading");
-    assert.strictEqual(gen2Blocks[0].payload.raw, "Document 2 Beta", "Doc 2 heading raw must match normalized text");
+    const gen2HeadingRange = store.getNode(gen2Blocks[0].id)?.range;
+    assert.ok(gen2HeadingRange, "Doc 2 heading must retain its source range");
+    assert.strictEqual(
+      gen2Source.slice(gen2HeadingRange.from, gen2HeadingRange.to),
+      "# Document 2 Beta",
+      "Doc 2 heading range must match the authored source",
+    );
+    assert.strictEqual(
+      gen2Blocks[0].payload.meta?.headingText,
+      "Document 2 Beta",
+      "Doc 2 heading semantic text must match",
+    );
     assert.strictEqual(gen2Blocks[1].type, "paragraph", "Doc 2 block 1 must be paragraph");
     assert.strictEqual(gen2Blocks[1].payload.raw, "Second paragraph text in generation 2.", "Doc 2 paragraph raw must match exactly");
 
@@ -206,26 +228,22 @@ export async function runGenerationAndResetInvariants(): Promise<DivergenceRepor
 }
 
 /**
- * Live Mounted React Layer under JSDOM createRoot.
- * Exercises real append/update/unmount lifecycles, store subscriptions,
- * and exact authored DOM elements without SSR-only shortcuts.
+ * Mounted public StreamingMarkdown proof for the native main-thread root-code route.
+ * This deliberately sets mdx:false; the pre-P9 legacy MDX bridge and any default-route
+ * extra cold work remain unmeasured until that integration lands.
  */
 export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
   const divergences: DivergenceReport[] = [];
-  const fakeFixture: DenseFixture = {
-    id: "live-react-layer",
-    name: "Live React Layer",
-    stage: "lifecycle:react-layer",
-    description: "Validates mounted React createRoot lifecycle, DOM updates, and ambient cleanup",
-    source: "# React Head\n\n| H1 | H2 |\n| :--- | :--- |\n| R1 | R2 |\n\n```typescript\nconst initial = 1;\n",
-  };
-  const plan: ChunkingPlan = { mode: "whole", seed: 0, chunks: [fakeFixture.source] };
-
+  const fixture = DENSE_FIXTURES.find((candidate) => candidate.id === "fence-indent-multiline");
+  assert.ok(fixture, "the existing fence-indent fixture is required");
+  const plan: ChunkingPlan = { mode: "whole", seed: 0, chunks: [fixture.source] };
+  console.log(
+    "Mounted-code scope: native route with mdx:false; legacy MDX bridge/default-route extra cold work remains unresolved.",
+  );
   const snapshot = captureDomGlobals();
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     pretendToBeVisual: true,
   });
-
   const target = globalThis as unknown as Record<string, unknown>;
   target.window = dom.window;
   target.document = dom.window.document;
@@ -233,20 +251,24 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
   target.Node = dom.window.Node;
   target.requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.window);
   target.cancelAnimationFrame = dom.window.cancelAnimationFrame.bind(dom.window);
+  target.IS_REACT_ACT_ENVIRONMENT = true;
   Object.defineProperty(globalThis, "navigator", {
     configurable: true,
     writable: true,
     value: dom.window.navigator,
   });
 
+  let root: Root | undefined;
+  let unmounted = false;
+  let unsubscribe: (() => void) | undefined;
   try {
     const container = dom.window.document.getElementById("root");
     assert.ok(container, "root element exists in JSDOM");
-    const root = createRoot(container);
-
-    try {
-      const handleRef = createRef<StreamingMarkdownHandle>();
-      root.render(
+    root = createRoot(container);
+    const handleRef = createRef<StreamingMarkdownHandle>();
+    let flushCount = 0;
+    await act(async () => {
+      root?.render(
         createElement(StreamingMarkdown, {
           ref: handleRef,
           engine: "main-thread",
@@ -269,86 +291,147 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
           },
         }),
       );
+    });
 
-      // Wait for handle and worker initialization
-      const handleReady = await waitForCondition(
-        () => handleRef.current !== null && Boolean(handleRef.current.getState?.()?.workerReady),
-        5000,
-      );
-      if (!handleReady || !handleRef.current) {
-        recordDivergence(divergences, fakeFixture, plan, "react:mount", 0, 0, "StreamingMarkdown handleRef failed to mount");
-        return divergences;
-      }
+    const mounted = await waitForCondition(
+      () => handleRef.current !== null && Boolean(handleRef.current.getState().workerReady),
+    );
+    if (!mounted || !handleRef.current) throw new Error("StreamingMarkdown failed to mount its real inline engine");
+    const handle = handleRef.current;
+    unsubscribe = handle.onFlush(() => {
+      flushCount += 1;
+    });
+    const idleAppend = async (text: string): Promise<void> => {
+      await act(async () => {
+        handle.append(text);
+        await handle.waitForIdle();
+        await new Promise<void>((resolve) => dom.window.requestAnimationFrame(() => resolve()));
+      });
+    };
 
-      // Initial feed
-      handleRef.current.append("# React Head\n\n| H1 | H2 |\n| :--- | :--- |\n| R1 | R2 |\n\n```typescript\nconst initial = 1;\n");
+    const source = fixture.source;
+    const stableLineStart = source.indexOf("    id: string;");
+    const laterLineStart = source.indexOf("    name: string;", stableLineStart);
+    const closingFenceStart = source.indexOf("```\n\n", laterLineStart);
+    assert.ok(stableLineStart > 0 && laterLineStart > stableLineStart && closingFenceStart > laterLineStart);
+    await idleAppend(source.slice(0, stableLineStart));
 
-      // Verify DOM content presence
-      const headingRendered = await waitForCondition(() => {
-        const h1 = container.querySelector("h1");
-        return h1 !== null && (h1.textContent ?? "").includes("React Head");
-      }, 5000);
+    const store = handle.getState().store;
+    const rootCode = store.getBlocks().find((block) => block.type === "code");
+    assert.ok(rootCode, "fixture establishes a root-owned code block");
+    const initialView = store.getCodeBlock(rootCode.id);
+    assert.ok(initialView, "root code owner has a prepared view");
+    assert.equal(initialView.source.state, "open");
+    assert.equal(initialView.source.completeLineCount, 1);
+    const completedRow = store.getCodeLines(rootCode.id, 0, 1)[0];
+    assert.ok(completedRow);
+    assert.equal(completedRow.text, "interface User {");
+    assert.equal(source.slice(completedRow.sourceRange.from, completedRow.sourceRange.to), `  ${completedRow.text}`);
+    assert.equal(completedRow.ending, "\n");
+    const renderedCodeRow = (index: number): HTMLElement | null =>
+      container.querySelectorAll<HTMLElement>("pre code > .line").item(index);
+    const completedRowElement = renderedCodeRow(completedRow.index);
+    assert.ok(completedRowElement, "native code renderer exposes the completed row");
+    assert.equal(
+      completedRowElement.textContent,
+      completedRow.text,
+      "native code renderer exposes the authored completed row text",
+    );
+    assert.equal(container.querySelector("pre")?.textContent?.includes(completedRow.text), true);
+    const generation = initialView.source.generation;
 
-      if (!headingRendered) {
-        recordDivergence(divergences, fakeFixture, plan, "react:append", 0, 0, "Rendered DOM missing expected heading content");
-      }
+    const tailUpdate = source.slice(stableLineStart, laterLineStart);
+    const remainingOpenCode = source.slice(laterLineStart, closingFenceStart);
+    const closeAndFollowingProse = source.slice(closingFenceStart);
+    await idleAppend(tailUpdate);
+    assert.strictEqual(
+      store.getCodeLines(rootCode.id, 0, 1)[0]?.id,
+      completedRow.id,
+      "typed code owner retains the completed source row ID after tail updates",
+    );
+    assert.strictEqual(store.getCodeLines(rootCode.id, 0, 1)[0], completedRow);
+    assert.strictEqual(
+      renderedCodeRow(completedRow.index),
+      completedRowElement,
+      "completed row DOM identity survives tail updates",
+    );
+    assert.equal(store.getCodeBlock(rootCode.id)?.source.generation, generation);
+    await idleAppend(remainingOpenCode);
+    assert.strictEqual(
+      store.getCodeLines(rootCode.id, 0, 1)[0]?.id,
+      completedRow.id,
+      "typed code owner retains the completed source row ID while appending rows",
+    );
+    assert.strictEqual(store.getCodeLines(rootCode.id, 0, 1)[0], completedRow);
+    assert.strictEqual(renderedCodeRow(completedRow.index), completedRowElement);
+    await idleAppend(closeAndFollowingProse);
+    assert.equal(store.getCodeBlock(rootCode.id)?.source.state, "closed");
 
-      // Verify code block rendered
-      const codeRendered = await waitForCondition(() => {
-        const pre = container.querySelector("pre");
-        return pre !== null && (pre.textContent ?? "").includes("const initial = 1;");
-      }, 5000);
-
-      if (!codeRendered) {
-        recordDivergence(divergences, fakeFixture, plan, "react:code", 0, 0, "Rendered DOM missing expected code content");
-      }
-
-      // Verify table rendered
-      const tableRendered = await waitForCondition(() => {
-        const td = container.querySelector("td");
-        return td !== null && (td.textContent ?? "").includes("R1");
-      }, 5000);
-
-      if (!tableRendered) {
-        recordDivergence(divergences, fakeFixture, plan, "react:table", 0, 0, "Rendered DOM missing expected table cells");
-      }
-
-      // Complete the existing streaming code block.
-      handleRef.current.append("const appended = 2;\n```\n\n");
-
-      const codeUpdated = await waitForCondition(() => {
-        const pre = container.querySelector("pre");
-        return pre !== null && (pre.textContent ?? "").includes("const appended = 2;");
-      }, 5000);
-
-      if (!codeUpdated) {
-        recordDivergence(divergences, fakeFixture, plan, "react:append-code", 0, 0, "Rendered DOM failed to update with appended code line");
-      }
-
-      // Restart document session through public handle and wait for new worker session to be ready
-      handleRef.current.restart();
-      const resetReady = await waitForCondition(
-        () => Boolean(handleRef.current?.getState?.()?.workerReady) && (handleRef.current?.getState?.()?.blocks.length ?? 0) === 0,
-        5000,
-      );
-      if (!resetReady || !handleRef.current) {
-        recordDivergence(divergences, fakeFixture, plan, "react:reset", 0, 0, "StreamingMarkdown session restart failed to become ready");
-        return divergences;
-      }
-      handleRef.current.append("# Clean Replacement\n\nFresh paragraph after reset.\n");
-      const resetCompleted = await waitForCondition(() => {
-        const h1 = container.querySelector("h1");
-        const hasOld = container.textContent?.includes("React Head") ?? false;
-        return h1 !== null && (h1.textContent ?? "").includes("Clean Replacement") && !hasOld;
-      }, 5000);
-
-      if (!resetCompleted) {
-        recordDivergence(divergences, fakeFixture, plan, "react:reset", 0, 0, "DOM failed to cleanly replace content on reset");
-      }
-    } finally {
-      root.unmount();
+    const authored = fixture.expectations?.codeBlocks?.[0];
+    assert.ok(authored, "fixture includes independently specified CommonMark code expectations");
+    const finalView = store.getCodeBlock(rootCode.id);
+    assert.ok(finalView);
+    const finalRows = store.getCodeLines(rootCode.id, 0, authored.codeLines.length);
+    assert.deepStrictEqual(finalRows.map((row) => row.text), authored.codeLines);
+    assert.deepStrictEqual(
+      Array.from(container.querySelectorAll<HTMLElement>("pre code > .line"), (row) => row.textContent),
+      authored.codeLines,
+      "native code DOM rows must match the authored code lines",
+    );
+    assert.equal(finalView.language, authored.lang);
+    assert.equal(finalView.source.generation, generation);
+    for (const row of finalRows) {
+      assert.equal(source.slice(row.sourceRange.from, row.sourceRange.to), `  ${row.text}`);
+      assert.equal(row.ending, "\n");
     }
+    assert.strictEqual(finalRows[0], completedRow);
+    const rawExport = store.getBlocks().find((block) => block.id === rootCode.id);
+    assert.ok(rawExport);
+    assert.equal(
+      source.slice(finalView.source.sourceRange.from, finalView.source.sourceRange.to),
+      rawExport.payload.raw,
+      "cold block export is an exact authored-source range",
+    );
+
+    await act(async () => {
+      handle.finalize();
+      const finalizationApplied = await waitForCondition(
+        () => store.getCodeBlock(rootCode.id)?.source.state === "finalized",
+      );
+      assert.ok(finalizationApplied, "root code finalization PATCH was not applied");
+      await handle.waitForIdle();
+    });
+    assert.equal(store.getCodeBlock(rootCode.id)?.source.state, "finalized");
+    assert.equal(store.getCodeBlock(rootCode.id)?.source.generation, generation);
+    assert.strictEqual(
+      renderedCodeRow(completedRow.index),
+      completedRowElement,
+      "completed row DOM identity survives finalization",
+    );
+    const versionBeforeDisposal = store.getVersion();
+    const rowsBeforeDisposal = store.getCodeLines(rootCode.id, 0, authored.codeLines.length);
+    const flushesBeforeDisposal = flushCount;
+    await act(async () => root?.unmount());
+    unmounted = true;
+    handle.append("\npost-disposal mutation must be ignored\n");
+    await handle.waitForIdle();
+    await delay(20);
+    assert.equal(store.getVersion(), versionBeforeDisposal, "disposed native engine cannot mutate its store");
+    assert.deepStrictEqual(store.getCodeLines(rootCode.id, 0, authored.codeLines.length), rowsBeforeDisposal);
+    assert.equal(flushCount, flushesBeforeDisposal, "disposed handle emits no later flush");
+  } catch (err) {
+    recordDivergence(
+      divergences,
+      fixture,
+      plan,
+      "lifecycle:native-root-code",
+      0,
+      fixture.source.length,
+      `Native StreamingMarkdown root-code proof failure (mdx:false; legacy MDX bridge not covered): ${String(err)}`,
+    );
   } finally {
+    unsubscribe?.();
+    if (root && !unmounted) root.unmount();
     restoreDomGlobals(snapshot);
     dom.window.close();
   }

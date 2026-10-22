@@ -90,6 +90,7 @@ interface PatchBatchInternal {
   receivedAt: number;
   priority: "high" | "low";
   kind: PatchKind;
+  hasNonInputSourcePatch: boolean;
 }
 
 const DEFAULT_TIMEOUT_MS = 16;
@@ -133,7 +134,7 @@ function getDefaultCancelRaf(): typeof cancelAnimationFrame | null {
 
 export class PatchCommitScheduler {
   private readonly store: RendererStore;
-  private readonly onFlush: (result: PatchFlushResult) => void;
+  private readonly onFlush: (result: PatchFlushResult, hasNonInputSourcePatch: boolean) => void;
   private frameBudgetMs: number;
   private maxBatchesPerFlush?: number;
   private readonly now: NowFn;
@@ -169,7 +170,7 @@ export class PatchCommitScheduler {
 
   constructor(params: {
     store: RendererStore;
-    onFlush: (result: PatchFlushResult) => void;
+    onFlush: (result: PatchFlushResult, hasNonInputSourcePatch: boolean) => void;
     options?: PatchCommitSchedulerOptions;
   }) {
     this.store = params.store;
@@ -211,17 +212,27 @@ export class PatchCommitScheduler {
     if (!this.paused && !this.flushing && this.getPendingCount() >= this.urgentQueueThreshold) {
       this.runFlush(this.frameBudgetMs, false);
     }
+    const explicitKind = input.meta?.kind;
+    const hasExplicitKind = explicitKind === "semantic" || explicitKind === "enrichment";
+    let hasSemanticPatch = false;
+    let hasNonInputSourcePatch = false;
+    for (const patch of input.patches) {
+      if (patch.op !== "appendInputSource") hasNonInputSourcePatch = true;
+      if (!hasExplicitKind && !hasSemanticPatch && getPatchKind(patch) === "semantic") {
+        hasSemanticPatch = true;
+      }
+    }
     const batch: PatchBatchInternal = {
       seq: ++this.sequence,
       patches: input.patches,
       meta: input.meta ?? {},
       receivedAt: input.meta?.receivedAt ?? this.now(),
-      kind:
-        input.meta?.kind === "semantic" || input.meta?.kind === "enrichment"
-          ? input.meta.kind
-          : input.patches.some((patch) => getPatchKind(patch) === "semantic")
-            ? "semantic"
-            : "enrichment",
+      kind: explicitKind === "semantic" || explicitKind === "enrichment"
+        ? explicitKind
+        : hasSemanticPatch
+          ? "semantic"
+          : "enrichment",
+      hasNonInputSourcePatch,
       priority: input.meta?.priority === "low" ? "low" : "high",
     };
     if (batch.kind === "semantic") {
@@ -359,13 +370,14 @@ export class PatchCommitScheduler {
 
     this.flushing = true;
     const startedAt = this.now();
+    let elapsed = 0;
     const initialSemanticQueueSize = this.semanticQueue.length;
     const initialEnrichmentQueueSize = this.enrichmentHighQueue.length + this.enrichmentLowQueue.length;
     const initialQueueSize = initialSemanticQueueSize + initialEnrichmentQueueSize;
     const batches: PatchFlushBatchResult[] = [];
     let totalInputPatches = 0;
     let totalAppliedPatches = 0;
-    let elapsed = 0;
+    let hasNonInputSourcePatch = false;
 
     const processQueue = (queue: PatchBatchInternal[], maxBatches?: number, budgetLimit?: number) => {
       const effectiveBudget = manual ? Number.POSITIVE_INFINITY : Math.max(0, budgetLimit ?? budgetMs);
@@ -374,6 +386,7 @@ export class PatchCommitScheduler {
       while (consumed < queue.length) {
         const next = queue[consumed];
         if (!next) break;
+        hasNonInputSourcePatch ||= next.hasNonInputSourcePatch;
         consumed += 1;
         const applyStart = this.now();
         const queueDelayMs = Math.max(0, applyStart - next.receivedAt);
@@ -477,7 +490,7 @@ export class PatchCommitScheduler {
           enrichmentQueueDepthBefore: initialEnrichmentQueueSize,
           flushStartedAt: startedAt,
           flushCompletedAt: completedAt,
-        });
+        }, hasNonInputSourcePatch);
       } catch (error) {
         console.error("[patch-scheduler] onFlush callback failed", error);
       }

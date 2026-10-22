@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import { createElement, createRef } from "react";
 import { createRoot } from "react-dom/client";
 import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
@@ -257,7 +259,7 @@ let activeGeneration: number | null = null;
 let initAcknowledgement: ((initialized: boolean) => void) | null = null;
 let activeHandle: StreamingMarkdownHandle | null = null;
 let removeFlushListener: (() => void) | null = null;
-let codePre: HTMLPreElement | null = null;
+let codeFrame: HTMLDivElement | null = null;
 let tickTimer: number | null = null;
 let visibilityTimer: number | null = null;
 let producerStartAt = 0;
@@ -491,16 +493,16 @@ function hasPositiveShikiDecoration(line: HTMLElement): boolean {
 }
 
 function sampleVisibleSourceLines(): VisibilitySample | null {
-  if (!codePre || !codePre.isConnected) {
-    codePre = document.querySelector<HTMLPreElement>('pre[data-code-block="true"]');
+  if (!codeFrame || !codeFrame.isConnected) {
+    codeFrame = document.querySelector<HTMLDivElement>('div[data-code-block="true"]');
   }
-  if (!codePre) return null;
+  if (!codeFrame) return null;
 
-  const preRect = codePre.getBoundingClientRect();
-  const visibleTop = Math.max(0, preRect.top);
-  const visibleBottom = Math.min(window.innerHeight, preRect.bottom);
-  const visibleLeft = Math.max(0, preRect.left);
-  const visibleRight = Math.min(window.innerWidth, preRect.right);
+  const frameRect = codeFrame.getBoundingClientRect();
+  const visibleTop = Math.max(0, frameRect.top);
+  const visibleBottom = Math.min(window.innerHeight, frameRect.bottom);
+  const visibleLeft = Math.max(0, frameRect.left);
+  const visibleRight = Math.min(window.innerWidth, frameRect.right);
   if (visibleBottom <= visibleTop || visibleRight <= visibleLeft) return null;
 
   const byLineNumber = new Map<number, VisibleLineSample>();
@@ -508,11 +510,11 @@ function sampleVisibleSourceLines(): VisibilitySample | null {
   for (let y = Math.floor(visibleTop + 1); y < visibleBottom && pointRows < VIEWPORT_POINT_LIMIT; y += VIEWPORT_POINT_STEP_PX) {
     pointRows += 1;
     for (const offset of LINE_POINT_OFFSETS_PX) {
-      const x = Math.min(visibleRight - 1, Math.max(visibleLeft + 1, preRect.left + offset));
+      const x = Math.min(visibleRight - 1, Math.max(visibleLeft + 1, frameRect.left + offset));
       const target = document.elementFromPoint(x, y);
       if (!(target instanceof HTMLElement)) continue;
       const line = target.closest<HTMLElement>(".line[data-line]");
-      if (!line || !codePre.contains(line)) continue;
+      if (!line || !codeFrame.contains(line)) continue;
 
       const rect = line.getBoundingClientRect();
       const intersectsViewport = rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth;
@@ -749,24 +751,21 @@ async function initializeObservation(worker: Worker): Promise<void> {
   const initialized = new Promise<boolean>((resolve) => {
     initAcknowledgement = resolve;
   });
-  const initMessage: WorkerIn = {
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: false,
-      tables: true,
-      callouts: false,
-      math: true,
-      formatAnticipation: featurePolicy.formatAnticipation,
-      codeHighlighting: "incremental",
-      liveCodeHighlighting: true,
-      emitDiffBlocks: false,
-    },
-    mdx: { compileMode: "server" },
-  };
+  const initMessage: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: false,
+    tables: true,
+    callouts: false,
+    math: true,
+    formatAnticipation: featurePolicy.formatAnticipation,
+    codeHighlighting: "incremental",
+    liveCodeHighlighting: true,
+    emitDiffBlocks: false,
+  },
+  mdx: { compileMode: "server" }, };
   worker.postMessage(initMessage);
   const initializedSuccessfully = await initialized;
   if (!initializedSuccessfully || stopped) {

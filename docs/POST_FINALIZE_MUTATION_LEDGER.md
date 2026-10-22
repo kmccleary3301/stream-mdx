@@ -1,16 +1,26 @@
 # Post-Finalize Mutation Ledger
 
-This ledger is the explicit allowlist for visible mutations that may occur after the worker emits `FINALIZED`.
+_Last updated: 2026-10-19_
 
 If a post-finalize visible mutation path is not listed here, it is a bug until proven otherwise.
 
 ## Contract
 
-After `FINALIZED`, native blocks are semantically stable. The only allowed follow-up worker patch is:
+After worker `FINALIZED`, existing committed owner source windows and block
+topology stay fixed. A newer semantic input transaction may append to the
+canonical root document without widening those windows; any resumed raw-EOF
+owner uses its own fresh generation.
 
 | Path | Source | Patch kind | Allowed? | Why |
 | --- | --- | --- | --- | --- |
 | Lazy code tokenization metadata and line HTML/tokens | Worker `TOKENIZE_RANGE` follow-up on finalized code blocks | `enrichment` | Yes | Completes deferred syntax coloring for an already-finalized code block without changing block topology or semantic block identity |
+| Paragraph dependency meaning | Worker `updateParagraphSpans` for link, footnote, or numbering invalidation | `semantic` | Yes | Changes only affected prepared spans whose owner generation, expected revision, span source revision, and source identity still match |
+| Table dependency meaning | Worker `updateTableRows` for reference, footnote, or numbering invalidation | `semantic` | Yes | Changes only affected row/header meaning while preserving table source identity under owner generation, expected revision, and row source identity guards |
+| Canonical root input retention | Worker `APPEND` admitted after EOF | `semantic` | Yes | Extends only the root input document; it does not mutate a finalized owner or count as owner progress |
+
+All semantic entries remain subject to epoch and transaction ordering and stale
+patch rejection. The paragraph and table entries cannot append source, change
+span/row boundaries, or reopen finalized owners.
 
 All other worker-visible block mutations are disallowed unless they arrive under a newer parse epoch / semantic transaction. Trusted whole-document readiness is separate host-owned render state, not a worker mutation or exception to this allowlist.
 
@@ -37,6 +47,25 @@ Guard coverage:
 - `packages/markdown-v2-react/__tests__/finalized-semantic-stability.test.ts`
 - `packages/markdown-v2-react/__tests__/post-finalize-contract.test.ts`
 
+
+## Source-Neutral Native Updates
+
+A table in `closed` state has a committed native source prefix while document
+input may continue. This is paragraph/table owner state, not worker
+`FINALIZED`. `updateTableRows` may change dependency-affected meaning on a closed
+or finalized table, including after worker `FINALIZED`, only when owner
+generation, expected revision, and row/header source identities match. It never
+appends table source.
+
+`updateParagraphSpans` follows the same source-neutral rule for closed or
+finalized paragraph owners. It updates only dependency-affected prepared spans
+whose source revision and source identity still match, and preserves the
+paragraph's authored bytes and span boundaries.
+
+`appendTableRows` and `appendParagraph` cannot grow or reopen same-generation
+finalized source owners. Raw input accepted after EOF may extend the independent
+root input generation, but the engine replaces an affected owner under a fresh
+owner generation instead of reopening its finalized source window.
 
 ## Disallowed Post-Finalize Mutations
 

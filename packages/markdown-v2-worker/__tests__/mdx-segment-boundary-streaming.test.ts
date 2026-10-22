@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { Patch, WorkerOut } from "@stream-mdx/core";
@@ -48,6 +50,7 @@ async function runMdxSegmentBoundaryStreamingTest(): Promise<void> {
 
   const initMessages = await harness.send({
     type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     initialContent: "",
     contentPolicy: "trusted-mdx",
     docPlugins: {
@@ -63,7 +66,7 @@ async function runMdxSegmentBoundaryStreamingTest(): Promise<void> {
   });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const chunks = [
     '- Item with prefix <InlineChip tone="warm">',

@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import React, { act } from "react";
@@ -7,7 +9,8 @@ import { JSDOM } from "jsdom";
 import type { Block, HtmlOptions, SyntaxRuleSpec, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
-import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore, type RendererStore } from "../src/server";
+import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore } from "../src/server";
+import type { RendererStore } from "../src/renderer/store";
 import { normalizeHtmlSemantics } from "../../../tests/conformance/normalizer.mts";
 
 const globalDescriptors = new Map(["window", "document", "DOMParser", "Node", "Element", "HTMLElement", "IS_REACT_ACT_ENVIRONMENT"]
@@ -40,7 +43,7 @@ async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "IN
   const { promise, resolve, reject } = deferred<RendererStore>();
   worker.onmessage = (event: MessageEvent<WorkerOut>) => {
     const message = event.data;
-    if (message.type === "INITIALIZED") store.reset(message.blocks);
+    if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
     else if (message.type === "PATCH") store.applyPatches(message.patches);
     else if (message.type === "FINALIZED") {
       worker.terminate();
@@ -50,7 +53,7 @@ async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "IN
       reject(new Error(message.error.message));
     }
   };
-  worker.postMessage({ type: "INIT", initialContent: "", ...init, ...config });
+  worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", ...init, ...config });
   for (const char of text) worker.postMessage({ type: "APPEND", text: char });
   worker.postMessage({ type: "FINALIZE" });
   return promise;
@@ -64,9 +67,13 @@ for (const number of assigned) {
   const example = examples.find((value) => value.number === number)!;
   const text = example.markdown.replace(/→/g, "\t");
   const expected = normalizeHtmlSemantics(example.html.replace(/→/g, "\t"));
-  const compiled = await compileMarkdownSnapshotDirect({ text, init });
+  const compiled = await compileMarkdownSnapshotDirect({ text, init }).catch((error: unknown) => {
+    throw new Error(`cm_${number} static compilation failed for ${JSON.stringify(text)}`, { cause: error });
+  });
   const staticHtml = normalizeHtmlSemantics(render(compiled.blocks));
-  const store = await streamed(text);
+  const store = await streamed(text).catch((error: unknown) => {
+    throw new Error(`cm_${number} streaming failed for ${JSON.stringify(text)}`, { cause: error });
+  });
   const streamingHtml = normalizeHtmlSemantics(render([], undefined, store));
   if (staticHtml !== expected || streamingHtml !== expected) {
     failures.push(`cm_${number}: expected ${expected}\nstatic ${staticHtml}\nstreaming ${streamingHtml}`);
@@ -142,7 +149,7 @@ actEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
 const captureMounted = window.document.createElement("div");
 const captureRoot = createRoot(captureMounted);
 await act(async () => {
-  captureRoot.render(<MarkdownBlocksRenderer store={captureStore} componentRegistry={captureRegistry} />);
+  captureRoot.render(<MarkdownBlocksRenderer blocks={captureStore.getBlocks()} store={captureStore} componentRegistry={captureRegistry} />);
 });
 assert.equal(captureMounted.querySelector("mark a a"), null, "captured plugins must mount the reconstructed children, not invalid original anchors");
 assert.equal(captureMounted.querySelector("mark")?.textContent, "inner trailing");
@@ -171,6 +178,37 @@ for (const [source, expected] of [
   assert.deepEqual(errors, [], "literal HTML hydration must not replace mismatched server text");
   await act(async () => { hydrationRoot.unmount(); });
 }
+
+const legacyHtmlBlock: Block = {
+  id: "legacy-html",
+  type: "html",
+  isFinalized: true,
+  payload: {
+    raw: "<div>",
+    meta: {
+      htmlTree: [{
+        kind: "element",
+        tagName: "div",
+        attributes: {},
+        children: [{
+          kind: "block",
+          block: {
+            id: "legacy-html-code",
+            type: "code",
+            isFinalized: true,
+            payload: { raw: "const coldSnapshot = true;", meta: { code: "const coldSnapshot = true;", lang: "js" } },
+          },
+        }],
+      }],
+    },
+  },
+};
+const legacyHtmlMarkup = renderToStaticMarkup(<MarkdownBlocksRenderer blocks={[legacyHtmlBlock]} />);
+assert.equal(
+  new JSDOM(legacyHtmlMarkup).window.document.querySelector("pre")?.textContent,
+  "const coldSnapshot = true;",
+  "a static HTML tree must render its actual embedded Block slot",
+);
 
 // The authored HTML fixture contains braces owned by native code, not MDX.
 const inlineHtmlFixture = await fs.readFile(new URL("../../../tests/regression/fixtures/inline-html.md", import.meta.url), "utf8");
@@ -210,10 +248,10 @@ for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
   for (const element of [
     <MarkdownBlocksRenderer blocks={codeCompiled.blocks} componentRegistry={registry} />,
     <MarkdownBlocksRenderer blocks={codeSerialized} componentRegistry={registry} />,
-    <MarkdownBlocksRenderer store={codeStore} componentRegistry={registry} />,
+    <MarkdownBlocksRenderer blocks={codeCompiled.blocks} store={codeStore} componentRegistry={registry} />,
   ]) {
     const assertCodeOwnership = (root: ParentNode) => {
-      const codes = Array.from(root.querySelectorAll("code.inline-code"));
+      const codes = Array.from(root.querySelectorAll("code"));
       assert.deepEqual(codes.map((code) => code.textContent), [
         "{:js}{:js}", "{:js}{:js}", "{:js}{:js}", "{:js}{:js}", "{:js}{:js}",
         "{:js} `literal` {:js}", "{:js}{:js}",
@@ -249,7 +287,7 @@ for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
     render([], registry, outsideCodeStore),
   ]) {
     const document = new JSDOM(markup).window.document;
-    assert.equal(document.querySelector("code.inline-code")?.textContent, "{:js}{:js}");
+    assert.equal(document.querySelector("code")?.textContent, "{:js}{:js}");
     assert.equal(document.querySelector("em")?.textContent, "HTML");
     assert.equal(document.querySelector('a[href="/safe"]')?.textContent, "link");
     assert.equal(document.querySelector("p")?.textContent, "Code {:js}{:js} with HTML and {outside} <InlineChip /> link tail.");

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 import type { Block, Patch, WorkerOut } from "@stream-mdx/core";
 import { MarkdownBlocksRenderer, TrustedMdxServerRegionProvider } from "@stream-mdx/react/server";
 import { compileTrustedMdxDocument } from "@stream-mdx/worker/mdx-compile";
@@ -52,7 +53,7 @@ async function compileAppendSnapshot(): Promise<Block[]> {
   const engine = new MarkdownEngine({
     post(message) {
       messages.push(message);
-      if (message.type === "INITIALIZED") store.reset(message.blocks);
+      if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
       else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
     },
   });
@@ -60,6 +61,7 @@ async function compileAppendSnapshot(): Promise<Block[]> {
   try {
     await engine.handle({
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: "",
       prewarmLangs: [],
       contentPolicy: "trusted-mdx",
@@ -102,7 +104,7 @@ try {
   assert.equal(appendPreview.querySelector("p")?.textContent, "Native preview body paragraph.");
   assert.equal(appendPreview.querySelector("[data-preview-example]")?.textContent, "Native preview example");
   const appendNativeCode = Array.from(appendContainer.querySelectorAll("pre code"))
-    .filter((code) => code.textContent === 'const native = "exact";');
+    .filter((code) => code.textContent === 'const native = "exact";\n');
   assert.equal(appendNativeCode.length, 1, "the following native fence renders once before FINALIZE");
   assert.equal(appendNativeCode[0]?.closest("section[data-preview]"), null);
   const appendNativeProse = Array.from(appendContainer.querySelectorAll("p"))
@@ -137,7 +139,7 @@ try {
   assert.equal(panels[1]?.querySelector("figure")?.getAttribute("data-video-id"), "by9PUlqtJlM");
   assert.equal(panels[1]?.querySelector("figcaption")?.textContent, "A Test Video");
   const nativeCode = Array.from(container.querySelectorAll("pre code"))
-    .filter((code) => code.textContent === 'const native = "exact";');
+    .filter((code) => code.textContent === 'const native = "exact";\n');
   assert.equal(nativeCode.length, 1, "the adjacent native fence renders once outside its Preview owner");
   assert.equal(nativeCode[0]?.closest("section[data-preview]"), null, "the adjacent native fence does not become Preview children");
   const nativeProse = Array.from(container.querySelectorAll("p"))

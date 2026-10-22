@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { DiffBlock, Patch, WorkerOut } from "@stream-mdx/core";
@@ -8,26 +10,23 @@ import { createWorkerHarness } from "./worker-test-harness";
 async function runDiffBlocksTest(): Promise<void> {
   const harness = await createWorkerHarness();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: ["typescript"],
-    docPlugins: {
-      footnotes: false,
-      html: false,
-      mdx: false,
-      tables: false,
-      callouts: false,
-      codeHighlighting: "final",
-      outputMode: "tokens",
-      emitHighlightTokens: true,
-      emitDiffBlocks: true,
-      liveTokenization: false,
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: ["typescript"],
+  docPlugins: {
+    footnotes: false,
+    html: false,
+    mdx: false,
+    tables: false,
+    callouts: false,
+    codeHighlighting: "final",
+    outputMode: "tokens",
+    emitHighlightTokens: true,
+    emitDiffBlocks: true,
+    liveTokenization: false,
+  }, });
   const init = initMessages.find((msg) => msg.type === "INITIALIZED") as Extract<WorkerOut, { type: "INITIALIZED" }> | undefined;
   assert.ok(init, "worker did not emit INITIALIZED message");
-  const snapshot = createInitialSnapshot(init.blocks ?? []);
+  const snapshot = createInitialSnapshot(init.snapshot);
 
   const diffContent = [
     "```diff",
@@ -56,7 +55,7 @@ async function runDiffBlocksTest(): Promise<void> {
     }
   }
 
-  const codeBlock = snapshot.blocks.find((block) => block.type === "code");
+  const codeBlock = snapshot.getBlocks().find((block) => block.type === "code");
   assert.ok(codeBlock, "expected a code block in snapshot");
   const diffBlocks = (codeBlock.payload?.meta as { diffBlocks?: DiffBlock[] } | undefined)?.diffBlocks;
   assert.ok(Array.isArray(diffBlocks) && diffBlocks.length > 0, "expected diffBlocks to be emitted");

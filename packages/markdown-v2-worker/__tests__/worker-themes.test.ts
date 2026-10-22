@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { Block, Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
@@ -8,7 +10,7 @@ function collectBlocks(messages: WorkerOut[]): ReadonlyArray<Block> {
   const store = createRendererStore();
   for (const msg of messages) {
     if (msg.type === "INITIALIZED") {
-      store.reset(msg.blocks);
+      store.resetSnapshot(msg.snapshot);
     } else if (msg.type === "PATCH") {
       store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
     }
@@ -29,21 +31,15 @@ async function runWorkerThemesTest(): Promise<void> {
   {
     const defaultMessages: WorkerOut[] = [];
     const defaultEngine = new MarkdownEngine({ post: (msg) => defaultMessages.push(msg) });
-    await defaultEngine.handle({
-      type: "INIT",
-      initialContent: codeInput,
-      docPlugins: { codeHighlighting: "final", outputMode: "both", emitHighlightTokens: true, lazyTokenization: { enabled: false } },
-    });
+    await defaultEngine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: codeInput,
+    docPlugins: { codeHighlighting: "final", outputMode: "both", emitHighlightTokens: true, lazyTokenization: { enabled: false } }, });
     await defaultEngine.handle({ type: "FINALIZE" });
 
     const customMessages: WorkerOut[] = [];
     const customEngine = new MarkdownEngine({ post: (msg) => customMessages.push(msg) });
-    await customEngine.handle({
-      type: "INIT",
-      initialContent: codeInput,
-      themes: { light: "min-light", dark: "nord" },
-      docPlugins: { codeHighlighting: "final", outputMode: "both", emitHighlightTokens: true, lazyTokenization: { enabled: false } },
-    });
+    await customEngine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: codeInput,
+    themes: { light: "min-light", dark: "nord" },
+    docPlugins: { codeHighlighting: "final", outputMode: "both", emitHighlightTokens: true, lazyTokenization: { enabled: false } }, });
     await customEngine.handle({ type: "FINALIZE" });
 
     const defaultBlocks = collectBlocks(defaultMessages);
@@ -91,20 +87,14 @@ async function runWorkerThemesTest(): Promise<void> {
     const engineC = new MarkdownEngine({ post: (msg) => messagesC.push(msg) });
 
     // Engine A: default themes
-    await engineA.handle({
-      type: "INIT",
-      initialContent: "",
-      themes: { light: "github-light", dark: "github-dark" },
-      docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } },
-    });
+    await engineA.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+    themes: { light: "github-light", dark: "github-dark" },
+    docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } }, });
 
     // Engine B: min-light + nord
-    await engineB.handle({
-      type: "INIT",
-      initialContent: "",
-      themes: { light: "min-light", dark: "nord" },
-      docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } },
-    });
+    await engineB.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+    themes: { light: "min-light", dark: "nord" },
+    docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } }, });
 
     // Verify cache keys differ for the same code and language
     const keyA = getSharedHighlightCacheKey("javascript", { light: "github-light", dark: "github-dark" }, "const x = 1;");
@@ -131,12 +121,9 @@ async function runWorkerThemesTest(): Promise<void> {
     assert.ok(!htmlB.includes("github-dark"), "engine B must not contain github-dark theme");
 
     // Engine C with same themes as B should hit B's cache and also get nord
-    await engineC.handle({
-      type: "INIT",
-      initialContent: codeInput,
-      themes: { light: "min-light", dark: "nord" },
-      docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } },
-    });
+    await engineC.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: codeInput,
+    themes: { light: "min-light", dark: "nord" },
+    docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } }, });
     await engineC.handle({ type: "FINALIZE" });
 
     const blocksC = collectBlocks(messagesC);
@@ -153,12 +140,9 @@ async function runWorkerThemesTest(): Promise<void> {
     const messages: WorkerOut[] = [];
     const engine = new MarkdownEngine({ post: (msg) => messages.push(msg) });
 
-    await engine.handle({
-      type: "INIT",
-      initialContent: "# Header\n\n```javascript\nconst valid = true;\n```\n",
-      themes: { light: "this-theme-does-not-exist-xyz", dark: "nord" },
-      docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } },
-    });
+    await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "# Header\n\n```javascript\nconst valid = true;\n```\n",
+    themes: { light: "this-theme-does-not-exist-xyz", dark: "nord" },
+    docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } }, });
     await engine.handle({ type: "FINALIZE" });
 
     // Check that an ERROR message was reported during INIT phase

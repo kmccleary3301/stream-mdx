@@ -55,6 +55,8 @@ export function CustomDiagram({ text }: { text: string }) {
 
 `MermaidBlock` accepts the code fence renderer props. `renderCode` is an already rendered React node used by the Code view. Set `deferHeavyBlocks` on `StreamingMarkdown` to use Mermaid's viewport deferral.
 
+If a custom `mermaid` provider's `bindFunctions` installs provider-global effects, it MUST return a disposer. `MermaidBlock` calls it when the rendered artifact is replaced, the block leaves Diagram view, or the block unmounts. Existing `void`-returning callbacks remain supported, but they cannot undo effects outside the SVG root.
+
 ## Documentation
 - [`../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md)
 - Mermaid guide on the docs site: <https://stream-mdx.vercel.app/guides/mermaid-diagrams>

@@ -132,20 +132,31 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
   for (const body of codeBodies) {
     const wrapper = body.closest(".markdown-code-block,[data-streamdown='code-block']");
     if (!wrapper) continue;
-    const frame = wrapper.parentElement;
-    // The public native frame owns one highlighted fence, not authored PRE
-    // siblings or text. Its inner PRE/CODE structure is renderer-generated.
-    const nativeFrame = wrapper.matches("div.markdown-code-block") &&
-      frame?.matches("[data-code-block='true'][data-block-id][data-code-total-lines]") === true;
-    const ownsNativeFrame = nativeFrame &&
+    const frame = wrapper.closest("div[data-code-block='true'][data-block-id][data-code-total-lines]");
+    const frameContent = wrapper.parentElement;
+    const isDirectFrameContent = frameContent === frame;
+    const isVirtualFrameContent =
+      frameContent?.matches("div.markdown-code-block-container") === true && frameContent.parentElement === frame;
+    const virtualContentIsGenerated =
+      isVirtualFrameContent &&
+      Array.from(frameContent!.childNodes).every((child) =>
+        child === wrapper ||
+        (child.nodeType === 1 && (child as Element).matches("div[aria-hidden='true']")) ||
+        (child.nodeType === 3 && !child.textContent?.trim()),
+      );
+    const frameContentElement = virtualContentIsGenerated ? frameContent! : wrapper;
+    // The public native DIV frame owns one highlighted fence; the inner PRE/CODE structure is renderer-generated.
+    const nativeFrame = wrapper.matches("div.markdown-code-block") && frame !== null;
+    const ownsNativeFrame = nativeFrame && frame !== null &&
       body.parentElement?.tagName === "PRE" && body.parentElement.parentElement === wrapper &&
       body.parentElement.childNodes.length === 1 && body.parentElement.firstChild === body &&
       Array.from(body.querySelectorAll("*")).every((child) => child.tagName === "SPAN" &&
         !Array.from(child.attributes).some((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|target|rel|download|type|checked|disabled|aria-)/.test(attribute.name))) &&
       wrapper.children.length === 1 && wrapper.firstElementChild === body.parentElement &&
       Array.from(wrapper.childNodes).every((child) => child === body.parentElement || (child.nodeType === 3 && !child.textContent?.trim())) &&
-      frame.children.length === 1 && frame.firstElementChild === wrapper &&
-      Array.from(frame.childNodes).every((child) => child === wrapper || (child.nodeType === 3 && !child.textContent?.trim()));
+      (isDirectFrameContent || virtualContentIsGenerated) &&
+      frame.children.length === 1 && frame.firstElementChild === frameContentElement &&
+      Array.from(frame.childNodes).every((child) => child === frameContentElement || (child.nodeType === 3 && !child.textContent?.trim()));
     if (nativeFrame && !ownsNativeFrame) continue;
     generatedOwners.set(body, ownsNativeFrame && frame ? frame : wrapper);
   }

@@ -51,6 +51,21 @@ import { splitPatchBatch } from "@stream-mdx/core/perf/patch-batching";
 
 Use `@stream-mdx/core` together with `@stream-mdx/protocol` when you want a typed transport or a non-React consumer of StreamMDX patch data.
 
+### Settled inline preparation
+
+`InlineParser.parseSettledPrefix(tail)` returns `{ settledTo, nodes, attemptedReferences }`. The boundary is a UTF-16 offset into the supplied tail. Retain the suffix for the next call; returned reference labels belong only to the settled prefix and remain dependencies for later definition changes.
+
+Settlement follows the configured native tokenizer, including unresolved delimiters, opaque code and paired HTML. Undeclared custom parsers and whole-paragraph AST transforms retain the whole tail instead of claiming local reuse. Declarative rules use their existing anticipation declaration and exact compiled extension identity.
+
+This prepares inline records only. It does not provide a paragraph owner, transport, renderer or constant-time guarantee for a large unfinished construct.
+
+### Native block compatibility
+
+`createBlockCompatibilityExtension()` keeps admitted GFM table body rows such as `--` and `===`, while a native thematic break still ends the table. Ordinary Setext headings, paragraph-to-table interruption, disabled tables and caller grammar overrides retain their respective behavior.
+
+Core and Worker pin `@lezer/markdown` to 1.6.1 because native settlement and table compatibility inspect its private state. Re-establish the native grammar regressions before upgrading that dependency; this is not a replacement Markdown grammar.
+
+
 ## Related Packages
 
 | Package | Role |

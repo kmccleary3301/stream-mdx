@@ -201,7 +201,7 @@ async function testActualWholeDocumentProjectionAndIndependentConsumers(): Promi
       assert.equal(flowCard?.closest("p"), null, "flow JSX has no native paragraph ancestor");
       const panel = container.querySelector('section[data-card-value="native-panel"]');
       assert.equal(panel?.querySelector("h2")?.textContent, "Prepared child heading", "flow JSX keeps worker-prepared native heading children");
-      assert.equal(panel?.querySelector("pre code")?.textContent, "const preparedChild = 11;", "flow JSX keeps the worker-prepared code owner");
+      assert.equal(panel?.querySelector("pre code")?.textContent, "const preparedChild = 11;\n", "flow JSX keeps the worker-prepared code owner");
       assert.ok(panel?.querySelector("[data-native-table-wrapper]"), "flow JSX children use the native table element override");
       assert.deepEqual(
         Array.from(panel?.querySelectorAll("tbody tr") ?? [], (row) =>
@@ -224,7 +224,7 @@ async function testActualWholeDocumentProjectionAndIndependentConsumers(): Promi
       const fragmentPanel = container.querySelector('section[data-card-value="fragment-panel"]');
       assert.equal(fragmentPanel?.closest("p"), null, "fragment flow JSX is not nested in a native paragraph");
       assert.equal(fragmentPanel?.querySelector("h2")?.textContent, "Fragment prepared child heading");
-      assert.equal(fragmentPanel?.querySelector("pre code")?.textContent, "const fragmentPreparedChild = 19;");
+      assert.equal(fragmentPanel?.querySelector("pre code")?.textContent, "const fragmentPreparedChild = 19;\n");
       assert.ok(fragmentPanel?.querySelector("[data-native-table-wrapper]"), "fragment flow children retain the native table override");
       assert.deepEqual(
         Array.from(fragmentPanel?.querySelectorAll("tbody tr") ?? [], (row) =>
@@ -351,7 +351,12 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
     return <>{renderCode}</>;
   };
   const codeRenderers = { js: captureCodeMetadata };
-  const workerWithTrace = () => workerFactory((blockId) => tokenizeRangeRequests.push(blockId));
+  // Live enrichment must arrive after the good revision commits, so hold range requests until then.
+  const tokenizeGate = deferred<void>();
+  const workerWithTrace = () => workerFactory((blockId) => {
+    tokenizeRangeRequests.push(blockId);
+    return tokenizeGate.promise;
+  });
   const previousVirtualizedCodeSetting = process.env.STREAM_MDX_DISABLE_VIRTUALIZED_CODE;
   process.env.STREAM_MDX_DISABLE_VIRTUALIZED_CODE = "true";
 
@@ -377,6 +382,7 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
       () => container.querySelector('[data-lease-card-value="last valid module"]') !== null,
       "the initial complete native generation commits the good module",
     );
+    tokenizeGate.resolve();
     goodBlocks = handle.current?.getState().blocks ?? [];
     assert.ok(goodBlocks.length > 0);
     const codeBlock = goodBlocks.find((block) => block.type === "code");

@@ -21,19 +21,15 @@ const navSections = getDocsShellSections({ includeDocsHomeLink: true });
 
 const protocolSchema = `{
   "protocol": "streammdx",
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "streamId": "a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a",
-  "event": "patch",
-  "tx": 42,
-  "patches": [
-    {
-      "op": "appendLines",
-      "at": ["__root__", 3],
-      "startIndex": 0,
-      "lines": ["# Title", "Streaming docs"],
-      "tokens": [{"spans": [{"t": "# Title", "s": {"fg": "#93c5fd"}}]}]
-    }
-  ]
+  "event": "snapshot",
+  "snapshot": {
+    "id": "__root__",
+    "type": "__root__",
+    "props": {},
+    "children": []
+  }
 }`;
 
 const tokenSnippet = `{
@@ -81,18 +77,18 @@ export default function TuiJsonProtocolPage() {
       icon: Sparkles,
     },
     {
-      title: "block_snapshot",
-      description: "Emit stable block snapshots.",
+      title: "snapshot",
+      description: "Publish the root NodeSnapshot used to establish or reset the document.",
       icon: Blocks,
     },
     {
-      title: "patch_batch",
-      description: "Append lines with tokens + diffs.",
+      title: "patch",
+      description: "Apply sequenced patch batches.",
       icon: GitCommitHorizontal,
     },
     {
-      title: "finalize",
-      description: "Seal the stream + final tx.",
+      title: "done",
+      description: "Report terminal status and the final transaction.",
       icon: Layers,
     },
   ];
@@ -192,7 +188,7 @@ export default function TuiJsonProtocolPage() {
             <CodePanel title="Protocol schema">
               <StreamingCodeBlock
                 className="code-panel-block"
-                code={`{\n  \"protocol\": \"streammdx\",\n  \"schemaVersion\": \"1.0\",\n  \"event\": \"init\",\n  \"capabilities\": { \"tokens\": \"v1\", \"diff\": \"v1\" },\n  \"theme\": { \"mode\": \"dual\", \"dark\": \"github-dark\", \"light\": \"github-light\" }\n}`}
+                code={`{\n  \"protocol\": \"streammdx\",\n  \"schemaVersion\": \"2.0\",\n  \"event\": \"init\",\n  \"streamId\": \"stream-1\",\n  \"capabilities\": { \"tokens\": \"v1\", \"diff\": \"v1\" },\n  \"theme\": { \"mode\": \"dual\", \"dark\": \"github-dark\", \"light\": \"github-light\" }\n}`}
                 language="json"
               />
             </CodePanel>

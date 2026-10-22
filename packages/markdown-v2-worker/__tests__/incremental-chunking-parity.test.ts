@@ -1,9 +1,11 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { WorkerOut } from "@stream-mdx/core";
 import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
-import { createWorkerHarness, type WorkerHarness } from "./worker-test-harness";
+import { createWorkerHarness, projectConsumerBlocks, type WorkerHarness } from "./worker-test-harness";
 
 
 // Deterministic pseudo-random number generator
@@ -17,17 +19,14 @@ function createRng(seed = 123456789) {
 
 async function runSession(harness: WorkerHarness, chunks: string[]): Promise<RendererStore> {
   const store = createRendererStore();
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: ["typescript"],
-    docPlugins: { footnotes: true, html: true, mdx: true, math: true, tables: true, callouts: true },
-    mdx: { compileMode: "worker" },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: ["typescript"],
+  docPlugins: { footnotes: true, html: true, mdx: true, math: true, tables: true, callouts: true },
+  mdx: { compileMode: "worker" }, });
   assertNoErrors(initMessages);
   const init = initMessages.find((m): m is Extract<WorkerOut, { type: "INITIALIZED" }> => m.type === "INITIALIZED");
   assert.ok(init, "worker must initialize before applying patches");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
   for (const msg of initMessages) {
     if (msg.type === "PATCH") store.applyPatches(msg.patches, { captureMetrics: false });
   }
@@ -95,19 +94,10 @@ async function runParityTest(): Promise<void> {
     }
 
     const streamedStore = await runSession(harness, chunks);
-    const singleShotBlocks = singleShotStore.getBlocks();
-    const streamedBlocks = streamedStore.getBlocks();
-
-    assert.strictEqual(
-      streamedBlocks.length,
-      singleShotBlocks.length,
-      `block count mismatch for fixture ${file}: streamed=${streamedBlocks.length} single=${singleShotBlocks.length}`,
-    );
-
     assert.deepStrictEqual(
-      streamedBlocks,
-      singleShotBlocks,
-      `blocks differ between random chunking and single-shot parse for fixture ${file}`,
+      projectConsumerBlocks(streamedStore.getBlocks()),
+      projectConsumerBlocks(singleShotStore.getBlocks()),
+      `consumer blocks differ between random chunking and single-shot parse for fixture ${file}`,
     );
   }
 

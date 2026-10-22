@@ -1,6 +1,6 @@
 # Streaming Correctness Contract
 
-_Last updated: 2026-04-10_
+_Last updated: 2026-10-21_
 
 This document defines the correctness rules for StreamMDX's streaming renderer.
 
@@ -89,6 +89,105 @@ At every committed semantic state:
 5. A committed code block must preserve stable line ordering and contiguous line identity.
 6. A committed MDX block must not silently lose content between states.
 
+Unmanaged generic nodes publish their canonical range and metadata with content.
+`setProps.props.range` carries the physical authored range; `props.meta` replaces
+the metadata object, `null` clears it, and omission retains it. `Patch.meta` is
+the separate ordering/classification envelope. Core and React consume these
+reserved fields without turning them into presentation props or mutating earlier
+cold values. These fields cannot replace managed code, table or paragraph source
+ownership or bypass its guards.
+
+Managed table rows are immutable fixed-range records, not child `NodeRecord`s.
+Tail append, provisional-row retraction, and re-extension are atomic under the
+owner generation and expected revision; `processedTo` never regresses. The
+Live consumers retain one root-owned append-only input document and expose
+managed table source through immutable windows capped to each owner's current
+range. Standalone cold snapshots without a baseline use honest per-block slices;
+they never invent text between blocks.
+
+A native table block in `closed` state has committed source while the document
+input session may remain active. This is not worker `FINALIZED`. Dependency
+updates may change only affected inline meaning on closed or finalized table
+rows/header when owner generation, expected revision, and unchanged source
+identity match. These updates remain valid after worker `FINALIZED` under
+semantic ordering guards. `appendTableRows` cannot grow a same-generation
+finalized table.
+
+Native root paragraphs use owner-scoped source and immutable
+`ParagraphSpanRecord`s. `appendParagraph` is a semantic tail transaction guarded
+by owner ID, generation, and expected revision. Its required `sourceAppend`
+contains exactly authored bytes newly entering the owner's source range, never
+the full prefix, and has no optional or legacy whole-raw payload alternative.
+`fromSpan` identifies the changed tail; a span-changing append starts at
+`completeSpanCount`. Completed span records and authored bytes remain immutable.
+
+Metadata-only progress and closed-to-finalized lifecycle patches carry an empty
+suffix and no new span records. Provisional-tail retraction also carries an
+empty suffix and cannot remove completed source. The reducer rejects stale
+generation or revision, a regressing `processedTo` or completed-span frontier,
+a changed owner start, a suffix-length mismatch, and changed retained
+provisional bytes on re-extension.
+
+Live `INITIALIZED` roots carry `inputSource: { generation, raw }`, including an
+empty baseline, and its generation matches the worker message. Each later
+worker-admitted chunk is an ordered, non-coalescable semantic
+`appendInputSource` at the root with the exact UTF-16 offset and new bytes.
+Consumers validate the generation and point before mutation. Input retention
+does not rebuild semantic root children or count as semantic completion,
+ordinal progress, or owner progress.
+
+Code, table, and paragraph source windows share that one consumer document.
+Native owners validate `sourceAppend` against their own root range and carry
+only the exact newly owned authored suffix. An owner suffix may include an LF
+retained by an earlier root append. Root input generation is separate from
+native owner generations. Same-bounds dependency meaning updates retain the
+existing source window and cannot absorb later definitions.
+
+Each paragraph span retains its stable ID and index, absolute UTF-16 source
+range, source revision, and provisional flag, alongside prepared inline nodes,
+attempted-reference labels, and optional typed
+`ParagraphSpanChildSnapshot`s. Native mixed children use the `paragraph-text`,
+`paragraph-html`, or `paragraph-mdx` type with stable IDs and absolute ranges.
+Their prepared order and ranges remain authoritative; consumers do not rebuild
+them by reparsing the parent paragraph.
+
+`ParagraphBlockSourceMetadata` records owner ID, generation, revision, state,
+`processedTo`, complete and total span counts, and the owned source range. An
+open paragraph may retain a provisional tail. A closed paragraph has no
+provisional span and may only advance to `finalized` without changing source,
+span boundaries, or processing frontier. `closed` is paragraph-owner state, not
+the worker's document-level `FINALIZED` message. A same-generation finalized
+paragraph cannot accept source growth or reopen. If raw engine input grows a
+finalized EOF paragraph, the engine replaces its owner under a fresh generation.
+
+`updateParagraphSpans` is a semantic, source-neutral update. It carries only
+dependency-affected prepared spans and requires matching owner generation,
+expected revision, next revision, span index, expected span source revision, and
+unchanged span source identity. It preserves authored bytes, source ranges, and
+span boundaries, and remains valid for closed or finalized owners when ordering
+guards pass. A continued reference title may update dependent prepared meaning;
+the first definition keeps precedence.
+
+The default public native paragraph append path emits these owner-scoped changes
+without a global `getBlocks()` projection or document-wide MDX scan. Consumers
+that request a complete `Block` projection perform explicit cold materialization.
+
+Core source preparation uses `AppendSourceDocument.stageAppend(text)` without
+mutating canonical source. Its reader combines the captured canonical prefix
+and offered suffix; it never chains earlier staged readers or copies the
+completed source directory. `commit()` appends once only while its exact base
+remains current, returns false for a stale base, and is idempotent after success.
+Higher-level semantic guards must all pass before calling it.
+`createSourceWindow(snapshot, from, to)` exposes a capped, zero-origin UTF-16
+reader for that authored range. Old windows and staged readers remain unchanged
+after later appends; full materialization is explicit cold work.
+
+Live source consumers stage the complete baseline and node validation before
+resetting prior state. A live snapshot without `inputSource` is an incompatible
+producer, not a block-based reconstruction request. Empty input is a valid
+baseline; static artifacts remain version 1 and cold block exports do not
+materialize the complete root input as routine append work.
+
 Inline JSX tags and expressions belong to their paragraph or list-item projection. They must preserve surrounding prose and component allowlists without gaining block-module evaluation. A complete standalone component owns its source as block MDX and remains inert unless admitted by the restricted policy's host registrations. Registrations use `defineContentComponent`; narrowed source-prop types require a type-predicate validator. Only serializable name/render-condition descriptors cross the worker boundary; component callbacks and native projected children remain host-side.
 
 The trusted lane is separate from native parsing: a host may submit one complete authored-document revision for explicit trusted preparation and evaluation. The worker never compiles or evaluates authored modules. `FINALIZED` means native semantic completion only; it does not promise trusted compilation, projection, or host render commit readiness.
@@ -101,7 +200,7 @@ Recognized restricted-component headers have a registration-aware native boundar
 
 Native `InlineCode` spans own their literal contents. Mixed-content projection must not promote braces or tags inside them to MDX or HTML, including multi-backtick spans and code inside prepared quotes or lists. Direct compilation, worker patches, and serialized resets must preserve the same code text.
 
-Registered paragraph wrappers receive each projected inline group through the existing `children` prop, with their original raw, inline, and metadata props intact. Prepared quotes pass their native child projection to the registered quote wrapper. Custom wrappers must consume that projection rather than rebuild incomplete JSX from raw prose.
+Registered paragraph wrappers receive their projected inline group through the existing `children` prop and retain their truthful raw, inline, and metadata props. Until the separate approved P6 API migration, the legacy full-source-props path explicitly materializes a cold `Block`; it is not flat append work. Native prepared children remain authoritative, so custom wrappers must consume the supplied `children` projection rather than reconstructing JSX from raw prose.
 
 HTML portions of mixed paragraphs and list items retain owner-prepared sanitized trees through patches and serialization. Registry URL transforms and descendant drop/unwrap policies apply to those trees without reintroducing filtered HTML. Registered quote wrappers remain active while streaming and when the prepared quote is empty.
 
@@ -167,10 +266,24 @@ If the system is unsure, the tail remains provisional.
 - Header and body rows commit only after row integrity is stable.
 - Tail rows remain provisional until delimiters and cell boundaries are known.
 
+- Managed table rows use stable owner-derived row/cell identities and exact authored UTF-16 ranges.
+- `appendTableRows` replaces only a provisional tail and appends rows; it never resends or materializes the completed prefix.
+- `updateTableRows` carries only dependency-affected inline meaning changes. Row/header source identity, raw slices and ranges stay unchanged; a header-only update does not traverse body rows.
+- Owner generation, expected revision and row source revision guard each atomic table mutation. Stale commands leave the index and visible snapshot unchanged.
+- The fixed-range row index preserves historical readers; explicit cold `getBlocks()` materialization is allowed to read the complete table.
+- Configured row virtualization remains available while the table is streaming; streaming state alone does not disable it.
 ### Code blocks
 
-- Append-only line fast paths are allowed only when append safety is provable.
-- Any non-tail mutation or ordering ambiguity falls back to semantic replace.
+- Live schema-2 native code uses `NodeSnapshot.code` (`CodeBlockSnapshot`) with
+  typed `CodeLineRecord`s.
+- `appendCode` commits semantic changed-tail source updates; `decorateCode`
+  carries decoration-only row updates.
+- Owner generation and semantic source revision are distinct from each row's
+  last source-change revision. Unchanged completed rows and historical readers
+  remain immutable.
+- Exact authored raw source is retained independently of dedented display lines.
+  Full source, HTML and cold snapshots are explicit O(N) reads, not routine
+  append payloads or finalize repairs.
 
 ## 8) Lookahead Rules
 

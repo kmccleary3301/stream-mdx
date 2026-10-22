@@ -77,6 +77,8 @@ export interface ControlsComponentProps {
   headers?: string[];
   rows?: string[][];
   align?: Array<"left" | "center" | "right" | null>;
+  /** Materialize table strings only when a custom control action needs them. */
+  getTableData?: () => { headers: string[]; rows: string[][]; align?: Array<"left" | "center" | "right" | null> };
   onCopy?: (format?: "raw" | "tsv" | "markdown") => Promise<boolean> | boolean | void;
   onDownload?: (format?: "code" | "csv" | "tsv" | "markdown") => void;
   labels?: ControlsLabels;
@@ -192,6 +194,8 @@ export interface BlockComponents {
     lang?: string;
     preAttrs?: Record<string, string>;
     codeAttrs?: Record<string, string>;
+    /** Prepared renderer-owned children, placed once inside the default semantic code element. */
+    children?: React.ReactNode;
   }>;
   blockquote: React.FC<{ inlines: InlineNode[]; renderedContent?: React.ReactNode }>;
   list: React.FC<{ ordered: boolean; items: InlineNode[][] }>;
@@ -289,6 +293,8 @@ export type CodeHighlightRangeRequest = {
 
 export interface Renderer {
   attachWorker(worker: Worker, options?: { skipInit?: boolean }): void;
+  /** Resolve after the attached worker supplies its matching initial root, before queued source dispatch. */
+  whenInitialized(): Promise<void>;
   append(text: string): void;
   renderStatic(text: string): Promise<Block[]>;
   onUpdate(cb: (blocks: ReadonlyArray<Block>) => void): () => void;

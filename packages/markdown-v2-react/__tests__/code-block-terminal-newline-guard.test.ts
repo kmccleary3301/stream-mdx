@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import type { Block, Patch } from "@stream-mdx/core";
+import type { NodeSnapshot, Patch } from "@stream-mdx/core";
 import React from "react";
 import { JSDOM } from "jsdom";
 import { createRoot } from "react-dom/client";
@@ -30,57 +30,66 @@ async function runCodeBlockTerminalNewlineGuardTest(): Promise<void> {
   (globalThis as any).cancelAnimationFrame = window.cancelAnimationFrame.bind(window);
   (globalThis as any).ResizeObserver = ResizeObserverStub;
 
-  const initialCode = "alpha\nbeta";
-  const staleParentCode = "alpha\nbeta\n";
-  const partialLine = "gam";
-  const block: Block = {
-    id: "code-terminal-newline-guard",
-    type: "code",
-    isFinalized: false,
-    payload: {
-      raw: `\`\`\`txt\n${initialCode}`,
-      meta: {
-        lang: "txt",
-        code: initialCode,
+  const blockId = "code-terminal-newline-guard";
+  const raw = "```txt\nalpha\nbeta";
+  const snapshot: NodeSnapshot = {
+    id: "__root__",
+    type: "__root__",
+    children: [{
+      id: blockId,
+      type: "code",
+      props: { lang: "txt" },
+      children: [],
+      code: {
+        codeOwnerId: blockId,
+        generation: 1,
+        revision: 0,
+        state: "open",
+        processedTo: raw.length,
+        completeLineCount: 1,
+        lineCount: 2,
+        sourceRange: { from: 0, to: raw.length },
+        configurationRevision: 0,
+        language: "txt",
+        raw,
+        lines: [
+          { id: `${blockId}::line:0`, index: 0, text: "alpha", ending: "\n", sourceRange: { from: 7, to: 12 }, sourceRevision: 0, isProvisional: false },
+          { id: `${blockId}::line:1`, index: 1, text: "beta", ending: "", sourceRange: { from: 13, to: 17 }, sourceRevision: 0, isProvisional: true },
+        ],
       },
-    },
+    }],
   };
-
-  const store = createRendererStore([block]);
+  const store = createRendererStore();
+  store.resetSnapshot(snapshot);
   const registry = new ComponentRegistry();
-
-  const patches: Patch[] = [
-    {
-      op: "setProps",
-      at: { blockId: block.id, nodeId: block.id },
-      props: {
-        block: {
-          ...block,
-          payload: {
-            ...block.payload,
-            raw: `\`\`\`txt\n${staleParentCode}`,
-            meta: {
-              ...(block.payload.meta ?? {}),
-              code: staleParentCode,
-            },
-          },
-        },
-      },
+  const patch: Patch = {
+    op: "appendCode",
+    at: { blockId },
+    code: {
+      codeOwnerId: blockId,
+      generation: 1,
+      revision: 1,
+      state: "open",
+      processedTo: 21,
+      completeLineCount: 2,
+      lineCount: 3,
+      sourceRange: { from: 0, to: 21 },
     },
-    {
-      op: "appendLines",
-      at: { blockId: block.id, nodeId: block.id },
-      startIndex: 2,
-      lines: [partialLine],
-      highlight: [null],
-    },
-  ];
-  store.applyPatches(patches);
+    expectedRevision: 0,
+    fromLine: 1,
+    lines: [
+      { id: `${blockId}::line:1`, index: 1, text: "beta", ending: "\n", sourceRange: { from: 13, to: 17 }, sourceRevision: 1, isProvisional: false },
+      { id: `${blockId}::line:2`, index: 2, text: "gam", ending: "", sourceRange: { from: 18, to: 21 }, sourceRevision: 1, isProvisional: true },
+    ],
+    sourceAppend: "\ngam",
+    meta: { kind: "semantic" },
+  };
+  store.applyPatches([patch]);
 
   const container = window.document.getElementById("root");
   assert.ok(container, "missing test root container");
   const root = createRoot(container);
-  root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
+  root.render(React.createElement(BlockNodeRenderer, { store, blockId, registry }));
   await sleep(40);
 
   const code = container.querySelector('[data-code-block="true"] pre code') as HTMLElement | null;

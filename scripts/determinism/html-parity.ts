@@ -162,7 +162,7 @@ async function main(): Promise<void> {
       Object.defineProperty(globalThis, "DOMParser", { value: dom.window.DOMParser, configurable: true });
 
       const clientRegistry = new ClientRegistry();
-      hydrateRoot(
+      const hydratedRoot = hydrateRoot(
         app,
         React.createElement(ClientMarkdownBlocksRenderer, {
           blocks: compiled.blocks,
@@ -180,6 +180,8 @@ async function main(): Promise<void> {
 
       const canonServer = canonicalize(serverMarkup);
       const canonHydrated = canonicalize(app.innerHTML);
+      // The next fixture removes the DOM globals; a still-mounted root would commit its later work without them.
+      hydratedRoot.unmount();
 
       // Sanity checks that the content exists and is meaningful.
       assert.ok(canonServer.includes(`id="${fixture.expect.headingId}"`), `${fixture.name}: server: expected heading id`);

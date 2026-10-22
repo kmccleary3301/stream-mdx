@@ -1,6 +1,12 @@
-import type { Block, FootnoteItem, HtmlTreeNode, InlineNode, NodeSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
+import type { Block, FootnoteItem, HtmlTreeNode, InlineNode, NodeSnapshot, ParagraphSpanChildSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
 import { generateBlockId } from "@stream-mdx/core";
-import type { DocumentPlugin, DocumentPluginRegistry } from "../document";
+import type {
+  DocumentPlugin,
+  DocumentPluginRegistry,
+  FootnoteParagraphSpanTarget,
+  FootnoteParagraphTargetDelta,
+  FootnoteParagraphTargetUpdate,
+} from "../document";
 
 /**
  * Footnotes document plugin
@@ -13,18 +19,23 @@ import type { DocumentPlugin, DocumentPluginRegistry } from "../document";
 export const FootnotesPlugin: DocumentPlugin = {
   name: "footnotes",
 
-	  onBegin(ctx) {
-	    if (!ctx.state.footnotes) {
-	      const initialState: FootnoteState = {
-	        labelToNumber: new Map<string, number>(),
-	        definitions: new Map<string, string>(), // raw content
-	        definitionOrigins: new Map<string, number>(),
-	        referenceCounts: new Map<string, number>(),
-	        definitionInlines: new Map<string, InlineNode[]>(),
-	        inlineParser: ctx.state.inlineParser,
-	      };
-	      ctx.state.footnotes = initialState;
-	    } else {
+  onBegin(ctx) {
+    if (!ctx.state.footnotes) {
+      const initialState: FootnoteState = {
+        labelToNumber: new Map<string, number>(),
+        definitions: new Map<string, string>(),
+        definitionOrigins: new Map<string, number>(),
+        referenceCounts: new Map<string, number>(),
+        definitionInlines: new Map<string, InlineNode[]>(),
+        inlineParser: ctx.state.inlineParser,
+        paragraphTargets: new Map<string, FootnoteParagraphOwnerState>(),
+        paragraphDependents: new Map<string, Map<string, Set<number>>>(),
+        paragraphTargetEvents: [],
+        publishedNumbers: new Map<string, number>(),
+        retiredParagraphGenerations: new Map<string, number>(),
+      };
+      ctx.state.footnotes = initialState;
+    } else {
       const existing = ctx.state.footnotes as FootnoteState;
       if (!existing.inlineParser && ctx.state.inlineParser) {
         existing.inlineParser = ctx.state.inlineParser;
@@ -34,27 +45,64 @@ export const FootnotesPlugin: DocumentPlugin = {
 
   process(ctx) {
     const state = ctx.state.footnotes as FootnoteState;
+    const bridge = ctx.footnoteParagraphTargets;
+    for (const ownerId of bridge?.removedOwnerIds ?? []) retireParagraphOwner(state, ownerId);
+    const targetChanges = mergeParagraphTargetDeltas(state, bridge?.deltas ?? []);
+    const changedTargets = targetChanges.targets;
+    const changedReferenceLabels = targetChanges.referenceLabels;
+    const changedDefinitions = collectDefinitionsFromBlocks(ctx.blocks, state);
+    const publicationChanged = state.hasProvisionalTail !== ctx.hasProvisionalTail;
+    state.hasProvisionalTail = ctx.hasProvisionalTail;
+    const rebuildAllTargets = Boolean(bridge?.rebuild)
+      || (bridge?.removedOwnerIds?.length ?? 0) > 0
+      || publicationChanged;
+    const affectedTargets = collectAffectedParagraphTargets(
+      state,
+      changedTargets,
+      changedDefinitions,
+      rebuildAllTargets,
+      changedReferenceLabels,
+    );
+    const shouldRebuild = !bridge
+      || Boolean(bridge.rebuild)
+      || (bridge.removedOwnerIds?.length ?? 0) > 0
+      || publicationChanged
+      || changedDefinitions.size > 0
+      || changedReferenceLabels.size > 0;
+    let numbers: Map<string, number>;
+    if (shouldRebuild) {
+      const scopes = assignNumbersFromReferencesInBlocks(ctx.blocks, state, state.paragraphTargetEvents);
+      numbers = numberInlineReferences(ctx.blocks, state, scopes, ctx.hasProvisionalTail);
+      addChangedFootnoteNumberTargets(state, numbers, affectedTargets);
+      const paragraphUpdates = numberParagraphTargets(
+        state,
+        scopes,
+        numbers,
+        ctx.hasProvisionalTail,
+        affectedTargets,
+      );
+      if (paragraphUpdates.length > 0) bridge?.applyUpdates(paragraphUpdates);
+    } else {
+      numbers = new Map<string, number>();
+      for (const label of state.labelToNumber.keys()) {
+        if (state.definitions.has(label) && (state.referenceCounts.get(label) ?? 0) > 0) {
+          numbers.set(label, numbers.size + 1);
+        }
+      }
+      addChangedFootnoteNumberTargets(state, numbers, affectedTargets);
+    }
 
-    // 1) Collect definitions from blocks and retag definition blocks
-    collectDefinitionsFromBlocks(ctx.blocks, state);
-
-    // 2) Assign numbers based on first reference order (scan content)
-    const scopes = assignNumbersFromReferencesInBlocks(ctx.blocks, state);
-
-    // 3) Update inline nodes in blocks to include assigned numbers
-    const numbers = numberInlineReferences(ctx.blocks, state, scopes);
-
-    // 4) Build synthetic footnotes block
+    // Build the synthetic footer after the current pass has updated definitions and references.
     const items = buildFootnoteItems(state, numbers);
-    const rawSignature = JSON.stringify(items.map((it) => ({ n: it.number, l: it.label })));
+    const rawSignature = JSON.stringify(items.map((item) => ({ n: item.number, l: item.label })));
     const id = generateBlockId(`FOOTNOTES:${rawSignature}`, "footnotes");
 
     const footnotesBlock: Block = {
       id,
       type: "footnotes",
-      isFinalized: true, // can be treated as finalized except when tail updates
+      isFinalized: true,
       payload: {
-        raw: "", // not used by renderer
+        raw: "",
         meta: { items },
       },
     };
@@ -67,14 +115,520 @@ type InlineParserAdapter = { parse: (input: string) => InlineNode[] };
 
 type FootnoteState = {
   labelToNumber: Map<string, number>;
-  definitions: Map<string, string>; // raw definition content
+  definitions: Map<string, string>;
   definitionOrigins: Map<string, number>;
   referenceCounts: Map<string, number>;
   definitionInlines: Map<string, InlineNode[]>;
   inlineParser?: InlineParserAdapter;
+  paragraphTargets: Map<string, FootnoteParagraphOwnerState>;
+  paragraphDependents: Map<string, Map<string, Set<number>>>;
+  paragraphTargetEvents: ParagraphTargetReferenceEvent[];
+  publishedNumbers: Map<string, number>;
+  retiredParagraphGenerations: Map<string, number>;
+  hasProvisionalTail?: boolean;
 };
 
-function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState) {
+interface FootnoteParagraphSpanState extends FootnoteParagraphSpanTarget {
+  readonly references: readonly string[];
+  readonly positions: ReadonlyMap<string, number>;
+  readonly childReferences?: ReadonlyMap<string, readonly string[]>;
+}
+
+interface FootnoteParagraphOwnerState {
+  readonly generation: number;
+  readonly spans: Map<number, FootnoteParagraphSpanState>;
+  readonly referenceCounts: Map<string, number>;
+  readonly eventsBySpan: Map<number, readonly ParagraphTargetReferenceEvent[]>;
+  maxSpanIndex: number;
+}
+
+type ParagraphTargetReferenceEvent = {
+  readonly ownerId: string;
+  readonly from: number;
+  readonly index: number;
+  readonly references: readonly string[];
+  readonly snapshot?: ParagraphSpanChildSnapshot;
+};
+
+function compareParagraphTargetEvents(
+  left: ParagraphTargetReferenceEvent,
+  right: ParagraphTargetReferenceEvent,
+): number {
+  if (left.from !== right.from) return left.from - right.from;
+  if (left.index !== right.index) return left.index - right.index;
+  return left.ownerId < right.ownerId ? -1 : left.ownerId > right.ownerId ? 1 : 0;
+}
+
+function paragraphTargetEventIndex(
+  events: readonly ParagraphTargetReferenceEvent[],
+  target: ParagraphTargetReferenceEvent,
+): number {
+  let low = 0;
+  let high = events.length;
+  while (low < high) {
+    const middle = low + Math.floor((high - low) / 2);
+    if (compareParagraphTargetEvents(events[middle]!, target) < 0) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+function removeParagraphTargetEvents(state: FootnoteState, ownerId: string, spanIndex: number): void {
+  const owner = state.paragraphTargets.get(ownerId);
+  const events = owner?.eventsBySpan.get(spanIndex);
+  if (!owner || !events) return;
+  for (const target of events) {
+    const insertion = paragraphTargetEventIndex(state.paragraphTargetEvents, target);
+    for (let index = insertion; index < state.paragraphTargetEvents.length
+      && compareParagraphTargetEvents(state.paragraphTargetEvents[index]!, target) === 0; index += 1) {
+      if (state.paragraphTargetEvents[index] !== target) continue;
+      state.paragraphTargetEvents.splice(index, 1);
+      break;
+    }
+  }
+  owner.eventsBySpan.delete(spanIndex);
+}
+
+function addParagraphTargetEvents(
+  state: FootnoteState,
+  owner: FootnoteParagraphOwnerState,
+  ownerId: string,
+  span: FootnoteParagraphSpanState,
+): void {
+  const events: ParagraphTargetReferenceEvent[] = [];
+  if (span.children?.length) {
+    for (const child of span.children) {
+      const references = span.childReferences?.get(child.id);
+      if (references?.length) events.push({ ownerId, from: child.range.from, index: span.index, references, snapshot: child });
+    }
+  } else if (span.references.length > 0) {
+    events.push({ ownerId, from: span.sourceRange.from, index: span.index, references: span.references });
+  }
+  if (events.length === 0) return;
+  const frozenEvents = Object.freeze(events);
+  owner.eventsBySpan.set(span.index, frozenEvents);
+  for (const target of frozenEvents) {
+    const insertion = paragraphTargetEventIndex(state.paragraphTargetEvents, target);
+    state.paragraphTargetEvents.splice(insertion, 0, target);
+  }
+}
+
+function collectParagraphHtmlReferences(tree: readonly HtmlTreeNode[], references: string[]): void {
+  for (const node of tree) {
+    if (node.kind === "text") {
+      if (node.inline) collectParagraphReferences(node.inline, references);
+    } else if (node.kind === "element" || node.kind === "component") {
+      if (node.kind === "element" && node.inlineNode?.kind === "footnote-ref") collectParagraphReferences([node.inlineNode], references);
+      collectParagraphHtmlReferences(node.children, references);
+    } else if (node.block.payload.inline) {
+      collectParagraphReferences(node.block.payload.inline, references);
+    }
+  }
+}
+
+function collectParagraphSnapshotReferences(snapshot: NodeSnapshot, references: string[]): void {
+  const block = snapshot.props?.block as Block | undefined;
+  const tree = (snapshot.props?.htmlParagraphTree ?? snapshot.props?.htmlTree
+    ?? block?.payload.meta?.htmlParagraphTree ?? block?.payload.meta?.htmlTree) as HtmlTreeNode[] | undefined;
+  if (Array.isArray(tree)) {
+    collectParagraphHtmlReferences(tree, references);
+  } else if (Array.isArray(snapshot.props?.inline)) {
+    collectParagraphReferences(snapshot.props.inline as InlineNode[], references);
+  } else if (block?.payload.inline) {
+    collectParagraphReferences(block.payload.inline, references);
+  }
+  for (const child of snapshot.children ?? []) collectParagraphSnapshotReferences(child, references);
+}
+
+function collectParagraphReferences(nodes: readonly InlineNode[], references: string[]): void {
+  for (const node of nodes) {
+    if (node.kind === "footnote-ref") references.push(node.label);
+    if (hasInlineChildren(node)) collectParagraphReferences(node.children, references);
+  }
+}
+
+function removeParagraphSpanDependencies(
+  state: FootnoteState,
+  ownerId: string,
+  span: FootnoteParagraphSpanState,
+): void {
+  for (const label of span.references) {
+    const owners = state.paragraphDependents.get(label);
+    const indices = owners?.get(ownerId);
+    indices?.delete(span.index);
+    if (indices?.size === 0) owners?.delete(ownerId);
+    if (owners?.size === 0) state.paragraphDependents.delete(label);
+  }
+}
+
+function addParagraphSpanDependencies(
+  state: FootnoteState,
+  ownerId: string,
+  span: FootnoteParagraphSpanState,
+): void {
+  for (const label of span.references) {
+    let owners = state.paragraphDependents.get(label);
+    if (!owners) {
+      owners = new Map();
+      state.paragraphDependents.set(label, owners);
+    }
+    let indices = owners.get(ownerId);
+    if (!indices) {
+      indices = new Set<number>();
+      owners.set(ownerId, indices);
+    }
+    indices.add(span.index);
+  }
+}
+
+function removeParagraphOwner(state: FootnoteState, ownerId: string): void {
+  const owner = state.paragraphTargets.get(ownerId);
+  if (!owner) return;
+  for (const index of owner.eventsBySpan.keys()) removeParagraphTargetEvents(state, ownerId, index);
+  for (const span of owner.spans.values()) removeParagraphSpanDependencies(state, ownerId, span);
+  state.paragraphTargets.delete(ownerId);
+}
+
+function retireParagraphOwner(state: FootnoteState, ownerId: string): void {
+  const owner = state.paragraphTargets.get(ownerId);
+  if (owner) {
+    const retiredGeneration = state.retiredParagraphGenerations.get(ownerId) ?? -1;
+    state.retiredParagraphGenerations.set(ownerId, Math.max(retiredGeneration, owner.generation));
+  }
+  removeParagraphOwner(state, ownerId);
+}
+
+function rebuildParagraphOwnerPositions(owner: FootnoteParagraphOwnerState): void {
+  const counts = new Map<string, number>();
+  const spans = Array.from(owner.spans.values()).sort((left, right) => left.index - right.index);
+  for (const span of spans) {
+    const positions = new Map<string, number>();
+    for (const label of span.references) {
+      const count = counts.get(label) ?? 0;
+      if (!positions.has(label)) positions.set(label, count);
+      counts.set(label, count + 1);
+    }
+    owner.spans.set(span.index, { ...span, positions });
+  }
+  owner.referenceCounts.clear();
+  for (const [label, count] of counts) owner.referenceCounts.set(label, count);
+}
+
+function mergeParagraphTargetDeltas(
+  state: FootnoteState,
+  deltas: readonly FootnoteParagraphTargetDelta[],
+): { targets: Map<string, Set<number>>; referenceLabels: Set<string> } {
+  const changed = new Map<string, Set<number>>();
+  const referenceLabels = new Set<string>();
+  for (const delta of deltas) {
+    const retiredGeneration = state.retiredParagraphGenerations.get(delta.ownerId);
+    if (retiredGeneration !== undefined) {
+      if (delta.generation <= retiredGeneration) continue;
+      state.retiredParagraphGenerations.delete(delta.ownerId);
+    }
+    let owner = state.paragraphTargets.get(delta.ownerId);
+    if (owner && delta.generation < owner.generation) continue;
+    if (owner && owner.generation !== delta.generation) {
+      for (const span of owner.spans.values()) for (const label of span.references) referenceLabels.add(label);
+      removeParagraphOwner(state, delta.ownerId);
+      owner = undefined;
+    }
+    if (!owner) {
+      owner = {
+        generation: delta.generation,
+        spans: new Map(),
+        referenceCounts: new Map(),
+        eventsBySpan: new Map(),
+        maxSpanIndex: -1,
+      };
+      state.paragraphTargets.set(delta.ownerId, owner);
+    }
+    let indices = changed.get(delta.ownerId);
+    if (!indices) {
+      indices = new Set<number>();
+      changed.set(delta.ownerId, indices);
+    }
+    for (const target of delta.spans) {
+      const outOfOrder = target.index < owner.maxSpanIndex;
+      const previous = owner.spans.get(target.index);
+      if (previous && target.sourceRevision < previous.sourceRevision) continue;
+      if (previous) {
+        removeParagraphTargetEvents(state, delta.ownerId, target.index);
+        removeParagraphSpanDependencies(state, delta.ownerId, previous);
+        for (const label of previous.references) {
+          referenceLabels.add(label);
+          const count = owner.referenceCounts.get(label) ?? 0;
+          if (count <= 1) owner.referenceCounts.delete(label);
+          else owner.referenceCounts.set(label, count - 1);
+        }
+      }
+      const references: string[] = [];
+      const childReferences = new Map<string, readonly string[]>();
+      if (target.children?.length) {
+        for (const child of target.children) {
+          const childLabels: string[] = [];
+          collectParagraphSnapshotReferences(child, childLabels);
+          childReferences.set(child.id, Object.freeze(childLabels));
+          references.push(...childLabels);
+        }
+      } else {
+        collectParagraphReferences(target.nodes, references);
+      }
+      for (const label of references) referenceLabels.add(label);
+      const positions = new Map<string, number>();
+      for (const label of references) {
+        const count = owner.referenceCounts.get(label) ?? 0;
+        if (!positions.has(label)) positions.set(label, count);
+        owner.referenceCounts.set(label, count + 1);
+      }
+      const span: FootnoteParagraphSpanState = {
+        ...target,
+        references: Object.freeze(references),
+        positions,
+        ...(childReferences.size > 0 ? { childReferences } : {}),
+      };
+      owner.spans.set(target.index, span);
+      addParagraphTargetEvents(state, owner, delta.ownerId, span);
+      addParagraphSpanDependencies(state, delta.ownerId, span);
+      if (outOfOrder) rebuildParagraphOwnerPositions(owner);
+      owner.maxSpanIndex = Math.max(owner.maxSpanIndex, target.index);
+      indices.add(target.index);
+    }
+  }
+  return { targets: changed, referenceLabels };
+}
+
+
+function collectAffectedParagraphTargets(
+  state: FootnoteState,
+  changedTargets: Map<string, Set<number>>,
+  changedDefinitions: ReadonlySet<string>,
+  rebuildAll: boolean,
+  changedReferenceLabels: ReadonlySet<string>,
+): Map<string, Set<number>> {
+  const affected = new Map<string, Set<number>>();
+  const add = (ownerId: string, index: number) => {
+    let indices = affected.get(ownerId);
+    if (!indices) {
+      indices = new Set<number>();
+      affected.set(ownerId, indices);
+    }
+    indices.add(index);
+  };
+  if (rebuildAll) {
+    for (const [ownerId, owner] of state.paragraphTargets) {
+      for (const span of owner.spans.values()) if (span.references.length > 0) add(ownerId, span.index);
+    }
+    return affected;
+  }
+  for (const [ownerId, indices] of changedTargets) {
+    const owner = state.paragraphTargets.get(ownerId);
+    if (!owner) continue;
+    for (const index of indices) if ((owner.spans.get(index)?.references.length ?? 0) > 0) add(ownerId, index);
+  }
+  for (const label of changedDefinitions) {
+    const owners = state.paragraphDependents.get(label);
+    if (!owners) continue;
+    for (const [ownerId, indices] of owners) for (const index of indices) add(ownerId, index);
+  }
+  for (const label of changedReferenceLabels) {
+    const owners = state.paragraphDependents.get(label);
+    if (!owners) continue;
+    for (const [ownerId, indices] of owners) for (const index of indices) add(ownerId, index);
+  }
+  return affected;
+}
+
+function addChangedFootnoteNumberTargets(
+  state: FootnoteState,
+  numbers: Map<string, number>,
+  affected: Map<string, Set<number>>,
+): void {
+  const current = new Map<string, number>();
+  for (const [label, referenceNumber] of state.labelToNumber) {
+    const number = numbers.get(label) ?? referenceNumber;
+    current.set(label, number);
+    if (state.publishedNumbers.get(label) === number) continue;
+    const owners = state.paragraphDependents.get(label);
+    if (!owners) continue;
+    for (const [ownerId, indices] of owners) {
+      let targets = affected.get(ownerId);
+      if (!targets) {
+        targets = new Set<number>();
+        affected.set(ownerId, targets);
+      }
+      for (const index of indices) targets.add(index);
+    }
+  }
+  for (const label of state.publishedNumbers.keys()) {
+    if (current.has(label)) continue;
+    const owners = state.paragraphDependents.get(label);
+    if (!owners) continue;
+    for (const [ownerId, indices] of owners) {
+      let targets = affected.get(ownerId);
+      if (!targets) {
+        targets = new Set<number>();
+        affected.set(ownerId, targets);
+      }
+      for (const index of indices) targets.add(index);
+    }
+  }
+  state.publishedNumbers.clear();
+  for (const [label, number] of current) state.publishedNumbers.set(label, number);
+}
+
+function numberParagraphTargets(
+  state: FootnoteState,
+  scopes: Map<string, FootnoteReferenceScope>,
+  numbers: Map<string, number>,
+  hasProvisionalTail: boolean,
+  affectedTargets: Map<string, Set<number>>,
+): FootnoteParagraphTargetUpdate[] {
+  const updates: FootnoteParagraphTargetUpdate[] = [];
+  for (const [ownerId, indices] of affectedTargets) {
+    const owner = state.paragraphTargets.get(ownerId);
+    if (!owner) continue;
+    const scope = scopes.get(ownerId);
+    const ownerUpdates: FootnoteParagraphTargetUpdate["updates"][number][] = [];
+    for (const index of Array.from(indices).sort((left, right) => left - right)) {
+      const span = owner.spans.get(index);
+      if (!span) continue;
+      if (span.children?.length) {
+        const children = mapChanged(span.children, (child) => numberParagraphTargetChild(
+          child,
+          scopes,
+          scope,
+          numbers,
+          state,
+          hasProvisionalTail,
+        ));
+        if (children === span.children) continue;
+        owner.spans.set(index, { ...span, children });
+        ownerUpdates.push({
+          index,
+          expectedSourceRevision: span.sourceRevision,
+          nodes: span.nodes,
+          children,
+          attemptedReferences: span.attemptedReferences,
+        });
+        continue;
+      }
+      const nodes = numberParagraphInline(
+        span.nodes,
+        scope,
+        numbers,
+        state,
+        hasProvisionalTail,
+        new Map(span.positions),
+      );
+      if (nodes === span.nodes) continue;
+      owner.spans.set(index, { ...span, nodes });
+      ownerUpdates.push({
+        index,
+        expectedSourceRevision: span.sourceRevision,
+        nodes,
+        attemptedReferences: span.attemptedReferences,
+      });
+    }
+    if (ownerUpdates.length > 0) updates.push({ ownerId, generation: owner.generation, updates: ownerUpdates });
+  }
+  return updates;
+}
+
+function numberParagraphInline(
+  nodes: readonly InlineNode[],
+  scope: FootnoteReferenceScope | undefined,
+  numbers: Map<string, number>,
+  state: FootnoteState,
+  hasProvisionalTail: boolean,
+  positions: Map<string, number>,
+): readonly InlineNode[] {
+  if (!scope?.references.size) return nodes;
+  const numberNode = (node: InlineNode): InlineNode => {
+    let result = node;
+    if (hasInlineChildren(node)) {
+      const children = mapChanged(node.children, numberNode);
+      if (children !== node.children) result = { ...node, children } as InlineNode;
+    }
+    if (result.kind !== "footnote-ref") return result;
+    const position = positions.get(result.label) ?? 0;
+    positions.set(result.label, position + 1);
+    const occurrence = scope.references.get(result.label)?.[position];
+    const number = numbers.get(result.label) ?? state.labelToNumber.get(result.label);
+    const defined = !hasProvisionalTail && state.definitions.has(result.label) && occurrence !== undefined;
+    if (result.number === number && result.occurrence === occurrence && result.defined === defined) return result;
+    const updated = { ...result, defined };
+    if (number === undefined) delete updated.number;
+    else updated.number = number;
+    if (occurrence === undefined) delete updated.occurrence;
+    else updated.occurrence = occurrence;
+    return updated;
+  };
+  return mapChanged(nodes, numberNode);
+}
+
+function numberParagraphTargetHtmlTree(
+  tree: readonly HtmlTreeNode[],
+  scope: FootnoteReferenceScope | undefined,
+  numbers: Map<string, number>,
+  state: FootnoteState,
+  hasProvisionalTail: boolean,
+): readonly HtmlTreeNode[] {
+  return mapChanged(tree, (node, index) => {
+    const nodeScope = scope?.html?.[index] ?? scope;
+    if (node.kind === "text") {
+      const inline = node.inline
+        ? numberParagraphInline(node.inline, nodeScope, numbers, state, hasProvisionalTail, new Map())
+        : node.inline;
+      return inline === node.inline ? node : { ...node, inline: inline ? Array.from(inline) : inline };
+    }
+    if (node.kind === "element") {
+      const children = numberParagraphTargetHtmlTree(node.children, nodeScope, numbers, state, hasProvisionalTail);
+      const inlineNode = node.inlineNode
+        ? numberParagraphInline([node.inlineNode], nodeScope, numbers, state, hasProvisionalTail, new Map())[0]
+        : node.inlineNode;
+      return children === node.children && inlineNode === node.inlineNode
+        ? node
+        : { ...node, children: Array.from(children), ...(inlineNode !== node.inlineNode ? { inlineNode } : {}) };
+    }
+    return node;
+  });
+}
+
+function numberParagraphTargetChild(
+  child: ParagraphSpanChildSnapshot,
+  scopes: Map<string, FootnoteReferenceScope>,
+  parentScope: FootnoteReferenceScope | undefined,
+  numbers: Map<string, number>,
+  state: FootnoteState,
+  hasProvisionalTail: boolean,
+): ParagraphSpanChildSnapshot {
+  const scope = scopes.get(child.id) ?? parentScope;
+  const props = child.props ? { ...child.props } : undefined;
+  let changed = false;
+  if (props && Array.isArray(props.inline)) {
+    const inline = numberParagraphInline(props.inline as InlineNode[], scope, numbers, state, hasProvisionalTail, new Map());
+    if (inline !== props.inline) {
+      props.inline = inline;
+      changed = true;
+    }
+  }
+  if (props) {
+    for (const key of ["htmlTree", "htmlParagraphTree"]) {
+      const tree = props[key];
+      if (!Array.isArray(tree)) continue;
+      const numbered = numberParagraphTargetHtmlTree(tree as HtmlTreeNode[], scope, numbers, state, hasProvisionalTail);
+      if (numbered !== tree) {
+        props[key] = numbered;
+        changed = true;
+      }
+    }
+  }
+  return changed ? { ...child, ...(props ? { props } : {}) } : child;
+}
+
+function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState): Set<string> {
+  const changedLabels = new Set<string>();
   const defStartRe = /^\[\^([A-Za-z0-9_-]+)\]:[ \t]*(.*)$/;
 
   for (let i = 0; i < blocks.length; i++) {
@@ -91,9 +645,9 @@ function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState) {
     const definitions: Array<{ label: string; origin: number; parts: string[] }> = [];
     let lineOffset = 0;
     for (const line of lines) {
-      const m = line.match(defStartRe);
-      if (m) {
-        definitions.push({ label: m[1], origin: blockFrom + lineOffset, parts: [m[2] || ""] });
+      const match = line.match(defStartRe);
+      if (match) {
+        definitions.push({ label: match[1], origin: blockFrom + lineOffset, parts: [match[2] || ""] });
       } else {
         const current = definitions[definitions.length - 1];
         current.parts.push(line.trim() === "" ? "" : line.replace(/^\s{4}|^\t/, ""));
@@ -105,43 +659,40 @@ function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState) {
     // Cross-paragraph continuation: subsequent paragraphs fully indented (or blank)
     let j = i + 1;
     while (j < blocks.length) {
-      const b = blocks[j];
-      if (b.type !== "paragraph") break;
-      const blines = b.payload.raw.split("\n");
-      // Check all non-empty lines are indented
-      const allIndented = blines.filter((l) => l.trim() !== "").every((l) => /^(?:\s{4}|\t).*/.test(l));
-      if (!allIndented && blines.some((l) => l.trim() !== "")) break;
-      // Append stripped content (preserve blank lines)
-      for (const l of blines) {
-        if (l.trim() === "") last.parts.push("");
-        else last.parts.push(l.replace(/^\s{4}|^\t/, ""));
+      const continuation = blocks[j];
+      if (continuation.type !== "paragraph") break;
+      const continuationLines = continuation.payload.raw.split("\n");
+      const allIndented = continuationLines.filter((line) => line.trim() !== "").every((line) => /^(?:\s{4}|\t).*/.test(line));
+      if (!allIndented && continuationLines.some((line) => line.trim() !== "")) break;
+      for (const line of continuationLines) {
+        if (line.trim() === "") last.parts.push("");
+        else last.parts.push(line.replace(/^\s{4}|^\t/, ""));
       }
-      // Retag the absorbed paragraph
-      b.type = "footnote-def";
-      b.payload.inline = [];
-      const bFrom = b.payload.range?.from ?? 0;
-      b.id = generateBlockId(`${bFrom}:${b.type}`, b.type);
+      continuation.type = "footnote-def";
+      continuation.payload.inline = [];
+      const continuationFrom = continuation.payload.range?.from ?? 0;
+      continuation.id = generateBlockId(`${continuationFrom}:${continuation.type}`, continuation.type);
       j++;
     }
-    // Move outer index to last consumed paragraph - 1 (for loop increments)
     i = j - 1;
 
     for (const definition of definitions) {
       const content = definition.parts.join("\n").trim();
       const previousOrigin = state.definitionOrigins.get(definition.label);
-      // Streaming-safe: allow the first definition to grow as text is appended, while still ignoring later duplicates.
       if (previousOrigin === undefined) {
         state.definitionOrigins.set(definition.label, definition.origin);
+        if (state.definitions.get(definition.label) !== content) changedLabels.add(definition.label);
         state.definitions.set(definition.label, content);
       } else if (previousOrigin === definition.origin) {
+        if (state.definitions.get(definition.label) !== content) changedLabels.add(definition.label);
         state.definitions.set(definition.label, content);
       }
     }
-    // Retag the starting block
     block.type = "footnote-def";
     block.payload.inline = [];
     block.id = generateBlockId(`${blockFrom}:${block.type}`, block.type);
   }
+  return changedLabels;
 }
 
 interface FootnoteReferenceScope {
@@ -171,7 +722,7 @@ function snapshotHtmlTree(snapshot: NodeSnapshot): HtmlTreeNode[] | undefined {
   return key ? meta?.[key] as HtmlTreeNode[] : undefined;
 }
 
-function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteState) {
+function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteState, paragraphTargets: readonly ParagraphTargetReferenceEvent[]) {
   const scopes = new Map<string, FootnoteReferenceScope>();
   state.labelToNumber.clear();
   state.referenceCounts.clear();
@@ -185,21 +736,20 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
     }
     return scope;
   };
+  const recordReference = (label: string, parents: FootnoteReferenceScope[]): void => {
+    if (!state.labelToNumber.has(label)) state.labelToNumber.set(label, state.labelToNumber.size + 1);
+    const occurrence = (state.referenceCounts.get(label) ?? 0) + 1;
+    state.referenceCounts.set(label, occurrence);
+    if (occurrence === 1 && state.definitions.has(label) && !state.definitionInlines.has(label)) pendingDefinitions.push(label);
+    for (const scope of parents) {
+      const occurrences = scope.references.get(label);
+      if (occurrences) occurrences.push(occurrence);
+      else scope.references.set(label, [occurrence]);
+    }
+  };
   const scanInline = (nodes: InlineNode[], parents: FootnoteReferenceScope[]) => {
     for (const node of nodes) {
-      if (node.kind === "footnote-ref") {
-        if (!state.labelToNumber.has(node.label)) {
-          state.labelToNumber.set(node.label, state.labelToNumber.size + 1);
-        }
-        const occurrence = (state.referenceCounts.get(node.label) ?? 0) + 1;
-        state.referenceCounts.set(node.label, occurrence);
-        if (occurrence === 1 && state.definitions.has(node.label) && !state.definitionInlines.has(node.label)) pendingDefinitions.push(node.label);
-        for (const scope of parents) {
-          const occurrences = scope.references.get(node.label);
-          if (occurrences) occurrences.push(occurrence);
-          else scope.references.set(node.label, [occurrence]);
-        }
-      }
+      if (node.kind === "footnote-ref") recordReference(node.label, parents);
       if (hasInlineChildren(node)) scanInline(node.children, parents);
     }
   };
@@ -282,8 +832,19 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
       scanInline(block.payload.inline, owners);
     }
   };
-  for (const block of blocks) {
-    if (mayReferenceFootnotes(block)) visitBlock(block, []);
+  const orderedEvents: Array<{ readonly from: number; readonly block: Block } | { readonly from: number; readonly target: ParagraphTargetReferenceEvent }> = [
+    ...blocks.map((block) => ({ from: block.payload.range?.from ?? Number.POSITIVE_INFINITY, block })),
+    ...paragraphTargets.map((target) => ({ from: target.from, target })),
+  ];
+  orderedEvents.sort((left, right) => left.from - right.from);
+  for (const event of orderedEvents) {
+    if ("block" in event) {
+      if (mayReferenceFootnotes(event.block)) visitBlock(event.block, []);
+    } else {
+      const scope = scopeFor(event.target.ownerId);
+      if (event.target.snapshot) visitSnapshot(event.target.snapshot, [scope]);
+      else for (const label of event.target.references) recordReference(label, [scope]);
+    }
   }
   const queuedDefinitions = new Set(pendingDefinitions);
   const discoverDefinitions = (nodes: InlineNode[]): void => {
@@ -315,12 +876,17 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
   return scopes;
 }
 
-function numberInlineReferences(blocks: Block[], state: FootnoteState, scopes: Map<string, FootnoteReferenceScope>): Map<string, number> {
+function numberInlineReferences(
+  blocks: Block[],
+  state: FootnoteState,
+  scopes: Map<string, FootnoteReferenceScope>,
+  hasProvisionalTail: boolean,
+): Map<string, number> {
   const numbers = new Map<string, number>();
   for (const label of state.labelToNumber.keys()) {
     if (state.definitions.has(label) && (state.referenceCounts.get(label) ?? 0) > 0) numbers.set(label, numbers.size + 1);
   }
-  const definitionsPublished = blocks.length === 0 || blocks[blocks.length - 1].isFinalized;
+  const definitionsPublished = !hasProvisionalTail;
   const numberInlineNode = (node: InlineNode, scope: FootnoteReferenceScope, positions: Map<string, number>): InlineNode => {
     let result = node;
     if (hasInlineChildren(node)) {
@@ -535,7 +1101,9 @@ function mayContainBlockquote(block: Block): boolean {
 }
 
 /** Copy only a changed array, leaving unrelated prepared code/HTML artifacts shared. */
-function mapChanged<T>(values: T[], map: (value: T, index: number) => T): T[] {
+function mapChanged<T>(values: T[], map: (value: T, index: number) => T): T[];
+function mapChanged<T>(values: readonly T[], map: (value: T, index: number) => T): readonly T[];
+function mapChanged<T>(values: readonly T[], map: (value: T, index: number) => T): readonly T[] {
   let result: T[] | undefined;
   for (let index = 0; index < values.length; index++) {
     const value = map(values[index], index);

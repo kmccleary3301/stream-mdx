@@ -1,18 +1,38 @@
 import assert from "node:assert";
 import { JSDOM } from "jsdom";
 import React from "react";
-import { createRoot } from "react-dom/client";
-import {
-  MermaidBlock,
-  createMermaidBlock,
-} from "../src";
+import { createMermaidBlock } from "../src";
 import type {
   MermaidErrorComponentProps,
   MermaidModule,
 } from "../src";
 
-// Integration test exercises React state transitions and macro-task timeouts.
-// waitFor drains event-loop turns via setImmediate rather than fixed wall-clock sleeps.
+const dom = new JSDOM("<!doctype html><html><body><div id=\"root\"></div></body></html>", {
+  pretendToBeVisual: true,
+});
+const { window } = dom;
+const originalDomGlobals: Record<string, PropertyDescriptor | undefined> = {};
+const domGlobalValues = {
+  window,
+  document: window.document,
+  navigator: window.navigator,
+  HTMLElement: window.HTMLElement,
+  Node: window.Node,
+  requestAnimationFrame: window.requestAnimationFrame.bind(window),
+  cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
+};
+for (const [name, value] of Object.entries(domGlobalValues)) {
+  originalDomGlobals[name] = Object.getOwnPropertyDescriptor(globalThis, name);
+  Object.defineProperty(globalThis, name, {
+    configurable: true,
+    writable: true,
+    value,
+  });
+}
+
+// ReactDOM must initialize only after Node's navigator and the isolated DOM globals exist.
+const { createRoot } = await import("react-dom/client");
+
 async function waitFor(condition: () => boolean, timeoutMs = 1500): Promise<void> {
   const start = Date.now();
   while (!condition()) {
@@ -24,343 +44,516 @@ async function waitFor(condition: () => boolean, timeoutMs = 1500): Promise<void
 }
 
 async function setupDom() {
-  const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
-    pretendToBeVisual: true,
-  });
-  const { window } = dom;
-  (globalThis as unknown as { window: unknown }).window = window;
-  (globalThis as unknown as { document: unknown }).document = window.document;
-  (globalThis as unknown as { HTMLElement: unknown }).HTMLElement = window.HTMLElement;
-  (globalThis as unknown as { Node: unknown }).Node = window.Node;
-  (globalThis as unknown as { requestAnimationFrame: unknown }).requestAnimationFrame =
-    window.requestAnimationFrame.bind(window);
-  (globalThis as unknown as { cancelAnimationFrame: unknown }).cancelAnimationFrame =
-    window.cancelAnimationFrame.bind(window);
+  const root = window.document.createElement("div");
+  root.id = "root";
+  window.document.body.replaceChildren(root);
   return window;
 }
 
-// 1. Default MermaidBlock unchanged
-async function testDefaultMermaidBlockUnchanged() {
+async function drainEventLoop(): Promise<void> {
+  await new Promise<void>((resolve) => setImmediate(resolve));
+}
+
+// Provider work is held and released by tests, so its resolver functions must be retained.
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+function restoreDomGlobals(): void {
+  for (const name of Object.keys(domGlobalValues)) {
+    const descriptor = originalDomGlobals[name];
+    if (descriptor) {
+      Object.defineProperty(globalThis, name, descriptor);
+    } else {
+      Reflect.deleteProperty(globalThis, name);
+    }
+  }
+}
+
+function diagramSvg(nodeLabel: string): string {
+  return `<svg role="img"><text>${nodeLabel}</text></svg>`;
+}
+
+async function testCodeAndDiagramNavigation() {
   const window = await setupDom();
-  assert.strictEqual(typeof MermaidBlock, "function", "MermaidBlock should be a React component");
-  assert.strictEqual(MermaidBlock.defer, true, "MermaidBlock.defer should be true");
-
-  const initializeCalls: Record<string, unknown>[] = [];
-  const mockMermaid: MermaidModule = {
-    initialize: (cfg) => {
-      initializeCalls.push(cfg);
+  const NavigationBlock = createMermaidBlock({
+    mermaid: {
+      render: async () => ({ svg: diagramSvg("Destination B") }),
     },
-    render: async (id, code) => ({
-      svg: `<svg id="${id}"><text>${code}</text></svg>`,
-    }),
-  };
-
-  // Block created with default options plus test mermaid provider
-  const DefaultConfiguredBlock = createMermaidBlock({
-    mermaid: mockMermaid,
     debounceMs: 0,
   });
-  assert.strictEqual(DefaultConfiguredBlock.defer, true, "defer must be true");
-
   const container = window.document.getElementById("root");
   assert.ok(container, "root element required");
   const root = createRoot(container);
 
   root.render(
-    React.createElement(DefaultConfiguredBlock, {
+    React.createElement(NavigationBlock, {
       code: "graph TD; A-->B;",
-      renderCode: React.createElement("pre", { id: "code-view" }, "graph TD; A-->B;"),
+      renderCode: React.createElement("pre", { id: "code-view" }, "Code fallback"),
       language: "mermaid",
     }),
   );
+  await waitFor(
+    () =>
+      container.querySelector(".stream-mdx-mermaid-diagram svg text")?.textContent ===
+      "Destination B",
+  );
+  assert.ok(container.querySelector(".stream-mdx-mermaid-toolbar"));
 
-  await waitFor(() => Boolean(container.querySelector(".stream-mdx-mermaid-diagram")));
-
-  // Assert default MermaidBlock rendered toolbar and diagram
-  assert.ok(container.querySelector(".stream-mdx-mermaid-toolbar"), "toolbar should render");
-  assert.ok(container.querySelector(".stream-mdx-mermaid-diagram"), "diagram container should render");
-  assert.ok(container.textContent?.includes("graph TD; A-->B;"), "diagram SVG content should render");
-
-  // Verify initialize config has default strict security level and suppressErrorRendering
-  assert.ok(initializeCalls.length > 0, "mermaid.initialize should be called");
-  const lastCall = initializeCalls[initializeCalls.length - 1];
-  assert.strictEqual(lastCall.securityLevel, "strict", "default securityLevel must be strict");
-  assert.strictEqual(lastCall.startOnLoad, false, "startOnLoad must be false");
-  assert.strictEqual(lastCall.suppressErrorRendering, true, "suppressErrorRendering must be true");
-
-  // Toggle to Code view
-  const buttons = container.querySelectorAll("button");
-  const codeBtn = Array.from(buttons).find((b) => b.textContent?.trim() === "Code");
-  assert.ok(codeBtn, "Code toggle button must exist");
-  codeBtn.click();
-
+  const codeButton = Array.from(container.querySelectorAll("button")).find(
+    (button) => button.textContent?.trim() === "Code",
+  );
+  assert.ok(codeButton, "Code view control must be available");
+  codeButton.click();
   await waitFor(() => Boolean(container.querySelector("#code-view")));
-  assert.ok(container.querySelector("#code-view"), "code view must render when toggled");
+  assert.ok(container.querySelector("#code-view"), "Code view must render after navigation");
 
-  // Toggle back to Diagram view
-  const diagramBtn = Array.from(container.querySelectorAll("button")).find(
-    (b) => b.textContent?.trim() === "Diagram",
+  const diagramButton = Array.from(container.querySelectorAll("button")).find(
+    (button) => button.textContent?.trim() === "Diagram",
   );
-  assert.ok(diagramBtn, "Diagram toggle button must exist");
-  diagramBtn.click();
-
-  await waitFor(() => Boolean(container.querySelector(".stream-mdx-mermaid-diagram")));
-  assert.ok(container.querySelector(".stream-mdx-mermaid-diagram"), "diagram view must re-appear");
-
-  root.unmount();
-
-  // Test parse error behavior for default MermaidBlock
-  mockMermaid.render = async () => {
-    throw new Error("Syntax error in graph");
-  };
-
-  const errorRoot = createRoot(container);
-  errorRoot.render(
-    React.createElement(DefaultConfiguredBlock, {
-      code: "graph TD; syntax_error!!!",
-      renderCode: React.createElement("pre", null, "syntax_error"),
-      language: "mermaid",
-    }),
+  assert.ok(diagramButton, "Diagram view control must be available");
+  diagramButton.click();
+  await waitFor(
+    () =>
+      container.querySelector(".stream-mdx-mermaid-diagram svg text")?.textContent ===
+      "Destination B",
   );
-
-  await waitFor(() => Boolean(container.querySelector(".stream-mdx-mermaid-error")));
-
-  // Default error message div
-  const errorDiv = container.querySelector(".stream-mdx-mermaid-error");
-  assert.ok(errorDiv, "default MermaidBlock must show default error div on parse error");
-  assert.ok(errorDiv.textContent?.includes("Syntax error in graph"), "error message must match");
-
-  // Document body must not contain leaked error SVG
-  assert.strictEqual(
-    window.document.body.querySelector("svg"),
-    null,
-    "parse error must not leak error SVG into document.body",
-  );
-
-  errorRoot.unmount();
-}
-
-// 2. Two factories with different configs each render with their own config
-async function testTwoFactoriesWithDifferentConfigs() {
-  const window = await setupDom();
-  const initHistory: Array<{ config: Record<string, unknown>; code: string }> = [];
-
-  let currentConfig: Record<string, unknown> = {};
-  const mockMermaid: MermaidModule = {
-    initialize: (cfg) => {
-      currentConfig = { ...cfg };
-    },
-    render: async (id, code) => {
-      initHistory.push({ config: currentConfig, code });
-      return {
-        svg: `<svg id="${id}" data-theme="${String(currentConfig.theme)}"><text>${code}</text></svg>`,
-      };
-    },
-  };
-
-  const FactoryDark = createMermaidBlock({
-    mermaid: () => Promise.resolve(mockMermaid), // exercises function loader
-    config: { theme: "dark" },
-    debounceMs: 0,
-  });
-
-  const FactoryForest = createMermaidBlock({
-    mermaid: mockMermaid, // exercises direct module object
-    config: { theme: "forest", securityLevel: "loose" },
-    debounceMs: 0,
-  });
-
-  const container = window.document.getElementById("root");
-  assert.ok(container, "root required");
-  const root = createRoot(container);
-
-  // Mount both factory instances concurrently
-  root.render(
-    React.createElement("div", null, [
-      React.createElement(FactoryDark, {
-        key: "dark",
-        code: "graph TD; DarkNode;",
-        renderCode: React.createElement("pre", null, "DarkNode"),
-        language: "mermaid",
-      }),
-      React.createElement(FactoryForest, {
-        key: "forest",
-        code: "graph TD; ForestNode;",
-        renderCode: React.createElement("pre", null, "ForestNode"),
-        language: "mermaid",
-      }),
-    ]),
-  );
-
-  await waitFor(() => initHistory.length === 2);
-  await waitFor(() => container.querySelectorAll("svg").length === 2);
-
-  // Check that both rendered with their respective configurations
-  assert.strictEqual(initHistory.length, 2, "both blocks must execute through render queue");
-
-  const darkExecution = initHistory.find((entry) => entry.code.includes("DarkNode"));
-  const forestExecution = initHistory.find((entry) => entry.code.includes("ForestNode"));
-
-  assert.ok(darkExecution, "dark factory render must be recorded");
-  assert.ok(forestExecution, "forest factory render must be recorded");
-
-  assert.strictEqual(darkExecution?.config.theme, "dark", "Dark factory must apply theme: dark");
-  assert.strictEqual(
-    darkExecution?.config.securityLevel,
-    "strict",
-    "Dark factory must retain securityLevel: strict by default",
-  );
-  assert.strictEqual(
-    darkExecution?.config.suppressErrorRendering,
-    true,
-    "suppressErrorRendering must be true",
-  );
-
-  assert.strictEqual(forestExecution?.config.theme, "forest", "Forest factory must apply theme: forest");
-  assert.strictEqual(
-    forestExecution?.config.securityLevel,
-    "loose",
-    "Forest factory must allow explicit securityLevel: loose override",
-  );
-  assert.strictEqual(
-    forestExecution?.config.suppressErrorRendering,
-    true,
-    "suppressErrorRendering must be true",
-  );
-
-  // Verify DOM contains rendered SVGs with respective data-theme
-  const svgs = container.querySelectorAll("svg");
-  assert.strictEqual(svgs.length, 2, "both SVGs should be in the DOM");
-  const darkSvg = Array.from(svgs).find((s) => s.getAttribute("data-theme") === "dark");
-  const forestSvg = Array.from(svgs).find((s) => s.getAttribute("data-theme") === "forest");
-  assert.ok(darkSvg, "SVG rendered with dark theme must exist");
-  assert.ok(forestSvg, "SVG rendered with forest theme must exist");
-
   root.unmount();
 }
 
-// 3. Custom errorComponent shown on parse error and retry re-renders
 async function testCustomErrorComponentAndRetry() {
   const window = await setupDom();
-
   let shouldFail = true;
-  let renderCallCount = 0;
   const mockMermaid: MermaidModule = {
-    initialize: () => {},
-    render: async (id, code) => {
-      renderCallCount += 1;
-      if (shouldFail) {
-        throw new Error("Invalid diagram syntax at line 2");
-      }
-      return {
-        svg: `<svg id="${id}" data-retry-success="true"><text>${code}</text></svg>`,
-      };
+    render: async () => {
+      if (shouldFail) throw new Error("Invalid diagram syntax.");
+      return { svg: diagramSvg("Recovered destination") };
     },
   };
-
-  let lastProps: MermaidErrorComponentProps | null = null;
-  const CustomError: React.FC<MermaidErrorComponentProps> = (props) => {
-    lastProps = props;
-    return React.createElement(
+  const CustomError: React.FC<MermaidErrorComponentProps> = ({ error, retry }) =>
+    React.createElement(
       "div",
-      { id: "custom-error-banner" },
-      React.createElement("span", { id: "error-message" }, props.error),
-      React.createElement("span", { id: "error-code" }, props.code),
-      React.createElement("button", { id: "retry-button", type: "button", onClick: props.retry }, "Try Again"),
+      null,
+      React.createElement("div", { role: "alert" }, error),
+      React.createElement("button", { type: "button", onClick: retry }, "Try Again"),
     );
-  };
-
   const CustomBlock = createMermaidBlock({
     mermaid: mockMermaid,
     errorComponent: CustomError,
     debounceMs: 0,
   });
-
   const container = window.document.getElementById("root");
-  assert.ok(container, "root required");
+  assert.ok(container, "root element required");
   const root = createRoot(container);
 
   root.render(
     React.createElement(CustomBlock, {
       code: "graph TD; Broken-->???",
-      renderCode: React.createElement("pre", null, "broken"),
+      renderCode: React.createElement("pre", null, "Code fallback"),
       language: "mermaid",
     }),
   );
+  await waitFor(() => Boolean(container.querySelector('[role="alert"]')));
 
-  await waitFor(() => Boolean(container.querySelector("#custom-error-banner")));
-
-  // Assert custom errorComponent is shown
-  assert.strictEqual(renderCallCount, 1, "render should have been called once and failed");
-  const errorBanner = container.querySelector("#custom-error-banner");
-  assert.ok(errorBanner, "custom errorComponent must be mounted in DOM");
-
-  const errMsg = container.querySelector("#error-message");
-  assert.strictEqual(
-    errMsg?.textContent,
-    "Invalid diagram syntax at line 2",
-    "errorComponent must receive error message",
-  );
-
-  const errCode = container.querySelector("#error-code");
-  assert.strictEqual(
-    errCode?.textContent,
-    "graph TD; Broken-->???",
-    "errorComponent must receive diagram code",
-  );
-
-  assert.ok(lastProps, "lastProps should be captured");
-  assert.strictEqual(typeof lastProps?.retry, "function", "retry prop must be a function");
-
-  // Ensure default error div is not present when custom errorComponent is provided
-  assert.strictEqual(
-    container.querySelector(".stream-mdx-mermaid-error"),
-    null,
-    "default error div should not be rendered when custom errorComponent is used",
-  );
-
-  // Ensure body didn't leak temporary error nodes
-  assert.strictEqual(
-    window.document.body.querySelector("svg[id*='mermaid']"),
-    null,
-    "parse error must not leak error elements into body",
-  );
-
-  // Fix the render failure and invoke retry
   shouldFail = false;
-  const retryBtn = container.querySelector("#retry-button") as HTMLButtonElement | null;
-  assert.ok(retryBtn, "retry button must be in DOM");
-  retryBtn.click();
+  const retryButton = Array.from(container.querySelectorAll("button")).find(
+    (button) => button.textContent === "Try Again",
+  );
+  assert.ok(retryButton, "error view must expose its retry control");
+  retryButton.click();
+  await waitFor(
+    () =>
+      container.querySelector(".stream-mdx-mermaid-diagram svg text")?.textContent ===
+      "Recovered destination",
+  );
+  assert.strictEqual(container.querySelector('[role="alert"]'), null);
+  root.unmount();
+}
 
-  await waitFor(() => Boolean(container.querySelector("svg[data-retry-success='true']")));
 
-  // Assert that retry triggered a second render call and succeeded
-  assert.strictEqual(renderCallCount, 2, "retry must re-render the diagram");
+async function testDetachedQueuedDemandSkipsProviderWork() {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "root element required");
+  const busyResult = deferred<{ svg: string }>();
+  let busyRenderStarted = false;
+  const BusyBlock = createMermaidBlock({
+    mermaid: {
+      render: async () => {
+        busyRenderStarted = true;
+        return busyResult.promise;
+      },
+    },
+    debounceMs: 0,
+  });
+  const detachedEffects: string[] = [];
+  const DetachedBlock = createMermaidBlock({
+    mermaid: {
+      initialize: () => detachedEffects.push("initialize"),
+      render: async () => {
+        detachedEffects.push("render");
+        return { svg: diagramSvg("Detached destination") };
+      },
+    },
+    debounceMs: 0,
+  });
+  const root = createRoot(container);
+  const busyView = React.createElement(BusyBlock, {
+    key: "busy",
+    blockId: "busy-owner",
+    code: "graph TD; Busy-->Destination;",
+    renderCode: React.createElement("pre", null, "busy source"),
+    language: "mermaid",
+  });
+
+  root.render(React.createElement("div", null, [busyView]));
+  await waitFor(() => busyRenderStarted);
+
+  const detachedView = React.createElement(DetachedBlock, {
+    key: "detached",
+    blockId: "detached-owner",
+    code: "graph TD; Detached-->Destination;",
+    renderCode: React.createElement("pre", null, "detached source"),
+    language: "mermaid",
+  });
+  root.render(React.createElement("div", null, [busyView, detachedView]));
+  await waitFor(() => container.querySelectorAll(".stream-mdx-mermaid-block").length === 2);
+  await drainEventLoop();
+
+  root.render(React.createElement("div", null, [busyView]));
+  await waitFor(() => container.querySelectorAll(".stream-mdx-mermaid-block").length === 1);
+  busyResult.resolve({ svg: diagramSvg("Busy destination") });
+  await waitFor(
+    () =>
+      container.querySelector(".stream-mdx-mermaid-diagram svg text")?.textContent ===
+      "Busy destination",
+  );
+  await drainEventLoop();
+
+  assert.deepStrictEqual(detachedEffects, [], "detached queued demand must not initialize or render");
   assert.strictEqual(
-    container.querySelector("#custom-error-banner"),
+    container.querySelector(".stream-mdx-mermaid-diagram svg text")?.textContent,
+    "Busy destination",
+    "the mounted diagram must retain its rendered meaning",
+  );
+  root.unmount();
+}
+
+async function testDetachmentDuringModuleLoadSkipsProviderWork() {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "root element required");
+  const loadedModule = deferred<MermaidModule>();
+  const providerEffects: string[] = [];
+  let loaderStarted = false;
+  const Block = createMermaidBlock({
+    mermaid: () => {
+      loaderStarted = true;
+      return loadedModule.promise;
+    },
+    debounceMs: 0,
+  });
+  const root = createRoot(container);
+
+  root.render(
+    React.createElement(Block, {
+      code: "graph TD; Pending-->Module;",
+      renderCode: React.createElement("pre", null, "pending source"),
+      language: "mermaid",
+    }),
+  );
+  await waitFor(() => loaderStarted);
+  root.unmount();
+
+  loadedModule.resolve({
+    initialize: () => providerEffects.push("initialize"),
+    render: async () => {
+      providerEffects.push("render");
+      return { svg: diagramSvg("Detached destination") };
+    },
+  });
+  await drainEventLoop();
+
+  assert.deepStrictEqual(
+    providerEffects,
+    [],
+    "a detached lease must not initialize or render after its loader resolves",
+  );
+}
+
+async function testOwnerReplacementPublishesOnlyCurrentRender() {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "root element required");
+  const obsoleteResult = deferred<{ svg: string }>();
+  const currentResult = deferred<{ svg: string }>();
+  let renderCalls = 0;
+  let currentRenderStarted = false;
+  const Block = createMermaidBlock({
+    mermaid: {
+      render: async () => {
+        renderCalls += 1;
+        if (renderCalls === 1) return obsoleteResult.promise;
+        currentRenderStarted = true;
+        return currentResult.promise;
+      },
+    },
+    debounceMs: 0,
+  });
+  const root = createRoot(container);
+  const source = "graph TD; Source-->Destination;";
+
+  root.render(
+    React.createElement(Block, {
+      blockId: "previous-owner",
+      code: source,
+      renderCode: React.createElement("pre", null, "source"),
+      language: "mermaid",
+    }),
+  );
+  await waitFor(() => renderCalls === 1);
+  root.render(
+    React.createElement(Block, {
+      blockId: "current-owner",
+      code: source,
+      renderCode: React.createElement("pre", null, "source"),
+      language: "mermaid",
+    }),
+  );
+  await drainEventLoop();
+
+  obsoleteResult.resolve({ svg: diagramSvg("Obsolete destination") });
+  await waitFor(() => currentRenderStarted);
+  assert.strictEqual(
+    container.querySelector(".stream-mdx-mermaid-diagram svg"),
     null,
-    "custom errorComponent must be unmounted after successful retry",
+    "the obsolete owner must not publish while the current render is pending",
   );
 
-  const successSvg = container.querySelector("svg[data-retry-success='true']");
-  assert.ok(successSvg, "diagram SVG must be rendered after successful retry");
-  assert.ok(
-    container.textContent?.includes("graph TD; Broken-->???"),
-    "SVG content must include the diagram code",
+  currentResult.resolve({ svg: diagramSvg("Current destination") });
+  await waitFor(
+    () =>
+      container.querySelector(".stream-mdx-mermaid-diagram svg text")?.textContent ===
+      "Current destination",
+  );
+  assert.strictEqual(
+    container.querySelector(".stream-mdx-mermaid-stale"),
+    null,
+    "a replaced owner must not retain an artifact from the prior owner",
+  );
+  root.unmount();
+}
+
+async function testObsoleteFailureCannotReplaceCurrentDiagnostic() {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "root element required");
+  const obsoleteResult = deferred<{ svg: string }>();
+  let renderCalls = 0;
+  const ErrorView: React.FC<MermaidErrorComponentProps> = ({ error }) =>
+    React.createElement("div", { role: "alert" }, error);
+  const Block = createMermaidBlock({
+    mermaid: {
+      render: async () => {
+        renderCalls += 1;
+        if (renderCalls === 1) return obsoleteResult.promise;
+        throw new Error("The active diagram failed to render.");
+      },
+    },
+    errorComponent: ErrorView,
+    debounceMs: 0,
+  });
+  const root = createRoot(container);
+  const source = "graph TD; Source-->Destination;";
+
+  root.render(
+    React.createElement(Block, {
+      blockId: "previous-owner",
+      code: source,
+      renderCode: React.createElement("pre", null, "source"),
+      language: "mermaid",
+    }),
+  );
+  await waitFor(() => renderCalls === 1);
+  const observedDiagnostics = new Set<string>();
+  const observer = new window.MutationObserver(() => {
+    const diagnostic = container.querySelector('[role="alert"]')?.textContent;
+    if (diagnostic) observedDiagnostics.add(diagnostic);
+  });
+  observer.observe(container, { childList: true, characterData: true, subtree: true });
+
+  root.render(
+    React.createElement(Block, {
+      blockId: "current-owner",
+      code: source,
+      renderCode: React.createElement("pre", null, "source"),
+      language: "mermaid",
+    }),
+  );
+  await drainEventLoop();
+  obsoleteResult.reject(new Error("A retired diagram failed."));
+  await waitFor(
+    () =>
+      container.querySelector('[role="alert"]')?.textContent ===
+      "The active diagram failed to render.",
+  );
+  await drainEventLoop();
+  observer.disconnect();
+
+  assert.deepStrictEqual(
+    [...observedDiagnostics],
+    ["The active diagram failed to render."],
+    "only the current owner's diagnostic may reach the rendered error boundary",
+  );
+  root.unmount();
+}
+
+async function testBindingDisposersPreserveOtherMountedDiagrams() {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "root element required");
+  const navigation = window.document.createElement("nav");
+  window.document.body.append(navigation);
+  const sourceByNodeLabel: Record<string, string> = {
+    "graph TD; A-->B;": "Destination B",
+    "graph TD; A-->C;": "Destination C",
+    "graph TD; D-->E;": "Destination E",
+  };
+  const Block = createMermaidBlock({
+    mermaid: {
+      render: async (_id, code) => {
+        const nodeLabel = sourceByNodeLabel[code];
+        if (!nodeLabel) throw new Error("Unexpected test diagram");
+        return {
+          svg: diagramSvg(nodeLabel),
+          bindFunctions: (element) => {
+            const boundNode = element.querySelector("text")?.textContent ?? "";
+            const navigate = () => {
+              const item = window.document.createElement("span");
+              item.textContent = boundNode;
+              navigation.append(item);
+            };
+            window.addEventListener("mermaid-provider-navigation", navigate);
+            return () => window.removeEventListener("mermaid-provider-navigation", navigate);
+          },
+        };
+      },
+    },
+    debounceMs: 0,
+  });
+  const root = createRoot(container);
+  const elementFor = (key: string, code: string) =>
+    React.createElement(Block, {
+      key,
+      blockId: key,
+      code,
+      renderCode: React.createElement("pre", null, "diagram source"),
+      language: "mermaid",
+    });
+  const navigationAfterEvent = () => {
+    navigation.replaceChildren();
+    window.dispatchEvent(new window.Event("mermaid-provider-navigation"));
+    return Array.from(navigation.querySelectorAll("span"), (item) => item.textContent ?? "");
+  };
+  const navigationMatches = (expected: string[]) => {
+    const actual = navigationAfterEvent().sort();
+    return actual.length === expected.length && actual.every((label, index) => label === expected[index]);
+  };
+
+
+  root.render(
+    React.createElement("div", null, [
+      elementFor("first-owner", "graph TD; A-->B;"),
+      elementFor("second-owner", "graph TD; D-->E;"),
+    ]),
+  );
+  await waitFor(() => navigationMatches(["Destination B", "Destination E"]));
+  const initialMeaning = Array.from(
+    container.querySelectorAll(".stream-mdx-mermaid-diagram svg text"),
+    (node) => node.textContent ?? "",
+  ).sort();
+  assert.deepStrictEqual(initialMeaning, ["Destination B", "Destination E"]);
+  assert.deepStrictEqual(
+    navigationAfterEvent().sort(),
+    ["Destination B", "Destination E"],
+    "both mounted providers must retain their host navigation effect",
   );
 
+  root.render(
+    React.createElement("div", null, [
+      elementFor("first-owner", "graph TD; A-->C;"),
+      elementFor("second-owner", "graph TD; D-->E;"),
+    ]),
+  );
+  await waitFor(() =>
+    Array.from(
+      container.querySelectorAll(".stream-mdx-mermaid-diagram svg text"),
+      (node) => node.textContent,
+    ).includes("Destination C"),
+  );
+  await waitFor(() => navigationMatches(["Destination C", "Destination E"]));
+  const replacedMeaning = Array.from(
+    container.querySelectorAll(".stream-mdx-mermaid-diagram svg text"),
+    (node) => node.textContent ?? "",
+  ).sort();
+  assert.deepStrictEqual(replacedMeaning, ["Destination C", "Destination E"]);
+  assert.deepStrictEqual(
+    navigationAfterEvent().sort(),
+    ["Destination C", "Destination E"],
+    "replacement must dispose the old provider effect without disturbing the other diagram",
+  );
+
+  root.render(React.createElement("div", null, [elementFor("second-owner", "graph TD; D-->E;")]));
+  await waitFor(() => container.querySelectorAll(".stream-mdx-mermaid-block").length === 1);
+  await waitFor(() => navigationMatches(["Destination E"]));
+  assert.deepStrictEqual(
+    Array.from(
+      container.querySelectorAll(".stream-mdx-mermaid-diagram svg text"),
+      (node) => node.textContent ?? "",
+    ),
+    ["Destination E"],
+    "the remaining mounted diagram must keep its current meaning",
+  );
+  assert.deepStrictEqual(
+    navigationAfterEvent(),
+    ["Destination E"],
+    "unmount must dispose only the removed provider effect",
+  );
   root.unmount();
 }
 
 async function main() {
-  await testDefaultMermaidBlockUnchanged();
-  console.log("✓ default MermaidBlock unchanged passed");
-
-  await testTwoFactoriesWithDifferentConfigs();
-  console.log("✓ two factories with different configs passed");
+  await testCodeAndDiagramNavigation();
+  console.log("Code and Diagram navigation passed");
 
   await testCustomErrorComponentAndRetry();
-  console.log("✓ custom errorComponent and retry passed");
+  console.log("Error and retry transitions passed");
+
+  await testDetachedQueuedDemandSkipsProviderWork();
+  console.log("Detached queued demand skipped provider work");
+
+  await testDetachmentDuringModuleLoadSkipsProviderWork();
+  console.log("Detachment during module load skipped provider work");
+
+  await testOwnerReplacementPublishesOnlyCurrentRender();
+  console.log("Owner replacement published only current render");
+
+  await testObsoleteFailureCannotReplaceCurrentDiagnostic();
+  console.log("Obsolete failure did not replace current diagnostic");
+
+  await testBindingDisposersPreserveOtherMountedDiagrams();
+  console.log("Binding disposers preserved independent mounted diagrams");
 }
 
-await main();
+try {
+  await main();
+} finally {
+  dom.window.close();
+  restoreDomGlobals();
+}

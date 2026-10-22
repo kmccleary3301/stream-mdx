@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Worker, type WorkerOptions } from "node:worker_threads";
 
-import { PATCH_ROOT_ID, applyPatchBatch, createInitialSnapshot, type Block, type DocumentSnapshot, type TocHeading, type WorkerIn, type WorkerOut } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, STREAM_MDX_SCHEMA_VERSION, applyPatchBatch, createInitialSnapshot, type Block, type DocumentSnapshot, type TocHeading, type WorkerIn, type WorkerOut } from "@stream-mdx/core";
 
 export interface CreateWorkerThreadOptions extends Omit<WorkerOptions, "type" | "workerData"> {
   /**
@@ -232,7 +232,7 @@ export interface SnapshotArtifactV1 {
 
 export interface CompileMarkdownSnapshotOptions {
   text: string;
-  init?: Omit<WorkerInitMessage, "type" | "initialContent">;
+  init?: Omit<WorkerInitMessage, "type" | "initialContent" | "schemaVersion">;
   /**
    * Optional salt mixed into the snapshot hash and cache key.
    *
@@ -272,7 +272,7 @@ function createSnapshotArtifactInit(init: CompileMarkdownSnapshotOptions["init"]
   };
 }
 
-export function computeSnapshotHash(text: string, init?: Omit<WorkerInitMessage, "type" | "initialContent">, hashSalt?: string): string {
+export function computeSnapshotHash(text: string, init?: Omit<WorkerInitMessage, "type" | "initialContent" | "schemaVersion">, hashSalt?: string): string {
   return hashCompileInput(text, init, hashSalt);
 }
 
@@ -298,7 +298,7 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
     if (cached) {
       const snapshot = createInitialSnapshot(cached.blocks);
       return {
-        blocks: snapshot.blocks,
+        blocks: snapshot.getBlocks(),
         snapshot,
         artifact: { ...cached, init: createSnapshotArtifactInit(init) },
         fromCache: true,
@@ -321,11 +321,12 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
       settled = true;
       cleanup();
       const finalSnapshot = snapshot ?? createInitialSnapshot();
-      const blocks = finalSnapshot.blocks;
+      const blocks = finalSnapshot.getBlocks();
       const contentHash = createHash("sha256").update(text).digest("hex");
       const configHash = createHash("sha256")
         .update(
           stableStringify({
+            schemaVersion: STREAM_MDX_SCHEMA_VERSION,
             init: init ?? null,
             salt: hashSalt ?? null,
           }),
@@ -378,13 +379,27 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
     const handleMessage = (message: WorkerOut) => {
       switch (message.type) {
         case "INITIALIZED":
-          snapshot = createInitialSnapshot(message.blocks);
-          initialized = true;
+          if (
+            message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+            !Number.isSafeInteger(message.generation) ||
+            message.generation < 0 ||
+            message.snapshot.inputSource?.generation !== message.generation ||
+            typeof message.snapshot.inputSource?.raw !== "string"
+          ) {
+            fail(new Error("Incompatible worker initialization: canonical input baseline is missing or invalid"));
+            break;
+          }
+          try {
+            snapshot = createInitialSnapshot(message.snapshot);
+            initialized = true;
+          } catch (error) {
+            fail(error);
+          }
           scheduleIdleFinalize();
           break;
         case "PATCH":
           if (snapshot) {
-            snapshot.blocks = applyPatchBatch(snapshot, message.patches);
+            applyPatchBatch(snapshot, message.patches);
           }
           scheduleIdleFinalize();
           break;
@@ -427,6 +442,7 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
 
     const initMessage: WorkerInitMessage = {
       type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
       initialContent: text,
       ...(init?.prewarmLangs === undefined ? {} : { prewarmLangs: init.prewarmLangs }),
       ...(init?.docPlugins === undefined ? {} : { docPlugins: init.docPlugins }),
@@ -554,8 +570,9 @@ function sanitizeCacheKey(value: string): string {
   return value.replace(/[^a-z0-9._-]+/gi, "_");
 }
 
-function hashCompileInput(text: string, init?: Omit<WorkerInitMessage, "type" | "initialContent">, hashSalt?: string): string {
+function hashCompileInput(text: string, init?: Omit<WorkerInitMessage, "type" | "initialContent" | "schemaVersion">, hashSalt?: string): string {
   const payload = stableStringify({
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     text,
     init: init ?? null,
     salt: hashSalt ?? null,

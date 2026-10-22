@@ -1,8 +1,13 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import DOMPurifyFactory from "dompurify";
-import type { Block, InlineNode, Patch, WorkerOut } from "@stream-mdx/core";
+import type { Block, Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
+import type { RendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
+
+import { projectConsumerBlocks } from "./consumer-block-projection";
 
 const SAMPLE_DOC = [
   "# Streaming Markdown Invariants",
@@ -28,71 +33,11 @@ if (typeof dompurifyShim.sanitize !== "function") {
   dompurifyShim.sanitize = (html: string) => html;
 }
 
-function applyPatchMessages(store: ReturnType<typeof createRendererStore>, messages: WorkerOut[]): void {
-  for (const msg of messages) {
-    if (msg.type !== "PATCH") continue;
-    store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
+function applyPatchMessages(store: RendererStore, messages: WorkerOut[]): void {
+  for (const message of messages) {
+    if (message.type !== "PATCH") continue;
+    store.applyPatches(message.patches as Patch[], { captureMetrics: false });
   }
-}
-
-type NormalizedBlock = {
-  type: string;
-  isFinalized: boolean;
-  raw: string | null;
-  inlineKinds: string[];
-  lineCount: number;
-  metaSignature: string;
-};
-
-function collectInlineKinds(nodes: InlineNode[] | undefined, acc: string[]): void {
-  if (!Array.isArray(nodes)) return;
-  for (const node of nodes) {
-    acc.push(node.kind);
-    if ("children" in node && Array.isArray((node as { children?: InlineNode[] }).children)) {
-      collectInlineKinds((node as { children?: InlineNode[] }).children ?? [], acc);
-    }
-  }
-}
-
-function summarizeMeta(meta: Record<string, unknown> | undefined): string {
-  if (!meta) return "";
-  const parts: string[] = [];
-  if (typeof meta.headingLevel === "number") {
-    parts.push(`h${meta.headingLevel}`);
-  }
-  if (typeof meta.headingText === "string" && meta.headingText) {
-    parts.push(`heading:${meta.headingText}`);
-  }
-  if (typeof meta.ordered === "boolean") {
-    parts.push(`ordered:${meta.ordered}`);
-  }
-  if (Array.isArray(meta.items)) {
-    parts.push(`items:${meta.items.length}`);
-  }
-  if (typeof meta.normalizedText === "string") {
-    parts.push(`normalized:${meta.normalizedText}`);
-  }
-  if (typeof meta.inlineStatus === "string") {
-    parts.push(`inline:${meta.inlineStatus}`);
-  }
-  return parts.join("|");
-}
-
-function cloneBlocks(blocks: ReadonlyArray<Block>): NormalizedBlock[] {
-  return blocks.map((block) => {
-    const inlineKinds: string[] = [];
-    collectInlineKinds(block.payload?.inline as InlineNode[] | undefined, inlineKinds);
-    const lineCount = Array.isArray(block.payload?.lines) ? block.payload!.lines!.length : 0;
-    const normalized: NormalizedBlock = {
-      type: block.type,
-      isFinalized: block.isFinalized,
-      raw: block.payload?.raw ?? null,
-      inlineKinds,
-      lineCount,
-      metaSignature: summarizeMeta(block.payload?.meta as Record<string, unknown> | undefined),
-    };
-    return normalized;
-  });
 }
 
 function assertStreamingInvariants(blocks: ReadonlyArray<Block>, label: string): void {
@@ -100,7 +45,7 @@ function assertStreamingInvariants(blocks: ReadonlyArray<Block>, label: string):
   assert.ok(dirty.length <= 1, `[${label}] expected at most one dirty block, found ${dirty.length}`);
 
   const duplicateParagraph = blocks.find(
-    (block) => block.type === "paragraph" && typeof block.payload?.raw === "string" && block.payload.raw.includes("Handling missing values"),
+    (block) => block.type === "paragraph" && typeof block.payload.raw === "string" && block.payload.raw.includes("Handling missing values"),
   );
   assert.strictEqual(duplicateParagraph, undefined, `[${label}] duplicate list tails should not create standalone paragraphs`);
 
@@ -108,35 +53,33 @@ function assertStreamingInvariants(blocks: ReadonlyArray<Block>, label: string):
   assert.ok(footnotes.length <= 1, `[${label}] only one synthesized footnotes block expected`);
 }
 
-async function streamDocument(chunkSize: number): Promise<Block[]> {
+async function streamDocument(chunkSize: number) {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
-
   const initMessages = await harness.send({
     type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     initialContent: "",
     prewarmLangs: [],
     docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true },
   });
-  const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
+  const init = initMessages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED");
   assert.ok(init, "worker failed to emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
+  applyPatchMessages(store, initMessages);
 
-  const doc = SAMPLE_DOC;
-  for (let idx = 0; idx < doc.length; idx += chunkSize) {
-    const segment = doc.slice(idx, idx + chunkSize);
+  for (let idx = 0; idx < SAMPLE_DOC.length; idx += chunkSize) {
+    const segment = SAMPLE_DOC.slice(idx, idx + chunkSize);
     const appendMessages = await harness.send({ type: "APPEND", text: segment });
-    const patches = appendMessages.filter((msg) => msg.type === "PATCH");
+    const patches = appendMessages.filter((message) => message.type === "PATCH");
     assert.ok(patches.length > 0, `missing PATCH payload at segment ${idx / chunkSize}`);
     applyPatchMessages(store, appendMessages);
   }
 
-  const finalizeMessages = await harness.send({ type: "FINALIZE" });
-  applyPatchMessages(store, finalizeMessages);
-
-  const blocks = cloneBlocks(store.getBlocks());
+  applyPatchMessages(store, await harness.send({ type: "FINALIZE" }));
+  const blocks = store.getBlocks();
   assertStreamingInvariants(blocks, `chunk=${chunkSize}`);
-  return blocks;
+  return projectConsumerBlocks(blocks);
 }
 
 async function runTickRateParity(): Promise<void> {
@@ -145,7 +88,7 @@ async function runTickRateParity(): Promise<void> {
   assert.deepStrictEqual(
     coarse,
     fineGrained,
-    "renderer snapshots should not depend on worker chunk size (tick rate)",
+    "tick-rate parity must include block identity, authored source, lifecycle, range, and rendered output",
   );
 }
 

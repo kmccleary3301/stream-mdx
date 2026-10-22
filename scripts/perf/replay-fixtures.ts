@@ -5,7 +5,12 @@
 
 export interface FixtureExpectations {
   headings?: Array<{ level: number; text: string }>;
-  codeBlocks?: Array<{ lang?: string; codeLines: string[] }>;
+  codeBlocks?: Array<{
+    lang?: string;
+    codeLines: string[];
+    openingFenceIndent?: number;
+    closingFenceIndent?: number;
+  }>;
   tables?: Array<{
     columnCount: number;
     rowCount?: number;
@@ -112,8 +117,8 @@ export const DENSE_FIXTURES: DenseFixture[] = [
   {
     id: "fence-indent-multiline",
     name: "Opening/Closing Fence Indent with Multiline Grammar",
-    stage: "engine:fence-indent",
-    description: "Exercises CommonMark fence dedent, independent Shiki tokenization, and multiline grammar",
+    stage: "engine:code",
+    description: "Exercises CommonMark dedent from a two-space opening fence against an unindented closing fence, independent Shiki tokenization, and multiline grammar",
     source:
       "Paragraph before fence.\n\n" +
       "  ```typescript\n" +
@@ -132,6 +137,8 @@ export const DENSE_FIXTURES: DenseFixture[] = [
     expectations: {
       codeBlocks: [
         {
+          openingFenceIndent: 2,
+          closingFenceIndent: 0,
           lang: "typescript",
           codeLines: [
             "interface User {",
@@ -313,4 +320,63 @@ export function generateChunkingPlans(source: string, seed = 42): ChunkingPlan[]
     { mode: "1-unit", seed: 0, chunks: splitOneUnitChunks(source) },
     { mode: "random", seed, chunks: createSeededRandomChunks(source, seed) },
   ];
+}
+
+function undefinedPropertyPaths(value: unknown): string[] {
+  const paths: string[] = [];
+  const ancestors = new Set<object>();
+  const visit = (entry: unknown, path: string): void => {
+    if (entry === null || typeof entry !== "object" || ancestors.has(entry)) return;
+    ancestors.add(entry);
+    for (const [key, child] of Object.entries(entry)) {
+      const childPath = `${path}/${key.replace(/~/g, "~0").replace(/\//g, "~1")}`;
+      if (child === undefined) paths.push(childPath);
+      else visit(child, childPath);
+    }
+    ancestors.delete(entry);
+  };
+  visit(value, "");
+  return paths;
+}
+
+export function recordDivergence(
+  divergences: DivergenceReport[],
+  fixture: DenseFixture,
+  plan: ChunkingPlan,
+  stage: string,
+  tx: number,
+  frontier: number,
+  message: string,
+  comparison?: DivergenceReport["comparison"],
+): void {
+  divergences.push({
+    fixtureId: fixture.id,
+    planMode: plan.mode,
+    seed: plan.seed,
+    stage,
+    commitIndex: tx,
+    frontier,
+    sourcePrefix: fixture.source.slice(0, frontier),
+    message,
+    ...(comparison ? {
+      comparison,
+      comparisonUndefinedProperties: {
+        current: undefinedPropertyPaths(comparison.current),
+        cold: undefinedPropertyPaths(comparison.cold),
+      },
+    } : {}),
+  });
+}
+
+export interface DivergenceReport {
+  fixtureId: string;
+  planMode: string;
+  seed: number;
+  stage: string;
+  commitIndex: number;
+  frontier: number;
+  sourcePrefix: string;
+  message: string;
+  comparison?: { current: unknown; cold: unknown };
+  comparisonUndefinedProperties?: { current: string[]; cold: string[] };
 }

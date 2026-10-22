@@ -154,16 +154,10 @@ export type StreamingDemoAutomationApiV2 = {
       longTasksMs: number[];
     };
     worker?: PerformanceMetrics | null;
-    workerTotals?: {
-      appendLineBatches: number;
-      appendLineTotalLines: number;
-      appendLineMaxLines: number;
-    } | null;
     coalescingTotals?: {
       input: number;
       output: number;
       coalesced: number;
-      appendLines: number;
       setProps: number;
       insertChild: number;
       durationMs: number;
@@ -213,7 +207,6 @@ export type StreamingDemoAutomationApiV2 = {
     input: number;
     output: number;
     coalesced: number;
-    appendLines: number;
     setProps: number;
     insertChild: number;
     durationMs: number;
