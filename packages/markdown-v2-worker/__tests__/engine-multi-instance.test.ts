@@ -1,11 +1,14 @@
 import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 
+import { JSDOM } from "jsdom";
 import assert from "node:assert";
 import type { Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
+import type { RendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { MarkdownEngine } from "../src/engine/engine";
+import { projectConsumerBlocks } from "./consumer-block-projection";
 
-function applyPatchMessages(store: ReturnType<typeof createRendererStore>, messages: WorkerOut[]): void {
+function applyPatchMessages(store: RendererStore, messages: WorkerOut[]): void {
   for (const msg of messages) {
     if (msg.type === "INITIALIZED") {
       store.resetSnapshot(msg.snapshot);
@@ -53,6 +56,13 @@ async function runMultiInstanceEngineTest(): Promise<void> {
 
   const blocks1 = store1.getBlocks();
   const blocks2 = store2.getBlocks();
+  const markup1 = projectConsumerBlocks(blocks1).map((block) => block.markup).join("");
+  const markup2 = projectConsumerBlocks(blocks2).map((block) => block.markup).join("");
+  assert.ok(markup1.includes("Text with footnote"), "engine1 rendered output must retain its own paragraph");
+  const renderedEngine2 = new JSDOM(markup2);
+  assert.equal(renderedEngine2.window.document.querySelector("h1")?.textContent, "Engine 2 Header", "engine2 heading must render from its cold export");
+  assert.ok(renderedEngine2.window.document.querySelector("table"), "engine2 table must render from its cold export");
+  renderedEngine2.window.close();
   const hasFootnotes1 = blocks1.some((b) => b.type === "footnotes");
   assert.strictEqual(hasFootnotes1, true, "engine1 should have synthesized a footnotes block");
   const hasHeader1 = blocks1.some((b) => b.type === "heading");
@@ -63,7 +73,7 @@ async function runMultiInstanceEngineTest(): Promise<void> {
   assert.strictEqual(hasFootnotes2, false, "engine2 should not have synthesized a footnotes block");
   const heading2 = blocks2.find((b) => b.type === "heading");
   assert.ok(heading2, "engine2 should contain heading");
-  assert.strictEqual(heading2.payload.raw?.trim(), "Engine 2 Header");
+  assert.strictEqual(heading2.payload.raw, "# Engine 2 Header", "heading raw is the authored source slice");
   const list2 = blocks2.find((b) => b.type === "list");
   assert.ok(list2, "engine2 should contain list");
 
