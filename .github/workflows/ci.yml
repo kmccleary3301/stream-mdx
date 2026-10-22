@@ -59,6 +59,14 @@ jobs:
           npm run worker:build
           npm run test:conformance
 
+      # Fails when the streamed store's rendered HTML at any publication frontier differs from a cold render of the same
+      # prefix, for blocks nested in quotes and lists and for the regression fixtures (spec examples are covered by the
+      # ratchet's streamed paths).
+      - name: Render frontier parity (nested + fixtures)
+        run: |
+          npm run -s test:conformance:render-frontiers -- --corpus nested
+          npm run -s test:conformance:render-frontiers -- --corpus fixtures
+
       - name: Benchmark methodology contract
         run: npm run test:benchmarks:methodology
 
