@@ -120,11 +120,7 @@ function createRootParagraphOwnerFromSnapshot(
     sourceOffset,
     options.attestation,
   );
-  const state = options.finalized
-    ? "finalized"
-    : tailParser.state.phase === "closed"
-      ? "closed"
-      : "open";
+  const state = options.finalized || tailParser.state.phase === "closed" ? "finalized" : "open";
   const to = sourceOffset + node.to;
   const id = generateBlockId(`${from}:paragraph`, "paragraph");
   const owner = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && options.counters !== undefined
@@ -216,7 +212,13 @@ export function advanceRootParagraphOwner(
   }
   if (!tail) throw new Error("Native paragraph tail state is unavailable for this owner");
   const nativeChange = tail.append(source, appendedText);
-  return owner.accept(previous.processedTo, source.length, nativeChange);
+  // A root sibling ends a root paragraph for good, so closure settles it and FINALIZE skips it.
+  // Nested closure stays provisional: container finalization can still move the paragraph end.
+  return owner.accept(
+    previous.processedTo,
+    source.length,
+    nativeChange.closure === "following-root" ? { ...nativeChange, closure: "finalized" } : nativeChange,
+  );
 }
 
 export function isFinalizedRootParagraphAppendCandidate(owner: RootParagraphSourceOwner): boolean {

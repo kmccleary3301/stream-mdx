@@ -8150,7 +8150,15 @@ export class MarkdownEngine {
       }
       for (const owner of previousRootParagraphOwners) {
         const previous = owner.getMetadata();
-        if (previous.state === "finalized") continue;
+        if (previous.state === "finalized") {
+          // Settled at closure; only an owner admitted already closed still needs its store record.
+          if (!this.emittedRootParagraphIds.has(owner.id)) {
+            this.publishParagraphLinkReferences(owner);
+            semanticPatches.push(this.rootParagraphInsertPatch(owner));
+            this.emittedRootParagraphIds.add(owner.id);
+          }
+          continue;
+        }
         const change = finalizeRootParagraphOwner(owner, source);
         if (rootParagraphChangeNeedsReplacement(change) || this.rootParagraphChangeContainsInlineHtml(change, source)) {
           const replacementFrom = this.rootParagraphReplacementFrom(source, previous.sourceRange.from);

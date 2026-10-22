@@ -159,6 +159,11 @@ span boundaries, or processing frontier. `closed` is paragraph-owner state, not
 the worker's document-level `FINALIZED` message. A same-generation finalized
 paragraph cannot accept source growth or reopen. If raw engine input grows a
 finalized EOF paragraph, the engine replaces its owner under a fresh generation.
+A root paragraph ended by a following root sibling, and a root fenced code block
+ended by its closing fence, settle directly to `finalized`: later input cannot
+change their source, so worker `FINALIZE` leaves them untouched and costs only
+the open tail. A nested paragraph stays `closed` until its container finalizes,
+because container finalization can still move its end.
 
 `updateParagraphSpans` is a semantic, source-neutral update. It carries only
 dependency-affected prepared spans and requires matching owner generation,
