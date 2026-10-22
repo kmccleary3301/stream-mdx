@@ -387,6 +387,7 @@ async function runNestedTableRowsTest(): Promise<void> {
     "> | a |\n> | - |\n> | b c |",
     "- | a |\n  | - |\n  | b |\n  | c |\n\nafter\n",
     "> | a |\n> | - |\n> | x |\n> # z\n",
+    "- x\n\n  | a |\n  | - |\n  | b |\n  | c |\n",
   ];
   const harness = await createWorkerHarness();
   for (const source of sources) {

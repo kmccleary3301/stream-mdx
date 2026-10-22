@@ -381,11 +381,18 @@ export class NativeContainerWindowCache {
     }
     const codeOpeningFrom = code && code.openingLineFrom < from ? code.openingLineFrom : undefined;
     const contextEnd = codeOpeningFrom ?? from;
+    // The active leaf's own context lines (a table's header and delimiter) may sit between the previous child and the
+    // changing suffix; the separating gap then ends at the first of them and is emitted before them.
+    let gapEnd = contextEnd;
+    for (const line of additionalContextLines) {
+      if (line.from < gapEnd) gapEnd = line.from;
+    }
     const gapStart = boundedContextGapStart(
       source,
-      activeContextGapStart(source, frames, contextEnd, to),
-      contextEnd,
+      activeContextGapStart(source, frames, gapEnd, to),
+      gapEnd,
     );
+    const inGap = (lineFrom: number): boolean => gapStart !== undefined && lineFrom >= gapStart && lineFrom < gapEnd;
     const contextLines = new Map<number, NativeContainerContextLine>();
     for (const frame of frames) {
       for (const marker of listChainMarkers(frame)) {
@@ -414,13 +421,13 @@ export class NativeContainerWindowCache {
     for (const opening of openings) {
       const lineFrom = lineStartAt(source, opening.from);
       if (lineFrom >= from || (codeOpeningFrom !== undefined && lineFrom >= codeOpeningFrom)) continue;
-      if (gapStart !== undefined && lineFrom >= gapStart) continue;
+      if (inGap(lineFrom)) continue;
       const group = groups.get(lineFrom);
       if (group) group.push(opening);
       else groups.set(lineFrom, [opening]);
     }
     for (const [lineFrom] of contextLines) {
-      if (lineFrom >= from || (gapStart !== undefined && lineFrom >= gapStart)) continue;
+      if (lineFrom >= from || inGap(lineFrom)) continue;
       if (!groups.has(lineFrom)) groups.set(lineFrom, []);
     }
 
@@ -457,8 +464,19 @@ export class NativeContainerWindowCache {
       inputLength += 1;
     };
 
+    let gapEmitted = gapStart === undefined;
+    const emitGap = (): void => {
+      if (gapEmitted) return;
+      gapEmitted = true;
+      // The gap may start at the previous child's content end, inside a context line already emitted with its ending;
+      // repeating that ending would add a blank line outside every container.
+      const emittedTo = runs.length > 0 ? runs[runs.length - 1]!.sourceTo : 0;
+      const gapFrom = Math.max(gapStart!, emittedTo);
+      if (gapFrom < gapEnd) appendSource(gapFrom, gapEnd);
+    };
     const orderedGroups = [...groups.entries()].sort((left, right) => left[0] - right[0]);
     for (const [lineFrom, group] of orderedGroups) {
+      if (lineFrom >= gapEnd) emitGap();
       group.sort((left, right) => left.from - right.from);
       if (group.length > 0) {
         const last = group[group.length - 1]!;
@@ -491,11 +509,7 @@ export class NativeContainerWindowCache {
         appendLineEnding(contextLine.to, endingTo);
       }
     }
-    // The gap may start at the previous child's content end, inside a context line already emitted with its ending;
-    // repeating that ending would add a blank line outside every container.
-    const emittedTo = runs.length > 0 ? runs[runs.length - 1]!.sourceTo : 0;
-    const gapFrom = gapStart === undefined ? undefined : Math.max(gapStart, emittedTo);
-    if (gapFrom !== undefined && gapFrom < contextEnd) appendSource(gapFrom, contextEnd);
+    emitGap();
     if (code && codeOpeningFrom !== undefined) {
       const prefixStart = inputLength;
       appendKnownSource(code.openingLineFrom, code.openingContextText);
