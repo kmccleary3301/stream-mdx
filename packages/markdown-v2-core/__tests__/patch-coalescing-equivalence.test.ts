@@ -1,7 +1,13 @@
 import assert from "node:assert";
 
 import { applyPatchBatch, createInitialSnapshot, type DocumentSnapshot } from "../src/block-snapshot";
-import { type CoalesceConfig, DEFAULT_COALESCE_CONFIG, coalescePatchesLinear, coalescePatchesQuadratic } from "../src/perf/patch-coalescing";
+import {
+  type CoalesceConfig,
+  DEFAULT_COALESCE_CONFIG,
+  coalescePatchesLinear,
+  coalescePatchesQuadratic,
+  coalescePatchesWithMetrics,
+} from "../src/perf/patch-coalescing";
 import { PATCH_ROOT_ID, type NodePath, type Patch } from "../src/types";
 
 // Coalescing is an optimization: for any patch sequence, applying the coalesced sequence must leave
@@ -19,7 +25,24 @@ function mulberry32(seed: number): () => number {
 }
 
 const INITIAL_SOURCE_LENGTH = 20;
-const PROP_TARGETS = ["p1", "p2", "L", "li1", "li2"];
+/** Own-block, block-only and in-block addressing: several nodes share a blockId, as list and quote children do. */
+const PROP_TARGETS: readonly NodePath[] = [
+  { blockId: "p1", nodeId: "p1" },
+  { blockId: "p1" },
+  { blockId: "p2", nodeId: "p2" },
+  { blockId: "L", nodeId: "L" },
+  { blockId: "L" },
+  { blockId: "L", nodeId: "li1" },
+  { blockId: "L", nodeId: "li2" },
+  { blockId: "Q", nodeId: "Q" },
+  { blockId: "Q", nodeId: "q1" },
+];
+/** Insert parents; `L` and `li1` share a blockId. */
+const INSERT_PARENTS: readonly NodePath[] = [
+  { blockId: "L", nodeId: "L" },
+  { blockId: "L", nodeId: "li1" },
+  { blockId: "Q", nodeId: "Q" },
+];
 
 function createSnapshot(): DocumentSnapshot {
   const leaf = (id: string, type: string) => ({ id, type, props: {}, children: [] });
@@ -31,6 +54,7 @@ function createSnapshot(): DocumentSnapshot {
       leaf("p1", "paragraph"),
       leaf("p2", "paragraph"),
       { id: "L", type: "list", props: {}, children: [leaf("li1", "list-item"), leaf("li2", "list-item")] },
+      { id: "Q", type: "blockquote", props: {}, children: [leaf("q1", "paragraph")] },
     ],
   } as never);
 }
@@ -42,12 +66,9 @@ function generatePatches(seed: number): Patch[] {
   const integer = (max: number) => Math.floor(random() * (max + 1));
   const length = 1 + integer(64);
   let sourceLength = INITIAL_SOURCE_LENGTH;
-  let listChildren = 2;
+  const childCounts = new Map<string, number>([["L", 2], ["li1", 0], ["Q", 1]]);
   let nextNode = 0;
-  const target = (): NodePath => {
-    const id = pick(PROP_TARGETS);
-    return random() < 0.7 ? { blockId: id, nodeId: id } : { blockId: id };
-  };
+  const target = (): NodePath => ({ ...pick(PROP_TARGETS) });
   const props = (): Record<string, unknown> => {
     const result: Record<string, unknown> = {};
     for (const key of ["a", "b", "c"]) {
@@ -63,13 +84,18 @@ function generatePatches(seed: number): Patch[] {
     if (roll < 0.5) {
       patches.push({ op: "setProps", at: target(), props: props() });
     } else if (roll < 0.7) {
-      const index = random() < 0.6 ? listChildren : integer(listChildren);
+      const parent = pick(INSERT_PARENTS);
+      const count = childCounts.get(parent.nodeId as string) ?? 0;
+      const index = random() < 0.6 ? count : integer(count);
       const id = `n${nextNode++}`;
-      patches.push({ op: "insertChild", at: { blockId: "L", nodeId: "L" }, index, node: { id, type: "list-item", props: {}, children: [] } });
-      listChildren += 1;
-    } else if (roll < 0.78 && listChildren > 0) {
-      patches.push({ op: "deleteChild", at: { blockId: "L", nodeId: "L" }, index: integer(listChildren - 1) });
-      listChildren -= 1;
+      patches.push({ op: "insertChild", at: { ...parent }, index, node: { id, type: "paragraph", props: {}, children: [] } });
+      childCounts.set(parent.nodeId as string, count + 1);
+    } else if (roll < 0.78) {
+      const parent = pick(INSERT_PARENTS);
+      const count = childCounts.get(parent.nodeId as string) ?? 0;
+      if (count === 0) continue;
+      patches.push({ op: "deleteChild", at: { ...parent }, index: integer(count - 1) });
+      childCounts.set(parent.nodeId as string, count - 1);
     } else if (roll < 0.88) {
       patches.push({ op: "appendInputSource", at: { blockId: PATCH_ROOT_ID }, generation: 1, from: sourceLength, text: "abc" } as Patch);
       sourceLength += 3;
@@ -121,6 +147,21 @@ for (let seed = 1; seed <= 400; seed += 1) {
       assert.strictEqual(actual, expected, `${coalescerName} coalescing (${configName}) changed the applied state for seed ${seed}`);
     }
   }
+}
+
+// Metrics report what coalescing removed, by op.
+{
+  const { patches, metrics } = coalescePatchesWithMetrics([
+    { op: "setProps", at: { blockId: "p1", nodeId: "p1" }, props: { a: 1 } },
+    { op: "setProps", at: { blockId: "p1", nodeId: "p1" }, props: { b: 2 } },
+    { op: "setProps", at: { blockId: "p1", nodeId: "p1" }, props: { c: 3 } },
+    { op: "insertChild", at: { blockId: "L", nodeId: "L" }, index: 2, node: { id: "x", type: "paragraph", props: {}, children: [] } },
+    { op: "insertChild", at: { blockId: "L", nodeId: "L" }, index: 3, node: { id: "y", type: "paragraph", props: {}, children: [] } },
+  ]);
+  assert.strictEqual(patches.length, 3, "three same-node setProps merge into one; inserts stay individual");
+  const { durationMs, ...counts } = metrics;
+  assert.ok(durationMs >= 0, "duration is non-negative");
+  assert.deepStrictEqual(counts, { inputPatchCount: 5, outputPatchCount: 3, coalescedCount: 2, setPropsCoalesced: 2, insertChildCoalesced: 0 });
 }
 
 console.log("patch coalescing equivalence test passed");
