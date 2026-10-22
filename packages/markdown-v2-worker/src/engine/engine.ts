@@ -3423,11 +3423,9 @@ export class MarkdownEngine {
       ...(footnoteTargets.removedOwnerIds ?? []),
       ...removedParagraphOwners,
     ]));
-    const nativeFootnotesChanged = tailBlocks.some((block) => {
-      if (typeof block.payload.range?.to === "number" && block.payload.range.to < oldLength) return false;
-      const raw = block.payload.raw ?? "";
-      return raw.includes("[^") || raw.includes("&");
-    });
+    const previouslyProvisionalIds = new Set(this.blocks.filter((block) => !block.isFinalized).map((block) => block.id));
+    const nativeFootnotesChanged = tailBlocks.some((block) =>
+      this.footnoteSourceNeedsNumbering(block, oldLength, previouslyProvisionalIds));
     const paragraphDeltas = [...(footnoteTargets.deltas ?? []), ...createdParagraphTargets];
     const rebuildParagraphTargets = Boolean(footnoteTargets.rebuild)
       || nativeFootnotesChanged
@@ -3444,12 +3442,12 @@ export class MarkdownEngine {
         }
       : undefined;
     await this.prepareTrustedMdxFlowChildrenForBlocks(tailBlocks, this.blocks, changedLabels);
+    const documentBlocks = [...stableBlocks, ...documentContextTailBlocks];
+    if (changedLabels.size > 0 && await this.refreshLinkReferenceDependents(documentBlocks, changedLabels) && paragraphBridge) {
+      paragraphBridge.rebuild = true;
+    }
     this.pendingRootParagraphPatches = [];
-    let changedBlocks = this.runDocumentPlugins(
-      [...stableBlocks, ...documentContextTailBlocks],
-      source,
-      paragraphBridge,
-    );
+    let changedBlocks = this.runDocumentPlugins(documentBlocks, source, paragraphBridge);
     rootParagraphSemanticPatches.push(...this.takePendingRootParagraphPatches());
     this.registerRootCodeOwners(createdOwners);
     if (createdOwners.length > 0) {
@@ -3457,28 +3455,6 @@ export class MarkdownEngine {
       changedBlocks = changedBlocks.filter((block) => !rootCodeIds.has(block.id));
     }
     tableSemanticPatches.push(...this.takePendingRootTablePatches());
-    if (changedLabels.size > 0) {
-      for (let index = 0; index < changedBlocks.length; index += 1) {
-        const block = changedBlocks[index];
-        if (!block) continue;
-        const attempted = this.blockAttemptedReferences.get(block.id);
-        if (!attempted) continue;
-        let matched = false;
-        for (const label of changedLabels) {
-          if (attempted.has(label)) {
-            matched = true;
-            break;
-          }
-        }
-        if (!matched) continue;
-        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-          this.campaignCounters?.recordInvalidation("link_reference_definition", block.id, ["props.inline"]);
-        }
-        const clone = cloneBlock(block);
-        await this.refreshChangedLinkReferences(clone, changedLabels, attempted);
-        changedBlocks[index] = clone;
-      }
-    }
     this.blocks = changedBlocks;
     this.treeFragments = TreeFragment.addTree(tree, updatedFragments);
     this.rootNativeFragmentOffset = tailOffset;
@@ -3882,12 +3858,9 @@ export class MarkdownEngine {
       nestedNativeContainerStarts,
     );
     await this.prepareTrustedMdxFlowChildrenForBlocks(changedBlocks, this.blocks, changedLabels);
+    const previouslyProvisionalIds = new Set(this.blocks.filter((block) => !block.isFinalized).map((block) => block.id));
     const appendedFootnotesChanged = appendedText.includes("[^") || appendedText.includes("&")
-      || changedBlocks.some((block) => {
-        if (typeof block.payload.range?.to === "number" && block.payload.range.to < oldLen) return false;
-        const raw = block.payload.raw ?? "";
-        return raw.includes("[^") || raw.includes("&");
-      });
+      || changedBlocks.some((block) => this.footnoteSourceNeedsNumbering(block, oldLen, previouslyProvisionalIds));
     const documentContextBlocks = this.excludeRootCodeBlocksFromDocumentContext(changedBlocks, createdRootCodeOwners);
     const removedParagraphOwnerIds = previousRootParagraphOwners
       .filter((owner) => !this.rootParagraphOwners.includes(owner))
@@ -3898,6 +3871,8 @@ export class MarkdownEngine {
       this.rootParagraphOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner);
     const paragraphTargets = activeCreatedRootParagraphOwners
       .map((owner) => this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize()));
+    const linkReferencesRefreshed = changedLabels.size > 0
+      && await this.refreshLinkReferenceDependents(documentContextBlocks, changedLabels);
     this.pendingRootParagraphPatches = [];
     changedBlocks = this.runDocumentPlugins(
       documentContextBlocks,
@@ -3909,7 +3884,7 @@ export class MarkdownEngine {
         ? {
             deltas: paragraphTargets,
             ...(removedParagraphOwnerIds.length > 0 ? { removedOwnerIds: removedParagraphOwnerIds } : {}),
-            rebuild: appendedFootnotesChanged || removedParagraphOwnerIds.length > 0,
+            rebuild: appendedFootnotesChanged || removedParagraphOwnerIds.length > 0 || linkReferencesRefreshed,
           }
         : undefined,
     );
@@ -4013,29 +3988,6 @@ export class MarkdownEngine {
       if (fullLast >= newLen - 1 || fullBlocks.length >= changedBlocks.length) {
         newTree = fullTree;
         changedBlocks = fullBlocks;
-      }
-    }
-
-    if (changedLabels.size > 0) {
-      for (let i = 0; i < changedBlocks.length; i++) {
-        const block = changedBlocks[i];
-        const attempted = this.blockAttemptedReferences.get(block.id);
-        if (!attempted) continue;
-        let matched = false;
-        for (const label of changedLabels) {
-          if (attempted.has(label)) {
-            matched = true;
-            break;
-          }
-        }
-        if (matched) {
-          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-            this.campaignCounters?.recordInvalidation("link_reference_definition", block.id, ["props.inline"]);
-          }
-          const cloned = cloneBlock(block);
-          await this.refreshChangedLinkReferences(cloned, changedLabels, attempted);
-          changedBlocks[i] = cloned;
-        }
       }
     }
     const paragraphSemanticPatches = [
@@ -4706,6 +4658,51 @@ export class MarkdownEngine {
       const { linkReferences: _stale, ...rest } = meta;
       block.payload.meta = rest;
     }
+  }
+
+  /**
+   * Footnote numbering lives on the inline the document plugins annotated. A block reaching the append, or a
+   * base-path block re-extracted from the provisional tail, carries fresh inline that needs a full rebuild.
+   */
+  private footnoteSourceNeedsNumbering(
+    block: Block,
+    oldLength: number,
+    previouslyProvisionalIds: ReadonlySet<string>,
+  ): boolean {
+    const raw = block.payload.raw ?? "";
+    if (!raw.includes("[^") && !raw.includes("&")) return false;
+    if (!(typeof block.payload.range?.to === "number" && block.payload.range.to < oldLength)) return true;
+    return !this.isRootOwnedBlock(block) && previouslyProvisionalIds.has(block.id);
+  }
+
+  /**
+   * Re-resolves blocks whose attempted link references changed, in place. Document plugins number the
+   * re-parsed inline, so this runs before them; a refreshed block needs their full rebuild.
+   */
+  private async refreshLinkReferenceDependents(blocks: Block[], changedLabels: ReadonlySet<string>): Promise<boolean> {
+    let refreshed = false;
+    for (let index = 0; index < blocks.length; index += 1) {
+      const block = blocks[index];
+      if (!block) continue;
+      const attempted = this.blockAttemptedReferences.get(block.id);
+      if (!attempted) continue;
+      let matched = false;
+      for (const label of changedLabels) {
+        if (attempted.has(label)) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) continue;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordInvalidation("link_reference_definition", block.id, ["props.inline"]);
+      }
+      const clone = cloneBlock(block);
+      await this.refreshChangedLinkReferences(clone, changedLabels, attempted);
+      blocks[index] = clone;
+      refreshed = true;
+    }
+    return refreshed;
   }
   private resolveLinkReferences(attempted: Iterable<string>): BlockResolvedLinkReference[] {
     const resolved: BlockResolvedLinkReference[] = [];
