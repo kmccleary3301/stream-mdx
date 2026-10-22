@@ -7234,6 +7234,8 @@ export class MarkdownEngine {
     const insertedRootTableNodes = new Map<string, NodeSnapshot>();
     const insertedRootParagraphNodes = new Map<string, NodeSnapshot>();
     const additionalPatches: Patch[] = [];
+    // Plugin revisions of nested owners are computed from current owner state, so they follow this batch's owner patches.
+    const nestedOwnerRevisionPatches: Patch[] = [];
     for (const patch of extraPatches) {
       if (!this.isCurrentRootNativeOwnerPatch(patch)) continue;
       if (patch.op === "insertChild" && patch.at.blockId === PATCH_ROOT_ID && patch.node.type === "code") {
@@ -7252,6 +7254,8 @@ export class MarkdownEngine {
         )
       ) {
         continue;
+      } else if ((patch.op === "updateParagraphSpans" || patch.op === "updateTableRows") && patch.at.nodeId !== undefined) {
+        nestedOwnerRevisionPatches.push(patch);
       } else {
         additionalPatches.push(patch);
       }
@@ -7524,7 +7528,14 @@ export class MarkdownEngine {
     const nativeOwnerPatches = this.pendingNativeNestedOwnerPatches;
     this.pendingNativeNestedPatches = [];
     this.pendingNativeNestedOwnerPatches = [];
-    const combined = additionalPatches.concat(lifecyclePatches, patches, nativeStructuralPatches, nativeOwnerPatches, contentPatches);
+    const combined = additionalPatches.concat(
+      lifecyclePatches,
+      patches,
+      nativeStructuralPatches,
+      nativeOwnerPatches,
+      nestedOwnerRevisionPatches,
+      contentPatches,
+    );
     if (tocPatch) {
       combined.push(tocPatch);
     }
@@ -7866,11 +7877,14 @@ export class MarkdownEngine {
       block.isFinalized = true;
       finalizePatches.push({ op: "finalize", at: { blockId: block.id } });
     }
+    this.pendingRootParagraphPatches = [];
+    this.pendingRootTablePatches = [];
     this.blocks = this.runDocumentPlugins(
       this.blocks,
       source,
       this.nestedParagraphOwners.size > 0 ? { rebuild: true } : undefined,
     );
+    finalizePatches.push(...this.takePendingRootParagraphPatches(), ...this.takePendingRootTablePatches());
     for (const block of this.blocks) {
       if (!block.isFinalized) {
         block.isFinalized = true;

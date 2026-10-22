@@ -4,12 +4,14 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
-import type { Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type { Block, Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import type { RendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { JSDOM } from "jsdom";
 
 import { projectConsumerBlocks } from "./consumer-block-projection";
+import { compileMarkdownSnapshotDirect } from "../src/direct-compile";
+import { createWorkerHarness } from "./worker-test-harness";
 import { MarkdownEngine } from "../src/engine/engine";
 
 function applyMessages(store: RendererStore, messages: readonly WorkerOut[]): void {
@@ -23,6 +25,32 @@ function applyMessages(store: RendererStore, messages: readonly WorkerOut[]): vo
 function renderDocument(store: RendererStore): string {
   const coldExport = store.getBlocks();
   return renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: coldExport, store }));
+}
+
+function assertQuoteRendersFootnoteReference(blocks: readonly Block[], label: string): void {
+  const quote = blocks.find((block) => block.type === "blockquote");
+  assert.ok(quote, `${label}: output must contain the quote`);
+  assert.match(projectConsumerBlocks([quote])[0].markup, /<sup class="footnote-ref">/, `${label}: quote paragraph must render a footnote reference`);
+}
+
+// Numbering reaches a quoted paragraph at finalize, with and without a root paragraph owner before it.
+async function runNestedFootnoteReferenceAtFinalize(): Promise<void> {
+  const docPlugins = { formatAnticipation: true };
+  for (const before of ["", "Intro [^late]\n\n"]) {
+    const body = `${before}> nested [^late]`;
+    const definition = "\n\n[^late]: Footnote body";
+    const label = before ? "after a root owner" : "quote only";
+
+    const direct = await compileMarkdownSnapshotDirect({ text: `${body}${definition}`, init: { docPlugins } });
+    assertQuoteRendersFootnoteReference(direct.blocks, `single-shot ${label}`);
+
+    const harness = await createWorkerHarness();
+    const store = createRendererStore();
+    applyMessages(store, await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: body, prewarmLangs: [], docPlugins }));
+    applyMessages(store, await harness.send({ type: "APPEND", text: definition }));
+    applyMessages(store, await harness.send({ type: "FINALIZE" }));
+    assertQuoteRendersFootnoteReference(store.getBlocks(), `streamed ${label}`);
+  }
 }
 
 async function runDefaultMixedReferencesAndNestedFootnotes(): Promise<void> {
@@ -99,7 +127,14 @@ async function runDefaultOriginalRootReclassification(): Promise<void> {
     assert.equal(heading.payload.range?.from, 0);
     assert.equal(heading.payload.range?.to, original.length + "\n---".length);
     assert.notEqual(heading.id, priorOwner?.id, "the reclassified consumer block must replace its prior identity");
-    assert.match(projectConsumerBlocks([heading])[0].markup, /<h2>Title<\/h2>/, "the reclassified root must render as a level-two heading");
+    const singleShot = await compileMarkdownSnapshotDirect({ text: `${original}\n---` });
+    const singleShotHeading = singleShot.blocks.find((block) => block.type === "heading");
+    assert.ok(singleShotHeading, "single-shot parsing must produce the same heading");
+    assert.equal(
+      projectConsumerBlocks([heading])[0].markup,
+      projectConsumerBlocks([singleShotHeading])[0].markup,
+      "the reclassified root must render as its single-shot heading",
+    );
     await setextEngine.handle({ type: "FINALIZE" });
     applyMessages(setextStore, setextMessages.splice(0));
   } finally {
@@ -127,6 +162,7 @@ async function runDefaultOriginalRootReclassification(): Promise<void> {
   }
 }
 
+await runNestedFootnoteReferenceAtFinalize();
 await runDefaultMixedReferencesAndNestedFootnotes();
 await runDefaultOriginalRootReclassification();
 console.log("native paragraph default bridge consumer tests passed");
