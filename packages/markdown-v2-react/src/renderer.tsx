@@ -705,7 +705,9 @@ export class MarkdownRenderer implements Renderer {
     this.trustedSemanticAwaitingFlush = false;
     this.patchScheduler.restart();
     this.componentRegistry.resetAnimationTimeline();
-    this.store.reset([]);
+    // An initialized worker without content keeps its generation and empty input baseline, which the store
+    // already mirrors. Resetting would drop that baseline and every later source-range patch with it.
+    if (!this.workerSchemaReady || this.workerHasContent) this.store.reset([]);
     // A source session can restart before its attachment receives the initial ACK.
     // Keep that empty initialization so its matching ACK can release the session.
     const preservePendingEmptyInitialization = !this.workerSchemaReady
