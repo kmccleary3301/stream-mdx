@@ -185,7 +185,7 @@ try {
         && blocks.every((block) => block.isFinalized);
     }, "new renderer initializes, appends, and finalizes after the detached INIT error");
     assert.ok(currentRenderer.getStore().getBlocks().some(
-      (block) => block.payload.raw === "Current initialization owner",
+      (block) => block.payload.raw === "# Current initialization owner",
     ));
   } finally {
     detachedRenderer.detachWorker();
@@ -206,11 +206,11 @@ try {
     const first = renderer.renderStatic(firstSource);
     const second = renderer.renderStatic(secondSource);
     const [firstBlocks, secondBlocks] = await Promise.all([first, second]);
-    assert.equal(firstBlocks[0].payload.raw, "First FIFO document", "empty attach ACK cannot resolve full-content waiter");
-    assert.equal(secondBlocks[0].payload.raw, "Second FIFO document", "full-content ACKs resolve FIFO owners");
+    assert.equal(firstBlocks[0].payload.raw, "# First FIFO document", "empty attach ACK cannot resolve full-content waiter");
+    assert.equal(secondBlocks[0].payload.raw, "# Second FIFO document", "full-content ACKs resolve FIFO owners");
     renderer.finalize();
     await waitFor(() => renderer.getStore().getBlocks().some((block) => block.type === "table") && renderer.getStore().getBlocks().every((block) => block.isFinalized), "real hosted FIFO replacement finalizes");
-    assert.equal(renderer.getStore().getBlocks()[0].payload.raw, "Second FIFO document");
+    assert.equal(renderer.getStore().getBlocks()[0].payload.raw, "# Second FIFO document");
     assert.equal(worker.input.filter((message) => message.type === "APPEND").length, 0);
     assert.ok(renderer.getStore().getBlocks().find((block) => block.type === "table")?.payload.raw.includes("PK-0499"));
     const ownSource = source(250, "Reattached owner document");
@@ -224,12 +224,12 @@ try {
     reusedRenderer.attachWorker(worker.asBrowserWorker());
     try {
       const ownBlocks = await reusedRenderer.renderStatic(ownSource);
-      assert.equal(ownBlocks[0]?.payload.raw, "Reattached owner document",
+      assert.equal(ownBlocks[0]?.payload.raw, "# Reattached owner document",
         "pending detached INIT acknowledgment cannot resolve the new attachment's full-content promise");
       reusedRenderer.finalize();
       await waitFor(() => reusedRenderer.getStore().getBlocks().every((block) => block.isFinalized),
         "reused hosted worker finalizes its current document");
-      assert.equal(reusedRenderer.getStore().getBlocks()[0]?.payload.raw, "Reattached owner document");
+      assert.equal(reusedRenderer.getStore().getBlocks()[0]?.payload.raw, "# Reattached owner document");
     } finally {
       reusedRenderer.detachWorker();
     }
