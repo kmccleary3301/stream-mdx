@@ -256,9 +256,11 @@ function followingRoots(
   const result: NativeParagraphRootCandidate[] = [];
   const terminalLineEnding = !finalizing && hasTerminalNativeLineEnding(source, sourceOffset, inputLength);
   for (let node = first; node; node = node.nextSibling) {
+    // A title-less definition can still take its title from the next line, so only a titled one is settled.
     const terminalReference = node.type.name === "LinkReference"
       && node.to < inputLength
-      && terminalLineEnding;
+      && terminalLineEnding
+      && node.getChild("LinkTitle") !== null;
     result.push({
       node,
       sourceOffset,

@@ -462,12 +462,36 @@ async function runResetGeneration(): Promise<void> {
   engine.dispose();
 }
 
+async function runStreamingDefinitionTakesNextLineTitle(): Promise<void> {
+  const messages: WorkerOut[] = [];
+  const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
+  const store = createRendererStore();
+  await engine.handle({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "See [site][destination]\n\n[destination]: /guide\n",
+    prewarmLangs: [],
+    docPlugins: rootParagraphPlugins,
+  });
+  applyMessages(store, messages.splice(0));
+  // CommonMark lets a title-less definition take its title from the following line.
+  await engine.handle({ type: "APPEND", text: '  "Existing title"' });
+  applyMessages(store, messages.splice(0));
+  const paragraphs = store.getBlocks().filter((block) => block.type === "paragraph");
+  assert.equal(paragraphs.length, 1, "the title line joins the definition instead of opening a paragraph");
+  const link = findInline(paragraphs[0]?.payload.inline, "link");
+  assert.ok(link && link.kind === "link");
+  assert.equal(link.title, "Existing title");
+  engine.dispose();
+}
+
 
 async function runNativeParagraphEngineCutoverTest(): Promise<void> {
   await runNamedReferenceAndFinalize();
   await runFinalizedReferenceSemanticUpdates();
   await runFinalizedMultipleParagraphReferenceUpdatesAvoidRepreparation();
   await runFinalizedParagraphBoundaryAndBodyExtension();
+  await runStreamingDefinitionTakesNextLineTitle();
   await runSetextAndTableReplacement();
   await runResetGeneration();
 }
