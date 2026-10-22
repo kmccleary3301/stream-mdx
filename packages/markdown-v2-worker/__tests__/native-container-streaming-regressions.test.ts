@@ -256,21 +256,24 @@ async function runQuotedTabIndentedCodeTest(): Promise<void> {
   }
 }
 
-// CommonMark 283/311: a root paragraph that ends a list ("3", "  2") and later becomes an item joins that list.
+// A root paragraph that later becomes a list item is reparsed from its line, keeping its indentation
+// (CommonMark 271, 286, 291), and joins the list before it (CommonMark 283, 311).
 async function runParagraphBecomesListItemTest(): Promise<void> {
   const cases: Array<[string, number]> = [
     ["1. foo\n2.\n3. bar\n", 11],
     ["1. a\n\n  2. b\n\n   3. c\n", 9],
-    ["- a\nb\n- c\n", 7],
+    ["  1.  A paragraph\n    with two lines.\n", 3],
+    [" 1.  A paragraph\n     with two lines.\n\n         indented code\n", 2],
+    ["  10.  foo\n\n           bar\n", 4],
   ];
   const harness = await createWorkerHarness();
   for (const [source, cut] of cases) {
+    const expected = projectConsumerBlocks((await runSession(harness, [source])).getBlocks());
     for (const chunks of [[source.slice(0, cut), source.slice(cut)], chunksOfSize(source, 1)]) {
-      const blocks = (await runSession(harness, chunks)).getBlocks();
       assert.deepEqual(
-        blocks.map((block) => block.type),
-        ["list"],
-        `${JSON.stringify(source)} is one list (chunks ${JSON.stringify(chunks.slice(0, 2))})`,
+        projectConsumerBlocks((await runSession(harness, chunks)).getBlocks()),
+        expected,
+        `${JSON.stringify(source)} must match single-shot (chunks ${JSON.stringify(chunks.slice(0, 2))})`,
       );
     }
   }

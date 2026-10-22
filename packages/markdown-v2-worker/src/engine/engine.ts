@@ -2704,7 +2704,7 @@ export class MarkdownEngine {
     this.rootNativeFragmentOffset = null;
     this.treeFragments = [];
     await this.parseRootNativeTail(
-      sourceStart,
+      this.rootParagraphReplacementFrom(source, sourceStart),
       oldLength,
       source.length,
       metrics,
@@ -3120,7 +3120,7 @@ export class MarkdownEngine {
       this.rootNativeFragmentOffset = null;
       this.treeFragments = [];
       await this.parseRootNativeTail(
-        this.rootListContinuationStart(source, previous.sourceRange.from) ?? previous.sourceRange.from,
+        this.rootParagraphReplacementFrom(source, previous.sourceRange.from),
         oldLength,
         newLength,
         metrics,
@@ -3189,15 +3189,19 @@ export class MarkdownEngine {
     this.sourceDocument.append(appendedText);
     await this.parseRootNativeTail(tailOffset, oldLength, this.sourceDocument.length, metrics);
   }
-  /** A root paragraph that becomes a list item may join the root list right before it, so reparse from that list. */
-  private rootListContinuationStart(source: SourceSnapshot, paragraphFrom: number): number | undefined {
-    if (!LIST_ITEM_START.test(source.read(paragraphFrom, Math.min(source.length, paragraphFrom + 12)))) return undefined;
+  /**
+   * Where to reparse a replaced root paragraph: its line start, so indentation before the paragraph text still counts,
+   * or the root list right before it when the paragraph now starts a list item that may join that list.
+   */
+  private rootParagraphReplacementFrom(source: SourceSnapshot, paragraphFrom: number): number {
+    const lineFrom = sourceLineStart(source, paragraphFrom);
+    if (!LIST_ITEM_START.test(source.read(paragraphFrom, Math.min(source.length, paragraphFrom + 12)))) return lineFrom;
     for (let index = this.blocks.length - 1; index >= 0; index -= 1) {
       const range = this.blocks[index]?.payload.range;
-      if (!range || range.from >= paragraphFrom) continue;
-      return this.blocks[index]?.type === "list" ? range.from : undefined;
+      if (!range || range.from >= lineFrom) continue;
+      return this.blocks[index]?.type === "list" ? range.from : lineFrom;
     }
-    return undefined;
+    return lineFrom;
   }
   private rootQuoteContinuationStart(
     source: SourceSnapshot,
@@ -8115,9 +8119,10 @@ export class MarkdownEngine {
         if (previous.state === "finalized") continue;
         const change = finalizeRootParagraphOwner(owner, source);
         if (rootParagraphChangeNeedsReplacement(change) || this.rootParagraphChangeContainsInlineHtml(change, source)) {
+          const replacementFrom = this.rootParagraphReplacementFrom(source, previous.sourceRange.from);
           replacementRootFrom = replacementRootFrom === undefined
-            ? previous.sourceRange.from
-            : Math.min(replacementRootFrom, previous.sourceRange.from);
+            ? replacementFrom
+            : Math.min(replacementRootFrom, replacementFrom);
           this.retireRootParagraphOwner(owner);
           continue;
         }
