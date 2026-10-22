@@ -491,7 +491,11 @@ export class NativeContainerWindowCache {
         appendLineEnding(contextLine.to, endingTo);
       }
     }
-    if (gapStart !== undefined && gapStart < contextEnd) appendSource(gapStart, contextEnd);
+    // The gap may start at the previous child's content end, inside a context line already emitted with its ending;
+    // repeating that ending would add a blank line outside every container.
+    const emittedTo = runs.length > 0 ? runs[runs.length - 1]!.sourceTo : 0;
+    const gapFrom = gapStart === undefined ? undefined : Math.max(gapStart, emittedTo);
+    if (gapFrom !== undefined && gapFrom < contextEnd) appendSource(gapFrom, contextEnd);
     if (code && codeOpeningFrom !== undefined) {
       const prefixStart = inputLength;
       appendKnownSource(code.openingLineFrom, code.openingContextText);

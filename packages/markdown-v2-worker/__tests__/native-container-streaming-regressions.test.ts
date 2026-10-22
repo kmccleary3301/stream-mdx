@@ -126,6 +126,20 @@ async function runPluginReplacedBlockAfterParagraphAppendTest(): Promise<void> {
   assert.deepEqual(projectConsumerBlocks(streamed.getBlocks()), expected, "blocks replaced by document plugins must be patched");
 }
 
+// CommonMark: a `> >` line after a blank quote line opens a quote nested in the outer one.
+async function runNestedQuoteAfterBlankQuoteLineTest(): Promise<void> {
+  const chunks = ["Intro\n\n> W", " w.\n>\n> > q"];
+  const harness = await createWorkerHarness();
+  for (const session of [[chunks.join("")], chunks]) {
+    const quote = projectConsumerBlocks((await runSession(harness, session)).getBlocks())[1];
+    assert.deepEqual(
+      quote?.children.map((child) => (child.type === "blockquote" ? [child.type, child.raw] : [child.type])),
+      [["paragraph"], ["blockquote", "> q"]],
+      `nested quote after a blank quote line (${session.length} chunks)`,
+    );
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -133,4 +147,5 @@ await runNestedParagraphLeavesNativeOwnershipTest();
 await runOrderedMarkerWidthTest();
 await runNestedListLaterSiblingTest();
 await runPluginReplacedBlockAfterParagraphAppendTest();
+await runNestedQuoteAfterBlankQuoteLineTest();
 console.log("Native container streaming regressions passed");
