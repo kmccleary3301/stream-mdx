@@ -4445,6 +4445,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           );
           const incomingPrepared = incomingNativeContainer ? incomingBlock.payload?.meta?.preparedNested : undefined;
           target.block = cloneBlock(incomingNativeContainer ? blockWithoutPreparedNested(incomingBlock) : incomingBlock);
+          (target as NodeRecordWithSerializedBlock)[serializedBlockOwnership] = true;
           const paragraphState = paragraphStateByRecord.get(target);
           if (paragraphState) coldParagraphBlocksByView.delete(paragraphState);
           const metaPrepared = incomingNativeContainer && nativePreparedLayoutByRecord.get(target)?.meta === true;
