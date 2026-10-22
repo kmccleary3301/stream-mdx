@@ -7,6 +7,8 @@ import { JSDOM } from "jsdom";
 import ts from "typescript";
 
 import type { DiffLineKind, Patch, TokenLineV1, WorkerOut } from "@stream-mdx/core";
+import { createBlockSnapshot } from "@stream-mdx/core";
+import type { Block, NodeSnapshot } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import type { RendererStore } from "../../markdown-v2-react/src/renderer/store";
 
@@ -123,6 +125,125 @@ async function runChunkedDiffNumberingTest(): Promise<void> {
   }
 }
 
+function findNestedCodeBlock(blocks: readonly Block[]): Block {
+  const visit = (snapshot: NodeSnapshot): Block | undefined => {
+    if (snapshot.type === "code") return snapshot.props?.block as Block | undefined;
+    for (const child of snapshot.children ?? []) {
+      const code = visit(child);
+      if (code) return code;
+    }
+    return undefined;
+  };
+  for (const block of blocks) {
+    const code = visit(createBlockSnapshot(block));
+    if (code) return code;
+  }
+  throw new Error("expected nested diff code block");
+}
+
+async function streamNestedDiffRows(source: string, chunkSize: number | null): Promise<DiffRow[]> {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const docPlugins = {
+    footnotes: false,
+    html: false,
+    mdx: false,
+    tables: false,
+    callouts: false,
+    outputMode: "tokens" as const,
+    emitHighlightTokens: true,
+    emitDiffBlocks: true,
+  };
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: chunkSize === null ? source : "",
+    prewarmLangs: [],
+    docPlugins,
+  }));
+  if (chunkSize !== null) {
+    for (let index = 0; index < source.length; index += chunkSize) {
+      applyMessages(store, await harness.send({ type: "APPEND", text: source.slice(index, index + chunkSize) }));
+    }
+  }
+  applyMessages(store, await harness.send({ type: "FINALIZE" }));
+  const code = findNestedCodeBlock(store.getBlocks());
+  return store.getCodeLines(code.id, 0, 64).map((line) => ({
+    text: line.text,
+    diffKind: line.diffKind,
+    oldNo: line.oldNo ?? null,
+    newNo: line.newNo ?? null,
+  }));
+}
+
+async function runNestedChunkedDiffNumberingTest(): Promise<void> {
+  const source = [
+    "- owner",
+    "",
+    "  ```diff",
+    "  @@ -3,2 +3,3 @@",
+    "   ctx",
+    "  -old",
+    "  +new1",
+    "  +new2",
+    "  @@ -10 +11 @@",
+    "  -x",
+    "  +y",
+    "  ```",
+    "",
+  ].join("\n");
+  const whole = await streamNestedDiffRows(source, null);
+  const byText = new Map(whole.map((row) => [row.text, row]));
+  assert.deepStrictEqual(byText.get(" ctx"), { text: " ctx", diffKind: "context", oldNo: 3, newNo: 3 });
+  assert.deepStrictEqual(byText.get("+new2"), { text: "+new2", diffKind: "add", oldNo: null, newNo: 5 });
+  assert.deepStrictEqual(byText.get("-x"), { text: "-x", diffKind: "del", oldNo: 10, newNo: null });
+  assert.deepStrictEqual(byText.get("+y"), { text: "+y", diffKind: "add", oldNo: null, newNo: 11 });
+  for (const chunkSize of [1, 5]) {
+    assert.deepStrictEqual(
+      await streamNestedDiffRows(source, chunkSize),
+      whole,
+      `nested code chunk size ${chunkSize} must match single-shot diff rows`,
+    );
+  }
+}
+
+// A diff fence renders through the diff renderer whether it is a root block or nested in a list, eager or lazy.
+async function runNestedDiffRendererTest(): Promise<void> {
+  const fence = ["```diff-js", "@@ -1,2 +1,2 @@", "-const a = 0;", "+const a = 1;", " keep();", "```"];
+  const sources = {
+    root: fence.join("\n"),
+    nested: ["- owner", "", ...fence.map((line) => `  ${line}`)].join("\n"),
+  };
+  for (const [label, source] of Object.entries(sources)) {
+    for (const lazy of [false, true]) {
+      const harness = await createWorkerHarness();
+      const store = createRendererStore();
+      applyMessages(store, await harness.send({
+        type: "INIT",
+        schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+        initialContent: source,
+        prewarmLangs: [],
+        docPlugins: {
+          footnotes: false,
+          html: false,
+          mdx: false,
+          tables: false,
+          callouts: false,
+          outputMode: "tokens",
+          emitHighlightTokens: true,
+          emitDiffBlocks: true,
+          lazyTokenization: lazy ? { enabled: true, thresholdLines: 1 } : { enabled: false },
+        },
+      }));
+      applyMessages(store, await harness.send({ type: "FINALIZE" }));
+      const markup = projectConsumerBlocks(store.getBlocks()).map((block) => block.markup).join("");
+      assert.match(markup, /stream-mdx-diff-block/, `${label} ${lazy ? "lazy" : "eager"} diff fence must render through the diff renderer`);
+    }
+  }
+}
+
 await runDiffTokenizationTest();
 await runChunkedDiffNumberingTest();
+await runNestedChunkedDiffNumberingTest();
+await runNestedDiffRendererTest();
 console.log("worker-diff-tokenization test passed");

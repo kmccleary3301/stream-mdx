@@ -4,6 +4,7 @@ import {
   createCodeLineIndex,
   createSourceWindow,
   parseCodeFenceInfo,
+  type Block,
   type CodeBlockSnapshot,
   type CodeBlockSourceMetadata,
   type CodeLineDecoration,
@@ -13,6 +14,8 @@ import {
   type Patch,
   type SourceSnapshot,
 } from "@stream-mdx/core";
+import { detectDiffLanguage, parseUnifiedDiffLine, toDiffLineKind } from "./highlight";
+import type { DiffCursorState } from "./types";
 import {
   registerPreparedCodeLineSource,
   type PreparedCodeLineOwner,
@@ -73,6 +76,12 @@ interface NativeCodeLineDraft {
   readonly to: number;
   readonly ending: CodeLineRecord["ending"];
   readonly isProvisional: boolean;
+}
+
+interface DiffLineFields {
+  readonly diffKind: NonNullable<CodeLineRecord["diffKind"]>;
+  readonly oldNo: number | null;
+  readonly newNo: number | null;
 }
 
 interface NativeCodeTextEvent {
@@ -523,8 +532,19 @@ function readNativeCodeLines(
   return { lines, ...(pendingCRAt === undefined ? {} : { pendingCRAt }) };
 }
 
-function recordFromDraft(ownerId: string, index: number, draft: NativeCodeLineDraft, sourceRevision: number): CodeLineRecord {
-  return Object.freeze({
+function diffLineFields(text: string, cursor: DiffCursorState): DiffLineFields {
+  const info = parseUnifiedDiffLine(text, cursor);
+  return { diffKind: toDiffLineKind(info.kind), oldNo: info.oldNo ?? null, newNo: info.newNo ?? null };
+}
+
+function recordFromDraft(
+  ownerId: string,
+  index: number,
+  draft: NativeCodeLineDraft,
+  sourceRevision: number,
+  diff: DiffLineFields | undefined,
+): CodeLineRecord {
+  const base = {
     id: `${ownerId}:line:${index}`,
     index,
     text: draft.text,
@@ -532,21 +552,31 @@ function recordFromDraft(ownerId: string, index: number, draft: NativeCodeLineDr
     sourceRange: Object.freeze({ from: draft.from, to: draft.to }),
     sourceRevision,
     isProvisional: draft.isProvisional,
-  });
+  };
+  return Object.freeze(diff ? { ...base, diffKind: diff.diffKind, oldNo: diff.oldNo, newNo: diff.newNo } : base);
 }
 
 function draftFromRecord(record: CodeLineRecord, ending = record.ending, isProvisional = record.isProvisional): NativeCodeLineDraft {
   return { text: record.text, from: record.sourceRange.from, to: record.sourceRange.to, ending, isProvisional };
 }
 
-function sameProjection(record: CodeLineRecord, draft: NativeCodeLineDraft, index: number, ownerId: string): boolean {
+function sameProjection(
+  record: CodeLineRecord,
+  draft: NativeCodeLineDraft,
+  index: number,
+  ownerId: string,
+  diff: DiffLineFields | undefined,
+): boolean {
   return record.id === `${ownerId}:line:${index}`
     && record.index === index
     && record.text === draft.text
     && record.ending === draft.ending
     && record.sourceRange.from === draft.from
     && record.sourceRange.to === draft.to
-    && record.isProvisional === draft.isProvisional;
+    && record.isProvisional === draft.isProvisional
+    && record.diffKind === diff?.diffKind
+    && (record.oldNo ?? null) === (diff?.oldNo ?? null)
+    && (record.newNo ?? null) === (diff?.newNo ?? null);
 }
 
 function validateRange(range: { readonly from: number; readonly to: number }, sourceLength: number): void {
@@ -573,10 +603,18 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
   private processedTo: number;
   private revision = 0;
   private codeLines: CodeLineIndex;
+  private diffCursor: DiffCursorState | undefined;
+  /** Unified-diff fences tokenize diff-aware, as root code does. */
+  readonly isDiff: boolean;
   private pendingCRAt: number | undefined;
   private highlightableLineCount = 0;
   private emptyPlaceholder: boolean;
   private cachedWindow: { readonly from: number; readonly to: number; readonly source: SourceSnapshot } | undefined;
+  private presentation: {
+    readonly revision: number;
+    readonly highlightedHtml: string | undefined;
+    readonly meta: Block["payload"]["meta"];
+  } | undefined;
 
   private constructor(options: NativeNestedCodeSourceOwnerOptions) {
     if (!Number.isSafeInteger(options.generation) || options.generation < 0) throw new RangeError("Native code lease generation must be a non-negative safe integer");
@@ -598,6 +636,8 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     this.inputGeneration = options.inputGeneration;
     this.sourceDocument = options.source;
     this.info = info;
+    this.isDiff = detectDiffLanguage(parsedInfo.lang, parsedInfo.meta).isDiff;
+    const initialDiffCursor: DiffCursorState | undefined = this.isDiff ? { oldLine: null, newLine: null } : undefined;
     this.language = parsedInfo.lang;
     this.baseIndent = baseIndent;
     this.requiredIndent = kind === "FencedCode" ? fencedIndent : 4;
@@ -624,7 +664,16 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
       (count, draft) => count + (NON_WHITESPACE.test(draft.text) ? 1 : 0),
       0,
     );
-    this.codeLines = createCodeLineIndex({ lines: initialDrafts.map((draft, index) => recordFromDraft(this.id, index, draft, 0)) });
+    let cursor = initialDiffCursor;
+    let committedDiffCursor = initialDiffCursor;
+    const initialRecords = initialDrafts.map((draft, index) => {
+      const before = cursor ? { ...cursor } : undefined;
+      const diff = cursor ? diffLineFields(draft.text, cursor) : undefined;
+      committedDiffCursor = draft.isProvisional ? before : cursor ? { ...cursor } : undefined;
+      return recordFromDraft(this.id, index, draft, 0, diff);
+    });
+    this.diffCursor = committedDiffCursor;
+    this.codeLines = createCodeLineIndex({ lines: initialRecords });
     registerPreparedCodeLineSource(this, { info, ...(parsedInfo.lang ? { language: parsedInfo.lang } : {}) });
   }
 
@@ -642,6 +691,24 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
   }
   get hasHighlightableContent(): boolean {
     return this.highlightableLineCount > 0;
+  }
+  setPresentation(block: Block): void {
+    if (block.id !== this.id || block.type !== "code") {
+      throw new TypeError("Native nested code presentation must belong to its source owner");
+    }
+    this.presentation = {
+      revision: this.revision,
+      highlightedHtml: block.payload.highlightedHtml,
+      meta: block.payload.meta ? { ...block.payload.meta } : undefined,
+    };
+  }
+
+  getPresentation(): {
+    readonly highlightedHtml: string | undefined;
+    readonly meta: Block["payload"]["meta"];
+  } | undefined {
+    const presentation = this.presentation;
+    return presentation?.revision === this.revision ? presentation : undefined;
   }
 
   decorateLines(decorations: readonly CodeLineDecoration[]): CodeLineIndex {
@@ -679,7 +746,27 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
       lines: Object.freeze(this.codeLines.readRange(0, this.codeLines.length)),
       raw: this.getSourceSnapshot().materialize(),
     });
-    const props = Object.freeze({ info: this.info, ...(this.language ? { language: this.language } : {}) });
+    const presentation = this.getPresentation();
+    const block: Block | undefined = presentation
+      ? {
+          id: this.id,
+          type: "code",
+          isFinalized: this.sourceState !== "open",
+          payload: {
+            raw: code.raw,
+            meta: presentation.meta ? { ...presentation.meta } : undefined,
+            range: { ...this.sourceRange },
+            inline: undefined,
+            highlightedHtml: presentation.highlightedHtml,
+            sanitizedHtml: undefined,
+          },
+        }
+      : undefined;
+    const props = Object.freeze({
+      info: this.info,
+      ...(this.language ? { language: this.language } : {}),
+      ...(block ? { block } : {}),
+    });
     return Object.freeze({
       id: this.id,
       type: "code",
@@ -783,13 +870,26 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     }
 
     const nextTail = desiredTail;
+    const diffRows = this.diffCursor ? new Array<DiffLineFields>(nextTail.length) : undefined;
+    let committedDiffCursor = this.diffCursor;
+    if (diffRows && this.diffCursor) {
+      const working = { ...this.diffCursor };
+      for (let offset = 0; offset < nextTail.length; offset += 1) {
+        const draft = nextTail[offset];
+        if (draft.isProvisional) committedDiffCursor = { ...working };
+        diffRows[offset] = diffLineFields(draft.text, working);
+      }
+      if (nextTail.length === 0 || !nextTail[nextTail.length - 1]?.isProvisional) {
+        committedDiffCursor = { ...working };
+      }
+    }
     const reusable = new Array<CodeLineRecord | undefined>(nextTail.length);
     let rowsChanged = oldTail.length !== nextTail.length;
     for (let offset = 0; offset < nextTail.length; offset += 1) {
       const index = oldComplete + offset;
       const prior = oldTail[offset];
       const draft = nextTail[offset];
-      if (prior && draft && sameProjection(prior, draft, index, this.id)) reusable[offset] = prior;
+      if (prior && draft && sameProjection(prior, draft, index, this.id, diffRows?.[offset])) reusable[offset] = prior;
       else rowsChanged = true;
     }
     let highlightableLineCount = this.highlightableLineCount;
@@ -809,10 +909,11 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     }
     const semanticChanged = rowsChanged || nextState !== oldState || rangeChanged;
     const revision = semanticChanged ? nextRevision(this.revision) : this.revision;
-    const records = nextTail.map((draft, offset) => reusable[offset] ?? recordFromDraft(this.id, oldComplete + offset, draft, revision));
+    const records = nextTail.map((draft, offset) => reusable[offset] ?? recordFromDraft(this.id, oldComplete + offset, draft, revision, diffRows?.[offset]));
     if (rowsChanged) this.codeLines = this.codeLines.replaceTail(oldComplete, records);
     if (rowsChanged) this.highlightableLineCount = highlightableLineCount;
     this.sourceState = nextState;
+    this.diffCursor = committedDiffCursor;
     this.revision = revision;
     this.sourceRange = Object.freeze({ from: update.sourceRange.from, to: update.sourceRange.to });
     this.processedTo = update.sourceRange.to;
