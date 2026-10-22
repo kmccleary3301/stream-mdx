@@ -2786,12 +2786,15 @@ export class MarkdownEngine {
       && this.rootParagraphOwners.length === 0) return null;
     let latestFrom = -1;
     let processedTo: number | null = null;
+    // Only the latest owner's pending root matters; resolving it per owner rescans source for every paragraph.
+    let latestParagraph: RootParagraphSourceOwner | undefined;
     for (const owner of this.rootCodeOwners) {
       const metadata = owner.getMetadata();
       if (metadata.state === "open") return null;
       if (metadata.sourceRange.from >= latestFrom) {
         latestFrom = metadata.sourceRange.from;
         processedTo = metadata.processedTo;
+        latestParagraph = undefined;
       }
     }
     for (const owner of this.rootTableOwners) {
@@ -2801,6 +2804,7 @@ export class MarkdownEngine {
         latestFrom = metadata.sourceRange.from;
         // A table may consume trailing source while classifying its interrupt; restart at its owned end.
         processedTo = metadata.sourceRange.to;
+        latestParagraph = undefined;
       }
     }
     for (const owner of this.rootParagraphOwners) {
@@ -2809,12 +2813,13 @@ export class MarkdownEngine {
       if (metadata.sourceRange.from >= latestFrom) {
         latestFrom = metadata.sourceRange.from;
         processedTo = metadata.processedTo;
-        const pendingRootOffset = rootParagraphPendingRootOffset(owner);
-        if (pendingRootOffset !== undefined) {
-          // Native block node offsets can omit indentation needed when reparsing a continuation.
-          processedTo = sourceLineStart(this.sourceDocument.snapshot(), pendingRootOffset);
-        }
+        latestParagraph = owner;
       }
+    }
+    const pendingRootOffset = latestParagraph ? rootParagraphPendingRootOffset(latestParagraph) : undefined;
+    if (pendingRootOffset !== undefined) {
+      // Native block node offsets can omit indentation needed when reparsing a continuation.
+      processedTo = sourceLineStart(this.sourceDocument.snapshot(), pendingRootOffset);
     }
     return processedTo;
   }
