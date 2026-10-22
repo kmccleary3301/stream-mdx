@@ -7,6 +7,7 @@ import {
   type InlineNode,
   type InlineParser,
   type ParagraphBlockSnapshot,
+  type BlockResolvedLinkReference,
   type ParagraphBlockSourceMetadata,
   type ParagraphSpanIndex,
   type ParagraphSpanRecord,
@@ -217,6 +218,7 @@ export class RootParagraphSourceOwner {
   private rawEnd: number;
   private readonly spansByDependency = new Map<string, Set<number>>();
   private counters?: RootParagraphSourceOwnerCounters;
+  private linkReferences: readonly BlockResolvedLinkReference[] | undefined;
   private cachedSnapshot: { readonly revision: number; readonly snapshot: ParagraphBlockSnapshot } | undefined;
 
   constructor(options: RootParagraphSourceOwnerOptions, copyFrom?: RootParagraphSourceOwner) {
@@ -263,6 +265,7 @@ export class RootParagraphSourceOwner {
       for (const [dependency, indices] of copyFrom.spansByDependency) {
         this.spansByDependency.set(dependency, new Set(indices));
       }
+      this.linkReferences = copyFrom.linkReferences;
       return;
     }
     const reader = source.snapshot();
@@ -327,6 +330,7 @@ export class RootParagraphSourceOwner {
       completeSpanCount: this.spanIndex.completeSpanCount,
       spanCount: this.spanIndex.length,
       sourceRange: Object.freeze({ from: this.ownerStart, to: this.rawEnd }),
+      ...(this.linkReferences ? { linkReferences: this.linkReferences } : {}),
     });
   }
 
@@ -335,6 +339,20 @@ export class RootParagraphSourceOwner {
   }
   getSourceTextReader(): ParagraphSourceTextReader {
     return this.sourceTextReader;
+  }
+  setLinkReferences(references: readonly BlockResolvedLinkReference[]): void {
+    const current = this.linkReferences ?? [];
+    if (current.length === references.length && current.every((reference, index) => {
+      const next = references[index];
+      return next !== undefined
+        && reference.label === next.label
+        && reference.href === next.href
+        && reference.title === next.title;
+    })) return;
+    this.linkReferences = references.length > 0
+      ? references.map((reference) => ({ ...reference }))
+      : undefined;
+    this.cachedSnapshot = undefined;
   }
 
   getSourceSnapshot(): SourceSnapshot {
@@ -372,7 +390,10 @@ export class RootParagraphSourceOwner {
         raw: snapshot.raw,
         inline,
         range: { ...snapshot.sourceRange },
-        meta: { paragraph: snapshot },
+        meta: {
+          paragraph: snapshot,
+          ...(snapshot.linkReferences?.length ? { linkReferences: snapshot.linkReferences.map((reference) => ({ ...reference })) } : {}),
+        },
       },
     };
   }

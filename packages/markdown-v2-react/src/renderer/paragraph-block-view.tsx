@@ -3,7 +3,7 @@ import { type ManagedParagraphViewState, type ParagraphSpanRecord } from "@strea
 import React from "react";
 import { renderInlineNodes } from "../components";
 import type { ComponentRegistry } from "../components";
-import { useRendererNode } from "./hooks";
+import { RenderConfigVersionContext, useRendererNode } from "./hooks";
 import { BlockRangeProjectionTree, type BlockRangeProjection, type BlockRangeProjectionRange } from "./block-range-projection";
 import { PARAGRAPH_SPAN_RANGE_SIZE } from "./paragraph-span-range";
 import type {
@@ -181,6 +181,7 @@ const ParagraphSpanRangeView: React.FC<{
   registry: ComponentRegistry;
   parentTagName: string;
 }> = React.memo(({ store, blockId, generation, from, spanFrom, spanTo, sourceStart, sourceEnd, segmentKey, registry, parentTagName }) => {
+  React.useContext(RenderConfigVersionContext);
   const subscribe = React.useCallback(
     (listener: () => void) => store.subscribeParagraphSpans(blockId, generation, from, listener),
     [store, blockId, generation, from],

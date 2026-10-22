@@ -2529,6 +2529,7 @@ export class MarkdownEngine {
   }
 
   private rootParagraphInsertPatch(owner: RootParagraphSourceOwner): Patch {
+    this.publishParagraphLinkReferences(owner);
     return {
       op: "insertChild",
       at: { blockId: PATCH_ROOT_ID },
@@ -2580,12 +2581,14 @@ export class MarkdownEngine {
     for (let index = 0; index < rootParagraphCount; index += 1) {
       const owner = this.rootParagraphOwners[index];
       if (!owner) continue;
+      this.publishParagraphLinkReferences(owner);
       const patch = rootParagraphSemanticPatch(owner, owner.invalidateLinkReferences(labels));
       if (patch && this.emittedRootParagraphIds.has(owner.id)) paragraphPatches.push(patch);
     }
     for (const owner of this.nestedParagraphOwners.values()) {
       const target = this.findNestedParagraphSnapshot(owner.id);
       if (target?.snapshot.paragraph?.generation !== owner.getMetadata().generation) continue;
+      this.publishParagraphLinkReferences(owner);
       const patch = rootParagraphSemanticPatch(owner, owner.invalidateLinkReferences(labels));
       if (patch) {
         paragraphPatches.push({ ...patch, at: { blockId: target.blockId, nodeId: owner.id } });
@@ -3024,6 +3027,7 @@ export class MarkdownEngine {
       return;
     }
 
+    this.publishParagraphLinkReferences(owner);
     const appendChange = rootParagraphAppendChange(source, previous, change);
     const appendPatch = rootParagraphAppendPatch(owner, appendChange);
     const footnoteTargets = change.spans.length > 0
@@ -4573,13 +4577,7 @@ export class MarkdownEngine {
     } else {
       this.blockAttemptedReferences.set(block.id, attempted);
     }
-    const resolved: BlockResolvedLinkReference[] = [];
-    for (const key of attempted) {
-      const def = this.currentLinkReferences.get(key);
-      if (def) {
-        resolved.push(def.title !== undefined ? { label: def.label ?? key, href: def.href, title: def.title } : { label: def.label ?? key, href: def.href });
-      }
-    }
+    const resolved = this.resolveLinkReferences(attempted);
     const meta = block.payload.meta;
     if (resolved.length > 0) {
       block.payload.meta = { ...meta, linkReferences: resolved };
@@ -4587,6 +4585,27 @@ export class MarkdownEngine {
       const { linkReferences: _stale, ...rest } = meta;
       block.payload.meta = rest;
     }
+  }
+  private resolveLinkReferences(attempted: Iterable<string>): BlockResolvedLinkReference[] {
+    const resolved: BlockResolvedLinkReference[] = [];
+    for (const key of attempted) {
+      const def = this.currentLinkReferences.get(key);
+      if (def) {
+        resolved.push(def.title !== undefined ? { label: def.label ?? key, href: def.href, title: def.title } : { label: def.label ?? key, href: def.href });
+      }
+    }
+    return resolved;
+  }
+
+  private publishParagraphLinkReferences(owner: RootParagraphSourceOwner): void {
+    const attempted = new Set<string>();
+    const spans = owner.getSpans();
+    for (let index = 0; index < spans.length; index += 1) {
+      const span = spans.get(index);
+      if (!span) continue;
+      for (const label of span.attemptedReferences) attempted.add(label);
+    }
+    owner.setLinkReferences(this.resolveLinkReferences(attempted));
   }
 
   private async refreshChangedLinkReferences(
@@ -5625,6 +5644,7 @@ export class MarkdownEngine {
           owner = undefined;
           previousOwnerReleased = true;
         } else {
+          this.publishParagraphLinkReferences(owner);
           const appendChange = rootParagraphAppendChange(source, previous, accepted);
           const appendPatch = rootParagraphAppendPatch(owner, appendChange);
           this.pendingNativeNestedOwnerPatches.push({
@@ -5653,6 +5673,7 @@ export class MarkdownEngine {
           owner = undefined;
           previousOwnerReleased = true;
         } else {
+          this.publishParagraphLinkReferences(owner);
           const appendChange = rootParagraphAppendChange(source, previous, finalized);
           const appendPatch = rootParagraphAppendPatch(owner, appendChange);
           this.pendingNativeNestedOwnerPatches.push({
@@ -5725,6 +5746,7 @@ export class MarkdownEngine {
       }
       this.nestedParagraphOwners.set(id, owner);
       if (owner.getMetadata().state === "open") this.activeNestedParagraphByContainer.set(block.id, id);
+      this.publishParagraphLinkReferences(owner);
       const snapshot = mutableNativeOwnerSnapshot(rootParagraphNodeSnapshot(owner), paragraphRange);
       if (isActive) this.nativeContainerActiveSnapshots.set(block.id, snapshot);
       return snapshot;
@@ -7878,6 +7900,7 @@ export class MarkdownEngine {
           this.retireRootParagraphOwner(owner);
           continue;
         }
+        this.publishParagraphLinkReferences(owner);
         const appendChange = rootParagraphAppendChange(source, previous, change);
         if (change.spans.length > 0) {
           finalizedParagraphTargets.push(this.rootParagraphFootnoteTargetDelta(owner, change.spans));

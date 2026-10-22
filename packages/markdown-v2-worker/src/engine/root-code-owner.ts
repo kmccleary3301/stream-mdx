@@ -1,12 +1,15 @@
 import {
   AppendSourceDocument,
   createCodeLineIndex,
+  parseCodeFenceInfo,
   type Block,
   type CodeLineIndex,
   type CodeLineDecoration,
   type CodeLineRecord,
   type SourceSnapshot,
 } from "@stream-mdx/core";
+import { detectDiffLanguage, parseUnifiedDiffLine, toDiffLineKind } from "./highlight";
+import type { DiffCursorState } from "./types";
 
 declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
 
@@ -89,6 +92,13 @@ interface DraftCodeLine {
   readonly isProvisional: boolean;
 }
 
+/** Unified-diff row meaning for a line of a diff-labeled fence; derived from that line and its predecessors. */
+interface DiffLineFields {
+  readonly diffKind: NonNullable<CodeLineRecord["diffKind"]>;
+  readonly oldNo: number | null;
+  readonly newNo: number | null;
+}
+
 function classifyFenceTail(raw: string, opening: RootCodeSourceOpening): FenceTailKind {
   let cursor = 0;
   while (cursor < 3 && raw[cursor] === " ") cursor += 1;
@@ -117,8 +127,9 @@ function freezeRecord(
   draft: DraftCodeLine,
   openingIndent: number,
   sourceRevision: number,
+  diff: DiffLineFields | undefined,
 ): CodeLineRecord {
-  return Object.freeze({
+  const base = {
     id: `${ownerId}:line:${index}`,
     index,
     text: stripOpeningIndent(draft.raw, openingIndent),
@@ -126,7 +137,8 @@ function freezeRecord(
     sourceRange: Object.freeze({ from: draft.from, to: draft.to }),
     sourceRevision,
     isProvisional: draft.isProvisional,
-  });
+  };
+  return Object.freeze(diff ? { ...base, diffKind: diff.diffKind, oldNo: diff.oldNo, newNo: diff.newNo } : base);
 }
 
 function sameRecordProjection(
@@ -135,6 +147,7 @@ function sameRecordProjection(
   index: number,
   ownerId: string,
   openingIndent: number,
+  diff: DiffLineFields | undefined,
 ): boolean {
   return record.id === `${ownerId}:line:${index}`
     && record.index === index
@@ -142,7 +155,10 @@ function sameRecordProjection(
     && record.ending === draft.ending
     && record.sourceRange.from === draft.from
     && record.sourceRange.to === draft.to
-    && record.isProvisional === draft.isProvisional;
+    && record.isProvisional === draft.isProvisional
+    && record.diffKind === diff?.diffKind
+    && (record.oldNo ?? null) === (diff?.oldNo ?? null)
+    && (record.newNo ?? null) === (diff?.newNo ?? null);
 }
 
 function readSourceRange(reader: SourceSnapshot, from: number, to: number): string {
@@ -174,6 +190,8 @@ export class RootCodeSourceOwner {
   private lineStart: number;
   private pendingCR = false;
   private rawEnd: number;
+  /** Present only for diff-labeled fences: diff numbering state after the complete-line prefix. */
+  private diffCursor: DiffCursorState | undefined;
   private cachedBlock: { readonly revision: number; readonly block: Block } | undefined;
   private presentation: {
     readonly revision: number;
@@ -202,13 +220,21 @@ export class RootCodeSourceOwner {
     this.processedTo = opening.bodyFrom;
     this.lineStart = opening.bodyFrom;
     this.rawEnd = opening.bodyFrom;
-    const initialRecord = freezeRecord(id, 0, {
+    const { lang, meta } = parseCodeFenceInfo(opening.info);
+    const initialCursor: DiffCursorState | undefined = detectDiffLanguage(lang, meta).isDiff
+      ? { oldLine: null, newLine: null }
+      : undefined;
+    this.diffCursor = initialCursor;
+    const initialDraft: DraftCodeLine = {
       raw: "",
       from: opening.bodyFrom,
       to: opening.bodyFrom,
       ending: "",
       isProvisional: true,
-    }, opening.indent, 0);
+    };
+    const initialRecord = freezeRecord(id, 0, initialDraft, opening.indent, 0, initialCursor
+      ? diffLineFields("", { ...initialCursor })
+      : undefined);
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       this.counters = options.counters;
       const diagnosticOptions = {
@@ -477,6 +503,17 @@ export class RootCodeSourceOwner {
     }
 
     const oldTail = this.codeLines.readRange(oldCompleteLineCount, this.codeLines.length);
+    const diffRows = this.diffCursor ? new Array<DiffLineFields>(desiredTail.length) : undefined;
+    let committedDiffCursor = this.diffCursor;
+    if (diffRows && this.diffCursor) {
+      const working: DiffCursorState = { ...this.diffCursor };
+      for (let offset = 0; offset < desiredTail.length; offset += 1) {
+        const draft = desiredTail[offset];
+        if (draft.isProvisional) committedDiffCursor = { ...working };
+        diffRows[offset] = diffLineFields(stripOpeningIndent(draft.raw, this.opening.indent), working);
+      }
+      if (desiredTail.length === 0 || !desiredTail[desiredTail.length - 1].isProvisional) committedDiffCursor = working;
+    }
     const reusableRecords = new Array<CodeLineRecord | undefined>(desiredTail.length);
     let rowsChanged = oldTail.length !== desiredTail.length;
     for (let offset = 0; offset < desiredTail.length; offset += 1) {
@@ -484,7 +521,7 @@ export class RootCodeSourceOwner {
       const draft = desiredTail[offset];
       const previous = oldTail[offset];
       if (draft !== undefined && previous !== undefined
-        && sameRecordProjection(previous, draft, index, this.id, this.opening.indent)) {
+        && sameRecordProjection(previous, draft, index, this.id, this.opening.indent, diffRows?.[offset])) {
         reusableRecords[offset] = previous;
       } else {
         rowsChanged = true;
@@ -497,7 +534,7 @@ export class RootCodeSourceOwner {
       const draft = desiredTail[offset];
       if (draft === undefined) continue;
       nextRows[offset] = reusableRecords[offset]
-        ?? freezeRecord(this.id, oldCompleteLineCount + offset, draft, this.opening.indent, nextRevision);
+        ?? freezeRecord(this.id, oldCompleteLineCount + offset, draft, this.opening.indent, nextRevision, diffRows?.[offset]);
     }
 
     const preparedTo = closeBoundary ?? to;
@@ -508,6 +545,7 @@ export class RootCodeSourceOwner {
     this.processedTo = closeBoundary ?? to;
     this.lineStart = lineStart;
     this.pendingCR = pendingCR;
+    this.diffCursor = committedDiffCursor;
     this.rawEnd = nextRawEnd;
     if (semanticChanged) this.cachedBlock = undefined;
 
@@ -560,4 +598,9 @@ export class RootCodeSourceOwner {
       state: this.state,
     });
   }
+}
+
+function diffLineFields(text: string, cursor: DiffCursorState): DiffLineFields {
+  const info = parseUnifiedDiffLine(text, cursor);
+  return { diffKind: toDiffLineKind(info.kind), oldNo: info.oldNo ?? null, newNo: info.newNo ?? null };
 }

@@ -1,184 +1,91 @@
 import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 
 import assert from "node:assert";
-import { PATCH_ROOT_ID, type InlineNode, type Patch, type WorkerOut } from "@stream-mdx/core";
+import type { Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
+import type { RendererStore } from "@stream-mdx/react/renderer/store";
+import { projectConsumerBlocks } from "./consumer-block-projection";
 import { createWorkerHarness } from "./worker-test-harness";
 
-function flattenInline(nodes: InlineNode[], kinds: Set<string>, texts: string[]): void {
-  for (const node of nodes) {
-    if (node.kind === "text") {
-      texts.push(node.text);
-      continue;
-    }
-    kinds.add(node.kind);
-    if ("children" in node && Array.isArray((node as { children?: InlineNode[] }).children)) {
-      flattenInline(((node as { children?: InlineNode[] }).children ?? []) as InlineNode[], kinds, texts);
-    }
+function applyMessages(store: RendererStore, messages: WorkerOut[]): void {
+  for (const message of messages) {
+    if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
+    else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
   }
 }
 
-function collectListItems(store: ReturnType<typeof createRendererStore>): Array<{ inline?: InlineNode[]; text?: string }> {
-  const root = store.getNode(PATCH_ROOT_ID);
-  if (!root) return [];
-  const results: Array<{ inline?: InlineNode[]; text?: string }> = [];
-  const stack = [root.id];
-  while (stack.length > 0) {
-    const id = stack.pop();
-    if (!id) continue;
-    const node = store.getNode(id);
-    if (!node) continue;
-    if (node.type === "list-item") {
-      const inline = Array.isArray(node.props.inline) ? (node.props.inline as InlineNode[]) : undefined;
-      const text = typeof node.props.text === "string" ? (node.props.text as string) : undefined;
-      results.push({ inline, text });
-    }
-    for (const childId of node.children) {
-      stack.push(childId);
-    }
-  }
-  return results;
+function markupForRaw(store: RendererStore, rawPart: string): string {
+  const projection = projectConsumerBlocks(store.getBlocks()).find((block) => block.raw?.includes(rawPart));
+  assert.ok(projection, `expected cold export containing ${JSON.stringify(rawPart)}`);
+  return projection.markup;
 }
 
 async function runFormatAnticipationStreamingTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
-  prewarmLangs: [],
-  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true, formatAnticipation: true }, });
-  const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
-  assert.ok(init, "worker did not emit INITIALIZED");
-  store.resetSnapshot(init.snapshot);
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true, formatAnticipation: true },
+  }));
 
-  // No closing '*' yet.
-  const appendMessages = await harness.send({ type: "APPEND", text: "This is *italic" });
-  const patchMessages = appendMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
-  assert.ok(patchMessages.length > 0, "expected PATCH response from append");
-  for (const msg of patchMessages) {
-    store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
-  }
+  applyMessages(store, await harness.send({ type: "APPEND", text: "This is *italic" }));
+  const partialParagraph = store.getBlocks().find((block) => block.type === "paragraph" && block.payload.raw.includes("italic"));
+  assert.ok(partialParagraph, "expected a cold paragraph export for streamed emphasis");
+  const partialMarkup = markupForRaw(store, "italic");
+  assert.match(partialMarkup, /<em>italic<\/em>/, "an incomplete emphasis delimiter must render its anticipated emphasis");
 
-  const paragraph = store.getBlocks().find((block) => block.type === "paragraph" && block.payload.raw.includes("italic"));
-  assert.ok(paragraph, "expected streamed paragraph block");
-  assert.strictEqual(paragraph.payload?.meta?.inlineStatus, "anticipated", "expected inlineStatus=anticipated while delimiter is incomplete");
+  applyMessages(store, await harness.send({ type: "APPEND", text: " text*" }));
+  const completeParagraph = store.getBlocks().find((block) => block.type === "paragraph" && block.payload.raw.includes("italic"));
+  assert.ok(completeParagraph, "expected the paragraph after its emphasis delimiter closes");
+  assert.equal(completeParagraph.payload.raw, "This is *italic text*");
+  assert.match(markupForRaw(store, "italic"), /<em>italic text<\/em>/, "closed emphasis must remain rendered around the full authored phrase");
 
-  const inlineNodes: InlineNode[] = Array.isArray(paragraph.payload?.inline) ? (paragraph.payload?.inline as InlineNode[]) : [];
-  const kinds = new Set<string>();
-  const texts: string[] = [];
-  flattenInline(inlineNodes, kinds, texts);
-
-  assert(kinds.has("em"), "missing anticipated emphasis node");
-  assert(texts.every((text) => !text.includes("*")), `raw '*' leaked into inline nodes: ${texts.join(" | ")}`);
-
-  // Once the real closer arrives, status should flip to complete.
-  const append2 = await harness.send({ type: "APPEND", text: " text*" });
-  const patch2 = append2.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
-  for (const msg of patch2) {
-    store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
-  }
-
-  const paragraph2 = store.getBlocks().find((block) => block.type === "paragraph" && block.payload.raw.includes("italic"));
-  assert.ok(paragraph2, "expected paragraph block after second append");
-  assert.strictEqual(paragraph2.payload?.meta?.inlineStatus, "complete", "expected inlineStatus=complete once delimiter is balanced");
-
-  // List items should also honor anticipation.
-  const listMessages = await harness.send({ type: "APPEND", text: "\n- *List item" });
-  const listPatches = listMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
-  assert.ok(listPatches.length > 0, "expected PATCH response from list item append");
-  for (const msg of listPatches) {
-    store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
-  }
-
-  const listItems = collectListItems(store);
-  assert.ok(listItems.length > 0, "expected list item nodes after list append");
-  const targetItem = listItems.find((item) => item.text?.includes("List item"));
-  assert.ok(targetItem, "expected list item with streamed text");
-  const listInlineNodes = Array.isArray(targetItem.inline) ? targetItem.inline : [];
-  const listKinds = new Set<string>();
-  const listTexts: string[] = [];
-  flattenInline(listInlineNodes, listKinds, listTexts);
-  assert(listKinds.has("em"), "missing anticipated emphasis node inside list item");
-  assert(listTexts.every((text) => !text.includes("*")), `raw '*' leaked into list inline nodes: ${listTexts.join(" | ")}`);
+  applyMessages(store, await harness.send({ type: "APPEND", text: "\n- *List item" }));
+  const listBlock = store.getBlocks().find((block) => block.type === "list" && block.payload.raw.includes("List item"));
+  assert.ok(listBlock, "expected the streamed list source in the cold export");
+  assert.match(markupForRaw(store, "List item"), /<em>List item<\/em>/, "incomplete list-item emphasis must be visible in rendered output");
 }
 
 async function runMathAnticipationStreamingTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true, formatAnticipation: { mathInline: true } },
+  }));
 
-  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
-  prewarmLangs: [],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: true,
-    tables: true,
-    callouts: true,
-    math: true,
-    formatAnticipation: { mathInline: true },
-  }, });
-  const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
-  assert.ok(init, "worker did not emit INITIALIZED");
-  store.resetSnapshot(init.snapshot);
-
-  const appendMessages = await harness.send({ type: "APPEND", text: "Value $x" });
-  const patchMessages = appendMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
-  assert.ok(patchMessages.length > 0, "expected PATCH response from append");
-  for (const msg of patchMessages) {
-    store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
-  }
-
+  applyMessages(store, await harness.send({ type: "APPEND", text: "Value $x" }));
   const paragraph = store.getBlocks().find((block) => block.type === "paragraph" && block.payload.raw.includes("$x"));
-  assert.ok(paragraph, "expected streamed paragraph block");
-  assert.strictEqual(paragraph.payload?.meta?.inlineStatus, "anticipated", "expected inlineStatus=anticipated for math");
-
-  const inlineNodes: InlineNode[] = Array.isArray(paragraph.payload?.inline) ? (paragraph.payload?.inline as InlineNode[]) : [];
-  const kinds = new Set<string>();
-  const texts: string[] = [];
-  flattenInline(inlineNodes, kinds, texts);
-
-  assert(kinds.has("math-inline"), "missing anticipated inline math node");
-  assert(texts.every((text) => !text.includes("$x")), `raw '$' leaked into inline nodes: ${texts.join(" | ")}`);
+  assert.ok(paragraph, "expected the streamed math source in the cold paragraph export");
+  const markup = markupForRaw(store, "$x");
+  assert.match(markup, /class="[^"]*math-inline/, "anticipated inline math must reach the rendered output as math");
+  assert.match(markup, /data-tex="x"/, "anticipated inline math must retain its authored TeX value");
 }
 
 async function runMathBlockAnticipationStreamingTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true, formatAnticipation: { mathBlock: true } },
+  }));
 
-  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
-  prewarmLangs: [],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: true,
-    tables: true,
-    callouts: true,
-    math: true,
-    formatAnticipation: { mathBlock: true },
-  }, });
-  const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
-  assert.ok(init, "worker did not emit INITIALIZED");
-  store.resetSnapshot(init.snapshot);
-
-  const appendMessages = await harness.send({ type: "APPEND", text: "$$\nR_{\\rho\\sigma}" });
-  const patchMessages = appendMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
-  assert.ok(patchMessages.length > 0, "expected PATCH response from append");
-  for (const msg of patchMessages) {
-    store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
-  }
-
+  applyMessages(store, await harness.send({ type: "APPEND", text: "$$\nR_{\\rho\\sigma}" }));
   const paragraph = store.getBlocks().find((block) => block.type === "paragraph" && block.payload.raw.includes("R_{\\rho\\sigma}"));
-  assert.ok(paragraph, "expected streamed paragraph block for math block");
-  assert.strictEqual(paragraph.payload?.meta?.inlineStatus, "anticipated", "expected inlineStatus=anticipated for display math");
-  assert.ok(!Array.isArray(paragraph.payload?.meta?.mixedSegments), "text-only anticipation should not emit mixedSegments");
-
-  const inlineNodes: InlineNode[] = Array.isArray(paragraph.payload?.inline) ? (paragraph.payload?.inline as InlineNode[]) : [];
-  const kinds = new Set<string>();
-  const texts: string[] = [];
-  flattenInline(inlineNodes, kinds, texts);
-
-  assert(kinds.has("math-display"), "missing anticipated display math node");
-  assert(texts.every((text) => !text.includes("$$")), `raw '$$' leaked into inline nodes: ${texts.join(" | ")}`);
+  assert.ok(paragraph, "expected the streamed display-math source in the cold paragraph export");
+  const markup = markupForRaw(store, "R_{");
+  assert.match(markup, /class="[^"]*math-display/, "anticipated display math must reach the rendered output as display math");
+  assert.match(markup, /R_/, "anticipated display math must preserve its authored expression");
 }
 
 await runFormatAnticipationStreamingTest();

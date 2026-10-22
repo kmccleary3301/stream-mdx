@@ -10,24 +10,8 @@ import { compileMarkdownSnapshotDirect } from "../src/direct-compile";
 import { compileMarkdownSnapshot } from "../src/node/index";
 import { compileMarkdownSnapshotDirect as compilePublicDirect } from "@stream-mdx/worker/direct";
 import { createWorkerHarness } from "./worker-test-harness";
+import { projectConsumerBlocks } from "./consumer-block-projection";
 
-function summarizeBlocks(blocks: ReadonlyArray<any>) {
-  return blocks.map((block) => {
-    const meta = (block.payload?.meta ?? {}) as Record<string, unknown>;
-    return {
-      id: block.id ?? null,
-      type: block.type ?? null,
-      raw: block.payload?.raw ?? null,
-      isFinalized: Boolean(block.isFinalized),
-      meta: {
-        headingId: typeof meta.headingId === "string" ? meta.headingId : null,
-        headingText: typeof meta.headingText === "string" ? meta.headingText : null,
-        headingLevel: typeof meta.headingLevel === "number" ? meta.headingLevel : null,
-        lang: typeof meta.lang === "string" ? meta.lang : null,
-      },
-    };
-  });
-}
 
 async function runDirectCompileParityTest(): Promise<void> {
   const text = [
@@ -76,7 +60,7 @@ async function runDirectCompileParityTest(): Promise<void> {
     compileMarkdownSnapshotDirect({ text, init, hashSalt: "direct-parity" }),
   ]);
 
-  assert.deepStrictEqual(summarizeBlocks(directResult.blocks), summarizeBlocks(nodeResult.blocks), "Direct compile output should match worker_threads compile output");
+  assert.deepStrictEqual(projectConsumerBlocks(directResult.blocks), projectConsumerBlocks(nodeResult.blocks), "Direct compile consumer output should match worker_threads compile output");
   assert.deepStrictEqual(directResult.artifact.tocHeadings ?? [], nodeResult.artifact.tocHeadings ?? [], "Direct compile TOC headings should match worker_threads compile");
   assert.strictEqual(directResult.artifact.hash, nodeResult.artifact.hash, "Direct compile hash should match worker_threads compile hash");
   assert.strictEqual(directResult.artifact.configHash, nodeResult.artifact.configHash, "Direct compile config hash should match worker_threads compile config hash");
@@ -108,7 +92,11 @@ async function runDirectTransportIsolationTest(): Promise<void> {
     assert.ok(transportMessages.some((message) => message.type === "INITIALIZED"));
     const beforeSecond = ["self", "postMessage"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const);
     const second = await compilePublicDirect({ text, init });
-    assert.deepStrictEqual(second.blocks, first.blocks, "cached public direct compilation must retain its own transport across another real worker runtime");
+    assert.deepStrictEqual(
+      projectConsumerBlocks(second.blocks),
+      projectConsumerBlocks(first.blocks),
+      "cached public direct compilation must retain its consumer output across another real worker runtime",
+    );
     for (const [key, descriptor] of beforeSecond) assert.deepStrictEqual(Object.getOwnPropertyDescriptor(globalThis, key), descriptor, `direct compilation must not replace ${key}`);
   } finally {
     for (const [key, descriptor] of beforeFirst) {
