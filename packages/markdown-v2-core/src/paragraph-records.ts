@@ -77,41 +77,26 @@ function freezeStringRecord(values: Record<string, string>): Record<string, stri
 }
 
 function freezeInlineNode(node: InlineNode): InlineNode {
+  const owned = copyInlineNode(node);
+  if (node.sourceRange !== undefined) {
+    owned.sourceRange = Object.freeze({ from: node.sourceRange.from, to: node.sourceRange.to });
+  }
+  return Object.freeze(owned);
+}
+
+/** Owned shallow copy of one inline node's kind-specific fields; children are frozen recursively. */
+function copyInlineNode(node: InlineNode): InlineNode {
   switch (node.kind) {
-    case "text": {
-      const owned: Extract<InlineNode, { kind: "text" }> = { kind: "text", text: node.text };
-      Object.freeze(owned);
-      return owned;
-    }
-    case "strong": {
-      const owned: Extract<InlineNode, { kind: "strong" }> = {
-        kind: "strong",
-        children: freezeInlineChildren(node.children),
-      };
-      Object.freeze(owned);
-      return owned;
-    }
-    case "em": {
-      const owned: Extract<InlineNode, { kind: "em" }> = {
-        kind: "em",
-        children: freezeInlineChildren(node.children),
-      };
-      Object.freeze(owned);
-      return owned;
-    }
-    case "strike": {
-      const owned: Extract<InlineNode, { kind: "strike" }> = {
-        kind: "strike",
-        children: freezeInlineChildren(node.children),
-      };
-      Object.freeze(owned);
-      return owned;
-    }
-    case "code": {
-      const owned: Extract<InlineNode, { kind: "code" }> = { kind: "code", text: node.text };
-      Object.freeze(owned);
-      return owned;
-    }
+    case "text":
+      return { kind: "text", text: node.text };
+    case "strong":
+      return { kind: "strong", children: freezeInlineChildren(node.children) };
+    case "em":
+      return { kind: "em", children: freezeInlineChildren(node.children) };
+    case "strike":
+      return { kind: "strike", children: freezeInlineChildren(node.children) };
+    case "code":
+      return { kind: "code", text: node.text };
     case "link": {
       const owned: Extract<InlineNode, { kind: "link" }> = {
         kind: "link",
@@ -120,21 +105,16 @@ function freezeInlineNode(node: InlineNode): InlineNode {
       if (node.href !== undefined) owned.href = node.href;
       if (node.title !== undefined) owned.title = node.title;
       if (node.autolink !== undefined) owned.autolink = node.autolink;
-      Object.freeze(owned);
       return owned;
     }
     case "image": {
       const owned: Extract<InlineNode, { kind: "image" }> = { kind: "image", src: node.src };
       if (node.alt !== undefined) owned.alt = node.alt;
       if (node.title !== undefined) owned.title = node.title;
-      Object.freeze(owned);
       return owned;
     }
-    case "br": {
-      const owned: Extract<InlineNode, { kind: "br" }> = { kind: "br" };
-      Object.freeze(owned);
-      return owned;
-    }
+    case "br":
+      return { kind: "br" };
     case "html": {
       const owned: Extract<InlineNode, { kind: "html" }> = { kind: "html", raw: node.raw };
       if (node.openingRaw !== undefined) owned.openingRaw = node.openingRaw;
@@ -145,35 +125,21 @@ function freezeInlineNode(node: InlineNode): InlineNode {
       if (node.isSelfClosing !== undefined) owned.isSelfClosing = node.isSelfClosing;
       if (node.attributes !== undefined) owned.attributes = freezeStringRecord(node.attributes);
       if (node.children !== undefined) owned.children = freezeInlineChildren(node.children);
-      Object.freeze(owned);
       return owned;
     }
-    case "mention": {
-      const owned: Extract<InlineNode, { kind: "mention" }> = { kind: "mention", handle: node.handle };
-      Object.freeze(owned);
-      return owned;
-    }
-    case "citation": {
-      const owned: Extract<InlineNode, { kind: "citation" }> = { kind: "citation", id: node.id };
-      Object.freeze(owned);
-      return owned;
-    }
-    case "math-inline": {
-      const owned: Extract<InlineNode, { kind: "math-inline" }> = { kind: "math-inline", tex: node.tex };
-      Object.freeze(owned);
-      return owned;
-    }
-    case "math-display": {
-      const owned: Extract<InlineNode, { kind: "math-display" }> = { kind: "math-display", tex: node.tex };
-      Object.freeze(owned);
-      return owned;
-    }
+    case "mention":
+      return { kind: "mention", handle: node.handle };
+    case "citation":
+      return { kind: "citation", id: node.id };
+    case "math-inline":
+      return { kind: "math-inline", tex: node.tex };
+    case "math-display":
+      return { kind: "math-display", tex: node.tex };
     case "footnote-ref": {
       const owned: Extract<InlineNode, { kind: "footnote-ref" }> = { kind: "footnote-ref", label: node.label };
       if (node.number !== undefined) owned.number = node.number;
       if (node.occurrence !== undefined) owned.occurrence = node.occurrence;
       if (node.defined !== undefined) owned.defined = node.defined;
-      Object.freeze(owned);
       return owned;
     }
     case "plugin": {
@@ -184,18 +150,10 @@ function freezeInlineNode(node: InlineNode): InlineNode {
         raw: node.raw,
       };
       if (node.children !== undefined) owned.children = freezeInlineChildren(node.children);
-      Object.freeze(owned);
       return owned;
     }
-    case "trusted-mdx-inline": {
-      const owned: Extract<InlineNode, { kind: "trusted-mdx-inline" }> = {
-        kind: "trusted-mdx-inline",
-        raw: node.raw,
-        ownerId: node.ownerId,
-      };
-      Object.freeze(owned);
-      return owned;
-    }
+    case "trusted-mdx-inline":
+      return { kind: "trusted-mdx-inline", raw: node.raw, ownerId: node.ownerId };
     default: {
       const unreachable: never = node;
       return unreachable;
@@ -247,6 +205,8 @@ function freezeParagraphChildHtmlNode(node: HtmlTreeNode): HtmlTreeNode {
       kind: "text",
       text: node.text,
       ...(inline ? { inline } : {}),
+      ...(node.diagnostic === undefined ? {} : { diagnostic: node.diagnostic }),
+      ...(node.rawSource === undefined ? {} : { rawSource: node.rawSource }),
     };
     return Object.freeze(owned);
   }
