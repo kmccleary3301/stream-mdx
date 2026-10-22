@@ -5417,6 +5417,12 @@ export class MarkdownEngine {
     const tailTo = rootRange?.to ?? source.length;
     let tail = this.nativeContainerTails.get(block.id);
     let change: NativeContainerTailChange | undefined;
+    if (!precomputedChange && !options?.forceFinalize && tail && tail.state.tailFrom > tailTo) {
+      // This tail belongs to a suffix that the canonical parse moved outside the container.
+      this.nativeContainerTails.delete(block.id);
+      tail.clear();
+      tail = undefined;
+    }
     let previousPath = this.nativeContainerActivePathSnapshots.get(block.id) ?? [];
     let admittedOpenList = false;
     if (precomputedChange) {

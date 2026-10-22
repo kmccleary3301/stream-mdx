@@ -304,6 +304,23 @@ async function runNestedCodeContinuationTest(): Promise<void> {
 }
 
 
+// A list marker published alone must be removed when its line completes as a thematic break.
+async function runThematicBreakRetractsProvisionalListItemTest(): Promise<void> {
+  const cases: Array<[number, string]> = [
+    [60, "* Foo\n* * *\n* Bar\n"],
+    [94, "- Foo\n---\n"],
+    [99, "- foo\n-----\n"],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [example, source] of cases) {
+    const expected = projectConsumerBlocks((await runSession(harness, [source], false)).getBlocks());
+    for (const cut of [7, 8, 9, 10].filter((offset) => offset < source.length)) {
+      const streamedStore = await runSession(harness, [source.slice(0, cut), source.slice(cut)], false);
+      const streamed = projectConsumerBlocks(streamedStore.getBlocks());
+      assert.deepEqual(streamed, expected, `CommonMark ${example} cut ${cut} must retract the provisional list item`);
+    }
+  }
+}
 // A root paragraph that later becomes a list item is reparsed from its line, keeping its indentation
 // (CommonMark 271, 286, 291), and joins the list before it (CommonMark 283, 311).
 async function runParagraphBecomesListItemTest(): Promise<void> {
@@ -476,6 +493,7 @@ await runSiblingBeforeActiveParagraphTest();
 await runEmptyQuoteTest();
 await runQuotedTabIndentedCodeTest();
 await runParagraphBecomesListItemTest();
+await runThematicBreakRetractsProvisionalListItemTest();
 await runLinkReferenceDefinitionSplitTest();
 await runIndentedQuoteWindowTest();
 await runClosedQuoteHtmlChildTest();
