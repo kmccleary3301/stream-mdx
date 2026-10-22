@@ -216,6 +216,27 @@ async function runSiblingBeforeActiveParagraphTest(): Promise<void> {
   }
 }
 
+// CommonMark 239-240: a quote of blank lines is an empty blockquote; it has no paragraph, empty or otherwise.
+async function runEmptyQuoteTest(): Promise<void> {
+  const cases: Array<[string, string[]]> = [
+    [">\n", []],
+    [">\n>  \n> \n", []],
+    ["> \n> a\n", ["paragraph"]],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, expected] of cases) {
+    for (const chunkSize of [source.length, 1, 2]) {
+      const blocks = (await runSession(harness, chunksOfSize(source, chunkSize))).getBlocks();
+      const nested = blocks[0]?.payload.meta?.preparedNested as { children?: readonly NodeSnapshot[] } | undefined;
+      assert.deepEqual(
+        (nested?.children ?? []).map((child) => child.type),
+        expected,
+        `${JSON.stringify(source)} quote children (chunk size ${chunkSize})`,
+      );
+    }
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -227,4 +248,5 @@ await runNestedQuoteAfterBlankQuoteLineTest();
 await runItemWithNonParagraphFirstChildTest();
 await runFenceBodyAfterOpeningLineBoundaryTest();
 await runSiblingBeforeActiveParagraphTest();
+await runEmptyQuoteTest();
 console.log("Native container streaming regressions passed");

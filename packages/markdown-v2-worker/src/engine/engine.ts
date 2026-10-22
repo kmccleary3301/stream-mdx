@@ -5740,6 +5740,11 @@ export class MarkdownEngine {
         ?? (previousParagraphId === id ? undefined : this.nestedParagraphOwners.get(previousParagraphId));
       let previousOwnerReleased = false;
       const paragraphRange = nativeEmptyParagraphBoundary(source, range);
+      // Lezer gives a quote of blank lines an empty Paragraph; core lowering drops empty paragraphs, so no owner does.
+      if (paragraphRange.from === paragraphRange.to) {
+        if (owner) this.retireNestedParagraphOwner(block.id, id, owner);
+        return undefined;
+      }
       const ownerMetadata = owner?.getMetadata();
       const contextSourceFrontier = change
         ? mapping.mapOffset(change.window.prefixLength)
