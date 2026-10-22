@@ -5551,9 +5551,10 @@ export class MarkdownEngine {
       range: { readonly from: number; readonly to: number },
     ): NodeSnapshot | undefined => {
       const isActive = sameNativeSyntaxNode(node, activeLeaf, mapping);
+      // A bare opening fence is the block's only CodeMark; only a second one closes it.
       const codeHasClosingFence = kind === "code"
         && node.type.name === "FencedCode"
-        && node.lastChild?.type.name === "CodeMark";
+        && node.getChildren("CodeMark").length >= 2;
       let nextSibling = node.nextSibling;
       if (kind === "code") {
         while (nextSibling && (nextSibling.type.name === "QuoteMark" || nextSibling.type.name === "ListMark")) {

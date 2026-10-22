@@ -561,14 +561,14 @@ function deriveActivePath(
       quoteMarker = markers.last ?? quoteMarker;
       if (markers.context.length > 0) contextQuoteMarkers = markers.context;
     }
-    let firstContextLine = prior?.firstContextLine;
-    let firstContextLineComplete = prior?.firstContextLineComplete;
-    if (!firstContextLine) {
-      const first = firstContextNode(node);
-      if (first) {
-        firstContextLine = contextLine(source, window.mapping, first);
-        firstContextLineComplete = firstContextLine !== undefined && firstContextLine.to < source.length;
-      }
+    // A retained line stays context only while the first child is still paragraph text. A first line of one backtick
+    // grows into a fence opener, and a fence line used as context would swallow every later sibling in the window.
+    const first = firstContextNode(node);
+    let firstContextLine = first ? prior?.firstContextLine : undefined;
+    let firstContextLineComplete = first ? prior?.firstContextLineComplete : undefined;
+    if (first && !firstContextLine) {
+      firstContextLine = contextLine(source, window.mapping, first);
+      firstContextLineComplete = firstContextLine !== undefined && firstContextLine.to < source.length;
     }
     let properties = prior?.listProperties;
     if (kind === "list") {
@@ -615,7 +615,45 @@ function deriveActivePath(
   }
   return { nodes, frames, leaf };
 }
+/**
+ * First source offset the bounded window re-reads verbatim. Only paragraph text gives an item a reusable first
+ * context line; a marker-only prefix would reopen any other item as one that starts blank, which CommonMark
+ * closes at the next blank line. Such an item is re-read from its first line once the active leaf is past it.
+ */
 function activeTailStart(
+  source: SourceSnapshot,
+  leaf: SyntaxNode,
+  physicalRange: { readonly from: number; readonly to: number },
+  fallbackTo: number,
+  ownerStart: number,
+  frames: readonly NativeContainerFrame[],
+  paragraphOwnerSupported: boolean,
+  codeContext?: NativeContainerCodeOpening,
+  counters?: NativeContainerTailDiagnosticCounters,
+): number {
+  const start = boundedTailStart(
+    source,
+    leaf,
+    physicalRange,
+    fallbackTo,
+    ownerStart,
+    frames,
+    paragraphOwnerSupported,
+    codeContext,
+    counters,
+  );
+  const leafLineFrom = lineStartAt(source, physicalRange.from);
+  for (const frame of frames) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons?.(1, "engine");
+    }
+    if (frame.kind !== "item" || frame.firstContextLine) continue;
+    const itemLineFrom = lineStartAt(source, frame.parentFrom);
+    if (itemLineFrom < leafLineFrom && itemLineFrom < start) return itemLineFrom;
+  }
+  return start;
+}
+function boundedTailStart(
   source: SourceSnapshot,
   leaf: SyntaxNode,
   physicalRange: { readonly from: number; readonly to: number },

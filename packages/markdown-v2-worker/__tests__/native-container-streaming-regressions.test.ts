@@ -1,4 +1,4 @@
-import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "@stream-mdx/core";
+import { type Block, type NodeSnapshot, STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "@stream-mdx/core";
 
 import assert from "node:assert/strict";
 import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
@@ -141,6 +141,55 @@ async function runNestedQuoteAfterBlankQuoteLineTest(): Promise<void> {
   }
 }
 
+// CommonMark: blank lines inside an item do not close it, whatever its first child is. An item opened by code,
+// a heading or a fence must keep its later children, at every chunking and at finalize.
+async function runItemWithNonParagraphFirstChildTest(): Promise<void> {
+  const cases: Array<[string, string[][]]> = [
+    ["1.     indented code\n\n   paragraph\n\n       more code\n", [["code", "indented code"], ["paragraph", "paragraph"], ["code", "more code"]]],
+    ["-     a\n\n  b\n\n  c\n", [["code", "a"], ["paragraph", "b"], ["paragraph", "c"]]],
+    ["- # h\n\n  b\n\n      c\n", [["heading", "# h"], ["paragraph", "b"], ["code", "c"]]],
+    ["- ```\n  x\n  ```\n\n  b\n\n      c\n", [["code", "```\n  x\n  ```"], ["paragraph", "b"], ["code", "c"]]],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, expected] of cases) {
+    for (const chunkSize of [source.length, 1, 3, 7]) {
+      const blocks = (await runSession(harness, chunksOfSize(source, chunkSize))).getBlocks();
+      assert.equal(blocks.length, 1, `${JSON.stringify(source)} stays one list (chunk size ${chunkSize})`);
+      const items = (blocks[0]?.payload.meta?.preparedNested as { children?: readonly NodeSnapshot[] } | undefined)?.children ?? [];
+      assert.deepEqual(
+        items.map((item) => item.children.map((child) => [child.type, child.range ? source.slice(child.range.from, child.range.to) : ""])),
+        [expected],
+        `${JSON.stringify(source)} item children (chunk size ${chunkSize})`,
+      );
+    }
+  }
+}
+
+// A bare opening fence is the fenced block's only CodeMark; it does not close the block. An append boundary right
+// after the opening line must not finalize an empty code block inside a list item.
+async function runFenceBodyAfterOpeningLineBoundaryTest(): Promise<void> {
+  const cases: Array<[string, string[][]]> = [
+    ["- ```\n  x\n  ```\n", [["code", "x"]]],
+    ["- a\n\n  ```\n  x\n  ```\n", [["code", "x"]]],
+    ["1. ```\n   x\n   ```\n\n   b\n", [["code", "x"], ["paragraph", "b"]]],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, expected] of cases) {
+    const openingLineEnd = source.indexOf("```\n") + 4;
+    for (const chunks of [[source], [source.slice(0, openingLineEnd), source.slice(openingLineEnd)], chunksOfSize(source, 1)]) {
+      const blocks = (await runSession(harness, chunks)).getBlocks();
+      const items = (blocks[0]?.payload.meta?.preparedNested as { children?: readonly NodeSnapshot[] } | undefined)?.children ?? [];
+      assert.deepEqual(
+        items.map((item) => item.children.map((child) => (child.type === "code"
+          ? ["code", String((child.props?.block as Block | undefined)?.payload.meta?.code)]
+          : [child.type, child.range ? source.slice(child.range.from, child.range.to) : ""]))),
+        [expected],
+        `${JSON.stringify(source)} keeps its fenced body (${chunks.length} chunks)`,
+      );
+    }
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -149,4 +198,6 @@ await runOrderedMarkerWidthTest();
 await runNestedListLaterSiblingTest();
 await runPluginReplacedBlockAfterParagraphAppendTest();
 await runNestedQuoteAfterBlankQuoteLineTest();
+await runItemWithNonParagraphFirstChildTest();
+await runFenceBodyAfterOpeningLineBoundaryTest();
 console.log("Native container streaming regressions passed");
