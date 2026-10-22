@@ -1518,11 +1518,14 @@ export class MarkdownEngine {
           if (rejectAppend) throw new Error("Cannot append after FINALIZE; start a new generation with INIT.");
           await this.processMessage(message);
         } catch (error) {
+          // dispose() during an awaited message clears document state; the abandoned message has no consumer.
+          if (this.disposed) return;
           console.error("Worker error:", error);
           this.reportError(error, message.type, { phase: message.type });
         }
       })
       .catch((error) => {
+        if (this.disposed) return;
         console.error("Worker queue error:", error);
         this.reportError(error, message.type, { phase: message.type, queue: true });
       });
