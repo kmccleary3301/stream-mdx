@@ -14,6 +14,8 @@ const inputs = [
   "> Quote with ref[^a].\n\n[^a]: Note.\n",
   "- item\n\n  ```ts\n  const a = 1;\n  const b = 2;\n  ```\n\nafter\n",
   "> - one\n> - two\n>\n> para\n",
+  "    const value = \"a\";\n    return value",
+  "| key | value |\n| :--- | ---: |\n| row0 | a |\n",
 ] as const;
 
 function splitEvery(text: string, size: number): string[] {

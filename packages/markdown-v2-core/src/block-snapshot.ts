@@ -1970,16 +1970,18 @@ function sameTableCellSourceIdentity(prior: TableCellRecord, next: TableCellReco
     && prior.sourceRange.to === next.sourceRange.to;
 }
 
-function sameTableHeaderSourceIdentity(prior: TableHeaderRecord, next: TableHeaderRecord): boolean {
+// A header that ends at the table frontier is still streaming its delimiter row: its end may only grow and
+// its alignment is provisional. Its cells come from the completed header line.
+function sameTableHeaderSourceIdentity(prior: TableHeaderRecord, next: TableHeaderRecord, priorIsOpenTail: boolean): boolean {
   if (
     !next ||
     !Array.isArray(next.cells) ||
     !Array.isArray(next.align) ||
     prior.sourceRange.from !== next.sourceRange.from ||
-    prior.sourceRange.to !== next.sourceRange.to ||
+    (priorIsOpenTail ? next.sourceRange.to < prior.sourceRange.to : prior.sourceRange.to !== next.sourceRange.to) ||
     prior.cells.length !== next.cells.length ||
     prior.align.length !== next.align.length ||
-    prior.align.some((align, index) => align !== next.align[index])
+    (!priorIsOpenTail && prior.align.some((align, index) => align !== next.align[index]))
   ) return false;
   for (let index = 0; index < prior.cells.length; index += 1) {
     const previousCell = prior.cells[index];
@@ -2166,7 +2168,11 @@ function canInsertSnapshot(
         && candidate.table.completeRowCount >= currentSource.completeRowCount
         && candidate.table.sourceRange.from === currentSource.sourceRange.from
         && candidate.table.sourceRange.to >= currentSource.sourceRange.to
-        && sameTableHeaderSourceIdentity(currentTable.header, candidate.table.header)
+        && sameTableHeaderSourceIdentity(
+          currentTable.header,
+          candidate.table.header,
+          currentTable.header.sourceRange.to === currentSource.sourceRange.to,
+        )
         && sameCompletedTableRowSources(currentTable, candidate.table.rows)
         && retiredGeneration < candidate.table.generation;
       if (candidate.table.generation <= Math.max(currentGeneration, retiredGeneration) && !isActiveReplacement) return false;
@@ -2575,6 +2581,15 @@ function applyPropsToNode(snapshot: DocumentSnapshot, node: SnapshotNode, props:
         node.block = cloneBlock(blockWithoutPreparedNested(incoming));
       } else {
         node.block = cloneBlock(incoming);
+      }
+      // Base-path code has no owner channel and refuses generic ranges; its block carries the authored range and
+      // its code-line children the text, as the React store's legacy code state reads them.
+      if (node.type === "code" && node.codeState && !node.codeState.managed) {
+        const incomingRange = incoming.payload.range;
+        if (isAdmittedAuthoredRange(incomingRange, inputSourceSnapshot(snapshot))) node.range = { from: incomingRange.from, to: incomingRange.to };
+        if (node.range) node.block.payload.range = { ...node.range };
+        node.codeState = createLegacyCodeState(node, snapshot.nodes, snapshot);
+        continue;
       }
       if (node.range) node.block.payload.range = { ...node.range };
       continue;

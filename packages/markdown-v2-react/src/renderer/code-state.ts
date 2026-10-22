@@ -1025,7 +1025,8 @@ export function materializeStoredCodeBlock(
   const tokenLines = rows.map((line) => line.decoration
     ? { spans: line.decoration.tokens.spans as TokenLineV1["spans"] }
     : null);
-  metadata.tokenLines = tokenLines;
+  if (tokenLines.some((line) => line !== null)) metadata.tokenLines = tokenLines;
+  else delete metadata.tokenLines;
   const diffKind = rows.map((line) => line.diffKind ?? null);
   const oldNo = rows.map((line) => line.oldNo ?? null);
   const newNo = rows.map((line) => line.newNo ?? null);
