@@ -106,6 +106,16 @@ async function runOrderedMarkerWidthTest(): Promise<void> {
   assert.deepEqual(projectConsumerBlocks(streamed.getBlocks()), expected, "streamed list items must use the latest item's content indent");
 }
 
+// A nested list's window keeps its first item, so the list keeps its source start and earlier items survive
+// when a later sibling becomes active.
+async function runNestedListLaterSiblingTest(): Promise<void> {
+  const chunks = ["Intro\n\n- A\n- B\n  - b1\n  - b2\n    - deep\n  - b3", " z\n-"];
+  const harness = await createWorkerHarness();
+  const expected = projectConsumerBlocks((await runSession(harness, [chunks.join("")])).getBlocks());
+  const streamed = await runSession(harness, chunks);
+  assert.deepEqual(projectConsumerBlocks(streamed.getBlocks()), expected, "nested list items before the active sibling must survive");
+}
+
 // Completing a footnote reference in an open root paragraph reruns document plugins over earlier blocks;
 // whatever they replace there (here the quote's footnote-scan inline) must reach consumers.
 async function runPluginReplacedBlockAfterParagraphAppendTest(): Promise<void> {
@@ -121,5 +131,6 @@ await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
 await runNestedParagraphLeavesNativeOwnershipTest();
 await runOrderedMarkerWidthTest();
+await runNestedListLaterSiblingTest();
 await runPluginReplacedBlockAfterParagraphAppendTest();
 console.log("Native container streaming regressions passed");
