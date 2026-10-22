@@ -141,6 +141,11 @@ export function useWorkerSession({
 }) {
   const [workerReady, setWorkerReady] = useState(false);
   const [inputReady, setInputReady] = useState(false);
+  /**
+   * Counts attach-time initializations. A restart can clear and restore `inputReady` within one render batch,
+   * so input consumers depend on this counter to observe every completed initialization.
+   */
+  const [initializationEpoch, setInitializationEpoch] = useState(0);
   const inputReadyRef = useRef(false);
   const [initializationError, setInitializationError] = useState<Error | null>(null);
   const workerReadyRef = useRef(false);
@@ -176,6 +181,7 @@ export function useWorkerSession({
           inputReadyRef.current = true;
           setInitializationError(null);
           setInputReady(true);
+          setInitializationEpoch((epoch) => epoch + 1);
         },
         onInitializationError: (error) => {
           if (!cancelled) reportError(error);
@@ -226,5 +232,5 @@ export function useWorkerSession({
     activeInstanceRef.current = null;
   }, []);
 
-  return { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationError, readyRendererRef };
+  return { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationEpoch, initializationError, readyRendererRef };
 }

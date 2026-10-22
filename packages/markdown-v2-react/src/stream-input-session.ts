@@ -4,7 +4,8 @@ import type { MarkdownRenderer } from "./renderer";
 import type { StreamingMarkdownProps } from "./streaming-markdown";
 
 export function useStreamInputSession({
-  renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationError, session, managedWorker, readyRendererRef,
+  renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationEpoch, initializationError, session, managedWorker,
+  readyRendererRef,
   imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
 }: {
   renderer: MarkdownRenderer;
@@ -13,6 +14,7 @@ export function useStreamInputSession({
   workerReady: boolean;
   inputReady: boolean;
   inputReadyRef: MutableRefObject<boolean>;
+  initializationEpoch: number;
   initializationError: Error | null;
   session: number;
   managedWorker: boolean;
@@ -33,6 +35,9 @@ export function useStreamInputSession({
   useEffect(() => {
     const restartToken = session;
     void restartToken;
+    // Re-run after every attach-time initialization, even when `inputReady` itself did not change between renders.
+    const initializationToken = initializationEpoch;
+    void initializationToken;
     let cancelled = false;
     if (initializationError) {
       setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
@@ -132,6 +137,6 @@ export function useStreamInputSession({
         setStreamStatus(imperativeActivityRef.current ? "streaming" : "idle");
       }
     };
-  }, [renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationError, session, managedWorker, readyRendererRef, imperativeActivityRef, onErrorRef, DEBUG_WORKER]);
+  }, [renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationEpoch, initializationError, session, managedWorker, readyRendererRef, imperativeActivityRef, onErrorRef, DEBUG_WORKER]);
   return { streamStatus, setStreamStatus, activeIteratorRef };
 }

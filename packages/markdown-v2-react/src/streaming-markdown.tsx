@@ -578,12 +578,12 @@ function StreamingMarkdownComponent(
   }, [historyLimit]);
 
 
-  const { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationError, readyRendererRef } = useWorkerSession({
+  const { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationEpoch, initializationError, readyRendererRef } = useWorkerSession({
     renderer, workerSource, engine, session, managedWorker, onErrorRef, debug: DEBUG_WORKER,
   });
   const { streamStatus, setStreamStatus, activeIteratorRef } = useStreamInputSession({
-    renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationError, session, managedWorker, readyRendererRef,
-    imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
+    renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationEpoch, initializationError, session, managedWorker,
+    readyRendererRef, imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
   });
   const flushPendingCommands = useCallback(() => {
     const pending = pendingCommandsRef.current;
