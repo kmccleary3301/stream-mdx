@@ -3075,10 +3075,26 @@ export class MarkdownEngine {
 
     this.pendingRootParagraphPatches = [];
     this.pendingRootTablePatches = [];
+    const previousBlocks = this.blocks;
     if (footnoteTargets) this.blocks = this.runDocumentPlugins(this.blocks, source, footnoteTargets);
     const paragraphPatches = this.takePendingRootParagraphPatches();
     const tablePatches = this.takePendingRootTablePatches();
-    this.dispatchPatchBatch([appendPatch, ...paragraphPatches, ...tablePatches], metrics);
+    // Document plugins may replace other root blocks (footnote numbering, quote inline); those need a root diff.
+    const pluginReplacedBlocks = this.blocks !== previousBlocks
+      && (this.blocks.length !== previousBlocks.length || this.blocks.some((block, index) => block !== previousBlocks[index]));
+    if (!pluginReplacedBlocks) {
+      this.dispatchPatchBatch([appendPatch, ...paragraphPatches, ...tablePatches], metrics);
+      return;
+    }
+    await this.emitBlockDiffPatches(
+      previousBlocks,
+      this.blocks,
+      [{ fromA: oldLength, toA: oldLength, fromB: oldLength, toB: newLength }],
+      metrics,
+      undefined,
+      undefined,
+      [appendPatch, ...paragraphPatches, ...tablePatches],
+    );
   }
 
   private async appendRootNativeTail(

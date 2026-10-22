@@ -106,9 +106,20 @@ async function runOrderedMarkerWidthTest(): Promise<void> {
   assert.deepEqual(projectConsumerBlocks(streamed.getBlocks()), expected, "streamed list items must use the latest item's content indent");
 }
 
+// Completing a footnote reference in an open root paragraph reruns document plugins over earlier blocks;
+// whatever they replace there (here the quote's footnote-scan inline) must reach consumers.
+async function runPluginReplacedBlockAfterParagraphAppendTest(): Promise<void> {
+  const chunks = ["Intro[^a].\n\n> Quote H<sub>2</sub>O.\n>\n> - item", " `code`\n>\n> Tail.\n\nLater ref[^n", "] text"];
+  const harness = await createWorkerHarness();
+  const expected = projectConsumerBlocks((await runSession(harness, [chunks.join("")])).getBlocks());
+  const streamed = await runSession(harness, chunks);
+  assert.deepEqual(projectConsumerBlocks(streamed.getBlocks()), expected, "blocks replaced by document plugins must be patched");
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
 await runNestedParagraphLeavesNativeOwnershipTest();
 await runOrderedMarkerWidthTest();
+await runPluginReplacedBlockAfterParagraphAppendTest();
 console.log("Native container streaming regressions passed");
