@@ -340,7 +340,8 @@ async function runNestedIndentedTerminalTest(): Promise<void> {
 }
 
 function runNestedBlockquoteTabProjectionTest(): void {
-  for (const [input, expectedDisplay] of [[">\t\tcode", "   code"], [">     code", "code"]]) {
+  // CommonMark 6: the optional space after `>` takes one column of the first tab.
+  for (const [input, expectedDisplay] of [[">\t\tcode", "  code"], [">     code", "code"]]) {
     const fixture = createFixture(input, "native-blockquote-indent-container", "Blockquote");
     const rows = fixture.store.getCodeLines(fixture.owner.id, 0, 2);
     assert.equal(rows.length, 1, "the native blockquote must expose one indented-code row");

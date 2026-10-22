@@ -197,7 +197,9 @@ function ancestorBaseIndent(node: SyntaxNode, mapping: NativeNestedCodeSourceMap
       if (!mark) continue;
       const markTo = mapping.mapOffset(mark.to);
       const lineStart = lineStartAt(source, markTo);
-      baseIndent = columnAt(source, lineStart, markTo) + (sourceCharacterAt(source, markTo) === " " ? 1 : 0);
+      // The optional space after `>` may be one column of a tab; the rest of that tab stays content indentation.
+      const afterMark = sourceCharacterAt(source, markTo);
+      baseIndent = columnAt(source, lineStart, markTo) + (afterMark === " " || afterMark === "\t" ? 1 : 0);
     }
   }
   return baseIndent;

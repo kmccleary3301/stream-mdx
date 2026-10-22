@@ -237,6 +237,25 @@ async function runEmptyQuoteTest(): Promise<void> {
   }
 }
 
+// CommonMark 6: in `>\t\tfoo` the quote's optional space takes one column of the first tab, so the code line keeps
+// the two columns left after the four-column code indent.
+async function runQuotedTabIndentedCodeTest(): Promise<void> {
+  const cases: Array<[string, string]> = [
+    [">\t\tfoo\n", "  foo"],
+    [">\t\tfoo\n>\t\tbar\n", "  foo\n  bar"],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, expected] of cases) {
+    for (const chunkSize of [source.length, 1, 3]) {
+      const blocks = (await runSession(harness, chunksOfSize(source, chunkSize))).getBlocks();
+      const nested = blocks[0]?.payload.meta?.preparedNested as { children?: readonly NodeSnapshot[] } | undefined;
+      const code = nested?.children?.[0];
+      assert.equal(code?.type, "code", `${JSON.stringify(source)} is quoted code (chunk size ${chunkSize})`);
+      assert.equal((code?.props?.block as Block | undefined)?.payload.meta?.code, expected, `${JSON.stringify(source)} code text (chunk size ${chunkSize})`);
+    }
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -249,4 +268,5 @@ await runItemWithNonParagraphFirstChildTest();
 await runFenceBodyAfterOpeningLineBoundaryTest();
 await runSiblingBeforeActiveParagraphTest();
 await runEmptyQuoteTest();
+await runQuotedTabIndentedCodeTest();
 console.log("Native container streaming regressions passed");
