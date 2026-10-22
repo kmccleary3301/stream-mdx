@@ -21,6 +21,16 @@ assert.deepEqual(reference.nodes, [{ kind: "text", text: "[foo][A B] " }]);
 assert.deepEqual([...reference.attemptedReferences], ["a b"]);
 assert.deepEqual(parser.parseSettledPrefix("[foo][A B] ").nodes, []);
 
+// CommonMark 568: after a failed inline link `[foo]` is a shortcut reference, so defining foo changes the output
+// and the parse must report foo as attempted.
+const fallbackAttempts = new Set<string>();
+assert.deepEqual(
+  parser.parse("[foo](not a link)", { onAttemptedReference: (label) => fallbackAttempts.add(label) }),
+  [{ kind: "text", text: "[foo](not a link)" }],
+);
+assert.deepEqual([...fallbackAttempts], ["foo"]);
+assert.equal(new InlineParser({ references: { foo: { href: "/url1" } } }).parse("[foo](not a link)")[0]?.kind, "link");
+
 const pendingCitation = parser.parseSettledPrefix("prefix {cite:unfinished later ");
 assert.deepEqual(pendingCitation.nodes, [{ kind: "text", text: "prefix " }]);
 assert.equal(parser.parse("prefix {cite:unfinished later } next ")[1]?.kind, "citation");

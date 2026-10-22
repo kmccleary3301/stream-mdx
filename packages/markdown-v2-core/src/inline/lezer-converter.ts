@@ -4,6 +4,7 @@ import type { HtmlOptions, InlineNode } from "../types";
 import { decodeEntity } from "./entities";
 import { sanitizeHtmlTreeInWorker } from "../worker-html-sanitizer";
 import { normalizeLinkLabel } from "./reference-collector";
+import { getActiveReferencePredicate } from "./reference-guard";
 import type { InlineExtension, LinkReferenceDefinition, LinkReferenceMap, MarkdownElement } from "./types";
 
 export interface LezerConverterOptions {
@@ -14,6 +15,9 @@ export interface LezerConverterOptions {
 }
 
 function resolveReference(map: LinkReferenceMap | undefined, rawLabel: string): LinkReferenceDefinition | undefined {
+  // Lezer falls back to a reference after a failed inline link (`[foo](not a link)`) without consulting the
+  // reference guard, so the lookup itself records the attempt; a later definition must re-resolve this link.
+  getActiveReferencePredicate()?.(rawLabel);
   if (!map) return undefined;
   const key = normalizeLinkLabel(rawLabel);
   if (map instanceof Map) {
