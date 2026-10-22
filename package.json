@@ -46,6 +46,8 @@
     "test:benchmarks:methodology": "tsx scripts/check-benchmark-methodology.ts",
     "test:conformance": "tsx scripts/conformance/run-commonmark.mts --check",
     "test:conformance:update": "tsx scripts/conformance/run-commonmark.mts --update-baseline",
+    "test:conformance:base-differential": "tsx scripts/conformance/run-base-differential.mts",
+    "test:conformance:render-frontiers": "tsx scripts/conformance/run-render-frontier-parity.mts",
     "test:snippets": "tsx scripts/analyze-test-snippets.ts",
     "test:regression": "npm run test:regression:html && npm run test:regression:styles",
     "test:regression:html": "tsx scripts/regression/run-html-snapshots.ts",
