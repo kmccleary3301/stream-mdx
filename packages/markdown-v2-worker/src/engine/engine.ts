@@ -122,6 +122,7 @@ import {
 } from "@stream-mdx/plugins";
 import { isBlockLevelNode, mapLezerNodeToBlockType } from "../parser/block-types";
 import { HtmlContinuationExtension } from "../parser/html-extension";
+import { FOOTNOTE_DEFINITION_START, FootnoteDefinitionInterruptExtension } from "../parser/footnote-definition-extension";
 import {
   applyHtmlTagBalance,
   containsInlineHtml,
@@ -1153,7 +1154,7 @@ export class MarkdownEngine {
       this.campaignCounters?.attachSourceSnapshotReader(() => this.sourceDocument.snapshot());
     }
 
-    this.buildMarkdownParser(true);
+    this.buildMarkdownParser(true, true);
 
     this.documentPluginRegistry = new DocumentPluginRegistry();
     if (this.extensions?.documentPlugins) {
@@ -1196,15 +1197,22 @@ export class MarkdownEngine {
     return this.contentPolicy === "restricted" && components !== undefined && components.size > 0;
   }
 
-  private buildMarkdownParser(tables: boolean): void {
+  private buildMarkdownParser(tables: boolean, footnotes: boolean): void {
     const gfm = tables ? GFM : GFM.filter((extension) => extension !== Table);
-    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(() => this.contentPolicy === "restricted" ? this.getActiveContentComponents() : undefined), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
+    this.mdParser = mdParser.configure([
+      gfm,
+      createBlockCompatibilityExtension(() => this.contentPolicy === "restricted" ? this.getActiveContentComponents() : undefined),
+      HtmlContinuationExtension,
+      ...(footnotes ? [FootnoteDefinitionInterruptExtension] : []),
+      ...(this.extensions?.markdown ?? []),
+    ]);
     const customMarkdownExtensions = this.extensions?.markdown ?? [];
     this.rootParagraphWindowAttestation = customMarkdownExtensions.length === 0
       ? attestNativeParagraphWindowGrammar(this.mdParser, {
           tablesEnabled: tables,
           blockCompatibility: true,
           htmlContinuation: true,
+          footnoteDefinitionInterrupts: footnotes,
           customMarkdownExtensions,
         })
       : undefined;
@@ -1955,7 +1963,7 @@ export class MarkdownEngine {
       emitHighlightTokens: docPlugins?.emitHighlightTokens ?? true,
       emitDiffBlocks: docPlugins?.emitDiffBlocks ?? false,
     };
-    this.buildMarkdownParser(enable.tables);
+    this.buildMarkdownParser(enable.tables, enable.footnotes);
 
     this.mdxEnabled = enable.mdx;
     this.enableMath = enable.math;
@@ -4119,7 +4127,7 @@ export class MarkdownEngine {
           let raw: string | undefined;
           const footnoteDefinition = nodeType === "LinkReference"
             && footnotesEnabled
-            && /^\[\^[A-Za-z0-9_-]+\]:/.test(raw = readSourceRange(content, from, to));
+            && FOOTNOTE_DEFINITION_START.test(raw = readSourceRange(content, from, to));
           if (nodeType === "LinkReference" && !footnoteDefinition) {
             hasRecognizedNodes = true;
             continue;

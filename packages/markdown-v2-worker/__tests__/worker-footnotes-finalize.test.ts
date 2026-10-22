@@ -446,9 +446,10 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
   }
 }
 
-// GFM: each `[^x]:` line starts a new definition, even without a blank line; other lines continue lazily.
-async function runConsecutiveDefinitionsTest(): Promise<void> {
-  const content = "First[^a] then second[^b] and third[^c].\n\n[^a]: Alpha body\nlazy tail.\n[^b]: Beta body.\n[^c]: Gamma body.\n";
+// GFM: each `[^x]:` line starts a new definition, even without a blank line, and interrupts a paragraph like
+// micromark-extension-gfm-footnote; other lines continue lazily.
+type RenderedFootnotes = { refs: (string | null)[]; items: (string | undefined)[]; literal: boolean };
+async function runDefinitionLinesTest(content: string, expected: RenderedFootnotes, what: string): Promise<void> {
   const init = { prewarmLangs: [], docPlugins: { footnotes: true, html: false, mdx: false, math: false, tables: false, callouts: false } };
   const renderedItems = (blocks: Block[]) => {
     const dom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks })));
@@ -461,9 +462,8 @@ async function runConsecutiveDefinitionsTest(): Promise<void> {
     dom.window.close();
     return result;
   };
-  const expected = { refs: ["1", "2", "3"], items: ["Alpha body lazy tail.", "Beta body.", "Gamma body."], literal: false };
   const compiled = await compileMarkdownSnapshotDirect({ text: content, init });
-  assert.deepStrictEqual(renderedItems(compiled.blocks), expected, "static compile resolves consecutive definitions");
+  assert.deepStrictEqual(renderedItems(compiled.blocks), expected, `static compile resolves ${what}`);
 
   const harness = await createWorkerHarness();
   const store = createRendererStore();
@@ -476,7 +476,7 @@ async function runConsecutiveDefinitionsTest(): Promise<void> {
   apply(await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", ...init } as WorkerIn));
   for (const char of content) apply(await harness.send({ type: "APPEND", text: char }));
   apply(await harness.send({ type: "FINALIZE" }));
-  assert.deepStrictEqual(renderedItems(store.getBlocks()), expected, "character streaming resolves consecutive definitions");
+  assert.deepStrictEqual(renderedItems(store.getBlocks()), expected, `character streaming resolves ${what}`);
 }
 
 // The footnotes pass also rebuilds a prepared blockquote's `inline`, which block component overrides render from. A
@@ -507,6 +507,38 @@ async function runNestedBlockquoteWithoutReferencesTest(): Promise<void> {
   assert.strictEqual(text, "quoted text", "a streaming blockquote inside an MDX component region carries its inline text");
 }
 
+async function runOpenPrefixReferenceAnnotationTest(): Promise<void> {
+  // The HTML paragraph stays on the base path, so a late link definition re-resolves its inline in place.
+  // Both forms render a literal `[^note]`; custom inline components receive the exported reference props.
+  const content = "Text[^note] <kbd>K</kbd> [late][deferred] end.\n\n[deferred]: /url\n\n[^note]: body";
+  const init: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: false, tables: true, callouts: false } };
+  const apply = (store: ReturnType<typeof createRendererStore>, messages: WorkerOut[]): void => {
+    for (const message of messages) {
+      if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
+      else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
+    }
+  };
+  const exportedReferences = (store: ReturnType<typeof createRendererStore>): InlineNode[] =>
+    (store.getBlocks()[0]?.payload.inline ?? []).filter((node) => node.kind === "footnote-ref");
+  const streamed = createRendererStore();
+  const streamHarness = await createWorkerHarness();
+  apply(streamed, await streamHarness.send(init));
+  let prefix = "";
+  for (const line of content.split(/(?<=\n)/)) {
+    prefix += line;
+    apply(streamed, await streamHarness.send({ type: "APPEND", text: line }));
+    const single = createRendererStore();
+    const singleHarness = await createWorkerHarness();
+    apply(single, await singleHarness.send(init));
+    apply(single, await singleHarness.send({ type: "APPEND", text: prefix }));
+    assert.deepStrictEqual(
+      exportedReferences(streamed),
+      exportedReferences(single),
+      `open prefix ${JSON.stringify(prefix)} must not depend on when the link definition arrived`,
+    );
+  }
+}
+
 const consumerDom = new JSDOM("<!doctype html><html><body></body></html>");
 const consumerGlobals = new Map(["window", "document", "HTMLElement", "Node", "MutationObserver"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
 for (const key of consumerGlobals.keys()) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: (consumerDom.window as unknown as Record<string, unknown>)[key] });
@@ -515,8 +547,18 @@ try {
   await runPreparedFootnoteConsumerTest();
   await runRepeatedReferenceTargetsTest();
   await runCanonicalFootnoteOrderTest();
-  await runConsecutiveDefinitionsTest();
+  await runDefinitionLinesTest(
+    "First[^a] then second[^b] and third[^c].\n\n[^a]: Alpha body\nlazy tail.\n[^b]: Beta body.\n[^c]: Gamma body.\n",
+    { refs: ["1", "2", "3"], items: ["Alpha body lazy tail.", "Beta body.", "Gamma body."], literal: false },
+    "consecutive definitions",
+  );
+  await runDefinitionLinesTest(
+    "Text with a note[^a].\n[^a]: Alpha body\n",
+    { refs: ["1"], items: ["Alpha body"], literal: false },
+    "a definition interrupting its paragraph",
+  );
   await runNestedBlockquoteWithoutReferencesTest();
+  await runOpenPrefixReferenceAnnotationTest();
   console.log("worker-footnotes-finalize test passed");
 } finally {
   consumerDom.window.close();

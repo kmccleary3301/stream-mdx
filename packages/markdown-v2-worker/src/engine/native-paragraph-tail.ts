@@ -16,6 +16,8 @@ export interface NativeParagraphWindowConfiguration {
   readonly tablesEnabled: boolean;
   readonly blockCompatibility: boolean;
   readonly htmlContinuation: boolean;
+  /** Footnote definitions interrupt paragraphs when the footnotes plugin is enabled. */
+  readonly footnoteDefinitionInterrupts: boolean;
   /** Any caller-provided native markdown extension disables bounded-window attestation. */
   readonly customMarkdownExtensions: readonly MarkdownExtension[];
 }
@@ -39,6 +41,7 @@ export function attestNativeParagraphWindowGrammar(
     tablesEnabled: configuration.tablesEnabled,
     blockCompatibility: configuration.blockCompatibility,
     htmlContinuation: configuration.htmlContinuation,
+    footnoteDefinitionInterrupts: configuration.footnoteDefinitionInterrupts,
     customMarkdownExtensions: Object.freeze(Array.from(configuration.customMarkdownExtensions)),
   });
   return Object.freeze({

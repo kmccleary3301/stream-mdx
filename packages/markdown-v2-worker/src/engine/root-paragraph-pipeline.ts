@@ -16,6 +16,7 @@ import {
   type NativeParagraphTailChange,
   type NativeParagraphWindowAttestation,
 } from "./native-paragraph-tail";
+import { FOOTNOTE_DEFINITION_START } from "../parser/footnote-definition-extension";
 import {
   RootParagraphSourceOwner,
   type ParagraphOwnerReplacement,
@@ -66,8 +67,6 @@ function isRootParagraph(node: SyntaxNode): boolean {
   return node.type.name === "Paragraph" && node.parent?.type.name === "Document" && !node.parent.parent;
 }
 // Keep plugin-owned footnote definitions on the ordinary block path.
-const FOOTNOTE_DEFINITION_START = /^\[\^[A-Za-z0-9_-]+\]:/;
-
 export function isRootFootnoteDefinitionStart(source: SourceSnapshot, sourceOffset: number): boolean {
   if (sourceOffset < 0 || sourceOffset + 2 > source.length || source.read(sourceOffset, sourceOffset + 2) !== "[^") {
     return false;

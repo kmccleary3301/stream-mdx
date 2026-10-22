@@ -31,6 +31,7 @@ function createOwner(
       tablesEnabled: true,
       blockCompatibility: true,
       htmlContinuation: true,
+      footnoteDefinitionInterrupts: false,
       customMarkdownExtensions: [],
     }) } : {}),
   });
@@ -208,6 +209,7 @@ assert.throws(() => attestNativeParagraphWindowGrammar(fallbackParser, {
   tablesEnabled: true,
   blockCompatibility: true,
   htmlContinuation: true,
+  footnoteDefinitionInterrupts: false,
   customMarkdownExtensions: [fallbackExtension],
 }), /audited default block grammar/, "caller grammar extensions must not receive native-window trust");
 const fallbackSource = new AppendSourceDocument();
