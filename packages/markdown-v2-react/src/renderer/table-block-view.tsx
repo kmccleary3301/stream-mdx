@@ -152,6 +152,8 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
     rowRanges = ranges;
   }
 
+  // A committed table without rows has no body (GFM); an open one keeps it mounted for the rows still to stream.
+  const hasBody = !committed || rowCount > 0;
   const renderSections = () => (
     <>
       {header ? (
@@ -164,7 +166,7 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
           tableElements={tableElements}
         />
       ) : null}
-      <tableElements.Tbody>
+      {hasBody ? <tableElements.Tbody>
         {isVirtualized && virtualWindow.topSpacerHeight > 0 ? (
           <tableElements.Tr
             key={`${blockId}::spacer-top`}
@@ -192,7 +194,7 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
             />
           </tableElements.Tr>
         ) : null}
-      </tableElements.Tbody>
+      </tableElements.Tbody> : null}
     </>
   );
 

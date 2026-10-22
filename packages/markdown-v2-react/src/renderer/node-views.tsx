@@ -1894,6 +1894,8 @@ const TableSectionView: React.FC<{
   }
   if (node.type === "table-body") {
     const rowIds = useRendererChildren(store, nodeId);
+    // GFM: a table without rows has no body; this view re-renders when the first row is inserted.
+    if (rowIds.length === 0) return null;
     if (!virtualization?.isVirtualized) {
       return (
         <tableElements.Tbody>

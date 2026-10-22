@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import { Worker as NodeWorker } from "node:worker_threads";
 import type { Block, InlineNode, WorkerOut } from "@stream-mdx/core";
 import { StreamingMarkdown, type StreamingMarkdownHandle, type TableElements, type TableVirtualizationOptions } from "@stream-mdx/react";
-import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore } from "@stream-mdx/react/server";
+import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
 import { JSDOM } from "jsdom";
 import React from "react";
@@ -32,6 +33,18 @@ assert.equal((ssr.match(/data-row-id=/g) ?? []).length, 120, "public SSR rendere
 assert.ok(ssr.includes("Row-119"));
 assert.ok(!ssr.includes("markdown-table-spacer"));
 assert.ok(!ssr.includes('data-table-virtualized="true"'));
+// GFM 205: a table without body rows has no <tbody>, through the store path and the SSR blocks path.
+const headerOnly = await compileMarkdownSnapshotDirect({
+  text: "| abc | def |\n| --- | --- |\n",
+  init: { schemaVersion: STREAM_MDX_SCHEMA_VERSION, docPlugins: { tables: true } },
+});
+for (const headerOnlySsr of [
+  renderToStaticMarkup(<MarkdownBlocksRenderer blocks={[]} store={createRendererStore(headerOnly.blocks)} componentRegistry={new ComponentRegistry()} />),
+  renderToStaticMarkup(<MarkdownBlocksRenderer blocks={headerOnly.blocks} componentRegistry={new ComponentRegistry()} />),
+]) {
+  assert.ok(headerOnlySsr.includes("<th"), "the header still renders");
+  assert.ok(!headerOnlySsr.includes("<tbody"), "a table without rows has no body section");
+}
 
 // This implements the browser observation boundary, not a renderer collaborator.
 class TestResizeObserver implements ResizeObserver {
