@@ -68,6 +68,47 @@ async function runMarkerAlignmentTest(): Promise<void> {
   }
 }
 
+// An unregistered component opener retires root paragraph owners after a root native tail parse, so the next
+// append re-parses the whole document. Earlier finalized blocks must keep their authored source.
+async function runTailWindowThenDocumentReparseTest(): Promise<void> {
+  const chunks = [
+    "# Restricted native component streaming\n\n<Card label=\"open-stage\" co",
+    "unt={17} enabled>\n\n**Native bold child: p9-open-native-strong**\n\nP9_T2_OPEN_CARD_STAGE This authored body is intentionally",
+    " staged across many deterministic producer c",
+    "hunks.\n</Card>\n\nAfter the card.\n",
+  ];
+  const harness = await createWorkerHarness();
+  const expected = projectConsumerBlocks((await runSession(harness, [chunks.join("")])).getBlocks());
+  const streamed = await runSession(harness, chunks);
+  assert.deepEqual(projectConsumerBlocks(streamed.getBlocks()), expected, "document re-parse after a root tail parse must match single-shot");
+}
+
+// Inline HTML arriving later moves a nested paragraph off native paragraph ownership; the export must follow.
+async function runNestedParagraphLeavesNativeOwnershipTest(): Promise<void> {
+  const harness = await createWorkerHarness();
+  for (const chunks of [
+    ["> text ", "<kbd>Ctrl</kbd> x\n\nAfter\n"],
+    ["> text ", "<kbd>Ctrl</kbd> x\n>\n> - item\n\nAfter\n"],
+    ["- text ", "<kbd>Ctrl</kbd> x\n- next\n\nAfter\n"],
+  ]) {
+    const expected = projectConsumerBlocks((await runSession(harness, [chunks.join("")])).getBlocks());
+    const streamed = await runSession(harness, chunks);
+    assert.deepEqual(projectConsumerBlocks(streamed.getBlocks()), expected, `nested paragraph ownership change must match single-shot: ${JSON.stringify(chunks)}`);
+  }
+}
+
+// Continuation indent belongs to the latest item: three spaces nest under "9." but not under "11.".
+async function runOrderedMarkerWidthTest(): Promise<void> {
+  const chunks = ["9. A\n10. B\n11. C\n   1. off", "set\n   2. store ", "kernel\n12. D\n\n"];
+  const harness = await createWorkerHarness();
+  const expected = projectConsumerBlocks((await runSession(harness, [chunks.join("")])).getBlocks());
+  const streamed = await runSession(harness, chunks);
+  assert.deepEqual(projectConsumerBlocks(streamed.getBlocks()), expected, "streamed list items must use the latest item's content indent");
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
+await runTailWindowThenDocumentReparseTest();
+await runNestedParagraphLeavesNativeOwnershipTest();
+await runOrderedMarkerWidthTest();
 console.log("Native container streaming regressions passed");

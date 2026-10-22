@@ -3705,6 +3705,10 @@ export class MarkdownEngine {
     const continuationStart = this.rootQuoteContinuationStart(source, oldLen, newLen, this.blocks);
     // Append-only: restart at an adjacent open quote only when native parsing confirms continuation.
     const changeRanges: ContentChangeRange[] = appendedText.length > 0 ? [{ fromA: oldLen, toA: oldLen, fromB: oldLen, toB: newLen }] : [];
+    // Root native tail parses leave fragments positioned relative to their tail window; a document-rooted
+    // parse cannot reuse them. The fragments stored below are document-rooted, so no tail window applies.
+    if (this.rootNativeFragmentOffset !== null && this.rootNativeFragmentOffset !== 0) this.treeFragments = [];
+    this.rootNativeFragmentOffset = null;
     const updatedFragments = TreeFragment.applyChanges(
       this.treeFragments,
       [appendFragmentChange(source, 0, oldLen, newLen, continuationStart ?? oldLen)],
