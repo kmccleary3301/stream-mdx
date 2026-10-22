@@ -2799,7 +2799,10 @@ export class MarkdownEngine {
         latestFrom = metadata.sourceRange.from;
         processedTo = metadata.processedTo;
         const pendingRootOffset = rootParagraphPendingRootOffset(owner);
-        if (pendingRootOffset !== undefined) processedTo = pendingRootOffset;
+        if (pendingRootOffset !== undefined) {
+          // Native block node offsets can omit indentation needed when reparsing a continuation.
+          processedTo = sourceLineStart(this.sourceDocument.snapshot(), pendingRootOffset);
+        }
       }
     }
     return processedTo;
@@ -3299,7 +3302,7 @@ export class MarkdownEngine {
     const input = new NativeMarkdownInput(sourceInput);
     const updatedFragments = TreeFragment.applyChanges(
       this.treeFragments,
-      [appendFragmentChange(source, tailOffset, oldLength, newLength, continuationStart ?? oldLength)],
+      [appendFragmentChange(source, tailOffset, oldLength, newLength, continuationStart ?? sourceLineStart(source, oldLength))],
       continuationStart === undefined ? 128 : 0,
     );
     const tree = input.parse(this.mdParser, updatedFragments);
@@ -3827,7 +3830,7 @@ export class MarkdownEngine {
     this.rootNativeFragmentOffset = null;
     const updatedFragments = TreeFragment.applyChanges(
       this.treeFragments,
-      [appendFragmentChange(source, 0, oldLen, newLen, continuationStart ?? oldLen)],
+      [appendFragmentChange(source, 0, oldLen, newLen, continuationStart ?? sourceLineStart(source, oldLen))],
       continuationStart === undefined ? 128 : 0,
     );
     const nativeInput = new NativeMarkdownInput(source);

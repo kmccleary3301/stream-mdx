@@ -5,7 +5,7 @@ import { createRendererStore, type RendererStore } from "../../markdown-v2-react
 import { createWorkerHarness, projectConsumerBlocks, projectConsumerRoots, type WorkerHarness } from "./worker-test-harness";
 
 
-async function runSession(harness: WorkerHarness, chunks: readonly string[]): Promise<RendererStore> {
+async function runSession(harness: WorkerHarness, chunks: readonly string[], finalize = true): Promise<RendererStore> {
   const store = createRendererStore();
   const initMessages = await harness.send({
     type: "INIT",
@@ -27,10 +27,12 @@ async function runSession(harness: WorkerHarness, chunks: readonly string[]): Pr
     for (const message of messages) if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
   }
 
-  const finalized = await harness.send({ type: "FINALIZE" });
-  assertNoErrors(finalized);
-  for (const message of finalized) if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
-  assert.equal(finalized.at(-1)?.type, "FINALIZED", "the consumer must receive terminal FINALIZED after patches");
+  if (finalize) {
+    const finalized = await harness.send({ type: "FINALIZE" });
+    assertNoErrors(finalized);
+    for (const message of finalized) if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
+    assert.equal(finalized.at(-1)?.type, "FINALIZED", "the consumer must receive terminal FINALIZED after patches");
+  }
   return store;
 }
 
@@ -257,6 +259,51 @@ async function runQuotedTabIndentedCodeTest(): Promise<void> {
   }
 }
 
+// A continuation of a partial indented code line stays in code at the publication frontier (CommonMark 253, 272).
+async function runIndentedCodeContinuationTest(): Promise<void> {
+  const cases: Array<[string, string[]]> = [
+    ["    indented code", ["indented code"]],
+    ["A paragraph\nwith two lines.\n\n    indented code\n\n> A block quote.\n", ["indented code"]],
+    ["    indented code\n\nparagraph\n\n    more code\n", ["indented code", "more code"]],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, expectedCode] of cases) {
+    const split = source.indexOf("    indented code") + "    i".length;
+    const expectedStore = await runSession(harness, [source], false);
+    assert.deepEqual(
+      expectedStore.getBlocks().filter((block) => block.type === "code").map((block) => block.payload.meta?.code),
+      expectedCode,
+      `${JSON.stringify(source)} cold code text`,
+    );
+    const streamedStore = await runSession(harness, [source.slice(0, split), source.slice(split)], false);
+    assert.deepEqual(
+      projectConsumerBlocks(streamedStore.getBlocks()),
+      projectConsumerBlocks(expectedStore.getBlocks()),
+      `${JSON.stringify(source)} must match cold output at the second append`,
+    );
+  }
+}
+
+// Nested code must retain its block classification when a code line arrives across appends.
+async function runNestedCodeContinuationTest(): Promise<void> {
+  const cases: Array<[string, string, string]> = [
+    ["- item\n\n      indented code\n", "      indented code", "      i"],
+    [">     indented code\n", "    indented code", "    i"],
+    ["- ```\n  indented code\n  ```\n", "  indented code", "  i"],
+    ["> ```\n> indented code\n> ```\n", "> indented code", "> i"],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, marker, splitPrefix] of cases) {
+    const split = source.indexOf(marker) + splitPrefix.length;
+    const expected = projectConsumerBlocks((await runSession(harness, [source], false)).getBlocks());
+    const streamed = projectConsumerBlocks(
+      (await runSession(harness, [source.slice(0, split), source.slice(split)], false)).getBlocks(),
+    );
+    assert.deepEqual(streamed, expected, `${JSON.stringify(source)} must match cold output at the second append`);
+  }
+}
+
+
 // A root paragraph that later becomes a list item is reparsed from its line, keeping its indentation
 // (CommonMark 271, 286, 291), and joins the list before it (CommonMark 283, 311).
 async function runParagraphBecomesListItemTest(): Promise<void> {
@@ -434,4 +481,6 @@ await runIndentedQuoteWindowTest();
 await runClosedQuoteHtmlChildTest();
 await runItemBlockGapLoosenessTest();
 await runNestedTableRowsTest();
+await runIndentedCodeContinuationTest();
+await runNestedCodeContinuationTest();
 console.log("Native container streaming regressions passed");
