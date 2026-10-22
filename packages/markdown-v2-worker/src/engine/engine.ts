@@ -3313,7 +3313,7 @@ export class MarkdownEngine {
     const input = new NativeMarkdownInput(sourceInput);
     const updatedFragments = TreeFragment.applyChanges(
       this.treeFragments,
-      [appendFragmentChange(source, tailOffset, oldLength, newLength, continuationStart ?? sourceLineStart(source, oldLength))],
+      [appendFragmentChange(source, tailOffset, oldLength, newLength, continuationStart ?? oldLength)],
       continuationStart === undefined ? 128 : 0,
     );
     const tree = input.parse(this.mdParser, updatedFragments);
@@ -3844,7 +3844,7 @@ export class MarkdownEngine {
     this.rootNativeFragmentOffset = null;
     const updatedFragments = TreeFragment.applyChanges(
       this.treeFragments,
-      [appendFragmentChange(source, 0, oldLen, newLen, continuationStart ?? sourceLineStart(source, oldLen))],
+      [appendFragmentChange(source, 0, oldLen, newLen, continuationStart ?? oldLen)],
       continuationStart === undefined ? 128 : 0,
     );
     const nativeInput = new NativeMarkdownInput(source);
