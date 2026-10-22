@@ -321,6 +321,18 @@ async function runIndentedQuoteWindowTest(): Promise<void> {
   }
 }
 
+// A quote that closes while its open HTML child completes publishes that child's block (CommonMark 174).
+async function runClosedQuoteHtmlChildTest(): Promise<void> {
+  const source = "> <div>\n> foo\n\nbar\n";
+  const harness = await createWorkerHarness();
+  const expected = projectConsumerBlocks((await runSession(harness, [source])).getBlocks());
+  assert.deepEqual(
+    projectConsumerBlocks((await runSession(harness, ["> <div", source.slice(6)])).getBlocks()),
+    expected,
+    "the quote's html child must survive the quote closing",
+  );
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -337,4 +349,5 @@ await runQuotedTabIndentedCodeTest();
 await runParagraphBecomesListItemTest();
 await runLinkReferenceDefinitionSplitTest();
 await runIndentedQuoteWindowTest();
+await runClosedQuoteHtmlChildTest();
 console.log("Native container streaming regressions passed");

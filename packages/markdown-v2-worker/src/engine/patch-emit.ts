@@ -290,6 +290,8 @@ export function shallowEqual(a: Record<string, unknown>, b: Record<string, unkno
   const keysB = Object.keys(b);
   if (keysA.length !== keysB.length) return false;
   for (const key of keysA) {
+    // Same-size records with different keys differ even when the missing key would read as undefined.
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
     const valA = a[key];
     const valB = b[key];
     if (typeof valA === "object" || typeof valB === "object") {
