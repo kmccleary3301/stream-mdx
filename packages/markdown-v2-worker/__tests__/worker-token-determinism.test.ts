@@ -27,10 +27,10 @@ function applyMessages(store: RendererStore, messages: WorkerOut[]): void {
   }
 }
 
-async function collectTokenLines(): Promise<TokenConsumerOutput> {
+async function collectTokenLines(codeLines: readonly string[] = ["const alpha = 1;", "const beta = 2;"]): Promise<TokenConsumerOutput> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
-  const content = ["```ts", "const alpha = 1;", "const beta = 2;", "```"].join("\n");
+  const content = ["```ts", ...codeLines, "```"].join("\n");
 
   const initMessages = await harness.send({
     type: "INIT",
@@ -63,7 +63,7 @@ async function collectTokenLines(): Promise<TokenConsumerOutput> {
   }));
   assert.deepStrictEqual(
     tokenLines.map((line) => line.text),
-    ["const alpha = 1;", "const beta = 2;"],
+    codeLines,
     "consumer code lines must preserve source order",
   );
   for (const line of tokenLines) {
@@ -81,5 +81,24 @@ async function runTokenDeterminismTest(): Promise<void> {
   assert.deepStrictEqual(second, first, "consumer code lines, tokens, and rendered output must be deterministic across runs");
 }
 
+// A loaded or cold thread must not change highlighting: every clock read here advances one second.
+// The slow run highlights code no earlier run cached; the reference appends a line, so it cannot reuse
+// the slow result, and line-by-line tokenization keeps the shared lines comparable.
+async function runSlowClockTokenTest(): Promise<void> {
+  const codeLines = ["function add(a: number, b: number) {", "  return a + b;"];
+  const realNow = Date.now;
+  let now = realNow();
+  Date.now = () => (now += 1000);
+  let slow: TokenConsumerOutput;
+  try {
+    slow = await collectTokenLines(codeLines);
+  } finally {
+    Date.now = realNow;
+  }
+  const reference = await collectTokenLines([...codeLines, "}"]);
+  assert.deepStrictEqual(slow.tokenLines, reference.tokenLines.slice(0, codeLines.length), "highlighting must not depend on elapsed time");
+}
+
 await runTokenDeterminismTest();
+await runSlowClockTokenTest();
 console.log("worker token determinism test passed");
