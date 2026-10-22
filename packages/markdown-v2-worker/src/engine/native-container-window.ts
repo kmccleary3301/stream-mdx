@@ -336,6 +336,16 @@ export class NativeContainerWindowCache {
     const from = Math.max(0, Math.min(source.length, tailFrom));
     const to = Math.max(from, Math.min(source.length, tailTo));
     const openings = markerOpenings(frames);
+    // A retained prior item line inside a quote carries its own quote marks before the list marker.
+    for (const frame of frames) {
+      const priorMarker = priorListItemMarker(frame);
+      if (!priorMarker) continue;
+      for (let offset = lineStartAt(source, priorMarker.from); offset < priorMarker.from; offset += 1) {
+        if (source.read(offset, offset + 1) !== ">") continue;
+        if (openings.some((opening) => opening.from === offset)) continue;
+        openings.push({ typeName: "QuoteMark", from: offset, to: offset + 1 });
+      }
+    }
     const codeOpeningFrom = code && code.openingLineFrom < from ? code.openingLineFrom : undefined;
     const contextEnd = codeOpeningFrom ?? from;
     const gapStart = boundedContextGapStart(

@@ -831,6 +831,7 @@ const initialMixedPrimaryInline: InlineNode[] = [
   { kind: "text", text: "Before " },
   { kind: "html", raw: '<span onclick="bad()">HTML</span>', sanitized: "<span>HTML</span>" },
   { kind: "text", text: " " },
+  { kind: "text", text: '<InlineChip tone="warm" />' },
   { kind: "text", text: " tail" },
 ];
 assert.deepEqual(historicalMixedPrimaryItem.props.inline, initialMixedPrimaryInline);
@@ -914,6 +915,7 @@ assert.deepEqual(currentMixedPrimaryList.payload.meta?.items, [[
   { kind: "text", text: "Before " },
   { kind: "html", raw: '<span onclick="bad()">HTML</span>', sanitized: "<span>HTML</span>" },
   { kind: "text", text: " " },
+  { kind: "text", text: '<InlineChip tone="warm" />' },
   { kind: "text", text: " tail continued" },
 ]]);
 const currentMixedPrimaryItem = preparedChildren(currentMixedPrimaryList)
@@ -923,6 +925,7 @@ const currentMixedPrimaryInline: InlineNode[] = [
   { kind: "text", text: "Before " },
   { kind: "html", raw: '<span onclick="bad()">HTML</span>', sanitized: "<span>HTML</span>" },
   { kind: "text", text: " " },
+  { kind: "text", text: '<InlineChip tone="warm" />' },
   { kind: "text", text: " tail continued" },
 ];
 assert.deepEqual(currentMixedPrimaryItem.props.inline, currentMixedPrimaryInline);
