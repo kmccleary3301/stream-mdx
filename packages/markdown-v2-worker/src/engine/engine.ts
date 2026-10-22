@@ -5377,6 +5377,7 @@ export class MarkdownEngine {
     let tail = this.nativeContainerTails.get(block.id);
     let change: NativeContainerTailChange | undefined;
     let previousPath = this.nativeContainerActivePathSnapshots.get(block.id) ?? [];
+    let admittedOpenList = false;
     if (precomputedChange) {
       if (!tail) throw new Error(`Native container ${block.id} lost its active tail before applying the parsed window`);
       change = precomputedChange;
@@ -5404,7 +5405,9 @@ export class MarkdownEngine {
           paragraphOwnerSupported,
         );
       }
-      if (!options?.forceFinalize && !block.isFinalized && tail.state.phase === "open") {
+      // Blank lines do not close a list, so its tail parser rather than trailing-source extraction decides closure.
+      admittedOpenList = (name === "BulletList" || name === "OrderedList") && tail.state.phase === "open";
+      if (!options?.forceFinalize && (admittedOpenList || !block.isFinalized) && tail.state.phase === "open") {
         this.nativeContainerTails.set(block.id, tail);
       }
     } else {
@@ -5445,7 +5448,7 @@ export class MarkdownEngine {
       : baseMapping;
     const closure = options?.forceFinalize
       ? "finalized"
-      : change?.closure ?? (block.isFinalized ? "closed" : tail.state.phase);
+      : change?.closure ?? (block.isFinalized && !admittedOpenList ? "closed" : tail.state.phase);
     const codeEvents = change
       ? nativeCodeEventsInTail(change.rootNode, change.window.prefixLength)
       : [];
@@ -7925,16 +7928,29 @@ export class MarkdownEngine {
     return target?.snapshot.paragraph ? target : undefined;
   }
 
-  private nativeContainerNodeForBlock(block: Block): SyntaxNode | undefined {
-    const tree = this.lastTree;
+  /**
+   * The last tree may cover only the root native tail, so a container is reparsed from its own source lines.
+   * Node offsets are relative to the returned `sourceOffset` (the container's line start).
+   */
+  private nativeContainerNodeForBlock(block: Block): { node: SyntaxNode; sourceOffset: number } | undefined {
     const range = block.payload.range;
-    if (!tree || typeof range?.from !== "number" || typeof range.to !== "number") return undefined;
+    if (typeof range?.from !== "number" || typeof range.to !== "number") return undefined;
+    const source = this.sourceDocument.snapshot();
+    let lineStart = range.from;
+    while (lineStart > 0 && range.from - lineStart < 4) {
+      const previous = source.read(lineStart - 1, lineStart);
+      if (previous === "\n" || previous === "\r") break;
+      lineStart -= 1;
+    }
+    const tree = new NativeMarkdownInput(new SourceRangeInput(source, lineStart, range.to)).parse(this.mdParser);
     const cursor = tree.cursor();
     if (!cursor.firstChild()) return undefined;
     do {
       const type = cursor.type.name;
       const nativeContainer = type === "BulletList" || type === "OrderedList" || type === "Blockquote";
-      if (nativeContainer && cursor.from === range.from && cursor.to === range.to) return cursor.node;
+      if (nativeContainer && cursor.from + lineStart === range.from && cursor.to + lineStart === range.to) {
+        return { node: cursor.node, sourceOffset: lineStart };
+      }
     } while (cursor.nextSibling());
     return undefined;
   }
@@ -7976,9 +7992,9 @@ export class MarkdownEngine {
         if (!tailChange) throw new Error(`Native container ${block.id} could not finalize its active tail`);
         await this.prepareNativeNestedChildren(block, { forceFinalize: true }, [], tailChange.rootNode, tailChange);
       } else {
-        const nativeNode = this.nativeContainerNodeForBlock(block);
-        if (!nativeNode) throw new Error(`Native container ${block.id} is missing from the current syntax tree`);
-        await this.prepareNativeNestedChildren(block, { forceFinalize: true }, [], nativeNode);
+        const native = this.nativeContainerNodeForBlock(block);
+        if (!native) throw new Error(`Native container ${block.id} is missing from its source`);
+        await this.prepareNativeNestedChildren(block, { forceFinalize: true, sourceOffset: native.sourceOffset }, [], native.node);
       }
     }
 
