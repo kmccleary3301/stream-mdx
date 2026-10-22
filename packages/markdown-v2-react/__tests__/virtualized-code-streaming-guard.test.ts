@@ -224,7 +224,7 @@ class ResizeObserverStub {
 async function renderBlock(
   block: Block,
   registry = new ComponentRegistry(),
-): Promise<{ pre: HTMLElement }> {
+): Promise<{ pre: HTMLElement; codeFrame: HTMLElement; requests: CodeHighlightRequest[] }> {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     pretendToBeVisual: true,
   });
@@ -235,6 +235,7 @@ async function renderBlock(
   ) as Record<(typeof globalKeys)[number], PropertyDescriptor | undefined>;
   const container = window.document.getElementById("root");
   let root: Root | null = null;
+  const requests: CodeHighlightRequest[] = [];
   try {
     assert.ok(container, "missing test root container");
     Object.assign(globalThis, {
@@ -248,14 +249,28 @@ async function renderBlock(
     });
     const store = createRendererStore([block]);
     root = createRoot(container);
-    root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-    let pre: HTMLElement | null = null;
-    await waitFor(() => {
-      pre = container.querySelector<HTMLElement>('pre[data-code-block="true"]');
-      return pre !== null;
-    }, "expected code block to render");
-    assert.ok(pre, "expected code block to render");
-    return { pre };
+    root.render(
+      React.createElement(
+        CodeHighlightRequestContext.Provider,
+        { value: (request) => requests.push({ ...request }) },
+        React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }),
+      ),
+    );
+    await waitFor(
+      () => container.querySelector('[data-code-block="true"]') !== null,
+      "expected code block to render",
+    );
+    const codeFrame = container.querySelector<HTMLElement>('[data-code-block="true"]');
+    assert.ok(codeFrame, "expected code block to render");
+    const pre = codeFrame.matches("pre") ? codeFrame : codeFrame.querySelector<HTMLElement>("pre");
+    assert.ok(pre, "expected code block pre element to render");
+    if (block.payload.meta?.lazyTokenization) {
+      await waitFor(
+        () => requests.some((request) => request.blockId === block.id),
+        "finalized lazy code should request a highlight range",
+      );
+    }
+    return { pre, codeFrame, requests };
   } finally {
     try {
       root?.unmount();
@@ -290,12 +305,23 @@ async function runVirtualizedCodeStreamingGuardTest(): Promise<void> {
       meta: { lang: "ts", lazyTokenization: true, code: authoredSource },
     },
   };
-  const { pre } = await renderBlock(finalizedLazyBlock);
-  assert.strictEqual(pre.getAttribute("data-code-virtualized"), "false", "lazy-tokenized code must remain non-virtualized");
+
+  const { pre, codeFrame, requests } = await renderBlock(finalizedLazyBlock);
+  assert.strictEqual(codeFrame.getAttribute("data-code-virtualized"), "false", "lazy-tokenized code must remain non-virtualized");
+  assert.ok(requests.length > 0, "finalized lazy non-virtualized code should request a full highlight pass");
+  const fullRequest = requests.find((request) => request.blockId === finalizedLazyBlock.id);
+  assert.ok(fullRequest, "expected a lazy highlight request for the finalized lazy code block");
+  const expectedLineCount = authoredSource.split("\n").length;
+  assert.deepStrictEqual(
+    { startLine: fullRequest?.startLine, endLine: fullRequest?.endLine, priority: fullRequest?.priority, reason: fullRequest?.reason },
+    { startLine: 0, endLine: expectedLineCount, priority: "visible", reason: "finalize-full" },
+    "finalized lazy non-virtualized code should request the entire code range",
+  );
   assert.equal(
     Array.from(pre.querySelectorAll(".line"), (line) => line.textContent ?? "").join("\n").replace(/\n$/, ""),
     authoredSource,
     "lazy non-virtualized code should preserve every authored line in the DOM",
+  
   );
 
   await testInlineWorkerCustomCodeHighlighting();
@@ -310,8 +336,8 @@ async function runVirtualizedCodeStreamingGuardTest(): Promise<void> {
     },
   };
 
-  const { pre: eagerPre } = await renderBlock(eagerBlock);
-  assert.strictEqual(eagerPre.getAttribute("data-code-virtualized"), "true", "eager finalized code should still virtualize");
+  const { codeFrame: eagerCodeFrame } = await renderBlock(eagerBlock);
+  assert.strictEqual(eagerCodeFrame.getAttribute("data-code-virtualized"), "true", "eager finalized code should still virtualize");
 }
 
 runVirtualizedCodeStreamingGuardTest()

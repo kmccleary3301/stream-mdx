@@ -1,17 +1,18 @@
 /// <reference lib="es2024.promise" />
 "use client";
 
-import type { CodeHighlightingMode, PerformanceMetrics, WorkerOut } from "@stream-mdx/core";
+import type { CodeHighlightingMode, HtmlTreeNode, PerformanceMetrics, WorkerOut } from "@stream-mdx/core";
 import type { RendererMetrics, StreamingMarkdownProps, StreamingSchedulerOptions } from "@stream-mdx/react";
-import React, { Profiler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
+import { components as mdxComponents } from "@/mdx-components";
+import React, { Profiler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ElementType } from "react";
 import { useSearchParams } from "next/navigation";
 import { Streamdown, type LinkSafetyConfig, type PluginConfig } from "streamdown";
 import { code, type CodeHighlighterPlugin } from "@streamdown/code";
 import { createMathPlugin } from "@streamdown/math";
 
-import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { ComponentRegistry, defineContentComponent, StreamingMarkdown, type ContentComponentHostProps, type ContentComponentProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
 
-import { components as mdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
 import { collectGeneratedFootnoteLabels, collectSemanticDom, renderedCodeSource, type GeneratedFootnoteLabel, type SemanticDomRecords } from "../../../../scripts/perf/semantic-dom";
 import { createChunkTrace, semanticSha256 } from "../../../../scripts/perf/chunk-trace";
@@ -22,6 +23,11 @@ import {
   type CampaignScenarioConfig,
 } from "../../../../scripts/perf/campaign-portfolio";
 
+
+const perfMdxEngine = createTrustedMdxEngine({
+  components: mdxComponents as Readonly<Record<string, ElementType>>,
+});
+const perfMdxEngines = { mdx: perfMdxEngine };
 const streamdownMath = createMathPlugin({ singleDollarTextMath: true });
 const PARITY_LINK_SAFETY = { enabled: false } satisfies LinkSafetyConfig;
 
@@ -168,6 +174,322 @@ const PARITY_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   liveCodeHighlighting: true,
   emitDiffBlocks: false,
 };
+
+const P9_T2_FIXTURE_ID = "restricted-native-streaming";
+const P9_T2_OPEN_STAGE_MARKER = "P9_T2_OPEN_CARD_STAGE";
+const P9_T2_CLOSED_STAGE_MARKER = "P9_T2_CLOSED_CARD_STAGE";
+const P9_T2_OPEN_STRONG = "Native bold child: p9-open-native-strong";
+const P9_T2_CLOSED_STRONG = "Closed-only native child: p9-closed-native-strong";
+const P9_T2_INCOMPLETE_STRONG = "Native bold child: p9-incomplete-native-strong";
+
+type P9CardSourceProps = {
+  label: string;
+  count: number;
+  enabled: boolean;
+};
+
+type P9CardHostProps = P9CardSourceProps & ContentComponentHostProps;
+
+function renderP9CardHost(component: "Card" | "ClosedCard", props: P9CardHostProps): JSX.Element {
+  const { label, count, enabled, children, ...hostProps } = props;
+  return (
+    <section
+      data-p9-component={component}
+      data-label={label}
+      data-count={String(count)}
+      data-enabled={String(enabled)}
+      data-component-status={hostProps["data-component-status"] ?? ""}
+      data-diagnostic={hostProps["data-diagnostic"] ?? ""}
+    >
+      {children}
+    </section>
+  );
+}
+
+const P9CardHost = (props: P9CardHostProps): JSX.Element => renderP9CardHost("Card", props);
+const P9ClosedCardHost = (props: P9CardHostProps): JSX.Element => renderP9CardHost("ClosedCard", props);
+const validateP9CardProps = (props: ContentComponentProps): props is ContentComponentProps & P9CardSourceProps =>
+  typeof props.label === "string" &&
+  typeof props.count === "number" &&
+  Number.isSafeInteger(props.count) &&
+  typeof props.enabled === "boolean" &&
+  Object.keys(props).every((key) => key === "label" || key === "count" || key === "enabled");
+
+const P9_RESTRICTED_CONTENT_COMPONENTS = Object.freeze({
+  Card: defineContentComponent<P9CardSourceProps>({
+    component: P9CardHost,
+    validateProps: validateP9CardProps,
+  }),
+  ClosedCard: defineContentComponent<P9CardSourceProps>({
+    component: P9ClosedCardHost,
+    validateProps: validateP9CardProps,
+    renderWhen: "closed",
+  }),
+});
+
+type P9T2HostObservation = {
+  sourceOffset: number;
+  closerOffset: number;
+  rendered: boolean;
+  label: string | null;
+  count: string | null;
+  enabled: string | null;
+  status: string | null;
+  diagnostic: string | null;
+  nativeStrongText: string | null;
+};
+
+type P9T2BrowserAudit = {
+  effects: string[];
+  trapAttempts: string[];
+  trapsInstalledAfterBoot: boolean;
+  trapsInstalledBeforeSource: boolean;
+  workerInitializedAtTrapInstall: boolean;
+  trapsRestored: boolean;
+  sourceOffset: number;
+  installTraps?: () => void;
+  restoreTraps?: () => void;
+};
+
+// Keep the installer in the browser module. Serializing Node-transpiled nested
+// functions through Playwright can leave their compiler helpers in the wrong realm.
+function installRestrictedSourceTraps(): void {
+  const audit = window.__streammdxP9T2Audit;
+  if (!audit || typeof window.__streammdxPerfStart !== "function" || window.__streammdxPerfError) {
+    throw new Error("Evaluation traps require the booted harness and initialized worker.");
+  }
+  if (audit.sourceOffset !== 0 || typeof window.__streammdxPerfRunStart === "number") {
+    throw new Error("Evaluation traps must be installed before source processing.");
+  }
+  const attempts: string[] = [];
+  const previous: Array<{ target: object; key: PropertyKey; descriptor: PropertyDescriptor }> = [];
+  const seen = new Map<object, Set<PropertyKey>>();
+  let restored = false;
+  const deny = (name: string): never => {
+    attempts.push(name);
+    throw new Error(`restricted source reached ${name}`);
+  };
+  const blocker = (name: string) => new Proxy(function blockedEvaluation(): never {
+    return deny(name);
+  }, {
+    apply: () => deny(name),
+    construct: () => deny(name),
+  });
+  const wasSeen = (target: object, key: PropertyKey): boolean => {
+    const keys = seen.get(target);
+    if (keys?.has(key)) return true;
+    const nextKeys = keys ?? new Set<PropertyKey>();
+    nextKeys.add(key);
+    seen.set(target, nextKeys);
+    return false;
+  };
+  const replaceValue = (target: object, key: PropertyKey, name: string): void => {
+    if (wasSeen(target, key)) return;
+    const descriptor = Object.getOwnPropertyDescriptor(target, key);
+    if (!descriptor?.configurable) throw new Error(`${name} is not configurable for the evaluation trap.`);
+    previous.push({ target, key, descriptor });
+    Object.defineProperty(target, key, {
+      configurable: true,
+      enumerable: descriptor.enumerable,
+      writable: true,
+      value: blocker(name),
+    });
+  };
+  const replaceConstructorAccess = (prototype: object, name: string): void => {
+    if (wasSeen(prototype, "constructor")) return;
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, "constructor");
+    if (!descriptor?.configurable) throw new Error(`${name} is not configurable for the evaluation trap.`);
+    previous.push({ target: prototype, key: "constructor", descriptor });
+    Object.defineProperty(prototype, "constructor", {
+      configurable: true,
+      enumerable: descriptor.enumerable,
+      get: () => deny(name),
+    });
+  };
+  const functionPrototypes = [
+    { name: "Function.prototype.constructor", prototype: window.Function.prototype },
+    { name: "AsyncFunction.prototype.constructor", prototype: Object.getPrototypeOf(async function p9Async() {}) },
+    { name: "GeneratorFunction.prototype.constructor", prototype: Object.getPrototypeOf(function* p9Generator() {}) },
+    { name: "AsyncGeneratorFunction.prototype.constructor", prototype: Object.getPrototypeOf(async function* p9AsyncGenerator() {}) },
+  ];
+  const restore = (): void => {
+    if (restored) return;
+    restored = true;
+    for (const entry of previous.reverse()) Object.defineProperty(entry.target, entry.key, entry.descriptor);
+    audit.trapsRestored = true;
+  };
+  try {
+    replaceValue(window, "Function", "window.Function");
+    replaceValue(window, "eval", "window.eval");
+    for (const { name, prototype } of functionPrototypes) replaceConstructorAccess(prototype, name);
+    audit.trapAttempts = attempts;
+    audit.restoreTraps = restore;
+    audit.trapsInstalledAfterBoot = true;
+    audit.trapsInstalledBeforeSource = true;
+    audit.workerInitializedAtTrapInstall = true;
+  } catch (error) {
+    restore();
+    throw error;
+  }
+}
+
+type P9T2FunctionalObservations = {
+  contentPolicyPropOmitted: boolean;
+  mdxAdmissionEnabled: boolean;
+  worker: {
+    initialized: boolean;
+    sourceEof: boolean;
+    finalized: boolean;
+    semanticDrain: boolean;
+  };
+  partialOpeningHeaderObserved: boolean;
+  openCardBeforeCloser: P9T2HostObservation;
+  closedCardWithheldBeforeCloser: P9T2HostObservation;
+  closedCardAfterCloser: P9T2HostObservation;
+  incompleteCardAtEof: P9T2HostObservation;
+  authoredSource: Record<string, string | null>;
+  noScriptOrIframe: boolean;
+  sideEffectTrace: string[];
+  evaluationTraps: {
+    installedAfterBootBeforeSource: boolean;
+    attempts: string[];
+    restored: boolean;
+  };
+};
+
+const P9_T2_AUTHORED_SAMPLES = {
+  unknownTag: '<UnknownWidget label="unknown-authored-source" />',
+  malformedTag: "<Card 12345>",
+  braceExpression: '{globalThis.__streammdxP9T2Effects.push("brace-expression")}',
+  attributeExpression: '<Card label={globalThis.__streammdxP9T2Effects.push("attribute-expression")} count={7} enabled />',
+  functionExpression: '{Function("return globalThis.__streammdxP9T2Effects.push(\'function-constructor\')")()}',
+  evalExpression: '{eval("globalThis.__streammdxP9T2Effects.push(\'eval-call\')")}',
+  artifactScript: '<script>globalThis.__streammdxP9T2Effects.push("artifact-script")</script>',
+  artifactTag: '<Card label={globalThis.__streammdxP9T2Effects.push("artifact-component")} count={1} enabled />',
+  artifactExpression: '{Function("return globalThis.__streammdxP9T2Effects.push(\'artifact-constructor\')")()}',
+  htmlArtifactScript: '<script>globalThis.__streammdxP9T2Effects.push("html-artifact-script")</script>',
+  htmlArtifactIframe: '<iframe srcdoc="<script>globalThis.__streammdxP9T2Effects.push(\'html-artifact-frame\')</script>"></iframe>',
+  htmlArtifactTag: '<Card label={globalThis.__streammdxP9T2Effects.push("html-artifact-component")} count={1} enabled />',
+  htmlArtifactExpression: '{eval("globalThis.__streammdxP9T2Effects.push(\'html-artifact-eval\')")}',
+};
+
+type P9T2SourceOffsets = {
+  openHeaderStart: number;
+  openHeaderEnd: number;
+  openStageEnd: number;
+  openCardCloser: number;
+  closedStageEnd: number;
+  closedCardCloser: number;
+  incompleteCardStart: number;
+};
+
+function findP9T2SourceOffsets(source: string): P9T2SourceOffsets {
+  const openHeaderStart = source.indexOf('<Card label="open-stage"');
+  const openHeaderEnd = source.indexOf(">", openHeaderStart) + 1;
+  const openStageMarker = source.indexOf(P9_T2_OPEN_STAGE_MARKER);
+  const openCardCloser = source.indexOf("</Card>", openHeaderEnd);
+  const closedHeaderStart = source.indexOf('<ClosedCard label="closed-stage"');
+  const closedStageMarker = source.indexOf(P9_T2_CLOSED_STAGE_MARKER);
+  const closedCardCloser = source.indexOf("</ClosedCard>", closedHeaderStart);
+  const incompleteCardStart = source.indexOf('<Card label="eof-incomplete"');
+  if (
+    openHeaderStart < 0 || openHeaderEnd <= openHeaderStart || openStageMarker < openHeaderEnd ||
+    openCardCloser <= openStageMarker || closedHeaderStart <= openCardCloser || closedStageMarker < closedHeaderStart ||
+    closedCardCloser <= closedStageMarker || incompleteCardStart <= closedCardCloser
+  ) {
+    throw new Error("Incomplete measurement: restricted streaming fixture stages or actual closers are missing.");
+  }
+  return {
+    openHeaderStart,
+    openHeaderEnd,
+    openStageEnd: openStageMarker + P9_T2_OPEN_STAGE_MARKER.length,
+    openCardCloser,
+    closedStageEnd: closedStageMarker + P9_T2_CLOSED_STAGE_MARKER.length,
+    closedCardCloser,
+    incompleteCardStart,
+  };
+}
+
+function traceSplitsRange(trace: readonly { text: string }[], start: number, end: number): boolean {
+  let offset = 0;
+  for (const chunk of trace) {
+    offset += chunk.text.length;
+    if (offset > start && offset < end) return true;
+  }
+  return false;
+}
+
+function findP9ComponentTreeNode(
+  handle: StreamingMarkdownHandle,
+  name: "Card" | "ClosedCard",
+  label: string,
+
+): Extract<HtmlTreeNode, { kind: "component" }> | null {
+  const visit = (nodes: readonly HtmlTreeNode[], seenBlocks: Set<object>): Extract<HtmlTreeNode, { kind: "component" }> | null => {
+    for (const node of nodes) {
+      if (node.kind === "component") {
+        if (node.name === name && node.props.label === label) return node;
+        const nested = visit(node.children, seenBlocks);
+        if (nested) return nested;
+      } else if (node.kind === "element") {
+        const nested = visit(node.children, seenBlocks);
+        if (nested) return nested;
+      } else if (node.kind === "block" && !seenBlocks.has(node.block)) {
+        seenBlocks.add(node.block);
+        const nestedTree = node.block.payload.meta?.htmlTree;
+        if (Array.isArray(nestedTree)) {
+          const nested = visit(nestedTree as HtmlTreeNode[], seenBlocks);
+          if (nested) return nested;
+        }
+      }
+    }
+    return null;
+  };
+
+  const seenBlocks = new Set<object>();
+  for (const block of handle.getState().blocks) {
+    const tree = block.payload.meta?.htmlTree;
+    if (Array.isArray(tree)) {
+      const node = visit(tree as HtmlTreeNode[], seenBlocks);
+      if (node) return node;
+    }
+  }
+  return null;
+}
+
+function traceHasBoundaryInRange(trace: readonly { text: string }[], start: number, end: number): boolean {
+  let offset = 0;
+  for (const chunk of trace) {
+    offset += chunk.text.length;
+    if (offset >= start && offset < end) return true;
+  }
+  return false;
+}
+
+function readP9HostObservation(
+  root: HTMLElement,
+  component: "Card" | "ClosedCard",
+  label: string,
+  sourceOffset: number,
+  closerOffset: number,
+  treeNode: Extract<HtmlTreeNode, { kind: "component" }> | null = null,
+): P9T2HostObservation {
+  const host = Array.from(root.querySelectorAll<HTMLElement>(`[data-p9-component="${component}"]`))
+    .find((element) => element.dataset.label === label);
+  return {
+    sourceOffset,
+    closerOffset,
+    rendered: host !== undefined,
+    label: host?.dataset.label ?? (typeof treeNode?.props.label === "string" ? treeNode.props.label : null),
+    count: host?.dataset.count ?? (typeof treeNode?.props.count === "number" ? String(treeNode.props.count) : null),
+    enabled: host?.dataset.enabled ?? (typeof treeNode?.props.enabled === "boolean" ? String(treeNode.props.enabled) : null),
+    status: host?.dataset.componentStatus ?? treeNode?.status ?? null,
+    diagnostic: host?.dataset.diagnostic ?? treeNode?.diagnostic ?? null,
+    nativeStrongText: host?.querySelector("strong")?.textContent ?? null,
+  };
+}
+
+
 export type LiveSubtreeCounts = {
   elements: number;
   pre: number;
@@ -566,6 +888,7 @@ type PerfReport = {
     totalChars: number;
     firstFlushAt: number | null;
     userAgent: string;
+    functionalObservations?: P9T2FunctionalObservations;
     liveDom: {
       subtreeCounts: LiveSubtreeCounts;
       semanticContent: SemanticContent;
@@ -605,6 +928,8 @@ declare global {
     __streammdxPerfRunEnd?: number;
     __streammdxPerfStart?: () => void;
     __streammdxPerfCollect?: () => void;
+    __streammdxP9T2Audit?: P9T2BrowserAudit;
+    __streammdxP9T2Effects?: string[];
   }
 }
 
@@ -700,26 +1025,39 @@ export function PerfHarness(): JSX.Element {
   const renderer = (searchParams.get("renderer") ?? "streammdx") as "streammdx" | "streamdown";
   const profile = (searchParams.get("profile") ?? "parity") as BenchmarkProfile;
   const fixtureId = campaignDef ? campaignDef.id : (searchParams.get("fixture") ?? "naive-bayes");
+  const restrictedNativeFixture = fixtureId === P9_T2_FIXTURE_ID;
   const scenarioId = campaignDef ? campaignDef.scenario.id : (searchParams.get("scenario") ?? "S2_typical");
   const schedulingPreset = searchParams.get("scheduling") ?? "aggressive";
   const requestedCodeHighlighting = (searchParams.get("codeHighlighting") as CodeHighlightingMode) || "incremental";
+  const parityFeatures = useMemo<NonNullable<StreamingMarkdownProps["features"]>>(
+    () => restrictedNativeFixture
+      ? {
+          ...PARITY_FEATURES,
+          mdx: true,
+          formatAnticipation: { ...PARITY_FORMAT_ANTICIPATION, mdx: true },
+        }
+      : PARITY_FEATURES,
+    [restrictedNativeFixture],
+  );
+  const contentComponents = restrictedNativeFixture ? P9_RESTRICTED_CONTENT_COMPONENTS : undefined;
   const resolvedFeatures: NonNullable<StreamingMarkdownProps["features"]> = useMemo(() => {
-    const base = profile === "parity" ? PARITY_FEATURES : DEFAULT_FEATURES;
+    const base = profile === "parity" ? parityFeatures : DEFAULT_FEATURES;
     return {
       ...base,
       codeHighlighting: requestedCodeHighlighting,
     };
-  }, [profile, requestedCodeHighlighting]);
+  }, [profile, parityFeatures, requestedCodeHighlighting]);
   const policy = useMemo(() => {
     const base = profile === "rich" ? RICH_POLICY : PARITY_POLICY;
     return {
       ...base,
+      ...(restrictedNativeFixture && profile === "parity" ? { mdx: true } : {}),
       syntaxHighlighting: {
         ...base.syntaxHighlighting,
         mode: requestedCodeHighlighting,
       },
     };
-  }, [profile, requestedCodeHighlighting]);
+  }, [profile, restrictedNativeFixture, requestedCodeHighlighting]);
   const [isColdStarted, setIsColdStarted] = useState(!campaignDef?.isCold);
   const profilerEnabled = parseBoolean(searchParams.get("profiler")) ?? false;
   const patchPerfEnabled = parseBoolean(searchParams.get("patchPerf")) ?? false;
@@ -809,6 +1147,29 @@ export function PerfHarness(): JSX.Element {
     const previousDebug = typeof window !== "undefined" ? window.__STREAMING_DEBUG__ : undefined;
     const previousPatchPerfDescriptor = previousDebug ? Object.getOwnPropertyDescriptor(previousDebug, "patchPerf") : undefined;
     const patchPerfDebug = { ...(previousDebug ?? {}), patchPerf: patchPerfEnabled };
+    const previousP9EffectsDescriptor = restrictedNativeFixture
+      ? Object.getOwnPropertyDescriptor(window, "__streammdxP9T2Effects")
+      : undefined;
+    const p9Audit: P9T2BrowserAudit | null = restrictedNativeFixture
+      ? {
+          effects: [],
+          trapAttempts: [],
+          trapsInstalledAfterBoot: false,
+          trapsInstalledBeforeSource: false,
+          workerInitializedAtTrapInstall: false,
+          trapsRestored: false,
+          sourceOffset: 0,
+        }
+      : null;
+    if (p9Audit) {
+      window.__streammdxP9T2Audit = p9Audit;
+      p9Audit.installTraps = installRestrictedSourceTraps;
+      Object.defineProperty(window, "__streammdxP9T2Effects", {
+        configurable: true,
+        writable: true,
+        value: p9Audit.effects,
+      });
+    }
 
     if (typeof window !== "undefined") {
       window.__STREAMING_DEBUG__ = patchPerfDebug;
@@ -892,6 +1253,18 @@ export function PerfHarness(): JSX.Element {
 
     const run = async () => {
       try {
+        if (restrictedNativeFixture && (renderer !== "streammdx" || profile !== "parity")) {
+          throw new Error("The restricted native streaming fixture requires renderer=streammdx and profile=parity.");
+        }
+        let p9Offsets: P9T2SourceOffsets | null = null;
+        let p9PartialOpeningHeaderObserved = false;
+        let p9SourceOffset = 0;
+        let p9SourceEof = false;
+        let p9SemanticDrain = false;
+        let p9OpenCardBeforeCloser: P9T2HostObservation | null = null;
+        let p9ClosedCardWithheldBeforeCloser: P9T2HostObservation | null = null;
+        let p9ObservationError: Error | null = null;
+
         let fixture: string;
         let scenario: ScenarioConfig | CampaignScenarioConfig;
         let trace: Array<{ atMs: number; text: string }>;
@@ -903,6 +1276,19 @@ export function PerfHarness(): JSX.Element {
           fixture = await fetchFixture(fixtureId);
           scenario = await fetchScenario(scenarioId);
           trace = createChunkTrace(fixture, scenario);
+        }
+        if (restrictedNativeFixture) {
+          p9Offsets = findP9T2SourceOffsets(fixture);
+          p9PartialOpeningHeaderObserved = traceSplitsRange(trace, p9Offsets.openHeaderStart, p9Offsets.openHeaderEnd);
+          if (!p9PartialOpeningHeaderObserved) {
+            throw new Error("Incomplete measurement: the source producer did not split the opening Card header.");
+          }
+          if (
+            !traceHasBoundaryInRange(trace, p9Offsets.openStageEnd, p9Offsets.openCardCloser) ||
+            !traceHasBoundaryInRange(trace, p9Offsets.closedStageEnd, p9Offsets.closedCardCloser)
+          ) {
+            throw new Error("Incomplete measurement: the selected source trace cannot expose both open-component stages.");
+          }
         }
         const fixtureHash = campaignDef ? campaignDef.fixtureHash : await semanticSha256(fixture);
         const chunkTraceHash = campaignDef ? campaignDef.traceHash : await semanticSha256(JSON.stringify(trace));
@@ -934,6 +1320,48 @@ export function PerfHarness(): JSX.Element {
           streamdownCommittedRef.current = 0;
           await nextFrame();
         }
+        const observeP9StreamingState = (): void => {
+          if (!restrictedNativeFixture || !p9Offsets || p9ObservationError) return;
+          const handle = handleRef.current;
+          const root = rootRef.current;
+          if (!handle || !root) return;
+
+          if (p9OpenCardBeforeCloser === null && p9SourceOffset >= p9Offsets.openStageEnd) {
+            if (p9SourceOffset >= p9Offsets.openCardCloser) {
+              p9ObservationError = new Error("Incomplete measurement: open Card host was not observed before its closer.");
+              return;
+            }
+            const treeNode = findP9ComponentTreeNode(handle, "Card", "open-stage");
+            const observation = readP9HostObservation(root, "Card", "open-stage", p9SourceOffset, p9Offsets.openCardCloser, treeNode);
+            if (
+              treeNode?.status === "open" &&
+              observation.rendered &&
+              observation.status === "open" &&
+              observation.count === "17" &&
+              observation.enabled === "true" &&
+              observation.nativeStrongText === P9_T2_OPEN_STRONG
+            ) {
+              p9OpenCardBeforeCloser = observation;
+            }
+          }
+
+          if (p9ClosedCardWithheldBeforeCloser === null && p9SourceOffset >= p9Offsets.closedStageEnd) {
+            if (p9SourceOffset >= p9Offsets.closedCardCloser) {
+              p9ObservationError = new Error("Incomplete measurement: ClosedCard withholding was not observed before its closer.");
+              return;
+            }
+            const treeNode = findP9ComponentTreeNode(handle, "ClosedCard", "closed-stage");
+            const observation = readP9HostObservation(root, "ClosedCard", "closed-stage", p9SourceOffset, p9Offsets.closedCardCloser, treeNode);
+            if (
+              treeNode?.status === "open" &&
+              !observation.rendered &&
+              observation.count === "23" &&
+              observation.enabled === "true"
+            ) {
+              p9ClosedCardWithheldBeforeCloser = observation;
+            }
+          }
+        };
         if (cancelled || token !== runTokenRef.current) return;
 
         const cdpControlled = new URLSearchParams(window.location.search).get("cdp") === "1";
@@ -1053,16 +1481,34 @@ export function PerfHarness(): JSX.Element {
           if (hasCodeFence && fenceClosedAt === null && closingFenceIndex >= 0 && accumulatedChars >= closingFenceIndex + 3) {
             fenceClosedAt = offerTime;
           }
+          if (restrictedNativeFixture) {
+            observeP9StreamingState();
+            if (p9ObservationError) throw p9ObservationError;
+          }
 
           if (renderer === "streammdx") {
             const handle = handleRef.current;
             if (!handle) throw new Error("Incomplete measurement: StreamMDX handle missing during append.");
             handle.append(chunk.text);
             acceptedUnitsCount += chunk.text.length;
+            if (restrictedNativeFixture) {
+              p9SourceOffset += chunk.text.length;
+              if (p9Audit) p9Audit.sourceOffset = p9SourceOffset;
+              observeP9StreamingState();
+              if (p9ObservationError) throw p9ObservationError;
+            }
           } else {
             accumulated += chunk.text;
             setStreamdownText(accumulated);
             acceptedUnitsCount += chunk.text.length;
+          }
+        }
+        if (restrictedNativeFixture) {
+          observeP9StreamingState();
+          if (p9ObservationError) throw p9ObservationError;
+          p9SourceEof = p9Audit?.sourceOffset === fixture.length && p9SourceOffset === fixture.length;
+          if (!p9SourceEof || !p9OpenCardBeforeCloser || !p9ClosedCardWithheldBeforeCloser) {
+            throw new Error("Incomplete measurement: restricted source EOF or pre-closer component observations are missing.");
           }
         }
 
@@ -1088,6 +1534,103 @@ export function PerfHarness(): JSX.Element {
         }
         if (cancelled || token !== runTokenRef.current) return;
         if (firstFlushAtRef.current === null) throw new Error("Incomplete measurement: no post-start committed content observed.");
+        let p9FunctionalObservations: P9T2FunctionalObservations | undefined;
+        if (restrictedNativeFixture) {
+          const finalRoot = rootRef.current;
+          const finalHandle = handleRef.current;
+          if (!p9Offsets || !p9Audit || !finalRoot || !finalHandle) {
+            throw new Error("Incomplete measurement: restricted streaming observations are unavailable.");
+          }
+          p9SemanticDrain = benchmarkWorker.finalized;
+          const closedTreeNode = findP9ComponentTreeNode(finalHandle, "ClosedCard", "closed-stage");
+          const incompleteTreeNode = findP9ComponentTreeNode(finalHandle, "Card", "eof-incomplete");
+          const closedCardAfterCloser = readP9HostObservation(
+            finalRoot,
+            "ClosedCard",
+            "closed-stage",
+            p9SourceOffset,
+            p9Offsets.closedCardCloser,
+            closedTreeNode,
+          );
+          const incompleteCardAtEof = readP9HostObservation(
+            finalRoot,
+            "Card",
+            "eof-incomplete",
+            p9SourceOffset,
+            fixture.length,
+            incompleteTreeNode,
+          );
+          const renderedText = finalRoot.textContent ?? "";
+          const renderedCode = Array.from(finalRoot.querySelectorAll("pre code")).map((node) => node.textContent ?? "");
+          const authoredSource = Object.fromEntries(
+            Object.entries(P9_T2_AUTHORED_SAMPLES).map(([key, sample]) => {
+              const inFence = key.startsWith("artifact") || key.startsWith("htmlArtifact");
+              const preserved = inFence
+                ? renderedCode.some((codeText) => codeText.includes(sample))
+                : renderedText.includes(sample);
+              return [key, preserved ? sample : null];
+            }),
+          );
+          const noScriptOrIframe = finalRoot.querySelector("script,iframe") === null;
+          const trapsInstalled = p9Audit.trapsInstalledAfterBoot &&
+            p9Audit.trapsInstalledBeforeSource &&
+            p9Audit.workerInitializedAtTrapInstall;
+          const sideEffectTrace = [...p9Audit.effects];
+          const trapAttempts = [...p9Audit.trapAttempts];
+          const evaluationTraps = {
+            installedAfterBootBeforeSource: trapsInstalled,
+            attempts: trapAttempts,
+            restored: p9Audit.trapsRestored,
+          };
+          p9SemanticDrain = p9SemanticDrain && benchmarkWorker.initialized && p9SourceEof;
+          p9FunctionalObservations = {
+            contentPolicyPropOmitted: true,
+            mdxAdmissionEnabled: parityFeatures.mdx === true && policy.mdx,
+            worker: {
+              initialized: benchmarkWorker.initialized,
+              sourceEof: p9SourceEof,
+              finalized: benchmarkWorker.finalized,
+              semanticDrain: p9SemanticDrain,
+            },
+            partialOpeningHeaderObserved: p9PartialOpeningHeaderObserved,
+            openCardBeforeCloser: p9OpenCardBeforeCloser!,
+            closedCardWithheldBeforeCloser: p9ClosedCardWithheldBeforeCloser!,
+            closedCardAfterCloser,
+            incompleteCardAtEof,
+            authoredSource,
+            noScriptOrIframe,
+            sideEffectTrace,
+            evaluationTraps,
+          };
+          const requiredAuthoredSamplesPreserved = Object.values(authoredSource).every((sample) => sample !== null);
+          if (
+            !p9FunctionalObservations.contentPolicyPropOmitted ||
+            !p9FunctionalObservations.mdxAdmissionEnabled ||
+            !Object.values(p9FunctionalObservations.worker).every(Boolean) ||
+            !p9FunctionalObservations.partialOpeningHeaderObserved ||
+            p9FunctionalObservations.openCardBeforeCloser.sourceOffset >= p9FunctionalObservations.openCardBeforeCloser.closerOffset ||
+            p9FunctionalObservations.openCardBeforeCloser.status !== "open" ||
+            p9FunctionalObservations.openCardBeforeCloser.nativeStrongText !== P9_T2_OPEN_STRONG ||
+            p9FunctionalObservations.closedCardWithheldBeforeCloser.sourceOffset >= p9FunctionalObservations.closedCardWithheldBeforeCloser.closerOffset ||
+            p9FunctionalObservations.closedCardWithheldBeforeCloser.rendered ||
+            p9FunctionalObservations.closedCardWithheldBeforeCloser.status !== "open" ||
+            !closedCardAfterCloser.rendered ||
+            closedCardAfterCloser.sourceOffset <= closedCardAfterCloser.closerOffset ||
+            closedCardAfterCloser.status !== "closed" ||
+            closedCardAfterCloser.nativeStrongText !== P9_T2_CLOSED_STRONG ||
+            !incompleteCardAtEof.rendered ||
+            incompleteCardAtEof.status !== "incomplete" ||
+            !/Unclosed component tag/.test(incompleteCardAtEof.diagnostic ?? "") ||
+            incompleteCardAtEof.nativeStrongText !== P9_T2_INCOMPLETE_STRONG ||
+            !requiredAuthoredSamplesPreserved ||
+            !noScriptOrIframe ||
+            sideEffectTrace.length !== 0 ||
+            trapAttempts.length !== 0 ||
+            !evaluationTraps.installedAfterBootBeforeSource
+          ) {
+            throw new Error("Incomplete measurement: restricted streaming functional observations failed.");
+          }
+        }
 
         const runEnd = performance.now();
         stopLongTasks();
@@ -1099,6 +1642,23 @@ export function PerfHarness(): JSX.Element {
           window.__streammdxPerfCollect = resolve;
           await waitForCompletionStep(promise, observationDeadline, controller.signal, "CDP end acknowledgment");
           window.__streammdxPerfCollect = undefined;
+        }
+        if (p9FunctionalObservations && p9Audit) {
+          // The driver restores after runEnd, then acknowledges collection.
+          p9FunctionalObservations = {
+            ...p9FunctionalObservations,
+            sideEffectTrace: [...p9Audit.effects],
+            evaluationTraps: {
+              ...p9FunctionalObservations.evaluationTraps,
+              attempts: [...p9Audit.trapAttempts],
+              restored: p9Audit.trapsRestored,
+            },
+          };
+          if (p9FunctionalObservations.sideEffectTrace.length !== 0 ||
+            p9FunctionalObservations.evaluationTraps.attempts.length !== 0 ||
+            !p9FunctionalObservations.evaluationTraps.restored) {
+            throw new Error("Incomplete measurement: restricted evaluation traps did not restore cleanly after content processing.");
+          }
         }
         const liveDom = await collectLiveDomMetrics(rootRef.current);
         if (cancelled || token !== runTokenRef.current) return;
@@ -1262,6 +1822,7 @@ export function PerfHarness(): JSX.Element {
             totalChars: fixture.length,
             firstFlushAt: firstFlushAtRef.current,
             userAgent: navigator.userAgent,
+            ...(p9FunctionalObservations ? { functionalObservations: p9FunctionalObservations } : {}),
             liveDom,
             campaignObservation,
             resolvedFeatures,
@@ -1296,6 +1857,13 @@ export function PerfHarness(): JSX.Element {
           stopRaf();
           stopMemory();
         }
+        if (p9Audit) {
+          if (previousP9EffectsDescriptor) {
+            Object.defineProperty(window, "__streammdxP9T2Effects", previousP9EffectsDescriptor);
+          } else {
+            Reflect.deleteProperty(window, "__streammdxP9T2Effects");
+          }
+        }
         benchmarkWorker.dispose();
         resolveDone();
       }
@@ -1325,7 +1893,9 @@ export function PerfHarness(): JSX.Element {
   return (
     <div className="prose">
       <div id="perf-root" ref={rootRef} data-fixture={fixtureId} data-scenario={scenarioId} data-renderer={renderer} data-profile={profile}>
-        {campaignDef?.isCold && !isColdStarted ? null : renderer === "streamdown" ? (
+        {restrictedNativeFixture && (renderer !== "streammdx" || profile !== "parity") ? (
+          <p>The restricted native streaming fixture requires renderer=streammdx and profile=parity.</p>
+        ) : campaignDef?.isCold && !isColdStarted ? null : renderer === "streamdown" ? (
           profilerEnabled ? (
             <Profiler id="Streamdown" onRender={onProfile}>
               <StreamdownHost
@@ -1359,6 +1929,7 @@ export function PerfHarness(): JSX.Element {
                 features={resolvedFeatures}
                 scheduling={scheduling}
                 caret={false}
+                {...(contentComponents ? { contentComponents } : {})}
                 onMetrics={onMetrics}
               />
             </Profiler>
@@ -1372,6 +1943,7 @@ export function PerfHarness(): JSX.Element {
               features={resolvedFeatures}
               scheduling={scheduling}
               caret={false}
+              {...(contentComponents ? { contentComponents } : {})}
               onMetrics={onMetrics}
             />
           )
@@ -1386,8 +1958,8 @@ export function PerfHarness(): JSX.Element {
               features={resolvedFeatures}
               scheduling={scheduling}
               caret={false}
-              mdxCompileMode="worker"
-              mdxComponents={mdxComponents as Record<string, React.ComponentType<unknown>>}
+              contentPolicy="trusted-mdx"
+              engines={perfMdxEngines}
               components={registry.getBlockComponentMap()}
               inlineComponents={registry.getInlineComponentMap()}
               tableElements={tableElements}
@@ -1405,8 +1977,8 @@ export function PerfHarness(): JSX.Element {
             features={resolvedFeatures}
             scheduling={scheduling}
             caret={false}
-            mdxCompileMode="worker"
-            mdxComponents={mdxComponents as Record<string, React.ComponentType<unknown>>}
+            contentPolicy="trusted-mdx"
+            engines={perfMdxEngines}
             components={registry.getBlockComponentMap()}
             inlineComponents={registry.getInlineComponentMap()}
             tableElements={tableElements}

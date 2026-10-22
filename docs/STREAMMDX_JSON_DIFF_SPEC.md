@@ -69,7 +69,6 @@ Include capability negotiation and theme metadata.
   "capabilities": {
     "tokens": "v1",
     "diff": "v1",
-    "mdx": "compile-ref",
     "htmlBlocks": "sanitized",
     "math": "tex"
   },
@@ -168,7 +167,7 @@ type CodeLineProps = {
 ```
 
 ### 7.7 MDX and HTML Blocks
-MDX blocks are opaque in JSON output.
+Native worker MDX blocks are opaque authored source in JSON output. The status/ref/error fields below are host-owned annotations for a separate JSON/TUI adapter, not worker block payload or built-in per-block compilation state. The worker does not emit `MDX_COMPILED` or `MDX_ERROR`; trusted MDX compilation and evaluation are whole-document and host-owned. Native `FINALIZED` does not imply trusted render readiness.
 ```ts
 type MdxBlockProps = {
   raw: string;

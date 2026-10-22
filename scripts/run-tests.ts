@@ -1,6 +1,6 @@
+import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 
 async function collectTestFiles(dirPath: string): Promise<string[]> {
   const entries = await fs.readdir(dirPath, { withFileTypes: true });
@@ -28,9 +28,31 @@ function formatRelative(filePath: string) {
   return rel.length === 0 ? filePath : rel;
 }
 
-// Node exits 0 without an error when the event loop drains while `await import()` of a test file is
-// still pending (an unsettled top-level await in a non-entry module). Track the running file so an
-// exit before main() settles is reported as a failure instead of a silent truncated run.
+// Run test files separately because they may share process-global test harness state.
+async function runTestFile(filePath: string): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(process.execPath, [...process.execArgv, filePath], {
+      stdio: "inherit",
+      cwd: process.cwd(),
+      env: process.env,
+    });
+
+    child.once("error", reject);
+    child.once("exit", (code, signal) => {
+      if (signal) {
+        reject(new Error(`${formatRelative(filePath)} exited due to signal ${signal}.`));
+        return;
+      }
+      if (code !== 0) {
+        reject(new Error(`${formatRelative(filePath)} exited with code ${code}.`));
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+// Keep async runner work from becoming a false green if the event loop drains before main settles.
 let runningFile: string | null = null;
 let finished = false;
 
@@ -56,7 +78,7 @@ async function main() {
   for (const filePath of testFiles) {
     runningFile = formatRelative(filePath);
     console.log(`[stream-mdx] → ${runningFile}`);
-    await import(pathToFileURL(filePath).href);
+    await runTestFile(filePath);
   }
 }
 

@@ -49,8 +49,8 @@ async function testMdxTagProviderAppearsInMixedLookahead(): Promise<void> {
       callouts: true,
       math: true,
       formatAnticipation: { inline: true, mdx: true },
-      mdxComponentNames: ["InlineChip"],
     },
+    contentComponents: [{ name: "InlineChip" }],
   });
 
   const meta = findParagraphMeta(messages);
@@ -74,7 +74,6 @@ async function testMdxExpressionProviderAppearsInMixedLookahead(): Promise<void>
       callouts: true,
       math: true,
       formatAnticipation: { inline: true, mdx: true },
-      mdxComponentNames: ["InlineChip"],
     },
   });
 

@@ -221,7 +221,8 @@ export interface SnapshotArtifactV1 {
   tocHeadings?: TocHeading[];
   init?: {
     docPlugins?: WorkerInitMessage["docPlugins"];
-    mdx?: WorkerInitMessage["mdx"];
+    contentPolicy?: WorkerInitMessage["contentPolicy"];
+    contentComponents?: WorkerInitMessage["contentComponents"];
     prewarmLangs?: string[];
     themes?: WorkerInitMessage["themes"];
     syntax?: WorkerInitMessage["syntax"];
@@ -261,12 +262,13 @@ export interface CompileMarkdownSnapshotResult {
 function createSnapshotArtifactInit(init: CompileMarkdownSnapshotOptions["init"]): SnapshotArtifactV1["init"] {
   if (!init) return undefined;
   return {
-    docPlugins: init.docPlugins,
-    mdx: init.mdx,
-    prewarmLangs: init.prewarmLangs,
-    themes: init.themes,
-    syntax: init.syntax,
-    html: init.html,
+    ...(init.docPlugins === undefined ? {} : { docPlugins: init.docPlugins }),
+    ...(init.contentPolicy === undefined ? {} : { contentPolicy: init.contentPolicy }),
+    ...(init.contentComponents === undefined ? {} : { contentComponents: init.contentComponents }),
+    ...(init.prewarmLangs === undefined ? {} : { prewarmLangs: init.prewarmLangs }),
+    ...(init.themes === undefined ? {} : { themes: init.themes }),
+    ...(init.syntax === undefined ? {} : { syntax: init.syntax }),
+    ...(init.html === undefined ? {} : { html: init.html }),
   };
 }
 
@@ -426,12 +428,13 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
     const initMessage: WorkerInitMessage = {
       type: "INIT",
       initialContent: text,
-      prewarmLangs: init?.prewarmLangs,
-      docPlugins: init?.docPlugins,
-      mdx: init?.mdx,
-      themes: init?.themes,
-      syntax: init?.syntax,
-      html: init?.html,
+      ...(init?.prewarmLangs === undefined ? {} : { prewarmLangs: init.prewarmLangs }),
+      ...(init?.docPlugins === undefined ? {} : { docPlugins: init.docPlugins }),
+      ...(init?.contentPolicy === undefined ? {} : { contentPolicy: init.contentPolicy }),
+      ...(init?.contentComponents === undefined ? {} : { contentComponents: init.contentComponents }),
+      ...(init?.themes === undefined ? {} : { themes: init.themes }),
+      ...(init?.syntax === undefined ? {} : { syntax: init.syntax }),
+      ...(init?.html === undefined ? {} : { html: init.html }),
     };
     worker.postMessage(initMessage);
 

@@ -251,7 +251,7 @@ Active V1 limits:
 
 MDX V1 closure:
 - `mdx-tag` is the only bounded repair surface for MDX in V1
-- `mdx-tag` currently guarantees bounded pending-shell preview behavior, not inline compiled-render guarantees
+- `mdx-tag` guarantees bounded pending-shell preview behavior, not evaluation; full MDX requires the separate explicit trusted-engine boundary
 - `mdx-expression` is deliberately conservative hard-stop / fallback behavior
 - no broad expression healing, child synthesis, or block-component optimism is part of V1
 

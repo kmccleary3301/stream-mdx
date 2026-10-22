@@ -28,8 +28,7 @@ Peer dependencies:
 | `@stream-mdx/react/renderer` | Lower-level renderer exports |
 | `@stream-mdx/react/renderer/patch-commit-scheduler` | Scheduler implementation surface |
 | `@stream-mdx/react/renderer/store` | Renderer store surface |
-| `@stream-mdx/react/mdx-client` | MDX client helpers |
-| `@stream-mdx/react/mdx-coordinator` | MDX coordination helpers |
+| `@stream-mdx/react/trusted-mdx` | Explicit trusted-MDX engine factory and pure contract types |
 
 ## Quickstart
 
@@ -48,8 +47,7 @@ export function Demo({ text }: { text: string }) {
     <StreamingMarkdown
       text={text}
       worker="/workers/markdown-worker.js"
-      features={{ html: true, tables: true, math: true, mdx: true, footnotes: true }}
-      mdxCompileMode="worker"
+      features={{ html: true, tables: true, math: true, footnotes: true }}
     />
   );
 }
@@ -57,7 +55,7 @@ export function Demo({ text }: { text: string }) {
 
 `engine` defaults to `"auto"`. It tries a browser Worker and dynamically imports the in-process engine only when Worker creation is unavailable or fails. `"worker"` requires a Worker; `"main-thread"` skips the Worker and runs parsing on the browser thread. Engine setup runs after mounting, not during SSR. Use compiled snapshots and the server entry for server markup.
 
-Custom inline regex syntax uses `syntax` plus named `inlineComponents`. Code fences use `codeRenderers`, with optional `aliases` per entry and case-insensitive resolution. Element filtering is configured with `allowedElements`, `disallowedElements`, `allowElement`, and `unwrapDisallowed`. `disableAutolinkProtocols` disables autolinking for specific URL protocols (e.g. `["mailto"]`) while preserving explicit markdown links. `mathRenderer` replaces math views; `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, artifact sandbox/CSP, and optional finalized-block unified routing.
+`mathRenderer` replaces math views; `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.
 
 ## Typical Uses
 

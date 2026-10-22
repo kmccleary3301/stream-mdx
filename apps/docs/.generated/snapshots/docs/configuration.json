@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-12T20:37:05.683Z",
-  "hash": "3d825b161d27ec997fcfb0e3513f27e038cf8a6200258ab95e0a836227150f81",
-  "contentHash": "05ba6628aea76298d54166d7e15c530fe4fe4700b82e2082d7ca05096ce08785",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "createdAt": "2026-10-21T20:39:30.097Z",
+  "hash": "30a444bb398ccbaeb5c1461e4698decf42737e092b2039eee1833559b5b5f33a",
+  "contentHash": "b536629890e6e5e162710730c27cd747ef0c49911908456dbcf16d78c38e422e",
+  "configHash": "d64d46ce02762d98863946deda7988b7bcd8ea1dc64e6560ca32dea58f9aee58",
+  "hashSalt": "docs-snapshots-v3:a1af5d4ffe8abd279e6137ad50c87f390f5afe18b69fff05e82bf96e33ef3700",
   "blocks": [
     {
       "id": "db082c0",
@@ -546,399 +546,259 @@
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "To render MDX blocks:",
+        "raw": "Set `features={{ mdx: true }}` to recognize component syntax. `contentPolicy` defaults to `\"restricted\"`; source is not automatically evaluated. Under that policy, `contentComponents` is a map of `defineContentComponent` adapters, not raw constructors. Narrow source JSON props require a type-predicate validator, while native projected children stay separate as host React nodes. This registry is not active under `\"markdown\"` or `\"trusted-mdx\"` and is separate from `components`, which overrides native Markdown presentation.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 4,
+              "to": 30,
+              "kind": "code-inline"
+            },
+            {
+              "from": 62,
+              "to": 77,
+              "kind": "code-inline"
+            },
+            {
+              "from": 90,
+              "to": 104,
+              "kind": "code-inline"
+            },
+            {
+              "from": 164,
+              "to": 183,
+              "kind": "code-inline"
+            },
+            {
+              "from": 196,
+              "to": 220,
+              "kind": "code-inline"
+            },
+            {
+              "from": 415,
+              "to": 427,
+              "kind": "code-inline"
+            },
+            {
+              "from": 431,
+              "to": 446,
+              "kind": "code-inline"
+            },
+            {
+              "from": 468,
+              "to": 480,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 1822,
-          "to": 1843
+          "to": 2349
         },
         "inline": [
           {
             "kind": "text",
-            "text": "To render MDX blocks:"
+            "text": "Set "
+          },
+          {
+            "kind": "code",
+            "text": "features={{ mdx: true }}"
+          },
+          {
+            "kind": "text",
+            "text": " to recognize component syntax. "
+          },
+          {
+            "kind": "code",
+            "text": "contentPolicy"
+          },
+          {
+            "kind": "text",
+            "text": " defaults to "
+          },
+          {
+            "kind": "code",
+            "text": "\"restricted\""
+          },
+          {
+            "kind": "text",
+            "text": "; source is not automatically evaluated. Under that policy, "
+          },
+          {
+            "kind": "code",
+            "text": "contentComponents"
+          },
+          {
+            "kind": "text",
+            "text": " is a map of "
+          },
+          {
+            "kind": "code",
+            "text": "defineContentComponent"
+          },
+          {
+            "kind": "text",
+            "text": " adapters, not raw constructors. Narrow source JSON props require a type-predicate validator, while native projected children stay separate as host React nodes. This registry is not active under "
+          },
+          {
+            "kind": "code",
+            "text": "\"markdown\""
+          },
+          {
+            "kind": "text",
+            "text": " or "
+          },
+          {
+            "kind": "code",
+            "text": "\"trusted-mdx\""
+          },
+          {
+            "kind": "text",
+            "text": " and is separate from "
+          },
+          {
+            "kind": "code",
+            "text": "components"
+          },
+          {
+            "kind": "text",
+            "text": ", which overrides native Markdown presentation."
           }
         ]
       }
     },
     {
-      "id": "66ab65ec",
-      "type": "list",
+      "id": "1d550a5d",
+      "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "- set `features={{ mdx: true }}`\n- set `mdxCompileMode=\"worker\"` (no server), or `\"server\"` (requires `/api/mdx-compile-v2`)\n- provide `mdxComponents` if you use custom MDX components",
+        "raw": "Full MDX evaluation requires `contentPolicy=\"trusted-mdx\"` and an explicit `engines.mdx` created with `createTrustedMdxEngine` from `@stream-mdx/react/trusted-mdx`. Its import map accepts only explicit host bindings; it does not fetch modules, is not a sandbox, and requires `unsafe-eval` in the host `script-src`. Use it only for trusted, reviewed content. See the [React Integration Guide](./REACT_INTEGRATION_GUIDE.md) and [Security Model](./SECURITY_MODEL.md).",
         "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "text",
-                "text": "set "
-              },
-              {
-                "kind": "code",
-                "text": "features={{ mdx: true }}"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "set "
-              },
-              {
-                "kind": "code",
-                "text": "mdxCompileMode=\"worker\""
-              },
-              {
-                "kind": "text",
-                "text": " (no server), or "
-              },
-              {
-                "kind": "code",
-                "text": "\"server\""
-              },
-              {
-                "kind": "text",
-                "text": " (requires "
-              },
-              {
-                "kind": "code",
-                "text": "/api/mdx-compile-v2"
-              },
-              {
-                "kind": "text",
-                "text": ")"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "provide "
-              },
-              {
-                "kind": "code",
-                "text": "mdxComponents"
-              },
-              {
-                "kind": "text",
-                "text": " if you use custom MDX components"
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 29,
+              "to": 58,
+              "kind": "code-inline"
             },
-            "children": [
-              {
-                "id": "66ab65ec::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 1845,
-                  "to": 1877
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "66ab65ec::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- set `features={{ mdx: true }}`",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "set "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "features={{ mdx: true }}"
-                        }
-                      ],
-                      "range": {
-                        "from": 1845,
-                        "to": 1877
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "set "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "features={{ mdx: true }}"
-                              }
-                            ],
-                            "text": "set features={{ mdx: true }}",
-                            "raw": "- set `features={{ mdx: true }}`"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "set "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "features={{ mdx: true }}"
-                    }
-                  ],
-                  "text": "set features={{ mdx: true }}",
-                  "raw": "- set `features={{ mdx: true }}`"
-                },
-                "children": []
-              },
-              {
-                "id": "66ab65ec::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 1878,
-                  "to": 1969
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "66ab65ec::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- set `mdxCompileMode=\"worker\"` (no server), or `\"server\"` (requires `/api/mdx-compile-v2`)",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "set "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "mdxCompileMode=\"worker\""
-                        },
-                        {
-                          "kind": "text",
-                          "text": " (no server), or "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "\"server\""
-                        },
-                        {
-                          "kind": "text",
-                          "text": " (requires "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "/api/mdx-compile-v2"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ")"
-                        }
-                      ],
-                      "range": {
-                        "from": 1878,
-                        "to": 1969
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "set "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "mdxCompileMode=\"worker\""
-                              },
-                              {
-                                "kind": "text",
-                                "text": " (no server), or "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "\"server\""
-                              },
-                              {
-                                "kind": "text",
-                                "text": " (requires "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "/api/mdx-compile-v2"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ")"
-                              }
-                            ],
-                            "text": "set mdxCompileMode=\"worker\" (no server), or \"server\" (requires /api/mdx-compile-v2)",
-                            "raw": "- set `mdxCompileMode=\"worker\"` (no server), or `\"server\"` (requires `/api/mdx-compile-v2`)"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "set "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "mdxCompileMode=\"worker\""
-                    },
-                    {
-                      "kind": "text",
-                      "text": " (no server), or "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "\"server\""
-                    },
-                    {
-                      "kind": "text",
-                      "text": " (requires "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "/api/mdx-compile-v2"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ")"
-                    }
-                  ],
-                  "text": "set mdxCompileMode=\"worker\" (no server), or \"server\" (requires /api/mdx-compile-v2)",
-                  "raw": "- set `mdxCompileMode=\"worker\"` (no server), or `\"server\"` (requires `/api/mdx-compile-v2`)"
-                },
-                "children": []
-              },
-              {
-                "id": "66ab65ec::item:2",
-                "type": "list-item",
-                "range": {
-                  "from": 1970,
-                  "to": 2028
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "66ab65ec::item:2",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- provide `mdxComponents` if you use custom MDX components",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "provide "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "mdxComponents"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " if you use custom MDX components"
-                        }
-                      ],
-                      "range": {
-                        "from": 1970,
-                        "to": 2028
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 2,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "provide "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "mdxComponents"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " if you use custom MDX components"
-                              }
-                            ],
-                            "text": "provide mdxComponents if you use custom MDX components",
-                            "raw": "- provide `mdxComponents` if you use custom MDX components"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 2,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "provide "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "mdxComponents"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " if you use custom MDX components"
-                    }
-                  ],
-                  "text": "provide mdxComponents if you use custom MDX components",
-                  "raw": "- provide `mdxComponents` if you use custom MDX components"
-                },
-                "children": []
-              }
-            ]
-          }
+            {
+              "from": 75,
+              "to": 88,
+              "kind": "code-inline"
+            },
+            {
+              "from": 102,
+              "to": 126,
+              "kind": "code-inline"
+            },
+            {
+              "from": 132,
+              "to": 163,
+              "kind": "code-inline"
+            },
+            {
+              "from": 275,
+              "to": 288,
+              "kind": "code-inline"
+            },
+            {
+              "from": 301,
+              "to": 313,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 1845,
-          "to": 2028
-        }
+          "from": 2351,
+          "to": 2815
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Full MDX evaluation requires "
+          },
+          {
+            "kind": "code",
+            "text": "contentPolicy=\"trusted-mdx\""
+          },
+          {
+            "kind": "text",
+            "text": " and an explicit "
+          },
+          {
+            "kind": "code",
+            "text": "engines.mdx"
+          },
+          {
+            "kind": "text",
+            "text": " created with "
+          },
+          {
+            "kind": "code",
+            "text": "createTrustedMdxEngine"
+          },
+          {
+            "kind": "text",
+            "text": " from "
+          },
+          {
+            "kind": "code",
+            "text": "@stream-mdx/react/trusted-mdx"
+          },
+          {
+            "kind": "text",
+            "text": ". Its import map accepts only explicit host bindings; it does not fetch modules, is not a sandbox, and requires "
+          },
+          {
+            "kind": "code",
+            "text": "unsafe-eval"
+          },
+          {
+            "kind": "text",
+            "text": " in the host "
+          },
+          {
+            "kind": "code",
+            "text": "script-src"
+          },
+          {
+            "kind": "text",
+            "text": ". Use it only for trusted, reviewed content. See the "
+          },
+          {
+            "kind": "link",
+            "href": "./REACT_INTEGRATION_GUIDE.md",
+            "children": [
+              {
+                "kind": "text",
+                "text": "React Integration Guide"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "link",
+            "href": "./SECURITY_MODEL.md",
+            "children": [
+              {
+                "kind": "text",
+                "text": "Security Model"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
       }
     },
     {
-      "id": "1de9dee5",
+      "id": "51782214",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -950,8 +810,8 @@
           "headingId": "rendering-overrides"
         },
         "range": {
-          "from": 2030,
-          "to": 2052
+          "from": 2817,
+          "to": 2839
         },
         "inline": [
           {
@@ -962,11 +822,11 @@
       }
     },
     {
-      "id": "21c104bf",
+      "id": "26c5a699",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- `components`: override block renders (heading/code/table/etc).\n- `inlineComponents`: override inline renders (strong/em/link/code/etc).\n- `tableElements`: override table tags (Shadcn table wrappers).\n- `htmlElements`: override HTML tag renders (when HTML is enabled).\n- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.\n- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).\n- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).\n- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.\n- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.\n- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active.\n- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).\n- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`).",
+        "raw": "- `components`: override block renders (heading/code/table/etc).\n- `inlineComponents`: override inline renders (strong/em/link/code/etc).\n- `tableElements`: override table tags (Shadcn table wrappers).\n- `htmlElements`: override HTML tag renders (when HTML is enabled).\n- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `diff`, or custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.\n  Fences labeled `artifact` or `html-artifact` remain code unless you provide a renderer.\n- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).\n- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).\n- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.\n- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.\n- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active.\n- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -1040,19 +900,11 @@
               },
               {
                 "kind": "code",
-                "text": "artifact"
-              },
-              {
-                "kind": "text",
-                "text": ", "
-              },
-              {
-                "kind": "code",
                 "text": "diff"
               },
               {
                 "kind": "text",
-                "text": ", custom languages) keyed by language; "
+                "text": ", or custom languages) keyed by language; "
               },
               {
                 "kind": "code",
@@ -1060,7 +912,23 @@
               },
               {
                 "kind": "text",
-                "text": " entries add alias languages, resolved case-insensitively."
+                "text": " entries add alias languages, resolved case-insensitively.\nFences labeled "
+              },
+              {
+                "kind": "code",
+                "text": "artifact"
+              },
+              {
+                "kind": "text",
+                "text": " or "
+              },
+              {
+                "kind": "code",
+                "text": "html-artifact"
+              },
+              {
+                "kind": "text",
+                "text": " remain code unless you provide a renderer."
               }
             ],
             [
@@ -1162,40 +1030,6 @@
                 "kind": "text",
                 "text": ": provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported)."
               }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "artifactHtml"
-              },
-              {
-                "kind": "text",
-                "text": ": opt-in flag ("
-              },
-              {
-                "kind": "code",
-                "text": "true"
-              },
-              {
-                "kind": "text",
-                "text": " to render standard "
-              },
-              {
-                "kind": "code",
-                "text": "html "
-              },
-              {
-                "kind": "text",
-                "text": " code fences via "
-              },
-              {
-                "kind": "code",
-                "text": "ArtifactFrame"
-              },
-              {
-                "kind": "text",
-                "text": ")."
-              }
             ]
           ],
           "preparedNested": {
@@ -1205,17 +1039,17 @@
             },
             "children": [
               {
-                "id": "21c104bf::item:0",
+                "id": "26c5a699::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 2054,
-                  "to": 2118
+                  "from": 2841,
+                  "to": 2905
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:0",
+                    "id": "26c5a699::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1231,8 +1065,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2054,
-                        "to": 2118
+                        "from": 2841,
+                        "to": 2905
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1276,17 +1110,17 @@
                 "children": []
               },
               {
-                "id": "21c104bf::item:1",
+                "id": "26c5a699::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 2119,
-                  "to": 2191
+                  "from": 2906,
+                  "to": 2978
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:1",
+                    "id": "26c5a699::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1302,8 +1136,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2119,
-                        "to": 2191
+                        "from": 2906,
+                        "to": 2978
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1347,17 +1181,17 @@
                 "children": []
               },
               {
-                "id": "21c104bf::item:2",
+                "id": "26c5a699::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 2192,
-                  "to": 2255
+                  "from": 2979,
+                  "to": 3042
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:2",
+                    "id": "26c5a699::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1373,8 +1207,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2192,
-                        "to": 2255
+                        "from": 2979,
+                        "to": 3042
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1418,17 +1252,17 @@
                 "children": []
               },
               {
-                "id": "21c104bf::item:3",
+                "id": "26c5a699::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 2256,
-                  "to": 2323
+                  "from": 3043,
+                  "to": 3110
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:3",
+                    "id": "26c5a699::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1444,8 +1278,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2256,
-                        "to": 2323
+                        "from": 3043,
+                        "to": 3110
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1489,21 +1323,21 @@
                 "children": []
               },
               {
-                "id": "21c104bf::item:4",
+                "id": "26c5a699::item:4",
                 "type": "list-item",
                 "range": {
-                  "from": 2324,
-                  "to": 2545
+                  "from": 3111,
+                  "to": 3413
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:4",
+                    "id": "26c5a699::item:4",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.",
+                      "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `diff`, or custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.\n  Fences labeled `artifact` or `html-artifact` remain code unless you provide a renderer.",
                       "inline": [
                         {
                           "kind": "code",
@@ -1523,19 +1357,11 @@
                         },
                         {
                           "kind": "code",
-                          "text": "artifact"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
                           "text": "diff"
                         },
                         {
                           "kind": "text",
-                          "text": ", custom languages) keyed by language; "
+                          "text": ", or custom languages) keyed by language; "
                         },
                         {
                           "kind": "code",
@@ -1543,12 +1369,28 @@
                         },
                         {
                           "kind": "text",
-                          "text": " entries add alias languages, resolved case-insensitively."
+                          "text": " entries add alias languages, resolved case-insensitively.\nFences labeled "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "artifact"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " or "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "html-artifact"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " remain code unless you provide a renderer."
                         }
                       ],
                       "range": {
-                        "from": 2324,
-                        "to": 2545
+                        "from": 3111,
+                        "to": 3413
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1576,19 +1418,11 @@
                               },
                               {
                                 "kind": "code",
-                                "text": "artifact"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", "
-                              },
-                              {
-                                "kind": "code",
                                 "text": "diff"
                               },
                               {
                                 "kind": "text",
-                                "text": ", custom languages) keyed by language; "
+                                "text": ", or custom languages) keyed by language; "
                               },
                               {
                                 "kind": "code",
@@ -1596,11 +1430,27 @@
                               },
                               {
                                 "kind": "text",
-                                "text": " entries add alias languages, resolved case-insensitively."
+                                "text": " entries add alias languages, resolved case-insensitively.\nFences labeled "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "artifact"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " or "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "html-artifact"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " remain code unless you provide a renderer."
                               }
                             ],
-                            "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.",
-                            "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively."
+                            "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, diff, or custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.\nFences labeled artifact or html-artifact remain code unless you provide a renderer.",
+                            "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `diff`, or custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.\n  Fences labeled `artifact` or `html-artifact` remain code unless you provide a renderer."
                           },
                           "children": []
                         }
@@ -1627,19 +1477,11 @@
                     },
                     {
                       "kind": "code",
-                      "text": "artifact"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", "
-                    },
-                    {
-                      "kind": "code",
                       "text": "diff"
                     },
                     {
                       "kind": "text",
-                      "text": ", custom languages) keyed by language; "
+                      "text": ", or custom languages) keyed by language; "
                     },
                     {
                       "kind": "code",
@@ -1647,26 +1489,42 @@
                     },
                     {
                       "kind": "text",
-                      "text": " entries add alias languages, resolved case-insensitively."
+                      "text": " entries add alias languages, resolved case-insensitively.\nFences labeled "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "artifact"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " or "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "html-artifact"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " remain code unless you provide a renderer."
                     }
                   ],
-                  "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.",
-                  "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively."
+                  "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, diff, or custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.\nFences labeled artifact or html-artifact remain code unless you provide a renderer.",
+                  "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `diff`, or custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.\n  Fences labeled `artifact` or `html-artifact` remain code unless you provide a renderer."
                 },
                 "children": []
               },
               {
-                "id": "21c104bf::item:5",
+                "id": "26c5a699::item:5",
                 "type": "list-item",
                 "range": {
-                  "from": 2546,
-                  "to": 2652
+                  "from": 3414,
+                  "to": 3520
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:5",
+                    "id": "26c5a699::item:5",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1690,8 +1548,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2546,
-                        "to": 2652
+                        "from": 3414,
+                        "to": 3520
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1751,17 +1609,17 @@
                 "children": []
               },
               {
-                "id": "21c104bf::item:6",
+                "id": "26c5a699::item:6",
                 "type": "list-item",
                 "range": {
-                  "from": 2653,
-                  "to": 2757
+                  "from": 3521,
+                  "to": 3625
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:6",
+                    "id": "26c5a699::item:6",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1785,8 +1643,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2653,
-                        "to": 2757
+                        "from": 3521,
+                        "to": 3625
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1846,17 +1704,17 @@
                 "children": []
               },
               {
-                "id": "21c104bf::item:7",
+                "id": "26c5a699::item:7",
                 "type": "list-item",
                 "range": {
-                  "from": 2758,
-                  "to": 2860
+                  "from": 3626,
+                  "to": 3728
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:7",
+                    "id": "26c5a699::item:7",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1880,8 +1738,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2758,
-                        "to": 2860
+                        "from": 3626,
+                        "to": 3728
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1941,17 +1799,17 @@
                 "children": []
               },
               {
-                "id": "21c104bf::item:8",
+                "id": "26c5a699::item:8",
                 "type": "list-item",
                 "range": {
-                  "from": 2861,
-                  "to": 2956
+                  "from": 3729,
+                  "to": 3824
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:8",
+                    "id": "26c5a699::item:8",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1975,8 +1833,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2861,
-                        "to": 2956
+                        "from": 3729,
+                        "to": 3824
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2036,17 +1894,17 @@
                 "children": []
               },
               {
-                "id": "21c104bf::item:9",
+                "id": "26c5a699::item:9",
                 "type": "list-item",
                 "range": {
-                  "from": 2957,
-                  "to": 3098
+                  "from": 3825,
+                  "to": 3966
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:9",
+                    "id": "26c5a699::item:9",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2070,8 +1928,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2957,
-                        "to": 3098
+                        "from": 3825,
+                        "to": 3966
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2131,17 +1989,17 @@
                 "children": []
               },
               {
-                "id": "21c104bf::item:10",
+                "id": "26c5a699::item:10",
                 "type": "list-item",
                 "range": {
-                  "from": 3099,
-                  "to": 3213
+                  "from": 3967,
+                  "to": 4081
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "21c104bf::item:10",
+                    "id": "26c5a699::item:10",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2157,8 +2015,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3099,
-                        "to": 3213
+                        "from": 3967,
+                        "to": 4081
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2200,161 +2058,18 @@
                   "raw": "- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported)."
                 },
                 "children": []
-              },
-              {
-                "id": "21c104bf::item:11",
-                "type": "list-item",
-                "range": {
-                  "from": 3214,
-                  "to": 3318
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "21c104bf::item:11",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`).",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "artifactHtml"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": opt-in flag ("
-                        },
-                        {
-                          "kind": "code",
-                          "text": "true"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " to render standard "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "html "
-                        },
-                        {
-                          "kind": "text",
-                          "text": " code fences via "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "ArtifactFrame"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ")."
-                        }
-                      ],
-                      "range": {
-                        "from": 3214,
-                        "to": 3318
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 11,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "artifactHtml"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": opt-in flag ("
-                              },
-                              {
-                                "kind": "code",
-                                "text": "true"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " to render standard "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "html "
-                              },
-                              {
-                                "kind": "text",
-                                "text": " code fences via "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "ArtifactFrame"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ")."
-                              }
-                            ],
-                            "text": "artifactHtml: opt-in flag (true to render standard html  code fences via ArtifactFrame).",
-                            "raw": "- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`)."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 11,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "artifactHtml"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": opt-in flag ("
-                    },
-                    {
-                      "kind": "code",
-                      "text": "true"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " to render standard "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "html "
-                    },
-                    {
-                      "kind": "text",
-                      "text": " code fences via "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "ArtifactFrame"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ")."
-                    }
-                  ],
-                  "text": "artifactHtml: opt-in flag (true to render standard html  code fences via ArtifactFrame).",
-                  "raw": "- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`)."
-                },
-                "children": []
               }
             ]
           }
         },
         "range": {
-          "from": 2054,
-          "to": 3318
+          "from": 2841,
+          "to": 4081
         }
       }
     },
     {
-      "id": "5339311e",
+      "id": "5665dfb7",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2370,8 +2085,8 @@
           ]
         },
         "range": {
-          "from": 3320,
-          "to": 3440
+          "from": 4083,
+          "to": 4203
         },
         "inline": [
           {
@@ -2403,7 +2118,7 @@
       }
     },
     {
-      "id": "6952e165",
+      "id": "734b2f49",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -2416,14 +2131,14 @@
           "highlightLang": "bash"
         },
         "range": {
-          "from": 3442,
-          "to": 3485
+          "from": 4205,
+          "to": 4248
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>"
       }
     },
     {
-      "id": "72ce46ba",
+      "id": "7354421f",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -2436,14 +2151,14 @@
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 3487,
-          "to": 3631
+          "from": 4250,
+          "to": 4394
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mermaid: MermaidBlock }}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
       }
     },
     {
-      "id": "23f14403",
+      "id": "1c853b24",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2455,8 +2170,8 @@
           "headingId": "scheduling-and-metrics"
         },
         "range": {
-          "from": 3633,
-          "to": 3658
+          "from": 4396,
+          "to": 4421
         },
         "inline": [
           {
@@ -2467,7 +2182,7 @@
       }
     },
     {
-      "id": "535f59bf",
+      "id": "49670bdb",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -2514,17 +2229,17 @@
             },
             "children": [
               {
-                "id": "535f59bf::item:0",
+                "id": "49670bdb::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3660,
-                  "to": 3752
+                  "from": 4423,
+                  "to": 4515
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "535f59bf::item:0",
+                    "id": "49670bdb::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2540,8 +2255,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3660,
-                        "to": 3752
+                        "from": 4423,
+                        "to": 4515
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2585,17 +2300,17 @@
                 "children": []
               },
               {
-                "id": "535f59bf::item:1",
+                "id": "49670bdb::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 3753,
-                  "to": 3841
+                  "from": 4516,
+                  "to": 4604
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "535f59bf::item:1",
+                    "id": "49670bdb::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2611,8 +2326,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3753,
-                        "to": 3841
+                        "from": 4516,
+                        "to": 4604
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2659,13 +2374,13 @@
           }
         },
         "range": {
-          "from": 3660,
-          "to": 3841
+          "from": 4423,
+          "to": 4604
         }
       }
     },
     {
-      "id": "36264b5c",
+      "id": "6e98f408",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2681,8 +2396,8 @@
           ]
         },
         "range": {
-          "from": 3843,
-          "to": 3898
+          "from": 4606,
+          "to": 4661
         },
         "inline": [
           {
@@ -2734,13 +2449,13 @@
     },
     {
       "id": "rendering-overrides",
-      "blockId": "1de9dee5",
+      "blockId": "51782214",
       "level": 2,
       "text": "Rendering overrides"
     },
     {
       "id": "scheduling-and-metrics",
-      "blockId": "23f14403",
+      "blockId": "1c853b24",
       "level": 2,
       "text": "Scheduling and metrics"
     }
@@ -2753,9 +2468,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

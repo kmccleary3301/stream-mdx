@@ -7,7 +7,6 @@ export type {
   InlineEngineWorkerOptions,
   ServeMarkdownWorkerOptions,
   CodeHighlightingMode,
-  WorkerMdxMode,
   ParseOptions,
 } from "./types";
 export { WorkerMetricsCollector } from "./metrics";

@@ -1,10 +1,25 @@
 import assert from "node:assert";
+import { createRequire } from "node:module";
 import fs from "node:fs/promises";
+import React from "react";
+import { JSDOM } from "jsdom";
+import { renderToStaticMarkup } from "react-dom/server";
+import { compileTrustedMdxDocument } from "../src/mdx-compile";
+import { projectTrustedMdxServerDocument } from "../../markdown-v2-react/src/trusted-mdx/server";
+import {
+  MarkdownBlocksRenderer,
+  TrustedMdxServerRegionProvider,
+} from "../../markdown-v2-react/src/server";
 
-import { applyPatchBatch, createInitialSnapshot, type Block, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { applyPatchBatch, createInitialSnapshot, type Block, type HtmlOptions, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 
 import { createWorkerHarness } from "./worker-test-harness";
+import type * as RegressionUtils from "../../../scripts/regression/utils";
+// Root scripts are CommonJS (no package "type"); Node 22+ cannot bind their named exports from
+// this ESM test, so load the seeded chunker through require.
+const { buildSeededChunks } = createRequire(import.meta.url)("../../../scripts/regression/utils.ts") as typeof RegressionUtils;
+
 
 const DOC_PLUGINS = {
   footnotes: true,
@@ -29,7 +44,19 @@ function applyPatchMessages(store: ReturnType<typeof createRendererStore>, messa
 async function streamFixture(
   content: string,
   chunkSize: number,
-  options: { mdxCompileMode?: "server" | "worker" } = {},
+  options: { contentPolicy?: "markdown" | "restricted" | "trusted-mdx"; html?: HtmlOptions } = {},
+): Promise<Block[]> {
+  const chunks: string[] = [];
+  for (let index = 0; index < content.length; index += chunkSize) {
+    chunks.push(content.slice(index, index + chunkSize));
+  }
+  return await streamFixtureChunks(content, chunks, options);
+}
+
+async function streamFixtureChunks(
+  content: string,
+  chunks: readonly string[],
+  options: { contentPolicy?: "markdown" | "restricted" | "trusted-mdx"; html?: HtmlOptions } = {},
 ): Promise<Block[]> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
@@ -39,14 +66,14 @@ async function streamFixture(
     initialContent: "",
     prewarmLangs: [],
     docPlugins: DOC_PLUGINS,
-    mdx: options.mdxCompileMode ? { compileMode: options.mdxCompileMode } : undefined,
+    contentPolicy: options.contentPolicy,
+    html: options.html,
   });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to initialize");
   store.reset(init.blocks);
 
-  for (let index = 0; index < content.length; index += chunkSize) {
-    const chunk = content.slice(index, index + chunkSize);
+  for (const chunk of chunks) {
     const appendMessages = await harness.send({ type: "APPEND", text: chunk });
     applyPatchMessages(store, appendMessages);
   }
@@ -54,6 +81,75 @@ async function streamFixture(
   const finalizeMessages = await harness.send({ type: "FINALIZE" });
   applyPatchMessages(store, finalizeMessages);
   return store.getBlocks();
+}
+
+
+async function assertTrustedMdxFlowProjection(content: string, blocks: readonly Block[]): Promise<void> {
+  const artifact = await compileTrustedMdxDocument(content);
+  const Preview = ({ children }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement("figure", { "data-preview": "true" }, children);
+  const projection = await projectTrustedMdxServerDocument({
+    source: content,
+    blocks,
+    artifact,
+    components: { Preview },
+  });
+  const mdxBlocks = blocks.filter((block) => block.type === "mdx");
+  const flowRegions = projection.regions.filter((region) => region.kind === "render" && region.nativeChildren === true);
+  assert.deepStrictEqual(
+    flowRegions.map((region) => region.ownerId),
+    mdxBlocks.map((block) => block.id),
+    "every completed flow root must map to one consumer-renderable MDX region",
+  );
+
+  const projectedChildSources = flowRegions.map((region) => {
+    assert.strictEqual(region.kind, "render");
+    if (region.kind !== "render") return [];
+    const flowChildren = region.flowChildren;
+    const nativeChildOwners = region.nativeChildOwners;
+    assert.ok(flowChildren, `flow projection ${region.ownerId} must retain compiler-authored child spans`);
+    assert.ok(nativeChildOwners, `flow projection ${region.ownerId} must assign native child owners`);
+    assert.strictEqual(nativeChildOwners.length, flowChildren.length);
+    assert.ok(nativeChildOwners.every((owner) => owner !== null), `Markdown flow children must have native owners for ${region.ownerId}`);
+    return flowChildren.map((child) => content.slice(child.from, child.to));
+  });
+  assert.deepStrictEqual(projectedChildSources, [
+    ["Inline **bold** with a list:", "- Alpha\n- Beta\n- Gamma"],
+    ["| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |"],
+    ["> Blockquote inside MDX", "`inline code` and **strong** text"],
+  ], "consumer projection must preserve each compiler-authored native Markdown child source");
+
+  const markup = renderToStaticMarkup(
+    React.createElement(
+      TrustedMdxServerRegionProvider,
+      { regions: projection.regions },
+      React.createElement(MarkdownBlocksRenderer, { blocks }),
+    ),
+  );
+  const previewBodies = Array.from(
+    markup.matchAll(/<figure\b[^>]*data-preview="true"[^>]*>([\s\S]*?)<\/figure>/g),
+    ([, body]) => body ?? "",
+  );
+  assert.strictEqual(previewBodies.length, 3, "all three flow roots must render through their compiler-authored Preview figures");
+  assert.match(previewBodies[0] ?? "", /Inline <strong>bold<\/strong> with a list:/);
+  assert.match(previewBodies[0] ?? "", /<ul\b/);
+  assert.match(previewBodies[0] ?? "", /Alpha[\s\S]*Beta[\s\S]*Gamma/);
+  assert.match(previewBodies[1] ?? "", /<table\b/);
+  assert.match(previewBodies[1] ?? "", /Model[\s\S]*Latency[\s\S]*medium/);
+  assert.match(previewBodies[2] ?? "", /<blockquote\b/);
+  assert.match(previewBodies[2] ?? "", /<code\b[^>]*>inline code<\/code>/);
+  assert.match(previewBodies[2] ?? "", /<strong>strong<\/strong> text/);
+  assert.strictEqual(
+    (markup.match(/<pre\b/g) ?? []).length,
+    3,
+    "all three authored fenced code blocks must remain visible beside the MDX flow roots",
+  );
+  assert.strictEqual(
+    (markup.match(/<figure\b/g) ?? []).length,
+    3,
+    "all three Preview roots must render their authored figure element",
+  );
+
 }
 
 async function runAppendLinesTailGuardTest(): Promise<void> {
@@ -111,6 +207,29 @@ async function runFinalizedTableShapeTest(): Promise<void> {
     assert.strictEqual(row.length, headerColumns, `finalized table row ${rowIndex} width mismatch`);
   });
 }
+
+async function runHtmlBackslashAttributeOwnershipTest(): Promise<void> {
+  const paragraphText = "Native paragraph inside the authored div.";
+  const content = `<div title="C:\\">\n\n${paragraphText}\n\n</div>\n`;
+  const blocks = await streamFixture(content, 11, {
+    contentPolicy: "markdown",
+    html: { allowedTags: { div: ["title"] } },
+  });
+  const markup = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks }));
+  const dom = new JSDOM(markup);
+  try {
+    const wrapper = [...dom.window.document.querySelectorAll("div[title]")]
+      .find((node) => node.getAttribute("title") === "C:\\");
+    const paragraph = [...dom.window.document.querySelectorAll("p")]
+      .find((node) => node.textContent === paragraphText);
+    assert.ok(wrapper, "the authored HTML div must render");
+    assert.ok(paragraph, "the blank-line-separated native paragraph must render");
+    assert.ok(wrapper.contains(paragraph), "the native paragraph must remain inside the authored div");
+  } finally {
+    dom.window.close();
+  }
+}
+
 
 async function runStreamingTableDeferralTest(): Promise<void> {
   const content = await loadFixture("table-boundary.md");
@@ -199,32 +318,117 @@ async function runFinalizedMdxStateTest(): Promise<void> {
   ];
 
   for (const { fixture, chunkSize, minMdxCount } of cases) {
-    const blocks = await streamFixture(await loadFixture(fixture), chunkSize, { mdxCompileMode: "worker" });
+    const content = await loadFixture(fixture);
+    const blocks = await streamFixture(content, chunkSize, { contentPolicy: "trusted-mdx" });
     const mdxBlocks = blocks.filter((block) => block.type === "mdx");
     assert.ok(mdxBlocks.length >= minMdxCount, `expected at least ${minMdxCount} mdx blocks for ${fixture} @${chunkSize}, got ${mdxBlocks.length}`);
+    if (fixture === "mdx-transitions.mdx") {
+      await assertTrustedMdxFlowProjection(content, blocks);
+    }
 
     for (const block of mdxBlocks) {
       assert.ok(block.isFinalized, `mdx block must be finalized: ${block.id}`);
-      const meta = block.payload.meta;
-      const status = meta && typeof meta === "object" && "mdxStatus" in meta && typeof meta.mdxStatus === "string" ? meta.mdxStatus : undefined;
-      assert.notStrictEqual(status, "pending", `finalized mdx block remained pending: ${block.id}`);
-      if (status === "compiled") {
-        assert.ok(block.payload.compiledMdxRef || block.payload.compiledMdxModule, `compiled mdx block missing artifact: ${block.id}`);
-      }
-      if (status === "error") {
-        assert.strictEqual(block.payload.compiledMdxRef, undefined, `errored mdx block retained compiledMdxRef: ${block.id}`);
-        assert.strictEqual(block.payload.compiledMdxModule, undefined, `errored mdx block retained compiledMdxModule: ${block.id}`);
-      }
-      if (block.payload.compiledMdxRef && block.payload.compiledMdxModule) {
-        assert.strictEqual(
-          block.payload.compiledMdxRef.id,
-          block.payload.compiledMdxModule.id,
-          `compiled mdx ids must agree for ${block.id}`,
-        );
-      }
     }
   }
 }
+
+async function runSeededMdxTransitionsProjectionTest(): Promise<void> {
+  const content = await loadFixture("mdx-transitions.mdx");
+  const chunks = buildSeededChunks(content, {
+    id: "S2_typical",
+    label: "Typical streaming",
+    updateIntervalMs: 16,
+    charRateCps: 1200,
+    maxChunkChars: 256,
+  }, "mdx-transitions:S2_typical:seed-2");
+  const blocks = await streamFixtureChunks(content, chunks, { contentPolicy: "trusted-mdx" });
+  await assertTrustedMdxFlowProjection(content, blocks);
+}
+
+
+async function runTrustedMdxFootnotePhaseTest(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const initialize = async () => {
+    const messages = await harness.send({
+      type: "INIT",
+      initialContent: "",
+      prewarmLangs: [],
+      docPlugins: DOC_PLUGINS,
+      contentPolicy: "trusted-mdx",
+    });
+    const init = messages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED");
+    assert.ok(init, "worker failed to initialize trusted MDX footnote document");
+    store.reset(init.blocks);
+  };
+  await initialize();
+
+  const initialContent = [
+    "Earlier[^early].",
+    "",
+    "[^early]: Earlier definition.",
+    "",
+    "<Preview>",
+    "Native child[^late].",
+    "</Preview>",
+    "",
+    "",
+  ].join("\n");
+  const fullContent = `${initialContent}[^late]: Later definition.\n`;
+  applyPatchMessages(store, await harness.send({ type: "APPEND", text: initialContent }));
+  const previousBlocks = store.getBlocks();
+  const previousRoot = previousBlocks.find((block) => block.type === "mdx");
+  assert.ok(previousRoot, "expected completed trusted MDX flow root before its later definition");
+  assert.ok(previousRoot.isFinalized, "native child root must be complete before its later definition arrives");
+  const Preview = ({ children }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement("section", { "data-preview": "true" }, children);
+  const render = async (source: string, blocks: readonly Block[]) => {
+    const artifact = await compileTrustedMdxDocument(source);
+    const projection = await projectTrustedMdxServerDocument({
+      source,
+      blocks,
+      artifact,
+      components: { Preview },
+    });
+    return renderToStaticMarkup(
+      React.createElement(
+        TrustedMdxServerRegionProvider,
+        { regions: projection.regions },
+        React.createElement(MarkdownBlocksRenderer, { blocks }),
+      ),
+    );
+  };
+
+  const beforeDefinition = await render(initialContent, previousBlocks);
+  assert.match(beforeDefinition, /Native child\[\^late\]/, "unresolved native-child reference should remain literal");
+  assert.doesNotMatch(beforeDefinition, /id="fnref:2"/, "unresolved native-child reference must not publish an anchor");
+
+  applyPatchMessages(store, await harness.send({ type: "APPEND", text: fullContent.slice(initialContent.length) }));
+  applyPatchMessages(store, await harness.send({ type: "FINALIZE" }));
+  const firstDocumentBlocks = store.getBlocks();
+  const firstDocumentRoot = firstDocumentBlocks.find((block) => block.type === "mdx");
+  assert.strictEqual(firstDocumentRoot?.id, previousRoot.id, "later definition should update the same completed MDX root");
+  const afterDefinition = await render(fullContent, firstDocumentBlocks);
+  assert.match(afterDefinition, /Native child<sup class="footnote-ref"><a[^>]*>2<\/a><\/sup>/);
+  assert.match(afterDefinition, /href="#fn:2"/, "native reference should target its numbered footnote item");
+  assert.match(afterDefinition, /<li id="fn:2">Later definition\./, "later definition should publish the matching numbered item");
+  assert.match(afterDefinition, /href="#fnref:2"[^>]*class="footnote-backref"/, "numbered item should backlink to the native reference");
+  assert.strictEqual(
+    await render(initialContent, previousBlocks),
+    beforeDefinition,
+    "updating the completed root must not mutate its previously emitted snapshot",
+  );
+
+  await initialize();
+  const resetContent = "<Preview>\nNative child[^late].\n</Preview>\n\n[^late]: Reset definition.\n";
+  applyPatchMessages(store, await harness.send({ type: "APPEND", text: resetContent }));
+  applyPatchMessages(store, await harness.send({ type: "FINALIZE" }));
+  const resetMarkup = await render(resetContent, store.getBlocks());
+  assert.match(resetMarkup, /Native child<sup class="footnote-ref"><a[^>]*>1<\/a><\/sup>/);
+  assert.match(resetMarkup, /<li id="fn:1">Reset definition\./, "INIT must assign numbering from the new document context");
+  assert.doesNotMatch(resetMarkup, /fnref:2|fn:2/, "previous document numbering must not leak across INIT");
+}
+
 
 async function runMdxTransitionsRendererStoreInvariantTest(): Promise<void> {
   const content = await loadFixture("mdx-transitions.mdx");
@@ -236,7 +440,7 @@ async function runMdxTransitionsRendererStoreInvariantTest(): Promise<void> {
     initialContent: "",
     prewarmLangs: [],
     docPlugins: DOC_PLUGINS,
-    mdx: { compileMode: "worker" },
+    contentPolicy: "trusted-mdx",
   });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to initialize");
@@ -288,132 +492,15 @@ async function runMdxTransitionsRendererStoreInvariantTest(): Promise<void> {
   assert.deepStrictEqual(finalViolations, [], "renderer store rejected appendLines during mdx-transitions finalize");
 }
 
-async function runMdxErrorTransitionArtifactInvariantTest(): Promise<void> {
-  const loggedErrors: string[] = [];
-  const originalConsoleError = console.error;
-  console.error = (...args: unknown[]) => {
-    loggedErrors.push(args.map(String).join(" "));
-    originalConsoleError(...args);
-  };
-
-  const getMdxStatus = (block: Block): string | undefined => {
-    const meta = block.payload.meta;
-    if (meta && typeof meta === "object" && "mdxStatus" in meta && typeof meta.mdxStatus === "string") {
-      return meta.mdxStatus;
-    }
-    return undefined;
-  };
-
-  const assertBlockPayloadNoArtifactsOnError = (candidate: unknown, source: string) => {
-    if (!candidate || typeof candidate !== "object") return;
-    if (!("type" in candidate) || candidate.type !== "mdx" || !("payload" in candidate)) return;
-    const block = candidate as Block;
-    const status = getMdxStatus(block);
-    if (status === "error") {
-      assert.strictEqual(
-        block.payload.compiledMdxRef,
-        undefined,
-        `${source} errored mdx block must not retain compiledMdxRef: ${block.id}`,
-      );
-      assert.strictEqual(
-        block.payload.compiledMdxModule,
-        undefined,
-        `${source} errored mdx block must not retain compiledMdxModule: ${block.id}`,
-      );
-    }
-  };
-
-  try {
-    // Unclosed components are pending, not compilation errors. Exercise genuine failures in
-    // closed module-owned MDX, and identify each malformed source rather than incidental errors.
-    const malformedTransitionRaw = "<PreviewExample>\n{1 + }\n</PreviewExample>";
-    const malformedStatusRaw = "<Preview count={}>\nThis block should fail compilation and render the MDX error state.\n</Preview>";
-    const cases: Array<{ fixture: string; content: string; chunkSize: number; malformedRaw: string }> = [
-      { fixture: "mdx-multi-status.mdx", content: await loadFixture("mdx-multi-status.mdx"), chunkSize: 10, malformedRaw: malformedStatusRaw },
-      { fixture: "mdx-transitions.mdx", content: `${await loadFixture("mdx-transitions.mdx")}\n\n${malformedTransitionRaw}\n`, chunkSize: 5, malformedRaw: malformedTransitionRaw },
-    ];
-
-    for (const { fixture, content, chunkSize, malformedRaw } of cases) {
-      const harness = await createWorkerHarness();
-      const store = createRendererStore();
-
-      const initMessages = await harness.send({
-        type: "INIT",
-        initialContent: "",
-        prewarmLangs: [],
-        docPlugins: DOC_PLUGINS,
-        mdx: { compileMode: "worker" },
-      });
-      const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
-      assert.ok(init, "worker failed to initialize");
-      store.reset(init.blocks);
-
-      for (let index = 0; index < content.length; index += chunkSize) {
-        const chunk = content.slice(index, index + chunkSize);
-        const appendMessages = await harness.send({ type: "APPEND", text: chunk });
-        for (const message of appendMessages) {
-          if (message.type !== "PATCH") continue;
-          const patches = message.patches as Patch[];
-          for (const patch of patches) {
-            if (patch.op === "setProps" && patch.props && typeof patch.props === "object" && "block" in patch.props) {
-              assertBlockPayloadNoArtifactsOnError(patch.props.block, `patch setProps @${index}`);
-            } else if ((patch.op === "insertChild" || patch.op === "replaceChild") && patch.node?.props && typeof patch.node.props === "object" && "block" in patch.node.props) {
-              assertBlockPayloadNoArtifactsOnError(patch.node.props.block, `patch ${patch.op} @${index}`);
-            }
-          }
-          store.applyPatches(patches, { captureMetrics: false });
-        }
-      }
-
-      const finalizeMessages = await harness.send({ type: "FINALIZE" });
-      for (const message of finalizeMessages) {
-        if (message.type !== "PATCH") continue;
-        const patches = message.patches as Patch[];
-        for (const patch of patches) {
-          if (patch.op === "setProps" && patch.props && typeof patch.props === "object" && "block" in patch.props) {
-            assertBlockPayloadNoArtifactsOnError(patch.props.block, "finalize patch setProps");
-          } else if ((patch.op === "insertChild" || patch.op === "replaceChild") && patch.node?.props && typeof patch.node.props === "object" && "block" in patch.node.props) {
-            assertBlockPayloadNoArtifactsOnError(patch.node.props.block, `finalize patch ${patch.op}`);
-          }
-        }
-        store.applyPatches(patches, { captureMetrics: false });
-      }
-
-      const consumerBlocks = store.getBlocks();
-      const erroredMdxBlocks = consumerBlocks.filter(
-        (b) => b.type === "mdx" && getMdxStatus(b) === "error",
-      );
-      const malformedBlock = consumerBlocks.find((block) => block.payload.raw.trim() === malformedRaw);
-      assert.ok(malformedBlock, `missing owned malformed MDX source in ${fixture}`);
-      assert.strictEqual(malformedBlock.type, "mdx", `closed malformed source must retain module ownership in ${fixture}`);
-      assert.strictEqual(getMdxStatus(malformedBlock), "error", `closed malformed source must fail compilation in ${fixture}`);
-      for (const errorBlock of erroredMdxBlocks) {
-        assert.strictEqual(
-          errorBlock.payload.compiledMdxRef,
-          undefined,
-          `consumer store errored block must not retain compiledMdxRef: ${errorBlock.id}`,
-        );
-        assert.strictEqual(
-          errorBlock.payload.compiledMdxModule,
-          undefined,
-          `consumer store errored block must not retain compiledMdxModule: ${errorBlock.id}`,
-        );
-      }
-    }
-
-    const invariantViolations = loggedErrors.filter((msg) => msg.includes("Structural invariant violation"));
-    assert.deepStrictEqual(invariantViolations, [], "worker emitted structural invariant violation during MDX error transitions");
-  } finally {
-    console.error = originalConsoleError;
-  }
-}
 
 
 await runAppendLinesTailGuardTest();
 await runStreamingTableDeferralTest();
 await runCurrencyDoesNotTriggerStreamingMathTest();
 await runFinalizedTableShapeTest();
+await runHtmlBackslashAttributeOwnershipTest();
 await runFinalizedMdxStateTest();
+await runSeededMdxTransitionsProjectionTest();
+await runTrustedMdxFootnotePhaseTest();
 await runMdxTransitionsRendererStoreInvariantTest();
-await runMdxErrorTransitionArtifactInvariantTest();
 console.log("worker structural regressions test passed");

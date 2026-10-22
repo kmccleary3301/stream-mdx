@@ -85,7 +85,6 @@ async function runWorkerCompileParityTest(): Promise<void> {
       init: {
         docPlugins,
         prewarmLangs: ["typescript"],
-        mdx: { compileMode: "server" },
       },
     }),
   );

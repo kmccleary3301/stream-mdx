@@ -34,9 +34,14 @@ This document defines the artifact format produced by `npm run docs:snapshots:bu
 ## Determinism guarantees
 
 - `hash` is computed from markdown text + compile init options + optional `hashSalt`.
-- Identical input and init produce identical artifact hashes.
+- Identical text, init, and `hashSalt` produce identical artifact hashes.
 - Renderer output uses `blocks` and does not depend on stream chunk boundaries.
 - `tocHeadings` is derived from block metadata, not DOM reads.
+
+- The `docs-snapshots-v3` salt covers root runtime config and lockfile, docs target catalogs, generator and provenance code, the source Node compiler, workspace package manifests, the resolved core runtime, selected thread bootstrap, and hosted parser worker.
+- The source compiler imports Node builtins and `@stream-mdx/core`, with no relative imports. The core entry uses the same CommonJS resolution as the TSX generator. `@stream-mdx/worker/node` locates the package root; its unused compiled wrapper is not hashed.
+- The bootstrap follows the runtime's `.mjs`/`.cjs`/source fallback order, and the hosted worker is selected by `getHostedWorkerBundleUrl()`. Stable role and package-relative or repository-relative labels identify inputs; absolute checkout paths are excluded.
+- The generator init must match the canonical worker init recorded in `SnapshotArtifactV1.init`. Retired or unrecorded options must not affect artifact hashes.
 
 ## Nested block ownership
 
@@ -189,7 +194,9 @@ Notes:
 
 ## Build integration
 
-- `npm run docs:build` and `npm run docs:dev` run `docs:snapshots:build`.
+- `npm run docs:snapshots:build` prepares packages, rebuilds and copies the hosted worker, then generates snapshots. Package builds may clean hosted outputs, so the worker stage must follow them.
+- `npm run docs:build` and `npm run docs:dev` use that same prerequisite order before starting Next.
+- Screenshot capture invokes the snapshot wrapper once; it must not rebuild packages between the hosted-worker and snapshot stages.
 - Pages default to snapshot render mode unless `STREAM_MDX_DOCS_ARTICLE_MODE=streaming`.
 
 Direct compilation owns a private engine and output queue. It does not install or
@@ -197,41 +204,15 @@ reuse global `self`/`postMessage` transport bindings. Another worker runtime may
 replace those bindings without redirecting direct compilation output. Existing
 compile serialization, artifact hashes, and cache behavior remain unchanged.
 
-Public imports and direct/worker compilation also leave `document` and
-`DOMParser` unchanged. The obsolete ambient worker DOM stubs have been removed.
-Node SSR uses the actual DOM-free HTML/sanitizer paths; physical workers compile
-MDX through the existing DOM-free dependency aliases. Browser hosts retain their
-real DOM rather than receiving an incomplete replacement.
-
-Owner regression evidence at `c336251` (Node 26.3.0): both fresh public package
-formats, ESM and CJS, passed unchanged global-descriptor checks for `window`,
-`document`, `DOMParser`, `HTMLElement`, and `Node`. Direct and physical hosted
-worker compilation produced identical final blocks for balanced MDX components,
-case-sensitive `<Input>`, decoded entities, math, and quote-owned fenced code.
-All three targeted scripts passed: `worker-dom-free-public-imports`,
-`direct-compile-parity`, and `mdx-component-region-ownership`. The first also
-renders the public React component in Node SSR without installing DOM globals;
-that check establishes import/SSR safety, not rendered MDX-content parity.
-Node 20 public-package and real-browser application gates were not evidence from
-that run.
-
-The subsequent `342b378` packaging correction resolves public MDX dependencies
-with browser conditions and builds the native Node exports separately, retaining
-their existing names. The same three owner regressions passed after this change.
-On Node 20.20.2, the preserved Vite production consumer also passed after
-installing only a newly packed worker tarball; its Vite config and application
-source were unchanged. Fresh ESM and CJS subprocesses against that installed
-package passed the public import, direct/physical-worker MDX parity, and SSR
-global-descriptor checks.
-
-The final integration gates subsequently passed on Node 20.20.2: fresh packed
-ESM/CJS runtime imports, real remark/rehype mutations, and production Next/Vite
-builds. Both freshly installed applications also rendered the public main-thread
-consumer in an actual browser, including the transformed heading/text and
-Mermaid SVG, without page errors. Final integrated test suites passed 20 core,
-50 worker, 42 React, and one unified test file. The configured conformance corpus
-passed all 675 static/streaming/SSR cases with zero divergence and retained all
-427 baseline IDs. The final non-update production HTML run passed 120 scenarios.
+Public imports and parser compilation leave `document` and `DOMParser`
+unchanged. Worker parsing creates native MDX source blocks but never compiles or
+evaluates authored modules. The `streammdx.snapshot.v1` artifact in this
+contract is a serialized native parser snapshot, not a trusted compiled module
+or authorization to execute one. Trusted artifacts are pure compilation output;
+only an explicit trusted engine evaluates them with host-provided import
+bindings. Native `FINALIZED` is semantic completion, not trusted compilation,
+projection, or host-render readiness. See the React integration guide for the
+trusted revision lifecycle and the security model for its CSP requirements.
 
 ## Runtime fallback
 

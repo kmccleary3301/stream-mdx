@@ -34,7 +34,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
   return { promise, resolve, reject };
 }
 
-async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "INIT" }>, "html" | "syntax" | "docPlugins" | "mdxCompileMode"> = {}): Promise<RendererStore> {
+async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "INIT" }>, "html" | "syntax" | "docPlugins"> = {}): Promise<RendererStore> {
   const worker = createInlineEngineWorker();
   const store = createRendererStore();
   const { promise, resolve, reject } = deferred<RendererStore>();
@@ -196,7 +196,7 @@ const codeSource = [
   "| `{:js}{:js}` |",
   "",
 ].join("\n");
-const codeInit = { ...init, docPlugins: { ...init.docPlugins, mdx: true }, mdxCompileMode: "server" as const };
+const codeInit = { ...init, contentPolicy: "trusted-mdx" as const, docPlugins: { ...init.docPlugins, mdx: true } };
 const codeCompiled = await compileMarkdownSnapshotDirect({ text: codeSource, init: codeInit });
 const codeSerialized = JSON.parse(JSON.stringify(codeCompiled.blocks)) as Block[];
 const codeStore = await streamed(codeSource, codeInit);
@@ -218,7 +218,6 @@ for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
         "{:js}{:js}", "{:js}{:js}", "{:js}{:js}", "{:js}{:js}", "{:js}{:js}",
         "{:js} `literal` {:js}", "{:js}{:js}",
       ], "root, nested paragraphs/list items, double ticks and table cells must retain native inline-code ownership");
-      assert.equal(root.querySelector(".markdown-mdx-inline, .markdown-mdx-error, [data-mdx-status]"), null);
       assert.equal(codes[0].closest("p")?.textContent, expectedParagraph, "the fixture's whole paragraph prose must survive");
       assert.equal(codes[1].closest("blockquote p")?.textContent, expectedParagraph);
       assert.equal(codes[2].closest("li")?.textContent, expectedParagraph);
@@ -252,8 +251,6 @@ for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
     const document = new JSDOM(markup).window.document;
     assert.equal(document.querySelector("code.inline-code")?.textContent, "{:js}{:js}");
     assert.equal(document.querySelector("em")?.textContent, "HTML");
-    assert.deepEqual(Array.from(document.querySelectorAll(".markdown-mdx-inline")).map((span) => span.textContent), ["{outside}", "<InlineChip />"]);
-    assert.equal(document.querySelector('[data-mdx-status="error"]'), null);
     assert.equal(document.querySelector('a[href="/safe"]')?.textContent, "link");
     assert.equal(document.querySelector("p")?.textContent, "Code {:js}{:js} with HTML and {outside} <InlineChip /> link tail.");
   }

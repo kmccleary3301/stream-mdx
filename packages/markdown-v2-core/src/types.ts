@@ -1,3 +1,5 @@
+import type { RestrictedComponentDescriptor } from "./admission";
+
 // Core contracts (public types) - V2 Markdown Renderer
 // Based on final_spec.md architecture
 
@@ -16,6 +18,8 @@ export interface BlockMeta {
   /** Sanitized HTML ownership with inline text prepared by the owning engine parser. */
   htmlTree?: HtmlTreeNode[];
   htmlParagraphTree?: HtmlTreeNode[];
+  /** Engine-prepared Markdown owners for compiler-authored trusted MDX flow children. */
+  trustedMdxNativeChildren?: HtmlTreeNode[];
   [key: string]: unknown;
 }
 
@@ -31,25 +35,35 @@ export interface Block {
     inline?: InlineNode[]; // serialized inline tree
     highlightedHtml?: string; // safe HTML (code only)
     sanitizedHtml?: string; // sanitized HTML (html blocks)
-    compiledMdxRef?: { id: string } | null; // server-compiled artifact key
-    compiledMdxModule?: CompiledMdxModule | null; // inline compiled module (worker/client side)
     meta?: BlockMeta; // e.g., code fence info, table align, linkReferences
     range?: { from: number; to: number }; // original source offsets
   };
 }
 
-/** Sanitized HTML ownership tree. Block leaves retain the engine's prepared markdown. */
+export type ContentPolicy = "markdown" | "restricted" | "trusted-mdx";
+
+/** Sanitized HTML and restricted component ownership tree. Block leaves retain the engine's prepared markdown. */
 export type HtmlTreeNode =
-  | { kind: "text"; text: string; inline?: InlineNode[] }
-  | { kind: "element"; tagName: string; attributes: Record<string, string>; children: HtmlTreeNode[]; inlineNode?: InlineNode; paragraphRoot?: boolean }
+  | { kind: "text"; text: string; inline?: InlineNode[]; diagnostic?: string; rawSource?: string }
+  | {
+      kind: "element";
+      tagName: string;
+      attributes: Record<string, string>;
+      children: HtmlTreeNode[];
+      inlineNode?: InlineNode;
+      paragraphRoot?: boolean;
+    }
+  | {
+      kind: "component";
+      name: string;
+      props: Readonly<Record<string, unknown>>;
+      status: "open" | "closed" | "incomplete";
+      children: HtmlTreeNode[];
+      rawSource?: string;
+      diagnostic?: string;
+    }
   | { kind: "block"; block: Block };
 
-export interface CompiledMdxModule {
-  id: string;
-  code: string;
-  dependencies?: string[];
-  source?: "server" | "worker";
-}
 
 export interface MixedContentSegment {
   kind: "text" | "html" | "mdx";
@@ -57,8 +71,6 @@ export interface MixedContentSegment {
   range?: { from: number; to: number };
   inline?: InlineNode[];
   sanitized?: string;
-  status?: "pending" | "compiled" | "error";
-  error?: string;
   lookahead?: unknown[];
 }
 
@@ -102,7 +114,7 @@ export interface ProtectedRange {
 /**
  * Inline node types for rich text rendering
  */
-export type InlineNode =
+export type InlineNode = (
   | { kind: "text"; text: string }
   | { kind: "strong"; children: InlineNode[] }
   | { kind: "em"; children: InlineNode[] }
@@ -129,13 +141,18 @@ export type InlineNode =
   | { kind: "math-inline"; tex: string }
   | { kind: "math-display"; tex: string }
   | { kind: "footnote-ref"; label: string; number?: number; occurrence?: number; defined?: boolean }
+  | { kind: "trusted-mdx-inline"; raw: string; ownerId: string }
   | {
       kind: "plugin";
       name: string;
       attrs: Record<string, string>;
       children?: InlineNode[];
       raw: string;
-    };
+    }
+) & {
+  /** Authored UTF-16 offsets; absent when exact source provenance is unavailable. */
+  sourceRange?: { from: number; to: number };
+};
 
 export interface FootnoteItem {
   number: number;
@@ -229,14 +246,14 @@ export type WorkerIn =
         liveTokenization?: boolean;
         emitHighlightTokens?: boolean;
         emitDiffBlocks?: boolean;
-        mdxComponentNames?: string[];
         lazyTokenization?: {
           enabled?: boolean;
           thresholdLines?: number;
         };
         themes?: CodeHighlightThemes;
       };
-      mdx?: { compileMode?: "server" | "worker" };
+      contentPolicy?: ContentPolicy;
+      contentComponents?: readonly RestrictedComponentDescriptor[];
       syntax?: SyntaxRuleSpec[];
       html?: HtmlOptions;
     }
@@ -245,8 +262,6 @@ export type WorkerIn =
   | { type: "DEBUG_STATE" }
   | { type: "DUMP_BLOCKS" }
   | { type: "TOKENIZE_RANGE"; blockId: string; startLine: number; endLine: number; priority?: LazyTokenizationPriority }
-  | { type: "MDX_COMPILED"; blockId: string; compiledId: string; rawSignature?: string }
-  | { type: "MDX_ERROR"; blockId: string; error?: string; rawSignature?: string }
   | { type: "SET_CREDITS"; credits: number };
 
 export type WorkerPhase = WorkerIn["type"] | "UNKNOWN";

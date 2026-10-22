@@ -92,13 +92,13 @@ const result = await compileMarkdownSnapshotDirect({
 
 Use this in runtimes where `worker_threads` are unavailable or undesirable.
 
-## MDX Compile Parity Helper
+## Trusted document compiler
 
 ```ts
-import { compileMdxContent } from "@stream-mdx/worker/mdx-compile";
+import { compileTrustedMdxDocument } from "@stream-mdx/worker/mdx-compile";
 ```
 
-This is the shared MDX compilation path used to keep browser-worker and server compile flows aligned.
+This explicit trusted entry compiles the complete authored MDX module into a serializable artifact containing code, dependencies, regions and compiler identity. It does not evaluate that artifact. Use the explicit trusted MDX engine or trusted server adapter for evaluation and native-region projection. The default Markdown/restricted worker does not load this compiler.
 
 ## When To Reach For This Package
 

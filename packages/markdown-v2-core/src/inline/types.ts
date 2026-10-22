@@ -72,6 +72,11 @@ export interface InlineParseOptions {
   references?: LinkReferenceMap;
 
   /**
+   * Authored UTF-16 offset of `content` when exact source provenance is available.
+   * Provenance parsing bypasses the content-only cache so offsets cannot go stale.
+   */
+  sourceOffset?: number;
+  /**
    * Callback invoked whenever a link reference label candidate is evaluated during inline parsing.
    */
   onAttemptedReference?: (label: string) => void;

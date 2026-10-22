@@ -38,12 +38,10 @@ import type {
   BlockResolvedLinkReference,
   CodeHighlightOutputMode,
   CodeHighlightThemes,
-  CompiledMdxModule,
   DiffLineKind,
   FormatAnticipationConfig,
   HtmlOptions,
   HtmlTreeNode,
-  MixedContentSegment,
   InlineNode,
   InlineStreamingInlineStatus,
   InlineLookaheadPrepareResult,
@@ -62,6 +60,8 @@ import type {
   WorkerIn,
   WorkerOut,
   WorkerPhase,
+  ContentPolicy,
+  RestrictedComponentDescriptor,
 } from "@stream-mdx/core";
 import {
   InlineParser,
@@ -75,9 +75,8 @@ import {
   createBlockCompatibilityExtension,
   collectLinkReferences,
   diffLinkReferences,
-  dedentIndentedCode,
-  detectMDX,
   extractMixedContentSegmentsWithLookahead,
+  prepareTrustedMdxInlineNodes,
   generateBlockId,
   createContainerSignature,
   normalizeFormatAnticipation,
@@ -87,6 +86,7 @@ import {
   removeHeadingMarkers,
   sanitizeHtmlInWorker,
   sanitizeHtmlTreeInWorker,
+  dedentIndentedCode,
   stripCodeFence,
 } from "@stream-mdx/core";
 import {
@@ -100,7 +100,15 @@ import {
 } from "@stream-mdx/plugins";
 import { isBlockLevelNode, mapLezerNodeToBlockType } from "../parser/block-types";
 import { HtmlContinuationExtension } from "../parser/html-extension";
-import { applyHtmlTagBalance, containsInlineHtml, groupHtmlOwnership, normalizeHtmlParagraph, preserveInlineComponentSource } from "./html-ownership";
+import {
+  containsInlineHtml,
+  getActiveHtmlTreeKey,
+  groupHtmlOwnership,
+  normalizeHtmlParagraph,
+  preserveInlineComponentSource,
+} from "./html-ownership";
+import { parseTrustedMdxSourceSpans } from "../mdx-source-spans";
+import { buildRestrictedComponentInlineTree, buildRestrictedComponentTree } from "./restricted-component-ownership";
 import { computeParagraphPatchLimit } from "../perf/patch-heuristics";
 import {
   clampLazyRange,
@@ -140,12 +148,6 @@ import {
   shouldLazyTokenizeBlock,
 } from "./lazy-tokenization";
 import {
-  applyMdxStatusUpdate,
-  preserveMdxMetadata,
-  updateMdxCompilationState,
-  type EngineMdxState,
-} from "./mdx";
-import {
   WorkerMetricsCollector,
   now,
   roundMetric,
@@ -157,6 +159,7 @@ import {
   collectHtmlProtectedRangesFromSegments,
   collectMathProtectedRanges,
   collectNestedListItemInlineSources,
+  getNativeHeadingContentRange,
   maybeBuildTocPatch,
   parseGfmTableFromTree,
   reportWorkerStructuralInvariantViolations,
@@ -172,7 +175,6 @@ import {
   estimatePatchSize,
   partitionPatchesForCredits,
   syncEmittedBlockEpochsFromPatches,
-  withPatchKind,
   withPatchKindBatch,
 } from "./patch-emit";
 import { getPatchKind } from "@stream-mdx/core/perf/patch-batching";
@@ -185,10 +187,8 @@ import type {
   IncrementalHighlightState,
   LazyTokenizationState,
   MarkdownEngineOptions,
-  MdxStatusUpdate,
   ParseOptions,
   ShikiThemedToken,
-  WorkerMdxMode,
 } from "./types";
 
 const MAX_DEFERRED_PATCHES = 400;
@@ -201,6 +201,66 @@ const MIN_APPEND_CHUNK_SIZE = 256;
 const MAX_APPEND_CHUNK_SIZE = 12000;
 const MIN_APPEND_BATCH_MS = 4;
 const MAX_APPEND_BATCH_MS = 50;
+
+function appendPreparedNativeBlocksInRange(
+  nodes: readonly HtmlTreeNode[] | undefined,
+  from: number,
+  to: number,
+  exact: boolean,
+  mdxOnly: boolean,
+  output: Block[],
+  seenOwners: Set<Block>,
+): void {
+  if (!nodes || nodes.length === 0) return;
+  const pending: HtmlTreeNode[] = [];
+  for (let index = nodes.length - 1; index >= 0; index--) {
+    const node = nodes[index];
+    if (node) pending.push(node);
+  }
+  const visitedNodes = new WeakSet<object>();
+  while (pending.length > 0) {
+    const node = pending.pop();
+    if (!node || visitedNodes.has(node)) continue;
+    visitedNodes.add(node);
+    if (node.kind === "block") {
+      const block = node.block;
+      const range = block.payload.range;
+      const isPreparedOwner = Boolean(
+        range &&
+        (exact ? range.from === from && range.to === to : range.from >= from && range.to <= to) &&
+        (!mdxOnly || block.type === "mdx") &&
+        range.to > range.from
+      );
+      if (isPreparedOwner && range) {
+        if (!seenOwners.has(block)) {
+          seenOwners.add(block);
+          output.push(block);
+        }
+      } else {
+        const meta = block.payload.meta;
+        const nestedNativeChildren = meta?.trustedMdxNativeChildren;
+        let nestedTree: readonly HtmlTreeNode[] | undefined;
+        if (Array.isArray(nestedNativeChildren)) {
+          nestedTree = nestedNativeChildren;
+        } else {
+          const treeKey = getActiveHtmlTreeKey(meta);
+          nestedTree = treeKey ? (meta?.[treeKey] as HtmlTreeNode[] | undefined) : undefined;
+        }
+        if (nestedTree) {
+          for (let index = nestedTree.length - 1; index >= 0; index--) {
+            const child = nestedTree[index];
+            if (child) pending.push(child);
+          }
+        }
+      }
+    } else if (node.kind === "element" || node.kind === "component") {
+      for (let index = node.children.length - 1; index >= 0; index--) {
+        const child = node.children[index];
+        if (child) pending.push(child);
+      }
+    }
+  }
+}
 
 function clampInt(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
@@ -278,10 +338,6 @@ export class MarkdownEngine {
   private lazyTokenizationThresholdLines = DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
   private lazyTokenizationEnabled = true;
   private mdxEnabled = true;
-  private readonly workerMdxCache = new Map<string, CompiledMdxModule>();
-  private readonly workerMdxInflight = new Map<string, Promise<CompiledMdxModule>>();
-  private mdxCompileMode: WorkerMdxMode = "server";
-  private mdxComponentAllowlist: Set<string> | null = null;
   private loggedMdxSkipCount = 0;
 
   private formatAnticipationConfig: NormalizedFormatAnticipation = normalizeFormatAnticipation(false);
@@ -305,8 +361,11 @@ export class MarkdownEngine {
 
   private activeMetricsCollector: WorkerMetricsCollector | null = null;
   private lastWorkerInvariantSignature = { value: "" };
-
+  private contentPolicy: ContentPolicy = "restricted";
+  private contentComponents: Map<string, RestrictedComponentDescriptor> = new Map();
   private messageQueue: Promise<void> = Promise.resolve();
+  private inputPolicy: ContentPolicy = "restricted";
+  private inputSealed = false;
   private disposed = false;
   declare private campaignCounters?: CampaignCounterSink;
   declare private progressPublicationId?: number;
@@ -334,9 +393,13 @@ export class MarkdownEngine {
     this.buildInlineParser();
   }
 
+  private getActiveContentComponents(): ReadonlyMap<string, RestrictedComponentDescriptor> | undefined {
+    return this.mdxEnabled ? this.contentComponents : undefined;
+  }
+
   private buildMarkdownParser(tables: boolean): void {
     const gfm = tables ? GFM : GFM.filter((extension) => extension !== Table);
-    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
+    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(() => this.contentPolicy === "restricted" ? this.getActiveContentComponents() : undefined), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
   }
 
   private buildInlineParser(): void {
@@ -365,8 +428,6 @@ export class MarkdownEngine {
     this.deferredPatchQueue = [];
     this.deferredPatchQueue = [];
     this.incrementalHighlightStates.clear();
-    this.workerMdxCache.clear();
-    this.workerMdxInflight.clear();
     this.documentPluginRegistry.clear();
     this.blocks = [];
     this.lastTree = null;
@@ -387,10 +448,19 @@ export class MarkdownEngine {
     if (this.disposed) {
       return Promise.resolve();
     }
+    // Trusted MDX revisions are sealed; Markdown and restricted streams may reopen after EOF.
+    const rejectAppend = message.type === "APPEND" && this.inputSealed;
+    if (message.type === "INIT") {
+      this.inputPolicy = message.contentPolicy ?? "restricted";
+      this.inputSealed = false;
+    } else if (message.type === "FINALIZE") {
+      this.inputSealed = this.inputPolicy === "trusted-mdx";
+    }
     const task = this.messageQueue
       .then(async () => {
         if (this.disposed) return;
         try {
+          if (rejectAppend) throw new Error("Cannot append after FINALIZE; start a new generation with INIT.");
           await this.processMessage(message);
         } catch (error) {
           console.error("Worker error:", error);
@@ -472,10 +542,11 @@ export class MarkdownEngine {
           msg.initialContent,
           msg.prewarmLangs ?? [],
           msg.docPlugins,
-          msg.mdx,
           msg.syntax,
           msg.html,
           msg.themes ?? msg.docPlugins?.themes,
+          msg.contentPolicy,
+          msg.contentComponents,
         );
         return;
       case "APPEND":
@@ -605,21 +676,6 @@ export class MarkdownEngine {
         this.scheduleLazyTokenizationProcessing();
         return;
       }
-      case "MDX_COMPILED":
-        this.handleMdxStatus(msg.blockId, {
-          compiledRef: { id: msg.compiledId },
-          status: "compiled",
-          rawSignature: msg.rawSignature,
-        });
-        return;
-      case "MDX_ERROR":
-        this.handleMdxStatus(msg.blockId, {
-          compiledRef: undefined,
-          status: "error",
-          error: msg.error,
-          rawSignature: msg.rawSignature,
-        });
-        return;
       case "SET_CREDITS":
         this.workerCredits = Math.max(0, Math.min(1, Number(msg.credits ?? 0)));
         if (this.workerCredits > 0) {
@@ -648,15 +704,22 @@ export class MarkdownEngine {
       liveTokenization?: boolean;
       emitHighlightTokens?: boolean;
       emitDiffBlocks?: boolean;
-      mdxComponentNames?: string[];
       lazyTokenization?: { enabled?: boolean; thresholdLines?: number };
       themes?: CodeHighlightThemes;
     },
-    mdxOptions?: { compileMode?: WorkerMdxMode },
     syntax?: SyntaxRuleSpec[],
     html?: HtmlOptions,
     themes?: CodeHighlightThemes,
+    contentPolicy?: ContentPolicy,
+    contentComponents?: readonly RestrictedComponentDescriptor[],
   ): Promise<void> {
+    this.contentPolicy = contentPolicy ?? "restricted";
+    this.contentComponents = new Map();
+    if (contentComponents && Array.isArray(contentComponents)) {
+      for (const comp of contentComponents) {
+        if (comp?.name) this.contentComponents.set(comp.name, comp);
+      }
+    }
     this.documentGeneration += 1;
     let initialProgressPublication: ProgressPublicationContext | undefined;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
@@ -706,9 +769,6 @@ export class MarkdownEngine {
     this.lazyTokenizationScheduled = false;
     this.lazyTokenizationProcessing = false;
 
-    this.mdxCompileMode = mdxOptions?.compileMode ?? "server";
-    this.workerMdxCache.clear();
-    this.workerMdxInflight.clear();
 
     const enable = {
       footnotes: docPlugins?.footnotes ?? true,
@@ -750,11 +810,6 @@ export class MarkdownEngine {
       this.lazyTokenizationEnabled = true;
       this.lazyTokenizationThresholdLines = DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
     }
-    if (Array.isArray(docPlugins?.mdxComponentNames) && docPlugins.mdxComponentNames.length > 0) {
-      this.mdxComponentAllowlist = new Set(docPlugins.mdxComponentNames);
-    } else {
-      this.mdxComponentAllowlist = null;
-    }
     this.buildInlineParser();
     this.documentPluginState.inlineParser = this.inlineParser;
 
@@ -762,7 +817,9 @@ export class MarkdownEngine {
     if (enable.tables) this.documentPluginRegistry.register(TablesPlugin);
     if (enable.callouts) this.documentPluginRegistry.register(CalloutsPlugin);
     if (enable.html) this.documentPluginRegistry.register(HTMLBlockPlugin);
-    if (enable.mdx) this.documentPluginRegistry.register(MDXDetectionPlugin);
+    if (enable.mdx && this.contentPolicy === "trusted-mdx") {
+      this.documentPluginRegistry.register(MDXDetectionPlugin);
+    }
     if (this.extensions?.documentPlugins) {
       for (const plugin of this.extensions.documentPlugins) {
         this.documentPluginRegistry.register(plugin);
@@ -792,11 +849,21 @@ export class MarkdownEngine {
       }
     }
 
+    // Carry producer epochs on the initial wire projection, not in canonical semantic metadata.
+    const initialBlocks = this.blocks.map((block) => {
+      const blockEpoch = this.emittedBlockEpochs.get(block.id) ?? 1;
+      this.emittedBlockEpochs.set(block.id, blockEpoch);
+      return {
+        ...block,
+        payload: { ...block.payload, meta: { ...block.payload.meta, blockEpoch } },
+      };
+    });
+
     this.txCounter = 0;
     reportWorkerStructuralInvariantViolations("initialize", this.blocks, this.lastWorkerInvariantSignature);
     this.post({
       type: "INITIALIZED",
-      blocks: this.blocks,
+      blocks: initialBlocks,
     });
 
     if (this.blocks.length > 0) {
@@ -860,6 +927,7 @@ export class MarkdownEngine {
     this.currentLinkReferences = collectLinkReferences(tree, content);
     this.inlineParser.setReferences(this.currentLinkReferences);
     let extractedBlocks = await this.extractBlocks(tree, content, options);
+    await this.prepareTrustedMdxFlowChildrenForBlocks(extractedBlocks, this.blocks);
     extractedBlocks = this.runDocumentPlugins(extractedBlocks, content);
 
     this.performanceTimer.measure("parse-all");
@@ -895,6 +963,7 @@ export class MarkdownEngine {
       firstChangedPos: oldLen,
       previousBlocks: this.blocks,
     });
+    await this.prepareTrustedMdxFlowChildrenForBlocks(changedBlocks, this.blocks, changedLabels);
     changedBlocks = this.runDocumentPlugins(changedBlocks, newContent);
     const lastRange = changedBlocks.length > 0 ? changedBlocks[changedBlocks.length - 1]?.payload?.range : undefined;
     const lastTo = typeof lastRange?.to === "number" ? lastRange.to : 0;
@@ -909,6 +978,7 @@ export class MarkdownEngine {
         this.currentLinkReferences = fullRefs;
         this.inlineParser.setReferences(fullRefs);
         let fullBlocks = await this.extractBlocks(fullTree, newContent);
+        await this.prepareTrustedMdxFlowChildrenForBlocks(fullBlocks, this.blocks, changedLabels);
         fullBlocks = this.runDocumentPlugins(fullBlocks, newContent);
         const fullLast = fullBlocks.length > 0 ? fullBlocks[fullBlocks.length - 1]?.payload?.range?.to ?? 0 : 0;
         if (fullLast >= newContent.length - 1 || fullBlocks.length >= changedBlocks.length) {
@@ -961,16 +1031,36 @@ export class MarkdownEngine {
     }
   }
 
-  private async extractBlocks(tree: Tree, content: string, options: ParseOptions = {}): Promise<Block[]> {
+  private findTrustedMdxFlowRootEnd(raw: string): number | null {
+    if (this.contentPolicy !== "trusted-mdx" || !this.mdxEnabled) return null;
+    const parsed = parseTrustedMdxSourceSpans(raw);
+    if (parsed.kind !== "parsed") return null;
+    const flowRoot = parsed.regions.find(
+      (region) =>
+        region.kind === "jsx" &&
+        region.placement === "flow" &&
+        typeof region.rootElementName === "string" &&
+        raw.slice(0, region.from).trim() === "" &&
+        raw.slice(region.to).trim() !== "",
+    );
+    return flowRoot?.to ?? null;
+  }
+
+  private async extractBlocks(
+    tree: Tree,
+    content: string,
+    options: ParseOptions = {},
+    sourceOffset = 0,
+  ): Promise<Block[]> {
     try {
-      this.headingIdCounts = new Map<string, number>();
+      if (sourceOffset === 0) this.headingIdCounts = new Map<string, number>();
       const extracted: Block[] = [];
       const cursor = tree.cursor();
       const footnotesEnabled = this.documentPluginRegistry.getAll().some((plugin) => plugin.name === "footnotes");
       let hasRecognizedNodes = false;
       // Keyed by range only: a key embedding `raw` hashes the whole document on every append. `raw` is checked on hit.
       const reusableBlockMap =
-        options.firstChangedPos !== undefined && options.previousBlocks
+        sourceOffset === 0 && options.firstChangedPos !== undefined && options.previousBlocks
           ? new Map(options.previousBlocks.map((b) => [`${b.payload.range?.from ?? -1}:${b.payload.range?.to ?? -1}`, b]))
           : null;
 
@@ -992,9 +1082,29 @@ export class MarkdownEngine {
           if (isBlockLevelNode(nodeType) || footnoteDefinition) {
             hasRecognizedNodes = true;
             const blockType = footnoteDefinition ? "paragraph" : mapLezerNodeToBlockType(nodeType);
+            const flowRootEnd = blockType === "html" ? this.findTrustedMdxFlowRootEnd(raw) : null;
+            if (flowRootEnd !== null) {
+              // Lezer can extend an HTML block across a following fence; reparse after the exact authored JSX root.
+              const prefix = raw.slice(0, flowRootEnd);
+              const suffix = raw.slice(flowRootEnd);
+              const prefixBlocks = await this.extractBlocks(
+                this.mdParser.parse(prefix),
+                prefix,
+                { ...options, forceFinalize: true },
+                sourceOffset + from,
+              );
+              const suffixBlocks = await this.extractBlocks(
+                this.mdParser.parse(suffix),
+                suffix,
+                options,
+                sourceOffset + from + flowRootEnd,
+              );
+              extracted.push(...prefixBlocks, ...suffixBlocks);
+              continue;
+            }
             let block: Block | null = null;
             if (reusableBlockMap && to <= options.firstChangedPos!) {
-              const prev = reusableBlockMap.get(`${from}:${to}`);
+              const prev = reusableBlockMap.get(`${from + sourceOffset}:${to + sourceOffset}`);
               if (prev && prev.isFinalized && prev.type === blockType && prev.payload.raw === raw) {
                 block = prev;
                 if (blockType === "heading") {
@@ -1008,7 +1118,7 @@ export class MarkdownEngine {
             }
 
             if (!block) {
-              block = await this.createBlock(blockType, raw, from, to, content, options, nodeType, cursor.node);
+              block = await this.createBlock(blockType, raw, from, to, content, options, nodeType, cursor.node, sourceOffset);
             }
             if (block && raw.trim()) {
               extracted.push(block);
@@ -1018,18 +1128,26 @@ export class MarkdownEngine {
       }
 
       if (extracted.length === 0 && !hasRecognizedNodes) {
-        return await this.extractBlocksSimple(content, options);
+        return await this.extractBlocksSimple(content, options, sourceOffset);
       }
 
-      const grouped = groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, 0, (text) => this.inlineParser.parse(text), { mdxComponents: this.mdxEnabled });
-      return await this.refreshOwnedMdxRegions(grouped, options);
+      return groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, sourceOffset, (text) => this.inlineParser.parse(text), {
+        mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
+        contentPolicy: this.contentPolicy,
+        contentComponents: this.getActiveContentComponents(),
+        forceFinalize: options.forceFinalize,
+      });
     } catch (error) {
       console.warn("Lezer parsing failed, falling back to simple parsing:", error);
-      return await this.extractBlocksSimple(content, options);
+      return await this.extractBlocksSimple(content, options, sourceOffset);
     }
   }
 
-  private async extractBlocksSimple(content: string, options: ParseOptions = {}): Promise<Block[]> {
+  private async extractBlocksSimple(
+    content: string,
+    options: ParseOptions = {},
+    sourceOffset = 0,
+  ): Promise<Block[]> {
     const blocks: Block[] = [];
     const lines = content.split("\n");
     let currentParagraph: string[] = [];
@@ -1052,7 +1170,7 @@ export class MarkdownEngine {
           blockType = "list";
         }
 
-        const block = await this.createBlock(blockType, raw, from, to, content, options);
+        const block = await this.createBlock(blockType, raw, from, to, content, options, undefined, undefined, sourceOffset);
         if (block) {
           blocks.push(block);
         }
@@ -1075,6 +1193,7 @@ export class MarkdownEngine {
     return blocks;
   }
 
+
   private async createBlock(
     type: string,
     raw: string,
@@ -1084,6 +1203,7 @@ export class MarkdownEngine {
     options: ParseOptions = {},
     nodeType?: string,
     syntaxNode?: SyntaxNode,
+    sourceOffset = 0,
   ): Promise<Block | null> {
     if (!raw.trim()) return null;
 
@@ -1093,7 +1213,7 @@ export class MarkdownEngine {
       blockType = "paragraph";
     }
 
-    const id = generateBlockId(`${from}:${blockType}`, blockType);
+    const id = generateBlockId(`${from + sourceOffset}:${blockType}`, blockType);
 
     const initialMeta: Record<string, unknown> = nodeType ? { lezerNodeType: nodeType } : {};
     if (type === "code" && syntaxNode) {
@@ -1119,13 +1239,128 @@ export class MarkdownEngine {
       payload: {
         raw,
         meta: Object.keys(initialMeta).length > 0 ? initialMeta : undefined,
-        range: { from, to },
+        range: { from: from + sourceOffset, to: to + sourceOffset },
       },
     };
 
     await this.enrichBlock(block, options, syntaxNode);
     return block;
   }
+
+  private async prepareTrustedMdxInlineChild(raw: string, from: number, to: number): Promise<Block> {
+    const child: Block = {
+      id: generateBlockId(`${from}:paragraph`, "paragraph"),
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw, range: { from, to }, meta: { trustedMdxSource: true } },
+    };
+    await this.enrichBlock(child, { forceFinalize: true });
+    return child;
+  }
+
+  private async prepareTrustedMdxFlowChildren(block: Block): Promise<void> {
+    if (
+      this.contentPolicy !== "trusted-mdx" ||
+      !this.mdxEnabled ||
+      !block.isFinalized ||
+      !this.hasTrustedNativeSource(block) ||
+      Array.isArray(block.payload.meta?.trustedMdxNativeChildren) ||
+      (block.type !== "paragraph" && block.type !== "html" && block.type !== "mdx")
+    ) {
+      return;
+    }
+    const raw = block.payload.raw ?? "";
+    if (!raw.includes("<")) return;
+    const sourceFrom = block.payload.range?.from;
+    if (typeof sourceFrom !== "number" || !Number.isSafeInteger(sourceFrom) || sourceFrom < 0) return;
+    const parsedSource = parseTrustedMdxSourceSpans(raw);
+    if (parsedSource.kind !== "parsed") return;
+    const flowRoot = parsedSource.regions.find(
+      (region) =>
+        region.kind === "jsx" &&
+        region.placement === "flow" &&
+        region.rootElementName !== undefined &&
+        raw.slice(0, region.from).trim() === "" &&
+        raw.slice(region.to).trim() === "",
+    );
+    if (!flowRoot || flowRoot.flowChildren === undefined) return;
+    const meta = block.payload.meta;
+    const treeKey = getActiveHtmlTreeKey(meta);
+    const activeTree = treeKey ? (meta?.[treeKey] as HtmlTreeNode[] | undefined) : undefined;
+    const mdxDetection = this.documentPluginRegistry.getAll().find((plugin) => plugin.name === "mdx-detection");
+    const nativeChildren: HtmlTreeNode[] = [];
+    for (const child of flowRoot.flowChildren) {
+      if (child.kind === "expression") continue;
+      const childSource = raw.slice(child.from, child.to);
+      if (child.kind !== "inline" && childSource.trim() === "") continue;
+      const childFrom = sourceFrom + child.from;
+      const childTo = sourceFrom + child.to;
+      const childBlocks: Block[] = [];
+      const seenOwners = new Set<Block>();
+      const exact = child.kind !== "markdown";
+      const mdxOnly = child.kind === "jsx";
+      appendPreparedNativeBlocksInRange(activeTree, childFrom, childTo, exact, mdxOnly, childBlocks, seenOwners);
+      if (childBlocks.length === 0) {
+        const parsedChildBlocks = child.kind === "inline"
+          ? [await this.prepareTrustedMdxInlineChild(childSource, childFrom, childTo)]
+          : await this.extractBlocks(
+            this.mdParser.parse(childSource),
+            childSource,
+            { forceFinalize: true },
+            childFrom,
+          );
+        if ((child.kind === "markdown" || child.kind === "inline") && parsedChildBlocks.length === 0) {
+          throw new Error("A compiler-authored Markdown child in an MDX flow root has no native block owner.");
+        }
+        if (parsedChildBlocks.length === 0) continue;
+        mdxDetection?.process({ content: childSource, blocks: parsedChildBlocks, state: this.documentPluginState });
+        for (const parsedChildBlock of parsedChildBlocks) {
+          await this.prepareTrustedMdxFlowChildren(parsedChildBlock);
+        }
+        childBlocks.push(...parsedChildBlocks);
+      }
+      for (const childBlock of childBlocks) {
+        nativeChildren.push({ kind: "block", block: childBlock });
+      }
+    }
+    block.payload.meta = {
+      ...meta,
+      trustedMdxNativeChildren: nativeChildren,
+    };
+  }
+  private async prepareTrustedMdxFlowChildrenForBlocks(
+    blocks: Block[],
+    previousBlocks: readonly Block[],
+    changedLabels?: ReadonlySet<string>,
+  ): Promise<void> {
+    const previousById = new Map(previousBlocks.map((block) => [block.id, block]));
+    for (const block of blocks) {
+      const previous = previousById.get(block.id);
+      const previousRange = previous?.payload.range;
+      const currentRange = block.payload.range;
+      const previousChildren = previous?.payload.meta?.trustedMdxNativeChildren;
+      const sameFlowRootType = previous?.type === block.type ||
+        (previous?.type === "mdx" && (block.type === "html" || block.type === "paragraph"));
+      if (
+        previous &&
+        previous.isFinalized &&
+        sameFlowRootType &&
+        block.isFinalized &&
+        previous.payload.raw === block.payload.raw &&
+        previousRange?.from === currentRange?.from &&
+        previousRange?.to === currentRange?.to &&
+        Array.isArray(previousChildren) &&
+        (changedLabels === undefined || changedLabels.size === 0)
+      ) {
+        block.payload.meta = {
+          ...block.payload.meta,
+          trustedMdxNativeChildren: previousChildren,
+        };
+      }
+      await this.prepareTrustedMdxFlowChildren(block);
+    }
+  }
+
 
   private inlineContext(block: Block, ancestorTypes: readonly string[] = [], segmentOrigin: "direct-inline" | "mixed-content" = "direct-inline"): LookaheadContainerContext {
     const context = {
@@ -1228,6 +1463,69 @@ export class MarkdownEngine {
       delete block.payload.meta.mixedLookahead;
     }
   }
+  private hasTrustedNativeSource(block: Block, nativeNode?: SyntaxNode): boolean {
+    const meta = block.payload.meta as Record<string, unknown> | undefined;
+    const hasSourcePositions = Array.isArray(meta?.inlineSourcePositions);
+    const hasNativeSource = nativeNode !== undefined ||
+      typeof meta?.lezerNodeType === "string" ||
+      meta?.trustedMdxSource === true ||
+      hasSourcePositions;
+    const sourceRange = block.payload.range;
+    const baseOffset = sourceRange?.from;
+    const endOffset = sourceRange?.to;
+    return this.contentPolicy === "trusted-mdx" &&
+      this.mdxEnabled &&
+      block.isFinalized &&
+      hasNativeSource &&
+      typeof baseOffset === "number" &&
+      Number.isSafeInteger(baseOffset) &&
+      baseOffset >= 0 &&
+      typeof endOffset === "number" &&
+      Number.isSafeInteger(endOffset) &&
+      endOffset >= baseOffset;
+  }
+
+  private prepareTrustedNativeInline(
+    nodes: InlineNode[],
+    rawSource: string,
+    ownerIdPrefix: string,
+    baseOffset: number,
+    sourcePositions?: readonly number[],
+    localProtectedRanges?: readonly ProtectedRange[],
+  ): InlineNode[] {
+    if (!rawSource.includes("<") && !rawSource.includes("{")) return nodes;
+    const protectedRanges = localProtectedRanges ?? [
+      ...collectCodeProtectedRanges(rawSource),
+      ...(this.enableMath ? collectMathProtectedRanges(rawSource) : []),
+      ...collectAutolinkProtectedRanges(rawSource),
+    ];
+    const absoluteProtectedRanges: ProtectedRange[] = [];
+    for (const range of protectedRanges) {
+      if (range.from < 0 || range.to <= range.from) continue;
+      let from: number;
+      let to: number;
+      if (sourcePositions) {
+        if (range.to > sourcePositions.length) continue;
+        from = sourcePositions[range.from];
+        to = sourcePositions[range.to - 1] + 1;
+      } else {
+        from = baseOffset + range.from;
+        to = baseOffset + range.to;
+      }
+      if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to) || to <= from) continue;
+      absoluteProtectedRanges.push({ ...range, from, to });
+    }
+    return prepareTrustedMdxInlineNodes(
+      nodes,
+      rawSource,
+      sourcePositions ? 0 : baseOffset,
+      ownerIdPrefix,
+      absoluteProtectedRanges.length > 0 ? { protectedRanges: absoluteProtectedRanges } : undefined,
+      sourcePositions,
+    );
+  }
+
+  
 
   private async enrichBlock(block: Block, options?: ParseOptions, nativeNode?: SyntaxNode): Promise<void> {
     this.inlineParser.startCollectingAttemptedReferences();
@@ -1238,127 +1536,7 @@ export class MarkdownEngine {
     }
   }
 
-  private engineMdxState(): EngineMdxState {
-    return {
-      cache: this.workerMdxCache,
-      inflight: this.workerMdxInflight,
-      compileMode: this.mdxCompileMode,
-      debugMdx: false,
-    };
-  }
 
-  /** Whether a raw fragment opens a container (`<div>`, `<SmokeBox>`) that never closes inside it. */
-  private leavesOpenContainer(raw: string): boolean {
-    if (!raw) return false;
-    const stack: string[] = [];
-    applyHtmlTagBalance(raw, this.mdParser, stack, this.mdxEnabled);
-    return stack.length > 0;
-  }
-
-  /**
-   * Native MDX eligibility for one block: a component open tag or JSX expression outside protected
-   * ranges. Html blocks are additionally re-checked without their own html-block protection so a
-   * complete `<Component>` region root is recognized even when its opening tag is the protected span.
-   */
-  private applyMdxDetection(block: Block, metrics?: WorkerMetricsCollector | null): boolean {
-    if (!this.mdxEnabled || (block.type !== "paragraph" && block.type !== "html")) return false;
-    const maybeMeta = block.payload.meta as Record<string, unknown> | undefined;
-    if (block.type === "paragraph") {
-      const segments = maybeMeta?.mixedSegments as MixedContentSegment[] | undefined;
-      let owner: MixedContentSegment | undefined;
-      let contentCount = 0;
-      for (const segment of segments ?? []) {
-        if (segment.kind === "text" && segment.value.trim().length === 0) continue;
-        owner = segment;
-        contentCount++;
-      }
-      const standalone = contentCount === 1 && owner?.kind === "mdx" &&
-        owner.value.startsWith("<") && owner.value.trim() === block.payload.raw.trim();
-      if (!standalone && (maybeMeta?.inlineComponentSource || maybeMeta?.htmlParagraphTree || segments?.length)) return false;
-      if (standalone && maybeMeta) {
-        // Coordinator mode keeps pending segments for its existing status/signature contract,
-        // but a complete component still belongs to the block-module evaluator.
-        maybeMeta.mdxStandalone = true;
-        if (this.mdxCompileMode !== "server") delete maybeMeta.mixedSegments;
-        delete maybeMeta.mixedHtmlTrees;
-        delete maybeMeta.mixedLookahead;
-        delete maybeMeta.allowMixedStreaming;
-        delete maybeMeta.htmlParagraphTree;
-        delete maybeMeta.inlineComponentSource;
-      }
-    }
-    const protectedRanges = Array.isArray(maybeMeta?.protectedRanges) ? (maybeMeta?.protectedRanges as ProtectedRange[]) : undefined;
-    const blockRange = block.payload.range;
-    const baseOffset = typeof blockRange?.from === "number" ? blockRange.from : 0;
-    const normalizedRanges =
-      protectedRanges && protectedRanges.length > 0
-        ? protectedRanges.map((range) => ({
-            ...range,
-            from: baseOffset + range.from,
-            to: baseOffset + range.to,
-          }))
-        : undefined;
-    const mdxOptions =
-      normalizedRanges && normalizedRanges.length > 0 ? { protectedRanges: normalizedRanges, baseOffset } : baseOffset ? { baseOffset } : undefined;
-    const mdxDetectStart = now();
-    let shouldConvertToMDX = detectMDX(block.payload.raw, mdxOptions);
-    if (!shouldConvertToMDX && block.type === "html") {
-      const fallbackOptions = baseOffset ? { baseOffset } : undefined;
-      shouldConvertToMDX = detectMDX(block.payload.raw, fallbackOptions);
-    }
-    metrics?.recordMdxDetect(now() - mdxDetectStart);
-    if (shouldConvertToMDX && protectedRanges && protectedRanges.length > 0 && block.type !== "html") {
-      const exprPattern = /\{[^{}]+\}/g;
-      let match: RegExpExecArray | null;
-      while (true) {
-        match = exprPattern.exec(block.payload.raw);
-        if (match === null) break;
-        const start = match.index;
-        const end = start + match[0].length;
-        const covered = protectedRanges.some((range) => range.from <= start && range.to >= end);
-        if (!covered) {
-          shouldConvertToMDX = true;
-          break;
-        }
-        shouldConvertToMDX = false;
-      }
-    }
-    if (shouldConvertToMDX) {
-      const originalType = block.type;
-      block.payload.meta = { ...block.payload.meta, originalType };
-      block.type = "mdx";
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Region grouping runs before MDX detection so a balanced component stays one owning root.
-   * Deferred html blocks refresh here: region owners convert and compile, while an unclosed
-   * container that is not finalized yet stays an html block pending its close or FINALIZE.
-   */
-  private async refreshOwnedMdxRegions(blocks: Block[], options: ParseOptions): Promise<Block[]> {
-    if (!this.mdxEnabled) return blocks;
-    for (const block of blocks) {
-      if (block.type !== "html") continue;
-      const owned = (block.payload.meta as { htmlOwnership?: unknown } | undefined)?.htmlOwnership === true;
-      const raw = block.payload.raw ?? "";
-      const open = this.leavesOpenContainer(raw);
-      if (!open && !owned) continue;
-      if (open && !options.forceFinalize) {
-        if (owned || detectMDX(raw)) {
-          block.isFinalized = false;
-        }
-        continue;
-      }
-      if (!this.applyMdxDetection(block, this.activeMetricsCollector)) continue;
-      if ("sanitizedHtml" in block.payload) {
-        block.payload.sanitizedHtml = undefined;
-      }
-      await updateMdxCompilationState(this.engineMdxState(), block);
-    }
-    return blocks;
-  }
 
   /**
    * Remembers which reference labels a block tried to resolve (so a later definition can re-enrich it)
@@ -1396,13 +1574,54 @@ export class MarkdownEngine {
     const rawLength = typeof block.payload.raw === "string" ? block.payload.raw.length : 0;
     metrics?.recordBlockSize(block.type, rawLength);
     const shouldTrackInline = this.tracksInlineStatus();
+    const contentComponents = this.getActiveContentComponents();
     const allowMixed = this.formatAnticipationConfig.html || this.formatAnticipationConfig.mdx;
+    const trustedNativePath = this.hasTrustedNativeSource(block, nativeNode);
 
     switch (block.type) {
       case "heading": {
         const rawHeading = typeof block.payload.raw === "string" ? block.payload.raw : "";
-        const normalizedHeading = removeHeadingMarkers(rawHeading);
-        const metaLevel = (block.payload.meta as { headingLevel?: number } | undefined)?.headingLevel;
+        const headingMeta = block.payload.meta as Record<string, unknown> | undefined;
+        let normalizedHeading = removeHeadingMarkers(rawHeading);
+        const trustedNativeSource = this.hasTrustedNativeSource(block, nativeNode);
+        let inlineSourceText = trustedNativeSource && typeof headingMeta?.inlineSourceText === "string"
+          ? headingMeta.inlineSourceText
+          : undefined;
+        const inlineSourcePositions = trustedNativeSource && Array.isArray(headingMeta?.inlineSourcePositions)
+          ? headingMeta.inlineSourcePositions as number[]
+          : undefined;
+        let inlineSourceRange: { from: number; to: number } | undefined;
+        const storedRangeValue = headingMeta?.inlineSourceRange;
+        if (storedRangeValue && typeof storedRangeValue === "object" && "from" in storedRangeValue && "to" in storedRangeValue) {
+          const from = storedRangeValue.from;
+          const to = storedRangeValue.to;
+          if (typeof from === "number" && typeof to === "number" &&
+              Number.isSafeInteger(from) && Number.isSafeInteger(to) && from >= 0 && to > from) {
+            inlineSourceRange = { from, to };
+          }
+        }
+        if (trustedNativeSource && nativeNode) {
+          const baseOffset = block.payload.range?.from;
+          if (typeof baseOffset === "number" && Number.isSafeInteger(baseOffset) && baseOffset >= 0) {
+            const nativeRange = getNativeHeadingContentRange(nativeNode, rawHeading, baseOffset);
+            if (nativeRange) {
+              inlineSourceRange = nativeRange;
+              inlineSourceText = rawHeading.slice(nativeRange.from - baseOffset, nativeRange.to - baseOffset);
+            }
+          }
+        }
+        const hasMappedInlineSource = inlineSourceText !== undefined &&
+          inlineSourcePositions !== undefined &&
+          inlineSourcePositions.length === inlineSourceText.length &&
+          Array.isArray(block.payload.inline);
+        const hasContiguousInlineSource = inlineSourceText !== undefined &&
+          inlineSourceRange !== undefined &&
+          inlineSourceRange.to - inlineSourceRange.from === inlineSourceText.length;
+        if (trustedNativeSource && (hasMappedInlineSource || hasContiguousInlineSource)) {
+          normalizedHeading = inlineSourceText ?? normalizedHeading;
+        }
+        const rawMetaLevel = headingMeta?.headingLevel;
+        const metaLevel = typeof rawMetaLevel === "number" ? rawMetaLevel : undefined;
         let headingLevel = metaLevel;
         if (typeof headingLevel !== "number") {
           const atxMatch = rawHeading.match(/^#{1,6}/);
@@ -1426,10 +1645,27 @@ export class MarkdownEngine {
           headingLevel,
           headingText: normalizedHeading,
           headingId,
+          ...(inlineSourceText !== undefined && hasContiguousInlineSource ? { inlineSourceText, inlineSourceRange } : {}),
         };
         if (block.isFinalized) {
           block.payload.raw = normalizedHeading;
-          block.payload.inline = this.inlineParser.parse(normalizedHeading);
+          const hasTrustedInlineSource = trustedNativeSource && (hasMappedInlineSource || hasContiguousInlineSource);
+          if (hasTrustedInlineSource && inlineSourceText !== undefined) {
+            const sourcePositions = hasMappedInlineSource ? inlineSourcePositions : undefined;
+            const baseOffset = sourcePositions ? 0 : inlineSourceRange?.from ?? 0;
+            const nodes = sourcePositions && Array.isArray(block.payload.inline)
+              ? block.payload.inline
+              : this.inlineParser.parse(inlineSourceText, { sourceOffset: baseOffset });
+            block.payload.inline = this.prepareTrustedNativeInline(
+              nodes,
+              inlineSourceText,
+              block.id,
+              baseOffset,
+              sourcePositions,
+            );
+          } else {
+            block.payload.inline = this.inlineParser.parse(normalizedHeading);
+          }
           this.updateInlineLookaheadMeta(block, null, shouldTrackInline);
         } else {
           const parsed = this.parseInlineStreaming(normalizedHeading, this.inlineContext(block, ancestorTypes));
@@ -1447,37 +1683,87 @@ export class MarkdownEngine {
         const rawParagraph = typeof block.payload.raw === "string" ? block.payload.raw : "";
         const streamingParsed = !block.isFinalized ? this.parseInlineStreaming(rawParagraph, this.inlineContext(block, ancestorTypes)) : null;
         this.updateInlineLookaheadMeta(block, streamingParsed, shouldTrackInline);
-        block.payload.inline = block.isFinalized ? this.inlineParser.parse(rawParagraph) : streamingParsed?.inline ?? [{ kind: "text", text: rawParagraph }];
 
         const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
-        const nextMeta: Record<string, unknown> = { ...currentMeta };
-        let metaChanged = false;
-        if (this.mdxEnabled) {
-          const inline = preserveInlineComponentSource(block.payload.inline);
-          if (inline !== block.payload.inline) nextMeta.inlineComponentSource = true;
-          else delete nextMeta.inlineComponentSource;
-          block.payload.inline = inline;
-          metaChanged = true;
+        const trustedInlineSourceText = trustedNativePath && typeof currentMeta.inlineSourceText === "string"
+          ? currentMeta.inlineSourceText
+          : rawParagraph;
+        const trustedInlineSourcePositions = trustedNativePath && Array.isArray(currentMeta.inlineSourcePositions)
+          ? currentMeta.inlineSourcePositions as number[]
+          : undefined;
+        const hasMappedTrustedInlineSource = trustedInlineSourcePositions !== undefined &&
+          trustedInlineSourcePositions.length === trustedInlineSourceText.length;
+        const hasMappedTrustedInlineNodes = hasMappedTrustedInlineSource && Array.isArray(block.payload.inline);
+        const baseOffset = block.payload.range?.from ?? 0;
+        if (block.isFinalized) {
+          if (!hasMappedTrustedInlineNodes) {
+            if (trustedNativePath && trustedInlineSourcePositions === undefined) {
+              block.payload.inline = this.inlineParser.parse(rawParagraph, { sourceOffset: baseOffset });
+            } else if (trustedNativePath) {
+              block.payload.inline = this.inlineParser.parse(trustedInlineSourceText);
+            } else {
+              block.payload.inline = this.inlineParser.parse(rawParagraph);
+            }
+          }
+        } else {
+          block.payload.inline = streamingParsed?.inline ?? [{ kind: "text", text: rawParagraph }];
         }
 
-        const baseOffset = block.payload.range?.from ?? 0;
-        const protectedRanges = collectCodeProtectedRanges(rawParagraph);
+        const nextMeta: Record<string, unknown> = { ...currentMeta };
+        let metaChanged = false;
+        const protectedSource = trustedNativePath ? trustedInlineSourceText : rawParagraph;
+        const protectedRanges = collectCodeProtectedRanges(protectedSource);
         if (this.enableMath) {
-          protectedRanges.push(...collectMathProtectedRanges(rawParagraph, protectedRanges));
+          protectedRanges.push(...collectMathProtectedRanges(protectedSource, protectedRanges));
         }
-        const autolinkRanges = collectAutolinkProtectedRanges(rawParagraph);
+        const autolinkRanges = collectAutolinkProtectedRanges(protectedSource);
         if (autolinkRanges.length > 0) {
           protectedRanges.push(...autolinkRanges);
         }
 
-        const shouldExtractSegments = typeof rawParagraph === "string" && (rawParagraph.includes("<") || rawParagraph.includes("{"));
-        if (shouldExtractSegments) {
+        if (trustedNativePath && block.isFinalized) {
+          if (trustedInlineSourcePositions === undefined) {
+            block.payload.inline = this.prepareTrustedNativeInline(
+              block.payload.inline ?? [],
+              rawParagraph,
+              block.id,
+              baseOffset,
+              undefined,
+              protectedRanges,
+            );
+          } else if (hasMappedTrustedInlineNodes && Array.isArray(block.payload.inline)) {
+            block.payload.inline = this.prepareTrustedNativeInline(
+              block.payload.inline,
+              trustedInlineSourceText,
+              block.id,
+              baseOffset,
+              trustedInlineSourcePositions,
+              protectedRanges,
+            );
+          }
+        }
+        const shouldExtractSegments = protectedSource.includes("<") || protectedSource.includes("{");
+        const hasOwnedHtmlTree = nextMeta.htmlOwnership === true && Array.isArray(nextMeta.htmlTree);
+        if (trustedNativePath || hasOwnedHtmlTree) {
+          delete nextMeta.mixedLookahead;
+          delete nextMeta.mixedSegments;
+          delete nextMeta.mixedHtmlTrees;
+          delete nextMeta.allowMixedStreaming;
+          metaChanged = true;
+        } else if (shouldExtractSegments) {
           const mixedOptions =
             allowMixed
               ? {
                   html: this.formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
                   mdx: this.formatAnticipationConfig.mdx
-                    ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES, componentAllowlist: this.mdxComponentAllowlist ?? undefined }
+                    ? {
+                        autoClose: true,
+                        maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES,
+                        componentAllowlist:
+                          this.contentPolicy === "trusted-mdx" || !contentComponents || contentComponents.size === 0
+                            ? undefined
+                            : contentComponents.keys(),
+                      }
                     : undefined,
                 }
               : undefined;
@@ -1550,6 +1836,13 @@ export class MarkdownEngine {
             metaChanged = true;
           }
         }
+        if (this.mdxEnabled) {
+          const inline = preserveInlineComponentSource(block.payload.inline ?? []);
+          if (inline !== block.payload.inline) nextMeta.inlineComponentSource = true;
+          else delete nextMeta.inlineComponentSource;
+          block.payload.inline = inline;
+          metaChanged = true;
+        }
         if (!shouldExtractSegments && "mixedLookahead" in nextMeta) {
           delete nextMeta.mixedLookahead;
           metaChanged = true;
@@ -1563,7 +1856,7 @@ export class MarkdownEngine {
           metaChanged = true;
         }
 
-        if (!nextMeta.mixedSegments && containsInlineHtml(block.payload.inline ?? [])) {
+        if (nextMeta.htmlOwnership !== true && !nextMeta.mixedSegments && containsInlineHtml(block.payload.inline ?? [])) {
           nextMeta.htmlParagraphTree = normalizeHtmlParagraph(block, this.htmlConfig);
           metaChanged = true;
         } else if (nextMeta.htmlParagraphTree) {
@@ -1594,7 +1887,7 @@ export class MarkdownEngine {
         if (!nextMeta.htmlOwnership) {
           nextMeta.htmlTree = sanitizeHtmlTreeInWorker(rawHtml, this.htmlConfig, undefined, (text) => this.inlineParser.parse(text));
         }
-        if (rawHtml) {
+        if (rawHtml && this.contentPolicy !== "trusted-mdx") {
           nextMeta.protectedRanges = [{ from: 0, to: rawHtml.length, kind: "html-block" }];
         }
         block.payload.meta = nextMeta;
@@ -1606,28 +1899,40 @@ export class MarkdownEngine {
         break;
 
       case "table": {
-        const tableData = parseGfmTableFromTree(block.payload.raw ?? "", this.inlineParser);
+        const rawTable = block.payload.raw ?? "";
+        const baseOffset = block.payload.range?.from;
+        const tableData = parseGfmTableFromTree(
+          rawTable,
+          this.inlineParser,
+          trustedNativePath ? baseOffset : undefined,
+        );
         if (tableData) {
+          const header = tableData.header.map((inline, column) => {
+            const source = tableData.headerCellSources?.[column];
+            const range = tableData.headerCellRanges?.[column];
+            return trustedNativePath && source !== undefined && range
+              ? this.prepareTrustedNativeInline(inline, source, `${block.id}::th:${column}`, range.from)
+              : inline;
+          });
+          const rows = tableData.rows.map((row, rowIndex) => row.map((inline, column) => {
+            const source = tableData.rowCellSources?.[rowIndex]?.[column];
+            const range = tableData.rowCellRanges?.[rowIndex]?.[column];
+            return trustedNativePath && source !== undefined && range
+              ? this.prepareTrustedNativeInline(inline, source, `${block.id}::td:${rowIndex}:${column}`, range.from)
+              : inline;
+          }));
           block.payload.inline = [];
           block.payload.meta = {
             ...(block.payload.meta ?? {}),
-            header: tableData.header,
+            header,
             align: tableData.align,
-            rows: tableData.rows,
+            rows,
           };
         }
         break;
       }
     }
-    if (!(this.mdxEnabled && block.type === "html" && this.leavesOpenContainer(block.payload.raw ?? ""))) {
-      // An html block that leaves a container open is a region candidate: grouping must see its
-      // native `html` identity before MDX detection can retag it, so detection is refreshed for
-      // region-owned blocks after grouping instead.
-      this.applyMdxDetection(block, metrics);
-    }
 
-    const mdxState = this.engineMdxState();
-    await updateMdxCompilationState(mdxState, block);
 
     const enrichDuration = this.performanceTimer.measure("enrich-block");
     metrics?.recordEnrich(enrichDuration);
@@ -1648,15 +1953,26 @@ export class MarkdownEngine {
   }
 
   private async prepareNestedChildren(block: Block, options?: ParseOptions, ancestorTypes: readonly string[] = [], nativeNode?: SyntaxNode): Promise<void> {
-    block.payload.meta = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
+    const contentComponents = this.getActiveContentComponents();
+    const trustedNativeSource = this.hasTrustedNativeSource(block, nativeNode);
+    const containerMeta: NonNullable<Block["payload"]["meta"]> = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
+    if (trustedNativeSource) containerMeta.trustedMdxSource = true;
+    else delete containerMeta.trustedMdxSource;
+    block.payload.meta = containerMeta;
     const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text, this.inlineContext(block, ancestorTypes)).inline);
-    const listItemSources = collectNestedListItemInlineSources(block, this.mdParser, nativeNode);
+    const listItemSources = collectNestedListItemInlineSources(block, this.mdParser, nativeNode, trustedNativeSource);
     const groupChildren = async (children: NodeSnapshot[], ancestors: readonly string[]): Promise<NodeSnapshot[]> => {
       const grouped: NodeSnapshot[] = [];
       let sequence: NodeSnapshot[] = [];
       const flush = async () => {
         const blocks = sequence.map((child) => child.props?.block as Block);
-        const owned = groupHtmlOwnership(blocks, this.mdParser, block.payload.raw, this.htmlConfig, block.payload.range?.from ?? 0, (text) => this.inlineParser.parse(text), { joinLeafRaws: true, forceFinalize: options?.forceFinalize, mdxComponents: this.mdxEnabled });
+        const owned = groupHtmlOwnership(blocks, this.mdParser, block.payload.raw, this.htmlConfig, block.payload.range?.from ?? 0, (text) => this.inlineParser.parse(text), {
+          joinLeafRaws: true,
+          forceFinalize: options?.forceFinalize,
+          mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
+          contentPolicy: this.contentPolicy,
+          contentComponents,
+        });
         const retained = new Set<Block>(owned);
         // Markdown leaves absorbed into an owner keep their consumer metadata (code highlighting,
         // inline segments): the owner owns their source, their tree slots still reference them.
@@ -1666,9 +1982,6 @@ export class MarkdownEngine {
         }
         for (const child of owned) {
           const original = sequence.find((candidate) => candidate.props?.block === child);
-          if (!original) {
-            await this.refreshOwnedMdxRegions([child], options ?? {});
-          }
           grouped.push(original ?? createBlockSnapshot(child));
         }
         sequence = [];
@@ -1696,49 +2009,149 @@ export class MarkdownEngine {
           const range = nested.payload.range;
           const source = range ? listItemSources.get(`${range.from}:${range.to}`) : undefined;
           if (source !== undefined) {
-            const { text, from: baseOffset } = source;
-            const codeRanges = collectCodeProtectedRanges(text).map((range) => ({
-              ...range,
-              from: baseOffset + range.from,
-              to: baseOffset + range.to,
-            }));
-            const parsed = nested.isFinalized ? null : this.parseInlineStreaming(text, this.inlineContext(nested, ancestors), nested.payload.inline);
-            this.updateInlineLookaheadMeta(nested, parsed, this.tracksInlineStatus());
-            if (text.includes("<") || text.includes("{")) {
-              const extraction = extractMixedContentSegmentsWithLookahead(text, baseOffset,
-                (value) => {
-                  const inline = nested.isFinalized ? this.inlineParser.parse(value) : this.parseInlineStreaming(value, this.inlineContext(nested, ancestors, "mixed-content")).inline;
-                  return this.mdxEnabled ? preserveInlineComponentSource(inline) : inline;
-                }, {
-                  html: !nested.isFinalized && this.formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
-                  mdx: { autoClose: !nested.isFinalized && this.formatAnticipationConfig.mdx, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES, componentAllowlist: this.mdxComponentAllowlist ?? undefined },
-                  protectedRanges: codeRanges,
-                  allowedTags: this.htmlConfig?.allowedTags,
-                  literalTagContent: this.htmlConfig?.literalTagContent,
-                  lookaheadContext: this.inlineContext(nested, ancestors, "mixed-content"),
-                });
-              if (!nested.isFinalized && extraction.lookahead.length > 0) {
-                nested.payload.meta = { ...nested.payload.meta, mixedLookahead: extraction.lookahead };
+            const { text, from: baseOffset, sourcePositions } = source;
+            const trustedNativeListItem = this.hasTrustedNativeSource(nested);
+            if (trustedNativeListItem) {
+              const protectedRanges = collectCodeProtectedRanges(text);
+              if (this.enableMath) protectedRanges.push(...collectMathProtectedRanges(text, protectedRanges));
+              protectedRanges.push(...collectAutolinkProtectedRanges(text));
+              if (
+                sourcePositions !== undefined &&
+                sourcePositions.length === text.length &&
+                Array.isArray(nested.payload.inline)
+              ) {
+                nested.payload.inline = this.prepareTrustedNativeInline(
+                  nested.payload.inline,
+                  text,
+                  nested.id,
+                  baseOffset,
+                  sourcePositions,
+                  protectedRanges,
+                );
               }
-              const segmentPrefix = `${nested.id}::list-item:segment:`;
-              const blockChildren = (snapshot.children ?? []).filter((child) => !child.id.startsWith(segmentPrefix));
-              const segments = extraction.segments;
-              const segmentChildren: NodeSnapshot[] = segments.some((segment) => segment.kind === "mdx") ? segments.map((segment, index) => ({
-                id: `${segmentPrefix}${index}`,
-                type: `list-item-${segment.kind}`,
-                props: segment.kind === "text" ? { inline: segment.inline, text: segment.value }
-                  : segment.kind === "html" ? {
-                      raw: segment.value, html: segment.sanitized ?? segment.value,
-                      htmlTree: sanitizeHtmlTreeInWorker(segment.value, this.mixedHtmlConfig, undefined, (value) => this.inlineParser.parse(value)),
-                    }
-                  : { raw: segment.value, status: segment.status ?? "pending", error: segment.error },
-                children: [],
-              })) : [];
+              const nativeInline = nested.payload.inline ?? [];
+              const inline = this.mdxEnabled
+                ? preserveInlineComponentSource(nativeInline)
+                : nativeInline;
               if (this.mdxEnabled) {
-                nested.payload.inline = preserveInlineComponentSource(nested.payload.inline ?? []);
-                snapshot.props = { ...snapshot.props, inline: nested.payload.inline };
+                const meta = { ...nested.payload.meta };
+                if (inline !== nested.payload.inline) meta.inlineComponentSource = true;
+                else delete meta.inlineComponentSource;
+                nested.payload.meta = meta;
               }
-              snapshot.children = [...segmentChildren, ...blockChildren];
+              nested.payload.inline = inline;
+              snapshot.props = { ...snapshot.props, inline };
+              const segmentPrefix = `${nested.id}::list-item:segment:`;
+              snapshot.children = (snapshot.children ?? []).filter((child) => !child.id.startsWith(segmentPrefix));
+              const meta = { ...nested.payload.meta };
+              delete meta.mixedLookahead;
+              delete meta.mixedSegments;
+              delete meta.mixedHtmlTrees;
+              delete meta.allowMixedStreaming;
+              if (protectedRanges.length > 0) meta.protectedRanges = protectedRanges;
+              else delete meta.protectedRanges;
+              nested.payload.meta = meta;
+              this.updateInlineLookaheadMeta(nested, null, false);
+            } else {
+              const localCodeRanges = collectCodeProtectedRanges(text);
+              const codeRanges = localCodeRanges.map((range) => ({
+                ...range,
+                from: baseOffset + range.from,
+                to: baseOffset + range.to,
+              }));
+              const parsed = nested.isFinalized ? null : this.parseInlineStreaming(text, this.inlineContext(nested, ancestors), nested.payload.inline);
+              this.updateInlineLookaheadMeta(nested, parsed, this.tracksInlineStatus());
+              if (text.includes("<") || text.includes("{")) {
+                let restrictedInlineTree: HtmlTreeNode[] | null = null;
+                if (this.contentPolicy === "restricted" && contentComponents && text.includes("<")) {
+                  const protectedRanges = localCodeRanges;
+                  if (this.enableMath) protectedRanges.push(...collectMathProtectedRanges(text, protectedRanges));
+                  protectedRanges.push(...collectAutolinkProtectedRanges(text));
+                  restrictedInlineTree = buildRestrictedComponentInlineTree(text, contentComponents, {
+                    forceFinalize: options?.forceFinalize,
+                    parseInline: (value) => this.inlineParser.parse(value),
+                    parser: this.mdParser,
+                    htmlOptions: this.htmlConfig,
+                    literalTagContent: this.htmlConfig?.literalTagContent,
+                    protectedRanges,
+                  });
+                }
+                const extraction = restrictedInlineTree && nested.isFinalized
+                  ? null
+                  : extractMixedContentSegmentsWithLookahead(
+                      text,
+                      baseOffset,
+                      restrictedInlineTree
+                        ? () => []
+                        : (value) => {
+                            const inline = nested.isFinalized
+                              ? this.inlineParser.parse(value)
+                              : this.parseInlineStreaming(value, this.inlineContext(nested, ancestors, "mixed-content")).inline;
+                            return this.mdxEnabled ? preserveInlineComponentSource(inline) : inline;
+                          },
+                      {
+                        html: !nested.isFinalized && this.formatAnticipationConfig.html
+                          ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES }
+                          : undefined,
+                        mdx: {
+                          autoClose: !nested.isFinalized && this.formatAnticipationConfig.mdx,
+                          maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES,
+                          componentAllowlist:
+                            this.contentPolicy === "trusted-mdx" || !contentComponents || contentComponents.size === 0
+                              ? undefined
+                              : contentComponents.keys(),
+                        },
+                        protectedRanges: codeRanges,
+                        allowedTags: this.htmlConfig?.allowedTags,
+                        literalTagContent: this.htmlConfig?.literalTagContent,
+                        lookaheadContext: this.inlineContext(nested, ancestors, "mixed-content"),
+                      },
+                    );
+                if (extraction && !nested.isFinalized && extraction.lookahead.length > 0) {
+                  nested.payload.meta = { ...nested.payload.meta, mixedLookahead: extraction.lookahead };
+                }
+                const segmentPrefix = `${nested.id}::list-item:segment:`;
+                const blockChildren = (snapshot.children ?? []).filter((child) => !child.id.startsWith(segmentPrefix));
+                const segments = extraction?.segments ?? [];
+                const segmentChildren: NodeSnapshot[] = restrictedInlineTree
+                  ? [{
+                      id: `${segmentPrefix}0`,
+                      type: "list-item-html",
+                      range: sourcePositions && sourcePositions.length === text.length && sourcePositions.length > 0
+                        ? { from: sourcePositions[0], to: sourcePositions[sourcePositions.length - 1] + 1 }
+                        : { from: baseOffset, to: baseOffset + text.length },
+                      props: { raw: text, htmlTree: restrictedInlineTree },
+                      children: [],
+                    }]
+                  : segments.some((segment) => segment.kind === "mdx") ? segments.map((segment, index) => {
+                      const restrictedTree = segment.kind === "mdx" && this.contentPolicy === "restricted" && contentComponents
+                        ? buildRestrictedComponentTree(segment.value, contentComponents, {
+                            forceFinalize: options?.forceFinalize,
+                            parseInline: (value) => this.inlineParser.parse(value),
+                            parser: this.mdParser,
+                            literalTagContent: this.htmlConfig?.literalTagContent,
+                          })
+                        : null;
+                      return {
+                        id: `${segmentPrefix}${index}`,
+                        type: restrictedTree ? "list-item-html" : `list-item-${segment.kind}`,
+                        range: segment.range ? { ...segment.range } : undefined,
+                        props: segment.kind === "text" ? { inline: segment.inline, text: segment.value }
+                          : segment.kind === "html" ? {
+                              raw: segment.value, html: segment.sanitized ?? segment.value,
+                              htmlTree: sanitizeHtmlTreeInWorker(segment.value, this.mixedHtmlConfig, undefined, (value) => this.inlineParser.parse(value)),
+                            }
+                          : restrictedTree ? { raw: segment.value, htmlTree: restrictedTree }
+                          : { raw: segment.value },
+                        children: [],
+                      };
+                    }) : [];
+                if (this.mdxEnabled) {
+                  nested.payload.inline = preserveInlineComponentSource(nested.payload.inline ?? []);
+                  snapshot.props = { ...snapshot.props, inline: nested.payload.inline };
+                }
+                snapshot.children = [...segmentChildren, ...blockChildren];
+              }
             }
           }
         }
@@ -1747,7 +2160,6 @@ export class MarkdownEngine {
         nested.payload.meta = { ...nested.payload.meta, preparedNested: { props, children: snapshot.children ?? [] } };
       } else {
         await this.enrichBlockContent(nested, options, ancestors);
-        await this.refreshOwnedMdxRegions([nested], options ?? {});
         const updated = createBlockSnapshot(nested);
         snapshot.type = updated.type;
         snapshot.props = { ...snapshot.props, ...updated.props, inline: nested.payload.inline };
@@ -2459,9 +2871,6 @@ export class MarkdownEngine {
     for (const nextBlock of nextBlocks) {
       const prevBlock = prevMap.get(nextBlock.id);
       if (!prevBlock) continue;
-      if (prevBlock.type === "mdx" && nextBlock.type === "mdx") {
-        preserveMdxMetadata(prevBlock, nextBlock);
-      }
       if (changedBlockIds.size > 0 && !changedBlockIds.has(nextBlock.id) && blocksStructurallyEqual(prevBlock, nextBlock)) {
         continue;
       }
@@ -2579,10 +2988,8 @@ export class MarkdownEngine {
     }
 
     const { blocks: reparsedBlocks, lastTree: reparsedTree } = await this.parseAll(this.currentContent, { forceFinalize: true });
-    const mdxState = this.engineMdxState();
     for (const block of reparsedBlocks) {
       block.isFinalized = true;
-      await updateMdxCompilationState(mdxState, block);
     }
 
     this.blocks = reparsedBlocks;
@@ -2687,27 +3094,6 @@ export class MarkdownEngine {
     metricsCollector.setBlocksProduced(this.blocks.length);
     this.dispatchPatchBatch(immediate, metricsCollector);
   }
-  private handleMdxStatus(blockId: string, update: MdxStatusUpdate): void {
-    if (this.mdxCompileMode === "worker") {
-      return;
-    }
-    const { updatedBlock } = applyMdxStatusUpdate(this.blocks, blockId, update);
-    if (!updatedBlock) return;
-
-    reportWorkerStructuralInvariantViolations("handleMdxStatus", this.blocks, this.lastWorkerInvariantSignature);
-    this.dispatchPatchBatch([
-      withPatchKind(
-        {
-          op: "setProps",
-          at: { blockId },
-          props: {
-            block: updatedBlock,
-          },
-        },
-        "semantic",
-      ),
-    ]);
-  }
 
   private scheduleLazyTokenizationProcessing(): void {
     if (this.lazyTokenizationScheduled) return;
@@ -2746,7 +3132,7 @@ export class MarkdownEngine {
     const findTree = (tree: HtmlTreeNode[]): Block | undefined => {
       for (const node of tree) {
         const block = node.kind === "block" ? findBlock(node.block)
-          : node.kind === "element" ? findTree(node.children) : undefined;
+          : (node.kind === "element" || node.kind === "component") ? findTree(node.children) : undefined;
         if (block) return block;
       }
       return undefined;
@@ -2772,11 +3158,10 @@ export class MarkdownEngine {
       const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
       const nested = prepared ? findSnapshots(prepared.children) : undefined;
       if (nested) return nested;
-      for (const key of ["htmlTree", "htmlParagraphTree"]) {
-        const tree = meta?.[key] as HtmlTreeNode[] | undefined;
-        const owned = tree ? findTree(tree) : undefined;
-        if (owned) return owned;
-      }
+      const treeKey = getActiveHtmlTreeKey(meta);
+      const tree = treeKey ? (meta?.[treeKey] as HtmlTreeNode[] | undefined) : undefined;
+      const owned = tree ? findTree(tree) : undefined;
+      if (owned) return owned;
       return undefined;
     };
     for (let rootIndex = 0; rootIndex < this.blocks.length; rootIndex++) {
@@ -2809,7 +3194,7 @@ export class MarkdownEngine {
       if (node.kind === "block") {
         const block = replaceBlock(node.block);
         if (block !== node.block) result = { ...node, block };
-      } else if (node.kind === "element") {
+      } else if (node.kind === "element" || node.kind === "component") {
         const children = mapChanged(node.children, replaceTreeNode);
         if (children !== node.children) result = { ...node, children };
       }
@@ -2830,9 +3215,10 @@ export class MarkdownEngine {
         const children = mapChanged(prepared.children, replaceSnapshot);
         set("preparedNested", children === prepared.children ? prepared : { ...prepared, children });
       }
-      for (const key of ["htmlTree", "htmlParagraphTree"]) {
-        const tree = meta[key] as HtmlTreeNode[] | undefined;
-        if (tree) set(key, mapChanged(tree, replaceTreeNode));
+      const treeKey = getActiveHtmlTreeKey(meta);
+      if (treeKey) {
+        const tree = meta[treeKey] as HtmlTreeNode[] | undefined;
+        if (tree) set(treeKey, mapChanged(tree, replaceTreeNode));
       }
       replaced.set(meta, result);
       return result;

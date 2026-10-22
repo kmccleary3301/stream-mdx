@@ -37,23 +37,9 @@ Key points:
 - **Coalesce** merges small patch bursts to reduce render churn.
 - **Flush** applies patches under a frame budget.
 
-## Worker vs server compilation
+## MDX recognition and trust
 
-There are two compilation strategies for MDX:
-
-- **Worker** (recommended): all compilation happens in the worker for maximal parity.
-- **Server**: you host a compile endpoint and StreamMDX calls it when MDX is encountered.
-
-If you are unsure, start with worker mode:
-
-```tsx
-<StreamingMarkdown
-  text={content}
-  worker="/workers/markdown-worker.js"
-  features={{ mdx: true, html: true, math: true, tables: true }}
-  mdxCompileMode="worker"
-/>
-```
+MDX syntax recognition does not compile or evaluate authored code. Restricted source components use host adapters created by `defineContentComponent` in `contentComponents`; full MDX requires trusted content, `contentPolicy="trusted-mdx"`, an explicit engine and host import map, and `unsafe-eval` in `script-src`. Imports are not fetched, and evaluation runs in the host realm rather than a sandbox. See [MDX and HTML in StreamMDX](/docs/guides/mdx-and-html) for lifecycle and setup details.
 
 ## Minimal streaming example
 
@@ -67,8 +53,7 @@ export function StreamExample({ stream }: { stream: AsyncIterable<string> }) {
     <StreamingMarkdown
       stream={stream}
       worker="/workers/markdown-worker.js"
-      features={{ html: true, tables: true, mdx: true, math: true }}
-      mdxCompileMode="worker"
+      features={{ html: true, tables: true, math: true }}
     />
   );
 }
@@ -95,5 +80,4 @@ The two main rules are:
 
 - [ ] Host the worker bundle in `public/workers/markdown-worker.js`.
 - [ ] Pass `worker="/workers/markdown-worker.js"`.
-- [ ] Start with `features={{ html: true, tables: true, math: true, mdx: true }}`.
-- [ ] Use `mdxCompileMode="worker"` for parity.
+- [ ] Start with `features={{ html: true, tables: true, math: true }}`.

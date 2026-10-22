@@ -1,4 +1,5 @@
 import type { Block, HtmlTreeNode, NodeSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
+import { getActiveHtmlTreeKey } from "./html-ownership";
 import {
   compareLazyPriority,
   mergeLazyRequests,
@@ -83,8 +84,9 @@ export function pruneLazyTokenizationStates(states: Map<string, LazyTokenization
     if (block.type === "code") ids.add(block.id);
     const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
     if (prepared) visitSnapshots(prepared.children);
-    for (const key of ["htmlTree", "htmlParagraphTree"]) {
-      const tree = block.payload.meta?.[key] as HtmlTreeNode[] | undefined;
+    const treeKey = getActiveHtmlTreeKey(block.payload.meta);
+    if (treeKey) {
+      const tree = block.payload.meta?.[treeKey] as HtmlTreeNode[] | undefined;
       if (tree) visitTree(tree);
     }
   };

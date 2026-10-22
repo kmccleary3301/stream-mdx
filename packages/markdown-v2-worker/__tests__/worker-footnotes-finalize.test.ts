@@ -334,7 +334,11 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
         let document = createInitialSnapshot();
         const input: WorkerIn[] = [{ type: "INIT", initialContent: "", ...init }];
         if (mode === "interleaved" && content === first + later) {
-          input.push({ type: "APPEND", text: first }, { type: "FINALIZE" }, { type: "APPEND", text: later }, { type: "FINALIZE" });
+          input.push(
+            { type: "APPEND", text: first },
+            { type: "APPEND", text: later },
+            { type: "FINALIZE" },
+          );
         } else {
           const size = mode === "one-character" ? 1 : content.length;
           for (let index = 0; index < content.length; index += size) input.push({ type: "APPEND", text: content.slice(index, index + size) });
@@ -481,7 +485,13 @@ async function runNestedBlockquoteWithoutReferencesTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
   for (const message of [
-    ...(await harness.send({ type: "INIT", initialContent: "", prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: true, tables: false, callouts: false } })),
+    ...(await harness.send({
+      type: "INIT",
+      initialContent: "",
+      prewarmLangs: [],
+      contentPolicy: "trusted-mdx",
+      docPlugins: { footnotes: true, html: true, mdx: true, tables: false, callouts: false },
+    })),
     ...(await harness.send({ type: "APPEND", text: content })),
   ]) {
     if (message.type === "INITIALIZED") store.reset(message.blocks);

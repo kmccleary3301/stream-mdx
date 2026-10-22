@@ -56,17 +56,15 @@ async function runVirtualizedCodeMetadataTest(): Promise<void> {
   root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
   await sleep(30);
 
-  const pre = container.querySelector('pre[data-code-block="true"]') as HTMLElement | null;
-  assert.ok(pre, "expected code block to render");
-  assert.strictEqual(pre.getAttribute("data-code-virtualized"), "true", "expected code block to be virtualized");
+  const codeFrame = container.querySelector('[data-code-block="true"]') as HTMLElement | null;
+  assert.ok(codeFrame, "expected code block to render");
+  assert.strictEqual(codeFrame.getAttribute("data-code-virtualized"), "true", "expected code block to be virtualized");
 
-  const totalLines = Number(pre.getAttribute("data-code-total-lines"));
-  const mountedLines = Number(pre.getAttribute("data-code-mounted-lines"));
-  const windowSize = Number(pre.getAttribute("data-code-window-size"));
+  const totalLines = Number(codeFrame.getAttribute("data-code-total-lines"));
+  const mountedLines = Number(codeFrame.getAttribute("data-code-mounted-lines"));
 
   assert.ok(totalLines >= 500, `expected 500+ total lines, got ${totalLines}`);
   assert.ok(mountedLines > 0 && mountedLines < totalLines, "expected mounted lines to be a subset of total lines");
-  assert.ok(windowSize >= 100, `expected window size >= 100, got ${windowSize}`);
 
   root.unmount();
 }

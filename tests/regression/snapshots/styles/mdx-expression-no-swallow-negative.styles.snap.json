@@ -1,6 +1,6 @@
 {
   "fixtureId": "mdx-expression-no-swallow-negative",
-  "fixtureTitle": "MDX Expression No Swallow Negative",
+  "fixtureTitle": "Unfinished MDX-Like Expressions Stay Visible",
   "scenarioId": "S2_typical",
   "scenario": {
     "id": "S2_typical",
@@ -217,13 +217,9 @@
       "missing": true,
       "selector": "#regression-root .footnotes .footnote-backref"
     },
-    "preview-pre-adjacent": {
+    "preview-code-adjacent": {
       "missing": true,
-      "selector": "#regression-root .markdown-mdx + pre"
-    },
-    "mdx-block": {
-      "missing": true,
-      "selector": "#regression-root .markdown-mdx"
+      "selector": "#regression-root figure[data-with-codeblock=\"true\"] + :is(pre, figure, div[data-code-block=\"true\"], div:has(> div > [data-radix-scroll-area-viewport]))"
     },
     "math-inline": {
       "missing": true,

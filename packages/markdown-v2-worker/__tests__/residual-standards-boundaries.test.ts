@@ -15,7 +15,6 @@ Object.assign(globalThis, { window, document: window.document, DOMParser: window
 Object.defineProperty(globalThis, "navigator", { configurable: true, writable: true, value: window.navigator });
 const init = {
   docPlugins: { html: true, tables: true, footnotes: true, math: true, callouts: true, mdx: false },
-  mdx: { compileMode: "server" as const },
   prewarmLangs: [],
 };
 const code = "<pre><code>chunk1\n  \n  chunk2\n</code></pre>";

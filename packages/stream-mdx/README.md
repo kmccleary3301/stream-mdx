@@ -59,8 +59,7 @@ export function Demo({ text }: { text: string }) {
     <StreamingMarkdown
       text={text}
       worker="/workers/markdown-worker.js"
-      features={{ tables: true, html: true, math: true, mdx: true, footnotes: true }}
-      mdxCompileMode="worker"
+      features={{ tables: true, html: true, math: true, footnotes: true }}
       prewarmLangs={["tsx", "bash", "json"]}
     />
   );
@@ -113,8 +112,7 @@ import { compileMarkdownSnapshot } from "stream-mdx/worker/node";
 const { blocks } = await compileMarkdownSnapshot({
   text: "# Precompiled page\n\nThis was rendered from a snapshot.",
   init: {
-    docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-    mdx: { compileMode: "server" },
+    docPlugins: { tables: true, html: true, math: true, footnotes: true },
   },
 });
 

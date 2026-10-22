@@ -124,6 +124,9 @@ jobs:
       - name: Install Playwright Chromium
         run: node node_modules/playwright/cli.js install --with-deps chromium
 
+      - name: Inline-style HTML normalization regression
+        run: npx tsx tests/regression/__tests__/html-style-normalization.test.ts
+
       - name: Seeded regression smoke (managed docs server)
         run: npm run test:regression:seeded-smoke:server
 

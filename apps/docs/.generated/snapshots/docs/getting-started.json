@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:40.782Z",
-  "hash": "c68951c5469c5e0d1a9af0706568d80976c736c42ccf8dccdafd845c05530982",
+  "createdAt": "2026-10-21T20:39:29.832Z",
+  "hash": "cfa285972d14c37385fa8ed2a1fca0b9b79f743204bb968ff67d0e2eba3c64a8",
   "contentHash": "4f69972fbcead31ff58a373192299bbcabf479b7f2e1244b027006ca00280259",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "configHash": "d64d46ce02762d98863946deda7988b7bcd8ea1dc64e6560ca32dea58f9aee58",
+  "hashSalt": "docs-snapshots-v3:a1af5d4ffe8abd279e6137ad50c87f390f5afe18b69fff05e82bf96e33ef3700",
   "blocks": [
     {
       "id": "db082c0",
@@ -106,7 +106,14 @@
       "payload": {
         "raw": "In production, host the worker bundle from static assets (avoid `blob:` CSP requirements):",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 64,
+              "to": 71,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 94,
@@ -349,7 +356,19 @@
       "payload": {
         "raw": "Start with [`docs/TUI_GUIDE.md`](./TUI_GUIDE.md) for the recommended architecture and package choices, then use [`docs/CLI_USAGE.md`](./CLI_USAGE.md) for the lower-level worker/message examples.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 12,
+              "to": 31,
+              "kind": "code-inline"
+            },
+            {
+              "from": 113,
+              "to": 132,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 521,
@@ -446,7 +465,14 @@
       "payload": {
         "raw": "`StreamingMarkdown` is a client component.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 19,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 771,
@@ -890,9 +916,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

@@ -1,9 +1,11 @@
+import type { StreamingMarkdownProps } from "@stream-mdx/react";
+
 export type RegressionFixture = {
   id: string;
   title: string;
   file: string;
+  contentPolicy?: NonNullable<StreamingMarkdownProps["contentPolicy"]>;
   tags?: string[];
-  waitForMdxCompiled?: boolean;
   requiredSelectors?: string[];
   forbidSelectors?: string[];
   forbidSelectorsDuringStreaming?: string[];
@@ -18,7 +20,6 @@ export type RegressionFixture = {
   expectedTableColumnCount?: number;
   forbidIncompleteTableRows?: boolean;
   forbidIncompleteTableRowsDuringStreaming?: boolean;
-  expectedMdxBlockCount?: number;
   expectedCodeBlockCount?: number;
   enforceCodeTextPrefix?: boolean;
 };
@@ -62,7 +63,6 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "inline-html.md",
     tags: ["html"],
     requiredSelectors: ["kbd", "sub", "sup", "code.inline-code"],
-    forbidSelectors: [".markdown-mdx-inline", "[data-mdx-status]"],
     requiredTextFragments: ["Inline code with language hint: {:js}{:js}."],
   },
   {
@@ -107,7 +107,9 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     title: "MDX Preview Block",
     file: "mdx-preview-block.mdx",
     tags: ["mdx"],
-    requiredSelectors: [".markdown-mdx", "figure", "pre"],
+    contentPolicy: "trusted-mdx",
+    requiredSelectors: ["figure", "pre"],
+    expectedCodeBlockCount: 2,
   },
   {
     id: "line-breaks",
@@ -167,6 +169,7 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     title: "Naive Bayes Article",
     file: "naive-bayes.md",
     tags: ["article", "large", "mdx", "stress"],
+    contentPolicy: "trusted-mdx",
     requiredSelectors: ["table", "pre", ".katex", "blockquote"],
   },
   {
@@ -174,35 +177,56 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     title: "MDX Components",
     file: "mdx-components.mdx",
     tags: ["mdx"],
-    requiredSelectors: [".markdown-mdx", "figure", "pre", "iframe", "img"],
+    contentPolicy: "trusted-mdx",
+    requiredSelectors: ["figure", "pre", "iframe", "img"],
+    expectedCodeBlockCount: 2,
   },
   {
     id: "mdx-transitions",
     title: "MDX Pending/Compiled Transitions",
     file: "mdx-transitions.mdx",
     tags: ["mdx"],
-    requiredSelectors: [".markdown-mdx", "figure", "pre"],
-    requiredTextFragments: ["Alpha", "Model", "Blockquote inside MDX"],
-    expectedMdxBlockCount: 3,
+    contentPolicy: "trusted-mdx",
+    requiredSelectors: ["figure", "table", "pre", "blockquote"],
+    requiredTextFragments: [
+      "Alpha",
+      "Beta",
+      "Gamma",
+      "Model",
+      "Latency (ms)",
+      "fast",
+      "medium",
+      "Blockquote inside MDX",
+      "inline code",
+      "strong text",
+    ],
+    expectedTableColumnCount: 3,
+    expectedCodeBlockCount: 3,
   },
   {
     id: "mdx-math-code-mixed",
     title: "MDX Math Code Mixed",
     file: "mdx-math-code-mixed.mdx",
     tags: ["mdx", "math", "code", "stress"],
-    requiredSelectors: [".markdown-mdx", ".katex", "pre", "table"],
+    contentPolicy: "trusted-mdx",
+    requiredSelectors: [".katex", "pre", "table"],
     requiredTextFragments: ["ordered item", "Model", "answer = 42", "Stability note"],
-    expectedMdxBlockCount: 2,
-    expectedCodeBlockCount: 2,
+    // All three authored text, TypeScript, and Python fences must survive projection.
+    expectedCodeBlockCount: 3,
   },
   {
     id: "mdx-multi-status",
-    title: "MDX Multi Status",
+    title: "Mixed MDX Inputs Stay Markdown",
     file: "mdx-multi-status.mdx",
-    tags: ["mdx", "math", "code", "error", "stress"],
-    requiredSelectors: [".markdown-mdx", ".katex", "pre", "table"],
-    requiredTextFragments: ["Stable preview payload", "Stable", "Compiled", "MDX failed"],
-    expectedMdxBlockCount: 3,
+    tags: ["mdx", "math", "code", "stress"],
+    contentPolicy: "markdown",
+    requiredSelectors: [".katex", "pre", "pre code"],
+    requiredTextFragments: [
+      "Stable preview payload",
+      "Stable",
+      "Compiled",
+      "export const lanes = [\"alpha\", \"beta\", \"gamma\"];",
+    ],
     expectedCodeBlockCount: 2,
   },
   {
@@ -394,11 +418,11 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
   },
   {
     id: "mdx-tag-allowlist-inline",
-    title: "MDX Tag Allowlist Inline",
+    title: "Untrusted Inline MDX Stays Markdown",
     file: "mdx-tag-allowlist-inline.mdx",
     tags: ["anticipation", "mdx", "inline"],
-    waitForMdxCompiled: false,
-    requiredSelectors: [".markdown-mdx-inline", "ul", "blockquote"],
+    contentPolicy: "markdown",
+    requiredSelectors: ["ul", "blockquote"],
     requiredTextFragments: [
       "Prefix text with",
       "trailing prose that must remain visible",
@@ -410,11 +434,10 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
   },
   {
     id: "mdx-tag-no-swallow-negative",
-    title: "MDX Tag No Swallow Negative",
+    title: "Unfinished MDX-Like Tags Stay Visible",
     file: "mdx-tag-no-swallow-negative.mdx",
     tags: ["anticipation", "mdx", "negative"],
-    waitForMdxCompiled: false,
-    requiredSelectors: [],
+    contentPolicy: "markdown",
     requiredTextFragments: [
       "Prefix text with",
       "trailing prose that must stay visible",
@@ -423,10 +446,10 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
   },
   {
     id: "mdx-expression-no-swallow-negative",
-    title: "MDX Expression No Swallow Negative",
+    title: "Unfinished MDX-Like Expressions Stay Visible",
     file: "mdx-expression-no-swallow-negative.mdx",
     tags: ["anticipation", "mdx", "negative"],
-    waitForMdxCompiled: false,
+    contentPolicy: "markdown",
     requiredSelectors: ["ul", "blockquote"],
     requiredTextFragments: [
       "Prefix text with {expr and trailing prose that must stay visible.",

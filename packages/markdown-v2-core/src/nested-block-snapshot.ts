@@ -17,9 +17,51 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
   const source = block.payload.raw;
   const tree = parser.parse(source);
   const offset = block.payload.range?.from ?? 0;
-  const meta = block.payload.meta as { formatAnticipation?: FormatAnticipationConfig; mathEnabled?: boolean } | undefined;
-  const parseInline = (text: string): InlineNode[] => {
-    if (block.isFinalized) return inlineParser.parse(text);
+  const meta = block.payload.meta as {
+    formatAnticipation?: FormatAnticipationConfig;
+    mathEnabled?: boolean;
+    trustedMdxSource?: boolean;
+  } | undefined;
+  const authoredOffset = meta?.trustedMdxSource === true && block.isFinalized &&
+      Number.isSafeInteger(block.payload.range?.from) && (block.payload.range?.from as number) >= 0
+    ? block.payload.range?.from
+    : undefined;
+  const childrenOf = (node: SyntaxNode): SyntaxNode[] => {
+    const children: SyntaxNode[] = [];
+    for (let child = node.firstChild; child; child = child.nextSibling) children.push(child);
+    return children;
+  };
+  const mapInlineSourceRanges = (nodes: InlineNode[], positions: readonly number[]): InlineNode[] => nodes.map((node) => {
+    const range = node.sourceRange;
+    let sourceRange: { from: number; to: number } | undefined;
+    if (
+      range &&
+      Number.isSafeInteger(range.from) &&
+      Number.isSafeInteger(range.to) &&
+      range.from >= 0 &&
+      range.to > range.from &&
+      range.to <= positions.length
+    ) {
+      const authoredFrom = positions[range.from];
+      const authoredEnd = positions[range.to - 1];
+      if (Number.isSafeInteger(authoredFrom) && Number.isSafeInteger(authoredEnd)) {
+        sourceRange = { from: authoredFrom, to: authoredEnd + 1 };
+      }
+    }
+    const { sourceRange: _localRange, ...rest } = node;
+    return {
+      ...rest,
+      ...(sourceRange ? { sourceRange } : {}),
+      ...("children" in node && Array.isArray(node.children) ? { children: mapInlineSourceRanges(node.children, positions) } : {}),
+    } as InlineNode;
+  });
+  const parseInline = (text: string, sourcePositions?: readonly number[]): InlineNode[] => {
+    if (block.isFinalized) {
+      const nodes = authoredOffset !== undefined && sourcePositions
+        ? inlineParser.parse(text, { sourceOffset: 0 })
+        : inlineParser.parse(text);
+      return authoredOffset !== undefined && sourcePositions ? mapInlineSourceRanges(nodes, sourcePositions) : nodes;
+    }
     if (streamingInline) return streamingInline(text);
     const formatAnticipation = meta?.formatAnticipation ?? { inline: true, mathInline: true, mathBlock: true, regex: true };
     const regexAppend = normalizeFormatAnticipation(formatAnticipation).regex ? inlineParser.getRegexAnticipationAppend(text) : "";
@@ -27,29 +69,47 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
     if (prepared.kind === "raw") return [{ kind: "text", text }];
     return inlineParser.parse(prepared.content, { cache: false });
   };
-  const childrenOf = (node: SyntaxNode): SyntaxNode[] => {
-    const children: SyntaxNode[] = [];
-    for (let child = node.firstChild; child; child = child.nextSibling) children.push(child);
-    return children;
-  };
-  // Lezer includes continuation quote marks in leaf ranges. Remove exactly those marks,
-  // including every ancestor's mark on lazy continuation lines, rather than stripping text heuristically.
-  const leafText = (node: SyntaxNode): string => {
+  const buildLeafText = (node: SyntaxNode, includeSourcePositions = false): { text: string; sourcePositions?: number[] } => {
     const marks: SyntaxNode[] = [];
     const visit = (child: SyntaxNode) => {
       if (child.type.name === "QuoteMark") marks.push(child);
       else for (const nested of childrenOf(child)) visit(nested);
     };
     visit(node);
-    let result = "";
+    let rawText = "";
+    const rawPositions = includeSourcePositions && authoredOffset !== undefined ? [] as number[] : undefined;
+    const appendRange = (from: number, to: number) => {
+      rawText += source.slice(from, to);
+      if (rawPositions) {
+        for (let position = from; position < to; position++) rawPositions.push((authoredOffset as number) + position);
+      }
+    };
     let from = node.from;
     for (const mark of marks.sort((a, b) => a.from - b.from)) {
-      result += source.slice(from, mark.from);
+      appendRange(from, mark.from);
       from = mark.to;
       if (source[from] === " " || source[from] === "\t") from++;
     }
-    const text = result + source.slice(from, node.to);
-    if (node.type.name !== "HTMLBlock") return text.split("\n").map((line) => line.trimStart()).join("\n");
+    appendRange(from, node.to);
+    if (node.type.name !== "HTMLBlock") {
+      if (!rawPositions) return { text: rawText.split("\n").map((line) => line.trimStart()).join("\n") };
+      let text = "";
+      const sourcePositions: number[] = [];
+      let lineStart = 0;
+      while (lineStart <= rawText.length) {
+        const newline = rawText.indexOf("\n", lineStart);
+        const lineEnd = newline === -1 ? rawText.length : newline;
+        const line = rawText.slice(lineStart, lineEnd);
+        const trimLength = line.length - line.trimStart().length;
+        text += line.slice(trimLength);
+        for (let index = lineStart + trimLength; index < lineEnd; index++) sourcePositions.push(rawPositions[index]);
+        if (newline === -1) break;
+        text += "\n";
+        sourcePositions.push(rawPositions[newline]);
+        lineStart = newline + 1;
+      }
+      return { text, sourcePositions };
+    }
     let listIndent = 0;
     for (let parent = node.parent; parent; parent = parent.parent) {
       if (parent.type.name !== "ListItem" && parent.type.name !== "EmptyListItem") continue;
@@ -58,9 +118,30 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
       const spacing = source.slice(mark.to).match(/^[ \t]*/)?.[0].length ?? 0;
       listIndent += mark.to - mark.from + (spacing >= 1 && spacing <= 4 ? spacing : 1);
     }
-    const prefix = new RegExp(`^ {0,${listIndent}}`);
-    return listIndent === 0 ? text : text.split("\n").map((line) => line.replace(prefix, "")).join("\n");
+    if (!rawPositions) {
+      const prefix = new RegExp(`^ {0,${listIndent}}`);
+      const text = listIndent === 0 ? rawText : rawText.split("\n").map((line) => line.replace(prefix, "")).join("\n");
+      return { text };
+    }
+    if (listIndent === 0) return { text: rawText, sourcePositions: rawPositions };
+    let text = "";
+    const sourcePositions: number[] = [];
+    let lineStart = 0;
+    while (lineStart <= rawText.length) {
+      const newline = rawText.indexOf("\n", lineStart);
+      const lineEnd = newline === -1 ? rawText.length : newline;
+      let trimLength = 0;
+      while (trimLength < listIndent && rawText[lineStart + trimLength] === " ") trimLength++;
+      text += rawText.slice(lineStart + trimLength, lineEnd);
+      for (let index = lineStart + trimLength; index < lineEnd; index++) sourcePositions.push(rawPositions[index]);
+      if (newline === -1) break;
+      text += "\n";
+      sourcePositions.push(rawPositions[newline]);
+      lineStart = newline + 1;
+    }
+    return { text, sourcePositions };
   };
+  const leafText = (node: SyntaxNode): string => buildLeafText(node).text;
   const looseList = (node: SyntaxNode): boolean => {
     const items = childrenOf(node).filter((child) => child.type.name === "ListItem" || child.type.name === "EmptyListItem");
     const blankGap = (a: SyntaxNode, b: SyntaxNode) => /\n[ >\t]*\n/.test(source.slice(a.to, b.from));
@@ -87,26 +168,39 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
         const content = childrenOf(item).filter((child) => !["ListMark", "QuoteMark", "LinkReference"].includes(child.type.name));
         const first = content[0];
         const primary = first && (first.type.name === "Paragraph" || first.type.name === "Task") ? first : undefined;
-        const text = primary ? leafText(primary) : "";
+        const primaryLeaf = primary ? buildLeafText(primary, true) : { text: "" };
+        const text = primaryLeaf.text;
         const task = primary?.type.name === "Task" ? text.match(/^\[([ xX])\][ \t]+/) : null;
         const primaryText = task ? text.slice(task[0].length) : text;
-        const inline = parseInline(primaryText);
-        const baseOffset = offset + (primary?.from ?? item.from) + (task?.[0].length ?? 0);
+        const primarySourcePositions = primaryLeaf.sourcePositions?.slice(task?.[0].length ?? 0);
+        const inline = parseInline(primaryText, primarySourcePositions);
+        const baseOffset = primarySourcePositions?.[0] ?? (offset + (primary?.from ?? item.from) + (task?.[0].length ?? 0));
         const protectedRanges: ProtectedRange[] = [];
-        if (primaryText.includes("`")) {
+        if (authoredOffset === undefined && primaryText.includes("`")) {
           const cursor = parser.parse(primaryText).cursor();
           do {
-            if (cursor.name === "InlineCode") protectedRanges.push({ from: baseOffset + cursor.from, to: baseOffset + cursor.to, kind: "code-inline" });
+            if (cursor.name === "InlineCode") {
+              const from = baseOffset + cursor.from;
+              const to = baseOffset + cursor.to;
+              if (Number.isSafeInteger(from) && Number.isSafeInteger(to) && to > from) {
+                protectedRanges.push({ from, to, kind: "code-inline" });
+              }
+            }
           } while (cursor.next());
         }
-        const segments = primary ? extractMixedContentSegments(primaryText, baseOffset, parseInline, { protectedRanges }) : [];
+        const segments = primary && authoredOffset === undefined
+          ? extractMixedContentSegments(primaryText, baseOffset, parseInline, {
+              protectedRanges,
+            })
+          : [];
         const structured = segments.some((segment) => segment.kind === "mdx");
         const children: NodeSnapshot[] = structured ? segments.map((segment, segmentIndex) => ({
           id: `${itemId}::list-item:segment:${segmentIndex}`,
           type: `list-item-${segment.kind}`,
+          range: segment.range ? { ...segment.range } : undefined,
           props: segment.kind === "text" ? { inline: segment.inline, text: segment.value }
             : segment.kind === "html" ? { raw: segment.value, html: segment.sanitized ?? segment.value }
-            : { raw: segment.value, status: segment.status ?? "pending", error: segment.error },
+            : { raw: segment.value },
           children: [],
         })) : [];
         content.forEach((child, childIndex) => {
@@ -119,7 +213,15 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
         });
         const itemRange = { from: offset + item.from, to: offset + item.to };
         const itemBlock: Block = { id: itemId, type: "list-item", isFinalized: block.isFinalized,
-          payload: { raw: source.slice(item.from, item.to), inline, range: itemRange, meta: { sourceContainer: "list" } } };
+          payload: {
+            raw: source.slice(item.from, item.to),
+            inline,
+            range: itemRange,
+            meta: {
+              sourceContainer: "list",
+              ...(primarySourcePositions ? { inlineSourcePositions: primarySourcePositions } : {}),
+            },
+          } };
         return { id: itemId, type: "list-item", range: itemRange,
           props: { ...props, block: itemBlock, index, inline, text: inlineNodesToPlainText(inline), raw: itemBlock.payload.raw,
             task: task ? true : undefined, checked: task ? task[1].toLowerCase() === "x" : undefined }, children };
@@ -133,9 +235,13 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
       return { id, type: "blockquote", props: { block: nested }, range, children };
     }
     let type: Block["type"] = "paragraph";
-    let raw = leafText(node);
+    const isHeading = name.startsWith("ATXHeading") || name.startsWith("SetextHeading");
+    const leaf = buildLeafText(node, name === "Paragraph" || isHeading);
+    let raw = leaf.text;
+    let inlineSourcePositions = leaf.sourcePositions;
     if (name === "Paragraph" && !raw.trim()) return null;
     let inline: InlineNode[] | undefined;
+    let inlineSourceText: string | undefined;
     if (name === "FencedCode" || name === "CodeBlock" || name === "IndentedCode") {
       type = "code";
       const { code, info } = extractLezerCode(node, source);
@@ -147,21 +253,38 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
       }
       Object.assign(baseMeta, fence.meta);
       raw = source.slice(node.from, node.to);
-    } else if (name.startsWith("ATXHeading") || name.startsWith("SetextHeading")) {
+    } else if (isHeading) {
       type = "heading";
       baseMeta.headingLevel = Number(name.slice(name.startsWith("ATX") ? 10 : 13)) || 1;
-      inline = parseInline(removeHeadingMarkers(raw));
+      const headingText = removeHeadingMarkers(raw);
+      inlineSourceText = headingText;
+      if (inlineSourcePositions) {
+        const prefixLength = /^(?:#{1,6})(?:\s+|$)/.exec(raw)?.[0].length ?? 0;
+        inlineSourcePositions = inlineSourcePositions.slice(prefixLength, prefixLength + headingText.length);
+      }
+      inline = parseInline(headingText, inlineSourcePositions);
     } else if (name === "HorizontalRule") {
       type = "hr";
     } else if (name === "HTMLBlock" || name === "CommentBlock" || name === "ProcessingInstructionBlock") {
       type = "html";
       baseMeta.lezerNodeType = name;
     } else {
-      inline = parseInline(raw);
+      inlineSourceText = raw;
+      inline = parseInline(raw, inlineSourcePositions);
     }
     const nested: Block = { id, type, isFinalized: block.isFinalized, payload: { raw, inline, range, meta: baseMeta } };
     const snapshot = createBlockSnapshot(nested);
     if (type === "paragraph") snapshot.props = { ...snapshot.props, inline, text: inlineNodesToPlainText(inline ?? []) };
+    if (inlineSourcePositions) {
+      const snapshotBlock = snapshot.props?.block as Block | undefined;
+      if (snapshotBlock) {
+        snapshotBlock.payload.meta = {
+          ...snapshotBlock.payload.meta,
+          inlineSourcePositions,
+          ...(inlineSourceText !== undefined && inlineSourceText !== raw ? { inlineSourceText } : {}),
+        };
+      }
+    }
     return snapshot;
   };
   const root = tree.topNode.firstChild;

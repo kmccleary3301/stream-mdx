@@ -8,6 +8,7 @@ import { DOC_SECTIONS } from "../apps/docs/lib/docs";
 import { GUIDE_ITEMS } from "../apps/docs/content/guides";
 import { SHOWCASE_ITEMS } from "../apps/docs/content/showcase";
 import { compileMarkdownSnapshot, type SnapshotArtifactV1 } from "../packages/markdown-v2-worker/src/node/index.ts";
+import { computeDocsSnapshotHashSalt, DOCS_SNAPSHOT_INIT } from "./docs-snapshot-provenance";
 
 type SnapshotKind = "docs" | "guides" | "showcase";
 
@@ -40,12 +41,6 @@ const GUIDES_ROOT = path.join(ROOT, "apps/docs/content/guides");
 const SHOWCASE_ROOT = path.join(ROOT, "apps/docs/content/showcase");
 const OUTPUT_ROOT = path.join(ROOT, "apps/docs/.generated/snapshots");
 const CACHE_ROOT = path.join(ROOT, ".cache/docs-snapshots");
-
-const DEFAULT_INIT = {
-  docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true, callouts: true },
-  mdx: { compileMode: "server" as const },
-  prewarmLangs: ["typescript", "tsx", "javascript", "json", "bash", "diff"],
-};
 
 type BuildTarget = {
   kind: SnapshotKind;
@@ -86,33 +81,10 @@ function stableStringify(value: unknown): string {
   return `{${body}}`;
 }
 
-async function computeSnapshotHashSalt(): Promise<string> {
-  // We want cache invalidation when the worker bundle changes. Hashing the built
-  // bundle is deterministic and does not rely on git metadata.
-  const candidates = [
-    // Node snapshot compiler changes should also invalidate snapshot artifacts.
-    path.join(ROOT, "packages/markdown-v2-worker/dist/node/index.mjs"),
-    path.join(ROOT, "packages/markdown-v2-worker/dist/hosted/markdown-worker.js"),
-    path.join(ROOT, "apps/docs/public/workers/markdown-worker.js"),
-  ];
-
-  for (const filePath of candidates) {
-    try {
-      const raw = await fs.readFile(filePath);
-      const digest = createHash("sha256").update(raw).digest("hex");
-      return `docs-snapshots-v2:${digest}`;
-    } catch {
-      // try next candidate
-    }
-  }
-
-  return "docs-snapshots-v2:unknown-worker";
-}
-
 function stableHashForText(text: string, salt: string): string {
   // Mirror the worker's stable hashing logic so we can cheaply detect when an
   // on-disk artifact matches the current inputs (including our salt).
-  const payload = stableStringify({ text, init: DEFAULT_INIT, salt });
+  const payload = stableStringify({ text, init: DOCS_SNAPSHOT_INIT, salt });
   return createHash("sha256").update(payload).digest("hex");
 }
 
@@ -174,7 +146,7 @@ async function compileTarget(target: BuildTarget, hashSalt: string): Promise<Sna
 
   const result = await compileMarkdownSnapshot({
     text: markdown,
-    init: DEFAULT_INIT,
+    init: DOCS_SNAPSHOT_INIT,
     hashSalt,
     cache: {
       dir: CACHE_ROOT,
@@ -204,7 +176,7 @@ async function main(): Promise<void> {
   }
   await ensureDirs();
 
-  const hashSalt = await computeSnapshotHashSalt();
+  const hashSalt = await computeDocsSnapshotHashSalt(ROOT);
 
   const targets = buildTargets();
   const entries: SnapshotEntry[] = [];

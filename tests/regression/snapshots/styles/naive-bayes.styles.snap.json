@@ -425,37 +425,24 @@
         "text-underline-offset": "2px"
       }
     },
-    "preview-pre-adjacent": {
-      "missing": true,
-      "selector": "#regression-root .markdown-mdx + pre"
-    },
-    "mdx-block": {
-      "selector": "#regression-root .markdown-mdx",
+    "preview-code-adjacent": {
+      "selector": "#regression-root figure[data-with-codeblock=\"true\"] + :is(pre, figure, div[data-code-block=\"true\"], div:has(> div > [data-radix-scroll-area-viewport]))",
       "computed": {
-        "display": "block",
-        "padding-top": "0px",
-        "padding-right": "0px",
-        "padding-bottom": "0px",
-        "padding-left": "0px",
+        "width": "1238px",
         "margin-top": "0px",
         "margin-bottom": "0px",
         "border-top-width": "0px",
-        "border-right-width": "0px",
-        "border-bottom-width": "0px",
-        "border-left-width": "0px",
+        "border-right-width": "1px",
+        "border-bottom-width": "1px",
+        "border-left-width": "1px",
         "border-top-color": "rgb(232, 232, 232)",
         "border-right-color": "rgb(232, 232, 232)",
         "border-bottom-color": "rgb(232, 232, 232)",
         "border-left-color": "rgb(232, 232, 232)",
         "border-top-left-radius": "0px",
         "border-top-right-radius": "0px",
-        "border-bottom-left-radius": "0px",
-        "border-bottom-right-radius": "0px",
-        "background-color": "rgba(0, 0, 0, 0)",
-        "box-shadow": "none",
-        "overflow": "visible",
-        "overflow-x": "visible",
-        "overflow-y": "visible"
+        "border-bottom-left-radius": "8px",
+        "border-bottom-right-radius": "8px"
       }
     },
     "math-inline": {

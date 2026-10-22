@@ -82,6 +82,13 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
 }
 
 type NodeMap = Map<string, NodeRecord>;
+const preparedStoreCaptureByStore = new WeakMap<RendererStore, () => RendererStore>();
+
+export function capturePreparedRendererStore(store: RendererStore): RendererStore {
+  const capture = preparedStoreCaptureByStore.get(store);
+  if (!capture) throw new Error("RendererStore was not created by createRendererStore.");
+  return capture();
+}
 
 // Ids whose record object or version changed during the current synchronous store mutation. Keyed node
 // subscriptions wake exactly these ids: the same condition `getNodeWithVersion` snapshots change on.
@@ -337,7 +344,6 @@ function estimateBlockPayloadSize(block: Block): number {
   if (typeof payload.raw === "string") size += payload.raw.length;
   if (typeof payload.highlightedHtml === "string") size += payload.highlightedHtml.length;
   if (typeof payload.sanitizedHtml === "string") size += payload.sanitizedHtml.length;
-  if (typeof payload.compiledMdxModule?.code === "string") size += payload.compiledMdxModule.code.length;
   if (Array.isArray(payload.inline)) size += payload.inline.length * 8;
   return size;
 }
@@ -1307,6 +1313,121 @@ function replaceSnapshotAt(
   } else {
     ensureUniqueChildren(parent, touched);
   }
+}
+
+function cloneAndFreezePreparedValue<T>(value: T, copies = new WeakMap<object, unknown>()): T {
+  if (value === null || typeof value !== "object") return value;
+  const existing = copies.get(value);
+  if (existing !== undefined) return existing as T;
+
+  const copy: unknown[] | Record<string, unknown> = Array.isArray(value)
+    ? []
+    : Object.create(Object.getPrototypeOf(value) === null ? null : Object.prototype) as Record<string, unknown>;
+  copies.set(value, copy);
+  if (Array.isArray(value)) {
+    for (const item of value) (copy as unknown[]).push(cloneAndFreezePreparedValue(item, copies));
+  } else {
+    for (const key of Object.keys(value)) {
+      (copy as Record<string, unknown>)[key] = cloneAndFreezePreparedValue(
+        (value as Record<string, unknown>)[key],
+        copies,
+      );
+    }
+  }
+  return Object.freeze(copy) as T;
+}
+
+function createPreparedRendererStoreSnapshot(
+  sourceNodes: NodeMap,
+  version: number,
+  themes?: { light: string; dark: string },
+): RendererStore {
+  const nodes: NodeMap = new Map();
+  for (const [id, source] of sourceNodes) {
+    const block = source.block ? cloneAndFreezePreparedValue(source.block) : undefined;
+    const record = Object.freeze({
+      id: source.id,
+      type: source.type,
+      parentId: source.parentId,
+      children: Object.freeze([...source.children]) as unknown as string[],
+      props: cloneAndFreezePreparedValue(source.props) as Record<string, unknown>,
+      meta: source.meta ? cloneAndFreezePreparedValue(source.meta) as Record<string, unknown> : undefined,
+      range: source.range ? Object.freeze({ ...source.range }) : undefined,
+      version: source.version,
+      blockEpoch: source.blockEpoch,
+      block,
+    }) as NodeRecord;
+    nodes.set(id, record);
+  }
+
+  const nodeSnapshots = new Map<string, { version: number; node?: NodeRecord }>();
+  const childrenSnapshots = new Map<string, { version: number; children: ReadonlyArray<string> }>();
+  for (const [id, node] of nodes) {
+    nodeSnapshots.set(id, Object.freeze({ version: node.version, node }));
+    childrenSnapshots.set(id, Object.freeze({ version: node.version, children: node.children }));
+  }
+  const root = nodes.get(PATCH_ROOT_ID);
+  const blocks = Object.freeze(
+    (root?.children ?? []).flatMap((id) => {
+      const block = nodes.get(id)?.block;
+      return block ? [block] : [];
+    }),
+  ) as ReadonlyArray<Block>;
+  const capturedThemes = themes ? Object.freeze({ ...themes }) : undefined;
+  const emptyDiagnostics = Object.freeze([]) as unknown as string[];
+  const emptyCounters = Object.freeze({
+    appendLineGuardRejected: 0,
+    staleEpochRejected: 0,
+    storeInvariantViolationCount: 0,
+  });
+  const readOnlyError = new Error("Prepared renderer snapshots are read-only.");
+
+  const snapshot: RendererStore = {
+    reset() {
+      throw readOnlyError;
+    },
+    applyPatches() {
+      throw readOnlyError;
+    },
+    getBlocks() {
+      return blocks;
+    },
+    getVersion() {
+      return version;
+    },
+    getNode(id: string) {
+      return nodes.get(id);
+    },
+    getNodeWithVersion(id: string) {
+      return nodeSnapshots.get(id) ?? EMPTY_NODE_SNAPSHOT;
+    },
+    getChildren(id: string) {
+      return nodes.get(id)?.children ?? EMPTY_CHILDREN;
+    },
+    getChildrenWithVersion(id: string) {
+      return childrenSnapshots.get(id) ?? EMPTY_CHILDREN_SNAPSHOT;
+    },
+    getInvariantViolations() {
+      return emptyDiagnostics;
+    },
+    getDebugCounters() {
+      return emptyCounters;
+    },
+    subscribe() {
+      return () => {};
+    },
+    getLastCoalescingMetrics() {
+      return null;
+    },
+    getThemes() {
+      return capturedThemes;
+    },
+    setThemes() {
+      throw readOnlyError;
+    },
+  };
+  registerNodeSubscriptions(snapshot, () => () => {});
+  return snapshot;
 }
 
 // Only the counter-enabled diagnostic entry supplies this sink; normal builds erase its guarded accesses.
@@ -2389,5 +2510,6 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     internalStore.campaignCounters = (options as RendererStoreOptions & { campaignCounters?: RendererCampaignCounters })?.campaignCounters;
   }
   rebuildFromBlocks(initialBlocks);
+  preparedStoreCaptureByStore.set(store, () => createPreparedRendererStoreSnapshot(nodes, version, currentThemes));
   return store;
 }

@@ -161,7 +161,7 @@ For example, bundle it with esbuild installed in your application:
 npx esbuild markdown-worker.ts --bundle --platform=browser --format=iife --outfile=public/workers/custom-markdown-worker.js
 ```
 
-The published engine entry is built for the worker realm: its MDX pipeline resolves the DOM-free `decode-named-character-reference` and `hast-util-from-html-isomorphic` variants, so this command needs no bundler alias, no `document` or `DOMParser` global, and no other consumer configuration. The produced worker boots in a plain Worker scope and answers `INIT`, `APPEND`, and `FINALIZE`, including `mdx: { compileMode: "worker" }`.
+The published engine entry is built for the worker realm: its MDX parser resolves the DOM-free `decode-named-character-reference` and `hast-util-from-html-isomorphic` variants, so this command needs no bundler alias, no `document` or `DOMParser` global, and no other consumer configuration. The produced worker boots in a plain Worker scope and answers `INIT`, `APPEND`, and `FINALIZE`.
 
 Then select the emitted asset and map its inline node:
 

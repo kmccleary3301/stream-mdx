@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:43.155Z",
-  "hash": "1f1f795eaa6141e3bfeb91d4635d2c6d386a1ccbcede6124b03aedd8a9183421",
-  "contentHash": "8b887c6d81b7d5e40700cdb475e85637230271bbf73b62feb041d08367baa166",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "createdAt": "2026-10-21T20:39:32.439Z",
+  "hash": "bc2b09ccbe7a31941c8fcc613b495aeee55de5a6e584e5a2ebfddbb752b2bb55",
+  "contentHash": "79f761d2927292d2e5a48d1d5f7f5e2c3d9f575f5225c8a6eb4caa806a888252",
+  "configHash": "d64d46ce02762d98863946deda7988b7bcd8ea1dc64e6560ca32dea58f9aee58",
+  "hashSalt": "docs-snapshots-v3:a1af5d4ffe8abd279e6137ad50c87f390f5afe18b69fff05e82bf96e33ef3700",
   "blocks": [
     {
       "id": "db082c0",
@@ -62,7 +62,14 @@
       "payload": {
         "raw": "If you enable raw/inline HTML (`features.html`), treat the input as untrusted by default:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 31,
+              "to": 46,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 58,
@@ -346,7 +353,19 @@
       "payload": {
         "raw": "StreamMDX sanitizes URLs at render-time using `@stream-mdx/core`'s `defaultUrlTransform(url, attribute, context)`. This policy is uniformly applied to:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 46,
+              "to": 64,
+              "kind": "code-inline"
+            },
+            {
+              "from": 67,
+              "to": 113,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 340,
@@ -1928,65 +1947,7 @@
                             "text": "Callers can customize URL rewriting and filtering via the urlTransform prop on <StreamingMarkdown />, ComponentRegistry, and createUnifiedRenderer(). A rejected URL never executes or navigates.",
                             "raw": "- Callers can customize URL rewriting and filtering via the `urlTransform` prop on `<StreamingMarkdown />`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates."
                           },
-                          "children": [
-                            {
-                              "id": "6744b349::item:4::list-item:segment:0",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Callers can customize URL rewriting and filtering via the "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "urlTransform"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": " prop on `"
-                                  }
-                                ],
-                                "text": "Callers can customize URL rewriting and filtering via the `urlTransform` prop on `"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "6744b349::item:4::list-item:segment:1",
-                              "type": "list-item-mdx",
-                              "props": {
-                                "raw": "<StreamingMarkdown />",
-                                "status": "pending"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "6744b349::item:4::list-item:segment:2",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "code",
-                                    "text": ", "
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": "ComponentRegistry"
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": ", and "
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": "createUnifiedRenderer()`. A rejected URL never executes or navigates."
-                                  }
-                                ],
-                                "text": "`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates."
-                              },
-                              "children": []
-                            }
-                          ]
+                          "children": []
                         }
                       }
                     }
@@ -2033,65 +1994,7 @@
                   "text": "Callers can customize URL rewriting and filtering via the urlTransform prop on <StreamingMarkdown />, ComponentRegistry, and createUnifiedRenderer(). A rejected URL never executes or navigates.",
                   "raw": "- Callers can customize URL rewriting and filtering via the `urlTransform` prop on `<StreamingMarkdown />`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates."
                 },
-                "children": [
-                  {
-                    "id": "6744b349::item:4::list-item:segment:0",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "Callers can customize URL rewriting and filtering via the "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "urlTransform"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " prop on `"
-                        }
-                      ],
-                      "text": "Callers can customize URL rewriting and filtering via the `urlTransform` prop on `"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "6744b349::item:4::list-item:segment:1",
-                    "type": "list-item-mdx",
-                    "props": {
-                      "raw": "<StreamingMarkdown />",
-                      "status": "pending"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "6744b349::item:4::list-item:segment:2",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "text",
-                          "text": "ComponentRegistry"
-                        },
-                        {
-                          "kind": "code",
-                          "text": ", and "
-                        },
-                        {
-                          "kind": "text",
-                          "text": "createUnifiedRenderer()`. A rejected URL never executes or navigates."
-                        }
-                      ],
-                      "text": "`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates."
-                    },
-                    "children": []
-                  }
-                ]
+                "children": []
               }
             ]
           }
@@ -2133,7 +2036,14 @@
       "payload": {
         "raw": "When `features.html` is enabled:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 5,
+              "to": 20,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 1912,
@@ -3037,7 +2947,79 @@
       "payload": {
         "raw": "Highlighter code-row HTML (per-line `span.line` markup with Shiki theme variables) is sanitized on every runtime with one shared allowlist: `pre`/`code`/`span`/`div`/`br` with `class`, `data-*`, and `style`. The browser path runs it through DOMPurify; the Node/SSR path (snapshot prerender, `MarkdownBlocksRenderer`) runs the same allowlist through the DOM-free rehype pipeline, so server rendering needs no `window`/jsdom shim. Scripts, event handlers, `javascript:` URLs, and `url(...)`/`expression(...)` style values are dropped on both paths while theme foreground colors and CSS variables are preserved.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 36,
+              "to": 47,
+              "kind": "code-inline"
+            },
+            {
+              "from": 140,
+              "to": 145,
+              "kind": "code-inline"
+            },
+            {
+              "from": 146,
+              "to": 152,
+              "kind": "code-inline"
+            },
+            {
+              "from": 153,
+              "to": 159,
+              "kind": "code-inline"
+            },
+            {
+              "from": 160,
+              "to": 165,
+              "kind": "code-inline"
+            },
+            {
+              "from": 166,
+              "to": 170,
+              "kind": "code-inline"
+            },
+            {
+              "from": 176,
+              "to": 183,
+              "kind": "code-inline"
+            },
+            {
+              "from": 185,
+              "to": 193,
+              "kind": "code-inline"
+            },
+            {
+              "from": 199,
+              "to": 206,
+              "kind": "code-inline"
+            },
+            {
+              "from": 291,
+              "to": 315,
+              "kind": "code-inline"
+            },
+            {
+              "from": 408,
+              "to": 416,
+              "kind": "code-inline"
+            },
+            {
+              "from": 454,
+              "to": 467,
+              "kind": "code-inline"
+            },
+            {
+              "from": 478,
+              "to": 488,
+              "kind": "code-inline"
+            },
+            {
+              "from": 489,
+              "to": 506,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 2726,
@@ -3259,7 +3241,24 @@
       "payload": {
         "raw": "This avoids needing to allow `blob:` in `worker-src`/`script-src`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 29,
+              "to": 36,
+              "kind": "code-inline"
+            },
+            {
+              "from": 40,
+              "to": 52,
+              "kind": "code-inline"
+            },
+            {
+              "from": 53,
+              "to": 65,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 3508,
@@ -3342,101 +3341,484 @@
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "StreamMDX's core markdown and plugin pipeline does not require `unsafe-eval`. However, **client-side MDX evaluation** compiles and evaluates component code in the browser via `new Function(...)` (`mdx-client.ts`), which **requires `unsafe-eval`** in your host application's Content Security Policy (`script-src 'self' 'unsafe-eval'`).",
+        "raw": "The default `contentPolicy` is `\"restricted\"`. Markdown and restricted parsing do not evaluate authored code. Under restricted policy, use the `defineContentComponent` factory to register source names; raw constructors are not registrations. A type-predicate `validateProps` is required when narrowing the source JSON props, while the broad JSON-props overload may omit it. The worker receives only serializable `name` and `renderWhen` descriptors; validators and components stay on the host. Native projected `children` are supplied separately as host React nodes, not taken from source JSON. This registry is active only under `\"restricted\"` policy, not `\"markdown\"` or `\"trusted-mdx\"`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 12,
+              "to": 27,
+              "kind": "code-inline"
+            },
+            {
+              "from": 31,
+              "to": 45,
+              "kind": "code-inline"
+            },
+            {
+              "from": 143,
+              "to": 167,
+              "kind": "code-inline"
+            },
+            {
+              "from": 259,
+              "to": 274,
+              "kind": "code-inline"
+            },
+            {
+              "from": 412,
+              "to": 418,
+              "kind": "code-inline"
+            },
+            {
+              "from": 423,
+              "to": 435,
+              "kind": "code-inline"
+            },
+            {
+              "from": 510,
+              "to": 520,
+              "kind": "code-inline"
+            },
+            {
+              "from": 629,
+              "to": 643,
+              "kind": "code-inline"
+            },
+            {
+              "from": 656,
+              "to": 668,
+              "kind": "code-inline"
+            },
+            {
+              "from": 672,
+              "to": 687,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 3629,
-          "to": 3963
+          "to": 4317
         },
         "inline": [
           {
             "kind": "text",
-            "text": "StreamMDX's core markdown and plugin pipeline does not require "
+            "text": "The default "
           },
           {
             "kind": "code",
-            "text": "unsafe-eval"
+            "text": "contentPolicy"
           },
           {
             "kind": "text",
-            "text": ". However, "
-          },
-          {
-            "kind": "strong",
-            "children": [
-              {
-                "kind": "text",
-                "text": "client-side MDX evaluation"
-              }
-            ]
-          },
-          {
-            "kind": "text",
-            "text": " compiles and evaluates component code in the browser via "
+            "text": " is "
           },
           {
             "kind": "code",
-            "text": "new Function(...)"
+            "text": "\"restricted\""
           },
           {
             "kind": "text",
-            "text": " ("
+            "text": ". Markdown and restricted parsing do not evaluate authored code. Under restricted policy, use the "
           },
           {
             "kind": "code",
-            "text": "mdx-client.ts"
+            "text": "defineContentComponent"
           },
           {
             "kind": "text",
-            "text": "), which "
-          },
-          {
-            "kind": "strong",
-            "children": [
-              {
-                "kind": "text",
-                "text": "requires "
-              },
-              {
-                "kind": "code",
-                "text": "unsafe-eval"
-              }
-            ]
-          },
-          {
-            "kind": "text",
-            "text": " in your host application's Content Security Policy ("
+            "text": " factory to register source names; raw constructors are not registrations. A type-predicate "
           },
           {
             "kind": "code",
-            "text": "script-src 'self' 'unsafe-eval'"
+            "text": "validateProps"
           },
           {
             "kind": "text",
-            "text": ")."
+            "text": " is required when narrowing the source JSON props, while the broad JSON-props overload may omit it. The worker receives only serializable "
+          },
+          {
+            "kind": "code",
+            "text": "name"
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "renderWhen"
+          },
+          {
+            "kind": "text",
+            "text": " descriptors; validators and components stay on the host. Native projected "
+          },
+          {
+            "kind": "code",
+            "text": "children"
+          },
+          {
+            "kind": "text",
+            "text": " are supplied separately as host React nodes, not taken from source JSON. This registry is active only under "
+          },
+          {
+            "kind": "code",
+            "text": "\"restricted\""
+          },
+          {
+            "kind": "text",
+            "text": " policy, not "
+          },
+          {
+            "kind": "code",
+            "text": "\"markdown\""
+          },
+          {
+            "kind": "text",
+            "text": " or "
+          },
+          {
+            "kind": "code",
+            "text": "\"trusted-mdx\""
+          },
+          {
+            "kind": "text",
+            "text": "."
           }
         ]
       }
     },
     {
-      "id": "e76949b",
+      "id": "696f9e27",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "If your application operates under a strict CSP that forbids `unsafe-eval`:",
+        "raw": "Quoted attributes preserve literal backslashes and decode HTML entities; only brace-delimited strict JSON decodes backslash escapes. The complete validated opening fixes the source props. Admitted JSON is recursively frozen again after worker transport, before host validation, and the React props envelope is frozen in production as well. Native React children are not recursively frozen with source data.",
         "meta": {
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3965,
-          "to": 4040
+          "from": 4319,
+          "to": 4725
         },
         "inline": [
           {
             "kind": "text",
-            "text": "If your application operates under a strict CSP that forbids "
+            "text": "Quoted attributes preserve literal backslashes and decode HTML entities; only brace-delimited strict JSON decodes backslash escapes. The complete validated opening fixes the source props. Admitted JSON is recursively frozen again after worker transport, before host validation, and the React props envelope is frozen in production as well. Native React children are not recursively frozen with source data."
+          }
+        ]
+      }
+    },
+    {
+      "id": "163f808",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`renderWhen: \"closed\"` suppresses only a component whose native status is open. A finalized incomplete body that passes validation remains rendered with its diagnostic; an incomplete opening header remains literal and does not invoke a host callback.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 22,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 4727,
+          "to": 4977
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "renderWhen: \"closed\""
+          },
+          {
+            "kind": "text",
+            "text": " suppresses only a component whose native status is open. A finalized incomplete body that passes validation remains rendered with its diagnostic; an incomplete opening header remains literal and does not invoke a host callback."
+          }
+        ]
+      }
+    },
+    {
+      "id": "2eaba567",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Registered components retain native Markdown owners in paragraphs, headings, quotes, lists and sanitized HTML. Emphasis and visible link text may contain components without splitting the surrounding inline grammar. Tag spellings inside code, link destinations or titles, image alt text, comments and HTML attributes remain native data, never component registrations. Entity-encoded text cannot forge an admission marker.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 4979,
+          "to": 5399
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Registered components retain native Markdown owners in paragraphs, headings, quotes, lists and sanitized HTML. Emphasis and visible link text may contain components without splitting the surrounding inline grammar. Tag spellings inside code, link destinations or titles, image alt text, comments and HTML attributes remain native data, never component registrations. Entity-encoded text cannot forge an admission marker."
+          }
+        ]
+      }
+    },
+    {
+      "id": "7506cd20",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Whole-list inline admission retains one native inline scope across component leaves and uses the configured HTML tag and attribute policy. Native inline renderers and element filters receive the actual recursive parent tag; component ownership does not reactivate disabled autolink protocols. Each prepared owner publishes one active HTML tree, so formatting and footnote numbering read the same meaning rather than a stale fallback copy.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 5401,
+          "to": 5839
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Whole-list inline admission retains one native inline scope across component leaves and uses the configured HTML tag and attribute policy. Native inline renderers and element filters receive the actual recursive parent tag; component ownership does not reactivate disabled autolink protocols. Each prepared owner publishes one active HTML tree, so formatting and footnote numbering read the same meaning rather than a stale fallback copy."
+          }
+        ]
+      }
+    },
+    {
+      "id": "63cbe260",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`FINALIZE` seals APPEND admission only under `\"trusted-mdx\"`. Input accepted before that trusted barrier still drains; later trusted appends fail before changing source, native state or a retained frame. `\"markdown\"` and `\"restricted\"` retain their existing append-after-FINALIZE behavior. Reset or replacement text opens the next generation. After an automatically owned worker restarts, imperative `APPEND` and `FINALIZE` requests are accepted into the fresh-generation FIFO before readiness and replay in order to the matching fresh worker after `INIT` has been posted. A later restart discards requests pending for the earlier generation; under `\"trusted-mdx\"`, a queued `FINALIZE` seals admission against later queued appends. A managed worker's host remains responsible for its initialization.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 10,
+              "kind": "code-inline"
+            },
+            {
+              "from": 45,
+              "to": 60,
+              "kind": "code-inline"
+            },
+            {
+              "from": 204,
+              "to": 216,
+              "kind": "code-inline"
+            },
+            {
+              "from": 221,
+              "to": 235,
+              "kind": "code-inline"
+            },
+            {
+              "from": 400,
+              "to": 408,
+              "kind": "code-inline"
+            },
+            {
+              "from": 413,
+              "to": 423,
+              "kind": "code-inline"
+            },
+            {
+              "from": 549,
+              "to": 555,
+              "kind": "code-inline"
+            },
+            {
+              "from": 649,
+              "to": 664,
+              "kind": "code-inline"
+            },
+            {
+              "from": 675,
+              "to": 685,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 5841,
+          "to": 6640
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "FINALIZE"
+          },
+          {
+            "kind": "text",
+            "text": " seals APPEND admission only under "
+          },
+          {
+            "kind": "code",
+            "text": "\"trusted-mdx\""
+          },
+          {
+            "kind": "text",
+            "text": ". Input accepted before that trusted barrier still drains; later trusted appends fail before changing source, native state or a retained frame. "
+          },
+          {
+            "kind": "code",
+            "text": "\"markdown\""
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "\"restricted\""
+          },
+          {
+            "kind": "text",
+            "text": " retain their existing append-after-FINALIZE behavior. Reset or replacement text opens the next generation. After an automatically owned worker restarts, imperative "
+          },
+          {
+            "kind": "code",
+            "text": "APPEND"
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "FINALIZE"
+          },
+          {
+            "kind": "text",
+            "text": " requests are accepted into the fresh-generation FIFO before readiness and replay in order to the matching fresh worker after "
+          },
+          {
+            "kind": "code",
+            "text": "INIT"
+          },
+          {
+            "kind": "text",
+            "text": " has been posted. A later restart discards requests pending for the earlier generation; under "
+          },
+          {
+            "kind": "code",
+            "text": "\"trusted-mdx\""
+          },
+          {
+            "kind": "text",
+            "text": ", a queued "
+          },
+          {
+            "kind": "code",
+            "text": "FINALIZE"
+          },
+          {
+            "kind": "text",
+            "text": " seals admission against later queued appends. A managed worker's host remains responsible for its initialization."
+          }
+        ]
+      }
+    },
+    {
+      "id": "277ae42",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Full MDX evaluation is available only through an explicit `createTrustedMdxEngine` from `@stream-mdx/react/trusted-mdx`, passed with `contentPolicy=\"trusted-mdx\"` and `engines.mdx`. It evaluates a complete authored document revision in the host realm with `AsyncFunction`, which requires `unsafe-eval` in the host application's `script-src`. Its `imports` map is an explicit host capability map from authored module specifiers to supplied bindings; unresolved imports fail, and modules are never fetched automatically. This is not a sandbox. Use it only for trusted, reviewed content.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 58,
+              "to": 82,
+              "kind": "code-inline"
+            },
+            {
+              "from": 88,
+              "to": 119,
+              "kind": "code-inline"
+            },
+            {
+              "from": 133,
+              "to": 162,
+              "kind": "code-inline"
+            },
+            {
+              "from": 167,
+              "to": 180,
+              "kind": "code-inline"
+            },
+            {
+              "from": 256,
+              "to": 271,
+              "kind": "code-inline"
+            },
+            {
+              "from": 288,
+              "to": 301,
+              "kind": "code-inline"
+            },
+            {
+              "from": 328,
+              "to": 340,
+              "kind": "code-inline"
+            },
+            {
+              "from": 346,
+              "to": 355,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 6642,
+          "to": 7226
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Full MDX evaluation is available only through an explicit "
+          },
+          {
+            "kind": "code",
+            "text": "createTrustedMdxEngine"
+          },
+          {
+            "kind": "text",
+            "text": " from "
+          },
+          {
+            "kind": "code",
+            "text": "@stream-mdx/react/trusted-mdx"
+          },
+          {
+            "kind": "text",
+            "text": ", passed with "
+          },
+          {
+            "kind": "code",
+            "text": "contentPolicy=\"trusted-mdx\""
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "engines.mdx"
+          },
+          {
+            "kind": "text",
+            "text": ". It evaluates a complete authored document revision in the host realm with "
+          },
+          {
+            "kind": "code",
+            "text": "AsyncFunction"
+          },
+          {
+            "kind": "text",
+            "text": ", which requires "
           },
           {
             "kind": "code",
@@ -3444,326 +3826,209 @@
           },
           {
             "kind": "text",
-            "text": ":"
+            "text": " in the host application's "
+          },
+          {
+            "kind": "code",
+            "text": "script-src"
+          },
+          {
+            "kind": "text",
+            "text": ". Its "
+          },
+          {
+            "kind": "code",
+            "text": "imports"
+          },
+          {
+            "kind": "text",
+            "text": " map is an explicit host capability map from authored module specifiers to supplied bindings; unresolved imports fail, and modules are never fetched automatically. This is not a sandbox. Use it only for trusted, reviewed content."
           }
         ]
       }
     },
     {
-      "id": "10451da3",
-      "type": "list",
+      "id": "6cad18df",
+      "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "- Disable MDX features (`features={{ mdx: false }}`), or\n- Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client.",
+        "raw": "Native `FINALIZED` acknowledges the complete native semantic revision; it does not await trusted compilation, projection, or React commit. The trusted document snapshot distinguishes the requested revision, projected candidate revision, and revision actually rendered. A candidate is committed only after the host confirms its render. Lease, request, and engine-generation checks reject stale async compilation results and run immediately before authored module evaluation; newer revisions, `clear`/cache invalidation, or disposal invalidate old work. Disposal is terminal. A render failure can restore the last actually committed UI, but cannot roll back side effects already caused by trusted authored code.\nFor a controlled replacement, the renderer captures one immutable prepared native store once after each successful complete-module host commit. If the next revision is pending or fails to render, the old frame stays labelled with its source generation and document revision; its code decorations remain at commit-time freshness while later enrichment updates only the live store. The retained frame does not send code jobs to the current worker and is released on reset, engine/cache invalidation or disposal, lease or policy change, or a later successful commit. A retained React render error shows the captured source and error, but cannot undo arbitrary trusted host effects.",
         "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "text",
-                "text": "Disable MDX features ("
-              },
-              {
-                "kind": "code",
-                "text": "features={{ mdx: false }}"
-              },
-              {
-                "kind": "text",
-                "text": "), or"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client."
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 7,
+              "to": 18,
+              "kind": "code-inline"
             },
-            "children": [
-              {
-                "id": "10451da3::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 4041,
-                  "to": 4097
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "10451da3::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- Disable MDX features (`features={{ mdx: false }}`), or",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "Disable MDX features ("
-                        },
-                        {
-                          "kind": "code",
-                          "text": "features={{ mdx: false }}"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "), or"
-                        }
-                      ],
-                      "range": {
-                        "from": 4041,
-                        "to": 4097
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "Disable MDX features ("
-                              },
-                              {
-                                "kind": "code",
-                                "text": "features={{ mdx: false }}"
-                              },
-                              {
-                                "kind": "text",
-                                "text": "), or"
-                              }
-                            ],
-                            "text": "Disable MDX features (features={{ mdx: false }}), or",
-                            "raw": "- Disable MDX features (`features={{ mdx: false }}`), or"
-                          },
-                          "children": [
-                            {
-                              "id": "10451da3::item:0::list-item:segment:0",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Disable MDX features (`features={"
-                                  }
-                                ],
-                                "text": "Disable MDX features (`features={"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "10451da3::item:0::list-item:segment:1",
-                              "type": "list-item-mdx",
-                              "props": {
-                                "raw": "{ mdx: false }",
-                                "status": "pending"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "10451da3::item:0::list-item:segment:2",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "}`), or"
-                                  }
-                                ],
-                                "text": "}`), or"
-                              },
-                              "children": []
-                            }
-                          ]
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "Disable MDX features ("
-                    },
-                    {
-                      "kind": "code",
-                      "text": "features={{ mdx: false }}"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "), or"
-                    }
-                  ],
-                  "text": "Disable MDX features (features={{ mdx: false }}), or",
-                  "raw": "- Disable MDX features (`features={{ mdx: false }}`), or"
-                },
-                "children": [
-                  {
-                    "id": "10451da3::item:0::list-item:segment:0",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "Disable MDX features (`features={"
-                        }
-                      ],
-                      "text": "Disable MDX features (`features={"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "10451da3::item:0::list-item:segment:1",
-                    "type": "list-item-mdx",
-                    "props": {
-                      "raw": "{ mdx: false }",
-                      "status": "pending"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "10451da3::item:0::list-item:segment:2",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "}`), or"
-                        }
-                      ],
-                      "text": "}`), or"
-                    },
-                    "children": []
-                  }
-                ]
-              },
-              {
-                "id": "10451da3::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 4098,
-                  "to": 4208
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "10451da3::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client.",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client."
-                        }
-                      ],
-                      "range": {
-                        "from": 4098,
-                        "to": 4208
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client."
-                              }
-                            ],
-                            "text": "Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client.",
-                            "raw": "- Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client."
-                    }
-                  ],
-                  "text": "Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client.",
-                  "raw": "- Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client."
-                },
-                "children": []
-              }
-            ]
-          }
+            {
+              "from": 491,
+              "to": 498,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 4041,
-          "to": 4208
-        }
+          "from": 7228,
+          "to": 8616
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Native "
+          },
+          {
+            "kind": "code",
+            "text": "FINALIZED"
+          },
+          {
+            "kind": "text",
+            "text": " acknowledges the complete native semantic revision; it does not await trusted compilation, projection, or React commit. The trusted document snapshot distinguishes the requested revision, projected candidate revision, and revision actually rendered. A candidate is committed only after the host confirms its render. Lease, request, and engine-generation checks reject stale async compilation results and run immediately before authored module evaluation; newer revisions, "
+          },
+          {
+            "kind": "code",
+            "text": "clear"
+          },
+          {
+            "kind": "text",
+            "text": "/cache invalidation, or disposal invalidate old work. Disposal is terminal. A render failure can restore the last actually committed UI, but cannot roll back side effects already caused by trusted authored code.\nFor a controlled replacement, the renderer captures one immutable prepared native store once after each successful complete-module host commit. If the next revision is pending or fails to render, the old frame stays labelled with its source generation and document revision; its code decorations remain at commit-time freshness while later enrichment updates only the live store. The retained frame does not send code jobs to the current worker and is released on reset, engine/cache invalidation or disposal, lease or policy change, or a later successful commit. A retained React render error shows the captured source and error, but cannot undo arbitrary trusted host effects."
+          }
+        ]
       }
     },
     {
-      "id": "32afef1d",
+      "id": "278b2565",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "JSX/MDX source-span discovery in the native worker is parse-only; it does not import the trusted compiler or evaluate a module. In a successfully compiled trusted revision, compiler-authored module ranges suppress the entire contained native declaration block, not only embedded expression leaves. Ordinary restricted Markdown keeps its literal source behavior.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 8618,
+          "to": 8979
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "JSX/MDX source-span discovery in the native worker is parse-only; it does not import the trusted compiler or evaluate a module. In a successfully compiled trusted revision, compiler-authored module ranges suppress the entire contained native declaration block, not only embedded expression leaves. Ordinary restricted Markdown keeps its literal source behavior."
+          }
+        ]
+      }
+    },
+    {
+      "id": "16aedb3a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If your CSP forbids `unsafe-eval`, keep full MDX disabled. Use the restricted content policy and native `contentComponents`, or publish pre-rendered static output.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 20,
+              "to": 33,
+              "kind": "code-inline"
+            },
+            {
+              "from": 104,
+              "to": 123,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 8981,
+          "to": 9144
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If your CSP forbids "
+          },
+          {
+            "kind": "code",
+            "text": "unsafe-eval"
+          },
+          {
+            "kind": "text",
+            "text": ", keep full MDX disabled. Use the restricted content policy and native "
+          },
+          {
+            "kind": "code",
+            "text": "contentComponents"
+          },
+          {
+            "kind": "text",
+            "text": ", or publish pre-rendered static output."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1aba649a",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "Artifact Sandbox Model (P4)",
+        "raw": "Artifact-like code fences",
         "meta": {
           "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
-          "headingText": "Artifact Sandbox Model (P4)",
-          "headingId": "artifact-sandbox-model-p4"
+          "headingText": "Artifact-like code fences",
+          "headingId": "artifact-like-code-fences"
         },
         "range": {
-          "from": 4210,
-          "to": 4240
+          "from": 9146,
+          "to": 9174
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Artifact Sandbox Model (P4)"
+            "text": "Artifact-like code fences"
           }
         ]
       }
     },
     {
-      "id": "7fc0a47c",
+      "id": "653a4937",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "StreamMDX provides built-in sandboxing for interactive HTML artifacts (languages `artifact`, `html-artifact`, and opt-in `html` via `artifactHtml: true`):",
+        "raw": "Fences labeled `artifact` or `html-artifact` render as ordinary code unless the host supplies a `codeRenderers` entry. StreamMDX no longer provides a default artifact frame or iframe sandbox. A custom renderer is application code; if it turns input into active content, the host must define and review that boundary. HTML sanitization, worker parsing, and `linkSafety` do not sandbox custom renderers or mediate every navigation.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 15,
+              "to": 25,
+              "kind": "code-inline"
+            },
+            {
+              "from": 29,
+              "to": 44,
+              "kind": "code-inline"
+            },
+            {
+              "from": 96,
+              "to": 111,
+              "kind": "code-inline"
+            },
+            {
+              "from": 356,
+              "to": 368,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 4242,
-          "to": 4396
+          "from": 9176,
+          "to": 9605
         },
         "inline": [
           {
             "kind": "text",
-            "text": "StreamMDX provides built-in sandboxing for interactive HTML artifacts (languages "
+            "text": "Fences labeled "
           },
           {
             "kind": "code",
@@ -3771,7 +4036,7 @@
           },
           {
             "kind": "text",
-            "text": ", "
+            "text": " or "
           },
           {
             "kind": "code",
@@ -3779,1685 +4044,29 @@
           },
           {
             "kind": "text",
-            "text": ", and opt-in "
+            "text": " render as ordinary code unless the host supplies a "
           },
           {
             "kind": "code",
-            "text": "html"
+            "text": "codeRenderers"
           },
           {
             "kind": "text",
-            "text": " via "
+            "text": " entry. StreamMDX no longer provides a default artifact frame or iframe sandbox. A custom renderer is application code; if it turns input into active content, the host must define and review that boundary. HTML sanitization, worker parsing, and "
           },
           {
             "kind": "code",
-            "text": "artifactHtml: true"
+            "text": "linkSafety"
           },
           {
             "kind": "text",
-            "text": "):"
+            "text": " do not sandbox custom renderers or mediate every navigation."
           }
         ]
       }
     },
     {
-      "id": "c03a2de",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "1. Hardened iframe isolation",
-        "meta": {
-          "lezerNodeType": "ATXHeading3",
-          "headingLevel": 3,
-          "headingText": "1. Hardened iframe isolation",
-          "headingId": "1-hardened-iframe-isolation"
-        },
-        "range": {
-          "from": 4398,
-          "to": 4430
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "1. Hardened iframe isolation"
-          }
-        ]
-      }
-    },
-    {
-      "id": "7ae395de",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- **No `allow-same-origin`**: Finalized artifacts mount inside an `<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">`. Because `allow-same-origin` is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, `localStorage`, `sessionStorage`, or auth tokens.\n- **Streaming safety**: During streaming while the block is dirty (`isFinalized === false`), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized.",
-        "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "No "
-                  },
-                  {
-                    "kind": "code",
-                    "text": "allow-same-origin"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": Finalized artifacts mount inside an "
-              },
-              {
-                "kind": "code",
-                "text": "<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">"
-              },
-              {
-                "kind": "text",
-                "text": ". Because "
-              },
-              {
-                "kind": "code",
-                "text": "allow-same-origin"
-              },
-              {
-                "kind": "text",
-                "text": " is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, "
-              },
-              {
-                "kind": "code",
-                "text": "localStorage"
-              },
-              {
-                "kind": "text",
-                "text": ", "
-              },
-              {
-                "kind": "code",
-                "text": "sessionStorage"
-              },
-              {
-                "kind": "text",
-                "text": ", or auth tokens."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Streaming safety"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": During streaming while the block is dirty ("
-              },
-              {
-                "kind": "code",
-                "text": "isFinalized === false"
-              },
-              {
-                "kind": "text",
-                "text": "), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized."
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
-            },
-            "children": [
-              {
-                "id": "7ae395de::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 4431,
-                  "to": 4734
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "7ae395de::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- **No `allow-same-origin`**: Finalized artifacts mount inside an `<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">`. Because `allow-same-origin` is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, `localStorage`, `sessionStorage`, or auth tokens.",
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "No "
-                            },
-                            {
-                              "kind": "code",
-                              "text": "allow-same-origin"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": Finalized artifacts mount inside an "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ". Because "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "allow-same-origin"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "localStorage"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "sessionStorage"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", or auth tokens."
-                        }
-                      ],
-                      "range": {
-                        "from": 4431,
-                        "to": 4734
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "No "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "allow-same-origin"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": Finalized artifacts mount inside an "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ". Because "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "allow-same-origin"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "localStorage"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "sessionStorage"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", or auth tokens."
-                              }
-                            ],
-                            "text": "No allow-same-origin: Finalized artifacts mount inside an <iframe sandbox=\"allow-scripts\" srcdoc=\"...\">. Because allow-same-origin is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, localStorage, sessionStorage, or auth tokens.",
-                            "raw": "- **No `allow-same-origin`**: Finalized artifacts mount inside an `<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">`. Because `allow-same-origin` is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, `localStorage`, `sessionStorage`, or auth tokens."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "No "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "allow-same-origin"
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": Finalized artifacts mount inside an "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ". Because "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "allow-same-origin"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "localStorage"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "sessionStorage"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", or auth tokens."
-                    }
-                  ],
-                  "text": "No allow-same-origin: Finalized artifacts mount inside an <iframe sandbox=\"allow-scripts\" srcdoc=\"...\">. Because allow-same-origin is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, localStorage, sessionStorage, or auth tokens.",
-                  "raw": "- **No `allow-same-origin`**: Finalized artifacts mount inside an `<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">`. Because `allow-same-origin` is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, `localStorage`, `sessionStorage`, or auth tokens."
-                },
-                "children": []
-              },
-              {
-                "id": "7ae395de::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 4735,
-                  "to": 4934
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "7ae395de::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- **Streaming safety**: During streaming while the block is dirty (`isFinalized === false`), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized.",
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Streaming safety"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": During streaming while the block is dirty ("
-                        },
-                        {
-                          "kind": "code",
-                          "text": "isFinalized === false"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized."
-                        }
-                      ],
-                      "range": {
-                        "from": 4735,
-                        "to": 4934
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Streaming safety"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": During streaming while the block is dirty ("
-                              },
-                              {
-                                "kind": "code",
-                                "text": "isFinalized === false"
-                              },
-                              {
-                                "kind": "text",
-                                "text": "), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized."
-                              }
-                            ],
-                            "text": "Streaming safety: During streaming while the block is dirty (isFinalized === false), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized.",
-                            "raw": "- **Streaming safety**: During streaming while the block is dirty (`isFinalized === false`), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Streaming safety"
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": During streaming while the block is dirty ("
-                    },
-                    {
-                      "kind": "code",
-                      "text": "isFinalized === false"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized."
-                    }
-                  ],
-                  "text": "Streaming safety: During streaming while the block is dirty (isFinalized === false), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized.",
-                  "raw": "- **Streaming safety**: During streaming while the block is dirty (`isFinalized === false`), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized."
-                },
-                "children": []
-              }
-            ]
-          }
-        },
-        "range": {
-          "from": 4431,
-          "to": 4934
-        }
-      }
-    },
-    {
-      "id": "58e1b158",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "2. In-frame Content Security Policy (CSP)",
-        "meta": {
-          "lezerNodeType": "ATXHeading3",
-          "headingLevel": 3,
-          "headingText": "2. In-frame Content Security Policy (CSP)",
-          "headingId": "2-in-frame-content-security-policy-csp"
-        },
-        "range": {
-          "from": 4936,
-          "to": 4981
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "2. In-frame Content Security Policy (CSP)"
-          }
-        ]
-      }
-    },
-    {
-      "id": "241c677f",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Every artifact `srcdoc` includes a strict `<meta http-equiv=\"Content-Security-Policy\">`:",
-        "meta": {
-          "lezerNodeType": "Paragraph",
-          "protectedRanges": [
-            {
-              "from": 43,
-              "to": 86,
-              "kind": "html-block"
-            }
-          ]
-        },
-        "range": {
-          "from": 4982,
-          "to": 5070
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Every artifact "
-          },
-          {
-            "kind": "code",
-            "text": "srcdoc"
-          },
-          {
-            "kind": "text",
-            "text": " includes a strict "
-          },
-          {
-            "kind": "code",
-            "text": "<meta http-equiv=\"Content-Security-Policy\">"
-          },
-          {
-            "kind": "text",
-            "text": ":"
-          }
-        ]
-      }
-    },
-    {
-      "id": "433c3e67",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- `default-src 'none'`\n- `connect-src 'none'` by default blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; allowlists can be configured via `csp.connectSrc`.\n- `script-src 'unsafe-inline'` + configured allowlist\n- `style-src 'unsafe-inline'` + configured allowlist\n- `img-src data: blob:` + configured allowlist\n- `font-src data:` + configured allowlist\n- `base-uri 'none'`, `form-action 'none'`",
-        "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "code",
-                "text": "default-src 'none'"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "connect-src 'none'"
-              },
-              {
-                "kind": "text",
-                "text": " by default blocks connection APIs such as "
-              },
-              {
-                "kind": "code",
-                "text": "fetch"
-              },
-              {
-                "kind": "text",
-                "text": ", "
-              },
-              {
-                "kind": "code",
-                "text": "XMLHttpRequest"
-              },
-              {
-                "kind": "text",
-                "text": ", and "
-              },
-              {
-                "kind": "code",
-                "text": "WebSocket"
-              },
-              {
-                "kind": "text",
-                "text": "; allowlists can be configured via "
-              },
-              {
-                "kind": "code",
-                "text": "csp.connectSrc"
-              },
-              {
-                "kind": "text",
-                "text": "."
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "script-src 'unsafe-inline'"
-              },
-              {
-                "kind": "text",
-                "text": " + configured allowlist"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "style-src 'unsafe-inline'"
-              },
-              {
-                "kind": "text",
-                "text": " + configured allowlist"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "img-src data: blob:"
-              },
-              {
-                "kind": "text",
-                "text": " + configured allowlist"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "font-src data:"
-              },
-              {
-                "kind": "text",
-                "text": " + configured allowlist"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "base-uri 'none'"
-              },
-              {
-                "kind": "text",
-                "text": ", "
-              },
-              {
-                "kind": "code",
-                "text": "form-action 'none'"
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
-            },
-            "children": [
-              {
-                "id": "433c3e67::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 5071,
-                  "to": 5093
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "433c3e67::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `default-src 'none'`",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "default-src 'none'"
-                        }
-                      ],
-                      "range": {
-                        "from": 5071,
-                        "to": 5093
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "default-src 'none'"
-                              }
-                            ],
-                            "text": "default-src 'none'",
-                            "raw": "- `default-src 'none'`"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "default-src 'none'"
-                    }
-                  ],
-                  "text": "default-src 'none'",
-                  "raw": "- `default-src 'none'`"
-                },
-                "children": []
-              },
-              {
-                "id": "433c3e67::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 5094,
-                  "to": 5253
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "433c3e67::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `connect-src 'none'` by default blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; allowlists can be configured via `csp.connectSrc`.",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "connect-src 'none'"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " by default blocks connection APIs such as "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "fetch"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "XMLHttpRequest"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", and "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "WebSocket"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "; allowlists can be configured via "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "csp.connectSrc"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "."
-                        }
-                      ],
-                      "range": {
-                        "from": 5094,
-                        "to": 5253
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "connect-src 'none'"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " by default blocks connection APIs such as "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "fetch"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "XMLHttpRequest"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", and "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "WebSocket"
-                              },
-                              {
-                                "kind": "text",
-                                "text": "; allowlists can be configured via "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "csp.connectSrc"
-                              },
-                              {
-                                "kind": "text",
-                                "text": "."
-                              }
-                            ],
-                            "text": "connect-src 'none' by default blocks connection APIs such as fetch, XMLHttpRequest, and WebSocket; allowlists can be configured via csp.connectSrc.",
-                            "raw": "- `connect-src 'none'` by default blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; allowlists can be configured via `csp.connectSrc`."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "connect-src 'none'"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " by default blocks connection APIs such as "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "fetch"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "XMLHttpRequest"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", and "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "WebSocket"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "; allowlists can be configured via "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "csp.connectSrc"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "."
-                    }
-                  ],
-                  "text": "connect-src 'none' by default blocks connection APIs such as fetch, XMLHttpRequest, and WebSocket; allowlists can be configured via csp.connectSrc.",
-                  "raw": "- `connect-src 'none'` by default blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; allowlists can be configured via `csp.connectSrc`."
-                },
-                "children": []
-              },
-              {
-                "id": "433c3e67::item:2",
-                "type": "list-item",
-                "range": {
-                  "from": 5254,
-                  "to": 5307
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "433c3e67::item:2",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `script-src 'unsafe-inline'` + configured allowlist",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "script-src 'unsafe-inline'"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " + configured allowlist"
-                        }
-                      ],
-                      "range": {
-                        "from": 5254,
-                        "to": 5307
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 2,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "script-src 'unsafe-inline'"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " + configured allowlist"
-                              }
-                            ],
-                            "text": "script-src 'unsafe-inline' + configured allowlist",
-                            "raw": "- `script-src 'unsafe-inline'` + configured allowlist"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 2,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "script-src 'unsafe-inline'"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " + configured allowlist"
-                    }
-                  ],
-                  "text": "script-src 'unsafe-inline' + configured allowlist",
-                  "raw": "- `script-src 'unsafe-inline'` + configured allowlist"
-                },
-                "children": []
-              },
-              {
-                "id": "433c3e67::item:3",
-                "type": "list-item",
-                "range": {
-                  "from": 5308,
-                  "to": 5360
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "433c3e67::item:3",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `style-src 'unsafe-inline'` + configured allowlist",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "style-src 'unsafe-inline'"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " + configured allowlist"
-                        }
-                      ],
-                      "range": {
-                        "from": 5308,
-                        "to": 5360
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 3,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "style-src 'unsafe-inline'"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " + configured allowlist"
-                              }
-                            ],
-                            "text": "style-src 'unsafe-inline' + configured allowlist",
-                            "raw": "- `style-src 'unsafe-inline'` + configured allowlist"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 3,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "style-src 'unsafe-inline'"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " + configured allowlist"
-                    }
-                  ],
-                  "text": "style-src 'unsafe-inline' + configured allowlist",
-                  "raw": "- `style-src 'unsafe-inline'` + configured allowlist"
-                },
-                "children": []
-              },
-              {
-                "id": "433c3e67::item:4",
-                "type": "list-item",
-                "range": {
-                  "from": 5361,
-                  "to": 5407
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "433c3e67::item:4",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `img-src data: blob:` + configured allowlist",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "img-src data: blob:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " + configured allowlist"
-                        }
-                      ],
-                      "range": {
-                        "from": 5361,
-                        "to": 5407
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 4,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "img-src data: blob:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " + configured allowlist"
-                              }
-                            ],
-                            "text": "img-src data: blob: + configured allowlist",
-                            "raw": "- `img-src data: blob:` + configured allowlist"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 4,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "img-src data: blob:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " + configured allowlist"
-                    }
-                  ],
-                  "text": "img-src data: blob: + configured allowlist",
-                  "raw": "- `img-src data: blob:` + configured allowlist"
-                },
-                "children": []
-              },
-              {
-                "id": "433c3e67::item:5",
-                "type": "list-item",
-                "range": {
-                  "from": 5408,
-                  "to": 5449
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "433c3e67::item:5",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `font-src data:` + configured allowlist",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "font-src data:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " + configured allowlist"
-                        }
-                      ],
-                      "range": {
-                        "from": 5408,
-                        "to": 5449
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 5,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "font-src data:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " + configured allowlist"
-                              }
-                            ],
-                            "text": "font-src data: + configured allowlist",
-                            "raw": "- `font-src data:` + configured allowlist"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 5,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "font-src data:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " + configured allowlist"
-                    }
-                  ],
-                  "text": "font-src data: + configured allowlist",
-                  "raw": "- `font-src data:` + configured allowlist"
-                },
-                "children": []
-              },
-              {
-                "id": "433c3e67::item:6",
-                "type": "list-item",
-                "range": {
-                  "from": 5450,
-                  "to": 5491
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "433c3e67::item:6",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `base-uri 'none'`, `form-action 'none'`",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "base-uri 'none'"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "form-action 'none'"
-                        }
-                      ],
-                      "range": {
-                        "from": 5450,
-                        "to": 5491
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 6,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "base-uri 'none'"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "form-action 'none'"
-                              }
-                            ],
-                            "text": "base-uri 'none', form-action 'none'",
-                            "raw": "- `base-uri 'none'`, `form-action 'none'`"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 6,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "base-uri 'none'"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "form-action 'none'"
-                    }
-                  ],
-                  "text": "base-uri 'none', form-action 'none'",
-                  "raw": "- `base-uri 'none'`, `form-action 'none'`"
-                },
-                "children": []
-              }
-            ]
-          }
-        },
-        "range": {
-          "from": 5071,
-          "to": 5491
-        }
-      }
-    },
-    {
-      "id": "5fe9747",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "The policy, theme styles, and bootstrap script are written before any artifact markup, so a full artifact document (with its own `<!doctype>`, `<html>`, `<head>`) cannot run script ahead of the policy.",
-        "meta": {
-          "lezerNodeType": "Paragraph"
-        },
-        "range": {
-          "from": 5493,
-          "to": 5694
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "The policy, theme styles, and bootstrap script are written before any artifact markup, so a full artifact document (with its own "
-          },
-          {
-            "kind": "code",
-            "text": "<!doctype>"
-          },
-          {
-            "kind": "text",
-            "text": ", "
-          },
-          {
-            "kind": "code",
-            "text": "<html>"
-          },
-          {
-            "kind": "text",
-            "text": ", "
-          },
-          {
-            "kind": "code",
-            "text": "<head>"
-          },
-          {
-            "kind": "text",
-            "text": ") cannot run script ahead of the policy."
-          }
-        ]
-      }
-    },
-    {
-      "id": "6a4a7202",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "The sandbox provides host DOM/origin isolation, and the default CSP restricts connections and resource loads. These controls do not guarantee total network isolation or prevent iframe self-navigation. Use self-contained artifact content. The link handler below covers intercepted anchor clicks, not every navigation a script can initiate.",
-        "meta": {
-          "lezerNodeType": "Paragraph"
-        },
-        "range": {
-          "from": 5696,
-          "to": 6034
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "The sandbox provides host DOM/origin isolation, and the default CSP restricts connections and resource loads. These controls do not guarantee total network isolation or prevent iframe self-navigation. Use self-contained artifact content. The link handler below covers intercepted anchor clicks, not every navigation a script can initiate."
-          }
-        ]
-      }
-    },
-    {
-      "id": "7a77509d",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "3. Secure host communication",
-        "meta": {
-          "lezerNodeType": "ATXHeading3",
-          "headingLevel": 3,
-          "headingText": "3. Secure host communication",
-          "headingId": "3-secure-host-communication"
-        },
-        "range": {
-          "from": 6036,
-          "to": 6068
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "3. Secure host communication"
-          }
-        ]
-      }
-    },
-    {
-      "id": "4fbec8e1",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (`stream-mdx:artifact-size`) strictly validate `Number.isFinite(data.height)` and clamp accepted values between 50px and 10,000px, ignoring `NaN`, `Infinity`, or negative dimensions.",
-        "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Origin and window verification"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": The artifact communicates with the host window via "
-              },
-              {
-                "kind": "code",
-                "text": "postMessage"
-              },
-              {
-                "kind": "text",
-                "text": ". The host listener verifies that "
-              },
-              {
-                "kind": "code",
-                "text": "event.source === iframeRef.current.contentWindow"
-              },
-              {
-                "kind": "text",
-                "text": ". Foreign-source messages and spoofed dimensions are ignored. Resizing messages ("
-              },
-              {
-                "kind": "code",
-                "text": "stream-mdx:artifact-size"
-              },
-              {
-                "kind": "text",
-                "text": ") strictly validate "
-              },
-              {
-                "kind": "code",
-                "text": "Number.isFinite(data.height)"
-              },
-              {
-                "kind": "text",
-                "text": " and clamp accepted values between 50px and 10,000px, ignoring "
-              },
-              {
-                "kind": "code",
-                "text": "NaN"
-              },
-              {
-                "kind": "text",
-                "text": ", "
-              },
-              {
-                "kind": "code",
-                "text": "Infinity"
-              },
-              {
-                "kind": "text",
-                "text": ", or negative dimensions."
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
-            },
-            "children": [
-              {
-                "id": "4fbec8e1::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 6069,
-                  "to": 6517
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "4fbec8e1::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (`stream-mdx:artifact-size`) strictly validate `Number.isFinite(data.height)` and clamp accepted values between 50px and 10,000px, ignoring `NaN`, `Infinity`, or negative dimensions.",
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Origin and window verification"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": The artifact communicates with the host window via "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "postMessage"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ". The host listener verifies that "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "event.source === iframeRef.current.contentWindow"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ". Foreign-source messages and spoofed dimensions are ignored. Resizing messages ("
-                        },
-                        {
-                          "kind": "code",
-                          "text": "stream-mdx:artifact-size"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ") strictly validate "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "Number.isFinite(data.height)"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " and clamp accepted values between 50px and 10,000px, ignoring "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "NaN"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "Infinity"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", or negative dimensions."
-                        }
-                      ],
-                      "range": {
-                        "from": 6069,
-                        "to": 6517
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Origin and window verification"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": The artifact communicates with the host window via "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "postMessage"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ". The host listener verifies that "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "event.source === iframeRef.current.contentWindow"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ". Foreign-source messages and spoofed dimensions are ignored. Resizing messages ("
-                              },
-                              {
-                                "kind": "code",
-                                "text": "stream-mdx:artifact-size"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ") strictly validate "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "Number.isFinite(data.height)"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " and clamp accepted values between 50px and 10,000px, ignoring "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "NaN"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "Infinity"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", or negative dimensions."
-                              }
-                            ],
-                            "text": "Origin and window verification: The artifact communicates with the host window via postMessage. The host listener verifies that event.source === iframeRef.current.contentWindow. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (stream-mdx:artifact-size) strictly validate Number.isFinite(data.height) and clamp accepted values between 50px and 10,000px, ignoring NaN, Infinity, or negative dimensions.",
-                            "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (`stream-mdx:artifact-size`) strictly validate `Number.isFinite(data.height)` and clamp accepted values between 50px and 10,000px, ignoring `NaN`, `Infinity`, or negative dimensions."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Origin and window verification"
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": The artifact communicates with the host window via "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "postMessage"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ". The host listener verifies that "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "event.source === iframeRef.current.contentWindow"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ". Foreign-source messages and spoofed dimensions are ignored. Resizing messages ("
-                    },
-                    {
-                      "kind": "code",
-                      "text": "stream-mdx:artifact-size"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ") strictly validate "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "Number.isFinite(data.height)"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " and clamp accepted values between 50px and 10,000px, ignoring "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "NaN"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "Infinity"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", or negative dimensions."
-                    }
-                  ],
-                  "text": "Origin and window verification: The artifact communicates with the host window via postMessage. The host listener verifies that event.source === iframeRef.current.contentWindow. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (stream-mdx:artifact-size) strictly validate Number.isFinite(data.height) and clamp accepted values between 50px and 10,000px, ignoring NaN, Infinity, or negative dimensions.",
-                  "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (`stream-mdx:artifact-size`) strictly validate `Number.isFinite(data.height)` and clamp accepted values between 50px and 10,000px, ignoring `NaN`, `Infinity`, or negative dimensions."
-                },
-                "children": []
-              }
-            ]
-          }
-        },
-        "range": {
-          "from": 6069,
-          "to": 6517
-        }
-      }
-    },
-    {
-      "id": "37293927",
+      "id": "39af731c",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -5469,8 +4078,8 @@
           "headingId": "reporting-security-issues"
         },
         "range": {
-          "from": 6519,
-          "to": 6547
+          "from": 9607,
+          "to": 9635
         },
         "inline": [
           {
@@ -5481,17 +4090,24 @@
       }
     },
     {
-      "id": "21462e84",
+      "id": "7c1878ff",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "See the repo root `SECURITY.md` once added.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 18,
+              "to": 31,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 6549,
-          "to": 6592
+          "from": 9637,
+          "to": 9680
         },
         "inline": [
           {
@@ -5510,7 +4126,7 @@
       }
     },
     {
-      "id": "be168e6",
+      "id": "7cba1529",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -5522,8 +4138,8 @@
           "headingId": "production-verification"
         },
         "range": {
-          "from": 6594,
-          "to": 6620
+          "from": 9682,
+          "to": 9708
         },
         "inline": [
           {
@@ -5534,7 +4150,7 @@
       }
     },
     {
-      "id": "11daf900",
+      "id": "50c65f7d",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -5543,8 +4159,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 6622,
-          "to": 6687
+          "from": 9710,
+          "to": 9775
         },
         "inline": [
           {
@@ -5555,7 +4171,7 @@
       }
     },
     {
-      "id": "76ab4525",
+      "id": "75b3483e",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -5618,17 +4234,17 @@
             },
             "children": [
               {
-                "id": "76ab4525::item:0",
+                "id": "75b3483e::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 6689,
-                  "to": 6753
+                  "from": 9777,
+                  "to": 9841
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "76ab4525::item:0",
+                    "id": "75b3483e::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5640,8 +4256,8 @@
                         }
                       ],
                       "range": {
-                        "from": 6689,
-                        "to": 6753
+                        "from": 9777,
+                        "to": 9841
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5677,17 +4293,17 @@
                 "children": []
               },
               {
-                "id": "76ab4525::item:1",
+                "id": "75b3483e::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 6754,
-                  "to": 6799
+                  "from": 9842,
+                  "to": 9887
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "76ab4525::item:1",
+                    "id": "75b3483e::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5699,8 +4315,8 @@
                         }
                       ],
                       "range": {
-                        "from": 6754,
-                        "to": 6799
+                        "from": 9842,
+                        "to": 9887
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5736,17 +4352,17 @@
                 "children": []
               },
               {
-                "id": "76ab4525::item:2",
+                "id": "75b3483e::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 6800,
-                  "to": 6858
+                  "from": 9888,
+                  "to": 9946
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "76ab4525::item:2",
+                    "id": "75b3483e::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5762,8 +4378,8 @@
                         }
                       ],
                       "range": {
-                        "from": 6800,
-                        "to": 6858
+                        "from": 9888,
+                        "to": 9946
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5807,17 +4423,17 @@
                 "children": []
               },
               {
-                "id": "76ab4525::item:3",
+                "id": "75b3483e::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 6859,
-                  "to": 6925
+                  "from": 9947,
+                  "to": 10013
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "76ab4525::item:3",
+                    "id": "75b3483e::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5837,8 +4453,8 @@
                         }
                       ],
                       "range": {
-                        "from": 6859,
-                        "to": 6925
+                        "from": 9947,
+                        "to": 10013
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5893,8 +4509,8 @@
           }
         },
         "range": {
-          "from": 6689,
-          "to": 6925
+          "from": 9777,
+          "to": 10013
         }
       }
     }
@@ -5949,38 +4565,20 @@
       "text": "MDX evaluation and `script-src` (`unsafe-eval`)"
     },
     {
-      "id": "artifact-sandbox-model-p4",
-      "blockId": "32afef1d",
+      "id": "artifact-like-code-fences",
+      "blockId": "1aba649a",
       "level": 2,
-      "text": "Artifact Sandbox Model (P4)"
-    },
-    {
-      "id": "1-hardened-iframe-isolation",
-      "blockId": "c03a2de",
-      "level": 3,
-      "text": "1. Hardened iframe isolation"
-    },
-    {
-      "id": "2-in-frame-content-security-policy-csp",
-      "blockId": "58e1b158",
-      "level": 3,
-      "text": "2. In-frame Content Security Policy (CSP)"
-    },
-    {
-      "id": "3-secure-host-communication",
-      "blockId": "7a77509d",
-      "level": 3,
-      "text": "3. Secure host communication"
+      "text": "Artifact-like code fences"
     },
     {
       "id": "reporting-security-issues",
-      "blockId": "37293927",
+      "blockId": "39af731c",
       "level": 2,
       "text": "Reporting security issues"
     },
     {
       "id": "production-verification",
-      "blockId": "be168e6",
+      "blockId": "7cba1529",
       "level": 2,
       "text": "Production verification"
     }
@@ -5993,9 +4591,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

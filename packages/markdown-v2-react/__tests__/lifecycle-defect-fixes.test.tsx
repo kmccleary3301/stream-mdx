@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
+import { createBlockSnapshot, PATCH_ROOT_ID } from "@stream-mdx/core";
 import type { Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import { MarkdownRenderer, StreamingMarkdown, type StreamingMarkdownHandle } from "../src/index";
 import React, { act } from "react";
+import { makeEngine as makeTrustedEngine } from "./trusted-native-fixture";
+import { workerFactory as createTrustedWorker } from "./trusted-native-fixture";
 import { createRoot } from "react-dom/client";
 
 class TestMockWorker extends EventTarget {
@@ -38,6 +41,12 @@ class TestMockWorker extends EventTarget {
       });
     }
   }
+  emit(message: WorkerOut): void {
+    const event = new Event("message") as MessageEvent<WorkerOut>;
+    Object.defineProperty(event, "data", { value: message });
+    this.dispatchEvent(event);
+  }
+
 
   terminate(): void {
     this.terminated = true;
@@ -219,6 +228,416 @@ async function testWorkerErrorEventRoutesToOnErrorAndExitsStreaming(): Promise<v
   }
 }
 
+function insertParagraphPatch(text: string, id = "appended-paragraph", index = 0): Patch {
+  return {
+    op: "insertChild",
+    at: { blockId: PATCH_ROOT_ID },
+    index,
+    node: createBlockSnapshot({
+      id,
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw: text, inline: [{ kind: "text", text }] },
+    }),
+  };
+}
+
+async function testAppendBeforeInitializationAckAfterRestart(): Promise<void> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const workers: TestMockWorker[] = [];
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const workerFactory = () => {
+    const worker = new TestMockWorker();
+    workers.push(worker);
+    return worker as unknown as Worker;
+  };
+  const text = "Appended before the fresh INIT acknowledgement";
+
+  try {
+    await act(async () => {
+      root.render(<StreamingMarkdown ref={handle} engine="worker" worker={workerFactory} />);
+    });
+    await waitFor(
+      () => workers.length === 1 && workers[0].messages.some((message) => message.type === "INIT"),
+      "initial worker INIT should be posted",
+    );
+    await act(async () => {
+      workers[0].emit({ type: "INITIALIZED", blocks: [] });
+    });
+
+    await act(async () => {
+      handle.current?.restart();
+    });
+    await waitFor(
+      () => workers.length === 2 && workers[1].messages.some((message) => message.type === "INIT"),
+      "restarted worker INIT should be posted",
+    );
+
+    await act(async () => {
+      handle.current?.append(text);
+    });
+    assert.ok(
+      workers[1].messages.some((message) => message.type === "APPEND" && message.text === text),
+      "append before the restarted worker's INIT acknowledgement must reach that worker",
+    );
+
+    await act(async () => {
+      workers[1].emit({ type: "INITIALIZED", blocks: [] });
+      workers[1].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch(text)] });
+    });
+    await waitFor(() => container.textContent?.includes(text) ?? false, "pre-ack append should render after acknowledgement");
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  }
+}
+
+async function testRecoverableThemeInitErrorDoesNotBlockStaticText(): Promise<void> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const worker = new TestMockWorker();
+  const text = "Static text survives a recoverable theme error";
+  const reportedErrors: Error[] = [];
+  const workerFactory = () => worker as unknown as Worker;
+
+  try {
+    root.render(
+      <StreamingMarkdown
+        engine="worker"
+        worker={workerFactory}
+        text={text}
+        onError={(error) => reportedErrors.push(error)}
+      />,
+    );
+    await waitFor(
+      () => worker.messages.some((message) => message.type === "INIT"),
+      "worker INIT should be posted",
+    );
+    await act(async () => {
+      worker.emit({
+        type: "ERROR",
+        phase: "INIT",
+        error: { message: "Unknown code theme" },
+        meta: { theme: ["not-a-theme"] },
+      });
+      worker.emit({ type: "INITIALIZED", blocks: [] });
+    });
+    assert.strictEqual(reportedErrors.length, 1, "recoverable INIT errors should still reach onError");
+    await waitFor(
+      () => worker.messages.some((message) => message.type === "INIT" && message.initialContent === text),
+      "static text should be sent after a recoverable theme error and INIT acknowledgement",
+    );
+    await act(async () => {
+      worker.emit({
+        type: "INITIALIZED",
+        blocks: [
+          {
+            id: "theme-error-paragraph",
+            type: "paragraph",
+            isFinalized: true,
+            payload: { raw: text, inline: [{ kind: "text", text }] },
+          },
+        ],
+      });
+    });
+    await waitFor(() => container.textContent?.includes(text) ?? false, "static text should render after recoverable theme error");
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  }
+}
+
+async function testSameTurnRestartFinalizeUsesFreshTrustedWorker(): Promise<void> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const reportedErrors: Error[] = [];
+  const observedWorkers: Array<{ worker: Worker; inputs: WorkerIn[]; outputs: WorkerOut[] }> = [];
+  const workerFactory = () => {
+    const worker = createTrustedWorker();
+    const observation = { worker, inputs: [] as WorkerIn[], outputs: [] as WorkerOut[] };
+    const postMessage = worker.postMessage.bind(worker);
+    Object.defineProperty(worker, "postMessage", {
+      configurable: true,
+      value(message: WorkerIn) {
+        observation.inputs.push(message);
+        postMessage(message as Parameters<typeof worker.postMessage>[0]);
+      },
+    });
+    worker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+      observation.outputs.push(event.data);
+    });
+    observedWorkers.push(observation);
+    return worker;
+  };
+  const Card: React.FC<{ value?: string; title?: string; children?: React.ReactNode }> = ({ value, children }) => (
+    <span data-lifecycle-card={value}>{children ?? value}</span>
+  );
+  const trustedEngine = makeTrustedEngine(Card);
+  const oldSource = [
+    'import { Card } from "host:widgets";',
+    'export const value = "old generation";',
+    "",
+    "<Card value={value} />",
+  ].join("\n");
+  const freshChunks = ["fresh first\n\n", "fresh second"];
+  const render = async (text: string | undefined) => {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          engine="worker"
+          worker={workerFactory}
+          contentPolicy="trusted-mdx"
+          engines={{ mdx: trustedEngine }}
+          features={{ mdx: true }}
+          text={text}
+          caret={false}
+          onError={(error) => reportedErrors.push(error)}
+        />,
+      );
+    });
+  };
+
+  try {
+    await render(oldSource);
+    await waitFor(
+      () => observedWorkers.length === 1 &&
+        observedWorkers[0].outputs.some((message) => message.type === "FINALIZED") &&
+        container.querySelector('[data-lifecycle-card="old generation"]') !== null,
+      "the initial trusted generation renders and receives a real FINALIZED response",
+      10_000,
+    );
+    assert.equal(observedWorkers[0].outputs.filter((message) => message.type === "FINALIZED").length, 1);
+
+    await render(undefined);
+    await act(async () => {
+      handle.current?.restart();
+      handle.current?.append(freshChunks[0]);
+      handle.current?.append(freshChunks[1]);
+      handle.current?.finalize();
+      assert.throws(
+        () => handle.current?.append("too late"),
+        Error,
+        "a queued trusted FINALIZE seals its generation before the worker attaches",
+      );
+    });
+    assert.ok(handle.current, "the public handle remains mounted after removing old source");
+    assert.equal(observedWorkers.length, 2, `restart should create a replacement worker; errors: ${reportedErrors.map((error) => error.message).join("; ")}`);
+    const freshWorker = observedWorkers[1];
+    assert.ok(freshWorker.inputs.some((message) => message.type === "INIT"), "the fresh worker receives INIT");
+    assert.deepEqual(
+      freshWorker.inputs.filter((message) => message.type === "INIT" || message.type === "APPEND" || message.type === "FINALIZE")
+        .map((message) => message.type === "APPEND" ? message.text : message.type),
+      ["INIT", ...freshChunks, "FINALIZE"],
+      "the fresh worker receives INIT, both appends, and FINALIZE in FIFO order",
+    );
+    await waitFor(
+      () => freshWorker.outputs.some((message) => message.type === "FINALIZED") &&
+        Array.from(container.querySelectorAll("p"), (paragraph) => paragraph.textContent).join("|") === "fresh first|fresh second",
+      "the real fresh worker finalizes and renders the exact authored chunks",
+      10_000,
+    );
+    assert.equal(freshWorker.outputs.filter((message) => message.type === "FINALIZED").length, 1);
+    assert.equal(container.textContent?.includes("old generation"), false);
+    assert.deepEqual(
+      Array.from(container.querySelectorAll("p"), (paragraph) => paragraph.textContent),
+      ["fresh first", "fresh second"],
+    );
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    trustedEngine.dispose();
+  }
+}
+
+async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<void> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const workers: TestMockWorker[] = [];
+  const workerFactory = () => {
+    const worker = new TestMockWorker();
+    workers.push(worker);
+    return worker as unknown as Worker;
+  };
+  const Card: React.FC<{ value?: string; title?: string; children?: React.ReactNode }> = ({ value, children }) => (
+    <span data-lifecycle-card={value}>{children ?? value}</span>
+  );
+  const trustedEngine = makeTrustedEngine(Card);
+  const appendTexts = (worker: TestMockWorker) =>
+    worker.messages.filter((message) => message.type === "APPEND").map((message) => message.text);
+  const freshChunks = ["fresh first\n\n", "fresh second"];
+  const secondRestartChunks = ["second restart first\n\n", "second restart second"];
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          engine="worker"
+          worker={workerFactory}
+          contentPolicy="trusted-mdx"
+          engines={{ mdx: trustedEngine }}
+          features={{ mdx: true }}
+          caret={false}
+        />,
+      );
+    });
+    await waitFor(
+      () => workers.length === 1 && workers[0].messages.some((message) => message.type === "INIT"),
+      "initial trusted worker INIT should be posted",
+    );
+    await act(async () => {
+      handle.current?.append("old generation");
+    });
+    assert.deepEqual(appendTexts(workers[0]), ["old generation"], "initial pre-ack input reaches its attached worker");
+    await act(async () => {
+      workers[0].emit({ type: "INITIALIZED", blocks: [] });
+      workers[0].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch("old generation", "old-generation")] });
+    });
+    await waitFor(
+      () => container.textContent?.includes("old generation") ?? false,
+      "the initial trusted generation renders before it is finalized",
+    );
+    await act(async () => {
+      handle.current?.finalize();
+    });
+    assert.ok(workers[0].messages.some((message) => message.type === "FINALIZE"));
+    await act(async () => {
+      workers[0].emit({ type: "FINALIZED" });
+    });
+
+    await act(async () => {
+      handle.current?.restart();
+      assert.equal(handle.current?.getState().workerReady, false, "restart closes readiness synchronously");
+      handle.current?.append(freshChunks[0]);
+      handle.current?.append(freshChunks[1]);
+    });
+    await waitFor(
+      () => workers.length === 2 && workers[1].messages.some((message) => message.type === "INIT"),
+      "the fresh trusted generation attaches its worker",
+    );
+    assert.deepEqual(
+      appendTexts(workers[1]),
+      freshChunks,
+      "same-turn appends transfer to the fresh generation exactly once and in order",
+    );
+    assert.deepEqual(
+      workers[1].messages.filter((message) => message.type === "INIT" || message.type === "APPEND")
+        .map((message) => message.type === "INIT" ? "INIT" : message.text),
+      ["INIT", ...freshChunks],
+      "the new worker receives INIT before queued APPENDs, without waiting for its acknowledgement",
+    );
+
+    await act(async () => {
+      workers[1].emit({ type: "INITIALIZED", blocks: [] });
+      workers[1].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch("fresh first", "fresh-first")] });
+      workers[1].emit({ type: "PATCH", tx: 2, patches: [insertParagraphPatch("fresh second", "fresh-second", 1)] });
+    });
+    await waitFor(
+      () => Array.from(container.querySelectorAll("p"), (paragraph) => paragraph.textContent)
+        .join("|") === "fresh first|fresh second",
+      "the fresh generation renders both authored chunks in order",
+    );
+    await act(async () => {
+      handle.current?.finalize();
+      workers[1].emit({ type: "FINALIZED" });
+    });
+    assert.equal(container.textContent?.includes("old generation"), false, "the prior generation is absent after restart");
+
+    await act(async () => {
+      handle.current?.restart();
+      handle.current?.append("discarded pending generation");
+      handle.current?.restart();
+      handle.current?.append(secondRestartChunks[0]);
+      handle.current?.append(secondRestartChunks[1]);
+    });
+    await waitFor(
+      () => workers.length === 3 && workers[2].messages.some((message) => message.type === "INIT"),
+      "the second restart attaches only its final worker generation",
+    );
+    assert.deepEqual(
+      appendTexts(workers[2]),
+      secondRestartChunks,
+      "a second restart clears the earlier pending generation while preserving later chunks in order",
+    );
+    await act(async () => {
+      workers[2].emit({ type: "INITIALIZED", blocks: [] });
+      workers[2].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch("second restart first", "second-first")] });
+      workers[2].emit({ type: "PATCH", tx: 2, patches: [insertParagraphPatch("second restart second", "second-second", 1)] });
+      handle.current?.finalize();
+      workers[2].emit({ type: "FINALIZED" });
+    });
+    await waitFor(
+      () => Array.from(container.querySelectorAll("p"), (paragraph) => paragraph.textContent)
+        .join("|") === "second restart first|second restart second",
+      "only the latest pending generation renders after the second restart",
+    );
+    assert.equal(container.textContent?.includes("discarded pending generation"), false);
+    assert.equal(container.textContent?.includes("old generation"), false);
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    trustedEngine.dispose();
+  }
+}
+
+async function testInitialAppendBeforeWorkerAttachIsQueued(): Promise<void> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const worker = new TestMockWorker();
+  const text = "initial before attach";
+  const workerFactory = () => worker as unknown as Worker;
+  const AppendBeforeAttach = () => {
+    React.useLayoutEffect(() => {
+      handle.current?.append(text);
+    }, []);
+    return <StreamingMarkdown ref={handle} engine="worker" worker={workerFactory} />;
+  };
+
+  try {
+    await act(async () => {
+      root.render(<AppendBeforeAttach />);
+    });
+    await waitFor(
+      () => worker.messages.some((message) => message.type === "APPEND" && message.text === text),
+      "an initial pre-attach append is queued until INIT is posted",
+    );
+    assert.deepEqual(
+      worker.messages.filter((message) => message.type === "INIT" || message.type === "APPEND")
+        .map((message) => message.type === "INIT" ? "INIT" : message.text),
+      ["INIT", text],
+      "the initial worker receives INIT before its queued append",
+    );
+    await act(async () => {
+      worker.emit({ type: "INITIALIZED", blocks: [] });
+      worker.emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch(text)] });
+    });
+    await waitFor(() => container.textContent?.includes(text) ?? false, "initial pre-attach content renders");
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  }
+}
+
 async function testNoCommitsAfterDetach(): Promise<void> {
   const worker = new TestMockWorker();
   const renderer = new MarkdownRenderer({
@@ -276,6 +695,11 @@ async function main(): Promise<void> {
     await testRemovingBlockRendererRevertsToDefault();
     await testWorkerErrorEventRoutesToOnErrorAndExitsStreaming();
     await testNoCommitsAfterDetach();
+    await testSameTurnRestartFinalizeUsesFreshTrustedWorker();
+    await testSameTurnRestartAppendsUseFreshTrustedGeneration();
+    await testInitialAppendBeforeWorkerAttachIsQueued();
+    await testAppendBeforeInitializationAckAfterRestart();
+    await testRecoverableThemeInitErrorDoesNotBlockStaticText();
     console.log("lifecycle defect fixes tests passed successfully");
   } finally {
     for (const [key, descriptor] of previousGlobals) {

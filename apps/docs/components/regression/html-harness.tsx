@@ -2,12 +2,17 @@
 
 import type { InlineNode } from "@stream-mdx/core";
 import type { RendererStateSnapshot, StreamingSchedulerOptions, StreamingMarkdownProps } from "@stream-mdx/react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
+import { useCallback, useEffect, useMemo, useRef, useState, type ElementType } from "react";
 
 import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
-
 import { components as mdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
+
+const regressionMdxEngine = createTrustedMdxEngine({
+  components: mdxComponents as Readonly<Record<string, ElementType>>,
+});
+const regressionMdxEngines = { mdx: regressionMdxEngine };
 
 const DEFAULT_FORMAT_ANTICIPATION = {
   inline: true,
@@ -42,8 +47,8 @@ const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
 type RegressionConfig = {
   features: NonNullable<StreamingMarkdownProps["features"]>;
   scheduling: StreamingSchedulerOptions;
-  mdxCompileMode: NonNullable<StreamingMarkdownProps["mdxCompileMode"]>;
   showCodeMeta: boolean;
+  contentPolicy: NonNullable<StreamingMarkdownProps["contentPolicy"]>;
 };
 
 type RegressionSummary = {
@@ -52,8 +57,6 @@ type RegressionSummary = {
     hasTable: boolean;
     hasPre: boolean;
     hasFootnotes: boolean;
-    hasMdxPending: boolean;
-    hasMdxCompiled: boolean;
     hasBlockquote: boolean;
     hasMath: boolean;
   };
@@ -62,8 +65,6 @@ type RegressionSummary = {
     pre: number;
     blockquote: number;
     katex: number;
-    mdxPending: number;
-    mdxCompiled: number;
     footnotes: number;
     hr: number;
   };
@@ -183,16 +184,6 @@ function collectInvariantViolations(state: RendererStateSnapshot): InvariantViol
       }
     }
 
-    if (block.type === "mdx") {
-      const meta = block.payload.meta as { mdxStatus?: unknown } | undefined;
-      const status = typeof meta?.mdxStatus === "string" ? meta.mdxStatus : undefined;
-      if (status === "compiled") {
-        const hasCompiled = Boolean(block.payload.compiledMdxModule || block.payload.compiledMdxRef);
-        if (!hasCompiled) {
-          violations.push({ message: `mdx block marked compiled without output: ${block.id}` });
-        }
-      }
-    }
   }
 
   if (state.queueDepth > 0) {
@@ -280,8 +271,8 @@ export function HtmlRegressionHarness(): JSX.Element {
   const [config, setConfig] = useState<RegressionConfig>({
     features: DEFAULT_FEATURES,
     scheduling: DEFAULT_SCHEDULING,
-    mdxCompileMode: "worker",
     showCodeMeta: false,
+    contentPolicy: "markdown",
   });
   const [instanceKey, setInstanceKey] = useState(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -817,8 +808,6 @@ export function HtmlRegressionHarness(): JSX.Element {
           hasTable: Boolean(root?.querySelector("table")),
           hasPre: Boolean(root?.querySelector("pre")),
           hasFootnotes: Boolean(root?.querySelector(".footnotes")),
-          hasMdxPending: Boolean(root?.querySelector('.markdown-mdx[data-mdx-status="pending"]')),
-          hasMdxCompiled: Boolean(root?.querySelector('.markdown-mdx[data-mdx-status="compiled"]')),
           hasBlockquote: Boolean(root?.querySelector("blockquote")),
           hasMath: Boolean(root?.querySelector(".katex")),
         };
@@ -830,8 +819,6 @@ export function HtmlRegressionHarness(): JSX.Element {
             pre: root?.querySelectorAll("pre").length ?? 0,
             blockquote: root?.querySelectorAll("blockquote").length ?? 0,
             katex: root?.querySelectorAll(".katex").length ?? 0,
-            mdxPending: root?.querySelectorAll('.markdown-mdx[data-mdx-status="pending"]').length ?? 0,
-            mdxCompiled: root?.querySelectorAll('.markdown-mdx[data-mdx-status="compiled"]').length ?? 0,
             footnotes: root?.querySelectorAll(".footnotes").length ?? 0,
             hr: root?.querySelectorAll("hr").length ?? 0,
           },
@@ -975,8 +962,8 @@ export function HtmlRegressionHarness(): JSX.Element {
           className="markdown-v2-output"
           features={config.features}
           scheduling={config.scheduling}
-          mdxCompileMode={config.mdxCompileMode}
-          mdxComponents={mdxComponents as Record<string, React.ComponentType<unknown>>}
+          contentPolicy={config.contentPolicy}
+          engines={config.contentPolicy === "trusted-mdx" ? regressionMdxEngines : undefined}
           components={registry.getBlockComponentMap()}
           inlineComponents={registry.getInlineComponentMap()}
           tableElements={tableElements}

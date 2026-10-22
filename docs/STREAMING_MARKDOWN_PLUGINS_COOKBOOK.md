@@ -5,9 +5,9 @@ _Last updated: 2025-12-17_
 This cookbook focuses on the parts of the “plugins” story that are relevant to **real app integration**:
 
 - How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled.
-- How the worker is configured (`docPlugins`, `mdxCompileMode`).
-- How to keep MDX compilation parity (server vs worker).
-- Where “custom plugins” actually live in the architecture (worker bundle customization).
+- How the worker is configured (`docPlugins` and `contentPolicy`).
+- How restricted source components differ from full MDX evaluation.
+- How to opt into full MDX with an explicit trusted engine.
 
 If you are looking for the top-level React API, start with `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.
 
@@ -51,14 +51,13 @@ import { StreamingMarkdown } from "stream-mdx";
     footnotes: true,
     callouts: false,
   }}
-  mdxCompileMode="worker"
 />;
 ```
 
 Notes:
 
-- `features` configures both the worker and the renderer.
-- `mdxCompileMode` enables MDX compilation/hydration and selects `"server"` vs `"worker"`.
+- `features` configures parsing and renderer behavior.
+- `contentPolicy` defaults to `"restricted"`; `features.mdx` alone does not evaluate authored source.
 
 ---
 
@@ -79,40 +78,40 @@ worker.postMessage({
     callouts: false,
     math: true,
   },
-  mdx: { compileMode: "worker" },
+  contentPolicy: "restricted",
 });
 ```
 
-The hosted worker bundle already includes StreamMDX’s built-in implementations for those domains. `docPlugins` controls what is enabled during parsing/aggregation.
+The hosted worker bundle includes the built-in implementations for those domains. `docPlugins` controls parsing and aggregation. `contentPolicy` defaults to `"restricted"`; worker parsing does not evaluate authored MDX. In restricted mode, host registrations are created with `defineContentComponent`; only serializable names and render conditions cross `INIT`, never validators or component functions. Native projected children remain host React nodes.
 
 ---
 
-## 4) MDX parity (server vs worker)
+## 4) Full MDX for trusted source
 
-StreamMDX is designed to keep server and worker compilation **equivalent**. For server compilation, use:
+`features.mdx` enables component syntax parsing, not automatic evaluation. Restricted source can use host `defineContentComponent` registrations in `contentComponents`. For full MDX, create an explicit engine and pass it through the React integration:
 
-```ts
-import { compileMdxContent } from "stream-mdx/worker/mdx-compile";
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
+import { Callout } from "./Callout";
+
+const hostWidgets = { Callout };
+const mdxEngine = createTrustedMdxEngine({
+  components: hostWidgets,
+  imports: { "host:widgets": hostWidgets },
+});
+
+<StreamingMarkdown
+  text={trustedContent}
+  features={{ mdx: true }}
+  contentPolicy="trusted-mdx"
+  engines={{ mdx: mdxEngine }}
+/>;
 ```
 
-This is the same pipeline used by the worker compilation path (remark/rehype stack + `@mdx-js/mdx` output as `function-body`).
+The trusted engine evaluates authored code in the host realm. Use it only for reviewed, trusted input; it is not a sandbox. See `docs/SECURITY_MODEL.md` for CSP requirements and limitations.
 
-### Next.js route example
-
-```ts
-import { NextRequest, NextResponse } from "next/server";
-import { compileMdxContent } from "stream-mdx/worker/mdx-compile";
-
-export async function POST(request: NextRequest) {
-  const { content, blockId } = await request.json();
-  const compiled = await compileMdxContent(content);
-  return NextResponse.json({
-    id: blockId,
-    code: compiled.code,
-    dependencies: compiled.dependencies,
-  });
-}
-```
+The explicit import map resolves authored specifiers only to supplied host bindings; no modules are fetched. Trusted evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox. Native worker `FINALIZED` does not imply trusted projection or host render commit readiness. See `docs/SECURITY_MODEL.md` for the lease, stale-work, and CSP boundaries.
 
 ---
 
@@ -165,7 +164,7 @@ Quick sanity check:
 
 ## 8) Troubleshooting
 
-- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode="worker"` (or implement `/api/mdx-compile-v2` for `"server"`).
+- **MDX renders as restricted content**: `contentPolicy` defaults to `"restricted"` and does not evaluate authored expressions. Register native source components with `defineContentComponent`; full MDX requires `engines.mdx` from `createTrustedMdxEngine`, trusted input, an explicit import map, and CSP permission for `unsafe-eval`.
 - **Worker fails under strict CSP**: host the worker bundle and use `worker="/workers/markdown-worker.js"` (avoid `blob:`).
 - **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes).
 - **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps.
