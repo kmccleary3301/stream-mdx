@@ -31,6 +31,8 @@ export interface NativeContainerWindowFrame {
   readonly parentTo: number;
   readonly firstMarker?: NativeContainerMarkerAnchor;
   readonly activeMarker?: NativeContainerMarkerAnchor;
+  /** Marker of the list item just before the active one; its width bounds the active item's indentation. */
+  readonly priorMarker?: NativeContainerMarkerAnchor;
   readonly quoteMarker?: NativeContainerMarkerAnchor;
   readonly firstQuoteMarker?: NativeContainerMarkerAnchor;
   /** Quote marks on retained list-item or code-opening context lines. */
@@ -160,6 +162,14 @@ function physicalLineEnd(source: SourceSnapshot, lineEnd: number, limit: number)
   return lineEnd;
 }
 
+/** A list item before the active one replaces the first item as indentation context: intermediate wider markers
+ * are omitted from the window, so the first item's content column could otherwise capture later siblings. */
+function priorListItemMarker(frame: NativeContainerWindowFrame): NativeContainerMarkerAnchor | undefined {
+  if (frame.kind !== "list" || !frame.priorMarker) return undefined;
+  if (frame.priorMarker.from === frame.firstMarker?.from || frame.priorMarker.from === frame.activeMarker?.from) return undefined;
+  return frame.priorMarker;
+}
+
 function markerOpenings(frames: readonly NativeContainerWindowFrame[]): NativeContainerMarkerAnchor[] {
   const result: NativeContainerMarkerAnchor[] = [];
   const append = (marker: NativeContainerMarkerAnchor): void => {
@@ -169,7 +179,9 @@ function markerOpenings(frames: readonly NativeContainerWindowFrame[]): NativeCo
   };
   for (const frame of frames) {
     if (frame.kind === "list") {
-      if (frame.firstMarker) append({ ...frame.firstMarker, globalChildIndex: 0 });
+      const priorMarker = priorListItemMarker(frame);
+      if (priorMarker) append({ ...priorMarker, globalChildIndex: frame.fromChild - 1 });
+      else if (frame.firstMarker) append({ ...frame.firstMarker, globalChildIndex: 0 });
       if (frame.activeMarker && frame.activeMarker.from !== frame.firstMarker?.from) {
         append({ ...frame.activeMarker, globalChildIndex: frame.fromChild });
       }
@@ -333,6 +345,13 @@ export class NativeContainerWindowCache {
     );
     const contextLines = new Map<number, NativeContainerContextLine>();
     for (const frame of frames) {
+      const priorMarker = priorListItemMarker(frame);
+      if (priorMarker) {
+        const lineFrom = lineStartAt(source, priorMarker.from);
+        const lineTo = lineEndAt(source, lineFrom, to);
+        if (lineFrom < contextEnd && lineTo > lineFrom) contextLines.set(lineFrom, { from: lineFrom, to: lineTo, text: source.read(lineFrom, lineTo) });
+        continue;
+      }
       const line = frame.firstContextLine;
       if (line && frame.firstContextLineComplete !== false && line.from < contextEnd) {
         contextLines.set(line.from, line);

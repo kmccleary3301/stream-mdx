@@ -310,6 +310,37 @@ function isManagedSourceSnapshot(node: NodeSnapshot): boolean {
     node.type.startsWith("paragraph-");
 }
 
+// A child that gains, loses, or changes its source owner record cannot be patched in place: the consumer
+// keys owner state to the record, so the node must be replaced.
+function sourceOwnershipChanged(prev: NodeSnapshot, next: NodeSnapshot): boolean {
+  return Boolean(prev.code) !== Boolean(next.code) ||
+    Boolean(prev.table) !== Boolean(next.table) ||
+    prev.paragraph?.paragraphOwnerId !== next.paragraph?.paragraphOwnerId ||
+    Boolean(prev.paragraph) !== Boolean(next.paragraph);
+}
+
+function diffOrReplaceChild(
+  blockId: string,
+  parent: NodeSnapshot,
+  index: number,
+  prevChild: NodeSnapshot,
+  nextChild: NodeSnapshot,
+  patches: Patch[],
+  metrics: WorkerMetricsCollector | null | undefined,
+  managedSourceOwner: boolean,
+  counters?: { recordPrefixComparisons?(count?: number, stage?: string): void },
+): void {
+  if (sourceOwnershipChanged(prevChild, nextChild)) {
+    patches.push({ op: "replaceChild", at: { blockId, nodeId: parent.id }, index, node: nextChild });
+    return;
+  }
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    diffNodeSnapshotWithOwner(blockId, prevChild, nextChild, patches, metrics, managedSourceOwner, counters);
+  } else {
+    diffNodeSnapshotWithOwner(blockId, prevChild, nextChild, patches, metrics, managedSourceOwner);
+  }
+}
+
 function canonicalSnapshotMeta(node: NodeSnapshot): Record<string, unknown> | undefined {
   const meta = node.meta;
   const nativeContainer = node.type === "list" || node.type === "blockquote" || node.type === "list-item";
@@ -615,11 +646,7 @@ function diffNodeSnapshotWithOwner(
       counters?.recordPrefixComparisons?.(1, "patch");
     }
     if (prevChildren[prefix].id !== nextChildren[prefix].id) break;
-    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-      diffNodeSnapshotWithOwner(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner, counters);
-    } else {
-      diffNodeSnapshotWithOwner(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner);
-    }
+    diffOrReplaceChild(blockId, prevNode, prefix, prevChildren[prefix], nextChildren[prefix], patches, metrics, managedSourceOwner, counters);
     prefix++;
   }
 
@@ -631,11 +658,7 @@ function diffNodeSnapshotWithOwner(
     const prevIdx = prevChildren.length - 1 - suffix;
     const nextIdx = nextChildren.length - 1 - suffix;
     if (prevChildren[prevIdx].id !== nextChildren[nextIdx].id) break;
-    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-      diffNodeSnapshotWithOwner(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner, counters);
-    } else {
-      diffNodeSnapshotWithOwner(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner);
-    }
+    diffOrReplaceChild(blockId, prevNode, prevIdx, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, managedSourceOwner, counters);
     suffix++;
   }
 
@@ -681,10 +704,11 @@ function diffNodeSnapshotWithOwner(
       }
 
       const prevMap = new Map(prevMid.map((child) => [child.id, child]));
-      for (const child of nextMid) {
+      for (let index = 0; index < nextMid.length; index++) {
+        const child = nextMid[index];
         const previous = prevMap.get(child.id);
         if (previous) {
-          diffNodeSnapshotWithOwner(blockId, previous, child, patches, metrics, managedSourceOwner);
+          diffOrReplaceChild(blockId, prevNode, prefix + index, previous, child, patches, metrics, managedSourceOwner, counters);
         }
       }
       if (isCodeNode) {
