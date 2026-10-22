@@ -278,7 +278,7 @@ export function rootParagraphAppendPatch(
     sourceAppend: change.sourceAppend,
     fromSpan: change.fromSpan,
     spans: change.spans,
-    paragraph: change.paragraph,
+    paragraph: owner.getMetadata(),
     meta: { kind: "semantic" },
   };
 }

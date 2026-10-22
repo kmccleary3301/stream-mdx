@@ -283,7 +283,13 @@ export const BlockNodeRenderer: React.FC<{
         renderNested={renderParagraphChild}
       />
     );
-    return <>{registry.renderFinalizedBlock(block, element)}</>;
+    // Block renderer overrides read the owner-materialized block (authored raw, inline, link references).
+    // Only materialize when an override will consume it; ordinary appends stay materialization-free.
+    const ownerState = store.getParagraphBlock(blockId);
+    const rendererBlock = registry.hasBlockRenderer() && ownerState?.source.state !== "open"
+      ? store.getParagraphColdBlock(blockId) ?? block
+      : block;
+    return <>{registry.renderFinalizedBlock(rendererBlock, element)}</>;
   }
 
   const block = node.block;

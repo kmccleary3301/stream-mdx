@@ -53,6 +53,7 @@ function copyParagraphSource(source: ParagraphBlockSourceMetadata): ParagraphBlo
     completeSpanCount: source.completeSpanCount,
     spanCount: source.spanCount,
     sourceRange: { from: source.sourceRange.from, to: source.sourceRange.to },
+    ...(source.linkReferences ? { linkReferences: source.linkReferences.map((reference) => ({ ...reference })) } : {}),
   };
 }
 
