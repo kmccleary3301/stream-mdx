@@ -1304,6 +1304,10 @@ function materializeSnapshotNodeBlock(
             .map((child, index) => Array.isArray(child.props?.inline)
               ? cloneInlineNodes(child.props.inline as InlineNode[])
               : cloneInlineNodes(existingItems[index] ?? []));
+          // The prepared list props mirror the same items; a stale record copy must not survive beside them.
+          if ("items" in nested.props) {
+            nested.props = { ...nested.props, items: (meta.items as InlineNode[][]).map(cloneInlineNodes) };
+          }
         }
         block.payload.meta = meta;
       }

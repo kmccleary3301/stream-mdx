@@ -3113,6 +3113,8 @@ function coldBlockForStoreNode(
         ? copyInlineNodes(child.props.inline as InlineNode[])
         : copyInlineNodes(existingItems[index] ?? []));
     meta.items = currentItems;
+    // The prepared list props mirror the same items; a stale record copy must not survive beside them.
+    if ("items" in prepared.props) prepared.props = { ...prepared.props, items: currentItems.map(copyInlineNodes) };
   }
   const payloadDescriptors = Object.getOwnPropertyDescriptors(projected.payload);
   payloadDescriptors.meta = { configurable: true, enumerable: true, writable: true, value: meta };
