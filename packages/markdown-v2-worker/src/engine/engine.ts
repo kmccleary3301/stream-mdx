@@ -5443,13 +5443,14 @@ export class MarkdownEngine {
             }
             return false;
           });
+          const previousRange = owner.getMetadata().sourceRange;
           const update = owner.acceptNativeTail({
             nodes: ownedEvents,
             mapping,
             inputGeneration: this.documentGeneration,
             sourceDocument: this.sourceDocument,
             closure: nodeClosure,
-            sourceRange: range,
+            sourceRange: { from: previousRange.from, to: Math.max(previousRange.to, range.to) },
           });
           if (update.revision !== update.expectedRevision || update.sourceAppend.length > 0) {
             this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(update));
@@ -7570,9 +7571,22 @@ export class MarkdownEngine {
     for (const nextBlock of nextBlocks) {
       if (rootReplacedTableIds?.has(nextBlock.id)) continue;
       const prevBlock = prevMap.get(nextBlock.id);
-      if (this.nativeContainerActivePathSnapshots.has(nextBlock.id)
-        && (nextBlock.type === "list" || nextBlock.type === "blockquote")) continue;
       if (!prevBlock) continue;
+      if (this.nativeContainerActivePathSnapshots.has(nextBlock.id)
+        && (nextBlock.type === "list" || nextBlock.type === "blockquote")) {
+        const previousRange = prevBlock.payload.range;
+        const nextRange = nextBlock.payload.range;
+        if (previousRange && nextRange
+          && (previousRange.from !== nextRange.from || previousRange.to !== nextRange.to)) {
+          patches.push({
+            op: "setProps",
+            at: { blockId: nextBlock.id },
+            props: { range: { ...nextRange } },
+            meta: { kind: "semantic" },
+          });
+        }
+        continue;
+      }
       if (changedBlockIds.size > 0 && !changedBlockIds.has(nextBlock.id) && blocksStructurallyEqual(prevBlock, nextBlock)) {
         continue;
       }
