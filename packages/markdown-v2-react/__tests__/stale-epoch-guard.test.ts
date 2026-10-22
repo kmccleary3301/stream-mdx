@@ -356,6 +356,24 @@ async function main() {
   assert.strictEqual(finalizeStore.getNode("paragraph-block")?.block?.isFinalized, true);
   assert.strictEqual(finalizeStore.getNode("paragraph-block")?.props.afterFinalize, true, "a patch after finalize must not be stale");
   assert.strictEqual(finalizeStore.getDebugCounters().staleEpochRejected, 0);
+
+  // Patches of one transaction all carry the epoch from before it; a root replace after the block's finalize
+  // belongs to the same transaction and must still apply.
+  const sameTxStore = createRendererStore([createParagraphBlock("alpha")]);
+  const beforeTxEpoch = sameTxStore.getNode("paragraph-block")?.blockEpoch ?? 0;
+  const txMeta = { kind: "semantic", blockEpoch: beforeTxEpoch, parseEpoch: beforeTxEpoch + 5, tx: 401 } as const;
+  sameTxStore.applyPatches([
+    { op: "finalize", at: { blockId: "paragraph-block" }, meta: txMeta } satisfies Patch,
+    {
+      op: "replaceChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index: 0,
+      node: createBlockSnapshot({ ...createParagraphBlock("omega"), isFinalized: true }),
+      meta: txMeta,
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(sameTxStore.getNode("paragraph-block")?.block?.payload.raw, "omega", "the same transaction's replace applies");
+  assert.strictEqual(sameTxStore.getDebugCounters().staleEpochRejected, 0);
 }
 
 await main();

@@ -4183,7 +4183,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         if (!target) return false;
         const actualBlockEpoch = effectiveBlockEpoch(nodes, target);
         if (actualBlockEpoch === expectedBlockEpoch) return false;
-        const txEpoch = at.blockId && patchTx !== undefined ? semanticTxEpochs.get(at.blockId) : undefined;
+        // A root insert/replace targets the block it carries, which is where its transaction's epoch was recorded.
+        const epochBlockId = at.blockId === PATCH_ROOT_ID ? target.id : at.blockId;
+        const txEpoch = epochBlockId && patchTx !== undefined ? semanticTxEpochs.get(epochBlockId) : undefined;
         if (txEpoch && txEpoch.tx === patchTx && txEpoch.blockEpoch === actualBlockEpoch) {
           return false;
         }
