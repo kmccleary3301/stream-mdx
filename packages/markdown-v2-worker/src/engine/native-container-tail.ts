@@ -867,6 +867,27 @@ function tableContextLines(
   return Object.freeze(lines);
 }
 
+// A table's header and delimiter rebuild it ahead of a tail that resumes inside it. A tail past its last row also keeps
+// the lines in between (the blank line that closed the table); without them its text reads as another table row, and
+// without the table the next sibling loses its index.
+function activeTableContextLines(
+  source: SourceSnapshot,
+  leaf: SyntaxNode,
+  leafRange: { readonly from: number; readonly to: number },
+  tailFrom: number,
+  mapping: NativeContainerWindow["mapping"],
+): readonly NativeContainerContextLine[] {
+  if (leaf.type.name !== "Table") return Object.freeze([]);
+  const header = tableContextLines(source, leaf, mapping);
+  const lastRowFrom = lineStartAt(source, leafRange.to);
+  const separators: NativeContainerContextLine[] = [];
+  for (let from = lineStartAt(source, tailFrom - 1); tailFrom > 0 && from > lastRowFrom; from = lineStartAt(source, from - 1)) {
+    const to = lineEndAt(source, from);
+    separators.unshift(Object.freeze({ from, to, text: source.read(from, to) }));
+  }
+  return separators.length === 0 ? header : Object.freeze([...header, ...separators]);
+}
+
 function changedCodeNodes(leaf: SyntaxNode, prefixLength: number): readonly SyntaxNode[] {
   const nodes: SyntaxNode[] = [];
   const stack: SyntaxNode[] = [leaf];
@@ -942,9 +963,6 @@ export class NativeContainerTailParser {
       source,
       ...identityMapping,
     });
-    this.tableContext = path.leaf.type.name === "Table"
-      ? tableContextLines(source, path.leaf, { input: source, source, ...identityMapping })
-      : Object.freeze([]);
     this.tailFrom = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
       ? activeTailStart(
           source,
@@ -967,6 +985,13 @@ export class NativeContainerTailParser {
           this.paragraphOwnerSupported,
           this.codeOpening,
         );
+    this.tableContext = activeTableContextLines(
+      source,
+      path.leaf,
+      identityMapping.mapRange(path.leaf.from, path.leaf.to),
+      this.tailFrom,
+      { input: source, source, ...identityMapping },
+    );
     const hasSourceAfterRoot = this.ownerType === "BulletList" || this.ownerType === "OrderedList"
       ? hasNonWhitespaceAfterNativeList(source, sourceOffset + root.to)
       : hasSourceAfterNativeContainer(source, sourceOffset + root.to);
@@ -1074,9 +1099,6 @@ export class NativeContainerTailParser {
         ? "closed"
         : "open";
     const nextCodeOpening = codeOpening(source, path.leaf, window.mapping, this.codeOpening, this.sourceLength, appendedText);
-    const nextTableContext = path.leaf.type.name === "Table"
-      ? tableContextLines(source, path.leaf, window.mapping)
-      : Object.freeze([]);
     const sourceAppend = source.read(this.sourceLength, source.length);
     this.sourceLength = source.length;
     const leafRange = window.mapping.mapRange(path.leaf.from, path.leaf.to);
@@ -1102,6 +1124,7 @@ export class NativeContainerTailParser {
           this.paragraphOwnerSupported,
           nextCodeOpening,
         );
+    const nextTableContext = activeTableContextLines(source, path.leaf, leafRange, this.tailFrom, window.mapping);
     this.frames = path.frames;
     this.activeLeaf = path.leaf;
     this.codeOpening = nextCodeOpening;

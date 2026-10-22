@@ -510,6 +510,28 @@ async function runNestedTableRowsTest(): Promise<void> {
   }
 }
 
+// A blank quote line closes a nested table. The paragraph after it publishes while it streams; the table's header
+// must not be prepended to it, or the paragraph reads as another table row until finalize.
+async function runQuoteParagraphAfterTableTest(): Promise<void> {
+  const render = (store: RendererStore): string =>
+    renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: [], store, componentRegistry: new ComponentRegistry() }));
+  const source = "> | a |\n> | - |\n> | b |\n> | c |\n>\n> after\n";
+  const harness = await createWorkerHarness();
+  const expected = render(await runSession(harness, [source], false));
+  assert.match(expected, /<\/table><p[^>]*>after<\/p><\/blockquote>/, "single-shot publication holds the table and the paragraph");
+  for (const size of [1, 2, 3, 4]) {
+    const chunks = chunksOfSize(source, size);
+    for (let count = 1; count <= chunks.length; count += 1) {
+      const prefix = chunks.slice(0, count);
+      assert.equal(
+        render(await runSession(harness, prefix, false)),
+        render(await runSession(harness, [prefix.join("")], false)),
+        `publication at ${prefix.join("").length} in chunks of ${size}`,
+      );
+    }
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -533,4 +555,5 @@ await runItemBlockGapLoosenessTest();
 await runNestedTableRowsTest();
 await runIndentedCodeContinuationTest();
 await runNestedCodeContinuationTest();
+await runQuoteParagraphAfterTableTest();
 console.log("Native container streaming regressions passed");
