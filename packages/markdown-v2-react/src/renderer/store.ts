@@ -1521,6 +1521,40 @@ function codeSnapshotGenerationAllowed(map: NodeMap, snapshot: NodeSnapshot): bo
   return (snapshot.children ?? []).every((child) => codeSnapshotGenerationAllowed(map, child));
 }
 
+type RetiredOwnerFloor = readonly [generations: Map<string, number>, id: string, floor: number | undefined];
+
+// Owners a replacement carries forward from the removed subtree (same id and generation) must not stay retired by
+// the removal that precedes the rebuild, or the insert rejects its own subtree and the block is lost.
+function continuedOwnerFloors(
+  map: NodeMap,
+  previous: ReadonlyMap<string, NodeRecord>,
+  snapshot: NodeSnapshot,
+  floors: RetiredOwnerFloor[] = [],
+): RetiredOwnerFloor[] {
+  const record = previous.get(snapshot.id);
+  const tableState = record && tableStateByRecord.get(record);
+  if (tableState && snapshot.table) {
+    const generations = retiredTableGenerations(map);
+    const floor = generations.get(snapshot.id);
+    if (
+      tableState.source.generation === snapshot.table.generation &&
+      snapshot.table.generation > (floor ?? -1) &&
+      snapshot.table.revision >= tableState.source.revision
+    ) floors.push([generations, snapshot.id, floor]);
+  }
+  const paragraphState = record && paragraphStateByRecord.get(record);
+  if (paragraphState && snapshot.paragraph) {
+    const generations = retiredParagraphGenerations(map);
+    const floor = generations.get(snapshot.id);
+    if (
+      snapshot.paragraph.generation > (floor ?? -1) &&
+      paragraphSnapshotPreservesActiveOwner(paragraphState, snapshot)
+    ) floors.push([generations, snapshot.id, floor]);
+  }
+  for (const child of snapshot.children ?? []) continuedOwnerFloors(map, previous, child, floors);
+  return floors;
+}
+
 function sameCompletedParagraphSpanSources(
   current: ManagedParagraphViewState,
   next: ParagraphBlockSnapshot,
@@ -3440,29 +3474,7 @@ function replaceSnapshotAt(
   if (!parent || index < 0 || index >= parent.children.length) return;
   const targetId = parent.children[index];
   const current = map.get(targetId);
-  const currentTableState = current && tableStateByRecord.get(current);
   const currentParagraphState = current && paragraphStateByRecord.get(current);
-  const retiredParagraphGeneration = snapshot.paragraph && targetId === snapshot.id
-    ? retiredParagraphGenerations(map).get(snapshot.id) ?? -1
-    : -1;
-  const replacesActiveParagraph = Boolean(
-    snapshot.paragraph &&
-      currentParagraphState &&
-      targetId === snapshot.id &&
-      snapshot.paragraph.generation > retiredParagraphGeneration &&
-      paragraphSnapshotPreservesActiveOwner(currentParagraphState, snapshot)
-  );
-  const retiredTableGeneration = snapshot.table && targetId === snapshot.id
-    ? retiredTableGenerations(map).get(snapshot.id) ?? -1
-    : -1;
-  const replacesActiveTable = Boolean(
-    snapshot.table &&
-      currentTableState &&
-      targetId === snapshot.id &&
-      currentTableState.source.generation === snapshot.table.generation &&
-      snapshot.table.generation > retiredTableGeneration &&
-      snapshot.table.revision >= currentTableState.source.revision
-  );
   if (!codeSnapshotGenerationAllowed(map, snapshot)) return;
   // Rebuild from the snapshot, but let unchanged records keep their identity (and their React snapshots), so a
   // canonical replace of an already-correct block re-renders nothing.
@@ -3480,16 +3492,11 @@ function replaceSnapshotAt(
   const parentChildren = parent.children.slice();
   parentChildren.splice(index, 1);
   parent.children = parentChildren;
+  const continuedOwners = continuedOwnerFloors(map, previous, snapshot);
   removeSubtree(map, targetId, touched, true);
-  if (replacesActiveTable) {
-    const generations = retiredTableGenerations(map);
-    if (retiredTableGeneration < 0) generations.delete(targetId);
-    else generations.set(targetId, retiredTableGeneration);
-  }
-  if (replacesActiveParagraph) {
-    const generations = retiredParagraphGenerations(map);
-    if (retiredParagraphGeneration < 0) generations.delete(targetId);
-    else generations.set(targetId, retiredParagraphGeneration);
+  for (const [generations, id, floor] of continuedOwners) {
+    if (floor === undefined) generations.delete(id);
+    else generations.set(id, floor);
   }
   const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous, onCodeOwnerReplaced);
   if (inserted && onParagraphOwnerReplaced && (currentParagraphState || snapshot.paragraph)) {
