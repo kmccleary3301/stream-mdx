@@ -110,6 +110,7 @@ function captureSemanticStoreForest(
       .filter((block) => block.type === "code" || block.type === "table" || block.type === "list")
       .map((block) => [block.id, block] as const),
   );
+  const rootIds = new Set(blocks.map((block) => block.id));
   const visit = (id: string): SemanticStoreNode => {
     const node = store.getNode(id);
     if (!node) {
@@ -122,14 +123,12 @@ function captureSemanticStoreForest(
     if (node.type === "list" || node.type === "list-item") {
       delete semanticProps.depth;
     }
-    // Missing and own-undefined optional built-in fields have the same native meaning.
-    if ((node.type === "list" || node.type === "list-item") && semanticProps.start === undefined) delete semanticProps.start;
-    if (node.type === "list-item") {
-      if (semanticProps.task === undefined) delete semanticProps.task;
-      if (semanticProps.checked === undefined) delete semanticProps.checked;
-    }
     const hasCanonicalListLayout = node.type === "list" && typeof semanticProps.loose === "boolean";
-    const usesCanonicalBlockProjection = usesTypedBlockProjection || hasCanonicalListLayout;
+    // Root code, table and list layout come from the exported root block. Whether a nested snapshot carries a
+    // block is patch history, so nested code and tables project their owners and nested lists their own layout
+    // props and children.
+    const isRoot = rootIds.has(id);
+    const usesCanonicalBlockProjection = isRoot && (usesTypedBlockProjection || hasCanonicalListLayout);
     const coldBlock = semanticProps.block;
     // Generic code-node block DTOs are stale mirrors; code meaning comes from the canonical exported block.
     if (node.type === "code") {
@@ -148,15 +147,20 @@ function captureSemanticStoreForest(
       // The cold DTO bridge is consumed on update; its meaning is compared through node.block below.
       delete semanticProps.block;
     }
-    const canonicalBlock = usesCanonicalBlockProjection ? canonicalBlocks.get(id) : node.block;
+    const canonicalBlock = usesCanonicalBlockProjection
+      ? canonicalBlocks.get(id)
+      : !isRoot && node.type === "table"
+        ? store.getTableColdBlock(id)
+        : usesTypedBlockProjection || hasCanonicalListLayout ? undefined : node.block;
     if (usesCanonicalBlockProjection && !canonicalBlock) missingCanonicalBlockIds.push(id);
+    const nestedCode = !isRoot && node.type === "code" ? store.getCodeBlock(id) : undefined;
     // Block HTML reads its canonical Block, not setHTML's duplicate transport props.
     if (node.type === "html" && canonicalBlock?.type === "html" && canonicalBlock.id === node.id) {
       delete semanticProps.html;
       delete semanticProps.policy;
       delete semanticProps.meta;
     }
-    const isFinalized = canonicalBlock?.isFinalized ?? true;
+    const isFinalized = nestedCode ? nestedCode.source.state === "finalized" : canonicalBlock?.isFinalized ?? true;
     const props = projectFootnotePublication({
       id: node.id,
       type: node.type,
@@ -185,7 +189,21 @@ function captureSemanticStoreForest(
       meta: semanticMeta,
       block: canonicalBlock
         ? semanticBlockProjection(projectFootnotePublication(canonicalBlock, publishedLabels))
-        : null,
+        : nestedCode
+          ? {
+              id: node.id,
+              type: node.type,
+              isFinalized,
+              raw: "",
+              range: undefined,
+              inline: null,
+              meta: {
+                info: nestedCode.info,
+                language: nestedCode.language,
+                lines: store.getCodeLines(id, 0, nestedCode.lines.length).map((line) => line.text),
+              },
+            }
+          : null,
       // Native code lines/table rows live outside generic children and are compared through their owned exports.
       children: usesTypedBlockProjection ? [] : store.getChildren(id).map(visit),
     };

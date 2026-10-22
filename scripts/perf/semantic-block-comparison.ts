@@ -90,11 +90,11 @@ export function normalizeSemanticDtoValue(value: unknown, key = "", inlineParent
   if (value === null || typeof value !== "object") return value;
   const record = value as Record<string, unknown>;
   const isInline = isInlineNode(value);
+  // Exports reach consumers as JSON, where an own undefined field and a missing one are the same.
   return Object.fromEntries(
-    Object.entries(record).map(([childKey, child]) => [
-      childKey,
-      normalizeSemanticDtoValue(child, childKey, isInline),
-    ]),
+    Object.entries(record)
+      .filter(([, child]) => child !== undefined)
+      .map(([childKey, child]) => [childKey, normalizeSemanticDtoValue(child, childKey, isInline)]),
   );
 }
 
@@ -103,14 +103,12 @@ export function semanticBlockProjection(block: Block): SemanticBlockComparison {
   // `preparedNested` is a derived projection of the generic owned child tree. Compare that public tree separately.
   if (meta) {
     delete meta.preparedNested;
-    if (block.type === "list" && meta.start === undefined) delete meta.start;
     // Native item content/layout comes from its compared child tree and props, not this legacy bridge.
     if (block.type === "list-item") {
       delete meta.ordered;
       delete meta.loose;
       delete meta.inline;
       delete meta.text;
-      if (meta.start === undefined) delete meta.start;
     }
     // Code-line decorations are owned and checked through the public code-line view after readiness.
     if (block.type === "code") {
