@@ -190,6 +190,32 @@ async function runFenceBodyAfterOpeningLineBoundaryTest(): Promise<void> {
   }
 }
 
+// CommonMark: a heading or fence ends the paragraph before it, so text after one starts a new paragraph. Container
+// windows that skip such a sibling must not join that text to the container's first paragraph.
+async function runSiblingBeforeActiveParagraphTest(): Promise<void> {
+  const cases: Array<[string, string[][]]> = [
+    ["> # Foo\n> bar\n> baz\n", [["heading", "# Foo"], ["paragraph", "bar\n> baz"]]],
+    ["> p\n> # Foo\n> bar\n", [["paragraph", "p"], ["heading", "# Foo"], ["paragraph", "bar"]]],
+    ["> ```\n> x\n> ```\n> bar\n", [["code", "```\n> x\n> ```"], ["paragraph", "bar"]]],
+    // The item's first paragraph is its own inline content, not a child.
+    ["- p\n  # Foo\n  bar\n", [["heading", "# Foo"], ["paragraph", "bar"]]],
+  ];
+  const harness = await createWorkerHarness();
+  for (const [source, expected] of cases) {
+    for (const chunkSize of [source.length, 1, 3, 7]) {
+      const blocks = (await runSession(harness, chunksOfSize(source, chunkSize))).getBlocks();
+      assert.equal(blocks.length, 1, `${JSON.stringify(source)} stays one container (chunk size ${chunkSize})`);
+      const nested = blocks[0]?.payload.meta?.preparedNested as { children?: readonly NodeSnapshot[] } | undefined;
+      const container = blocks[0]?.type === "list" ? nested?.children?.[0] : nested;
+      assert.deepEqual(
+        (container?.children ?? []).map((child) => [child.type, child.range ? source.slice(child.range.from, child.range.to) : ""]),
+        expected,
+        `${JSON.stringify(source)} container children (chunk size ${chunkSize})`,
+      );
+    }
+  }
+}
+
 await runNestedListTest();
 await runMarkerAlignmentTest();
 await runTailWindowThenDocumentReparseTest();
@@ -200,4 +226,5 @@ await runPluginReplacedBlockAfterParagraphAppendTest();
 await runNestedQuoteAfterBlankQuoteLineTest();
 await runItemWithNonParagraphFirstChildTest();
 await runFenceBodyAfterOpeningLineBoundaryTest();
+await runSiblingBeforeActiveParagraphTest();
 console.log("Native container streaming regressions passed");

@@ -11,6 +11,7 @@ import {
   listMarkerChain,
   type NativeContainerCodeOpening,
   type NativeContainerContextLine,
+  type NativeContainerFrameKind,
   type NativeContainerMarkerAnchor,
   type NativeContainerWindow,
   type NativeContainerWindowFrame,
@@ -36,6 +37,11 @@ interface NativeContainerFrame extends NativeContainerWindowFrame {
   readonly activeListItemContentEnd?: number;
   readonly nextChildIndex: number;
   readonly listProperties?: NativeContainerListProperties;
+  /**
+   * Source start of the item or quote child right before the active child when that sibling is not paragraph text.
+   * The window omits it, so without a blank line between them the tail would continue the context paragraph.
+   */
+  readonly separatingSiblingFrom?: number;
 }
 
 export interface NativeContainerTailState {
@@ -273,6 +279,7 @@ function publicFrame(frame: NativeContainerFrame): NativeContainerWindowFrame {
     activeChildTypeName: _activeChildTypeName,
     activeListItemContentEnd: _activeListItemContentEnd,
     contextQuoteMarkers: _contextQuoteMarkers,
+    separatingSiblingFrom: _separatingSiblingFrom,
     listChain: _listChain,
     firstContextLineComplete: _firstContextLineComplete,
     ...visible
@@ -282,6 +289,7 @@ function publicFrame(frame: NativeContainerFrame): NativeContainerWindowFrame {
   void _contextQuoteMarkers;
   void _firstContextLineComplete;
   void _listChain;
+  void _separatingSiblingFrom;
   return Object.freeze(visible);
 }
 
@@ -515,20 +523,22 @@ function deriveActivePath(
                 )
               : prior.fromChild;
     let previousSiblingEnd = prior?.childToBeforeFrontier;
+    let separatingSiblingFrom = prior?.separatingSiblingFrom;
     const selectedActualIndex = selected && selectedIsActual
       ? actualChildren.findIndex((child) => sameNativeSyntaxNode(child, selected))
       : -1;
     if (selectedActualIndex > 0) {
       const before = actualChildren[selectedActualIndex - 1];
       if (before) {
-        previousSiblingEnd = kind === "list"
-          ? listItemContentEnd(before, window.mapping.mapRange)
-          : window.mapping.mapRange(before.from, before.to).to;
+        const beforeRange = window.mapping.mapRange(before.from, before.to);
+        previousSiblingEnd = kind === "list" ? listItemContentEnd(before, window.mapping.mapRange) : beforeRange.to;
+        separatingSiblingFrom = separatingSiblingStart(kind, before.type.name, beforeRange.from);
       }
     } else if (selectedIsActual && prior && selectedRange.from > prior.sourceFrontier) {
       previousSiblingEnd = kind === "list"
         ? prior.activeListItemContentEnd ?? prior.activeChildSourceEnd
         : prior.activeChildSourceEnd;
+      separatingSiblingFrom = separatingSiblingStart(kind, prior.activeChildTypeName, prior.sourceFrontier);
     }
     let firstMarker = prior?.firstMarker;
     let activeMarker = prior?.activeMarker;
@@ -602,6 +612,7 @@ function deriveActivePath(
         ? { activeListItemContentEnd: listItemContentEnd(selected, window.mapping.mapRange) }
         : {}),
       ...(previousSiblingEnd !== undefined ? { childToBeforeFrontier: previousSiblingEnd } : {}),
+      ...(separatingSiblingFrom !== undefined ? { separatingSiblingFrom } : {}),
       ...(firstMarker ? { firstMarker } : {}),
       ...(activeMarker ? { activeMarker } : {}),
       ...(kind === "list" && listChain && listChain.length > 0 ? { listChain } : {}),
@@ -619,6 +630,9 @@ function deriveActivePath(
  * First source offset the bounded window re-reads verbatim. Only paragraph text gives an item a reusable first
  * context line; a marker-only prefix would reopen any other item as one that starts blank, which CommonMark
  * closes at the next blank line. Such an item is re-read from its first line once the active leaf is past it.
+ * A non-paragraph sibling right before the active child is re-read too unless a blank line follows it: the window
+ * would otherwise join the tail to the context paragraph. A fence opener interrupts any paragraph, so a streaming
+ * fence keeps its bounded window.
  */
 function activeTailStart(
   source: SourceSnapshot,
@@ -631,7 +645,7 @@ function activeTailStart(
   codeContext?: NativeContainerCodeOpening,
   counters?: NativeContainerTailDiagnosticCounters,
 ): number {
-  const start = boundedTailStart(
+  let start = boundedTailStart(
     source,
     leaf,
     physicalRange,
@@ -647,11 +661,34 @@ function activeTailStart(
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       counters?.recordPrefixComparisons?.(1, "engine");
     }
-    if (frame.kind !== "item" || frame.firstContextLine) continue;
-    const itemLineFrom = lineStartAt(source, frame.parentFrom);
-    if (itemLineFrom < leafLineFrom && itemLineFrom < start) return itemLineFrom;
+    if (frame.kind === "item" && !frame.firstContextLine) {
+      const itemLineFrom = lineStartAt(source, frame.parentFrom);
+      if (itemLineFrom < leafLineFrom && itemLineFrom < start) start = itemLineFrom;
+    }
+    if (frame.separatingSiblingFrom !== undefined && leaf.type.name !== "FencedCode") {
+      const siblingLineFrom = lineStartAt(source, frame.separatingSiblingFrom);
+      const siblingEnd = frame.childToBeforeFrontier ?? frame.sourceFrontier;
+      if (siblingLineFrom < start && !blankLineBetween(source, siblingEnd, frame.sourceFrontier)) start = siblingLineFrom;
+    }
+    // A closed active child is the separator before the next sibling arrives.
+    if (frame.activeChildSourceEnd <= start && separatesContext(frame.kind, frame.activeChildTypeName)) {
+      const activeLineFrom = lineStartAt(source, frame.sourceFrontier);
+      if (activeLineFrom < start && !blankLineBetween(source, frame.activeChildSourceEnd, start)) start = activeLineFrom;
+    }
   }
   return start;
+}
+
+/** Paragraph text closes itself before any sibling; any other item or quote child must be re-read to separate. */
+function separatesContext(kind: NativeContainerFrameKind, typeName: string | undefined): boolean {
+  return kind !== "list" && typeName !== undefined && !BLOCK_CONTEXT_TYPES.has(typeName);
+}
+function separatingSiblingStart(kind: NativeContainerFrameKind, typeName: string | undefined, from: number): number | undefined {
+  return separatesContext(kind, typeName) ? from : undefined;
+}
+/** A blank line already separates the window context from the tail; the gap copy reproduces it. */
+function blankLineBetween(source: SourceSnapshot, from: number, to: number): boolean {
+  return LIST_BLANK_GAP.test(source.read(from, Math.min(to, from + 256)));
 }
 function boundedTailStart(
   source: SourceSnapshot,
@@ -1117,6 +1154,9 @@ export class NativeContainerTailParser {
       const priorChildContentEnd = kind === "list" && priorChild
         ? listItemContentEnd(priorChild, mapping.mapRange)
         : priorRange?.to;
+      const separatingSiblingFrom = priorChild && priorRange
+        ? separatingSiblingStart(kind, priorChild.type.name, priorRange.from)
+        : undefined;
       let firstMarker: NativeContainerMarkerAnchor | undefined;
       let activeMarker: NativeContainerMarkerAnchor | undefined;
       let listChain: readonly NativeContainerMarkerAnchor[] | undefined;
@@ -1173,6 +1213,7 @@ export class NativeContainerTailParser {
         ...(firstContextLine ? { firstContextLine } : {}),
         ...(firstContextLine ? { firstContextLineComplete: firstContextLine.to < source.length } : {}),
         ...(priorChildContentEnd !== undefined ? { childToBeforeFrontier: priorChildContentEnd } : {}),
+        ...(separatingSiblingFrom !== undefined ? { separatingSiblingFrom } : {}),
         ...(properties ? { listProperties: properties } : {}),
       });
     }
