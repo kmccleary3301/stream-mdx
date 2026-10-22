@@ -160,7 +160,7 @@ export function createNativeTableHeaderRecordFromMapping(
     const sourceRange = mappedRange(mapping, localRange.from, localRange.to);
     const raw = mapping.source.read(sourceRange.from, sourceRange.to);
     const attempted = new Set<string>();
-    const inline = inlineParser.parse(raw, { onAttemptedReference: (label) => attempted.add(label) });
+    const inline = parseCellInline(inlineParser, raw, { onAttemptedReference: (label) => attempted.add(label) });
     recordAttempts?.(`${ownerId}::header:cell:${column}`, attempted, raw.length);
     cells[column] = freezeTableCellRecord({
       id: `${ownerId}::header:cell:${column}`,
@@ -186,8 +186,13 @@ function inlineCells(
 ): InlineNode[][] {
   return rangesForColumns(rowNode, columnCount, emptyAt).map(({ from, to }) => {
     const range = mappedRange(mapping, from, to);
-    return inlineParser.parse(mapping.source.read(range.from, range.to));
+    return parseCellInline(inlineParser, mapping.source.read(range.from, range.to));
   });
+}
+
+/** GFM removes the backslash of every `\|` in a table cell before inline parsing, so code spans hold a bare pipe. */
+function parseCellInline(inlineParser: InlineParser, raw: string, options?: Parameters<InlineParser["parse"]>[1]): InlineNode[] {
+  return inlineParser.parse(raw.includes("\\|") ? raw.replace(/\\\|/g, "|") : raw, options);
 }
 
 /** Lowers an already-admitted native GFM Table node without constructing or parsing its raw prefix. */

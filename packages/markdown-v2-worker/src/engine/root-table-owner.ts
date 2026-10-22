@@ -25,6 +25,7 @@ import {
   type NativeTableRowSpan,
 } from "./native-table-row-classifier";
 import { createNativeTableRowRecord } from "./native-table-projection";
+import { parseTableCellInline } from "./table-cell-inline";
 
 declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
 
@@ -314,7 +315,7 @@ export class RootTableSourceOwner {
       const cell = this.cellForId(cellId);
       if (!cell) continue;
       const attempted = new Set<string>();
-      const inline = this.inlineParser.parse(cell.raw, {
+      const inline = parseTableCellInline(this.inlineParser, cell.raw, {
         onAttemptedReference: (label) => attempted.add(label),
       });
       this.installCellAttempts(cellId, attempted);

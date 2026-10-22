@@ -17,6 +17,7 @@ import {
   type NativeTableCellSpan,
   type NativeTableRowSpan,
 } from "./native-table-row-classifier";
+import { parseTableCellInline } from "./table-cell-inline";
 
 export type TableCellAttemptRecorder = (cellId: string, labels: ReadonlySet<string>, sourceUnits: number) => void;
 
@@ -78,7 +79,7 @@ function prepareCell(
     && previous.sourceRange.to === sourceRange.to) return previous;
 
   const attempted = new Set<string>();
-  const inline = inlineParser.parse(raw, {
+  const inline = parseTableCellInline(inlineParser, raw, {
     onAttemptedReference: (label) => attempted.add(label),
   });
   recordAttempts?.(id, attempted, raw.length);

@@ -226,6 +226,7 @@ import {
 } from "./root-table-pipeline";
 import type { NativeTableExtensionContext } from "./native-table-row-classifier";
 import { RootTableSourceOwner, type RootTableFootnoteProjection } from "./root-table-owner";
+import { parseTableCellInline } from "./table-cell-inline";
 import {
   advanceRootParagraphOwner,
   createRootParagraphOwners,
@@ -5291,7 +5292,7 @@ export class MarkdownEngine {
           const trustedTable = trustedNativePath;
           const trustedCellInline = (cell: TableCellRecord, ownerIdPrefix: string) =>
             this.prepareTrustedNativeInline(
-              this.inlineParser.parse(cell.raw, { sourceOffset: cell.sourceRange.from }),
+              parseTableCellInline(this.inlineParser, cell.raw, { sourceOffset: cell.sourceRange.from }),
               cell.raw,
               ownerIdPrefix,
               cell.sourceRange.from,
