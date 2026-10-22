@@ -17,6 +17,7 @@ import { useRendererNode } from "./hooks";
 import { subscribeRendererNode } from "./node-subscriptions";
 import { CodeLineRangeView } from "./code-line-range";
 import { CODE_LINE_RANGE_SIZE } from "./code-state";
+import { nativeCodeBlockHtml } from "./native-code-line";
 import type { RendererStore } from "./store";
 import { getStoreResetVersion } from "./store-reset-version";
 import { useDeferredRender } from "./use-deferred-render";
@@ -274,9 +275,11 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     }
     codeLineRanges = ranges;
   }
+  // Registered code components predate prepared children and may render `html`; give them the highlighted markup.
+  const customCodeLines = registry.hasCustomBlockComponent("code") ? store.getCodeLines(blockId, 0, lineCount) : undefined;
   const nativeCodeProps: React.ComponentProps<typeof CodeComponent> = {
-    html: "",
-    lines: registry.hasCustomBlockComponent("code") ? store.getCodeLines(blockId, 0, lineCount) : undefined,
+    html: customCodeLines ? nativeCodeBlockHtml(customCodeLines, composedPreAttrs, composedCodeAttrs) : "",
+    lines: customCodeLines,
     children: codeLineRanges,
     lang,
     preAttrs: composedPreAttrs,
