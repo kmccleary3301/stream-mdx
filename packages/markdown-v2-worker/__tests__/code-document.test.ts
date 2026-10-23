@@ -677,6 +677,69 @@ async function runDiffRangeExposesBothContextTokenTracksTest(): Promise<void> {
     }
   }
 }
+async function runGrammarAcrossDiffHunksPerSideTest(): Promise<void> {
+  const diffSource = [
+    "@@ -1 +1 @@",
+    "-/*",
+    "+const template = `prefix ${",
+    "@@ -2 +2 @@",
+    "- * old comment",
+    "+name",
+    "@@ -3 +3 @@",
+    "- */ const oldValue = 1;",
+    "+} suffix`;",
+  ].join("\n");
+  const oldSource = ["/*", " * old comment", " */ const oldValue = 1;"].join("\n");
+  const newSource = ["const template = `prefix ${", "name", "} suffix`;"].join("\n");
+  const themes = { dark: "github-dark", light: "github-light" } as const;
+  let disposeDocument: (() => void) | undefined;
+  let disposeOracle: (() => void) | undefined;
+
+  try {
+    const document = createCodeDocument({ language: "typescript", diff: true, initialContent: diffSource, themes });
+    disposeDocument = () => document.dispose();
+    const oracle = await createHighlighter({
+      engine: createJavaScriptRegexEngine(),
+      langs: ["typescript"],
+      themes: [themes.dark, themes.light],
+    });
+    disposeOracle = () => oracle.dispose();
+    document.finalize();
+
+    const result = await document.highlight({ mode: "range", range: { from: 0, to: diffSource.split("\n").length } });
+    assert.strictEqual(result.exactness, "exact", "a based diff must preserve grammar context across hunk boundaries");
+    assert.ok(result.diffTokens, "diff highlighting must expose each old/new grammar track");
+
+    const oldExpected = oracle.codeToTokensWithThemes(oldSource, {
+      lang: "typescript",
+      themes: { dark: themes.dark, light: themes.light },
+    }).map(normalizeShikiLine);
+    const newExpected = oracle.codeToTokensWithThemes(newSource, {
+      lang: "typescript",
+      themes: { dark: themes.dark, light: themes.light },
+    }).map(normalizeShikiLine);
+    const oldActual = [1, 4, 7].map((index) => result.diffTokens?.[index]?.old);
+    const newActual = [2, 5, 8].map((index) => result.diffTokens?.[index]?.new);
+    assert.deepStrictEqual(
+      oldActual.map((line) => line ? normalizePublicLine(line) : null),
+      oldExpected,
+      "removed lines across hunks must match cold full-source Shiki on the old side",
+    );
+    assert.deepStrictEqual(
+      newActual.map((line) => line ? normalizePublicLine(line) : null),
+      newExpected,
+      "added lines across hunks must match cold full-source Shiki on the new side",
+    );
+    assert.notDeepStrictEqual(oldExpected[1], newExpected[1], "the middle hunk must distinguish old comment from new template-expression state");
+  } finally {
+    try {
+      disposeDocument?.();
+    } finally {
+      disposeOracle?.();
+    }
+  }
+}
+
 
 async function runLaterUnifiedDiffHunkWithoutContextIsUnavailableTest(): Promise<void> {
   const diffSource = "@@ -1 +1 @@\n-old();\n+new();\n@@ -100 +100 @@\n-before();\n+after();";
@@ -1107,5 +1170,6 @@ await runDiffRangeWithoutBaseContextIsUnavailableTest();
 await runUnifiedDiffUsesIndependentGrammarTracksTest();
 await runNonzeroDiffRangeReplaysBothTracksTest();
 await runDiffRangeExposesBothContextTokenTracksTest();
+await runGrammarAcrossDiffHunksPerSideTest();
 await runLaterUnifiedDiffHunkWithoutContextIsUnavailableTest();
 console.log("code document tests passed");
