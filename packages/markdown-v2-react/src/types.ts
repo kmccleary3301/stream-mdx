@@ -25,6 +25,8 @@ import type {
   TableVirtualizationOptions,
 } from "./renderer/virtualized-table";
 export type { TableVirtualizationConfig, TableVirtualizationOptions };
+import type { VirtualizedCodeConfig } from "./renderer/virtualized-code";
+export type { VirtualizedCodeConfig };
 
 export type TableDownloadFormat = "csv" | "tsv" | "markdown";
 export type TableCopyFormat = "tsv" | "markdown";
@@ -262,6 +264,7 @@ export interface RendererConfig extends ElementFilterOptions {
   html?: HtmlOptions;
   urlTransform?: (url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined;
   tableVirtualization?: TableVirtualizationOptions;
+  codeVirtualization?: Partial<VirtualizedCodeConfig>;
   performance?: {
     frameBudgetMs?: number;
     flushTimeoutMs?: number;

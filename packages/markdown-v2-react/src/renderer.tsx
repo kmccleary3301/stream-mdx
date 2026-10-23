@@ -224,6 +224,7 @@ export class MarkdownRenderer implements Renderer {
       {
         mathRenderer: this.config.mathRenderer,
         tableVirtualization: this.config.tableVirtualization,
+        codeVirtualization: this.config.codeVirtualization,
         urlTransform: this.config.urlTransform,
         blockRenderer: this.config.blockRenderer,
         controls: this.config.controls,

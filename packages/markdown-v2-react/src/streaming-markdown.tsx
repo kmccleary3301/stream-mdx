@@ -21,7 +21,7 @@ import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
-import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
   resolve(): void;
@@ -184,6 +184,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
   tableVirtualization?: TableVirtualizationOptions;
+  codeVirtualization?: Partial<VirtualizedCodeConfig>;
   urlTransform?: UrlTransform;
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
@@ -276,6 +277,7 @@ function StreamingMarkdownComponent(
     syntax,
     html,
     tableVirtualization,
+    codeVirtualization,
     urlTransform,
     controls,
     controlsComponent,
@@ -344,6 +346,7 @@ function StreamingMarkdownComponent(
       disableAutolinkProtocols,
       mathRenderer,
       tableVirtualization,
+      codeVirtualization,
       urlTransform,
       blockRenderer,
       controls,
@@ -572,6 +575,10 @@ function StreamingMarkdownComponent(
     }
     reg.setTableVirtualization(tableVirtualization);
   }, [renderer, components, normalizedContentComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, tableVirtualization]);
+
+  useEffect(() => {
+    renderer.getComponentRegistry().setCodeVirtualization(codeVirtualization);
+  }, [renderer, codeVirtualization]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
