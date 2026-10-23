@@ -208,6 +208,39 @@ async function runKnownDocumentRangeTest(): Promise<void> {
     }
   }
 }
+async function runSourceRevisionIsReportedForAllResultKindsTest(): Promise<void> {
+  const document = createCodeDocument({
+    language: "typescript",
+    initialContent: "const before = 1;\n",
+  });
+
+  try {
+    const isolated = await document.highlight({ mode: "isolated", range: { from: 0, to: 1 } });
+    assert.strictEqual(isolated.exactness, "isolated");
+    assert.strictEqual(isolated.sourceRevision, 0, "isolated results must identify the source revision they tokenized");
+
+    const exact = await document.highlight({ mode: "range", range: { from: 0, to: 1 } });
+    assert.strictEqual(exact.exactness, "exact");
+    assert.strictEqual(exact.sourceRevision, 0, "exact results must identify the source revision they tokenized");
+
+    const unavailable = await document.highlight({ mode: "continuation", range: { from: 0, to: 1 } });
+    assert.strictEqual(unavailable.exactness, "unavailable");
+    assert.strictEqual(unavailable.sourceRevision, 0, "unavailable results must identify the current source revision");
+
+    document.append("const after = 2;");
+    const context = document.captureContext();
+    const continuation = await document.highlight({
+      mode: "continuation",
+      context,
+      range: { from: 0, to: 1 },
+    });
+    assert.strictEqual(continuation.exactness, "exact");
+    assert.strictEqual(continuation.sourceRevision, 1, "appended-source results must report the updated revision");
+  } finally {
+    document.dispose();
+  }
+}
+
 
 async function runIsolatedNonzeroRangeInsideCommentTest(): Promise<void> {
   const source = "/* 🚀 start\r\nconst shadow = 1;\r\n*/ const answer = \"x\";";
@@ -1224,6 +1257,7 @@ await runDeclaredHunkCountsReportDiffStatusTest();
 await runStandaloneCodeDocumentTest();
 await runFinalizedCodeDocumentIsSealedTest();
 await runKnownDocumentRangeTest();
+await runSourceRevisionIsReportedForAllResultKindsTest();
 await runIsolatedNonzeroRangeInsideCommentTest();
 await runAppendInvalidatesProvisionalGrammarTest();
 await runCapturedContextContinuationTest();
