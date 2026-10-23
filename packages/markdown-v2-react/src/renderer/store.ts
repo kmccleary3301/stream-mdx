@@ -1,7 +1,7 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import type { CodeBlockSnapshot } from "@stream-mdx/core";
 import {
+  createCodeNodeHandle,
   AppendSourceDocument,
   appendManagedParagraphSpans,
   appendManagedTableRows,
@@ -18,7 +18,11 @@ import {
   updateManagedParagraphSpans,
   updateManagedTableRows,
   type Block,
+  type CodeBlockSnapshot,
+  type CodeBlockMetadata,
+  type CodeLineRange,
   type CodeLineRecord,
+  type CodeNodeHandle,
   type InlineNode,
   type ManagedParagraphPatchResult,
   type ManagedParagraphViewState,
@@ -144,8 +148,9 @@ export interface RendererStore {
   getBlocks(): ReadonlyArray<Block>;
   hasProvisionalBlocks(): boolean;
   getCodeBlock(id: string): CodeBlockViewState | undefined;
-  subscribeCodeLines(id: string, from: number, to: number, listener: () => void): () => void;
+  getCodeNodeHandle(id: string): CodeNodeHandle | undefined;
   getCodeLines(id: string, from: number, to: number): ReadonlyArray<CodeLineRecord>;
+  subscribeCodeLines(id: string, from: number, to: number, listener: () => void): () => void;
   getTableBlock(id: string): ManagedTableViewState | undefined;
   getTableColdBlock(id: string): Block | undefined;
   getTableRows(id: string, from: number, to: number): ReadonlyArray<TableRowRecord>;
@@ -1425,6 +1430,12 @@ interface TableRowRangeSubscription {
 interface CodeLineRangeSubscription {
   readonly listeners: Set<() => void>;
 }
+interface ActiveCodeLineRange {
+  readonly from: number;
+  readonly to: number;
+  consumers: number;
+  lines: readonly CodeLineRecord[] | undefined;
+}
 function createFreshNodeMap(): NodeMap {
   const map: NodeMap = new Map();
   retiredCodeGenerationsByMap.set(map, new Map<string, number>());
@@ -1715,6 +1726,18 @@ function clearSnapshotCaches(map: NodeMap) {
 }
 const EMPTY_CHILDREN: ReadonlyArray<string> = Object.freeze([]);
 const EMPTY_CODE_LINES: ReadonlyArray<CodeLineRecord> = Object.freeze([]);
+function assertCodeHandleRange(range: CodeLineRange): void {
+  if (
+    range === null ||
+    typeof range !== "object" ||
+    !Number.isSafeInteger(range.from) ||
+    !Number.isSafeInteger(range.to) ||
+    range.from < 0 ||
+    range.to < range.from
+  ) {
+    throw new RangeError("Code line range must be ordered non-negative safe integers");
+  }
+}
 const EMPTY_NODE_SNAPSHOT = Object.freeze<{ version: number; node?: NodeRecord }>({ version: -1, node: undefined });
 const EMPTY_CHILDREN_SNAPSHOT = Object.freeze<{ version: number; children: ReadonlyArray<string> }>({
   version: -1,
@@ -3028,7 +3051,7 @@ function removeSubtree(
 // internal block object stays valid until that record changes; unchanged blocks keep their identity across reads.
 function codeLineTokensForSnapshot(line: CodeLineRecord): TokenLineV1 | undefined {
   const decoration = line.decoration;
-  if (!decoration) return undefined;
+  if (!decoration || decoration.exactness === "unavailable") return undefined;
   return {
     spans: decoration.tokens.spans.map((span) => ({
       t: span.t,
@@ -3651,6 +3674,15 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   let version = 0;
   // Owner generations and worker input generations are independent; this version identifies a store baseline.
   let resetVersion = 0;
+  const codeNodeHandlesByRecord = new WeakMap<NodeRecord, {
+    readonly nodes: NodeMap;
+    readonly resetVersion: number;
+    readonly document: object;
+    readonly codeOwnerId: string;
+    readonly generation: number;
+    readonly handle: CodeNodeHandle;
+    readonly activeRanges: Map<string, ActiveCodeLineRange>;
+  }>();
   let blocksCache: Block[] = [];
   let blocksDirty = true;
   const publicBlocks = new WeakMap<Block, Block>();
@@ -3867,8 +3899,26 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     }
     starts.add(rangeStart);
   }
+  function activeCodeLineRangesForBlock(blockId: string): Map<string, ActiveCodeLineRange> | undefined {
+    const record = nodes.get(blockId);
+    return record ? codeNodeHandlesByRecord.get(record)?.activeRanges : undefined;
+  }
+  function invalidateActiveCodeLineRange(blockId: string, from: number, to: number): void {
+    if (from >= to) return;
+    const ranges = activeCodeLineRangesForBlock(blockId);
+    if (!ranges) return;
+    for (const range of ranges.values()) {
+      if (range.from < to && from < range.to) range.lines = undefined;
+    }
+  }
+  function invalidateAllActiveCodeLineRanges(blockId: string): void {
+    const ranges = activeCodeLineRangesForBlock(blockId);
+    if (!ranges) return;
+    for (const range of ranges.values()) range.lines = undefined;
+  }
   function invalidateCodeLineRange(blockId: string, from: number, to: number): void {
     if (from >= to) return;
+    invalidateActiveCodeLineRange(blockId, from, to);
     const ranges = codeLineRangesByBlock.get(blockId);
     if (!ranges) return;
     const firstRange = Math.floor(from / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
@@ -3879,6 +3929,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   }
   function invalidateCodeLineIndex(blockId: string, index: number): void {
     if (!Number.isSafeInteger(index) || index < 0) return;
+    invalidateActiveCodeLineRange(blockId, index, index + 1);
     const rangeStart = Math.floor(index / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
     if (codeLineRangesByBlock.get(blockId)?.has(rangeStart)) queueCodeLineRange(blockId, rangeStart);
   }
@@ -4644,6 +4695,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 : refreshLegacyCodeSource(existingCodeState, target.block, canonicalSource);
             }
             codeStateByRecord.set(target, nextCodeState);
+            if (nextCodeState.view.lines !== existingCodeState.view.lines) {
+              invalidateAllActiveCodeLineRanges(target.id);
+            }
             if (linesChanged || (target.block?.isFinalized && existingCodeState.view.source.state !== "finalized")) {
               invalidateAllCodeLineRanges(target.id);
             }
@@ -5208,6 +5262,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             }
             codeStateByRecord.set(target, appended.state);
             if (appended.state.view.source.state === "finalized") {
+              invalidateActiveCodeLineRange(target.id, patch.fromLine, appended.state.view.lines.length);
               invalidateAllCodeLineRanges(target.id);
             } else {
               invalidateCodeLineRange(target.id, patch.fromLine, appended.state.view.lines.length);
@@ -5579,6 +5634,179 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     getCodeBlock(id: string) {
       const record = nodes.get(id);
       return record?.type === "code" ? codeStateByRecord.get(record)?.view : undefined;
+    },
+    getCodeNodeHandle(id: string) {
+      const record = nodes.get(id);
+      const state = record?.type === "code" ? codeStateByRecord.get(record) : undefined;
+      if (!record || !state) return undefined;
+      const { codeOwnerId, generation } = state.view.source;
+      const ownerNodes = nodes;
+      const ownerResetVersion = resetVersion;
+      const document = state.document ?? inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+      const cached = codeNodeHandlesByRecord.get(record);
+      if (
+        cached &&
+        cached.nodes === ownerNodes &&
+        cached.resetVersion === ownerResetVersion &&
+        cached.document === document &&
+        cached.codeOwnerId === codeOwnerId &&
+        cached.generation === generation
+      ) {
+        return cached.handle;
+      }
+
+      const isCurrentState = (): StoredCodeBlockState | undefined => {
+        if (nodes !== ownerNodes || resetVersion !== ownerResetVersion || nodes.get(id) !== record) return undefined;
+        const current = codeStateByRecord.get(record);
+        if (!current) return undefined;
+        const currentSource = current.view.source;
+        if (currentSource.codeOwnerId !== codeOwnerId || currentSource.generation !== generation) return undefined;
+        const currentDocument = current.document ?? inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+        return currentDocument === document ? current : undefined;
+      };
+      const activeRanges = new Map<string, ActiveCodeLineRange>();
+      const readCodeLineSnapshot = (current: StoredCodeBlockState, range: CodeLineRange) => {
+        const lineCount = current.view.source.lineCount;
+        const from = Math.min(range.from, lineCount);
+        const to = Math.min(range.to, lineCount);
+        return from < to ? readStoredCodeLines(current, from, to) : EMPTY_CODE_LINES;
+      };
+
+      let metadataSource = state.view.source;
+      let metadataConfigurationRevision = state.view.configurationRevision;
+      let metadataInfo = state.view.info;
+      let metadataLanguage = state.view.language;
+      let metadataSnapshot: CodeBlockMetadata = Object.freeze({
+        ...metadataSource,
+        configurationRevision: metadataConfigurationRevision,
+        info: metadataInfo,
+        language: metadataLanguage,
+      });
+      const handle = createCodeNodeHandle({
+        readSource: () => {
+          const current = isCurrentState();
+          if (!current) throw new Error("Code node handle no longer refers to the current code document");
+          return current.sourceSnapshot.materialize();
+        },
+        readMetadata: () => {
+          const current = isCurrentState();
+          if (!current) throw new Error("Code node handle no longer refers to the current code document");
+          const currentSource = current.view.source;
+          const metadataChanged =
+            currentSource.codeOwnerId !== metadataSource.codeOwnerId ||
+            currentSource.generation !== metadataSource.generation ||
+            currentSource.revision !== metadataSource.revision ||
+            currentSource.state !== metadataSource.state ||
+            currentSource.processedTo !== metadataSource.processedTo ||
+            currentSource.completeLineCount !== metadataSource.completeLineCount ||
+            currentSource.lineCount !== metadataSource.lineCount ||
+            currentSource.sourceRange.from !== metadataSource.sourceRange.from ||
+            currentSource.sourceRange.to !== metadataSource.sourceRange.to ||
+            currentSource.diffStatus !== metadataSource.diffStatus ||
+            current.view.configurationRevision !== metadataConfigurationRevision ||
+            current.view.info !== metadataInfo ||
+            current.view.language !== metadataLanguage;
+          if (metadataChanged) {
+            metadataSource = currentSource;
+            metadataConfigurationRevision = current.view.configurationRevision;
+            metadataInfo = current.view.info;
+            metadataLanguage = current.view.language;
+            metadataSnapshot = Object.freeze({
+              ...metadataSource,
+              configurationRevision: metadataConfigurationRevision,
+              info: metadataInfo,
+              language: metadataLanguage,
+            });
+          }
+          return metadataSnapshot;
+        },
+        readLines: (range: CodeLineRange) => {
+          assertCodeHandleRange(range);
+          const current = isCurrentState();
+          if (!current) throw new Error("Code node handle no longer refers to the current code document");
+          const activeRange = activeRanges.get(`${range.from}:${range.to}`);
+          if (activeRange?.lines) return activeRange.lines;
+          const lines = readCodeLineSnapshot(current, range);
+          if (activeRange) activeRange.lines = lines;
+          return lines;
+        },
+        subscribeMetadata: (listener: () => void) => {
+          if (!isCurrentState()) return () => {};
+          let nodeSet = nodeListeners.get(id);
+          if (!nodeSet) {
+            nodeSet = new Set();
+            nodeListeners.set(id, nodeSet);
+          }
+          const notifyIfCurrent = () => {
+            if (isCurrentState()) listener();
+          };
+          nodeSet.add(notifyIfCurrent);
+          let subscribed = true;
+          return () => {
+            if (!subscribed) return;
+            subscribed = false;
+            nodeSet!.delete(notifyIfCurrent);
+            if (nodeSet!.size === 0 && nodeListeners.get(id) === nodeSet) nodeListeners.delete(id);
+          };
+        },
+        subscribeLines: (range: CodeLineRange, listener: () => void) => {
+          assertCodeHandleRange(range);
+          const current = isCurrentState();
+          if (!current || range.from === range.to) return () => {};
+          const notifyIfCurrent = () => {
+            if (isCurrentState()) listener();
+          };
+          const pageStart = Math.floor(range.from / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
+          if (!Number.isSafeInteger(pageStart + CODE_LINE_RANGE_SIZE)) {
+            throw new RangeError("Code line range cannot be represented by aligned store pages");
+          }
+          const unsubscribePages: Array<() => void> = [];
+          for (let from = pageStart; from < range.to; from += CODE_LINE_RANGE_SIZE) {
+            if (!Number.isSafeInteger(from + CODE_LINE_RANGE_SIZE)) {
+              for (const unsubscribe of unsubscribePages) unsubscribe();
+              throw new RangeError("Code line range cannot be represented by aligned store pages");
+            }
+            unsubscribePages.push(
+              store.subscribeCodeLines(id, from, from + CODE_LINE_RANGE_SIZE, notifyIfCurrent),
+            );
+          }
+          const key = `${range.from}:${range.to}`;
+          let activeRange = activeRanges.get(key);
+          if (!activeRange) {
+            activeRange = {
+              from: range.from,
+              to: range.to,
+              consumers: 0,
+              lines: readCodeLineSnapshot(current, range),
+            };
+            activeRanges.set(key, activeRange);
+          } else if (!activeRange.lines) {
+            activeRange.lines = readCodeLineSnapshot(current, range);
+          }
+          activeRange.consumers += 1;
+          const retainedRange = activeRange;
+          let subscribed = true;
+          return () => {
+            if (!subscribed) return;
+            subscribed = false;
+            for (const unsubscribe of unsubscribePages) unsubscribe();
+            retainedRange.consumers -= 1;
+            if (retainedRange.consumers === 0 && activeRanges.get(key) === retainedRange) {
+              activeRanges.delete(key);
+            }
+          };
+        },
+      });
+      codeNodeHandlesByRecord.set(record, {
+        nodes: ownerNodes,
+        resetVersion: ownerResetVersion,
+        document,
+        codeOwnerId,
+        generation,
+        handle,
+        activeRanges,
+      });
+      return handle;
     },
 
     getCodeLines(id: string, from: number, to: number) {

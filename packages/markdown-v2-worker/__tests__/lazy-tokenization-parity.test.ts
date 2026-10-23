@@ -5,7 +5,7 @@ import { applyPatchBatch, createInitialSnapshot, PATCH_ROOT_ID, type Block, type
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ComponentRegistry, MarkdownBlocksRenderer, type CodeFenceRendererProps } from "@stream-mdx/react/server";
-import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
+import { createRendererStore, type RendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 import { JSDOM } from "jsdom";
 import { CODE_HIGHLIGHT_THEMES, getSharedHighlighter } from "../src/engine/highlight";
@@ -580,7 +580,8 @@ async function runPublicTokenThemeConsumers(): Promise<void> {
     ["@@ -0,0 +1,60 @@", ...lines.map((line) => `+${line}`)],
     "native diff source records must retain authored prefixes and content",
   );
-  const rawDiff = highlighter.codeToTokensWithThemes(lines.map((line) => `+${line}`).join("\n"), { lang: "markdown", themes: CODE_HIGHLIGHT_THEMES }) as ShikiThemedToken[][];
+  // Additions form the new-side grammar track: Shiki sees authored content without diff markers.
+  const rawDiff = highlighter.codeToTokensWithThemes(lines.join("\n"), { lang: "markdown", themes: CODE_HIGHLIGHT_THEMES }) as ShikiThemedToken[][];
   for (let row = 0; row < lines.length; row += 1) {
     const nativeSpans = diffSourceLines[row + 1]?.decoration?.tokens.spans;
     assert.ok(nativeSpans, `native diff addition ${row} must carry its requested tokens`);
@@ -598,7 +599,7 @@ async function runPublicTokenThemeConsumers(): Promise<void> {
   const diffDom = new JSDOM(diffHtml);
   const diffRows = diffDom.window.document.querySelectorAll<HTMLElement>('[data-diff-kind="add"]');
   assert.strictEqual(diffRows.length, lines.length, "the public diff renderer must retain each added line");
-  const expectedDiff = rawDiff.map(([first, ...rest]) => first.content === "+" ? rest : [{ ...first, content: first.content.slice(1) }, ...rest]);
+  const expectedDiff = rawDiff;
   expectedDiff.forEach((line, row) => {
     const tokens = diffRows[row].querySelectorAll<HTMLElement>(".stream-mdx-diff-content > span");
     assert.strictEqual(tokens.length, line.length);

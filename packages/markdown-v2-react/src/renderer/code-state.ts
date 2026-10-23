@@ -97,6 +97,7 @@ function metadataSnapshot(source: CodeBlockSourceMetadata): CodeBlockSourceMetad
     completeLineCount: source.completeLineCount,
     lineCount: source.lineCount,
     sourceRange: Object.freeze({ from: source.sourceRange.from, to: source.sourceRange.to }),
+    ...(source.diffStatus !== undefined ? { diffStatus: source.diffStatus } : {}),
   });
 }
 
@@ -959,8 +960,9 @@ export function decorateStoredCodeState(
     const line = current.view.lines.get(decoration.index);
     if (!line || line.id !== decoration.lineId || line.sourceRevision !== decoration.sourceRevision) continue;
     valid.push(decoration);
+    const clearDecoration = decoration.tokens === null && !("exactness" in decoration);
     if (
-      decoration.tokens === null
+      clearDecoration
         ? line.decoration !== undefined && line.decoration.configurationRevision === decoration.configurationRevision
         : line.decoration !== decoration
     ) changedIndices.add(decoration.index);
@@ -1017,22 +1019,16 @@ function diffTokensEqual(
 }
 
 function diffTokensFromCodeLine(
-  tokens: CodeTokenLine | undefined,
-  kind: DiffLine["kind"],
+  tokens: CodeTokenLine | null | undefined,
 ): ThemedLine | null {
   if (!tokens) return null;
-  const themed = tokens.spans.map((span): ThemedToken => {
+  return tokens.spans.map((span): ThemedToken => {
     const style = span.s ?? span.v?.dark;
     const token: ThemedToken = { content: span.t };
     if (style?.fg !== undefined) token.color = style.fg;
     if (style?.fs !== undefined) token.fontStyle = style.fs;
     return token;
   });
-  const prefix = kind === "add" ? "+" : kind === "del" ? "-" : kind === "context" ? " " : "";
-  const first = themed[0];
-  if (!prefix || !first || !first.content.startsWith(prefix)) return themed;
-  if (first.content.length === prefix.length) return themed.slice(1);
-  return [{ ...first, content: first.content.slice(prefix.length) }, ...themed.slice(1)];
 }
 
 /** Applies native code-line decorations to the bounded token fields in existing diff presentation metadata. */
@@ -1071,7 +1067,7 @@ export function updateStoredDiffBlockDecorations(
       const diffLine = diffBlock.lines[diffLineIndex];
       const codeLine = state.view.lines.get(index);
       if (!diffLine || !codeLine || codeLine.text !== diffLine.raw) continue;
-      const tokens = diffTokensFromCodeLine(codeLine.decoration?.tokens, diffLine.kind);
+      const tokens = diffTokensFromCodeLine(codeLine.decoration?.tokens);
       if (diffTokensEqual(diffLine.tokens, tokens)) continue;
       if (!nextLines) nextLines = diffBlock.lines.slice();
       nextLines[diffLineIndex] = { ...diffLine, tokens };
@@ -1157,9 +1153,10 @@ export function materializeStoredCodeBlock(
   if (state.view.info.length > 0) metadata.info = state.view.info;
   if (state.view.language !== undefined) metadata.lang = state.view.language;
   const rows = state.view.lines.readRange(0, state.view.lines.length);
-  const tokenLines = rows.map((line) => line.decoration
-    ? { spans: line.decoration.tokens.spans as TokenLineV1["spans"] }
-    : null);
+  const tokenLines = rows.map((line) => {
+    if (!line.decoration || line.decoration.exactness === "unavailable") return null;
+    return { spans: line.decoration.tokens.spans as TokenLineV1["spans"] };
+  });
   if (tokenLines.some((line) => line !== null)) metadata.tokenLines = tokenLines;
   else delete metadata.tokenLines;
   const diffKind = rows.map((line) => line.diffKind ?? null);

@@ -390,7 +390,6 @@ export class MarkdownRenderer implements Renderer {
     this.managedInitializationErrorCallback = undefined;
     callback?.(error);
   }
-
   private pendingSourceUnits(): number {
     return this.acceptedSourceUnits - (this.workerAdmittedSourceUnits - this.workerAdmissionBaselineSourceUnits);
   }
@@ -1001,6 +1000,19 @@ export class MarkdownRenderer implements Renderer {
           error.name = message.error.name ?? "WorkerInitializationError";
           this.settleInitialization(error);
           if (this.managedInitializationPending) this.reportManagedInitializationError(error);
+        }
+        if (message.phase === "FINALIZE" && finalization === this.pendingFinalization) {
+          this.rejectPendingFinalization(new Error(message.error.message));
+        }
+        if (
+          message.phase === "APPEND" ||
+          (message.phase === "INIT" && message.meta?.theme === undefined && typeof message.meta?.rule !== "string")
+        ) {
+          if (message.phase === "INIT") {
+            this.pendingStreamCommands = [];
+            this.currentInitialization = null;
+          }
+          this.failSourceAdmission(message.error.message);
         }
         if (message.phase === "FINALIZE" && finalization === this.pendingFinalization) {
           this.rejectPendingFinalization(new Error(message.error.message));

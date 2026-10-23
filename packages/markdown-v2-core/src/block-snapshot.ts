@@ -1412,6 +1412,7 @@ function copyCodeSource(source: CodeBlockSourceMetadata): CodeBlockSourceMetadat
     completeLineCount: source.completeLineCount,
     lineCount: source.lineCount,
     sourceRange: { from: source.sourceRange.from, to: source.sourceRange.to },
+    ...(source.diffStatus !== undefined ? { diffStatus: source.diffStatus } : {}),
   };
 }
 
@@ -1431,6 +1432,10 @@ function assertCodeSourceMetadata(source: CodeBlockSourceMetadata, rawLength: nu
     !Number.isSafeInteger(source.lineCount) ||
     source.lineCount < source.completeLineCount ||
     (source.state !== "open" && source.state !== "closed" && source.state !== "finalized") ||
+    (source.diffStatus !== undefined &&
+      source.diffStatus !== "complete" &&
+      source.diffStatus !== "incomplete" &&
+      source.diffStatus !== "malformed") ||
     !Number.isSafeInteger(from) ||
     !Number.isSafeInteger(to) ||
     from < 0 ||
@@ -1748,7 +1753,7 @@ function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, Sn
 
 function codeLineTokens(line: CodeLineRecord): TokenLineV1 | undefined {
   const decoration = line.decoration;
-  if (!decoration) return undefined;
+  if (!decoration || decoration.exactness === "unavailable") return undefined;
   return {
     spans: decoration.tokens.spans.map((span) => ({
       t: span.t,

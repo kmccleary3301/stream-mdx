@@ -53,6 +53,11 @@ export interface ShikiThemedToken {
 export interface DiffCursorState {
   oldLine: number | null;
   newLine: number | null;
+  /** Undefined before a valid hunk; zero is retained after that side is exhausted. */
+  oldRemaining?: number;
+  newRemaining?: number;
+  /** First source line of the current unified-diff file, when known. */
+  fileStartLine?: number;
 }
 
 export interface DiffLineInfo {

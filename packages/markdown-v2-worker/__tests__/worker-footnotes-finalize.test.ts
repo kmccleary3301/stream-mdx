@@ -349,7 +349,6 @@ async function runPublicRegistryStableHeadingMutationTest(): Promise<void> {
     cold.engine.dispose();
   }
 }
-
 async function runRepeatedReferenceTargetsTest(): Promise<void> {
   const content = "Missing[^missing] then outer[^note].\n\n> repeated<span>[^note]</span>\n\n[^note]: Body with **emphasis**.\n";
   const init = { prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: false, math: false, tables: false, callouts: false } };
