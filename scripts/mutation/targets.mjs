@@ -40,4 +40,22 @@ export const targets = {
       "__tests__/patch-batching-partition.test.ts",
     ],
   },
+  "react-viewport-index": {
+    package: "packages/markdown-v2-react",
+    mutate: [
+      "src/renderer/viewport-height-index.ts",
+      "src/renderer/virtualized-table.ts:31-47",
+      "src/renderer/virtualized-table.ts:82-95",
+      "src/renderer/virtualized-table.ts:299-331",
+      "src/renderer/virtualized-table.ts:367-427",
+    ],
+    redirects: {
+      "@stream-mdx/react": "src/index.ts",
+      "@stream-mdx/react/server": "src/server.tsx",
+    },
+    tests: [
+      "__tests__/virtualized-code-metadata.test.ts",
+      "__tests__/table-virtualization.test.tsx",
+    ],
+  },
 };
