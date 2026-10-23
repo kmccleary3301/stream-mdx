@@ -8732,6 +8732,20 @@ export class MarkdownEngine {
       return inputBlocks;
     }
 
+    if (noFootnoteArtifactsForSource && tableProjections.size === 0) {
+      if (syntheticBlocks?.length) {
+        if (reuseInputArrayForNoFootnoteArtifacts) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(syntheticBlocks.length, "engine");
+          }
+          inputBlocks.push(...syntheticBlocks);
+          return inputBlocks;
+        }
+        return [...inputBlocks, ...syntheticBlocks];
+      }
+      return inputBlocks;
+    }
+
     const updatedTableBlocks = new Map<string, Block>();
     for (const block of blocks) {
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -9953,6 +9967,7 @@ export class MarkdownEngine {
         && plugin !== CalloutsPlugin
         && plugin !== HTMLBlockPlugin
         && plugin !== MDXDetectionPlugin);
+
     const containersToFinalizeInSourceOrder: Array<{ readonly id: string; readonly sourceStart: number }> = [];
     let retainedGenericSourceBefore = source.length;
     for (const containerId of containersToFinalize) {
@@ -10029,6 +10044,7 @@ export class MarkdownEngine {
     // Closed leaves only need lifecycle patches; completed containers stay out of the parse path.
     for (const { owner, blockId } of closedParagraphOwners) {
       if (!containersToFinalize.has(blockId)) {
+
         this.finalizeClosedNestedParagraphOwner(owner, blockId, source);
       }
     }
@@ -10142,7 +10158,6 @@ export class MarkdownEngine {
         : this.rootOwnerSnapshotWindow(this.rootOwnerSnapshotFrom(sourceLength));
       const previousRootParagraphOwners = previousRootOwnerWindow?.paragraphOwners ?? this.rootParagraphOwners.slice();
       let previousRootParagraphTargets: FootnoteParagraphTargetDelta[];
-
       for (const owner of this.pendingRootCodeOwners) {
         const previous = owner.getMetadata();
         const change = owner.finalize();
@@ -10162,6 +10177,7 @@ export class MarkdownEngine {
       }
       let remainingRootFrom: number | undefined;
       let replacementRootFrom: number | undefined;
+
       for (const owner of this.pendingRootTableOwners) {
         const previous = owner.getMetadata();
         let appendChange: RootTablePatchChange | undefined;
