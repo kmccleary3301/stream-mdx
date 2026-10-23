@@ -172,11 +172,17 @@ function assertCodeLineRange(range: CodeLineRange): void {
   }
 }
 
-function rangeIntersectsIndices(from: number, to: number, indices: ReadonlySet<number>): boolean {
-  for (const index of indices) {
-    if (index >= from && index < to) return true;
+function rangeIntersectsSortedIndices(from: number, to: number, indices: readonly number[]): boolean {
+  let low = 0;
+  let high = indices.length;
+  while (low < high) {
+    const middle = low + Math.floor((high - low) / 2);
+    const candidate = indices[middle];
+    if (candidate === undefined || candidate >= from) high = middle;
+    else low = middle + 1;
   }
-  return false;
+  const candidate = indices[low];
+  return candidate !== undefined && candidate < to;
 }
 
 
@@ -373,7 +379,7 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
     const lines = previous.decorate(decorations);
     if (lines === previous) return lines;
 
-    const changedIndices = new Set<number>();
+    const changedIndices: number[] = [];
     for (const decoration of decorations) {
       const index = decoration.index;
       if (
@@ -382,11 +388,12 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
         index < lines.length &&
         previous.get(index) !== lines.get(index)
       ) {
-        changedIndices.add(index);
+        changedIndices.push(index);
       }
     }
     this.lines = lines;
-    if (changedIndices.size > 0) {
+    if (changedIndices.length > 0) {
+      changedIndices.sort((left, right) => left - right);
       this.invalidateRangeSnapshotsForIndices(changedIndices);
       this.notifyLineRangeListenersForIndices(changedIndices);
     }
@@ -465,23 +472,23 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
     }
   }
 
-  private invalidateRangeSnapshotsForIndices(indices: ReadonlySet<number>): void {
+  private invalidateRangeSnapshotsForIndices(indices: readonly number[]): void {
     for (const subscription of this.lineRangeSubscriptions.values()) {
       const snapshot = subscription.snapshot;
-      if (snapshot !== undefined && rangeIntersectsIndices(snapshot.from, snapshot.to, indices)) {
+      if (snapshot !== undefined && rangeIntersectsSortedIndices(snapshot.from, snapshot.to, indices)) {
         subscription.snapshot = undefined;
       }
     }
     for (const [key, snapshot] of this.inactiveLineRangeSnapshots) {
-      if (rangeIntersectsIndices(snapshot.from, snapshot.to, indices)) {
+      if (rangeIntersectsSortedIndices(snapshot.from, snapshot.to, indices)) {
         this.inactiveLineRangeSnapshots.delete(key);
       }
     }
   }
 
-  private notifyLineRangeListenersForIndices(indices: ReadonlySet<number>): void {
+  private notifyLineRangeListenersForIndices(indices: readonly number[]): void {
     for (const subscription of this.lineRangeSubscriptions.values()) {
-      if (!rangeIntersectsIndices(subscription.from, subscription.to, indices)) continue;
+      if (!rangeIntersectsSortedIndices(subscription.from, subscription.to, indices)) continue;
       for (const observer of subscription.listeners) observer.listener();
     }
   }
