@@ -3100,7 +3100,27 @@ export class MarkdownEngine {
       || metadata.processedTo !== this.sourceDocument.length
       || !isFinalizedRootParagraphAppendCandidate(candidate)
     ) return undefined;
+    for (const start of this.currentLinkReferenceStarts.values()) {
+      if (start >= metadata.sourceRange.to) return undefined;
+    }
     return candidate;
+  }
+
+  private trailingLinkReferenceContinuationStart(source: SourceSnapshot, oldLength: number): number | undefined {
+    let lastDefinitionStart = -1;
+    for (const start of this.currentLinkReferenceStarts.values()) {
+      if (start < oldLength && start > lastDefinitionStart) lastDefinitionStart = start;
+    }
+    if (lastDefinitionStart < 0) return undefined;
+
+    const definitionTail = source.read(lastDefinitionStart, oldLength);
+    const firstNewline = definitionTail.indexOf("\n");
+    if (firstNewline < 0) return sourceLineStart(source, lastDefinitionStart);
+    const continuation = definitionTail.slice(firstNewline + 1);
+    if (continuation.length === 0 || /^[ \t]+["'(][^\r\n]*(?:\r?\n)?$/.test(continuation)) {
+      return sourceLineStart(source, lastDefinitionStart);
+    }
+    return undefined;
   }
 
   private async reopenFinalizedRootParagraph(
@@ -3780,7 +3800,10 @@ export class MarkdownEngine {
       }
     }
     this.sourceDocument.append(appendedText);
-    await this.parseRootNativeTail(tailOffset, oldLength, this.sourceDocument.length, metrics);
+    const source = this.sourceDocument.snapshot();
+    const referenceContinuationStart = this.trailingLinkReferenceContinuationStart(source, oldLength);
+    if (referenceContinuationStart !== undefined) tailOffset = Math.min(tailOffset, referenceContinuationStart);
+    await this.parseRootNativeTail(tailOffset, oldLength, source.length, metrics);
   }
   /**
    * Where to reparse a replaced root paragraph: its line start, so indentation before the paragraph text still counts,
