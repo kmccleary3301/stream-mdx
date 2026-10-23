@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createRequire } from "node:module";
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,14 +7,33 @@ import { fileURLToPath } from "node:url";
 const HOST = "127.0.0.1";
 const PORT = 3421;
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const require = createRequire(import.meta.url);
+const esbuildRoot = dirname(require.resolve("esbuild-wasm/package.json"));
+const tailwindRoot = dirname(require.resolve("tailwindcss/package.json"));
 const previewModule = (path) => ({
   file: join(packageRoot, "dist", path),
   contentType: "text/javascript; charset=utf-8",
   cors: true,
 });
+const dependencyModule = (root, path, contentType = "text/javascript; charset=utf-8") => ({
+  file: join(root, path),
+  contentType,
+  cors: true,
+});
 const routes = new Map([
   ["/", { file: join(packageRoot, "src/demo/index.html"), contentType: "text/html; charset=utf-8" }],
   ["/demo.js", { file: join(packageRoot, "src/demo/demo.js"), contentType: "text/javascript; charset=utf-8" }],
+  ["/preview/deps/esbuild-wasm.mjs", {
+    file: join(packageRoot, "src/demo/esbuild-wasm-adapter.mjs"),
+    contentType: "text/javascript; charset=utf-8",
+    cors: true,
+  }],
+  ["/preview/deps/esbuild-wasm/lib/browser.js", dependencyModule(esbuildRoot, "lib/browser.js")],
+  ["/preview/deps/esbuild-wasm/esbuild.wasm", dependencyModule(esbuildRoot, "esbuild.wasm", "application/wasm")],
+  ["/preview/deps/tailwindcss/dist/lib.mjs", dependencyModule(tailwindRoot, "dist/lib.mjs")],
+  ["/preview/deps/tailwindcss/dist/chunk-CT46QCH7.mjs", dependencyModule(tailwindRoot, "dist/chunk-CT46QCH7.mjs")],
+  ["/preview/deps/tailwindcss/dist/chunk-GFBUASX3.mjs", dependencyModule(tailwindRoot, "dist/chunk-GFBUASX3.mjs")],
+  ["/preview/deps/tailwindcss/dist/chunk-HTB5LLOP.mjs", dependencyModule(tailwindRoot, "dist/chunk-HTB5LLOP.mjs")],
   ["/preview/index.mjs", previewModule("index.mjs")],
   ["/preview/vendor/react-core.mjs", previewModule("vendor/react-core.mjs")],
   ["/preview/vendor/react.mjs", previewModule("vendor/react.mjs")],
@@ -21,11 +41,10 @@ const routes = new Map([
   ["/preview/vendor/react-dom-client.mjs", previewModule("vendor/react-dom-client.mjs")],
   ["/preview/vendor/react-jsx-runtime.mjs", previewModule("vendor/react-jsx-runtime.mjs")],
   ["/preview/vendor/react-jsx-dev-runtime.mjs", previewModule("vendor/react-jsx-dev-runtime.mjs")],
-  ["/preview/esbuild.wasm", { file: join(packageRoot, "dist/esbuild.wasm"), contentType: "application/wasm", cors: true }],
-  ["/preview/tailwindcss/index.css", { file: join(packageRoot, "dist/tailwindcss/index.css"), contentType: "text/css; charset=utf-8" }],
-  ["/preview/tailwindcss/theme.css", { file: join(packageRoot, "dist/tailwindcss/theme.css"), contentType: "text/css; charset=utf-8" }],
-  ["/preview/tailwindcss/preflight.css", { file: join(packageRoot, "dist/tailwindcss/preflight.css"), contentType: "text/css; charset=utf-8" }],
-  ["/preview/tailwindcss/utilities.css", { file: join(packageRoot, "dist/tailwindcss/utilities.css"), contentType: "text/css; charset=utf-8" }],
+  ["/preview/deps/tailwindcss/index.css", dependencyModule(tailwindRoot, "index.css", "text/css; charset=utf-8")],
+  ["/preview/deps/tailwindcss/theme.css", dependencyModule(tailwindRoot, "theme.css", "text/css; charset=utf-8")],
+  ["/preview/deps/tailwindcss/preflight.css", dependencyModule(tailwindRoot, "preflight.css", "text/css; charset=utf-8")],
+  ["/preview/deps/tailwindcss/utilities.css", dependencyModule(tailwindRoot, "utilities.css", "text/css; charset=utf-8")],
 ]);
 
 const server = createServer(async (request, response) => {

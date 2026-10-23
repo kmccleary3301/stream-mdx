@@ -11,7 +11,7 @@ type PreviewInput = {
 };
 ```
 
-The package bundles `esbuild-wasm` and Tailwind CSS 4.1.18. It compiles the project locally, then runs the result in a sandboxed, credential-free iframe. It never sends project source to a hosted compiler.
+The package uses its exact `esbuild-wasm` and Tailwind CSS 4.1.18 dependencies as external modules; browser consumers must resolve those bare imports with their bundler or an import map. The host supplies local asset URLs, and the package compiles project source locally without sending it to a hosted compiler.
 
 ## Installation and build
 
@@ -24,7 +24,7 @@ npm -w @stream-mdx/preview run test
 npm -w @stream-mdx/preview run demo
 ```
 
-The demo binds only to `127.0.0.1:3421`. Its local server provides the package bundle, React runtime modules, esbuild Wasm, and Tailwind stylesheets.
+The demo binds only to `127.0.0.1:3421`. Its import map and explicit route whitelist serve the compiler modules, Wasm, React runtime modules, and Tailwind stylesheets directly from installed dependencies; the package tarball contains no duplicated Wasm or Tailwind CSS.
 
 The demo server and source are workspace-only and are intentionally excluded from the package tarball.
 
@@ -32,10 +32,12 @@ The demo server and source are workspace-only and are intentionally excluded fro
 
 ```ts
 import { createBrowserPreviewController } from "@stream-mdx/preview";
+import wasmURL from "esbuild-wasm/esbuild.wasm?url";
 
 const controller = createBrowserPreviewController(previewElement, {
-  wasmURL: new URL("/preview/esbuild.wasm", location.href),
+  wasmURL,
   reactRuntimeURL: new URL("/preview/vendor/react-core.mjs", location.href),
+  tailwindAssetsURL: new URL("/assets/tailwindcss/", location.href),
 });
 
 void controller.request({
@@ -49,6 +51,8 @@ void controller.request({
 });
 ```
 
+The host must serve all of `@stream-mdx/preview/dist/vendor` at the directory used by `reactRuntimeURL` (the examples assume `/preview/vendor/`). Bundle consumers should use their bundler's Wasm URL import (for example, Vite's `import wasmURL from "esbuild-wasm/esbuild.wasm?url"`) or copy and serve the dependency asset locally. Copy Tailwind's `index.css`, `theme.css`, `preflight.css`, and `utilities.css` from the installed `tailwindcss` dependency to a same-origin static directory and pass that directory as `tailwindAssetsURL`. The demo uses a local import map and explicit node_modules routes instead.
+
 The host can subscribe to `onState` or call `getState()`. `requested`, `compiled`, `candidateReady`, and `visible` are separate identities. A compile/runtime failure keeps the last-valid output visible with its own older identity; it is never relabeled as the failed revision. `dispose()` stops publication and tears down the frame, channel, and listeners.
 
 ## Revision and style behavior
@@ -61,20 +65,22 @@ For simultaneous comparisons, `createBrowserPreviewVariantsController(container,
 
 ```ts
 import { createBrowserPreviewVariantsController } from "@stream-mdx/preview";
+import wasmURL from "esbuild-wasm/esbuild.wasm?url";
 
 const comparison = createBrowserPreviewVariantsController(previewElement, [
   { name: "Cool", css: ":root{--preview-accent:#1d4ed8}" },
   { name: "Warm", css: ":root{--preview-accent:#b45309}" },
 ], {
-  wasmURL: new URL("/preview/esbuild.wasm", location.href),
+  wasmURL,
   reactRuntimeURL: new URL("/preview/vendor/react-core.mjs", location.href),
+  tailwindAssetsURL: new URL("/assets/tailwindcss/", location.href),
 });
 void comparison.request(input);
 ```
 
 ## Local Tailwind and CSS isolation
 
-Project CSS may use `@import "tailwindcss";`. Tailwind runs locally against static class strings found in project source; no CDN, remote stylesheet, plugin, config module, or network resolver is used. Keep utility names as complete static strings (or use Tailwind's static `@source inline(...)` safelist); dynamically assembled class names are not discoverable. Tailwind CSS is bundled with JavaScript only as a compiler dependency, while generated project CSS is sent separately to the opaque frame.
+Project CSS may use `@import "tailwindcss";`. Tailwind runs locally against static class strings found in project source; no CDN, remote stylesheet, plugin, config module, or network resolver is used. Keep utility names as complete static strings (or use Tailwind's static `@source inline(...)` safelist); dynamically assembled class names are not discoverable. The compiler is an external pinned dependency; Tailwind's stylesheet assets are served from the host's configured same-origin `tailwindAssetsURL`, and generated project CSS is sent separately to the opaque frame.
 
 The frame is created with `sandbox="allow-scripts"` and an opaque origin. Host/frame bootstrap authenticates `event.source` and a per-generation capability, then transfers a dedicated `MessageChannel`; it does not trust the `"null"` origin string. A deny-by-default CSP in the frame permits only its nonce and package-local React modules for scripts, inline/data styles, and data images; `connect-src`, workers, objects, frames, forms, and base URLs are denied. Project styles remain in the iframe and cannot style the host. The preview exposes no host operations or host credentials.
 

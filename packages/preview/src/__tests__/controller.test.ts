@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { test } from "node:test";
 import { createEsbuildCompiler, createPreviewController, createPreviewVariantsController } from "../index";
 import type {
@@ -14,6 +15,9 @@ import type {
 } from "../index";
 
 const require = createRequire(import.meta.url);
+const esbuildWasmURL = pathToFileURL(
+  join(dirname(require.resolve("esbuild-wasm/package.json")), "esbuild.wasm"),
+);
 const tailwindPackage = dirname(require.resolve("tailwindcss/package.json"));
 
 function loadTailwindStylesheet(name: TailwindStylesheetName): Promise<string> {
@@ -254,7 +258,7 @@ function multiFileProject(generation: string, revision: string): PreviewInput {
 test("preview compiler bundles nested local TSX, TS, JS, JSX, JSON, and CSS imports", async () => {
   const transport = new RecordingTransport();
   const compiler = createEsbuildCompiler({
-    wasmURL: new URL("../../dist/esbuild.wasm", import.meta.url),
+    wasmURL: esbuildWasmURL,
   });
   const controller = createPreviewController({ transport, compile: compiler });
 
@@ -274,7 +278,7 @@ test("preview compiler bundles nested local TSX, TS, JS, JSX, JSON, and CSS impo
 test("unresolved local imports name their importer and keep the last valid preview", async () => {
   const transport = new RecordingTransport();
   const compiler = createEsbuildCompiler({
-    wasmURL: new URL("../../dist/esbuild.wasm", import.meta.url),
+    wasmURL: esbuildWasmURL,
   });
   const controller = createPreviewController({ transport, compile: compiler });
   const valid = multiFileProject("import-error", "valid");
@@ -361,7 +365,7 @@ test("local Tailwind utilities and preflight are emitted as frame CSS", async ()
   const controller = createPreviewController({
     transport,
     compile: createEsbuildCompiler({
-      wasmURL: new URL("../../dist/esbuild.wasm", import.meta.url),
+      wasmURL: esbuildWasmURL,
       loadTailwindStylesheet,
     }),
   });

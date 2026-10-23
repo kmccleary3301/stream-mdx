@@ -59,7 +59,7 @@ type FrameSession = {
 export type BrowserPreviewOptions = Readonly<{
   wasmURL: string | URL;
   reactRuntimeURL: string | URL;
-  tailwindAssetsURL?: string | URL;
+  tailwindAssetsURL: string | URL;
   onState?: (state: PreviewState) => void;
 }>;
 

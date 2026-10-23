@@ -37,9 +37,9 @@ const controller = createBrowserPreviewVariantsController(
     { name: "Warm", css: ":root{--preview-card-background:#fef3c7;--preview-button-background:#b45309}" },
   ],
   {
-    wasmURL: new URL("/preview/esbuild.wasm", location.href),
+    wasmURL: new URL("/preview/deps/esbuild-wasm/esbuild.wasm", location.href),
     reactRuntimeURL: new URL("/preview/vendor/react-core.mjs", location.href),
-    tailwindAssetsURL: new URL("/preview/tailwindcss/", location.href),
+    tailwindAssetsURL: new URL("/preview/deps/tailwindcss/", location.href),
     onState(name, state) {
       stateByVariant.set(name, state);
       const identity = (value) => value === null ? "—" : `${value.generation}/${value.revision}`;

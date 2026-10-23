@@ -34,7 +34,7 @@ function createBrowserController(
   onState?: (state: PreviewState) => void,
 ): PreviewController {
   const wasmURL = freshFrameAssetURL(options.wasmURL, "esbuild-wasm");
-  const tailwindAssetsURL = freshFrameAssetURL(options.tailwindAssetsURL ?? new URL("tailwindcss/", wasmURL), "Tailwind runtime");
+  const tailwindAssetsURL = freshFrameAssetURL(options.tailwindAssetsURL, "Tailwind runtime");
   const transport = createBrowserTransport(container, options.reactRuntimeURL);
   const baseCompiler = createEsbuildCompiler({
     wasmURL,
