@@ -79,6 +79,13 @@ function createIndex(lines: readonly CodeLineRecord[], counters?: StoreCodeCount
   }
   return createCodeLineIndex({ lines });
 }
+function settleFinalizedCodeTail(lines: CodeLineIndex): CodeLineIndex {
+  const provisionalIndex = lines.completeLineCount;
+  const provisionalLine = lines.get(provisionalIndex);
+  return provisionalLine?.isProvisional
+    ? lines.replaceTail(provisionalIndex, [{ ...provisionalLine, isProvisional: false }])
+    : lines;
+}
 
 function metadataSnapshot(source: CodeBlockSourceMetadata): CodeBlockSourceMetadata {
   return Object.freeze({
@@ -431,7 +438,7 @@ function legacyCodeState(
         : { from: sourceTo, to: sourceTo },
       sourceRevision: 0,
       // A last line without an authored body line yet (the opening fence is still streaming) is the open tail too.
-      isProvisional: !body.hasClosingFence && index === extracted.length - 1 && (rawLine === undefined || rawLine.ending === ""),
+      isProvisional: !block?.isFinalized && !body.hasClosingFence && index === extracted.length - 1 && (rawLine === undefined || rawLine.ending === ""),
       decoration,
       diffKind: childLines[index]?.props?.diffKind as CodeLineRecord["diffKind"],
       oldNo: childLines[index]?.props?.oldNo as CodeLineRecord["oldNo"],
@@ -506,6 +513,8 @@ export function createStoredCodeBlockState(
       throw new RangeError("Code snapshot line ranges must be inside its source range");
     }
   }
+  const settledIndex = cold.state === "finalized" ? settleFinalizedCodeTail(index) : index;
+  const source = settledIndex === index ? cold : { ...cold, completeLineCount: settledIndex.completeLineCount };
   const sourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
     ? sourceStateForRaw(
         cold.raw,
@@ -516,7 +525,7 @@ export function createStoredCodeBlockState(
       )
     : sourceStateForRaw(cold.raw, cold.sourceRange.from, cold.sourceRange.to, canonicalSource);
   return {
-    view: createView(cold, cold.configurationRevision, cold.info, cold.language, index),
+    view: createView(source, cold.configurationRevision, cold.info, cold.language, settledIndex),
     ...sourceState,
     managed: true,
     ranges: new Map(),
@@ -868,18 +877,19 @@ export function refreshLegacyCodeSource(
     rebound ??= [...current.view.lines.readRange(0, current.view.lines.length)];
     rebound[index] = { ...record, sourceRange: { from, to }, ending: rawLine.ending };
   }
-  const lines = rebound === undefined
+  const reboundLines = rebound === undefined
     ? current.view.lines
     : typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
       ? createIndex(rebound, counters)
       : createIndex(rebound);
+  const lines = block.isFinalized ? settleFinalizedCodeTail(reboundLines) : reboundLines;
   const metadata = block.payload.meta;
   const source: CodeBlockSourceMetadata = {
     ...current.view.source,
     state: block.isFinalized ? "finalized" : body.hasClosingFence ? "closed" : "open",
     processedTo: sourceTo,
-    completeLineCount: current.view.lines.completeLineCount,
-    lineCount: current.view.lines.length,
+    completeLineCount: lines.completeLineCount,
+    lineCount: lines.length,
     sourceRange: { from: sourceFrom, to: sourceTo },
   };
   const validatedSourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
@@ -904,11 +914,15 @@ export function refreshLegacyCodeSource(
   };
 }
 export function finalizeStoredCodeState(current: StoredCodeBlockState): StoredCodeBlockState {
-  if (current.view.source.state === "finalized") return current;
-  const source: CodeBlockSourceMetadata = { ...current.view.source, state: "finalized" };
+  const currentLines = current.view.lines;
+  const lines = settleFinalizedCodeTail(currentLines);
+  if (current.view.source.state === "finalized" && lines === currentLines) return current;
+  const source: CodeBlockSourceMetadata = current.view.source.state === "finalized"
+    ? current.view.source
+    : { ...current.view.source, state: "finalized" };
   return {
     ...current,
-    view: createView(source, current.view.configurationRevision, current.view.info, current.view.language, current.view.lines),
+    view: createView(source, current.view.configurationRevision, current.view.info, current.view.language, lines),
   };
 }
 

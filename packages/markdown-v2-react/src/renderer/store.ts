@@ -4667,6 +4667,16 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               recordSetPropsStage("code:apply-metadata", getPerfNow() - metadataStart);
             }
           }
+          if (target.type === "code" && target.block?.isFinalized) {
+            const currentCodeState = codeStateByRecord.get(target);
+            if (currentCodeState) {
+              const finalized = finalizeStoredCodeState(currentCodeState);
+              if (finalized !== currentCodeState) {
+                codeStateByRecord.set(target, finalized);
+                invalidateAllCodeLineRanges(target.id);
+              }
+            }
+          }
           if (semanticUpdate) {
             advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
             blockEpochAdvanced = true;
@@ -5075,10 +5085,13 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               if (fromSpan < changedSpanEnd) invalidateParagraphSpanRange(target.id, fromSpan, changedSpanEnd);
               changed = true;
             }
-            if (codeState && codeState.view.source.state !== "finalized") {
-              codeStateByRecord.set(target, finalizeStoredCodeState(codeState));
-              invalidateAllCodeLineRanges(target.id);
-              changed = true;
+            if (codeState) {
+              const finalized = finalizeStoredCodeState(codeState);
+              if (finalized !== codeState) {
+                codeStateByRecord.set(target, finalized);
+                invalidateAllCodeLineRanges(target.id);
+                changed = true;
+              }
             }
             if (!paragraphState && !tableState && target.block && !target.block.isFinalized) {
               target.block = cloneBlock(target.block);
