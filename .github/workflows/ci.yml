@@ -36,15 +36,14 @@ jobs:
           npx tsx __tests__/deferred-stale-replay-guard.test.ts
           npx tsx __tests__/mixed-segment-canonicalization.test.ts
 
-      - name: Worker streaming fidelity matrix (x2)
+      # `npm run test` above already ran the matrix once; this second run under a larger heap keeps the two-run
+      # determinism check.
+      - name: Worker streaming fidelity matrix (second run)
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: |
           cd packages/markdown-v2-worker
-          for run in 1 2; do
-            echo "[stream-mdx] matrix run ${run}/2"
-            npx tsx __tests__/streaming-fidelity-matrix.test.ts
-          done
+          npx tsx __tests__/streaming-fidelity-matrix.test.ts
 
       - name: Determinism matrix (node vs browser worker)
         run: npm run determinism:matrix
@@ -72,6 +71,27 @@ jobs:
 
       - name: Pack (dry-run)
         run: npm --workspaces --if-present pack --dry-run
+
+  # Docs-site surface checks need only the built packages, so they run beside build-test-pack instead of after it.
+  docs-site:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build:packages
+
+      - name: Install Playwright Chromium
+        run: node node_modules/playwright/cli.js install --with-deps chromium
 
       - name: Build docs site (static export)
         env:
