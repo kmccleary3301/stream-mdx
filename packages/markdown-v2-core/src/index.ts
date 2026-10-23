@@ -14,8 +14,9 @@ export {
   materializeManagedTableSnapshot,
 } from "./table-block-state";
 export type { ManagedTableViewState, ManagedTablePatchResult } from "./table-block-state";
-export type { CodeBlockMetadata, CodeDiffTokenLine, CodeLineDecoration, CodeLineDecorationUpdate, CodeLineIndex, CodeLineRange, CodeLineRecord, CodeNodeHandle, CodeTokenLine, CodeTokenSpan, HighlightUnavailableReason } from "./code-records";
-export { createCodeNodeHandle } from "./code-records";
+export type { CodeDiffTokenLine, CodeLineDecoration, CodeLineDecorationUpdate, CodeLineIndex, CodeLineRecord, CodeTokenLine, CodeTokenSpan, HighlightUnavailableReason } from "./code-records";
+export type { CodeBlockMetadata, CodeLineRange, CodeNodeHandle } from "./node-handles";
+export { createCodeNodeHandle } from "./node-handles";
 export { freezeParagraphSpanRecord } from "./paragraph-records";
 export { createParagraphSpanIndex } from "./paragraph-span-index";
 export {
