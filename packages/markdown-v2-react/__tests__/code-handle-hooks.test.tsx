@@ -62,6 +62,20 @@ function CodeDocumentView({ id, handle, range, capture }: CodeDocumentViewProps)
   );
 }
 
+type CodeLinesOnlyViewProps = {
+  readonly handle: CodeNodeHandle;
+  readonly range: CodeRange;
+  readonly onRender: () => void;
+};
+
+function CodeLinesOnlyView({ handle, range, onRender }: CodeLinesOnlyViewProps): React.ReactElement {
+  const lines = useCodeLines(handle, range);
+  React.useEffect(() => {
+    onRender();
+  });
+  return <output data-code-lines-only>{lines.length}</output>;
+}
+
 function readView(container: HTMLElement, id: ViewId): HTMLElement {
   const view = container.querySelector<HTMLElement>(`[data-code-view="${id}"]`);
   assert.ok(view, `missing ${id} code view`);
@@ -107,6 +121,10 @@ async function runCodeHandleHooksTest(): Promise<void> {
   const capture = (id: ViewId, snapshot: ViewSnapshot) => {
     captured[id] = snapshot;
   };
+  let lineOnlyRenderCount = 0;
+  const countLineOnlyRender = () => {
+    lineOnlyRenderCount += 1;
+  };
 
   try {
     root = createRoot(container);
@@ -115,6 +133,7 @@ async function runCodeHandleHooksTest(): Promise<void> {
         <>
           <CodeDocumentView id="narrow" handle={controller.handle} range={selectedRange} capture={capture} />
           <CodeDocumentView id="wide" handle={controller.handle} range={selectedRange} capture={capture} />
+          <CodeLinesOnlyView handle={controller.handle} range={selectedRange} onRender={countLineOnlyRender} />
         </>,
       );
     });
@@ -147,6 +166,7 @@ async function runCodeHandleHooksTest(): Promise<void> {
     const narrowRecordBeforeAppend = narrowBeforeAppend.lines[0]!;
     const wideRecordBeforeAppend = wideBeforeAppend.lines[0]!;
 
+    const lineOnlyRendersBeforeAppend = lineOnlyRenderCount;
     await act(async () => {
       controller.append(appendedSource);
     });
@@ -154,6 +174,11 @@ async function runCodeHandleHooksTest(): Promise<void> {
     assert.strictEqual(captured.narrow!.lines[0], narrowRecordBeforeAppend, "unchanged selected record retains its public record identity");
     assert.strictEqual(captured.wide!.lines, wideRangeBeforeAppend, "the second view retains its unchanged public range identity");
     assert.strictEqual(captured.wide!.lines[0], wideRecordBeforeAppend, "the second view retains its unchanged public record identity");
+    assert.equal(
+      lineOnlyRenderCount,
+      lineOnlyRendersBeforeAppend,
+      "useCodeLines consumers do not rerender when append changes metadata outside their selected range",
+    );
     assert.equal(readView(container, "narrow").dataset.lineCount, "3");
     assert.equal(readView(container, "wide").dataset.lineCount, "3");
     assert.equal(readLine(readView(container, "narrow"), 0).textContent, "const first = 1;");

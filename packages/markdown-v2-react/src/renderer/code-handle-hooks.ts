@@ -60,14 +60,7 @@ export function useCodeLines(
   );
   const snapshotRef = useRef<CodeLinesSnapshot | null>(null);
   const subscribe = useCallback(
-    (listener: () => void) => {
-      const unsubscribeLines = handle.subscribeLines(stableRange, listener);
-      const unsubscribeMetadata = handle.subscribeMetadata(listener);
-      return () => {
-        unsubscribeLines();
-        unsubscribeMetadata();
-      };
-    },
+    (listener: () => void) => handle.subscribeLines(stableRange, listener),
     [handle, stableRange],
   );
   const getSnapshot = useCallback(() => {
