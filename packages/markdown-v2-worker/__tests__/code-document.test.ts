@@ -734,6 +734,107 @@ async function runDiffFileContextAvailabilityResetsTest(): Promise<void> {
   }
 }
 
+async function runMultiFileDiffUsesIndependentPerFileShikiTest(): Promise<void> {
+  const diffSource = [
+    "diff --git a/open.ts b/open.ts",
+    "--- a/open.ts",
+    "+++ b/open.ts",
+    "@@ -1 +1 @@",
+    "-/* old comment",
+    "+/* new comment",
+    "diff --git a/fresh.ts b/fresh.ts",
+    "--- a/fresh.ts",
+    "+++ b/fresh.ts",
+    "@@ -1 +1 @@",
+    "-const oldValue = 1;",
+    "+const freshValue = 1;",
+    "diff --git a/script.py b/script.py",
+    "--- a/script.py",
+    "+++ b/script.py",
+    "@@ -1,2 +1,2 @@",
+    "-def old():",
+    "+def fresh():",
+    "     return 1",
+  ].join("\n");
+  const fileSources = {
+    oldOpen: "/* old comment",
+    newOpen: "/* new comment",
+    oldFresh: "const oldValue = 1;",
+    newFresh: "const freshValue = 1;",
+    oldPython: "def old():\n    return 1",
+    newPython: "def fresh():\n    return 1",
+  };
+  const themes = { dark: "github-dark", light: "github-light" } as const;
+  let disposeDocument: (() => void) | undefined;
+  let disposeOracle: (() => void) | undefined;
+
+  try {
+    const document = createCodeDocument({ language: "typescript", diff: true, initialContent: diffSource, themes });
+    disposeDocument = () => document.dispose();
+    const oracle = await createHighlighter({
+      engine: createJavaScriptRegexEngine(),
+      langs: ["typescript", "python"],
+      themes: [themes.dark, themes.light],
+    });
+    disposeOracle = () => oracle.dispose();
+
+    document.finalize();
+    const result = await document.highlight({ mode: "range", range: { from: 0, to: 18 } });
+    assert.strictEqual(result.exactness, "exact");
+    assert.ok(result.diffTokens, "multi-file results must expose both source-side token tracks");
+    const independent = (source: string, lang: "typescript" | "python") =>
+      oracle.codeToTokensWithThemes(source, {
+        lang,
+        themes: { dark: themes.dark, light: themes.light },
+      }).map(normalizeShikiLine);
+    const oldOpen = independent(fileSources.oldOpen, "typescript");
+    const newOpen = independent(fileSources.newOpen, "typescript");
+    const oldFresh = independent(fileSources.oldFresh, "typescript");
+    const newFresh = independent(fileSources.newFresh, "typescript");
+    const oldPython = independent(fileSources.oldPython, "python");
+    const newPython = independent(fileSources.newPython, "python");
+    const tracks = result.diffTokens;
+    assert.deepStrictEqual(normalizePublicLine(tracks[4]!.old!), oldOpen[0]);
+    assert.deepStrictEqual(normalizePublicLine(tracks[5]!.new!), newOpen[0]);
+    assert.deepStrictEqual(
+      normalizePublicLine(tracks[10]!.old!),
+      oldFresh[0],
+      "the next TypeScript file must not inherit the prior file's open multiline comment",
+    );
+    assert.deepStrictEqual(
+      normalizePublicLine(tracks[11]!.new!),
+      newFresh[0],
+      "the added row in a new TypeScript file must start from initial grammar state",
+    );
+    assert.deepStrictEqual(
+      normalizePublicLine(tracks[16]!.old!),
+      oldPython[0],
+      "the Python file's old track must use its own language and fresh grammar state",
+    );
+    assert.deepStrictEqual(
+      normalizePublicLine(tracks[17]!.new!),
+      newPython[0],
+      "the Python file's new track must use its own language and fresh grammar state",
+    );
+    const contextResult = await document.highlight({ mode: "range", range: { from: 18, to: 19 } });
+    assert.strictEqual(contextResult.exactness, "exact", "a checkpoint inside a detected file must remain reusable for later ranges");
+    assert.ok(contextResult.diffTokens);
+    assert.deepStrictEqual(normalizePublicLine(contextResult.diffTokens[0]!.old!), oldPython[1]);
+    assert.deepStrictEqual(normalizePublicLine(contextResult.diffTokens[0]!.new!), newPython[1]);
+    assert.notDeepStrictEqual(
+      oldPython[0],
+      independent(fileSources.oldPython, "typescript")[0],
+      "the Python fixture must distinguish per-file language detection from the document fallback",
+    );
+  } finally {
+    try {
+      disposeDocument?.();
+    } finally {
+      disposeOracle?.();
+    }
+  }
+}
+
 async function runHeaderLikeDiffContentUsesHunkCountsTest(): Promise<void> {
   const diffSource = "@@ -1 +1 @@\n--- before();\n+++ after();\n";
   let disposeDocument: (() => void) | undefined;
@@ -986,6 +1087,8 @@ async function runFinalizedNewFileWithoutTerminalNewlineTest(): Promise<void> {
 }
 
 await runDiffFileContextAvailabilityResetsTest();
+
+await runMultiFileDiffUsesIndependentPerFileShikiTest();
 
 await runHeaderLikeDiffContentUsesHunkCountsTest();
 await runDeletedFileHeaderLikeBodyRangePropertyTest();

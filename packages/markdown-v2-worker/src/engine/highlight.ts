@@ -725,6 +725,7 @@ interface DiffGrammarState {
   old?: unknown;
   new?: unknown;
   context?: unknown;
+  language?: string;
 }
 
 function isDiffGrammarTrackSnapshot(value: unknown): value is DiffGrammarTrackSnapshot {
@@ -779,6 +780,7 @@ export async function buildDiffTokenLines(
   const hasNewState = Object.prototype.hasOwnProperty.call(grammarState, "new");
   let oldGrammarState = hasOldState ? grammarState.old : storedTracks ? storedTracks.old : grammarState.context;
   let newGrammarState = hasNewState ? grammarState.new : storedTracks ? storedTracks.new : grammarState.context;
+  let currentLanguage = grammarState.language ?? language;
   let currentKind: DiffLineInfo["kind"] | null = null;
   let currentRun: DiffLineInfo[] = [];
   let startIndex = 0;
@@ -788,17 +790,17 @@ export async function buildDiffTokenLines(
     let oldRunTokens: Array<TokenLineV1 | null> | undefined;
     let newRunTokens: Array<TokenLineV1 | null> | undefined;
     if (currentKind === "context") {
-      const oldRun = await tokenizeDiffRun(currentRun, language, oldGrammarState, highlighter, themes);
+      const oldRun = await tokenizeDiffRun(currentRun, currentLanguage, oldGrammarState, highlighter, themes);
       oldGrammarState = oldRun.grammarState;
       oldRunTokens = oldRun.tokenLines;
-      const newRun = await tokenizeDiffRun(currentRun, language, newGrammarState, highlighter, themes);
+      const newRun = await tokenizeDiffRun(currentRun, currentLanguage, newGrammarState, highlighter, themes);
       newGrammarState = newRun.grammarState;
       newRunTokens = newRun.tokenLines;
     } else {
       const useNewGrammar = currentKind === "add";
       const result = await tokenizeDiffRun(
         currentRun,
-        language,
+        currentLanguage,
         useNewGrammar ? newGrammarState : oldGrammarState,
         highlighter,
         themes,
@@ -826,9 +828,16 @@ export async function buildDiffTokenLines(
     const info = lines[i];
     if (info.kind === "meta" || info.kind === "hunk" || info.hunkHeader) {
       await flush();
-      if (info.kind === "meta" && (info.raw.startsWith("diff --git") || info.raw.startsWith("--- "))) {
+      const fileBoundary = info.kind === "meta"
+        && (info.raw.startsWith("diff --git") || info.raw.startsWith("--- ") || info.raw.startsWith("+++ "));
+      if (fileBoundary) {
         oldGrammarState = undefined;
         newGrammarState = undefined;
+        const filePath = extractDiffFilePath(info.raw);
+        const detectedLanguage = filePath ? guessLanguageFromPath(filePath) : null;
+        if (detectedLanguage) {
+          currentLanguage = await resolveHighlightLanguage(highlighter, detectedLanguage);
+        }
       }
       tokenLines[i] = null;
       diffTokenLines[i] = { old: null, new: null };
@@ -845,6 +854,7 @@ export async function buildDiffTokenLines(
 
   grammarState.old = oldGrammarState;
   grammarState.new = newGrammarState;
+  grammarState.language = currentLanguage;
   grammarState.context = Object.freeze({
     [DIFF_GRAMMAR_TRACK_SNAPSHOT]: true as const,
     old: oldGrammarState,

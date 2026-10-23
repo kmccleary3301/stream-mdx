@@ -303,7 +303,7 @@ interface DiffGrammarCheckpoint {
   readonly newGrammarState: unknown;
   readonly configurationRevision: number;
   readonly language: string;
-  readonly highlighter: SharedHighlighter;
+  readonly fileLanguage: string;
   readonly darkTheme: CodeThemePair["dark"];
   readonly lightTheme: CodeThemePair["light"];
   readonly prefixLineId: string;
@@ -494,6 +494,7 @@ export class RootCodeHighlighter {
           const initialGrammarState = {
             old: checkpoint?.oldGrammarState,
             new: checkpoint?.newGrammarState,
+            language: checkpoint?.fileLanguage ?? language,
           };
           const scanTokens: Array<TokenLineV1 | null> = new Array(scanRows.length).fill(null);
           const scanDiffTokens = new Array<CodeDiffTokenLine>(scanRows.length);
@@ -509,6 +510,7 @@ export class RootCodeHighlighter {
             completedGrammarState = {
               old: completed.grammarState.old,
               new: completed.grammarState.new,
+              language: completed.grammarState.language ?? language,
             };
             for (let offset = 0; offset < completed.diffTokenLines.length; offset += 1) {
               scanTokens[offset] = completed.tokenLines[offset] ?? null;
@@ -747,7 +749,7 @@ export class RootCodeHighlighter {
     owner: PreparedCodeLineOwner,
     sourceIndex: CodeLineIndex,
     line: number,
-    grammarState: { readonly old?: unknown; readonly new?: unknown },
+    grammarState: { readonly old?: unknown; readonly new?: unknown; readonly language?: string },
     diffCursor: DiffCursorState,
     language: string,
     config: RootCodeHighlightConfiguration,
@@ -781,8 +783,8 @@ export class RootCodeHighlighter {
       newGrammarState: grammarState.new,
       configurationRevision: config.configurationRevision,
       language,
+      fileLanguage: grammarState.language ?? language,
       highlighter,
-      darkTheme: config.themes.dark,
       lightTheme: config.themes.light,
       prefixLineId: currentPrefix.id,
       prefixSourceRevision: currentPrefix.sourceRevision,
