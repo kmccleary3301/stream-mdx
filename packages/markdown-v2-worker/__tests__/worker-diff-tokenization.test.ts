@@ -1,9 +1,11 @@
 import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 
+import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { createHighlighter } from "shiki";
 import { runInNewContext } from "node:vm";
 import { JSDOM } from "jsdom";
 import ts from "typescript";
@@ -377,6 +379,114 @@ async function runNativeDiffMissingPrefixContextTest(): Promise<void> {
   assert.strictEqual(exportedCode.payload.raw, codeBlock.payload.raw, "range tokenization must not rewrite canonical authored markers");
 }
 
+async function runDiffFileLanguageSurvivesChunkBoundaryTest(): Promise<void> {
+  const themes = { dark: "github-dark", light: "github-light" } as const;
+  const firstChunk = [
+    "```diff-typescript",
+    "diff --git a/app.py b/app.py",
+    "--- a/app.py",
+    "+++ b/app.py",
+    "@@ -1,2 +1,2 @@",
+    "-old",
+    '+message = """open',
+    " context line",
+  ].join("\n");
+  const secondChunk = ['@@ -3,2 +3,2 @@', "-old2", '+return 1"""', " context after"].join("\n");
+  const emitted: WorkerOut[] = [];
+  const engine = new MarkdownEngine({ post: (message) => emitted.push(message) });
+  const oracle = await createHighlighter({
+    engine: createJavaScriptRegexEngine(),
+    langs: ["python"],
+    themes: [themes.dark, themes.light],
+  });
+  const drainMessages = () => {
+    const messages = emitted.splice(0);
+    const error = messages.find((message) => message.type === "ERROR");
+    if (error?.type === "ERROR") throw new Error(error.error.message);
+  };
+
+  try {
+    await engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "",
+      prewarmLangs: ["python", "typescript"],
+      themes,
+      docPlugins: {
+        html: false,
+        mdx: false,
+        math: false,
+        tables: false,
+        callouts: false,
+        footnotes: false,
+        codeHighlighting: "incremental",
+        outputMode: "tokens",
+        emitHighlightTokens: true,
+        liveTokenization: true,
+      },
+    });
+    drainMessages();
+    await engine.handle({ type: "APPEND", text: firstChunk });
+    drainMessages();
+    await engine.handle({ type: "DUMP_BLOCKS" });
+    const dump = emitted.splice(0).find((message) => message.type === "DUMP_BLOCKS");
+    assert.ok(dump);
+    const code = dump.blocks.find((block) => block.type === "code");
+    assert.ok(code);
+
+    const firstCode = firstChunk.slice(firstChunk.indexOf("\n") + 1);
+    const chunkedCode = {
+      ...code,
+      id: `${code.id}:language-checkpoint`,
+      isFinalized: false,
+      payload: {
+        ...code.payload,
+        raw: firstChunk,
+        meta: { ...(code.payload.meta ?? {}), info: "diff-typescript", code: firstCode },
+      },
+    };
+    await engine.enrichCodeBlock(chunkedCode);
+
+    chunkedCode.payload.raw = `${firstChunk}\n${secondChunk}`;
+    chunkedCode.payload.meta = {
+      ...(chunkedCode.payload.meta ?? {}),
+      code: `${firstCode}\n${secondChunk}`,
+    };
+    await engine.enrichCodeBlock(chunkedCode);
+    const tokenLines = chunkedCode.payload.meta?.tokenLines as Array<TokenLineV1 | null> | undefined;
+    const actual = tokenLines?.[9];
+    assert.ok(actual, "the second streamed chunk must publish tokens for its added row");
+
+    const firstTokens = oracle.codeToTokensWithThemes('message = """open\ncontext line', {
+      lang: "python",
+      themes,
+    });
+    const expectedTokens = oracle.codeToTokensWithThemes('return 1"""', {
+      lang: "python",
+      themes,
+      grammarState: oracle.getLastGrammarState(firstTokens),
+    })[0] ?? [];
+    const expectedReturn = expectedTokens.find((token) => token.content.includes("return"));
+    const actualReturn = actual.spans.find((span) => span.t.includes("return"));
+    assert.ok(expectedReturn);
+    assert.ok(actualReturn);
+    assert.deepStrictEqual(
+      {
+        dark: actualReturn.v?.dark?.fg ?? null,
+        light: actualReturn.v?.light?.fg ?? null,
+      },
+      {
+        dark: expectedReturn.variants.dark?.color ?? null,
+        light: expectedReturn.variants.light?.color ?? null,
+      },
+      "a detected Python file keeps its grammar across appended source chunks",
+    );
+  } finally {
+    engine.dispose();
+    oracle.dispose();
+  }
+}
+
 async function measureDeepDiffRangeTokenizedLines(prefixLines: number): Promise<number> {
   const emitted: WorkerOut[] = [];
   const campaignCounters = new counterSinkModule.SessionCounterSink();
@@ -479,5 +589,6 @@ await runChunkedDiffNumberingTest();
 await runNestedChunkedDiffNumberingTest();
 await runNestedDiffRendererTest();
 await runNativeDiffMissingPrefixContextTest();
+await runDiffFileLanguageSurvivesChunkBoundaryTest();
 await runDiffCheckpointRangeLocalityCounterTest();
 console.log("worker-diff-tokenization test passed");

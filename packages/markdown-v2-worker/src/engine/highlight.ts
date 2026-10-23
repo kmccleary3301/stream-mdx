@@ -719,6 +719,7 @@ interface DiffGrammarTrackSnapshot {
   readonly [DIFF_GRAMMAR_TRACK_SNAPSHOT]: true;
   readonly old: unknown;
   readonly new: unknown;
+  readonly language: string;
 }
 
 interface DiffGrammarState {
@@ -780,7 +781,7 @@ export async function buildDiffTokenLines(
   const hasNewState = Object.prototype.hasOwnProperty.call(grammarState, "new");
   let oldGrammarState = hasOldState ? grammarState.old : storedTracks ? storedTracks.old : grammarState.context;
   let newGrammarState = hasNewState ? grammarState.new : storedTracks ? storedTracks.new : grammarState.context;
-  let currentLanguage = grammarState.language ?? language;
+  let currentLanguage = grammarState.language ?? storedTracks?.language ?? language;
   let currentKind: DiffLineInfo["kind"] | null = null;
   let currentRun: DiffLineInfo[] = [];
   let startIndex = 0;
@@ -857,6 +858,7 @@ export async function buildDiffTokenLines(
     [DIFF_GRAMMAR_TRACK_SNAPSHOT]: true as const,
     old: oldGrammarState,
     new: newGrammarState,
+    language: currentLanguage,
   });
   return { tokenLines, diffTokenLines, grammarState };
 }
