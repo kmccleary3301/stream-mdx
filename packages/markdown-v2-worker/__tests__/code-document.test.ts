@@ -1205,6 +1205,7 @@ async function runDeclaredHunkCountsReportDiffStatusTest(): Promise<void> {
       ["@@ -1 +1 @@\n-a\n+b", "complete", "an authored unterminated last row satisfies the hunk"],
       ["@@ -1,2 +1,2 @@\n-a\n+b\n@@ -9 +9 @@", "malformed", "an unterminated header abandoning owed rows is malformed"],
       ["@@ -invalid +1 @@\n", "malformed", "an invalid hunk header is malformed even with no owed rows"],
+      ["@@ malformed hunk\n", "malformed", "an invalid hunk header without a closing delimiter is malformed"],
     ];
     for (const [initialContent, status, reason] of statusCases) {
       const document = createCodeDocument({ language: "typescript", diff: true, initialContent });
