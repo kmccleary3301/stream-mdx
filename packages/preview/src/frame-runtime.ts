@@ -93,7 +93,10 @@ function runFrameRuntime(expectedGeneration: string, expectedCapability: string)
     if (priorRoot !== null) priorRoot.id = "root";
   }
   function waitForRenderOpportunity(): Promise<void> {
-    const { promise, resolve } = Promise.withResolvers<void>();
+    let resolve!: () => void;
+    const promise = new Promise<void>((fulfill) => {
+      resolve = fulfill;
+    });
     let settled = false;
     let timeoutId = 0;
     const finish = () => {

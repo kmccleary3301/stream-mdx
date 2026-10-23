@@ -47,6 +47,7 @@ class TestClock implements PreviewClock {
 class RecordingTransport implements PreviewTransport {
   generations: string[] = [];
   published: PreviewCandidate[] = [];
+  disposed = false;
   styleUpdates: Array<{
     identity: PreviewCandidate["identity"];
     candidateId: number;

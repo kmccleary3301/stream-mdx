@@ -24,6 +24,7 @@
   "scripts": {
     "build": "tsup && node ./scripts/build-react-vendor.mjs && node ./scripts/copy-esbuild-wasm.mjs",
     "test": "tsx --test src/__tests__/controller.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "demo": "node ./scripts/serve-demo.mjs"
   },
   "dependencies": {
