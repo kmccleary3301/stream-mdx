@@ -9,11 +9,16 @@ import type {
   PreviewIdentity,
   PreviewInput,
   PreviewState,
+  PreviewStyleUpdate,
 } from "./types";
 
 const encoder = new TextEncoder();
 const MAX_ERROR_MESSAGE = 4 * 1024;
 const PUBLICATION_WINDOW_MS = 1000;
+
+type ReadyPublication =
+  | Readonly<{ kind: "candidate"; candidate: PreviewCandidate; input: PreviewInput }>
+  | Readonly<{ kind: "styles"; update: PreviewStyleUpdate; input: PreviewInput }>;
 
 function publicationWait(now: number, publicationTimes: number[]): number {
   while (publicationTimes[0] !== undefined && publicationTimes[0] <= now - PUBLICATION_WINDOW_MS) {
@@ -27,6 +32,7 @@ const EMPTY_STATE: PreviewState = Object.freeze({
   compiled: null,
   candidateReady: null,
   visible: null,
+  styleResult: null,
   error: null,
 });
 
@@ -89,6 +95,22 @@ function validateProject(input: PreviewInput): PreviewInput {
   });
 }
 
+function isStylesOnlyRevision(previous: PreviewInput, next: PreviewInput): boolean {
+  if (previous.generation !== next.generation || previous.entry !== next.entry) return false;
+  let changed = false;
+  for (const [path, source] of previous.files) {
+    if (next.files.get(path) === source) continue;
+    if (!path.endsWith(".css")) return false;
+    changed = true;
+  }
+  for (const path of next.files.keys()) {
+    if (previous.files.has(path)) continue;
+    if (!path.endsWith(".css")) return false;
+    changed = true;
+  }
+  return changed;
+}
+
 function compiledCandidate(
   identity: PreviewIdentity,
   candidateId: number,
@@ -120,7 +142,8 @@ export function createPreviewController(options: PreviewControllerOptions): Prev
     input: PreviewInput;
     resolve: () => void;
   } | null = null;
-  let readyCandidate: PreviewCandidate | null = null;
+  let readyPublication: ReadyPublication | null = null;
+  let visibleInput: PreviewInput | null = null;
   let publicationTimer: (() => void) | null = null;
   let publishing = false;
   const publicationTimes: number[] = [];
@@ -148,7 +171,7 @@ export function createPreviewController(options: PreviewControllerOptions): Prev
   }
 
   function schedulePublication(): void {
-    if (disposed || publishing || readyCandidate === null || publicationTimer !== null) return;
+    if (disposed || publishing || readyPublication === null || publicationTimer !== null) return;
     const waitMs = publicationWait(clock.now(), publicationTimes);
     if (waitMs > 0) {
       publicationTimer = clock.schedule(() => {
@@ -161,9 +184,17 @@ export function createPreviewController(options: PreviewControllerOptions): Prev
   }
 
   async function publishReadyCandidate(): Promise<void> {
-    if (disposed || publishing || readyCandidate === null) return;
-    const candidate = readyCandidate;
-    if (!isCurrent(candidate.candidateId, candidate.identity)) return;
+    if (disposed || publishing || readyPublication === null) return;
+    const publication = readyPublication;
+    const candidateId =
+      publication.kind === "candidate"
+        ? publication.candidate.candidateId
+        : publication.update.candidateId;
+    const identity =
+      publication.kind === "candidate"
+        ? publication.candidate.identity
+        : publication.update.identity;
+    if (!isCurrent(candidateId, identity)) return;
 
     const waitMs = publicationWait(clock.now(), publicationTimes);
     if (waitMs > 0) {
@@ -173,26 +204,38 @@ export function createPreviewController(options: PreviewControllerOptions): Prev
 
     publishing = true;
     try {
-      const published = await options.transport.publish(candidate, () =>
-        isCurrent(candidate.candidateId, candidate.identity),
-      );
+      const isPublicationCurrent = () => isCurrent(candidateId, identity);
+      const published =
+        publication.kind === "candidate"
+          ? await options.transport.publish(publication.candidate, isPublicationCurrent)
+          : await options.transport.updateStyles(publication.update, isPublicationCurrent);
+      if (!isCurrent(candidateId, identity)) return;
       if (published) publicationTimes.push(clock.now());
-      if (!isCurrent(candidate.candidateId, candidate.identity)) return;
-      readyCandidate = null;
+      readyPublication = null;
       if (published) {
-        updateState({ visible: candidate.identity, candidateReady: null, error: null });
+        visibleInput = publication.input;
+        updateState({
+          visible: identity,
+          candidateReady: null,
+          error: null,
+          styleResult:
+            publication.kind === "styles" ? Object.freeze({ kind: "styles-updated", identity }) : null,
+        });
       } else {
         const failure: PreviewError = Object.freeze({
-          identity: candidate.identity,
-          message: "Preview candidate did not become visible",
+          identity,
+          message:
+            publication.kind === "styles"
+              ? "Preview stylesheet update did not become visible"
+              : "Preview candidate did not become visible",
         });
         updateState({ candidateReady: null, error: failure });
       }
     } catch (error) {
-      if (isCurrent(candidate.candidateId, candidate.identity)) {
-        readyCandidate = null;
+      if (isCurrent(candidateId, identity)) {
+        readyPublication = null;
         const failure: PreviewError = Object.freeze({
-          identity: candidate.identity,
+          identity,
           message: errorMessage(error),
         });
         updateState({ candidateReady: null, error: failure });
@@ -218,12 +261,23 @@ export function createPreviewController(options: PreviewControllerOptions): Prev
           if (!isCurrent(work.candidateId, work.identity)) continue;
           const candidate = compiledCandidate(work.identity, work.candidateId, output);
           if (!isCurrent(work.candidateId, work.identity)) continue;
-          readyCandidate = candidate;
+          readyPublication =
+            visibleInput !== null && isStylesOnlyRevision(visibleInput, work.input)
+              ? {
+                  kind: "styles",
+                  update: Object.freeze({
+                    identity: work.identity,
+                    candidateId: work.candidateId,
+                    css: candidate.css,
+                  }),
+                  input: work.input,
+                }
+              : { kind: "candidate", candidate, input: work.input };
           updateState({ compiled: work.identity, candidateReady: work.identity, error: null });
           schedulePublication();
         } catch (error) {
           if (isCurrent(work.candidateId, work.identity)) {
-            readyCandidate = null;
+            readyPublication = null;
             const failure: PreviewError = Object.freeze({
               identity: work.identity,
               message: errorMessage(error),
@@ -249,17 +303,25 @@ export function createPreviewController(options: PreviewControllerOptions): Prev
       generation = input.generation;
       pendingCompilation?.resolve();
       pendingCompilation = null;
-      readyCandidate = null;
+      readyPublication = null;
+      visibleInput = null;
       cancelPublicationTimer();
       options.transport.beginGeneration(input.generation);
-      updateState({ requested: null, compiled: null, candidateReady: null, visible: null, error: null });
+      updateState({
+        requested: null,
+        compiled: null,
+        candidateReady: null,
+        visible: null,
+        styleResult: null,
+        error: null,
+      });
     }
 
     pendingCompilation?.resolve();
     pendingCompilation = null;
-    readyCandidate = null;
+    readyPublication = null;
     cancelPublicationTimer();
-    updateState({ requested: identity, candidateReady: null, error: null });
+    updateState({ requested: identity, candidateReady: null, styleResult: null, error: null });
     options.transport.requested(input.generation, candidateId);
 
     let normalized: PreviewInput;
@@ -286,8 +348,7 @@ export function createPreviewController(options: PreviewControllerOptions): Prev
     nextCandidateId += 1;
     pendingCompilation?.resolve();
     pendingCompilation = null;
-    readyCandidate = null;
-    cancelPublicationTimer();
+    readyPublication = null;
     options.transport.dispose();
   }
 

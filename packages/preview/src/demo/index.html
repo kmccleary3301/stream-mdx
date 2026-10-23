@@ -18,9 +18,12 @@
     <header>
       <div>
         <h1>Local project preview</h1>
-        <p class="notice">This demo compiles on this machine and runs in an opaque, credential-free iframe.</p>
+        <p class="notice">This demo compiles locally in an opaque iframe. Update styles to preserve the counter, or update code to remount and reset it.</p>
       </div>
-      <button id="revise" type="button">Compile next revision</button>
+      <div class="controls">
+        <button id="revise-styles" type="button">Update styles (keep state)</button>
+        <button id="revise-code" type="button">Update code (reset state)</button>
+      </div>
     </header>
     <div id="status" aria-live="polite">Starting local compiler…</div>
     <div id="preview"></div>

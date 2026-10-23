@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createPreviewController } from "../index";
+import { createEsbuildCompiler, createPreviewController } from "../index";
 import type {
   CompiledPreview,
   PreviewCandidate,
@@ -47,7 +47,11 @@ class TestClock implements PreviewClock {
 class RecordingTransport implements PreviewTransport {
   generations: string[] = [];
   published: PreviewCandidate[] = [];
-  disposed = false;
+  styleUpdates: Array<{
+    identity: PreviewCandidate["identity"];
+    candidateId: number;
+    css: string;
+  }> = [];
   failRevision: string | null = null;
 
   beginGeneration(generation: string): void {
@@ -60,6 +64,14 @@ class RecordingTransport implements PreviewTransport {
     if (!isCurrent()) return false;
     if (candidate.identity.revision === this.failRevision) throw new Error("frame render failure");
     this.published.push(candidate);
+    return true;
+  }
+  async updateStyles(
+    update: { identity: PreviewCandidate["identity"]; candidateId: number; css: string },
+    isCurrent: () => boolean,
+  ): Promise<boolean> {
+    if (!isCurrent()) return false;
+    this.styleUpdates.push(update);
     return true;
   }
 
@@ -192,4 +204,142 @@ test("preview revisions reject stale work, preserve visible identity, coalesce, 
   assert.equal(disposalTransport.published.length, 0, "disposed controllers do not publish late compiler results");
   assert.equal(compileCalls, 1, "disposed controllers do not start more compilations");
   assert.equal(disposalTransport.disposed, true);
+});
+function multiFileProject(generation: string, revision: string): PreviewInput {
+  return {
+    generation,
+    revision,
+    entry: "src/main.tsx",
+    files: new Map([
+      [
+        "src/main.tsx",
+        [
+          'import { Button } from "./components";',
+          'import { add } from "../lib/util";',
+          'import javascriptValue from "./javascript";',
+          'import jsxValue from "./jsx";',
+          'import config from "./data/config";',
+          'import "./styles";',
+          "export function App() {",
+          "  return <Button label={`${add(config.base, 2)}:${javascriptValue}:${jsxValue}`} />;",
+          "}",
+        ].join("\n"),
+      ],
+      ["src/components/index.tsx", 'export { Button } from "./Button";'],
+      [
+        "src/components/Button.tsx",
+        'export function Button({ label }: { label: string }) { return <button className="multi-file">{label}</button>; }',
+      ],
+      ["src/javascript/index.js", 'export default "from-js";'],
+      ["src/jsx/index.jsx", 'export default "from-jsx";'],
+      ["src/data/config.json", '{"base":40}'],
+      ["src/styles.css", ".multi-file { color: rgb(12, 34, 56); }"],
+      ["lib/util.ts", "export function add(left: number, right: number) { return left + right; }"],
+    ]),
+  };
+}
+
+test("preview compiler bundles nested local TSX, TS, JS, JSX, JSON, and CSS imports", async () => {
+  const transport = new RecordingTransport();
+  const compiler = createEsbuildCompiler({
+    wasmURL: new URL("../../dist/esbuild.wasm", import.meta.url),
+  });
+  const controller = createPreviewController({ transport, compile: compiler });
+
+  await controller.request(multiFileProject("multi-file", "first"));
+
+  assert.deepEqual(
+    controller.getState().visible,
+    { generation: "multi-file", revision: "first" },
+    controller.getState().error?.message,
+  );
+  assert.match(transport.published[0]?.javascript ?? "", /from-js/);
+  assert.match(transport.published[0]?.javascript ?? "", /from-jsx/);
+  assert.match(transport.published[0]?.css ?? "", /rgb\(12, 34, 56\)/);
+  controller.dispose();
+});
+
+test("unresolved local imports name their importer and keep the last valid preview", async () => {
+  const transport = new RecordingTransport();
+  const compiler = createEsbuildCompiler({
+    wasmURL: new URL("../../dist/esbuild.wasm", import.meta.url),
+  });
+  const controller = createPreviewController({ transport, compile: compiler });
+  const valid = multiFileProject("import-error", "valid");
+  await controller.request(valid);
+
+  const brokenFiles = new Map(valid.files);
+  brokenFiles.set(
+    "src/components/Button.tsx",
+    'import { missing } from "./missing"; export function Button() { return missing; }',
+  );
+  await controller.request({ ...valid, revision: "broken", files: brokenFiles });
+
+  assert.deepEqual(controller.getState().visible, {
+    generation: "import-error",
+    revision: "valid",
+  });
+  assert.match(
+    controller.getState().error?.message ?? "",
+    /Preview project import "\.\/missing" from "src\/components\/Button\.tsx" was not found/,
+  );
+  controller.dispose();
+});
+
+test("CSS-only revisions publish styles in place while code revisions publish a fresh candidate", async () => {
+  const transport = new RecordingTransport();
+  const controller = createPreviewController({
+    transport,
+    async compile(input) {
+      return {
+        javascript: input.files.get("App.tsx") ?? "",
+        css: input.files.get("styles.css") ?? "",
+      };
+    },
+  });
+  const base: PreviewInput = {
+    generation: "style-lifecycle",
+    revision: "base",
+    entry: "App.tsx",
+    files: new Map([
+      ["App.tsx", 'export const label = "base";'],
+      ["styles.css", ".card { color: red; }"],
+    ]),
+  };
+  await controller.request(base);
+  await flushMicrotasks();
+
+  const styleFiles = new Map(base.files);
+  styleFiles.set("styles.css", ".card { color: blue; }");
+  await controller.request({ ...base, revision: "styles", files: styleFiles });
+  await flushMicrotasks();
+
+  assert.deepEqual(
+    transport.published.map(({ identity }) => identity.revision),
+    ["base"],
+  );
+  assert.equal(transport.styleUpdates.length, 1);
+  assert.deepEqual(controller.getState().styleResult, {
+    kind: "styles-updated",
+    identity: { generation: "style-lifecycle", revision: "styles" },
+  });
+  assert.deepEqual(controller.getState().visible, {
+    generation: "style-lifecycle",
+    revision: "styles",
+  });
+
+  const codeFiles = new Map(styleFiles);
+  codeFiles.set("App.tsx", 'export const label = "changed";');
+  await controller.request({ ...base, revision: "code", files: codeFiles });
+  await flushMicrotasks();
+  assert.deepEqual(
+    transport.published.map(({ identity }) => identity.revision),
+    ["base", "code"],
+  );
+  assert.equal(controller.getState().styleResult, null);
+  assert.deepEqual(controller.getState().visible, {
+    generation: "style-lifecycle",
+    revision: "code",
+  });
+  controller.dispose();
 });

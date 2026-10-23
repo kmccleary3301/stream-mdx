@@ -13,6 +13,8 @@ export type {
   PreviewControllerOptions,
   PreviewError,
   PreviewIdentity,
+  PreviewStyleResult,
+  PreviewStyleUpdate,
   PreviewInput,
   PreviewState,
   PreviewTransport,

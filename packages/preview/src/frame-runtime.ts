@@ -21,6 +21,7 @@ function runFrameRuntime(expectedGeneration: string, expectedCapability: string)
   let port: MessagePort | null = null;
   let latestCandidateId = 0;
   let pendingCandidate: {
+    kind: "candidate" | "styles";
     candidateId: number;
     revision: string;
     javascriptBytes: number;
@@ -107,7 +108,7 @@ function runFrameRuntime(expectedGeneration: string, expectedCapability: string)
   }
 
   async function mountCandidate(candidate: NonNullable<typeof pendingCandidate>): Promise<void> {
-    if (candidate.candidateId !== latestCandidateId || !candidate.ready) return;
+    if (candidate.kind !== "candidate" || candidate.candidateId !== latestCandidateId || !candidate.ready) return;
     activeRuntimeCandidate = {
       candidateId: candidate.candidateId,
       revision: candidate.revision,
@@ -169,6 +170,63 @@ function runFrameRuntime(expectedGeneration: string, expectedCapability: string)
     }
   }
 
+  function updateStyles(candidate: NonNullable<typeof pendingCandidate>): void {
+    const runtime = activeRuntimeCandidate;
+    if (candidate.candidateId !== latestCandidateId || !candidate.ready || candidate.kind !== "styles") return;
+    if (activeStyle === null || runtime === null || failedRuntimeCandidateId === runtime.candidateId) {
+      pendingCandidate = null;
+      sendFailure(
+        candidate.candidateId,
+        candidate.revision,
+        new Error("Preview stylesheet cannot update before a healthy preview is visible"),
+      );
+      return;
+    }
+    const style = document.createElement("style");
+    style.media = "not all";
+    style.textContent = candidate.css;
+    document.head.append(style);
+    style.media = "all";
+    activeStyle.remove();
+    activeStyle = style;
+    activeRuntimeCandidate = {
+      candidateId: candidate.candidateId,
+      revision: candidate.revision,
+    };
+    failedRuntimeCandidateId = null;
+    pendingCandidate = null;
+    send({
+      type: "styles-updated",
+      generation: expectedGeneration,
+      candidateId: candidate.candidateId,
+      revision: candidate.revision,
+    });
+  }
+
+  function decodeTransfer(candidate: NonNullable<typeof pendingCandidate>): boolean {
+    const javascriptSize = candidate.javascriptChunks.reduce((total, chunk) => total + chunk.byteLength, 0);
+    const cssSize = candidate.cssChunks.reduce((total, chunk) => total + chunk.byteLength, 0);
+    if (
+      javascriptSize !== candidate.javascriptBytes ||
+      cssSize !== candidate.cssBytes ||
+      candidate.receivedBytes !== candidate.javascriptBytes + candidate.cssBytes
+    ) {
+      pendingCandidate = null;
+      sendFailure(candidate.candidateId, candidate.revision, new Error("Incomplete preview output transfer"));
+      return false;
+    }
+    try {
+      candidate.javascript = decodeChunks(candidate.javascriptChunks, javascriptSize);
+      candidate.css = decodeChunks(candidate.cssChunks, cssSize);
+      candidate.ready = true;
+      return true;
+    } catch (error) {
+      pendingCandidate = null;
+      sendFailure(candidate.candidateId, candidate.revision, error);
+      return false;
+    }
+  }
+
   function decodeChunks(chunks: ArrayBuffer[], byteCount: number): string {
     const joined = new Uint8Array(byteCount);
     let offset = 0;
@@ -192,10 +250,11 @@ function runFrameRuntime(expectedGeneration: string, expectedCapability: string)
       return;
     }
 
-    if (message.type === "start") {
+    if (message.type === "start" || message.type === "styles-start") {
       const candidateId = message.candidateId;
       const revision = message.revision;
-      const javascriptBytes = message.javascriptBytes;
+      const kind = message.type === "styles-start" ? "styles" : "candidate";
+      const javascriptBytes = message.type === "styles-start" ? 0 : message.javascriptBytes;
       const cssBytes = message.cssBytes;
       if (
         !Number.isSafeInteger(candidateId) ||
@@ -210,6 +269,7 @@ function runFrameRuntime(expectedGeneration: string, expectedCapability: string)
         return;
       }
       pendingCandidate = {
+        kind,
         candidateId: candidateId as number,
         revision,
         javascriptBytes: javascriptBytes as number,
@@ -223,6 +283,7 @@ function runFrameRuntime(expectedGeneration: string, expectedCapability: string)
       };
       return;
     }
+
 
     if (message.type === "chunk") {
       const candidate = pendingCandidate;
@@ -245,37 +306,37 @@ function runFrameRuntime(expectedGeneration: string, expectedCapability: string)
       return;
     }
 
-    if (message.type === "finish") {
+    if (message.type === "finish" || message.type === "styles-finish") {
       const candidate = pendingCandidate;
-      if (candidate === null || message.candidateId !== candidate.candidateId) return;
-      const javascriptSize = candidate.javascriptChunks.reduce((total, chunk) => total + chunk.byteLength, 0);
-      const cssSize = candidate.cssChunks.reduce((total, chunk) => total + chunk.byteLength, 0);
-      if (javascriptSize !== candidate.javascriptBytes || cssSize !== candidate.cssBytes) {
-        pendingCandidate = null;
-        sendFailure(candidate.candidateId, candidate.revision, new Error("Incomplete preview output transfer"));
+      const kind = message.type === "styles-finish" ? "styles" : "candidate";
+      if (
+        candidate === null ||
+        message.candidateId !== candidate.candidateId ||
+        candidate.kind !== kind ||
+        !decodeTransfer(candidate)
+      ) {
         return;
       }
-      try {
-        candidate.javascript = decodeChunks(candidate.javascriptChunks, javascriptSize);
-        candidate.css = decodeChunks(candidate.cssChunks, cssSize);
-        candidate.ready = true;
-        send({
-          type: "candidate-ready",
-          generation: expectedGeneration,
-          candidateId: candidate.candidateId,
-          revision: candidate.revision,
-        });
-      } catch (error) {
-        pendingCandidate = null;
-        sendFailure(candidate.candidateId, candidate.revision, error);
-      }
+      send({
+        type: candidate.kind === "styles" ? "styles-ready" : "candidate-ready",
+        generation: expectedGeneration,
+        candidateId: candidate.candidateId,
+        revision: candidate.revision,
+      });
       return;
     }
 
-    if (message.type === "commit") {
+    if (message.type === "commit" || message.type === "styles-commit") {
       const candidate = pendingCandidate;
-      if (candidate !== null && message.candidateId === candidate.candidateId && candidate.ready) {
-        void mountCandidate(candidate);
+      const kind = message.type === "styles-commit" ? "styles" : "candidate";
+      if (
+        candidate !== null &&
+        candidate.kind === kind &&
+        message.candidateId === candidate.candidateId &&
+        candidate.ready
+      ) {
+        if (candidate.kind === "styles") updateStyles(candidate);
+        else void mountCandidate(candidate);
       }
       return;
     }

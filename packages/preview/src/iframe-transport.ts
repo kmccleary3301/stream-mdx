@@ -1,6 +1,6 @@
 import { createFrameDocument, MAX_CHUNK_BYTES } from "./frame-runtime";
 import { PREVIEW_LIMITS } from "./types";
-import type { PreviewCandidate, PreviewState, PreviewTransport } from "./types";
+import type { PreviewCandidate, PreviewState, PreviewStyleUpdate, PreviewTransport } from "./types";
 
 const encoder = new TextEncoder();
 
@@ -27,6 +27,8 @@ function createReactRuntimeURLs(coreURL: URL): ReactRuntimeURLs {
 type FrameReply =
   | Readonly<{ kind: "ready" }>
   | Readonly<{ kind: "visible"; value: boolean }>
+  | Readonly<{ kind: "styles-ready"; value: boolean }>
+  | Readonly<{ kind: "styles-updated"; value: boolean }>
   | Readonly<{ kind: "error"; message: string }>;
 
 type Deferred<T> = Readonly<{
@@ -37,6 +39,12 @@ type Deferred<T> = Readonly<{
 type CandidateWaiter = Readonly<{
   ready: Deferred<FrameReply>;
   visible: Deferred<FrameReply>;
+}>;
+
+type StyleWaiter = Readonly<{
+  revision: string;
+  ready: Deferred<FrameReply>;
+  updated: Deferred<FrameReply>;
 }>;
 
 type FrameSession = {
@@ -114,6 +122,7 @@ export class IframePreviewTransport implements PreviewTransport {
   #candidateSession: FrameSession | null = null;
   #activeCancellation: (() => void) | null = null;
   #waiters = new Map<number, CandidateWaiter>();
+  #styleWaiters = new Map<number, StyleWaiter>();
 
   constructor(container: HTMLElement, reactRuntimeURL: string | URL) {
     this.#container = container;
@@ -123,6 +132,7 @@ export class IframePreviewTransport implements PreviewTransport {
 
   beginGeneration(generation: string): void {
     this.#cancelCandidate();
+    this.#cancelStyleUpdates();
     this.#removeSession(this.#visibleSession);
     this.#visibleSession = null;
     this.#generation = generation;
@@ -134,6 +144,12 @@ export class IframePreviewTransport implements PreviewTransport {
     if (this.#generation !== generation) return;
     this.#latestCandidateId = candidateId;
     this.#cancelCandidate();
+    const cancelStyles = this.#styleWaiters.size > 0;
+    this.#cancelStyleUpdates();
+    const port = this.#visibleSession?.port;
+    if (cancelStyles && port !== null && port !== undefined) {
+      postBounded(port, { type: "request", generation, candidateId });
+    }
   }
 
   async publish(candidate: PreviewCandidate, isCurrent: () => boolean): Promise<boolean> {
@@ -165,13 +181,94 @@ export class IframePreviewTransport implements PreviewTransport {
     }
   }
 
+  async updateStyles(update: PreviewStyleUpdate, isCurrent: () => boolean): Promise<boolean> {
+    const session = this.#visibleSession;
+    const port = session?.port ?? null;
+    if (
+      session === null ||
+      port === null ||
+      session.generation !== update.identity.generation ||
+      this.#generation !== update.identity.generation ||
+      update.candidateId !== this.#latestCandidateId ||
+      !isCurrent()
+    ) {
+      return false;
+    }
+    const css = encoder.encode(update.css);
+    if (css.byteLength > PREVIEW_LIMITS.outputBytes) {
+      throw new Error(`Compiled preview output exceeds ${PREVIEW_LIMITS.outputBytes} bytes`);
+    }
+
+    const waiter: StyleWaiter = {
+      revision: update.identity.revision,
+      ready: deferred<FrameReply>(),
+      updated: deferred<FrameReply>(),
+    };
+    this.#styleWaiters.set(update.candidateId, waiter);
+    try {
+      postBounded(port, {
+        type: "request",
+        generation: update.identity.generation,
+        candidateId: update.candidateId,
+      });
+      postBounded(port, {
+        type: "styles-start",
+        generation: update.identity.generation,
+        candidateId: update.candidateId,
+        revision: update.identity.revision,
+        cssBytes: css.byteLength,
+      });
+      this.#postChunks(port, update, "css", css);
+      postBounded(port, {
+        type: "styles-finish",
+        generation: update.identity.generation,
+        candidateId: update.candidateId,
+      });
+      const ready = await waiter.ready.promise;
+      if (ready.kind === "error") throw new Error(ready.message);
+      if (
+        ready.kind !== "styles-ready" ||
+        !ready.value ||
+        !isCurrent() ||
+        this.#visibleSession !== session
+      ) {
+        return false;
+      }
+      postBounded(port, {
+        type: "styles-commit",
+        generation: update.identity.generation,
+        candidateId: update.candidateId,
+      });
+      const reply = await waiter.updated.promise;
+      if (reply.kind === "error") throw new Error(reply.message);
+      return (
+        reply.kind === "styles-updated" &&
+        reply.value &&
+        isCurrent() &&
+        this.#visibleSession === session
+      );
+    } finally {
+      if (this.#styleWaiters.get(update.candidateId) === waiter) {
+        this.#styleWaiters.delete(update.candidateId);
+      }
+    }
+  }
+
   dispose(): void {
     this.#cancelCandidate();
+    this.#cancelStyleUpdates();
     this.#removeSession(this.#visibleSession);
     this.#visibleSession = null;
     this.#generation = null;
   }
 
+  #cancelStyleUpdates(): void {
+    for (const waiter of this.#styleWaiters.values()) {
+      waiter.ready.resolve({ kind: "styles-ready", value: false });
+      waiter.updated.resolve({ kind: "styles-updated", value: false });
+    }
+    this.#styleWaiters.clear();
+  }
   #cancelCandidate(): void {
     this.#activeCancellation?.();
     this.#activeCancellation = null;
@@ -345,7 +442,7 @@ export class IframePreviewTransport implements PreviewTransport {
 
   #postChunks(
     port: MessagePort,
-    candidate: PreviewCandidate,
+    candidate: Pick<PreviewCandidate, "identity" | "candidateId"> | PreviewStyleUpdate,
     section: "javascript" | "css",
     bytes: Uint8Array,
   ): void {
@@ -390,7 +487,7 @@ export class IframePreviewTransport implements PreviewTransport {
   }
 
   #receive(session: FrameSession, value: unknown): void {
-    if (session !== this.#candidateSession) return;
+    if (session !== this.#candidateSession && session !== this.#visibleSession) return;
     const message = objectRecord(value);
     if (message === null || boundedMessageSize(message) > PREVIEW_LIMITS.messageBytes) return;
     if (message.generation !== session.generation || typeof message.type !== "string") return;
@@ -399,26 +496,50 @@ export class IframePreviewTransport implements PreviewTransport {
       session.resolveReady = null;
       return;
     }
-    if (!Number.isSafeInteger(message.candidateId)) return;
-    const waiter = this.#waiters.get(message.candidateId as number);
-    if (waiter === undefined || typeof message.revision !== "string") return;
-    if (message.type === "candidate-ready") {
-      waiter.ready.resolve({ kind: "ready" });
+    if (!Number.isSafeInteger(message.candidateId) || typeof message.revision !== "string") return;
+    const candidateId = message.candidateId as number;
+    const candidateWaiter = this.#waiters.get(candidateId);
+    const styleWaiter = this.#styleWaiters.get(candidateId);
+
+    if (message.type === "candidate-ready" && candidateWaiter !== undefined) {
+      candidateWaiter.ready.resolve({ kind: "ready" });
       return;
     }
-    if (message.type === "visible") {
-      waiter.visible.resolve({ kind: "visible", value: true });
+    if (message.type === "visible" && candidateWaiter !== undefined) {
+      candidateWaiter.visible.resolve({ kind: "visible", value: true });
       return;
     }
-    if (message.type === "discarded") {
-      waiter.visible.resolve({ kind: "visible", value: false });
+    if (message.type === "discarded" && candidateWaiter !== undefined) {
+      candidateWaiter.visible.resolve({ kind: "visible", value: false });
+      return;
+    }
+    if (
+      message.type === "styles-ready" &&
+      styleWaiter !== undefined &&
+      message.revision === styleWaiter.revision
+    ) {
+      styleWaiter.ready.resolve({ kind: "styles-ready", value: true });
+      return;
+    }
+    if (
+      message.type === "styles-updated" &&
+      styleWaiter !== undefined &&
+      message.revision === styleWaiter.revision
+    ) {
+      styleWaiter.updated.resolve({ kind: "styles-updated", value: true });
       return;
     }
     if (message.type === "error" && typeof message.message === "string") {
       const reply: FrameReply = { kind: "error", message: message.message.slice(0, 4 * 1024) };
-      waiter.ready.resolve(reply);
-      waiter.visible.resolve(reply);
-      this.#cancelCandidate();
+      if (candidateWaiter !== undefined) {
+        candidateWaiter.ready.resolve(reply);
+        candidateWaiter.visible.resolve(reply);
+      }
+      if (styleWaiter !== undefined && message.revision === styleWaiter.revision) {
+        styleWaiter.ready.resolve(reply);
+        styleWaiter.updated.resolve(reply);
+      }
+      if (session === this.#candidateSession) this.#cancelCandidate();
     }
   }
 }

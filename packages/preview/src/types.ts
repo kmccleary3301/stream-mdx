@@ -30,6 +30,17 @@ export type PreviewCandidate = Readonly<{
   css: string;
 }>;
 
+export type PreviewStyleUpdate = Readonly<{
+  identity: PreviewIdentity;
+  candidateId: number;
+  css: string;
+}>;
+
+export type PreviewStyleResult = Readonly<{
+  kind: "styles-updated";
+  identity: PreviewIdentity;
+}>;
+
 export type PreviewError = Readonly<{
   identity: PreviewIdentity;
   message: string;
@@ -40,6 +51,7 @@ export type PreviewState = Readonly<{
   compiled: PreviewIdentity | null;
   candidateReady: PreviewIdentity | null;
   visible: PreviewIdentity | null;
+  styleResult: PreviewStyleResult | null;
   error: PreviewError | null;
 }>;
 
@@ -50,6 +62,7 @@ export interface PreviewTransport {
   beginGeneration(generation: string): void;
   requested(generation: string, candidateId: number): void;
   publish(candidate: PreviewCandidate, isCurrent: () => boolean): Promise<boolean>;
+  updateStyles(update: PreviewStyleUpdate, isCurrent: () => boolean): Promise<boolean>;
   dispose(): void;
 }
 

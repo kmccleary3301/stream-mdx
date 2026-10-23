@@ -61,12 +61,24 @@ function virtualProjectPlugin(input: PreviewInput): Plugin {
         if (args.kind === "entry-point") return { path: input.entry, namespace: "preview-project" };
         if (REACT_RUNTIME_IMPORTS.has(args.path)) return { path: args.path, external: true };
         if (!args.path.startsWith(".") || args.path.includes("\\")) {
-          return { errors: [{ text: `Preview dependency is not in the local runtime map: ${args.path}` }] };
+          return {
+            errors: [
+              {
+                text: `Preview dependency "${args.path}" imported by "${args.importer}" is not in the local runtime map`,
+              },
+            ],
+          };
         }
         const path = resolveProjectPath(args.path, args.importer);
         const resolved = path === null ? null : findProjectFile(path, input.files);
         if (resolved === null) {
-          return { errors: [{ text: `Preview project import was not found: ${args.path}` }] };
+          return {
+            errors: [
+              {
+                text: `Preview project import "${args.path}" from "${args.importer}" was not found`,
+              },
+            ],
+          };
         }
         return { path: resolved, namespace: "preview-project" };
       });
@@ -89,7 +101,10 @@ async function initializeEsbuild(wasmURL: string | URL): Promise<void> {
   }
 
   initializationURL = url;
-  const pending = esbuild.initialize({ wasmURL, worker: false });
+  const pending =
+    typeof window === "undefined"
+      ? esbuild.initialize({})
+      : esbuild.initialize({ wasmURL, worker: false });
   initialization = pending;
   try {
     await pending;
