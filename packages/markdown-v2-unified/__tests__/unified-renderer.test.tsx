@@ -527,15 +527,30 @@ async function runTests() {
   // Test 11: Key change while pending immediately shows new default, NOT stale previous async result
   {
     console.log("Test 11: Key change while pending immediately shows new default...");
+    function createGate() {
+      let resolve!: () => void;
+      const promise = new Promise<void>((resolvePromise) => {
+        resolve = resolvePromise;
+      });
+      return { promise, resolve };
+    }
+
+    const keyK1 = { started: createGate(), release: createGate(), transformed: createGate() };
+    const keyK2 = { started: createGate(), release: createGate(), transformed: createGate() };
+
     function slowKeyPlugin() {
       return (tree: unknown) => {
-        return new Promise<void>((resolve) => {
-          setTimeout(() => {
-            visit(tree as Node, "text", (node: { value: string }) => {
-              node.value = node.value + " [TRANSFORMED]";
-            });
-            resolve();
-          }, 50);
+        let raw = "";
+        visit(tree as Node, "text", (node: { value: string }) => {
+          raw += node.value;
+        });
+        const gate = raw.includes("Alpha") ? keyK1 : keyK2;
+        gate.started.resolve();
+        return gate.release.promise.then(() => {
+          visit(tree as Node, "text", (node: { value: string }) => {
+            node.value = node.value + " [TRANSFORMED]";
+          });
+          gate.transformed.resolve();
         });
       };
     }
@@ -556,13 +571,29 @@ async function runTests() {
     };
     const defaultK1 = React.createElement("p", null, "Default Alpha");
 
-    // Render K1 (triggers 50ms slow async job)
+    const waitForText = (expected: string): Promise<void> => {
+      if (container.textContent === expected) return Promise.resolve();
+      return new Promise<void>((resolve, reject) => {
+        const observer = new dom.window.MutationObserver(() => {
+          if (container.textContent !== expected) return;
+          clearTimeout(timeout);
+          observer.disconnect();
+          resolve();
+        });
+        const timeout = setTimeout(() => {
+          observer.disconnect();
+          reject(new Error(`Timed out waiting for ${JSON.stringify(expected)}`));
+        }, 10000);
+        observer.observe(container, { childList: true, characterData: true, subtree: true });
+      });
+    };
+
+    // The plugin gate keeps K1 pending until after the key switch.
+    const defaultAlphaVisible = waitForText("Default Alpha");
     root.render(unifiedRenderer({ block: blockK1, element: defaultK1 }));
-    await delay(5);
+    await Promise.all([keyK1.started.promise, defaultAlphaVisible]);
     assert.strictEqual(container.textContent, "Default Alpha");
 
-    // At 15ms, while K1 is still pending, key changes to K2
-    await delay(10);
     const blockK2: Block = {
       id: "p-key-switch",
       type: "paragraph",
@@ -571,9 +602,9 @@ async function runTests() {
     };
     const defaultK2 = React.createElement("p", null, "Default Beta");
 
-    // Rerender with K2
+    const defaultBetaVisible = waitForText("Default Beta");
     root.render(unifiedRenderer({ block: blockK2, element: defaultK2 }));
-    await delay(5);
+    await Promise.all([keyK2.started.promise, defaultBetaVisible]);
 
     // Container MUST immediately show Default Beta, not stale previous pending or async result
     assert.strictEqual(
@@ -582,8 +613,11 @@ async function runTests() {
       "Key change while pending must immediately display new default element",
     );
 
-    // After K2 completes (at 15ms + 50ms = 65ms total), it displays K2 transformed output
-    await delay(60);
+    keyK1.release.resolve();
+    await keyK1.transformed.promise;
+    const transformedBetaVisible = waitForText("Content Beta [TRANSFORMED]");
+    keyK2.release.resolve();
+    await Promise.all([keyK2.transformed.promise, transformedBetaVisible]);
     assert.strictEqual(
       container.textContent,
       "Content Beta [TRANSFORMED]",
