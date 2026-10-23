@@ -22,6 +22,10 @@ const routes = new Map([
   ["/preview/vendor/react-jsx-runtime.mjs", previewModule("vendor/react-jsx-runtime.mjs")],
   ["/preview/vendor/react-jsx-dev-runtime.mjs", previewModule("vendor/react-jsx-dev-runtime.mjs")],
   ["/preview/esbuild.wasm", { file: join(packageRoot, "dist/esbuild.wasm"), contentType: "application/wasm", cors: true }],
+  ["/preview/tailwindcss/index.css", { file: join(packageRoot, "dist/tailwindcss/index.css"), contentType: "text/css; charset=utf-8" }],
+  ["/preview/tailwindcss/theme.css", { file: join(packageRoot, "dist/tailwindcss/theme.css"), contentType: "text/css; charset=utf-8" }],
+  ["/preview/tailwindcss/preflight.css", { file: join(packageRoot, "dist/tailwindcss/preflight.css"), contentType: "text/css; charset=utf-8" }],
+  ["/preview/tailwindcss/utilities.css", { file: join(packageRoot, "dist/tailwindcss/utilities.css"), contentType: "text/css; charset=utf-8" }],
 ]);
 
 const server = createServer(async (request, response) => {

@@ -4,6 +4,7 @@ export const PREVIEW_LIMITS = Object.freeze({
   outputBytes: 16 * 1024 * 1024,
   messageBytes: 64 * 1024,
   publicationsPerSecond: 4,
+  variants: 4,
 });
 
 export type PreviewIdentity = Readonly<{
@@ -18,6 +19,11 @@ export type PreviewInput = Readonly<{
   entry: string;
 }>;
 
+export type TailwindStylesheetName = "index.css" | "theme.css" | "preflight.css" | "utilities.css";
+export type TailwindStylesheetLoader = (
+  name: TailwindStylesheetName,
+  context: PreviewCompileContext,
+) => Promise<string>;
 export type CompiledPreview = Readonly<{
   javascript: string;
   css?: string;

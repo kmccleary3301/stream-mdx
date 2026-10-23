@@ -5,20 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>StreamMDX local preview</title>
     <style>
-      :root { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
-      body { max-width: 960px; margin: 32px auto; padding: 0 20px; }
+      :root { color-scheme: light; font: 16px/1.5 system-ui, sans-serif; }
+      body { max-width: 1280px; margin: 32px auto; padding: 0 20px; color: #172033; background: #f8fafc; }
       header, .controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-      .notice { color: #596579; }
-      button { border: 0; border-radius: 8px; padding: 10px 14px; font: inherit; cursor: pointer; }
-      #status { margin: 16px 0; min-height: 48px; white-space: pre-wrap; font: 13px/1.5 ui-monospace, monospace; }
-      #preview { overflow: hidden; border: 1px solid #94a3b8; border-radius: 10px; }
+      header { align-items: start; }
+      .controls { flex-wrap: wrap; }
+      .notice { max-width: 680px; color: #596579; }
+      button { border: 0; border-radius: 8px; padding: 10px 14px; font: inherit; cursor: pointer; background: #1d4ed8; color: white; }
+      #status { margin: 16px 0 8px; min-height: 48px; white-space: pre-wrap; font: 13px/1.5 ui-monospace, monospace; }
+      #host-style-audit { display: block; margin-bottom: 16px; color: #475569; font: 12px/1.5 ui-monospace, monospace; }
+      #host-style-audit[data-result="fail"] { color: #b91c1c; }
+      #preview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+      .stream-mdx-preview-variant { min-width: 0; overflow: hidden; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; background: white; }
+      .stream-mdx-preview-variant h2 { margin: 0 0 12px; font-size: 14px; }
+      .stream-mdx-preview-variant__frame { overflow: hidden; border: 1px solid #94a3b8; border-radius: 10px; }
+      @media (max-width: 760px) {
+        header { flex-direction: column; }
+        #preview { grid-template-columns: minmax(0, 1fr); }
+      }
     </style>
   </head>
   <body>
     <header>
       <div>
         <h1>Local project preview</h1>
-        <p class="notice">This demo compiles locally in an opaque iframe. Update styles to preserve the counter, or update code to remount and reset it.</p>
+        <p class="notice">This demo compiles locally in opaque, isolated frames. Update styles to preserve each counter, or update code to remount and reset both.</p>
       </div>
       <div class="controls">
         <button id="revise-styles" type="button">Update styles (keep state)</button>
@@ -26,6 +37,7 @@
       </div>
     </header>
     <div id="status" aria-live="polite">Starting local compiler…</div>
+    <output id="host-style-audit" aria-live="polite">Host style audit pending.</output>
     <div id="preview"></div>
     <script type="module" src="/demo.js"></script>
   </body>

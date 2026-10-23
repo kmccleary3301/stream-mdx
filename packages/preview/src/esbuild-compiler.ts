@@ -1,8 +1,12 @@
 import * as esbuild from "esbuild-wasm";
 import type { Plugin } from "esbuild-wasm";
-import type { PreviewCompiler, PreviewInput } from "./types";
+import { compile as compileTailwind } from "tailwindcss";
+import type { PreviewCompiler, PreviewInput, TailwindStylesheetLoader, TailwindStylesheetName } from "./types";
 
-export type EsbuildCompilerOptions = Readonly<{ wasmURL: string | URL }>;
+export type EsbuildCompilerOptions = Readonly<{
+  wasmURL: string | URL;
+  loadTailwindStylesheet?: TailwindStylesheetLoader;
+}>;
 
 const REACT_RUNTIME_IMPORTS = new Set([
   "react",
@@ -11,7 +15,15 @@ const REACT_RUNTIME_IMPORTS = new Set([
   "react/jsx-runtime",
   "react/jsx-dev-runtime",
 ]);
+const TAILWIND_STYLESHEETS = new Map<string, TailwindStylesheetName>([
+  ["tailwindcss", "index.css"],
+  ["tailwindcss/index.css", "index.css"],
+  ["tailwindcss/theme.css", "theme.css"],
+  ["tailwindcss/preflight.css", "preflight.css"],
+  ["tailwindcss/utilities.css", "utilities.css"],
+]);
 const SOURCE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".json", ".css"] as const;
+const CLASS_STRING = /["'`]([^"'`\r\n]*?)["'`]/g;
 let initializationURL: string | null = null;
 let initialization: Promise<void> | null = null;
 
@@ -53,7 +65,55 @@ function sourceLoader(path: string): "tsx" | "ts" | "jsx" | "js" | "json" | "css
   return "dataurl";
 }
 
-function virtualProjectPlugin(input: PreviewInput): Plugin {
+function tailwindCandidates(files: ReadonlyMap<string, string>): string[] {
+  const candidates = new Set<string>();
+  for (const source of files.values()) {
+    for (const match of source.matchAll(CLASS_STRING)) {
+      for (const candidate of match[1].split(/\s+/)) {
+        if (candidate.length > 0) candidates.add(candidate);
+      }
+    }
+  }
+  return [...candidates].sort();
+}
+
+async function compileProjectStyles(
+  path: string,
+  source: string,
+  input: PreviewInput,
+  loadTailwindStylesheet: TailwindStylesheetLoader | undefined,
+  isCurrent: () => boolean,
+): Promise<string> {
+  if (loadTailwindStylesheet === undefined) {
+    throw new Error("Tailwind CSS imports require a local stylesheet loader");
+  }
+  const compiler = await compileTailwind(source, {
+    base: path,
+    loadStylesheet: async (id, base) => {
+      const normalizedId = base === "tailwindcss" && id.startsWith("./") ? `tailwindcss/${id.slice(2)}` : id;
+      const tailwindStylesheet = TAILWIND_STYLESHEETS.get(normalizedId);
+      if (tailwindStylesheet !== undefined) {
+        const content = await loadTailwindStylesheet(tailwindStylesheet, { isCurrent });
+        if (!isCurrent()) throw new Error("Preview compilation was superseded");
+        return { path: `tailwindcss/${tailwindStylesheet}`, base: "tailwindcss", content };
+      }
+      const projectPath = resolveProjectPath(id, base);
+      const resolved = projectPath === null ? null : findProjectFile(projectPath, input.files);
+      if (resolved !== null) {
+        return { path: resolved, base: resolved, content: input.files.get(resolved)! };
+      }
+      throw new Error(`Tailwind stylesheet import "${id}" from "${base}" is not in the local project or runtime`);
+    },
+  });
+  if (!isCurrent()) throw new Error("Preview compilation was superseded");
+  return compiler.build(tailwindCandidates(input.files));
+}
+
+function virtualProjectPlugin(
+  input: PreviewInput,
+  options: EsbuildCompilerOptions,
+  isCurrent: () => boolean,
+): Plugin {
   return {
     name: "stream-mdx-preview-project",
     setup(build) {
@@ -82,10 +142,15 @@ function virtualProjectPlugin(input: PreviewInput): Plugin {
         }
         return { path: resolved, namespace: "preview-project" };
       });
-      build.onLoad({ filter: /.*/, namespace: "preview-project" }, (args) => {
+      build.onLoad({ filter: /.*/, namespace: "preview-project" }, async (args) => {
         const source = input.files.get(args.path);
         if (source === undefined) return { errors: [{ text: `Preview project file was not found: ${args.path}` }] };
-        return { contents: source, loader: sourceLoader(args.path), resolveDir: "/" };
+        const contents =
+          args.path.endsWith(".css") && source.includes("@import")
+            ? await compileProjectStyles(args.path, source, input, options.loadTailwindStylesheet, isCurrent)
+            : source;
+        if (!isCurrent()) return { errors: [{ text: "Preview compilation was superseded" }] };
+        return { contents, loader: sourceLoader(args.path), resolveDir: "/" };
       });
     },
   };
@@ -135,7 +200,7 @@ export function createEsbuildCompiler(options: EsbuildCompilerOptions): PreviewC
       jsx: "automatic",
       jsxImportSource: "react",
       define: { "process.env.NODE_ENV": '\"production\"' },
-      plugins: [virtualProjectPlugin(input)],
+      plugins: [virtualProjectPlugin(input, options, context.isCurrent)],
     });
     if (!context.isCurrent()) throw new Error("Preview compilation was superseded");
     const javascript = result.outputFiles.find((file) => file.path.endsWith(".js"))?.text;
@@ -144,3 +209,4 @@ export function createEsbuildCompiler(options: EsbuildCompilerOptions): PreviewC
     return { javascript, css };
   };
 }
+

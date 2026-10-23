@@ -16,13 +16,11 @@
     }
   },
   "files": [
-    "dist",
-    "scripts",
-    "src/demo"
+    "dist"
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup && node ./scripts/build-react-vendor.mjs && node ./scripts/copy-esbuild-wasm.mjs",
+    "build": "tsup && node ./scripts/build-react-vendor.mjs && node ./scripts/copy-esbuild-wasm.mjs && node ./scripts/copy-tailwind-assets.mjs",
     "test": "tsx --test src/__tests__/controller.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "demo": "node ./scripts/serve-demo.mjs"
@@ -33,6 +31,7 @@
     "loose-envify": "1.4.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "scheduler": "0.23.2"
-}
+    "scheduler": "0.23.2",
+    "tailwindcss": "4.1.18"
+  }
 }

@@ -1,13 +1,24 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { test } from "node:test";
-import { createEsbuildCompiler, createPreviewController } from "../index";
+import { createEsbuildCompiler, createPreviewController, createPreviewVariantsController } from "../index";
 import type {
   CompiledPreview,
   PreviewCandidate,
   PreviewClock,
   PreviewInput,
   PreviewTransport,
+  TailwindStylesheetName,
 } from "../index";
+
+const require = createRequire(import.meta.url);
+const tailwindPackage = dirname(require.resolve("tailwindcss/package.json"));
+
+function loadTailwindStylesheet(name: TailwindStylesheetName): Promise<string> {
+  return readFile(join(tailwindPackage, name), "utf8");
+}
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -343,4 +354,95 @@ test("CSS-only revisions publish styles in place while code revisions publish a 
     revision: "code",
   });
   controller.dispose();
+});
+
+test("local Tailwind utilities and preflight are emitted as frame CSS", async () => {
+  const transport = new RecordingTransport();
+  const controller = createPreviewController({
+    transport,
+    compile: createEsbuildCompiler({
+      wasmURL: new URL("../../dist/esbuild.wasm", import.meta.url),
+      loadTailwindStylesheet,
+    }),
+  });
+  const projectInput = multiFileProject("tailwind-project", "initial");
+  const files = new Map(projectInput.files);
+  files.set(
+    "src/components/Button.tsx",
+    'export function Button({ label }: { label: string }) { return <button className="text-red-500 p-4">{label}</button>; }',
+  );
+  files.set("src/styles.css", '@import "tailwindcss";');
+  await controller.request({ ...projectInput, files });
+  await flushMicrotasks();
+
+  const state = controller.getState();
+  assert.equal(state.error, null, state.error?.message);
+  assert.match(transport.published[0]?.css ?? "", /\.text-red-500/);
+  assert.match(transport.published[0]?.css ?? "", /box-sizing:\s*border-box/);
+  assert.doesNotMatch(transport.published[0]?.javascript ?? "", /box-sizing:\s*border-box/);
+  controller.dispose();
+});
+
+test("preview variants keep independent state and cap simultaneous frames", async () => {
+  const transports = new Map<string, RecordingTransport>();
+  const variants = createPreviewVariantsController({
+    variants: [{ name: "Cool" }, { name: "Warm" }],
+    createController(variant, onState) {
+      const transport = new RecordingTransport();
+      transports.set(variant.name, transport);
+      return createPreviewController({
+        transport,
+        compile: async () => ({
+          javascript: `export const variant = ${JSON.stringify(variant.name)};`,
+          css: `.variant { --accent: ${variant.name}; }`,
+        }),
+        onState,
+      });
+    },
+  });
+
+  const first = project("variants", "first");
+  const files = new Map(first.files);
+  files.set("styles.css", ".variant { color: red; }");
+  await variants.request({ ...first, files });
+  await flushMicrotasks();
+  assert.deepEqual([...variants.getStates().keys()], ["Cool", "Warm"]);
+  assert.deepEqual(variants.getState("Cool")?.visible, { generation: "variants", revision: "first" });
+  assert.deepEqual(variants.getState("Warm")?.visible, { generation: "variants", revision: "first" });
+  assert.equal(transports.get("Cool")?.published.length, 1);
+  assert.equal(transports.get("Warm")?.published.length, 1);
+
+  const styleFiles = new Map(files);
+  styleFiles.set("styles.css", ".variant { color: blue; }");
+  await variants.request({ ...first, revision: "styles", files: styleFiles });
+  await flushMicrotasks();
+  assert.deepEqual(variants.getState("Cool")?.visible, { generation: "variants", revision: "styles" });
+  assert.deepEqual(variants.getState("Warm")?.visible, { generation: "variants", revision: "styles" });
+  assert.equal(transports.get("Cool")?.styleUpdates.length, 1);
+  assert.equal(transports.get("Warm")?.styleUpdates.length, 1);
+
+  const codeFiles = new Map(styleFiles);
+  codeFiles.set("main.tsx", 'export const code = "changed";');
+  await variants.request({ ...first, revision: "code", files: codeFiles });
+  await flushMicrotasks();
+  assert.deepEqual(variants.getState("Cool")?.visible, { generation: "variants", revision: "code" });
+  assert.deepEqual(variants.getState("Warm")?.visible, { generation: "variants", revision: "code" });
+  assert.equal(transports.get("Cool")?.published.length, 2);
+  assert.equal(transports.get("Warm")?.published.length, 2);
+  assert.equal(transports.get("Cool")?.styleUpdates.length, 1);
+  assert.equal(transports.get("Warm")?.styleUpdates.length, 1);
+  assert.throws(
+    () =>
+      createPreviewVariantsController({
+        variants: Array.from({ length: 5 }, (_, index) => ({ name: `Variant ${index}` })),
+        createController: () => {
+          throw new Error("must not construct an over-limit variant");
+        },
+      }),
+    /1 and 4/,
+  );
+
+  variants.dispose();
+  assert.equal(transports.get("Cool")?.disposed, true);
+  assert.equal(transports.get("Warm")?.disposed, true);
 });

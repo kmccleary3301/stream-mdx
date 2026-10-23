@@ -16,7 +16,7 @@ export default defineConfig({
   target: "es2020",
   platform: "browser",
   tsconfig: resolve("tsconfig.build.json"),
-  noExternal: ["esbuild-wasm"],
+  external: ["esbuild-wasm", "tailwindcss"],
   define: {
     "process.env.NODE_ENV": '"production"',
   },
