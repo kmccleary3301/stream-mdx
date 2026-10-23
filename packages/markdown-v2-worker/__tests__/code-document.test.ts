@@ -796,9 +796,28 @@ async function runDeclaredHunkCountsReportDiffStatusTest(): Promise<void> {
 
     const plain = createCodeDocument({ language: "typescript", initialContent: "const plain = true;\n" });
     try {
-      assert.strictEqual(plain.handle.readMetadata().diffStatus, undefined, "ordinary code carries no diff status");
+      assert.strictEqual(Object.hasOwn(plain.handle.readMetadata(), "diffStatus"), false, "ordinary code carries no diff status");
     } finally {
       plain.dispose();
+    }
+
+    // Each side's owed rows count on its own, a section heading may follow a hunk header, and the
+    // unterminated tail line counts once it is authored.
+    const statusCases: ReadonlyArray<readonly [content: string, status: string, reason: string]> = [
+      ["@@ -1 +1,2 @@\n-a\n+b\n", "incomplete", "a hunk owing only new rows is incomplete"],
+      ["@@ -1,2 +1 @@\n-a\n+b\n", "incomplete", "a hunk owing only old rows is incomplete"],
+      ["@@ -1 +1,2 @@\n-a\n+b\n@@ -9 +9 @@ function f() {\n-z\n+y\n", "malformed", "a headed hunk abandoning owed new rows is malformed"],
+      ["@@ -1,2 +1 @@\n-a\n+b\ndiff --git a/x.ts b/x.ts\n", "malformed", "a file boundary abandoning owed old rows is malformed"],
+      ["@@ -1 +1 @@\n-a\n+b", "complete", "an authored unterminated last row satisfies the hunk"],
+      ["@@ -1,2 +1,2 @@\n-a\n+b\n@@ -9 +9 @@", "malformed", "an unterminated header abandoning owed rows is malformed"],
+    ];
+    for (const [initialContent, status, reason] of statusCases) {
+      const document = createCodeDocument({ language: "typescript", diff: true, initialContent });
+      try {
+        assert.strictEqual(document.handle.readMetadata().diffStatus, status, reason);
+      } finally {
+        document.dispose();
+      }
     }
 
     // The first hunk owes a row when the second header arrives; later balance cannot repair it.
