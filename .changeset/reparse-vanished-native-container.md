@@ -2,4 +2,4 @@
 "@stream-mdx/worker": patch
 ---
 
-Reparse canonically when a provisional native container disappears from its bounded window.
+Distinguish a vanished bounded-window root from a closed tail: the primary append path reparses canonically, while nested preparation and finalization fail loudly rather than reusing stale state.

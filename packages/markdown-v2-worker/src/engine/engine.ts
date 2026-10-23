@@ -213,7 +213,12 @@ import {
   NativeNestedCodeSourceOwner,
   type NativeNestedCodeSourceMapping,
 } from "./native-nested-code-owner";
-import { NativeContainerTailParser, type NativeContainerTailChange } from "./native-container-tail";
+import {
+  NATIVE_CONTAINER_TAIL_VANISHED,
+  NativeContainerTailParser,
+  type NativeContainerTailChange,
+  type NativeContainerTailResult,
+} from "./native-container-tail";
 import {
   nativeParagraphSourceContext,
   nativeParagraphSpaceTabIndentationRangesFromInput,
@@ -2344,7 +2349,9 @@ export class MarkdownEngine {
     metrics?.markParseStart();
     this.sourceDocument.append(appendedText);
     const source = this.sourceDocument.snapshot();
-    const change = tail.append(source, appendedText, source.length);
+    const tailResult = tail.append(source, appendedText, source.length);
+    const vanished = tailResult === NATIVE_CONTAINER_TAIL_VANISHED;
+    const change = vanished ? undefined : tailResult;
     const engine = this;
     const hasNewLinkReference = (candidate: NativeContainerTailChange): boolean => {
       let found = false;
@@ -2364,7 +2371,8 @@ export class MarkdownEngine {
     const splitFootnoteMarker = oldLength > 0
       && appendedText.startsWith("^")
       && source.read(oldLength - 1, oldLength) === "[";
-    const requiresCanonicalParse = !change
+    const requiresCanonicalParse = vanished
+      || !change
       || change.closure !== "open"
       || appendedText.includes("[^")
       || appendedText.includes("&")
@@ -6440,7 +6448,7 @@ export class MarkdownEngine {
     };
     const tailTo = rootRange?.to ?? source.length;
     let tail = this.nativeContainerTails.get(block.id);
-    let change: NativeContainerTailChange | undefined;
+    let result: NativeContainerTailResult = undefined;
     if (!precomputedChange && !options?.forceFinalize && tail && tail.state.tailFrom > tailTo) {
       // This tail belongs to a suffix that the canonical parse moved outside the container.
       this.nativeContainerTails.delete(block.id);
@@ -6451,7 +6459,7 @@ export class MarkdownEngine {
     let admittedOpenList = false;
     if (precomputedChange) {
       if (!tail) throw new Error(`Native container ${block.id} lost its active tail before applying the parsed window`);
-      change = precomputedChange;
+      result = precomputedChange;
     } else if (!tail) {
       const paragraphOwnerSupported = this.rootParagraphOwnershipSupported();
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -6483,10 +6491,15 @@ export class MarkdownEngine {
       }
     } else {
       const priorState = tail.state;
-      change = options?.forceFinalize
+      result = options?.forceFinalize
         ? tail.finalize(source, tailTo)
         : tail.append(source, source.read(priorState.sourceLength, source.length), tailTo);
     }
+    if (result === NATIVE_CONTAINER_TAIL_VANISHED) {
+      // No reachable input in the scan produced this; never silently reuse stale state if one does.
+      throw new Error(`Native container ${block.id} (${tail.state.ownerType}) vanished from its bounded window`);
+    }
+    const change = result;
 
     const frames = change?.frames ?? tail.state.frames;
     const activeLeaf = change?.leafNode ?? tail.activeLeafNode;
@@ -9978,6 +9991,9 @@ export class MarkdownEngine {
       const tail = this.nativeContainerTails.get(block.id);
       if (tail) {
         const tailChange = tail.finalize(source, block.payload.range?.to ?? source.length);
+        if (tailChange === NATIVE_CONTAINER_TAIL_VANISHED) {
+          throw new Error(`Native container ${block.id} (${tail.state.ownerType}) vanished from its bounded window`);
+        }
         if (!tailChange) throw new Error(`Native container ${block.id} could not finalize its active tail`);
         await this.prepareNativeNestedChildren(block, { forceFinalize: true }, [], tailChange.rootNode, tailChange);
       } else {

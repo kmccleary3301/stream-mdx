@@ -71,6 +71,8 @@ export interface NativeContainerTailChange {
   readonly listProperties: readonly NativeContainerListProperties[];
   readonly changedCodeNodes: readonly SyntaxNode[];
 }
+export const NATIVE_CONTAINER_TAIL_VANISHED = Symbol("native-container-tail-vanished");
+export type NativeContainerTailResult = NativeContainerTailChange | typeof NATIVE_CONTAINER_TAIL_VANISHED | undefined;
 
 interface ActivePath {
   readonly nodes: readonly SyntaxNode[];
@@ -1066,7 +1068,7 @@ export class NativeContainerTailParser {
     appendedText: string,
     tailTo: number,
     finalized = false,
-  ): NativeContainerTailChange | undefined {
+  ): NativeContainerTailResult {
     if (source.length < this.sourceLength || appendedText.length !== source.length - this.sourceLength) {
       throw new RangeError("Native container source must be an exact append-only suffix");
     }
@@ -1086,7 +1088,7 @@ export class NativeContainerTailParser {
     if (!window) throw new Error("Native container marker context does not match its authored source");
     const tree = new NativeMarkdownInput(window.input).parse(this.parser);
     const rootNode = findContainer(tree, this.ownerType);
-    if (!rootNode) return undefined;
+    if (!rootNode) return NATIVE_CONTAINER_TAIL_VANISHED;
     const path = deriveActivePath(rootNode, source, window, contextFrames);
     const range = window.mapping.mapRange(rootNode.from, rootNode.to);
     const hasSourceAfterRoot = this.ownerType === "BulletList" || this.ownerType === "OrderedList"
@@ -1149,7 +1151,7 @@ export class NativeContainerTailParser {
     });
   }
 
-  finalize(source: SourceSnapshot, tailTo: number): NativeContainerTailChange | undefined {
+  finalize(source: SourceSnapshot, tailTo: number): NativeContainerTailResult {
     if (source.length !== this.sourceLength) {
       throw new RangeError("Append the latest canonical source before finalizing a native container");
     }
