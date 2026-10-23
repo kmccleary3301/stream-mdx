@@ -2,6 +2,8 @@ import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { runInNewContext } from "node:vm";
 import { JSDOM } from "jsdom";
 import ts from "typescript";
@@ -9,14 +11,19 @@ import ts from "typescript";
 import type { DiffLineKind, Patch, TokenLineV1, WorkerOut } from "@stream-mdx/core";
 import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot } from "@stream-mdx/core";
 import type { Block, NodeSnapshot } from "@stream-mdx/core";
-import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
-import type { RendererStore } from "../../markdown-v2-react/src/renderer/store";
+import { createRendererStore } from "@stream-mdx/react/renderer/store";
+import type { RendererStore } from "@stream-mdx/react/renderer/store";
 import { MarkdownEngine } from "../src/engine/engine";
 import type { MarkdownEngineOptions } from "../src/engine/types";
-import counterSinkModule from "../../../scripts/perf/counter-sink.ts";
 
 import { projectConsumerBlocks } from "./consumer-block-projection";
 import { createWorkerHarness } from "./worker-test-harness";
+
+// The mutation sandbox copies only this package, so resolve the shared test fixture from the live repo.
+const repoRoot = process.env.STREAM_MDX_MUTATION_LIVE_PACKAGE
+  ? resolve(process.env.STREAM_MDX_MUTATION_LIVE_PACKAGE, "../..")
+  : resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+const counterSinkModule = await import(pathToFileURL(resolve(repoRoot, "scripts/perf/counter-sink.ts")).href);
 
 function applyMessages(store: RendererStore, messages: WorkerOut[]): void {
   for (const message of messages) {
@@ -75,7 +82,7 @@ async function runDiffTokenizationTest(): Promise<void> {
   assert.ok(renderedCode.includes("+const a = 2;"), "static block output must preserve the added diff row");
   assert.ok(renderedCode.includes("-const a = 1;"), "static block output must preserve the deleted diff row");
 
-  const docs = readFileSync(new URL("../../../docs/CLI_USAGE.md", import.meta.url), "utf8");
+  const docs = readFileSync(resolve(repoRoot, "docs/CLI_USAGE.md"), "utf8");
   const ansiExample = [...docs.matchAll(/```ts\n([\s\S]*?)\n```/g)].find((match) => match[1].includes("function renderDiffLine("))?.[1];
   assert.ok(ansiExample, "the authored public CLI ANSI consumer must be exercised");
   const compiled = ts.transpileModule(ansiExample, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;

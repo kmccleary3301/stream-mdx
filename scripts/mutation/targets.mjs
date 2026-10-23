@@ -3,6 +3,7 @@
 // "packages/" are other packages' consumers. `redirects` maps the specifiers those consumers import
 // to sandbox source, so they exercise the mutated code (every core subpath shares one module graph).
 const coreSource = { "@stream-mdx/core": "src/index.ts", "@stream-mdx/core/*": "src/*.ts" };
+const workerEngineSource = { "@stream-mdx/worker/engine": "src/engine/index.ts" };
 
 export const targets = {
   "core-table-state": {
@@ -38,6 +39,22 @@ export const targets = {
       "__tests__/patch-coalescing-equivalence.test.ts",
       "__tests__/patch-batching-kind.test.ts",
       "__tests__/patch-batching-partition.test.ts",
+    ],
+  },
+  // Equivalent survivor: advanceDiffCursor discards parseUnifiedDiffLine's optional return value.
+  "worker-diff-status": {
+    package: "packages/markdown-v2-worker",
+    mutate: [
+      "src/engine/highlight.ts:449-452",
+      "src/engine/highlight.ts:454-459",
+      "src/engine/highlight.ts:461-476",
+    ],
+    redirects: workerEngineSource,
+    tests: [
+      "__tests__/code-document.test.ts",
+      "__tests__/worker-diff-tokenization.test.ts",
+      "__tests__/lazy-tokenization-parity.test.ts",
+      "packages/markdown-v2-react/__tests__/native-code-handle-presentation.test.tsx",
     ],
   },
 };

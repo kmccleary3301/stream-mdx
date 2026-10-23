@@ -5,7 +5,7 @@ import { applyPatchBatch, createInitialSnapshot, PATCH_ROOT_ID, type Block, type
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ComponentRegistry, MarkdownBlocksRenderer, type CodeFenceRendererProps } from "@stream-mdx/react/server";
-import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
+import { createRendererStore, type RendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 import { JSDOM } from "jsdom";
 import { CODE_HIGHLIGHT_THEMES, getSharedHighlighter } from "../src/engine/highlight";
