@@ -964,6 +964,69 @@ async function runDiffFileContextAvailabilityResetsTest(): Promise<void> {
   }
 }
 
+
+async function runUnknownDiffFileLanguageFallsBackToBaseTest(): Promise<void> {
+  const diffLines = [
+    "diff --git a/app.py b/app.py",
+    "--- a/app.py",
+    "+++ b/app.py",
+    "@@ -1 +1 @@",
+    "-def old_function():",
+    "+def new_function():",
+    "diff --git a/Makefile b/Makefile",
+    "--- a/Makefile",
+    "+++ b/Makefile",
+    "@@ -1 +1 @@",
+    "-const before: number = 1;",
+    "+const after: number = 2;",
+  ];
+  const themes = { dark: "github-dark", light: "github-light" } as const;
+  let disposeDocument: (() => void) | undefined;
+  let disposeOracle: (() => void) | undefined;
+
+  try {
+    const document = createCodeDocument({
+      language: "typescript",
+      diff: true,
+      initialContent: `${diffLines.join("\n")}\n`,
+      themes,
+    });
+    disposeDocument = () => document.dispose();
+    const oracle = await createHighlighter({
+      engine: createJavaScriptRegexEngine(),
+      langs: ["typescript", "python"],
+      themes: [themes.dark, themes.light],
+    });
+    disposeOracle = () => oracle.dispose();
+
+    const result = await document.highlight({ mode: "range", range: { from: 0, to: diffLines.length } });
+    assert.strictEqual(result.exactness, "exact");
+    assert.ok(result.diffTokens);
+    const pythonAddition = result.diffTokens[diffLines.indexOf("+def new_function():")]!.new!;
+    const makefileAddition = result.diffTokens[diffLines.indexOf("+const after: number = 2;")]!.new!;
+    const expectedPython = normalizeShikiLine(oracle.codeToTokensWithThemes("def new_function():", {
+      lang: "python",
+      themes,
+    })[0] ?? []);
+    const expectedTypeScript = normalizeShikiLine(oracle.codeToTokensWithThemes("const after: number = 2;", {
+      lang: "typescript",
+      themes,
+    })[0] ?? []);
+
+    assert.deepStrictEqual(normalizePublicLine(pythonAddition), expectedPython);
+    assert.deepStrictEqual(
+      normalizePublicLine(makefileAddition),
+      expectedTypeScript,
+      "an extensionless file resets to the diff's base language instead of retaining the prior file language",
+    );
+  } finally {
+    try {
+      disposeDocument?.();
+    } finally {
+      disposeOracle?.();
+    }
+  }
+}
 async function runMultiFileDiffUsesIndependentPerFileShikiTest(): Promise<void> {
   const diffSource = [
     "diff --git a/open.ts b/open.ts",
@@ -1318,6 +1381,7 @@ async function runFinalizedNewFileWithoutTerminalNewlineTest(): Promise<void> {
 
 await runDiffFileContextAvailabilityResetsTest();
 
+await runUnknownDiffFileLanguageFallsBackToBaseTest();
 await runMultiFileDiffUsesIndependentPerFileShikiTest();
 
 await runHeaderLikeDiffContentUsesHunkCountsTest();
