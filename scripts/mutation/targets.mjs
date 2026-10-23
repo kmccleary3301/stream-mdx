@@ -46,8 +46,8 @@ export const targets = {
     package: "packages/markdown-v2-worker",
     mutate: [
       "src/engine/highlight.ts:449-452",
-      "src/engine/highlight.ts:454-459",
-      "src/engine/highlight.ts:461-476",
+      "src/engine/highlight.ts:454-461",
+      "src/engine/highlight.ts:463-478",
     ],
     redirects: workerEngineSource,
     tests: [
