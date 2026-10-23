@@ -107,9 +107,11 @@ independent generations, and their `sourceAppend` contains exactly the newly
 owned authored suffix, which may include an LF retained by an earlier root
 append.
 
-This cutover does not change static artifact `version: 1`, `schemaId`, or the
+This change does not alter static artifact `version: 1`, `schemaId`, or the
 serialized `blocks: Block[]` format. The live worker protocol remains schema
-version 2.0 and transports `NodeSnapshot` trees; live native code appends do not
+version 2.0 and transports `NodeSnapshot` trees; every live `PATCH` carries the
+root generation from its `INITIALIZED` baseline. This wire-field addition does
+not change the serialized snapshot schema. Live native code appends do not
 materialize a complete `Block`. An explicit cold `getParagraphColdBlock()` or
 `getBlocks()` request may materialize authored `payload.raw`, current inline or
 mixed-segment data, the source range, and `meta.paragraph` from the current owner

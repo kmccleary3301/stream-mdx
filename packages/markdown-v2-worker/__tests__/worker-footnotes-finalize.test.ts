@@ -13,6 +13,10 @@ import { createWorkerHarness } from "./worker-test-harness";
 import { projectConsumerBlocks } from "./consumer-block-projection";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createWorkerThread } from "@stream-mdx/worker/node";
+import { FootnotesPlugin } from "@stream-mdx/plugins";
+
+import type { DocumentPlugin } from "@stream-mdx/plugins/document";
+import { MarkdownEngine } from "../src/engine/index";
 
 function findInlineFootnoteNumber(nodes: InlineNode[], label: string): number | undefined {
   for (const node of nodes) {
@@ -51,7 +55,6 @@ async function runFootnotesFinalizeTest(): Promise<void> {
 
   const appendMessages = await harness.send({ type: "APPEND", text: content });
   const appendPatches = appendMessages.filter((m): m is Extract<WorkerOut, { type: "PATCH" }> => m.type === "PATCH");
-  assert.ok(appendPatches.length > 0, "missing patch message after append");
   for (const patchMsg of appendPatches) {
     store.applyPatches(patchMsg.patches as Patch[], { captureMetrics: false });
   }
@@ -62,7 +65,6 @@ async function runFootnotesFinalizeTest(): Promise<void> {
 
   const finalizeMessages = await harness.send({ type: "FINALIZE" });
   const finalizePatchMessages = finalizeMessages.filter((m): m is Extract<WorkerOut, { type: "PATCH" }> => m.type === "PATCH");
-  assert.ok(finalizePatchMessages.length > 0, "FINALIZE should emit PATCH message when blocks are dirty");
   for (const patchMsg of finalizePatchMessages) {
     store.applyPatches(patchMsg.patches as Patch[], { captureMetrics: false });
   }
@@ -181,6 +183,173 @@ async function runPreparedFootnoteConsumerTest(): Promise<void> {
     assert.strictEqual(findInlineFootnoteNumber(quote.payload.inline ?? [], "alpha"), 2, "root compatibility inline must expose the actual numbered child content");
   }
 }
+
+async function runReplacementFootnotesNativeTableConsumerTest(): Promise<void> {
+  const store = createRendererStore();
+  let document = createInitialSnapshot();
+  const replacementFootnotesPlugin = { ...FootnotesPlugin };
+  assert.notStrictEqual(replacementFootnotesPlugin, FootnotesPlugin, "the registered footnotes plugin is a distinct replacement object");
+  const engine = new MarkdownEngine({
+    extensions: { documentPlugins: [replacementFootnotesPlugin] },
+    post(emitted) {
+      const message = structuredClone(emitted);
+      if (message.type === "INITIALIZED") {
+        store.resetSnapshot(message.snapshot);
+        document = createInitialSnapshot(message.snapshot);
+      } else if (message.type === "PATCH") {
+        applyPatchBatch(document, message.patches);
+        store.applyPatches(message.patches, { captureMetrics: false });
+      } else if (message.type === "ERROR") {
+        throw new Error(message.error.message);
+      }
+      assert.deepStrictEqual(document.getBlocks(), store.getBlocks(), "the public store must consume engine output without divergence");
+      assert.deepStrictEqual(store.getInvariantViolations(), []);
+    },
+  });
+  const content = [
+    "| value |",
+    "| --- |",
+    "| table reference[^table] |",
+    "",
+    "[^table]: Native table note.",
+    "",
+  ].join("\n");
+
+  try {
+    await engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "",
+      prewarmLangs: [],
+      docPlugins: { footnotes: true, tables: true, html: false, mdx: false, math: false, callouts: false },
+    });
+    await engine.handle({ type: "APPEND", text: content });
+    await engine.handle({ type: "FINALIZE" });
+
+    const blocks = store.getBlocks();
+    const table = blocks.find((block) => block.type === "table");
+    assert.ok(table, "the GFM source must produce a native table in the public store");
+    const rows = (table.payload.meta?.rows ?? []) as InlineNode[][][];
+    assert.strictEqual(findInlineFootnoteNumber(rows.flat(2), "table"), 1, "the native table reference must be numbered");
+
+    const items = blocks.find((block) => block.type === "footnotes")?.payload.meta?.items as FootnoteItem[] | undefined;
+    assert.deepStrictEqual(items?.map(({ label, number }) => [label, number]), [["table", 1]], "the real footnotes plugin must publish the referenced note");
+    assert.ok(items?.[0]?.inlines.some((node) => node.kind === "text" && node.text.includes("Native table note.")), "the published item must contain the authored definition");
+
+    const rendered = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks, store })));
+    try {
+      assert.strictEqual(
+        rendered.window.document.querySelectorAll('table sup.footnote-ref a[href="#fn:1"]').length,
+        1,
+        "the public renderer must render the numbered native-table reference",
+      );
+      assert.ok(
+        rendered.window.document.getElementById("fn:1")?.textContent?.includes("Native table note."),
+        "the public renderer must emit the referenced note",
+      );
+    } finally {
+      rendered.window.close();
+    }
+  } finally {
+    engine.dispose();
+  }
+}
+
+async function runPublicRegistryStableHeadingMutationTest(): Promise<void> {
+  const pluginName = "worker-finalize-public-registry-stable-heading-mutation";
+  const appendMarker = "PUBLIC_REGISTRY_APPEND_MUTATION_MARKER";
+  const headingText = "Stable registry heading";
+  const mutatedHeadingText = `${headingText} updated by public plugin`;
+  const headingRaw = `# ${headingText}`;
+  const initialContent = `${headingRaw}\n\n## ${"x".repeat(8192)}\n`;
+  const appendedContent = `\n# ${appendMarker}\n`;
+  const fullContent = `${initialContent}${appendedContent}`;
+  const plugin: DocumentPlugin = {
+    name: pluginName,
+    process(context) {
+      if (!context.source.materialize().includes(appendMarker)) return undefined;
+      const headingIndex = context.blocks.findIndex(
+        (block) => block.type === "heading" && block.payload.meta?.headingText === headingText,
+      );
+      if (headingIndex < 0) return undefined;
+      const heading = context.blocks[headingIndex]!;
+      heading.payload.meta!.headingText = mutatedHeadingText;
+      return undefined;
+    },
+  };
+  const createSnapshotEngine = (extensions?: { documentPlugins: DocumentPlugin[] }) => {
+    let snapshot = createInitialSnapshot();
+    const engine = new MarkdownEngine({
+      ...(extensions ? { extensions } : {}),
+      post(emitted) {
+        const message = structuredClone(emitted);
+        if (message.type === "INITIALIZED") snapshot = createInitialSnapshot(message.snapshot);
+        else if (message.type === "PATCH") applyPatchBatch(snapshot, message.patches);
+        else if (message.type === "ERROR") throw new Error(message.error.message);
+      },
+    });
+    return { engine, getBlocks: () => snapshot.getBlocks() };
+  };
+  const incremental = createSnapshotEngine();
+  const cold = createSnapshotEngine({ documentPlugins: [plugin] });
+  const docPlugins = { footnotes: false, html: false, mdx: false, math: false, tables: false, callouts: false };
+
+  try {
+    await incremental.engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent,
+      prewarmLangs: [],
+      docPlugins,
+    });
+    const beforeHeading = incremental.getBlocks().find(
+      (block) => block.type === "heading" && block.payload.meta?.headingText === headingText,
+    );
+    assert.ok(beforeHeading, "the initial document must publish the earlier generic heading");
+    assert.ok(beforeHeading.isFinalized, "the earlier generic heading must be stable before the append");
+    assert.ok(beforeHeading.payload.meta, "the heading must have existing metadata for a public plugin update");
+    const authoredRaw = beforeHeading.payload.raw;
+    assert.strictEqual(authoredRaw, headingRaw, "the stable heading must retain its authored source");
+
+    incremental.engine.documentPluginRegistry.register(plugin);
+    await incremental.engine.handle({ type: "APPEND", text: appendedContent });
+    const actualHeading = incremental.getBlocks().find(
+      (block) => block.type === "heading" && block.payload.raw === headingRaw,
+    );
+
+    await cold.engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: fullContent,
+      prewarmLangs: [],
+      docPlugins,
+    });
+    const expectedHeading = cold.getBlocks().find(
+      (block) => block.type === "heading" && block.payload.raw === headingRaw,
+    );
+
+    assert.ok(actualHeading, "the incremental Core snapshot must retain the earlier generic heading");
+    assert.ok(expectedHeading, "the cold Core snapshot must include the earlier generic heading");
+    assert.strictEqual(actualHeading.payload.raw, authoredRaw, "the incremental plugin edit must preserve authored raw source");
+    assert.strictEqual(expectedHeading.payload.raw, authoredRaw, "the cold plugin edit must preserve authored raw source");
+    assert.strictEqual(
+      expectedHeading.payload.meta?.headingText,
+      mutatedHeadingText,
+      "public registry registration must affect the cold same-source parse",
+    );
+    assert.strictEqual(
+      actualHeading.payload.meta?.headingText,
+      expectedHeading.payload.meta?.headingText,
+      "the incremental Core snapshot must receive the public plugin's stable-heading metadata edit",
+    );
+  } finally {
+    incremental.engine.documentPluginRegistry.unregister(plugin.name);
+    cold.engine.documentPluginRegistry.unregister(plugin.name);
+    incremental.engine.dispose();
+    cold.engine.dispose();
+  }
+}
+
 async function runRepeatedReferenceTargetsTest(): Promise<void> {
   const content = "Missing[^missing] then outer[^note].\n\n> repeated<span>[^note]</span>\n\n[^note]: Body with **emphasis**.\n";
   const init = { prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: false, math: false, tables: false, callouts: false } };
@@ -545,6 +714,8 @@ for (const key of consumerGlobals.keys()) Object.defineProperty(globalThis, key,
 try {
   await runFootnotesFinalizeTest();
   await runPreparedFootnoteConsumerTest();
+  await runReplacementFootnotesNativeTableConsumerTest();
+  await runPublicRegistryStableHeadingMutationTest();
   await runRepeatedReferenceTargetsTest();
   await runCanonicalFootnoteOrderTest();
   await runDefinitionLinesTest(

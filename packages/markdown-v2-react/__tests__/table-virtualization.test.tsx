@@ -333,16 +333,23 @@ try {
   finishStream();
   await waitFor(() => Boolean(scrollContainer()), "natural iterator EOF finalizes the tail and enables table windowing");
   assert.ok(handle.current?.getState().blocks.every((entry) => entry.isFinalized));
-  handle.current?.append("\n\nImperative content after EOF");
-  await waitFor(() => rows().length === 120, "append after EOF reopens an imperative session despite the retained stream prop");
-  handle.current?.finalize();
-  await waitFor(() => Boolean(scrollContainer()), "finalize closes imperative activity after EOF");
+  assert.throws(
+    () => handle.current?.append("\n\nImperative content after EOF"),
+    (error: unknown) => error instanceof Error && "reason" in error && error.reason === "sealed",
+    "automatic stream EOF seals the public source session",
+  );
+  assert.equal(container.textContent?.includes("Imperative content after EOF"), false);
   streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" className="stream-removed" features={features} tableVirtualization={true} caret={false} />);
   await waitFor(() => Boolean(container.querySelector(".stream-removed")), "stream removal commits without replacing the renderer");
-  handle.current?.append("\n\nImperative content after stream removal");
-  await waitFor(() => rows().length === 120, "removed stream permits imperative reuse");
-  handle.current?.finalize();
-  await waitFor(() => Boolean(scrollContainer()), "finalize uses current iterator ownership, not a stale stream closure");
+  handle.current?.restart();
+  await waitFor(
+    () => handle.current?.getState().workerReady === true && handle.current.getState().blocks.length === 0,
+    "restart opens a fresh source session after stream removal",
+  );
+  handle.current?.append(`${markdown}\n\nImperative content after stream removal`);
+  await waitFor(() => rows().length === 120, "a restarted streamless session renders imperative table content");
+  await handle.current?.finalize();
+  await waitFor(() => Boolean(scrollContainer()), "finalize releases windowing for the post-removal imperative generation");
 
   const { promise: oldGate, resolve: releaseOld } = deferred<void>();
   const { promise: oldFinished, resolve: markOldFinished } = deferred<void>();
@@ -365,7 +372,7 @@ try {
   await waitFor(() => rows().length === 120 && (container.textContent?.includes("New iterator tail") ?? false), "replacement iterator owns the session");
   releaseOld();
   await oldFinished;
-  handle.current?.finalize();
+  await handle.current?.finalize();
   await waitFor(() => handle.current?.getState().blocks.every((entry) => entry.isFinalized) ?? false, "replacement iterator blocks finalize");
   assert.equal(scrollContainer(), null, "late cancelled iterator completion cannot clear replacement iterator ownership");
   releaseNew();
@@ -378,10 +385,23 @@ try {
   await waitFor(() => rows().length === 120, "imperative append renders the complete table");
   assert.ok(handle.current?.getState().blocks.some((entry) => entry.type === "table" && entry.isFinalized));
   assert.equal(scrollContainer(), null, "imperative session stays active after a completed table");
-  handle.current?.finalize();
+  await handle.current?.finalize();
   await waitFor(() => Boolean(scrollContainer()), "imperative finalize ends the session and enables windowing");
-  handle.current?.append("\n\nAnother unfinished paragraph");
-  await waitFor(() => rows().length === 120, "append reopens the session and restores every table row");
+  assert.throws(
+    () => handle.current?.append("\n\nAnother unfinished paragraph"),
+    (error: unknown) => error instanceof Error && "reason" in error && error.reason === "sealed",
+    "imperative input remains sealed after host finalization",
+  );
+  handle.current?.restart();
+  await waitFor(
+    () => handle.current?.getState().workerReady === true && handle.current.getState().blocks.length === 0,
+    "restart opens a new imperative generation",
+  );
+  handle.current?.append(`${markdown}\n\nAnother unfinished paragraph`);
+  await waitFor(
+    () => rows().length === 120 && container.textContent?.includes("Another unfinished paragraph") === true,
+    "the restarted session renders active table content",
+  );
   assert.equal(scrollContainer(), null);
   handle.current?.restart();
   await waitFor(() => rows().length === 0, "restart clears the table and resets session activity");
@@ -411,7 +431,7 @@ try {
     assert.equal(externalInitializations, 1, "attachWorker skipInit preserves caller-owned initialization");
     handle.current?.append("\n\nManaged imperative content");
     await waitFor(() => rows().length === 120, "managed imperative append opens activity");
-    handle.current?.finalize();
+    await handle.current?.finalize();
     await waitFor(() => Boolean(scrollContainer()), "unconsumed stream prop does not prevent managed imperative finalization");
     assert.equal(externalInitializations, 1, "managed lifecycle sends no replacement initialization");
     assert.equal(suppliedStreamConsumed, false, "managed source remains caller-owned");

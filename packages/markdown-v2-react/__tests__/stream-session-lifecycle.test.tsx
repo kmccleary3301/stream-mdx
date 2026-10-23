@@ -131,7 +131,7 @@ async function testRestartAfterEOF(): Promise<void> {
     await waitFor(() => handle.current?.getState().workerReady === true && handle.current.getState().blocks.length === 0,
       "restart after EOF clears the document");
     handle.current?.append("# Imperative after restart\n\n");
-    handle.current?.finalize();
+    await handle.current?.finalize();
     await waitFor(() => container.textContent?.includes("Imperative after restart") === true, "imperative input works after EOF restart");
     assert.equal(nextCalls, 2, "restart after EOF must not re-enter the exhausted iterator");
     assert.equal(container.textContent?.includes("Completed source"), false);
@@ -162,7 +162,7 @@ async function testOpenIteratorRemoval(imperativeActivity: boolean): Promise<voi
     root.render(<StreamingMarkdown ref={handle} engine="worker" worker={workerFactory} stream={iterator}
       features={features} tableVirtualization={true} caret="block" />);
     await waitFor(() => container.querySelectorAll("tbody tr[data-row-id]").length === 60, "open iterator renders every table row");
-    handle.current?.finalize();
+    worker.postMessage({ type: "FINALIZE" });
     await waitFor(() => handle.current?.getState().blocks.every((block) => block.isFinalized) === true,
       "every block finalizes while the iterator remains gated");
     if (imperativeActivity) {
@@ -178,7 +178,7 @@ async function testOpenIteratorRemoval(imperativeActivity: boolean): Promise<voi
     if (imperativeActivity) {
       assert.equal(container.querySelector('[data-table-virtualized="true"]'), null, "iterator cleanup must preserve independent imperative activity");
       assert.ok(container.querySelector(".stream-mdx-caret"));
-      handle.current?.finalize();
+      await handle.current?.finalize();
     }
     await waitFor(() => Boolean(container.querySelector('[data-table-virtualized="true"]')) && !container.querySelector(".stream-mdx-caret"),
       "removing an open iterator releases only its activity and permits finalized table windowing");

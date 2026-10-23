@@ -65,6 +65,7 @@ function testResetRecovery(): void {
   });
   worker.emit({
     type: "PATCH",
+    generation: 1,
     tx: 0,
     patches: [{
       op: "appendInputSource",
@@ -77,7 +78,7 @@ function testResetRecovery(): void {
   renderer.flushPendingPatches();
   assert.strictEqual(updateCount, 0, "input-only source retention does not notify public block listeners");
 
-  worker.emit({ type: "PATCH", tx: 1, patches: [buildInsertPatch(makeParagraph("a", "Hello world"))] });
+  worker.emit({ type: "PATCH", generation: 1, tx: 1, patches: [buildInsertPatch(makeParagraph("a", "Hello world"))] });
   renderer.flushPendingPatches();
   const firstBlocks = renderer.getStore().getBlocks();
   assert.strictEqual(firstBlocks.length, 1, "expected one block after initial patch");
@@ -89,7 +90,7 @@ function testResetRecovery(): void {
   worker.emit({ type: "INITIALIZED", schemaVersion: STREAM_MDX_SCHEMA_VERSION, generation: 2, snapshot: { id: PATCH_ROOT_ID, type: "__root__", inputSource: { generation: 2, raw: "Recovered" }, children: [] } });
   assert.strictEqual(renderer.getStore().getBlocks().length, 0, "store should clear after reset+reinit");
 
-  worker.emit({ type: "PATCH", tx: 2, patches: [buildInsertPatch(makeParagraph("b", "Recovered"))] });
+  worker.emit({ type: "PATCH", generation: 2, tx: 2, patches: [buildInsertPatch(makeParagraph("b", "Recovered"))] });
   renderer.flushPendingPatches();
   const recoveredBlocks = renderer.getStore().getBlocks();
   assert.strictEqual(recoveredBlocks.length, 1, "expected one block after recovery patch");

@@ -136,6 +136,13 @@ Consumers validate the generation and point before mutation. Input retention
 does not rebuild semantic root children or count as semantic completion,
 ordinal progress, or owner progress.
 
+
+Every live `WorkerOut` PATCH envelope carries the root document generation that
+was current when the envelope was created. Consumers reject a generation
+mismatch before queue admission and again at commit; reset and detach invalidate
+queued batches. Delivery must never assign a generation from the receiver's
+current state. This root generation is independent of the `tx`/epoch ordering
+tuple and of native owner generations.
 Code, table, and paragraph source windows share that one consumer document.
 Native owners validate `sourceAppend` against their own root range and carry
 only the exact newly owned authored suffix. An owner suffix may include an LF

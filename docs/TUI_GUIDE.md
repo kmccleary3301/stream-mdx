@@ -80,6 +80,7 @@ import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "stream-mdx/core";
 
 const worker = createWorkerThread({ stdout: true, stderr: true });
 const store = createSnapshotStore();
+let generation: number | null = null;
 
 worker.on("message", (msg: WorkerOut) => {
   if (msg.type === "INITIALIZED") {
@@ -91,10 +92,12 @@ worker.on("message", (msg: WorkerOut) => {
       typeof inputSource?.raw !== "string"
     ) throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
     store.setSnapshot(msg.snapshot);
+    generation = msg.generation;
     return;
   }
 
   if (msg.type === "PATCH") {
+    if (msg.generation !== generation) return;
     store.applyPatches(msg.patches);
     const blocks = store.getBlocks();
     renderToTerminal(blocks);
@@ -126,10 +129,6 @@ worker.postMessage({ type: "FINALIZE" });
 function renderToTerminal(blocks: ReturnType<typeof store.getBlocks>) {
   process.stdout.write("\x1bc");
   for (const block of blocks) {
-    if (block.type === "heading") {
-      process.stdout.write(`# ${block.payload.raw}\n\n`);
-      continue;
-    }
     process.stdout.write(`${block.payload.raw}\n\n`);
   }
 }
@@ -301,6 +300,10 @@ for (const event of decoder.push(chunk)) {
   // Render from store.getBlocks() at the TUI presentation checkpoint.
 }
 ```
+
+Every schema-2 event (`init`, `snapshot`, `patch`, `metrics`, `error`, `done`) carries the native document `generation`, not a transport-local counter. The producer emits `init` and a validated `INITIALIZED` snapshot before patches; the snapshot envelope must match its canonical input generation. An announced generation is a lower bound: a newer native baseline may supersede it, but an older snapshot cannot restore the previous document. The store rejects stale-generation and foreign-stream events and clears generation-local transaction, metrics, error and completion metadata on replacement.
+
+Emit `done` only after the matching native `FINALIZED` and semantic delivery barrier. It does not establish grammar, DOM or paint readiness.
 
 Use this model when:
 

@@ -21,6 +21,7 @@ export class MarkdownWorkerClient {
   private messageErrorListener?: (event: MessageEvent<unknown>) => void;
   private cleanupCallbacks: Array<() => void> = [];
   private initialized = false;
+  private generation: number | null = null;
   private initializationError?: Error;
 
   constructor(options: MarkdownWorkerClientOptions = {}) {
@@ -41,20 +42,25 @@ export class MarkdownWorkerClient {
                 message.snapshot.inputSource?.generation !== message.generation ||
                 typeof message.snapshot.inputSource?.raw !== "string"
               ) {
-              const error = new Error(
-                message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION
-                  ? `Incompatible worker schema: expected ${STREAM_MDX_SCHEMA_VERSION}, received ${message.schemaVersion}`
-                  : "Incompatible worker initialization: canonical input baseline is missing or invalid",
-              );
-              error.name = "WorkerSchemaMismatch";
-              this.initializationError = error;
-              this.initialized = false;
-              message = { type: "ERROR", phase: "INIT", error: { name: error.name, message: error.message } };
-            } else {
-              this.initialized = true;
-              this.initializationError = undefined;
-            }
-            } else if ((message.type === "PATCH" || message.type === "FINALIZED") && !this.initialized) {
+                const error = new Error(
+                  message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION
+                    ? `Incompatible worker schema: expected ${STREAM_MDX_SCHEMA_VERSION}, received ${message.schemaVersion}`
+                    : "Incompatible worker initialization: canonical input baseline is missing or invalid",
+                );
+                error.name = "WorkerSchemaMismatch";
+                this.initializationError = error;
+                this.initialized = false;
+                this.generation = null;
+                message = { type: "ERROR", phase: "INIT", error: { name: error.name, message: error.message } };
+              } else {
+                this.initialized = true;
+                this.generation = message.generation;
+                this.initializationError = undefined;
+              }
+            } else if (
+              (message.type === "PATCH" && (!this.initialized || message.generation !== this.generation)) ||
+              (message.type === "FINALIZED" && !this.initialized)
+            ) {
               return;
             }
             for (const listener of this.listeners) {
@@ -178,8 +184,8 @@ export class MarkdownWorkerClient {
         this.worker.terminate();
       }
     }
-    this.worker = undefined;
     this.initialized = false;
+    this.generation = null;
     this.initializationError = undefined;
     this.messageListener = undefined;
     this.errorListener = undefined;
@@ -203,6 +209,7 @@ export class MarkdownWorkerClient {
   private post(msg: WorkerIn) {
     if (msg.type === "INIT") {
       this.initialized = false;
+      this.generation = null;
       this.initializationError = undefined;
     } else if ((msg.type === "APPEND" || msg.type === "FINALIZE") && !this.initialized) {
       throw this.initializationError ?? new Error("Wait for a matching INITIALIZED acknowledgement before posting source or FINALIZE");

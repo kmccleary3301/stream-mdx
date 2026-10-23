@@ -123,7 +123,7 @@ async function runRoundTripTest(): Promise<void> {
       );
 
       await waitFor(() => container.querySelectorAll("li").length >= 3, "three list items");
-      handleRef.current?.finalize();
+      await handleRef.current?.finalize();
       await handleRef.current?.waitForIdle();
 
       await waitFor(

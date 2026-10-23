@@ -116,6 +116,7 @@ const COUNTER_KEYS = [
   "patches_emitted",
   "store_records_touched",
   "blocks_reprepared",
+  "document_records_visited",
 ] as const satisfies readonly (keyof SessionCountersSnapshot)[];
 
 interface FinalizeMeasurement {
@@ -153,34 +154,39 @@ async function measureFinalize(
     campaignCounters: sink,
   } as MarkdownEngineOptions & { campaignCounters?: SessionCounterSink });
 
-  await engine.handle(INIT);
-  const text = prefixOf(family, prefixUnits) + family.tail;
-  const step = chunkUnits > 0 ? chunkUnits : text.length;
-  for (let from = 0; from < text.length; from += step) {
-    await engine.handle({ type: "APPEND", text: text.slice(from, from + step) });
-  }
-  sink.reset();
-  observing = true;
   const profiler = cpuProfilePath ? new Session() : undefined;
-  if (profiler) {
-    profiler.connect();
-    await profiler.post("Profiler.enable");
-    await profiler.post("Profiler.start");
+  try {
+    await engine.handle(INIT);
+    const text = prefixOf(family, prefixUnits) + family.tail;
+    const step = chunkUnits > 0 ? chunkUnits : text.length;
+    for (let from = 0; from < text.length; from += step) {
+      await engine.handle({ type: "APPEND", text: text.slice(from, from + step) });
+    }
+    sink.reset();
+    observing = true;
+    if (profiler) {
+      profiler.connect();
+      await profiler.post("Profiler.enable");
+      await profiler.post("Profiler.start");
+    }
+    const startedAt = performance.now();
+    await engine.handle({ type: "FINALIZE" });
+    const finalizeMs = performance.now() - startedAt;
+    if (profiler && cpuProfilePath) {
+      const { profile } = await profiler.post("Profiler.stop");
+      writeFileSync(cpuProfilePath, JSON.stringify(profile));
+    }
+    observing = false;
+    if (!finalized) throw new Error("FINALIZE did not post FINALIZED");
+    const snapshot = sink.snapshot();
+    const counters = Object.fromEntries(COUNTER_KEYS.map((key) => [key, snapshot[key]])) as FinalizeMeasurement["counters"];
+    const work = COUNTER_KEYS.reduce((sum, key) => sum + snapshot[key], 0);
+    return { prefixUnits: text.length - family.tail.length, work, counters, patchOps, finalizeMs };
+  } finally {
+    observing = false;
+    profiler?.disconnect();
+    engine.dispose();
   }
-  const startedAt = performance.now();
-  await engine.handle({ type: "FINALIZE" });
-  const finalizeMs = performance.now() - startedAt;
-  if (profiler && cpuProfilePath) {
-    const { profile } = await profiler.post("Profiler.stop");
-    writeFileSync(cpuProfilePath, JSON.stringify(profile));
-    profiler.disconnect();
-  }
-  observing = false;
-  if (!finalized) throw new Error("FINALIZE did not post FINALIZED");
-  const snapshot = sink.snapshot();
-  const counters = Object.fromEntries(COUNTER_KEYS.map((key) => [key, snapshot[key]])) as FinalizeMeasurement["counters"];
-  const work = COUNTER_KEYS.reduce((sum, key) => sum + snapshot[key], 0);
-  return { prefixUnits: text.length - family.tail.length, work, counters, patchOps, finalizeMs };
 }
 
 interface FamilyResult {
@@ -232,10 +238,10 @@ async function main(): Promise<void> {
     const fourN = await measureFinalize(family, PREFIX_UNITS * 4, chunkUnits, profilePath);
     // Equal tails: tail-proportional finalize does the same work at both sizes.
     const ratio = fourN.work / Math.max(1, n.work);
-    const gatePassed = ratio <= SCALING_GATE;
-    results.push({ family: name, n, fourN, ratio, gatePassed });
     const grew = COUNTER_KEYS.filter((key) => fourN.counters[key] > n.counters[key] * SCALING_GATE && fourN.counters[key] > 8)
       .map((key) => `${key} ${n.counters[key]}->${fourN.counters[key]}`);
+    const gatePassed = ratio <= SCALING_GATE && grew.length === 0;
+    results.push({ family: name, n, fourN, ratio, gatePassed });
     console.log(
       `[finalize-scaling] ${gatePassed ? "ok  " : "FAIL"} ${name.padEnd(12)} work ${n.work} -> ${fourN.work} (x${ratio.toFixed(2)}) ` +
         `ms ${n.finalizeMs.toFixed(1)} -> ${fourN.finalizeMs.toFixed(1)}${grew.length > 0 ? `; grew: ${grew.join(", ")}` : ""}`,

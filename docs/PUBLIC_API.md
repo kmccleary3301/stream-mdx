@@ -148,8 +148,9 @@ type StreamingMarkdownHandle = {
   pause(): void;
   resume(): void;
   restart(): void;
-  finalize(): void;
-  append(text: string): void;
+  finalize(): Promise<FinalizeResult>;
+  append(text: string): AppendResult;
+  waitForCapacity(options: WaitForCapacityOptions): Promise<void>;
   setCredits(value: number): void;
   flushPending(): PatchFlushResult | null;
   waitForIdle(): Promise<void>;
@@ -159,9 +160,32 @@ type StreamingMarkdownHandle = {
 };
 ```
 
+export type AppendResult = {
+  acceptedSourceUnits: number;
+  pendingSourceUnits: number;
+  shouldPause: boolean;
+};
+
+export type FinalizeResult = {
+  generation: number;
+  acceptedSourceUnits: number;
+  committedSourceUnits: number;
+};
+
+The React entry point exports `AppendResult`, `FinalizeResult`, `WaitForCapacityOptions`, `SourceCapacityError`, and `StreamSessionError`.
+
+- `append(text)` offers the whole imperative string atomically, measured in JavaScript UTF-16 code units. It returns cumulative `acceptedSourceUnits`, current `pendingSourceUnits`, and `shouldPause`. The soft threshold is 65,536 pending units and the hard limit is 262,144; refused offers accept no partial source. Session counts exclude `INIT.initialContent`.
+- An imperative offer larger than the 262,144-unit hard limit rejects atomically with a non-retryable `SourceCapacityError`. Keep imperative offers at or below 65,536 units. If `shouldPause` is true, wait before offering the next piece: `await handle.waitForCapacity({ units: nextPiece.length, signal })`.
+- Retry a refused offer only when it throws a retryable `SourceCapacityError`; wait for capacity for that exact offer, then retry it without reordering or dropping source. `waitForCapacity({ units, signal })` waits for room for the requested next offer. Requests larger than the hard limit reject with non-retryable `SourceCapacityError`; an offer refused only because capacity is currently occupied has a retryable `SourceCapacityError`. `StreamSessionError` reasons are `sealed`, `stale-generation`, and `disposed`. An aborted signal rejects the wait.
+- Automatically owned `stream` adapters losslessly split iterator chunks larger than the imperative offer size before calling `append()`. They do not impose an arbitrary source-chunk cap or drop source.
+- `finalize()` seals every host session synchronously, returns the same promise for repeated calls in that generation, and drains source accepted before the seal. It resolves to `FinalizeResult` (`{ generation, acceptedSourceUnits, committedSourceUnits }`) only after the matching native `FINALIZED` acknowledgement covers the accepted units and semantic patches have flushed into the renderer store.
+- The `FinalizeResult` promise is a native semantic-store barrier, not a React DOM-commit or optional-enrichment barrier. It does not wait for trusted MDX projection, code highlighting/tokenization, decoration, or a React commit. Use the corresponding public store, scheduler, DOM, or enrichment observation when those are part of the caller's completion criteria.
+
+Host handles seal regardless of `contentPolicy`; a reset or replacement opens the next host generation. This contract does not change raw `MarkdownEngine`, `MarkdownWorkerClient`, or worker-protocol controls. They remain lower-level APIs and do not provide the host admission ledger or `FinalizeResult` barrier.
+
 `restart()` clears the renderer-owned document and cancels the current iterator generation. It does not rewind a single-use iterator, including after EOF. Supply a fresh iterator to `stream` to begin another stream; reiterable sources that return fresh iterators are supported. Each actual iterator is consumed at most once during the component's mounted lifetime, including renderer/readiness changes. A pending `next()` may settle before cancellation closes that iterator; cancelled chunks are discarded.
 
-Removing an open stream releases that generation's activity. It does not end a replacement iterator or an independently open imperative session; call `finalize()` to close imperative activity.
+Removing an open stream releases that generation's activity. It does not end a replacement iterator or an independently open imperative session; call and await `finalize()` to close imperative activity.
 
 ---
 
@@ -228,6 +252,11 @@ engine.dispose();
 ```
 
 `handle(message: WorkerIn): Promise<void>` serializes protocol messages. Reset with `INIT`; there is no separate `reset()` or `emit()` method. `post(message: WorkerOut): void` sends through the supplied callback. `dispose(): void` releases instance state and stops further output. Disposal is terminal: afterwards `handle()` resolves immediately without processing the message, queued messages are skipped, and `post()` drops output. Create a new engine instead of reusing a disposed one.
+
+Every live `PATCH` `WorkerOut` requires the root document `generation` that
+matches its `INITIALIZED` source baseline. Reject mismatched messages before
+queueing or committing them; do not infer a generation when delayed messages
+arrive.
 
 The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, and `syntax?: SyntaxRuleSpec[]`. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions })`, or create an adapter with `createInlineEngineWorker({ extensions })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
 
@@ -510,7 +539,7 @@ Opt in to render a viewport-sized subset of a large finalized table. Server rend
 ### Rendering behavior
 
 - Disabled by default. `true` enables the defaults; an options object enables virtualization unless `enabled` is `false`.
-- Only mounted, finalized tables at or above `minRows` virtualize, and only when the surrounding streaming session is inactive. A completed table followed by an unfinished paragraph stays fully rendered. Imperative `append()` opens a session; `finalize()` closes it when no async iterator is active. Normal iterator EOF finalizes the tail and closes its session. Imperative append/finalize still works after EOF or after removing the stream prop; an unconsumed stream prop does not own a session.
+- Only mounted, finalized tables at or above `minRows` virtualize, and only when the surrounding streaming session is inactive. A completed table followed by an unfinished paragraph stays fully rendered. Imperative `append()` opens a session; `await finalize()` closes and seals it when no async iterator is active. Normal iterator EOF also awaits finalization before closing its activity. After EOF or explicit finalization, call `restart()` or replace the owned source to begin a new generation before appending again. Removing a stream prop does not itself reopen a sealed generation.
 - Replacing `text`, replacing an iterator, or calling `restart()` clears the renderer-owned engine document using its existing initialization options. Old iterator generations cannot finalize the replacement session. With `managedWorker`, the caller owns engine initialization: restart clears the renderer store without sending `INIT` or discarding the caller's engine document.
 - The scroll container has a native sticky `<thead>` and an accessible name. Spacer rows are `aria-hidden`. Only mounted body rows appear in the accessibility tree; disable virtualization when every row must be available to assistive technology, browser find, or printing.
 - The initial full table uses native automatic column sizing. Measured column widths then populate an explicit `<colgroup>` while rows are windowed. Container width changes trigger another full-table natural-layout pass and invalidate cached row heights. A `ResizeObserver` measures mounted multiline rows and later content resizes.

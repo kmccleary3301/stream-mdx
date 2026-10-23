@@ -4,7 +4,10 @@ import { createElement, createRef } from "react";
 import { createRoot } from "react-dom/client";
 import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
 import {
+  SourceCapacityError,
   StreamingMarkdown,
+  type AppendResult,
+  type FinalizeResult,
   type StreamingMarkdownHandle,
   type StreamingMarkdownProps,
 } from "@stream-mdx/react";
@@ -48,6 +51,7 @@ const VISIBILITY_SAMPLE_INTERVAL_MS = 100;
 const VIEWPORT_POINT_STEP_PX = 12;
 const VIEWPORT_POINT_LIMIT = 80;
 const LINE_POINT_OFFSETS_PX = [16, 32, 64, 128, 256, 512] as const;
+const HOST_FINALIZATION_TIMEOUT_MS = 15_000;
 
 interface SourceLineRange {
   readonly lineNumber: number;
@@ -131,7 +135,10 @@ interface ProgressObservationReport {
     finalizeRequestedAtMs: number | null;
     workerFinalizedAtMs: number | null;
     semanticDrainCompletedAtMs: number | null;
+    hostFinalizationResult: FinalizeResult | null;
+    nativeAdmissionGeneration: number | null;
     semanticDrainComplete: boolean | null;
+    nativeFinalizedGeneration: number | null;
     producerTicks: Array<{ ordinal: number; nominalAtMs: number; actualAtMs: number; latenessMs: number }>;
   };
   publicationProgress: PublicationProgressSnapshot | null;
@@ -178,7 +185,10 @@ const lifecycle = {
   producerStartedAtMs: null as number | null,
   producerCompletedAtMs: null as number | null,
   finalizeRequestedAtMs: null as number | null,
+  hostFinalizationResult: null as FinalizeResult | null,
+  nativeAdmissionGeneration: null as number | null,
   workerFinalizedAtMs: null as number | null,
+  nativeFinalizedGeneration: null as number | null,
   semanticDrainCompletedAtMs: null as number | null,
   semanticDrainComplete: null as boolean | null,
 };
@@ -258,6 +268,8 @@ const report: ProgressObservationReport = {
 let activeGeneration: number | null = null;
 let initAcknowledgement: ((initialized: boolean) => void) | null = null;
 let activeHandle: StreamingMarkdownHandle | null = null;
+let hostFinalization: Promise<FinalizeResult> | null = null;
+let finalizationDeadline: number | null = null;
 let removeFlushListener: (() => void) | null = null;
 let codeFrame: HTMLDivElement | null = null;
 let tickTimer: number | null = null;
@@ -265,6 +277,20 @@ let visibilityTimer: number | null = null;
 let producerStartAt = 0;
 let traceOrdinal = 0;
 let stopped = false;
+
+function clearFinalizationDeadline(): void {
+  if (finalizationDeadline === null) return;
+  window.clearTimeout(finalizationDeadline);
+  finalizationDeadline = null;
+}
+
+function armFinalizationDeadline(phase: string): void {
+  clearFinalizationDeadline();
+  finalizationDeadline = window.setTimeout(() => {
+    finalizationDeadline = null;
+    recordError(`Timed out waiting for ${phase} after ${HOST_FINALIZATION_TIMEOUT_MS}ms.`, true);
+  }, HOST_FINALIZATION_TIMEOUT_MS);
+}
 
 function elapsedMs(): number {
   return performance.now();
@@ -324,6 +350,7 @@ function recordError(message: string, stopProducer = false): void {
   if (!errors.includes(message)) errors.push(message);
   if (stopProducer) {
     stopped = true;
+    clearFinalizationDeadline();
     if (tickTimer !== null) {
       window.clearTimeout(tickTimer);
       tickTimer = null;
@@ -441,11 +468,39 @@ function installWorkerInstrumentation(worker: Worker): void {
       }
       initAcknowledgement?.(true);
       initAcknowledgement = null;
+    } else if (type === "SOURCE_ADMITTED") {
+      const generation = "generation" in value ? value.generation : undefined;
+      if (typeof generation !== "number" || !Number.isSafeInteger(generation) || generation < 0) {
+        recordError("Source worker SOURCE_ADMITTED omitted a valid native generation.", true);
+      } else if (
+        lifecycle.nativeAdmissionGeneration !== null &&
+        lifecycle.nativeAdmissionGeneration !== generation
+      ) {
+        recordError(
+          `Source worker admission generation changed from ${lifecycle.nativeAdmissionGeneration} to ${generation} without a source restart.`,
+          true,
+        );
+      } else {
+        lifecycle.nativeAdmissionGeneration = generation;
+      }
     } else if (type === "FINALIZED") {
       if (lifecycle.workerFinalizedAtMs !== null) {
         recordError("Received duplicate FINALIZED output from the source worker.");
       } else {
+        const generation = "generation" in value ? value.generation : undefined;
         lifecycle.workerFinalizedAtMs = elapsedMs();
+        if (typeof generation !== "number" || !Number.isSafeInteger(generation) || generation < 0) {
+          recordError("Source worker FINALIZED omitted a valid native generation.", true);
+        } else {
+          lifecycle.nativeFinalizedGeneration = generation;
+          if (lifecycle.nativeAdmissionGeneration !== generation) {
+            recordError(
+              `FINALIZED generation ${generation} did not match admitted source generation ${String(lifecycle.nativeAdmissionGeneration)}.`,
+              true,
+            );
+          }
+        }
+        clearFinalizationDeadline();
         void completeSemanticDrain();
       }
     } else if (type === "ERROR") {
@@ -587,17 +642,62 @@ function finishProducer(): void {
   }
 
   try {
-    activeHandle.finalize();
+    const finalization = activeHandle.finalize();
+    hostFinalization = finalization;
     lifecycle.finalizeRequestedAtMs = elapsedMs();
+    armFinalizationDeadline("host FinalizeResult");
+    void finalization.then(
+      (result) => {
+        lifecycle.hostFinalizationResult = result;
+        if (!Number.isSafeInteger(result.generation) || result.generation < 0) {
+          recordError("Host FinalizeResult omitted a valid native source generation.", true);
+        }
+        if (lifecycle.nativeAdmissionGeneration === null || result.generation !== lifecycle.nativeAdmissionGeneration) {
+          recordError(
+            `Host FinalizeResult generation ${result.generation} did not match admitted native generation ${String(lifecycle.nativeAdmissionGeneration)}.`,
+            true,
+          );
+        }
+        if (
+          lifecycle.nativeFinalizedGeneration !== null &&
+          result.generation !== lifecycle.nativeFinalizedGeneration
+        ) {
+          recordError(
+            `Host FinalizeResult generation ${result.generation} did not match finalized native generation ${lifecycle.nativeFinalizedGeneration}.`,
+            true,
+          );
+        }
+        if (
+          result.acceptedSourceUnits !== fixture.length ||
+          result.committedSourceUnits !== fixture.length ||
+          frontendCounters.accepted !== fixture.length
+        ) {
+          recordError(
+            `Host FinalizeResult covered ${result.committedSourceUnits}/${result.acceptedSourceUnits} source units; expected ${fixture.length}.`,
+            true,
+          );
+        }
+        if (lifecycle.nativeFinalizedGeneration === null) {
+          if (!stopped) armFinalizationDeadline("matching native FINALIZED acknowledgement");
+        } else {
+          clearFinalizationDeadline();
+        }
+        refreshReport();
+      },
+      (error: unknown) => {
+        clearFinalizationDeadline();
+        recordError(`StreamingMarkdownHandle.finalize rejected: ${error instanceof Error ? error.message : String(error)}`, true);
+      },
+    );
   } catch (error) {
+    clearFinalizationDeadline();
     recordError(`StreamingMarkdownHandle.finalize failed: ${error instanceof Error ? error.message : String(error)}`, true);
     return;
   }
-  setStatus("All frozen trace ordinals offered; waiting for actual FINALIZED and semantic drain…");
+  setStatus("All frozen trace ordinals offered; waiting for the host FinalizeResult and matching native FINALIZED generation…");
   refreshReport();
 }
-
-function pushThroughPublicHandle(text: string): void {
+async function pushThroughPublicHandle(text: string): Promise<void> {
   const expected = trace[ordinalCounters.accepted];
   if (!expected || expected.text !== text) {
     ordinalChecks.accepted = false;
@@ -608,12 +708,33 @@ function pushThroughPublicHandle(text: string): void {
     return;
   }
 
-  activeHandle.append(text);
-  frontendCounters.accepted += text.length;
+  let admission: AppendResult;
+  while (true) {
+    try {
+      admission = activeHandle.append(text);
+      break;
+    } catch (error) {
+      if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+      await activeHandle.waitForCapacity({ units: text.length });
+    }
+  }
+  const expectedAcceptedUnits = frontendCounters.accepted + text.length;
+  if (admission.acceptedSourceUnits !== expectedAcceptedUnits) {
+    recordError(
+      `AppendResult accepted ${admission.acceptedSourceUnits} source units; expected ${expectedAcceptedUnits}.`,
+      true,
+    );
+    return;
+  }
+  frontendCounters.accepted = admission.acceptedSourceUnits;
   ordinalCounters.accepted += 1;
+  if (admission.shouldPause) {
+    const nextChunk = trace[traceOrdinal];
+    if (nextChunk) await activeHandle.waitForCapacity({ units: nextChunk.text.length });
+  }
 }
 
-function runTraceOrdinal(): void {
+async function runTraceOrdinal(): Promise<void> {
   tickTimer = null;
   if (stopped) return;
   const chunk = trace[traceOrdinal];
@@ -647,7 +768,7 @@ function runTraceOrdinal(): void {
   traceOrdinal += 1;
 
   try {
-    pushThroughPublicHandle(chunk.text);
+    await pushThroughPublicHandle(chunk.text);
   } catch (error) {
     recordError(`StreamingMarkdownHandle.append failed: ${error instanceof Error ? error.message : String(error)}`, true);
     refreshReport();
@@ -669,8 +790,42 @@ async function completeSemanticDrain(): Promise<void> {
     return;
   }
   try {
-    await handle.waitForIdle();
-    lifecycle.semanticDrainCompletedAtMs = elapsedMs();
+    if (!hostFinalization) throw new Error("Actual FINALIZED arrived before host finalization was requested.");
+    const timeout = Promise.withResolvers<never>();
+    const semanticDrainTimer = window.setTimeout(() => {
+      timeout.reject(new Error(`Host finalization and semantic drain timed out after ${HOST_FINALIZATION_TIMEOUT_MS}ms.`));
+    }, HOST_FINALIZATION_TIMEOUT_MS);
+    let finalizationValid = false;
+    try {
+      const result = await Promise.race([hostFinalization, timeout.promise]);
+      lifecycle.hostFinalizationResult = result;
+      finalizationValid =
+        Number.isSafeInteger(result.generation) &&
+        result.generation >= 0 &&
+        lifecycle.nativeAdmissionGeneration !== null &&
+        result.generation === lifecycle.nativeAdmissionGeneration &&
+        lifecycle.nativeFinalizedGeneration !== null &&
+        result.generation === lifecycle.nativeFinalizedGeneration &&
+        result.acceptedSourceUnits === fixture.length &&
+        result.committedSourceUnits === fixture.length &&
+        frontendCounters.accepted === fixture.length;
+      if (!finalizationValid) {
+        recordError(
+          `Host FinalizeResult generation/counts did not match admitted/finalized native generation ${String(lifecycle.nativeAdmissionGeneration)}/${String(lifecycle.nativeFinalizedGeneration)} and ${fixture.length} source units.`,
+          true,
+        );
+      }
+      await Promise.race([handle.waitForIdle(), timeout.promise]);
+    } finally {
+      window.clearTimeout(semanticDrainTimer);
+    }
+    const rendererState = handle.getState();
+    if (rendererState.queueDepth !== 0 || rendererState.pendingBatches !== 0) {
+      recordError(
+        `Renderer queue remained at depth ${rendererState.queueDepth} with ${rendererState.pendingBatches} pending batches after waitForIdle.`,
+        true,
+      );
+    }
     const progress = tracker.snapshot();
     const frontiersComplete =
       progress.engineEnteredUTF16Frontier === fixture.length &&
@@ -707,35 +862,59 @@ async function completeSemanticDrain(): Promise<void> {
     if (report.authoredSourceEquality.exact !== true) recordError("Authored source equality was not proven exact.");
     if (!report.traceConsumption.complete) recordError("Frozen trace ordinal consumption is incomplete or diverged.");
 
-    lifecycle.semanticDrainComplete = frontiersComplete && ordinalsComplete && !progress.incomplete && errors.length === 0;
+    lifecycle.semanticDrainComplete =
+      finalizationValid && frontiersComplete && ordinalsComplete && !progress.incomplete && errors.length === 0;
     retainVisibilitySample();
     if (visibilityTimer !== null) {
       window.clearInterval(visibilityTimer);
       visibilityTimer = null;
     }
     report.status = lifecycle.semanticDrainComplete ? "complete" : "error";
-    if (report.status === "complete") setStatus("Complete: actual FINALIZED received and semantic patch drain observed.");
-    else setStatus("Observation finished with incomplete or invalid progress evidence.");
+    if (report.status === "complete") {
+      setStatus(
+        `Complete: native generation ${lifecycle.nativeFinalizedGeneration} matched host FinalizeResult ${lifecycle.hostFinalizationResult?.generation}; semantic patch drain observed.`,
+      );
+    } else {
+      setStatus("Observation finished with incomplete or invalid progress evidence.");
+    }
     removeFlushListener?.();
     removeFlushListener = null;
     refreshReport();
   } catch (error) {
-    recordError(`StreamingMarkdownHandle.waitForIdle failed: ${error instanceof Error ? error.message : String(error)}`, true);
+    recordError(`Host finalization or semantic drain failed: ${error instanceof Error ? error.message : String(error)}`, true);
   }
 }
 
 async function initializeObservation(worker: Worker): Promise<void> {
-  const readyHandle = await new Promise<StreamingMarkdownHandle>((resolve) => {
-    const waitForHandle = () => {
-      const handle = handleRef.current;
-      if (handle?.getState().workerReady) {
-        resolve(handle);
-      } else {
-        window.requestAnimationFrame(waitForHandle);
-      }
-    };
+  const readyHandleSignal = Promise.withResolvers<StreamingMarkdownHandle>();
+  let readyTimer: number | undefined;
+  let readyFrame: number | undefined;
+  let readySettled = false;
+  readyTimer = window.setTimeout(() => {
+    if (readySettled) return;
+    readySettled = true;
+    readyHandleSignal.reject(
+      new Error(`StreamingMarkdown handle did not become worker-ready within ${HOST_FINALIZATION_TIMEOUT_MS}ms.`),
+    );
+  }, HOST_FINALIZATION_TIMEOUT_MS);
+  const waitForHandle = () => {
+    if (readySettled) return;
+    const handle = handleRef.current;
+    if (handle?.getState().workerReady) {
+      readySettled = true;
+      readyHandleSignal.resolve(handle);
+    } else {
+      readyFrame = window.requestAnimationFrame(waitForHandle);
+    }
+  };
+  let readyHandle: StreamingMarkdownHandle;
+  try {
     waitForHandle();
-  });
+    readyHandle = await readyHandleSignal.promise;
+  } finally {
+    if (readyTimer !== undefined) window.clearTimeout(readyTimer);
+    if (readyFrame !== undefined) window.cancelAnimationFrame(readyFrame);
+  }
   activeHandle = readyHandle;
   lifecycle.rendererWorkerReadyAtMs = elapsedMs();
   removeFlushListener = readyHandle.onFlush((result) => {
@@ -748,9 +927,18 @@ async function initializeObservation(worker: Worker): Promise<void> {
     refreshReport();
   });
 
-  const initialized = new Promise<boolean>((resolve) => {
-    initAcknowledgement = resolve;
-  });
+  const initialization = Promise.withResolvers<boolean>();
+  let initializationTimedOut = false;
+  const initializationTimer = window.setTimeout(() => {
+    initializationTimedOut = true;
+    initAcknowledgement?.(false);
+    initAcknowledgement = null;
+  }, HOST_FINALIZATION_TIMEOUT_MS);
+  initAcknowledgement = (success) => {
+    window.clearTimeout(initializationTimer);
+    initAcknowledgement = null;
+    initialization.resolve(success);
+  };
   const initMessage: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
   prewarmLangs: [],
   docPlugins: {
@@ -767,9 +955,14 @@ async function initializeObservation(worker: Worker): Promise<void> {
   },
   mdx: { compileMode: "server" }, };
   worker.postMessage(initMessage);
-  const initializedSuccessfully = await initialized;
+  const initializedSuccessfully = await initialization.promise;
   if (!initializedSuccessfully || stopped) {
-    recordError("Source worker did not return a successful INITIALIZED message.");
+    recordError(
+      initializationTimedOut
+        ? `Source worker INITIALIZED acknowledgement timed out after ${HOST_FINALIZATION_TIMEOUT_MS}ms.`
+        : "Source worker did not return a successful INITIALIZED message.",
+      true,
+    );
     return;
   }
   if (activeGeneration === null) recordError("Source worker initialized without the required document-generation trace event.");

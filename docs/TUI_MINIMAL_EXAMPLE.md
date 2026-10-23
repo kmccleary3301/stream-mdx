@@ -65,6 +65,7 @@ import { STREAM_MDX_SCHEMA_VERSION } from "stream-mdx/core";
 
 const worker = createWorkerThread({ stdout: true, stderr: true });
 const store = createSnapshotStore();
+let generation: number | null = null;
 
 worker.on("message", (msg: WorkerOut) => {
   if (msg.type === "INITIALIZED") {
@@ -76,9 +77,10 @@ worker.on("message", (msg: WorkerOut) => {
       typeof inputSource?.raw !== "string"
     ) throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
     store.setSnapshot(msg.snapshot);
+    generation = msg.generation;
     return;
   }
-  if (msg.type !== "PATCH") return;
+  if (msg.type !== "PATCH" || msg.generation !== generation) return;
   store.applyPatches(msg.patches);
   renderToTerminal(store.getBlocks());
 });

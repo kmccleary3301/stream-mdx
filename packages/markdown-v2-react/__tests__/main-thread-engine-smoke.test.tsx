@@ -106,7 +106,7 @@ async function runCallbackUpdateDuringStream(): Promise<void> {
     });
     await delay(30);
     handle.current?.append("After callback update.");
-    handle.current?.finalize();
+    await handle.current?.finalize();
     await waitForMutation(container, () => container.textContent?.includes("After callback update.") ?? false);
     assert.strictEqual(container.querySelector("h1")?.textContent, "Retained heading");
     assert.ok(container.textContent?.includes("Before callback update."));

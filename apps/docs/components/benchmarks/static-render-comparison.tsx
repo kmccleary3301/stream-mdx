@@ -6,7 +6,7 @@ import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
 import { components as mdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
 import { cn } from "@/lib/utils";
-import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle, type StreamingMarkdownProps } from "@stream-mdx/react";
+import { ComponentRegistry, SourceCapacityError, StreamingMarkdown, type AppendResult, type StreamingMarkdownHandle, type StreamingMarkdownProps } from "@stream-mdx/react";
 import { useCallback, useMemo, useRef, useState, type ElementType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -14,6 +14,25 @@ import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
 import { createMathPlugin } from "@streamdown/math";
 
+function waitForAbortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) {
+    return Promise.reject(signal.reason instanceof Error ? signal.reason : new Error("Static benchmark cancelled."));
+  }
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(signal.reason instanceof Error ? signal.reason : new Error("Static benchmark cancelled."));
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(error);
+      },
+    );
+  });
+}
 type EngineKey = "streammdx" | "streamdown" | "react-markdown";
 type RunState = "idle" | "running" | "done";
 
@@ -299,6 +318,7 @@ export function StaticRenderComparison() {
     "react-markdown": null,
   });
   const runCancelledRef = useRef(false);
+  const runAbortControllerRef = useRef<AbortController | null>(null);
   const resultsRef = useRef<MeasureStore>(createMeasureStore());
   const streamHandleRef = useRef<StreamingMarkdownHandle | null>(null);
 
@@ -351,19 +371,8 @@ export function StaticRenderComparison() {
 
   const withRestartedStreamSession = useCallback(
     async (operation: (handle: StreamingMarkdownHandle) => Promise<void> | void) => {
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        const handle = await restartStreamSession();
-        try {
-          await operation(handle);
-          return;
-        } catch (error) {
-          if (error instanceof Error && error.message === "Worker not attached" && attempt === 0) {
-            continue;
-          }
-          throw error;
-        }
-      }
-      throw new Error("Timed out waiting for StreamMDX worker readiness.");
+      const handle = await restartStreamSession();
+      await operation(handle);
     },
     [restartStreamSession],
   );
@@ -477,8 +486,42 @@ export function StaticRenderComparison() {
           return;
         }
         await withRestartedStreamSession(async (handle) => {
-          handle.append(fixture.markdown);
-          handle.finalize();
+          const signal = runAbortControllerRef.current?.signal;
+          if (!signal) throw new Error("Static benchmark source admission has no active run signal.");
+          let offset = 0;
+          while (offset < fixture.markdown.length) {
+            if (signal.aborted) throw signal.reason instanceof Error ? signal.reason : new Error("Static benchmark cancelled.");
+            const chunk = fixture.markdown.slice(offset, offset + 65_536);
+            let admission: AppendResult;
+            for (;;) {
+              try {
+                admission = handle.append(chunk);
+                break;
+              } catch (error) {
+                if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+                await handle.waitForCapacity({ units: chunk.length, signal });
+              }
+            }
+            const expectedSourceUnits = offset + chunk.length;
+            if (admission.acceptedSourceUnits !== expectedSourceUnits) {
+              throw new Error(
+                `Static benchmark host admitted ${admission.acceptedSourceUnits} source units; expected ${expectedSourceUnits}.`,
+              );
+            }
+            offset = expectedSourceUnits;
+            if (admission.shouldPause && offset < fixture.markdown.length) {
+              await handle.waitForCapacity({
+                units: Math.min(65_536, fixture.markdown.length - offset),
+                signal,
+              });
+            }
+          }
+          const result = await waitForAbortable(handle.finalize(), signal);
+          if (result.acceptedSourceUnits !== offset || result.committedSourceUnits !== offset) {
+            throw new Error(
+              `Static benchmark finalization covered ${result.committedSourceUnits}/${result.acceptedSourceUnits} source units; expected ${offset}.`,
+            );
+          }
         });
       });
     },
@@ -489,6 +532,9 @@ export function StaticRenderComparison() {
     if (runState === "running") return;
 
     runCancelledRef.current = false;
+    runAbortControllerRef.current?.abort(new Error("A new static benchmark run replaced the previous run."));
+    const runAbortController = new AbortController();
+    runAbortControllerRef.current = runAbortController;
     setErrorMessage(null);
     setTimeoutCount(0);
     setProgress(0);
@@ -535,15 +581,17 @@ export function StaticRenderComparison() {
       }
     } catch (error) {
       setRunState("idle");
-      setErrorMessage(error instanceof Error ? error.message : "Static benchmark failed.");
+      if (!runCancelledRef.current) setErrorMessage(error instanceof Error ? error.message : "Static benchmark failed.");
     } finally {
       setActiveFixture(null);
       setActiveEngine(null);
+      if (runAbortControllerRef.current === runAbortController) runAbortControllerRef.current = null;
     }
   }, [iterations, runSingleCase, runState]);
 
   const cancelRun = useCallback(() => {
     runCancelledRef.current = true;
+    runAbortControllerRef.current?.abort(new Error("Static benchmark cancelled."));
   }, []);
 
   const summaries = useMemo(() => {

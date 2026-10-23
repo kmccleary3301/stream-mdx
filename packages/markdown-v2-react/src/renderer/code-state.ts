@@ -13,8 +13,12 @@ import {
   type CodeLineDecorationUpdate,
   type CodeLineIndex,
   type CodeLineRecord,
+  type DiffBlock,
+  type DiffLine,
   type CodeTokenLine,
   type CodeTokenSpan,
+  type ThemedLine,
+  type ThemedToken,
   type NodeSnapshot,
   type Patch,
   type SourceSnapshot,
@@ -977,6 +981,103 @@ export function decorateStoredCodeState(
     return { changed: false, reason: error instanceof Error ? error.message : "decoration validation failed" };
   }
 }
+
+function diffTokensEqual(
+  existing: ThemedLine | null | undefined,
+  next: ThemedLine | null,
+): boolean {
+  if (next === null) return existing == null;
+  if (!existing || existing.length !== next.length) return false;
+  for (let index = 0; index < next.length; index += 1) {
+    const left = existing[index];
+    const right = next[index];
+    if (
+      !left ||
+      !right ||
+      left.content !== right.content ||
+      left.color !== right.color ||
+      left.fontStyle !== right.fontStyle
+    ) return false;
+  }
+  return true;
+}
+
+function diffTokensFromCodeLine(
+  tokens: CodeTokenLine | undefined,
+  kind: DiffLine["kind"],
+): ThemedLine | null {
+  if (!tokens) return null;
+  const themed = tokens.spans.map((span): ThemedToken => {
+    const style = span.s ?? span.v?.dark;
+    const token: ThemedToken = { content: span.t };
+    if (style?.fg !== undefined) token.color = style.fg;
+    if (style?.fs !== undefined) token.fontStyle = style.fs;
+    return token;
+  });
+  const prefix = kind === "add" ? "+" : kind === "del" ? "-" : kind === "context" ? " " : "";
+  const first = themed[0];
+  if (!prefix || !first || !first.content.startsWith(prefix)) return themed;
+  if (first.content.length === prefix.length) return themed.slice(1);
+  return [{ ...first, content: first.content.slice(prefix.length) }, ...themed.slice(1)];
+}
+
+/** Applies native code-line decorations to the bounded token fields in existing diff presentation metadata. */
+export function updateStoredDiffBlockDecorations(
+  block: Block | undefined,
+  state: StoredCodeBlockState,
+  changedIndices: ReadonlySet<number> | undefined,
+): Block | undefined {
+  if (!block || block.type !== "code" || !changedIndices || changedIndices.size === 0) return block;
+  const value = block.payload.meta?.diffBlocks;
+  if (!Array.isArray(value)) return block;
+  const diffBlocks = value as DiffBlock[];
+  const indices = [...changedIndices];
+  for (let index = 1; index < indices.length; index += 1) {
+    if ((indices[index - 1] ?? -1) > (indices[index] ?? -1)) {
+      indices.sort((left, right) => left - right);
+      break;
+    }
+  }
+  let nextDiffBlocks: DiffBlock[] | undefined;
+  let indexCursor = 0;
+  let sourceLineOffset = 0;
+  for (let blockIndex = 0; blockIndex < diffBlocks.length; blockIndex += 1) {
+    const diffBlock = diffBlocks[blockIndex];
+    if (!diffBlock || !Array.isArray(diffBlock.lines)) continue;
+    const blockEnd = sourceLineOffset + diffBlock.lines.length;
+    while (indexCursor < indices.length && (indices[indexCursor] ?? Number.POSITIVE_INFINITY) < sourceLineOffset) {
+      indexCursor += 1;
+    }
+    let nextLines: DiffLine[] | undefined;
+    while (indexCursor < indices.length) {
+      const index = indices[indexCursor];
+      if (index === undefined || index >= blockEnd) break;
+      indexCursor += 1;
+      const diffLineIndex = index - sourceLineOffset;
+      const diffLine = diffBlock.lines[diffLineIndex];
+      const codeLine = state.view.lines.get(index);
+      if (!diffLine || !codeLine || codeLine.text !== diffLine.raw) continue;
+      const tokens = diffTokensFromCodeLine(codeLine.decoration?.tokens, diffLine.kind);
+      if (diffTokensEqual(diffLine.tokens, tokens)) continue;
+      if (!nextLines) nextLines = diffBlock.lines.slice();
+      nextLines[diffLineIndex] = { ...diffLine, tokens };
+    }
+    if (nextLines) {
+      nextDiffBlocks ??= diffBlocks.slice();
+      nextDiffBlocks[blockIndex] = { ...diffBlock, lines: nextLines };
+    }
+    sourceLineOffset = blockEnd;
+  }
+  if (!nextDiffBlocks) return block;
+  return {
+    ...block,
+    payload: {
+      ...block.payload,
+      meta: { ...(block.payload.meta ?? {}), diffBlocks: nextDiffBlocks },
+    },
+  };
+}
+
 
 export function readStoredCodeLines(state: StoredCodeBlockState, from: number, to: number): readonly CodeLineRecord[] {
   const key = `${from}:${to}`;

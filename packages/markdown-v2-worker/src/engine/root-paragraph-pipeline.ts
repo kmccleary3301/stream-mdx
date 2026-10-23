@@ -170,6 +170,7 @@ export function createRootParagraphOwners(
   generation: number,
   options: RootParagraphPipelineOptions,
   excludedSourceStarts?: ReadonlySet<number>,
+  existingSourceStarts?: Pick<ReadonlySet<number>, "has">,
 ): readonly RootParagraphSourceOwner[] {
   if (options.attestation && options.attestation.parser !== options.parser) {
     throw new TypeError("Root paragraph window attestation belongs to a different MarkdownParser");
@@ -177,7 +178,8 @@ export function createRootParagraphOwners(
   const sourceSnapshot = source.snapshot();
   const owners: RootParagraphSourceOwner[] = [];
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
-    if (excludedSourceStarts?.has((options.sourceOffset ?? 0) + node.from)) continue;
+    const sourceStart = (options.sourceOffset ?? 0) + node.from;
+    if (excludedSourceStarts?.has(sourceStart) || existingSourceStarts?.has(sourceStart)) continue;
     const owner = createRootParagraphOwnerFromSnapshot(node, source, sourceSnapshot, generation, options);
     if (owner) owners.push(owner);
   }

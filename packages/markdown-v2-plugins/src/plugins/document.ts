@@ -33,6 +33,11 @@ export interface FootnoteParagraphTargetUpdate {
 export interface FootnoteParagraphTargetBridge {
   readonly deltas: readonly FootnoteParagraphTargetDelta[];
   readonly removedOwnerIds?: readonly string[];
+  /** Unchanged generic blocks whose public inline artifacts were rebuilt during tail parsing. */
+  readonly inlineRefreshes?: readonly {
+    readonly previous: Block;
+    readonly current: Block;
+  }[];
   readonly rebuild?: boolean;
   applyUpdates(updates: readonly FootnoteParagraphTargetUpdate[]): void;
 }
@@ -101,6 +106,10 @@ export class DocumentPluginRegistry {
 
   getAll(): DocumentPlugin[] {
     return [...this.plugins];
+  }
+
+  some(predicate: (plugin: DocumentPlugin) => boolean): boolean {
+    return this.plugins.some(predicate);
   }
 
   clear(): void {

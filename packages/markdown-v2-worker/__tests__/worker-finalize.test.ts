@@ -14,8 +14,9 @@ function applyMessages(store: RendererStore, messages: WorkerOut[]): void {
   }
 }
 
-async function runFinalizeConsumerTest(): Promise<void> {
-  const harness = await createWorkerHarness();
+type WorkerHarness = Awaited<ReturnType<typeof createWorkerHarness>>;
+
+async function runFinalizeConsumerTest(harness: WorkerHarness): Promise<void> {
   const store = createRendererStore();
   applyMessages(store, await harness.send({
     type: "INIT",
@@ -51,5 +52,69 @@ async function runFinalizeConsumerTest(): Promise<void> {
   );
 }
 
-await runFinalizeConsumerTest();
+async function runTailHeadingFinalizeConsumerTest(harness: WorkerHarness): Promise<void> {
+  const store = createRendererStore();
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true },
+  }));
+
+  const content = ["## Repeat", "", "## Repeat", "", "## Repeat"].join("\n");
+  applyMessages(store, await harness.send({ type: "APPEND", text: content }));
+  const before = store.getBlocks().filter((block) => block.type === "heading");
+  assert.deepStrictEqual(
+    before.map((block) => block.payload.meta?.headingId),
+    ["repeat", "repeat-2", "repeat-3"],
+    "duplicate heading slugs should remain deterministic before FINALIZE",
+  );
+  assert.ok(before[2] && !before[2].isFinalized, "expected the trailing heading to remain unfinished");
+  const beforePrefix = projectConsumerBlocks(before.slice(0, 2));
+
+  applyMessages(store, await harness.send({ type: "FINALIZE" }));
+  const after = store.getBlocks();
+  const afterHeadings = after.filter((block) => block.type === "heading");
+  assert.ok(after.every((block) => block.isFinalized), "FINALIZE must settle every block");
+  assert.deepStrictEqual(
+    afterHeadings.map((block) => block.payload.meta?.headingId),
+    ["repeat", "repeat-2", "repeat-3"],
+    "FINALIZE must preserve duplicate heading slugs across the retained prefix and tail",
+  );
+  assert.deepStrictEqual(
+    projectConsumerBlocks(afterHeadings.slice(0, 2)),
+    beforePrefix,
+    "FINALIZE must preserve the rendered semantics of finalized prefix headings",
+  );
+}
+
+async function runClosedFenceConsumerTest(harness: WorkerHarness): Promise<void> {
+  const store = createRendererStore();
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "```ts\nconst value = 1;\n",
+    prewarmLangs: [],
+    docPlugins: { codeHighlighting: "none", footnotes: false, html: false, mdx: false, tables: false },
+  }));
+  applyMessages(store, await harness.send({ type: "APPEND", text: "```" }));
+  const code = store.getBlocks().find((block) => block.type === "code");
+  assert.ok(code);
+  assert.equal(store.getCodeBlock(code.id)?.source.state, "open", "an unterminated closing line can still change");
+
+  applyMessages(store, await harness.send({ type: "APPEND", text: "\n" }));
+  assert.equal(store.getCodeBlock(code.id)?.source.state, "finalized", "a physical closing fence settles source before document EOF");
+  assert.equal(store.getBlocks().find((block) => block.id === code.id)?.payload.raw, "```ts\nconst value = 1;\n```");
+
+  applyMessages(store, await harness.send({ type: "FINALIZE" }));
+  assert.equal(store.getCodeBlock(code.id)?.source.state, "finalized");
+  assert.equal(store.getBlocks().find((block) => block.id === code.id)?.payload.raw, "```ts\nconst value = 1;\n```");
+}
+
+const harness = await createWorkerHarness();
+await runClosedFenceConsumerTest(harness);
+await runTailHeadingFinalizeConsumerTest(harness);
+
+await runFinalizeConsumerTest(harness);
 console.log("worker finalize consumer test passed");

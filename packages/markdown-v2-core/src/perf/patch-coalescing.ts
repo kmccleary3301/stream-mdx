@@ -1,4 +1,5 @@
 import type { CoalescingMetrics, NodePath, NodeSnapshot, Patch, SetPropsBatchEntry } from "../types";
+import { getPatchKind } from "./patch-batching";
 export type { CoalescingMetrics } from "../types";
 
 
@@ -42,7 +43,7 @@ function carriesRange(patch: Patch): boolean {
 }
 
 function canMergeSetProps(base: Patch, next: Patch): boolean {
-  return !carriesRange(base) && !carriesRange(next);
+  return getPatchKind(base) === getPatchKind(next) && !carriesRange(base) && !carriesRange(next);
 }
 
 
@@ -173,12 +174,13 @@ function collectSetProps(window: Patch[], startIndex: number): { patches: Patch[
   if (!first || first.op !== "setProps") {
     return { patches: [first], nextIndex: startIndex + 1 };
   }
+  const firstKind = getPatchKind(first);
   const entries: SetPropsBatchEntry[] = [];
   let j = startIndex;
 
   while (j < window.length && entries.length < MAX_BATCHED_SET_PROPS) {
     const current = window[j];
-    if (current.op !== "setProps") {
+    if (current.op !== "setProps" || getPatchKind(current) !== firstKind) {
       break;
     }
     const mergedProps = { ...(current.props ?? {}) };
@@ -298,6 +300,7 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
       i = j;
       continue;
     } else if (current.op === "setProps") {
+      const currentKind = getPatchKind(current);
       // Coalesce multiple setProps for the same node
       const mergedProps = { ...(current.props ?? {}) };
       let j = i + 1;
@@ -329,7 +332,7 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
       let k = j;
       while (k < window.length && batchEntries.length < MAX_BATCHED_SET_PROPS) {
         const candidate = window[k];
-        if (candidate.op !== "setProps") {
+        if (candidate.op !== "setProps" || getPatchKind(candidate) !== currentKind) {
           break;
         }
 

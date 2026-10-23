@@ -2539,6 +2539,8 @@ function applyPropsToNode(snapshot: DocumentSnapshot, node: SnapshotNode, props:
   if (!props) return;
   const hasRange = Object.prototype.hasOwnProperty.call(props, "range");
   const hasMeta = Object.prototype.hasOwnProperty.call(props, "meta");
+  const hasFinality = Object.prototype.hasOwnProperty.call(props, "isFinalized");
+  const finality = props.isFinalized;
   let range: { from: number; to: number } | undefined;
   if (hasRange) {
     const candidate = props.range;
@@ -2571,7 +2573,7 @@ function applyPropsToNode(snapshot: DocumentSnapshot, node: SnapshotNode, props:
   const next = { ...node.props };
   if (hasMeta) delete next.meta;
   for (const [key, value] of Object.entries(props)) {
-    if (key === "range" || key === "meta") continue;
+    if (key === "range" || key === "meta" || key === "isFinalized") continue;
     if (key === "block" && value && typeof value === "object") {
       const incoming = value as Block;
       if (isGenericContainerType(node.type)) {
@@ -2607,6 +2609,16 @@ function applyPropsToNode(snapshot: DocumentSnapshot, node: SnapshotNode, props:
   if (applyMetaUpdate) {
     node.meta = nextMeta ? structuredCloneIfPossible(nextMeta) : undefined;
     if (node.block) node.block = blockWithExactMeta(node.block, node.meta);
+  }
+  if (
+    hasFinality &&
+    typeof finality === "boolean" &&
+    node.parentId === snapshot.rootId &&
+    (node.type === "list" || node.type === "blockquote") &&
+    node.block &&
+    node.block.isFinalized !== finality
+  ) {
+    node.block = { ...node.block, isFinalized: finality };
   }
   node.props = next;
 }

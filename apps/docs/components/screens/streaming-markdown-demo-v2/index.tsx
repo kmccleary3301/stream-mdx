@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { components as sharedMdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
 import { DEFAULT_BACKPRESSURE_CONFIG, calculateSmoothedCredit, clampCredit } from "@stream-mdx/core";
-import { defineContentComponent, StreamingMarkdown, type ContentComponentHostProps, type ContentComponentProps, type ContentComponentRegistration, type StreamingMarkdownHandle, ComponentRegistry } from "@stream-mdx/react";
+import { defineContentComponent, SourceCapacityError, StreamingMarkdown, type AppendResult, type FinalizeResult, type ContentComponentHostProps, type ContentComponentProps, type ContentComponentRegistration, type StreamingMarkdownHandle, ComponentRegistry } from "@stream-mdx/react";
 import { MarkdownWorkerClient, type MarkdownWorkerClientOptions } from "@stream-mdx/worker/worker-client";
 import type { DefaultWorkerMode } from "@stream-mdx/worker";
 
@@ -36,6 +36,8 @@ const LIST_AUTO_EXPORT_ENABLED = process.env.NEXT_PUBLIC_STREAMING_LIST_AUTO_EXP
 const AUTOMATION_DOC_LINK = "docs/STREAMING_MARKDOWN_V2_STATUS.md#54-automation-api-availability";
 const ENABLE_WORKER_HELPER = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER === "true";
 const WORKER_HELPER_MODE: DefaultWorkerMode = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER_MODE === "blob" ? "blob" : "auto";
+const MAX_SOURCE_OFFER_UNITS = 65_536;
+const FINALIZE_TIMEOUT_MS = 30_000;
 
 const demoContentComponents: Record<string, ContentComponentRegistration> = {};
 for (const [name, component] of Object.entries(sharedMdxComponents)) {
@@ -347,6 +349,12 @@ const SCHEDULING_PRESETS = {
 
 type SchedulingPreset = keyof typeof SCHEDULING_PRESETS;
 
+type SourceSessionStatus = {
+  isFinalizing: boolean;
+  isHostComplete: boolean;
+  streamError: string | null;
+};
+
 export function StreamingMarkdownDemoV2({
   fullText,
   className = "",
@@ -437,6 +445,14 @@ export function StreamingMarkdownDemoV2({
   const latestIdxRef = useRef(0);
   const fullTextRef = useRef(fullText);
   const automationWarningLoggedRef = useRef(false);
+  const sourceGenerationRef = useRef(0);
+  const nativeAdmissionGenerationRef = useRef<number | null>(null);
+  const nativeFinalizedGenerationRef = useRef<number | null>(null);
+  const sourceAdmissionTargetRef = useRef(0);
+  const sourceAdmissionTaskRef = useRef<Promise<void> | null>(null);
+  const sourceAdmissionTaskGenerationRef = useRef<number | null>(null);
+  const sourceAdmissionAbortRef = useRef<AbortController | null>(null);
+  const finalizationPromiseRef = useRef<Promise<FinalizeResult> | null>(null);
   useEffect(() => {
     latestIdxRef.current = idx;
   }, [idx]);
@@ -461,7 +477,6 @@ export function StreamingMarkdownDemoV2({
     setStreamLimit(normalized);
     if (normalized !== null && latestIdxRef.current > normalized) {
       setIdx(normalized);
-      workerSentIdxRef.current = Math.min(workerSentIdxRef.current, normalized);
     }
   }, []);
 
@@ -481,7 +496,18 @@ export function StreamingMarkdownDemoV2({
   const maxLen = fullText.length;
   const effectiveTotal = streamLimit ?? maxLen;
   const finished = idx >= effectiveTotal;
-  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [sourceSessionStatus, setSourceSessionStatus] = useState<SourceSessionStatus>({
+    isFinalizing: false,
+    isHostComplete: false,
+    streamError: null,
+  });
+  const sourceSessionStatusRef = useRef(sourceSessionStatus);
+  const updateSourceSessionStatus = useCallback((status: SourceSessionStatus) => {
+    sourceSessionStatusRef.current = status;
+    setSourceSessionStatus(status);
+  }, []);
+  const { isFinalizing, isHostComplete, streamError } = sourceSessionStatus;
+  const [sourceAdmissionEpoch, bumpSourceAdmissionEpoch] = useState(0);
   const current = useMemo(() => fullText.slice(0, Math.min(idx, effectiveTotal)), [fullText, idx, effectiveTotal]);
   const exportListDebug = useCallback(() => {
     try {
@@ -537,24 +563,7 @@ export function StreamingMarkdownDemoV2({
     streamingRef.current = handle;
     bumpStreamingHandleEpoch((value) => value + 1);
   }, []);
-  type WorkerReadyDeferred = { promise: Promise<void>; resolve: () => void };
-  const workerReadyDeferredRef = useRef<WorkerReadyDeferred | null>(null);
   const workerReadyStateRef = useRef(false);
-  const resetWorkerReadyPromise = useCallback(() => {
-    workerReadyStateRef.current = false;
-    let resolve!: () => void;
-    const promise = new Promise<void>((res) => {
-      resolve = res;
-    });
-    workerReadyDeferredRef.current = { promise, resolve };
-  }, []);
-  const resolveWorkerReadyPromise = useCallback(() => {
-    workerReadyStateRef.current = true;
-    if (workerReadyDeferredRef.current) {
-      workerReadyDeferredRef.current.resolve();
-      workerReadyDeferredRef.current = null;
-    }
-  }, []);
   const workerCleanupRef = useRef<(() => void) | null>(null);
   const workerInitTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingWorkerInitRef = useRef<MarkdownWorkerClient | null>(null);
@@ -624,7 +633,6 @@ export function StreamingMarkdownDemoV2({
     lastTx: 0,
   });
   const pendingDrainRef = useRef(false);
-  const finalizeDrainTimerRef = useRef<NodeJS.Timeout | null>(null);
   const patchDurationsRef = useRef<number[]>([]);
   const longTaskDurationsRef = useRef<number[]>([]);
   const recvToFlushRef = useRef<number[]>([]);
@@ -877,31 +885,192 @@ export function StreamingMarkdownDemoV2({
     streamingRef.current?.setCredits(clamped);
   }, []);
 
-  const startFinalizeDrain = useCallback(() => {
-    if (finalizeDrainTimerRef.current) {
-      clearTimeout(finalizeDrainTimerRef.current);
-      finalizeDrainTimerRef.current = null;
+  const reportStreamError = useCallback((error: unknown, generation: number) => {
+    if (generation !== sourceGenerationRef.current) return;
+    const message = error instanceof Error ? error.message : String(error);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
-    setIsFinalizing(true);
-    const drainStart = Date.now();
-    const MAX_FINALIZE_DRAIN_MS = 1000;
-    const drain = () => {
-      const handle = streamingRef.current;
-      if (!handle) return;
-      handle.flushPending();
-      const queueDepth = handle.getState?.().queueDepth ?? 0;
-      const elapsed = Date.now() - drainStart;
-      if (elapsed >= MAX_FINALIZE_DRAIN_MS) {
-        setIsFinalizing(false);
+    setIsRunning(false);
+    updateSourceSessionStatus({ isFinalizing: false, isHostComplete: false, streamError: message });
+    console.error("[StreamingMarkdown demo] source session failed", error);
+  }, [updateSourceSessionStatus]);
+
+  const requestSourceAdmission = useCallback((requestedTarget: number): Promise<void> => {
+    const target = Math.min(Math.max(0, requestedTarget), fullTextRef.current.length);
+    sourceAdmissionTargetRef.current = Math.max(sourceAdmissionTargetRef.current, target);
+    const currentTask = sourceAdmissionTaskRef.current;
+    if (currentTask) {
+      if (sourceAdmissionTaskGenerationRef.current === sourceGenerationRef.current) return currentTask;
+      return currentTask.then(
+        () => requestSourceAdmission(target),
+        () => requestSourceAdmission(target),
+      );
+    }
+
+    const handle = streamingRef.current;
+    if (!handle) return Promise.reject(new Error("StreamingMarkdown handle is unavailable for source admission."));
+    const generation = sourceGenerationRef.current;
+    let controller = sourceAdmissionAbortRef.current;
+    if (!controller || controller.signal.aborted) {
+      controller = new AbortController();
+      sourceAdmissionAbortRef.current = controller;
+    }
+    const signal = controller.signal;
+    const task = (async () => {
+      while (workerSentIdxRef.current < sourceAdmissionTargetRef.current) {
+        if (generation !== sourceGenerationRef.current) throw new Error("Source admission generation changed.");
+        if (signal.aborted) {
+          throw signal.reason instanceof Error ? signal.reason : new Error("Source admission cancelled.");
+        }
+        const start = workerSentIdxRef.current;
+        const end = Math.min(sourceAdmissionTargetRef.current, start + MAX_SOURCE_OFFER_UNITS);
+        const sourcePart = fullTextRef.current.slice(start, end);
+        if (sourcePart.length !== end - start) {
+          throw new Error("Source text changed before host admission reached its requested frontier.");
+        }
+
+        let admission: AppendResult;
+        for (;;) {
+          try {
+            admission = handle.append(sourcePart);
+            break;
+          } catch (error) {
+            if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+            await handle.waitForCapacity({ units: sourcePart.length, signal });
+            if (generation !== sourceGenerationRef.current) throw new Error("Source admission generation changed while waiting for capacity.");
+          }
+        }
+        if (admission.acceptedSourceUnits !== end) {
+          throw new Error(`Host admitted ${admission.acceptedSourceUnits} source units; expected ${end}.`);
+        }
+        workerSentIdxRef.current = end;
+        bumpSourceAdmissionEpoch((value) => value + 1);
+        debugEventsRef.current.push({
+          at: Date.now(),
+          type: "APPEND",
+          start,
+          end,
+          appendedLen: sourcePart.length,
+          totalBlocks: blocks.length,
+        });
+        if (debugEventsRef.current.length > 500) {
+          debugEventsRef.current.splice(0, debugEventsRef.current.length - 500);
+        }
+
+        const remainingSourceUnits = sourceAdmissionTargetRef.current - end;
+        if (admission.shouldPause && remainingSourceUnits > 0) {
+          await handle.waitForCapacity({
+            units: Math.min(MAX_SOURCE_OFFER_UNITS, remainingSourceUnits),
+            signal,
+          });
+        }
       }
-      if (elapsed >= MAX_FINALIZE_DRAIN_MS && queueDepth <= 0) {
-        finalizeDrainTimerRef.current = null;
-        return;
+    })();
+    sourceAdmissionTaskRef.current = task;
+    sourceAdmissionTaskGenerationRef.current = generation;
+    void task.then(
+      () => {
+        if (sourceAdmissionTaskRef.current !== task) return;
+        sourceAdmissionTaskRef.current = null;
+        sourceAdmissionTaskGenerationRef.current = null;
+        if (workerSentIdxRef.current < sourceAdmissionTargetRef.current) {
+          void requestSourceAdmission(sourceAdmissionTargetRef.current);
+        }
+      },
+      () => {
+        if (sourceAdmissionTaskRef.current !== task) return;
+        sourceAdmissionTaskRef.current = null;
+        sourceAdmissionTaskGenerationRef.current = null;
+        if (generation !== sourceGenerationRef.current && workerSentIdxRef.current < sourceAdmissionTargetRef.current) {
+          void requestSourceAdmission(sourceAdmissionTargetRef.current);
+        }
+      },
+    );
+    return task;
+  }, [blocks.length]);
+
+  const ensureSourceThrough = useCallback(async (target: number): Promise<void> => {
+    const generation = sourceGenerationRef.current;
+    const acceptedTarget = Math.min(Math.max(0, target), fullTextRef.current.length);
+    sourceAdmissionTargetRef.current = Math.max(sourceAdmissionTargetRef.current, acceptedTarget);
+    while (workerSentIdxRef.current < acceptedTarget) {
+      if (generation !== sourceGenerationRef.current) throw new Error("Source admission was cancelled by a new generation.");
+      await requestSourceAdmission(acceptedTarget);
+    }
+  }, [requestSourceAdmission]);
+
+  const finalizeHostSession = useCallback((): Promise<FinalizeResult> => {
+    if (finalizationPromiseRef.current) return finalizationPromiseRef.current;
+    const handle = streamingRef.current;
+    if (!handle) return Promise.reject(new Error("StreamingMarkdown handle is unavailable for finalization."));
+
+    const generation = sourceGenerationRef.current;
+    const target = Math.min(latestIdxRef.current, streamLimitRef.current ?? fullTextRef.current.length);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    bufferedCharsRef.current = 0;
+    streamTickAtRef.current = null;
+    setIsRunning(false);
+    updateSourceSessionStatus({
+      isFinalizing: true,
+      isHostComplete: false,
+      streamError: sourceSessionStatusRef.current.streamError,
+    });
+
+    let promise: Promise<FinalizeResult>;
+    promise = (async () => {
+      let timer: number | undefined;
+      const timeout = new Promise<never>((_, reject) => {
+        timer = window.setTimeout(() => reject(new Error(`Host finalization and renderer idle exceeded ${FINALIZE_TIMEOUT_MS}ms.`)), FINALIZE_TIMEOUT_MS);
+      });
+      try {
+        await ensureSourceThrough(target);
+        if (generation !== sourceGenerationRef.current || streamingRef.current !== handle) {
+          throw new Error("Finalization was cancelled by a new source generation.");
+        }
+        const result = await Promise.race([handle.finalize(), timeout]);
+        if (generation !== sourceGenerationRef.current || streamingRef.current !== handle) {
+          throw new Error("Finalization was cancelled by a new source generation.");
+        }
+        if (
+          result.acceptedSourceUnits !== workerSentIdxRef.current ||
+          result.committedSourceUnits !== result.acceptedSourceUnits
+        ) {
+          throw new Error(
+            `Host finalization covered ${result.committedSourceUnits}/${result.acceptedSourceUnits} source units; expected ${workerSentIdxRef.current}.`,
+          );
+        }
+        if (
+          result.acceptedSourceUnits > 0 &&
+          (result.generation !== nativeAdmissionGenerationRef.current ||
+            result.generation !== nativeFinalizedGenerationRef.current)
+        ) {
+          throw new Error(
+            `Host finalization generation ${result.generation} does not match native admissions/finalization ` +
+              `(${nativeAdmissionGenerationRef.current}/${nativeFinalizedGenerationRef.current}).`,
+          );
+        }
+        handle.flushPending();
+        await Promise.race([handle.waitForIdle(), timeout]);
+        if (generation !== sourceGenerationRef.current || streamingRef.current !== handle) {
+          throw new Error("Finalization was cancelled by a new source generation.");
+        }
+        updateSourceSessionStatus({ isFinalizing: false, isHostComplete: true, streamError: null });
+        return result;
+      } catch (error) {
+        reportStreamError(error, generation);
+        throw error;
+      } finally {
+        if (timer !== undefined) window.clearTimeout(timer);
       }
-      finalizeDrainTimerRef.current = setTimeout(drain, 16);
-    };
-    finalizeDrainTimerRef.current = setTimeout(drain, 0);
-  }, []);
+    })();
+    finalizationPromiseRef.current = promise;
+    return promise;
+  }, [ensureSourceThrough, reportStreamError, updateSourceSessionStatus]);
 
 
   const notifyPatchListeners = useCallback(() => {
@@ -1209,7 +1378,7 @@ export function StreamingMarkdownDemoV2({
     paintRef.current.length = 0;
     queueDepthRef.current.length = 0;
     flushBatchLogRef.current.length = 0;
-    resetWorkerReadyPromise();
+    workerReadyStateRef.current = false;
     resetCoalescingStats();
     if (softDrainTimeoutRef.current) {
       clearTimeout(softDrainTimeoutRef.current);
@@ -1235,8 +1404,16 @@ export function StreamingMarkdownDemoV2({
     streamingRef.current?.setCredits(workerCreditsRef.current);
 
     const unsubscribe = client.onMessage((msg) => {
+      if (msg.type === "SOURCE_ADMITTED") {
+        nativeAdmissionGenerationRef.current = msg.generation;
+        return;
+      }
+      if (msg.type === "FINALIZED") {
+        nativeFinalizedGenerationRef.current = msg.generation;
+        return;
+      }
       if (msg.type === "INITIALIZED") {
-        resolveWorkerReadyPromise();
+        workerReadyStateRef.current = true;
         bumpWorkerInitEpoch((epoch) => epoch + 1);
         patchDurationsRef.current.length = 0;
         flushApplyRef.current.length = 0;
@@ -1269,14 +1446,6 @@ export function StreamingMarkdownDemoV2({
         setRendererVersion(0);
         scheduleUiSync();
         workerSentIdxRef.current = 0;
-        const catchUpIdx = latestIdxRef.current;
-        if (catchUpIdx > 0) {
-          const pending = fullTextRef.current.slice(0, catchUpIdx);
-          if (pending) {
-            client.append(pending);
-            workerSentIdxRef.current = catchUpIdx;
-          }
-        }
         if (restartPendingRef.current) {
           restartPendingRef.current = false;
           setIsRunning(true);
@@ -1363,14 +1532,11 @@ export function StreamingMarkdownDemoV2({
       client.terminate();
       setRendererWorker(null);
       workerReadyStateRef.current = false;
-      workerReadyDeferredRef.current = null;
     };
   }, [
     PREWARM_LANGS,
     prewarm,
     resetCoalescingStats,
-    resetWorkerReadyPromise,
-    resolveWorkerReadyPromise,
     scheduleUiSync,
   ]);
 
@@ -1407,42 +1573,24 @@ export function StreamingMarkdownDemoV2({
   useEffect(() => {
     setupWorker();
     return () => {
+      sourceGenerationRef.current += 1;
+      sourceAdmissionAbortRef.current?.abort(new Error("Streaming demo unmounted during source admission."));
+      sourceAdmissionAbortRef.current = null;
       workerCleanupRef.current?.();
       workerCleanupRef.current = null;
       workerRef.current = null;
     };
   }, [setupWorker]);
 
-  // Send content to V2 worker
   useEffect(() => {
-    if (!workerReadyStateRef.current) {
-      return;
-    }
-    const ceiling = streamLimitRef.current ?? fullText.length;
-    const target = Math.min(idx, ceiling);
-
-    if (workerRef.current && target > workerSentIdxRef.current) {
-      const start = workerSentIdxRef.current;
-      const appended = fullText.slice(start, target);
-      if (appended) {
-        workerRef.current.append(appended);
-        workerSentIdxRef.current = target;
-
-        debugEventsRef.current.push({
-          at: Date.now(),
-          type: "APPEND",
-          start,
-          end: target,
-          appendedLen: appended.length,
-          totalBlocks: blocks.length,
-        });
-        const MAX_DEBUG_EVENTS = 500;
-        if (debugEventsRef.current.length > MAX_DEBUG_EVENTS) {
-          debugEventsRef.current.splice(0, debugEventsRef.current.length - MAX_DEBUG_EVENTS);
-        }
-      }
-    }
-  }, [idx, fullText, blocks.length]);
+    if (!workerReadyStateRef.current || !streamingRef.current) return;
+    const target = Math.min(idx, streamLimitRef.current ?? fullText.length);
+    if (target <= workerSentIdxRef.current) return;
+    const generation = sourceGenerationRef.current;
+    void requestSourceAdmission(target).catch((error: unknown) => {
+      reportStreamError(error, generation);
+    });
+  }, [idx, fullText, workerInitEpoch, streamingHandleEpoch, requestSourceAdmission, reportStreamError]);
 
   // Streaming control logic
   useEffect(() => {
@@ -1521,26 +1669,32 @@ export function StreamingMarkdownDemoV2({
   }, [rate, tickMs, isRunning, finished, maxLen, runToken]);
 
   useEffect(() => {
-    if (!workerRef.current) {
-      return;
-    }
-    if (!workerReadyStateRef.current) {
-      return;
-    }
-    if (workerSentIdxRef.current < effectiveTotal) {
-      return;
-    }
     const hasActiveStreamLimit = streamLimitRef.current !== null && streamLimitRef.current < fullTextRef.current.length;
-    if (finished && !finalizedOnceRef.current && !hasActiveStreamLimit) {
-      workerRef.current.finalize();
-      streamingRef.current?.finalize();
-      updateWorkerCredits(1);
-      startFinalizeDrain();
-      finalizedOnceRef.current = true;
+    if (!workerReadyStateRef.current || !streamingRef.current) return;
+    if (finished && !hasActiveStreamLimit && !isHostComplete && workerSentIdxRef.current >= effectiveTotal) {
+      if (!finalizedOnceRef.current) {
+        finalizedOnceRef.current = true;
+        updateWorkerCredits(1);
+        const generation = sourceGenerationRef.current;
+        void finalizeHostSession().catch((error: unknown) => {
+          if (generation === sourceGenerationRef.current) {
+            console.error("[StreamingMarkdown demo] automatic host finalization rejected", error);
+          }
+        });
+      }
     } else if (!finished && finalizedOnceRef.current) {
       finalizedOnceRef.current = false;
     }
-  }, [finished, effectiveTotal, workerInitEpoch, updateWorkerCredits, startFinalizeDrain]);
+  }, [
+    finished,
+    effectiveTotal,
+    workerInitEpoch,
+    sourceAdmissionEpoch,
+    streamingHandleEpoch,
+    isHostComplete,
+    updateWorkerCredits,
+    finalizeHostSession,
+  ]);
 
   useEffect(() => {
     if (finished) {
@@ -1590,17 +1744,22 @@ export function StreamingMarkdownDemoV2({
   // MDX coordinator: derive display blocks with compiled MDX refs
   const onRestart = useCallback(() => {
     const wasRunning = isRunning;
+    sourceGenerationRef.current += 1;
+    sourceAdmissionTargetRef.current = 0;
+    nativeAdmissionGenerationRef.current = null;
+    nativeFinalizedGenerationRef.current = null;
+    sourceAdmissionAbortRef.current?.abort(new Error("Source admission cancelled by restart."));
+    sourceAdmissionAbortRef.current = null;
+    streamingRef.current?.restart();
+    finalizationPromiseRef.current = null;
+    latestIdxRef.current = 0;
     restartPendingRef.current = wasRunning;
     setIsRunning(false);
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (finalizeDrainTimerRef.current) {
-      clearTimeout(finalizeDrainTimerRef.current);
-      finalizeDrainTimerRef.current = null;
-    }
-    setIsFinalizing(false);
+    updateSourceSessionStatus({ isFinalizing: false, isHostComplete: false, streamError: null });
     setIdx(0);
     setRenderTimes([]);
     workerSentIdxRef.current = 0;
@@ -1638,7 +1797,7 @@ export function StreamingMarkdownDemoV2({
     finalizedOnceRef.current = false;
     bumpRunToken((token) => token + 1);
     setupWorker();
-  }, [isRunning, setupWorker, bumpRunToken]);
+  }, [isRunning, setupWorker, bumpRunToken, updateSourceSessionStatus]);
 
   useEffect(() => {
     if (schedulingPresetRef.current === schedulingPreset) return;
@@ -1769,6 +1928,33 @@ export function StreamingMarkdownDemoV2({
       );
       automationWarningLoggedRef.current = true;
     }
+    const waitForWorkerReady = async () => {
+      const startedAt = Date.now();
+      while (!workerReadyStateRef.current || !streamingRef.current) {
+        if (Date.now() - startedAt >= 15_000) {
+          throw new Error("Worker and StreamingMarkdown handle did not become ready within 15000ms.");
+        }
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
+      }
+    };
+    const waitForHandleIdle = async () => {
+      const handle = streamingRef.current;
+      if (!handle) throw new Error("StreamingMarkdown handle is unavailable while waiting for renderer idle.");
+      let timer: number | undefined;
+      try {
+        await Promise.race([
+          handle.waitForIdle(),
+          new Promise<never>((_, reject) => {
+            timer = window.setTimeout(
+              () => reject(new Error(`Renderer idle exceeded ${FINALIZE_TIMEOUT_MS}ms.`)),
+              FINALIZE_TIMEOUT_MS,
+            );
+          }),
+        ]);
+      } finally {
+        if (timer !== undefined) window.clearTimeout(timer);
+      }
+    };
     const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(value)));
     const api = (window.__STREAMING_DEMO__ ?? {}) as StreamingDemoAutomationApiV2;
     api.onPatch = (listener) => {
@@ -1797,34 +1983,26 @@ export function StreamingMarkdownDemoV2({
       setSchedulingPreset(preset);
     };
     api.fastForward = async () => {
-      // Ensure worker is ready before forcing a full append
-      if (!workerReadyStateRef.current && workerReadyDeferredRef.current) {
-        try {
-          await workerReadyDeferredRef.current.promise;
-        } catch {
-          // ignore readiness errors
-        }
-      }
-      if (!workerRef.current) {
-        console.warn("[StreamingMarkdown demo] fastForward requested but worker not ready");
-        return;
-      }
+      await waitForWorkerReady();
+      if (!streamingRef.current) throw new Error("StreamingMarkdown handle is unavailable for fastForward.");
       const target = streamLimitRef.current ?? fullTextRef.current.length;
-      const start = workerSentIdxRef.current;
-      const remaining = target - start;
-      if (remaining > 0) {
-        const chunk = fullTextRef.current.slice(start, target);
-        if (chunk) {
-          try {
-            workerRef.current.append(chunk);
-          } catch (error) {
-            console.error("[StreamingMarkdown demo] fastForward append failed", error);
-          }
-        }
+      const generation = sourceGenerationRef.current;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
-      workerSentIdxRef.current = target;
-      setIdx(target);
+      bufferedCharsRef.current = 0;
+      streamTickAtRef.current = null;
       setIsRunning(false);
+      try {
+        await ensureSourceThrough(target);
+        if (generation !== sourceGenerationRef.current) throw new Error("fastForward was cancelled by a new source generation.");
+        latestIdxRef.current = target;
+        setIdx(target);
+      } catch (error) {
+        reportStreamError(error, generation);
+        throw error;
+      }
     };
     api.setMdxEnabled = (enabled: boolean) => {
       docPluginConfigRef.current = {
@@ -1836,39 +2014,17 @@ export function StreamingMarkdownDemoV2({
     api.restart = () => onRestart();
     api.pause = () => setIsRunning(false);
     api.resume = () => setIsRunning(true);
-    api.finalize = () => {
-      workerRef.current?.finalize?.();
-      streamingRef.current?.finalize();
-    };
+    api.finalize = () => finalizeHostSession();
     api.getHandle = () => streamingRef.current;
     api.getWorker = () => workerRef.current?.getWorker() ?? null;
     api.flushPending = async () => {
-      streamingRef.current?.flushPending();
-      await streamingRef.current?.waitForIdle?.();
+      const handle = streamingRef.current;
+      if (!handle) throw new Error("StreamingMarkdown handle is unavailable while flushing pending work.");
+      handle.flushPending();
+      await waitForHandleIdle();
     };
-    api.waitForIdle = async () => {
-      if (streamingRef.current) {
-        await streamingRef.current.waitForIdle();
-      }
-    };
-    api.waitForWorker = async () => {
-      if (workerReadyStateRef.current) {
-        return;
-      }
-      const deferred = workerReadyDeferredRef.current;
-      if (deferred) {
-        await deferred.promise;
-        return;
-      }
-      const start = Date.now();
-      const timeoutMs = 15_000;
-      while (!workerReadyStateRef.current) {
-        if (Date.now() - start > timeoutMs) {
-          throw new Error("Worker did not initialize within the expected window.");
-        }
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-    };
+    api.waitForIdle = waitForHandleIdle;
+    api.waitForWorker = waitForWorkerReady;
     api.getPerf = () => ({
       summary: timingSummary,
       samples: {
@@ -1895,30 +2051,39 @@ export function StreamingMarkdownDemoV2({
       },
       flushBatches: flushBatchLogRef.current.map((entry) => ({ ...entry })),
     });
-    api.getState = () => ({
-      idx,
-      total: effectiveTotal,
-      isRunning,
-      isPending,
-      fullTextLength: fullTextRef.current.length,
-      finished,
-      isFinalizing,
-      streamLimit: streamLimitRef.current,
-      workerSentIdx: workerSentIdxRef.current,
-      workerCredits: workerCreditsRef.current,
-      timerActive: Boolean(timerRef.current),
-      mode: modeRef.current,
-      schedulingPreset,
-      rate,
-      tickMs,
-      renderer: {
-        version: rendererVersion,
-        patchMode: hasPatchPipelineRef.current,
-      },
-      patchStats: { last: lastPatchSummaryRef.current, totals: patchTotalsRef.current },
-      renderTimes,
-      timings: timingSummary,
-    });
+    api.getState = () => {
+      const sourceStatus = sourceSessionStatusRef.current;
+      const sourceIdx = latestIdxRef.current;
+      const sourceTotal = streamLimitRef.current ?? fullTextRef.current.length;
+      return {
+        idx: sourceIdx,
+        total: sourceTotal,
+        isRunning,
+        isPending,
+        fullTextLength: fullTextRef.current.length,
+        finished: sourceIdx >= sourceTotal,
+        isFinalizing: sourceStatus.isFinalizing,
+        isHostComplete: sourceStatus.isHostComplete,
+        nativeAdmissionGeneration: nativeAdmissionGenerationRef.current,
+        nativeFinalizedGeneration: nativeFinalizedGenerationRef.current,
+        streamError: sourceStatus.streamError,
+        streamLimit: streamLimitRef.current,
+        workerSentIdx: workerSentIdxRef.current,
+        workerCredits: workerCreditsRef.current,
+        timerActive: Boolean(timerRef.current),
+        mode: modeRef.current,
+        schedulingPreset,
+        rate,
+        tickMs,
+        renderer: {
+          version: rendererVersion,
+          patchMode: hasPatchPipelineRef.current,
+        },
+        patchStats: { last: lastPatchSummaryRef.current, totals: patchTotalsRef.current },
+        renderTimes,
+        timings: timingSummary,
+      };
+    };
     window.__STREAMING_DEMO__ = api;
   }, [
     idx,
@@ -1926,7 +2091,6 @@ export function StreamingMarkdownDemoV2({
     isRunning,
     isPending,
     finished,
-    isFinalizing,
     schedulingPreset,
     rate,
     tickMs,
@@ -1936,6 +2100,9 @@ export function StreamingMarkdownDemoV2({
     onRestart,
     getCodeBlockSnapshot,
     updateStreamLimit,
+    ensureSourceThrough,
+    reportStreamError,
+    finalizeHostSession,
   ]);
 
   const coalescingTotalsSnapshot = coalescingPanel.totals;
@@ -1946,7 +2113,21 @@ export function StreamingMarkdownDemoV2({
     const match = fullText.match(/^#\s+(.+)$/m);
     return match?.[1]?.trim() || "Streaming Output";
   }, [fullText]);
-  const streamStatus = finished ? (isFinalizing ? "Finalizing…" : "Completed") : !isRunning ? "Paused" : showRendering ? "Rendering…" : "Streaming";
+  const activeStreamLimit = streamLimitRef.current !== null && streamLimitRef.current < fullText.length;
+  const pendingSourceUnits = workerSentIdxRef.current < Math.min(idx, streamLimitRef.current ?? fullText.length);
+  const streamStatus = streamError
+    ? "Error"
+    : isHostComplete
+      ? "Completed"
+      : isFinalizing || (finished && !activeStreamLimit && !pendingSourceUnits)
+        ? "Finalizing…"
+        : pendingSourceUnits
+          ? "Sending…"
+          : finished || !isRunning
+            ? "Paused"
+            : showRendering
+              ? "Rendering…"
+              : "Streaming";
   const statusTone =
     streamStatus === "Streaming"
       ? "bg-emerald-50 text-emerald-700"
@@ -1954,9 +2135,11 @@ export function StreamingMarkdownDemoV2({
         ? "bg-amber-50 text-amber-700"
         : streamStatus === "Rendering…"
           ? "bg-slate-100 text-slate-600"
-          : streamStatus === "Finalizing…"
+          : streamStatus === "Finalizing…" || streamStatus === "Sending…"
             ? "bg-sky-50 text-sky-700"
-            : "bg-foreground/5 text-foreground/70";
+            : streamStatus === "Error"
+              ? "bg-red-50 text-red-700"
+              : "bg-foreground/5 text-foreground/70";
   const summaryCards = [
     { label: "First flush", value: formatMs(firstMeaningfulMsRef.current) },
     { label: "Latency p95", value: formatMs(timingSummary.recvToFlush?.p95Ms) },
@@ -1993,6 +2176,7 @@ export function StreamingMarkdownDemoV2({
                 <div className="text-xs text-muted">
                   {idx.toLocaleString()} / {effectiveTotal.toLocaleString()} chars streamed
                 </div>
+                {streamError && <div role="alert" className="text-xs text-red-700">{streamError}</div>}
               </div>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

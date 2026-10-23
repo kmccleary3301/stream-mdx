@@ -1,3 +1,4 @@
+import type { InlineContext } from "@lezer/markdown";
 import type { InlineNode, RegexInlinePlugin, SyntaxRuleSpec } from "../types";
 import type { InlineExtension } from "./types";
 import { reportIncompleteNativeCandidate } from "./native-inline-state";
@@ -15,6 +16,8 @@ export function compileRegexPluginToExtension(plugin: RegexInlinePlugin): Inline
   const nodeName = `Custom_${plugin.id.replace(/[^A-Za-z0-9_]/g, "_")}`;
   const stickyRe = ensureSticky(plugin.re);
   const fastCheck = plugin.fastCheck;
+  // A context's text is immutable; do not rescan it at every token position.
+  const fastCheckResults = fastCheck ? new WeakMap<InlineContext, boolean>() : undefined;
 
   let before: string | undefined;
   let after: string | undefined;
@@ -43,8 +46,13 @@ export function compileRegexPluginToExtension(plugin: RegexInlinePlugin): Inline
           before,
           after,
           parse(cx, _next, pos) {
-            if (fastCheck && !fastCheck(cx.text)) {
-              return -1;
+            if (fastCheck && fastCheckResults) {
+              let eligible = fastCheckResults.get(cx);
+              if (eligible === undefined) {
+                eligible = fastCheck(cx.text);
+                fastCheckResults.set(cx, eligible);
+              }
+              if (!eligible) return -1;
             }
             stickyRe.lastIndex = pos;
             const match = stickyRe.exec(cx.text);

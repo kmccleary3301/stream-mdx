@@ -942,6 +942,37 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     });
   }
 
+  finalizeClosed(): NativeNestedCodeSourceChange {
+    if (this.sourceState === "finalized") {
+      return Object.freeze({
+        code: this.getMetadata(),
+        expectedRevision: this.revision,
+        revision: this.revision,
+        fromLine: this.codeLines.completeLineCount,
+        lines: EMPTY_CODE_LINES,
+        sourceAppend: "",
+      });
+    }
+    if (this.sourceState !== "closed" || this.codeLines.completeLineCount !== this.codeLines.length) {
+      throw new Error("Only a settled closed native code owner can finalize without its parser mapping");
+    }
+    const expectedRevision = this.revision;
+    this.sourceState = "finalized";
+    this.revision = nextRevision(this.revision);
+    this.pendingCRAt = undefined;
+    if (this.presentation?.revision === expectedRevision) {
+      this.presentation = { ...this.presentation, revision: this.revision };
+    }
+    return Object.freeze({
+      code: this.getMetadata(),
+      expectedRevision,
+      revision: this.revision,
+      fromLine: this.codeLines.completeLineCount,
+      lines: EMPTY_CODE_LINES,
+      sourceAppend: "",
+    });
+  }
+
   finalize(mapping: NativeNestedCodeSourceMapping): NativeNestedCodeSourceChange {
     if (this.sourceState === "finalized") {
       return Object.freeze({

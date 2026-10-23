@@ -139,7 +139,7 @@ async function testInlineWorkerNativeCodeHighlighting(): Promise<void> {
     assert.equal(workerError(), null);
     await renderer.whenInitialized();
     renderer.append(markdown);
-    renderer.finalize();
+    await renderer.finalize();
     await waitFor(() => {
       const blockId = currentCodeOwnerId();
       const codeBlock = blockId ? store.getCodeBlock(blockId) : undefined;
@@ -169,7 +169,7 @@ async function testInlineWorkerNativeCodeHighlighting(): Promise<void> {
     await waitFor(() => replacementEvents.initialized || workerError() !== null, "replacement inline worker publishes its attached initialization");
     assert.equal(workerError(), null);
     await renderer.whenInitialized();
-    renderer.finalize();
+    await renderer.finalize();
     await waitFor(() => {
       const replacementOwnerId = currentCodeOwnerId();
       const codeBlock = replacementOwnerId ? store.getCodeBlock(replacementOwnerId) : undefined;

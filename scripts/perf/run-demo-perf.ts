@@ -35,6 +35,52 @@ const SCHEDULING_PRESET = (getArg("--scheduling") ?? process.env.STREAM_MDX_PERF
   | "latency"
   | "throughput";
 
+function isDemoSourceEof(options: {
+  mode: "worker" | "classic";
+  workerId: number | null;
+  generation: number | null;
+}): boolean {
+  const api: StreamingDemoAutomationApiV2 | undefined = window.__STREAMING_DEMO__;
+  const state = api?.getState?.();
+  if (
+    !state ||
+    state.finished !== true ||
+    state.timerActive !== false ||
+    state.streamError !== null ||
+    state.idx !== state.total ||
+    state.fullTextLength !== state.total ||
+    state.streamLimit !== null ||
+    state.workerSentIdx !== state.total
+  ) {
+    return false;
+  }
+
+  if (options.mode === "worker") {
+    if (options.workerId === null || options.generation === null) return false;
+    const observer = (window as PerfWindow).__STREAM_MDX_WORKER_LIFECYCLE__;
+    if (!observer || observer.workerIdFor(api?.getWorker?.() ?? null) !== options.workerId) return false;
+    const initSent = observer.events.find(
+      (event) =>
+        event.workerId === options.workerId &&
+        event.generation === options.generation &&
+        event.direction === "input" &&
+        event.type === "INIT",
+    );
+    return Boolean(
+      initSent &&
+        observer.events.some(
+          (event) =>
+            event.sequence > initSent.sequence &&
+            event.workerId === options.workerId &&
+            event.generation === options.generation &&
+            event.direction === "output" &&
+            event.type === "INITIALIZED",
+        ),
+    );
+  }
+  return true;
+}
+
 function isDemoRunComplete(options: {
   mode: "worker" | "classic";
   workerId: number | null;
@@ -42,32 +88,26 @@ function isDemoRunComplete(options: {
   requireQueueDrain: boolean;
 }): boolean {
   const api: StreamingDemoAutomationApiV2 | undefined = window.__STREAMING_DEMO__;
-  const state = api?.getState?.() as
-    | {
-        finished?: unknown;
-        timerActive?: unknown;
-        isFinalizing?: unknown;
-        idx?: unknown;
-        total?: unknown;
-        workerSentIdx?: unknown;
-      }
-    | undefined;
+  const state = api?.getState?.();
   if (
     !state ||
     state.finished !== true ||
     state.timerActive !== false ||
     state.isFinalizing !== false ||
-    typeof state.idx !== "number" ||
-    typeof state.total !== "number" ||
-    state.idx < state.total
+    state.isHostComplete !== true ||
+    state.streamError !== null ||
+    state.idx !== state.total ||
+    state.fullTextLength !== state.total ||
+    state.streamLimit !== null ||
+    state.workerSentIdx !== state.total
   ) {
     return false;
   }
 
   if (options.mode === "worker") {
     if (
-      typeof state.workerSentIdx !== "number" ||
-      state.workerSentIdx < state.total ||
+      state.nativeAdmissionGeneration === null ||
+      state.nativeFinalizedGeneration !== state.nativeAdmissionGeneration ||
       options.workerId === null ||
       options.generation === null
     ) {
@@ -77,33 +117,41 @@ function isDemoRunComplete(options: {
     if (!observer || observer.workerIdFor(api?.getWorker?.() ?? null) !== options.workerId) {
       return false;
     }
-    const initialized = observer.events.some(
+    const initSent = observer.events.find(
       (event) =>
+        event.workerId === options.workerId &&
+        event.generation === options.generation &&
+        event.direction === "input" &&
+        event.type === "INIT",
+    );
+    if (!initSent) return false;
+    const initialized = observer.events.find(
+      (event) =>
+        event.sequence > initSent.sequence &&
         event.workerId === options.workerId &&
         event.generation === options.generation &&
         event.direction === "output" &&
         event.type === "INITIALIZED",
     );
-    if (!initialized) {
-      return false;
-    }
-    const finalizeSent = observer.events.some(
+    if (!initialized) return false;
+    const finalizeSent = observer.events.find(
       (event) =>
+        event.sequence > initialized.sequence &&
         event.workerId === options.workerId &&
         event.generation === options.generation &&
         event.direction === "input" &&
         event.type === "FINALIZE",
     );
+    if (!finalizeSent) return false;
     const finalized = observer.events.some(
       (event) =>
+        event.sequence > finalizeSent.sequence &&
         event.workerId === options.workerId &&
         event.generation === options.generation &&
         event.direction === "output" &&
         event.type === "FINALIZED",
     );
-    if (!finalizeSent || !finalized) {
-      return false;
-    }
+    if (!finalized) return false;
   }
 
   if (options.requireQueueDrain) {
@@ -124,16 +172,15 @@ async function waitForRendererIdle(page: Page, timeoutMs: number): Promise<void>
       throw new Error("[waitForIdle] Demo API does not expose the renderer idle wait.");
     }
 
-    let timer: number | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = window.setTimeout(() => {
-        reject(new Error(`[waitForIdle] Queue did not drain within ${timeoutMs}ms.`));
-      }, timeoutMs);
-    });
+    const timeout = Promise.withResolvers<never>();
+    const timer = window.setTimeout(
+      () => timeout.reject(new Error(`[waitForIdle] Queue did not drain within ${timeoutMs}ms.`)),
+      timeoutMs,
+    );
     try {
-      await Promise.race([api.waitForIdle(), timeoutPromise]);
+      await Promise.race([api.waitForIdle(), timeout.promise]);
     } finally {
-      if (timer !== undefined) window.clearTimeout(timer);
+      window.clearTimeout(timer);
     }
   }, timeoutMs);
 }
@@ -260,8 +307,8 @@ async function runOnce(pageId: number, page: Page, workerLifecycleScript: string
         });
         observer.observe({ type: "longtask", buffered: true });
         win.__STREAM_MDX_LONGTASK_OBSERVER__ = observer;
-      } catch {
-        // ignore observer errors
+      } catch (error) {
+        console.warn("[perf] long-task observation is unavailable; this run will omit long-task samples.", error);
       }
     });
 
@@ -272,16 +319,15 @@ async function runOnce(pageId: number, page: Page, workerLifecycleScript: string
           throw new Error("window.__STREAMING_DEMO__ is unavailable during configuration");
         }
         if (mode === "worker" && api.waitForWorker) {
-          let timer: number | undefined;
-          const timeoutPromise = new Promise<never>((_, reject) => {
-            timer = window.setTimeout(() => {
-              reject(new Error(`[waitForWorker] Worker did not initialize within ${timeoutMs}ms.`));
-            }, timeoutMs);
-          });
+          const timeout = Promise.withResolvers<never>();
+          const timer = window.setTimeout(
+            () => timeout.reject(new Error(`[waitForWorker] Worker did not initialize within ${timeoutMs}ms.`)),
+            timeoutMs,
+          );
           try {
-            await Promise.race([api.waitForWorker(), timeoutPromise]);
+            await Promise.race([api.waitForWorker(), timeout.promise]);
           } finally {
-            if (timer !== undefined) window.clearTimeout(timer);
+            window.clearTimeout(timer);
           }
         }
         if (api.setSchedulingPreset) {
@@ -357,6 +403,54 @@ async function runOnce(pageId: number, page: Page, workerLifecycleScript: string
       generation: workerRun?.generation ?? null,
       requireQueueDrain: false,
     };
+    await page.waitForFunction(isDemoSourceEof, {
+      mode: MODE,
+      workerId: workerRun?.workerId ?? null,
+      generation: workerRun?.generation ?? null,
+    }, { timeout: remainingTimeout() });
+    const finalizeResult = await page.evaluate(async ({ timeoutMs, mode }) => {
+      const api = window.__STREAMING_DEMO__;
+      if (!api || typeof api.finalize !== "function") {
+        throw new Error("Streaming demo does not expose its host finalization barrier.");
+      }
+      const timeout = Promise.withResolvers<never>();
+      const timer = window.setTimeout(
+        () => timeout.reject(new Error(`Host finalization did not resolve within ${timeoutMs}ms.`)),
+        timeoutMs,
+      );
+      try {
+        const result = await Promise.race([api.finalize(), timeout.promise]);
+        const state = api.getState?.();
+        if (
+          !state ||
+          !Number.isSafeInteger(result.generation) ||
+          result.generation < 0 ||
+          state.streamError !== null ||
+          state.isFinalizing !== false ||
+          state.isHostComplete !== true ||
+          state.idx !== state.total ||
+          state.total !== state.fullTextLength ||
+          state.streamLimit !== null ||
+          state.workerSentIdx !== state.total ||
+          result.acceptedSourceUnits !== state.total ||
+          result.committedSourceUnits !== result.acceptedSourceUnits
+        ) {
+          throw new Error("Host finalization result did not cover the complete demo source.");
+        }
+        if (
+          mode === "worker" &&
+          (state.nativeAdmissionGeneration !== result.generation ||
+            state.nativeFinalizedGeneration !== result.generation)
+        ) {
+          throw new Error(
+            "Host finalization generation did not match both observed native admission/finalization headers.",
+          );
+        }
+        return result;
+      } finally {
+        if (timer !== undefined) window.clearTimeout(timer);
+      }
+    }, { timeoutMs: Math.min(30_000, remainingTimeout()), mode: MODE });
     await page.waitForFunction(isDemoRunComplete, completionOptions, { timeout: remainingTimeout() });
     await waitForRendererIdle(page, remainingTimeout());
     await page.waitForFunction(
@@ -403,6 +497,7 @@ async function runOnce(pageId: number, page: Page, workerLifecycleScript: string
       rate: RATE,
       tickMs: TICK,
       mode: MODE,
+      hostFinalization: finalizeResult,
       baseUrl: BASE_URL,
       ...result,
     };
@@ -425,8 +520,10 @@ async function runOnce(pageId: number, page: Page, workerLifecycleScript: string
           },
         };
       });
-    } catch {
-      // page evaluation may fail if closed
+    } catch (captureError) {
+      partialState = {
+        captureError: captureError instanceof Error ? captureError.message : String(captureError),
+      };
     }
     const failurePath = await writePerfFailureArtifacts(pageId, error, capturedLogs, partialState);
     console.error(`\n[perf error] run ${pageId} failed:`, error);

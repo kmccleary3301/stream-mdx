@@ -6,12 +6,95 @@ import {
   type CodeLineIndex,
   type CodeLineDecoration,
   type CodeLineRecord,
+  type DiffBlock,
+  type DiffLine,
+  type ThemedLine,
   type SourceSnapshot,
 } from "@stream-mdx/core";
-import { detectDiffLanguage, parseUnifiedDiffLine, toDiffLineKind } from "./highlight";
+import {
+  detectDiffLanguage,
+  parseUnifiedDiffLine,
+  stripPrefixFromThemedLine,
+  toDiffLineKind,
+  toThemedLine,
+} from "./highlight";
 import type { DiffCursorState } from "./types";
 
 declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
+
+function themedDiffLine(tokens: CodeLineDecoration["tokens"], kind: DiffLine["kind"]): ThemedLine {
+  const themed = toThemedLine(tokens, "dark");
+  const prefix = kind === "add" ? "+" : kind === "del" ? "-" : kind === "context" ? " " : "";
+  return stripPrefixFromThemedLine(themed, prefix) ?? [];
+}
+
+function sameThemedDiffLine(left: ThemedLine | null | undefined, right: ThemedLine): boolean {
+  if (!left || left.length !== right.length) return false;
+  for (let index = 0; index < right.length; index += 1) {
+    const leftToken = left[index];
+    const rightToken = right[index];
+    if (
+      !leftToken ||
+      !rightToken ||
+      leftToken.content !== rightToken.content ||
+      leftToken.color !== rightToken.color ||
+      leftToken.fontStyle !== rightToken.fontStyle
+    ) return false;
+  }
+  return true;
+}
+
+function updateDiffBlockPresentation(
+  value: unknown,
+  decorations: readonly CodeLineDecoration[],
+  lines: CodeLineIndex,
+): DiffBlock[] | undefined {
+  if (!Array.isArray(value) || decorations.length === 0) return undefined;
+  const diffBlocks = value as DiffBlock[];
+  let orderedDecorations = decorations;
+  for (let index = 1; index < decorations.length; index += 1) {
+    if ((decorations[index - 1]?.index ?? -1) > (decorations[index]?.index ?? -1)) {
+      orderedDecorations = [...decorations].sort((left, right) => left.index - right.index);
+      break;
+    }
+  }
+  let nextDiffBlocks: DiffBlock[] | undefined;
+  let decorationCursor = 0;
+  let sourceLineOffset = 0;
+  let previousIndex: number | undefined;
+  for (let blockIndex = 0; blockIndex < diffBlocks.length; blockIndex += 1) {
+    const diffBlock = diffBlocks[blockIndex];
+    if (!diffBlock || !Array.isArray(diffBlock.lines)) continue;
+    const blockEnd = sourceLineOffset + diffBlock.lines.length;
+    while (
+      decorationCursor < orderedDecorations.length &&
+      (orderedDecorations[decorationCursor]?.index ?? Number.POSITIVE_INFINITY) < sourceLineOffset
+    ) decorationCursor += 1;
+    let nextLines: DiffLine[] | undefined;
+    while (decorationCursor < orderedDecorations.length) {
+      const decoration = orderedDecorations[decorationCursor];
+      if (!decoration || decoration.index >= blockEnd) break;
+      decorationCursor += 1;
+      if (decoration.index === previousIndex) continue;
+      previousIndex = decoration.index;
+      const diffLineIndex = decoration.index - sourceLineOffset;
+      const diffLine = diffBlock.lines[diffLineIndex];
+      const sourceLine = lines.get(decoration.index);
+      const lineDecoration = sourceLine?.decoration;
+      if (!diffLine || !sourceLine || sourceLine.text !== diffLine.raw || !lineDecoration) continue;
+      const tokens = themedDiffLine(lineDecoration.tokens, diffLine.kind);
+      if (sameThemedDiffLine(diffLine.tokens, tokens)) continue;
+      if (!nextLines) nextLines = diffBlock.lines.slice();
+      nextLines[diffLineIndex] = { ...diffLine, tokens };
+    }
+    if (nextLines) {
+      nextDiffBlocks ??= diffBlocks.slice();
+      nextDiffBlocks[blockIndex] = { ...diffBlock, lines: nextLines };
+    }
+    sourceLineOffset = blockEnd;
+  }
+  return nextDiffBlocks;
+}
 
 const SOURCE_SCAN_WINDOW_UNITS = 4096;
 const EMPTY_CHANGED_LINES: readonly CodeLineRecord[] = Object.freeze([]);
@@ -287,6 +370,29 @@ export class RootCodeSourceOwner {
   } | undefined {
     const presentation = this.presentation;
     return presentation?.revision === this.revision ? presentation : undefined;
+  }
+  /** Apply lazy progress and touched diff tokens without materializing the source-backed Block. */
+  updateLazyTokenizationPresentation(
+    lineCount: number,
+    decorations: readonly CodeLineDecoration[],
+  ): void {
+    const presentation = this.presentation;
+    if (presentation?.revision !== this.revision) return;
+    const meta = { ...(presentation.meta ?? {}) };
+    let changed = meta.lazyTokenizedUntil !== lineCount;
+    if (changed) meta.lazyTokenizedUntil = lineCount;
+    const diffBlocks = updateDiffBlockPresentation(meta.diffBlocks, decorations, this.codeLines);
+    if (diffBlocks) {
+      meta.diffBlocks = diffBlocks;
+      changed = true;
+    }
+    if (!changed) return;
+    this.presentation = {
+      revision: this.revision,
+      highlightedHtml: presentation.highlightedHtml,
+      meta,
+    };
+    this.cachedBlock = undefined;
   }
 
 

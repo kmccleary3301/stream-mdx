@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
+  AppendResult,
   CodeFenceRenderer,
   MarkdownEngineMode,
   StreamingMarkdownHandle,
   StreamingMarkdownProps,
 } from "@stream-mdx/react";
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { SourceCapacityError, StreamingMarkdown } from "@stream-mdx/react";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 import "katex/dist/katex.min.css";
 
@@ -93,6 +94,7 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
     streamIndexRef.current = 0;
 
     let cancelled = false;
+    const capacityAbort = new AbortController();
 
     const runStream = async () => {
       const startWait = Date.now();
@@ -101,15 +103,7 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
       // Wait until the handle is mounted and the engine/worker is ready
       while (!cancelled && currentGeneration === generationRef.current) {
         const handle = handleRef.current;
-        if (handle) {
-          try {
-            if (handle.getState().workerReady) {
-              break;
-            }
-          } catch {
-            // Worker is still instantiating
-          }
-        }
+        if (handle?.getState().workerReady) break;
 
         if (Date.now() - startWait > timeoutMs) {
           if (!cancelled && currentGeneration === generationRef.current) {
@@ -132,6 +126,15 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
       }
 
       setStatus(isPausedRef.current ? "paused" : "streaming");
+      const finalizeAndComplete = async (): Promise<void> => {
+        const result = await handle.finalize();
+        if (result.acceptedSourceUnits !== fullContent.length || result.committedSourceUnits !== fullContent.length) {
+          throw new Error(
+            `Host finalization covered ${result.committedSourceUnits}/${result.acceptedSourceUnits} source units; expected ${fullContent.length}.`,
+          );
+        }
+        if (!cancelled && currentGeneration === generationRef.current) setStatus("complete");
+      };
 
       // Incrementally stream chunks
       while (!cancelled && currentGeneration === generationRef.current) {
@@ -142,21 +145,38 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
 
         const currentIndex = streamIndexRef.current;
         if (currentIndex >= fullContent.length) {
-          handle.finalize();
-          setStatus("complete");
+          await finalizeAndComplete();
           break;
         }
 
         const nextIndex = Math.min(fullContent.length, currentIndex + CHUNK_SIZE_CHARS);
         const chunk = fullContent.slice(currentIndex, nextIndex);
-        handle.append(chunk);
+        let admission: AppendResult;
+        while (true) {
+          try {
+            admission = handle.append(chunk);
+            break;
+          } catch (error) {
+            if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+            await handle.waitForCapacity({ units: chunk.length, signal: capacityAbort.signal });
+            if (cancelled || currentGeneration !== generationRef.current) return;
+          }
+        }
+        if (admission.acceptedSourceUnits !== nextIndex) {
+          throw new Error(`Host admitted ${admission.acceptedSourceUnits} source units; expected ${nextIndex}.`);
+        }
 
         streamIndexRef.current = nextIndex;
         setStreamIndex(nextIndex);
 
+        if (admission.shouldPause && nextIndex < fullContent.length) {
+          const nextUnits = Math.min(CHUNK_SIZE_CHARS, fullContent.length - nextIndex);
+          await handle.waitForCapacity({ units: nextUnits, signal: capacityAbort.signal });
+          if (cancelled || currentGeneration !== generationRef.current) return;
+        }
+
         if (nextIndex >= fullContent.length) {
-          handle.finalize();
-          setStatus("complete");
+          await finalizeAndComplete();
           break;
         }
 
@@ -164,12 +184,18 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
       }
     };
 
-    void runStream();
+    void runStream().catch((error: unknown) => {
+      if (cancelled || currentGeneration !== generationRef.current) return;
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+      setStatus("error");
+    });
 
     return () => {
       cancelled = true;
+      capacityAbort.abort(new Error("Stream generation cancelled"));
     };
   }, [fullContent, engineMode, sessionKey]);
+
 
   const handleRestart = useCallback(() => {
     isPausedRef.current = false;

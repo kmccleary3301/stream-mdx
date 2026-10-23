@@ -22,55 +22,14 @@ const SAMPLE = [
 ].join("\n");
 
 function renderBlocks(blocks) {
-  const lines = [];
-
-  for (const block of blocks) {
-    if (block.type === "heading") {
-      const level = Number(block?.payload?.meta?.level ?? 1);
-      lines.push(`${"#".repeat(Math.max(1, Math.min(level, 6)))} ${block.payload.raw}`);
-      lines.push("");
-      continue;
-    }
-
-    if (block.type === "list") {
-      const items = Array.isArray(block.payload?.items) ? block.payload.items : [];
-      if (items.length > 0) {
-        for (const item of items) {
-          const text = typeof item?.raw === "string" ? item.raw : "";
-          lines.push(`- ${text}`);
-        }
-      } else {
-        lines.push(block.payload.raw);
-      }
-      lines.push("");
-      continue;
-    }
-
-    if (block.type === "blockquote") {
-      lines.push(`> ${block.payload.raw}`);
-      lines.push("");
-      continue;
-    }
-
-    if (block.type === "code") {
-      lines.push("```");
-      lines.push(block.payload.raw);
-      lines.push("```");
-      lines.push("");
-      continue;
-    }
-
-    lines.push(block.payload.raw);
-    lines.push("");
-  }
-
   process.stdout.write("\x1bc");
-  process.stdout.write(lines.join("\n"));
+  process.stdout.write(blocks.map((block) => block.payload.raw).join("\n\n"));
 }
 
 async function main() {
   const worker = createWorkerThread({ stdout: true, stderr: true });
   const store = createSnapshotStore();
+  let generation = null;
   const chunks = SAMPLE.match(/.{1,48}/gs) ?? [SAMPLE];
 
   worker.on("message", (msg) => {
@@ -85,9 +44,11 @@ async function main() {
         throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
       }
       store.setSnapshot(msg.snapshot);
+      generation = msg.generation;
       return;
     }
     if (msg.type === "PATCH") {
+      if (msg.generation !== generation) return;
       store.applyPatches(msg.patches);
       renderBlocks(store.getBlocks());
       return;

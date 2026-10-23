@@ -11,7 +11,7 @@ import { Streamdown, type LinkSafetyConfig, type PluginConfig } from "streamdown
 import { code, type CodeHighlighterPlugin } from "@streamdown/code";
 import { createMathPlugin } from "@streamdown/math";
 
-import { ComponentRegistry, defineContentComponent, StreamingMarkdown, type ContentComponentHostProps, type ContentComponentProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { ComponentRegistry, defineContentComponent, SourceCapacityError, StreamingMarkdown, type AppendResult, type ContentComponentHostProps, type ContentComponentProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
 
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
 import { collectGeneratedFootnoteLabels, collectSemanticDom, renderedCodeSource, type GeneratedFootnoteLabel, type SemanticDomRecords } from "../../../../scripts/perf/semantic-dom";
@@ -673,6 +673,7 @@ async function waitForStreamMdxCompletion(
   root: HTMLElement | null,
   signal: AbortSignal,
   deadline: number,
+  expectedSourceUnits: number,
 ): Promise<{
   finalizeRequestedAt: number;
   finalizeAckAt: number;
@@ -683,10 +684,22 @@ async function waitForStreamMdxCompletion(
   worker.assertHealthy();
   worker.finalized = false;
   const finalizeRequestedAt = performance.now();
-  handle.finalize();
-  while (!worker.finalized) {
-    worker.assertHealthy();
-    await waitForCompletionStep(nextFrame(), deadline, signal, "worker FINALIZED");
+  const finalizeResult = await waitForCompletionStep(
+    handle.finalize(),
+    deadline,
+    signal,
+    "StreamMDX host finalization barrier",
+  );
+  if (
+    finalizeResult.acceptedSourceUnits !== expectedSourceUnits ||
+    finalizeResult.committedSourceUnits !== expectedSourceUnits
+  ) {
+    throw new Error(
+      `Incomplete measurement: host finalization covered ${finalizeResult.committedSourceUnits}/${finalizeResult.acceptedSourceUnits} source units; expected ${expectedSourceUnits}.`,
+    );
+  }
+  if (!worker.finalized) {
+    throw new Error("Incomplete measurement: host finalization resolved without the observed worker FINALIZED.");
   }
   const finalizeAckAt = worker.finalizedAt ?? performance.now();
   // FINALIZED follows the canonical snapshot, but its patches still need to commit.
@@ -1453,6 +1466,7 @@ export function PerfHarness(): JSX.Element {
         let delayedTicksCount = 0;
         const nominalTotalMs = trace.length > 0 ? trace[trace.length - 1].atMs : 0;
 
+        let traceIndex = 0;
         for (const chunk of trace) {
           if (cancelled || token !== runTokenRef.current) return;
           if (performance.now() >= observationDeadline) {
@@ -1489,8 +1503,44 @@ export function PerfHarness(): JSX.Element {
           if (renderer === "streammdx") {
             const handle = handleRef.current;
             if (!handle) throw new Error("Incomplete measurement: StreamMDX handle missing during append.");
-            handle.append(chunk.text);
-            acceptedUnitsCount += chunk.text.length;
+            let chunkOffset = 0;
+            while (chunkOffset < chunk.text.length) {
+              const sourcePart = chunk.text.slice(chunkOffset, chunkOffset + 65_536);
+              let admission: AppendResult;
+              for (;;) {
+                try {
+                  admission = handle.append(sourcePart);
+                  break;
+                } catch (error) {
+                  if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+                  await waitForCompletionStep(
+                    handle.waitForCapacity({ units: sourcePart.length, signal: controller.signal }),
+                    observationDeadline,
+                    controller.signal,
+                    "source admission capacity",
+                  );
+                }
+              }
+              if (admission.acceptedSourceUnits !== acceptedUnitsCount + sourcePart.length) {
+                throw new Error(
+                  `Incomplete measurement: host admitted ${admission.acceptedSourceUnits} source units; expected ${acceptedUnitsCount + sourcePart.length}.`,
+                );
+              }
+              acceptedUnitsCount += sourcePart.length;
+              chunkOffset += sourcePart.length;
+              const nextUnits = chunkOffset < chunk.text.length
+                ? Math.min(65_536, chunk.text.length - chunkOffset)
+                : Math.min(65_536, trace[traceIndex + 1]?.text.length ?? 0);
+              if (admission.shouldPause && nextUnits > 0) {
+                await waitForCompletionStep(
+                  handle.waitForCapacity({ units: nextUnits, signal: controller.signal }),
+                  observationDeadline,
+                  controller.signal,
+                  "source admission capacity",
+                );
+              }
+            }
+            traceIndex += 1;
             if (restrictedNativeFixture) {
               p9SourceOffset += chunk.text.length;
               if (p9Audit) p9Audit.sourceOffset = p9SourceOffset;
@@ -1520,7 +1570,14 @@ export function PerfHarness(): JSX.Element {
         } | null = null;
 
         if (renderer === "streammdx") {
-          streamMdxTimings = await waitForStreamMdxCompletion(handleRef.current, benchmarkWorker, rootRef.current, controller.signal, observationDeadline);
+          streamMdxTimings = await waitForStreamMdxCompletion(
+            handleRef.current,
+            benchmarkWorker,
+            rootRef.current,
+            controller.signal,
+            observationDeadline,
+            acceptedUnitsCount,
+          );
         } else {
           await waitForStreamdownCompletion(
             rootRef.current,

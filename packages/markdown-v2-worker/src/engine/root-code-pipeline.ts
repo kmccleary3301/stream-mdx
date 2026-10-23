@@ -37,6 +37,7 @@ import type { ShikiThemedToken } from "./types";
 
 const OPENING_BY_OWNER = new WeakMap<RootCodeSourceOwner, RootCodeSourceOpening>();
 const PREPARED_CODE_SOURCE_BY_OWNER = new WeakMap<PreparedCodeLineOwner, PreparedCodeLineSource>();
+const NO_ROOT_CODE_OWNERS: readonly RootCodeSourceOwner[] = Object.freeze([]);
 
 export interface PreparedCodeLineOwner {
   readonly id: string;
@@ -166,22 +167,52 @@ export class SourceRangeInput implements SourceSnapshot {
   }
 }
 
+function rootCodeCursorAtSourceStart(
+  tree: Tree,
+  sourceOffset: number,
+  minimumSourceStart: number,
+) {
+  const position = minimumSourceStart - sourceOffset;
+  if (minimumSourceStart > sourceOffset && position >= tree.length) return undefined;
+  const cursor = tree.cursor();
+  if (minimumSourceStart <= sourceOffset) return cursor.firstChild() ? cursor : undefined;
+  cursor.moveTo(position, 1);
+  while (cursor.node.parent?.parent) {
+    if (!cursor.parent()) return undefined;
+  }
+  if (!cursor.node.parent && !cursor.childAfter(position)) return undefined;
+  while (sourceOffset + cursor.to <= minimumSourceStart) {
+    if (!cursor.nextSibling()) return undefined;
+  }
+  return cursor;
+}
+
 /** Admit only top-level native FencedCode nodes and bind each to the authored source. */
 export function createRootCodeOwners(
   tree: Tree,
   source: AppendSourceDocument,
   generation: number,
   sourceOffset = 0,
-  counters?: RootCodeSourceOwnerOptions["counters"],
+  counters?: RootCodeSourceOwnerOptions["counters"] & {
+    readonly recordDocumentRecordsVisited?: (count: number, stage?: "engine") => void;
+  },
   excludedSourceStarts?: ReadonlySet<number>,
+  existingSourceStarts?: Pick<ReadonlySet<number>, "has">,
+  minimumSourceStart = sourceOffset,
 ): readonly RootCodeSourceOwner[] {
-  const reader = source.snapshot();
-  const owners: RootCodeSourceOwner[] = [];
-  const cursor = tree.cursor();
-  if (!cursor.firstChild()) return owners;
+  let reader: SourceSnapshot | undefined;
+  let owners: RootCodeSourceOwner[] | undefined;
+  const cursor = rootCodeCursorAtSourceStart(tree, sourceOffset, minimumSourceStart);
+  if (!cursor) return NO_ROOT_CODE_OWNERS;
   do {
-    if (cursor.type.name !== "FencedCode" || excludedSourceStarts?.has(cursor.from + sourceOffset)) continue;
-    const opening = openingFor(cursor.node, reader, sourceOffset);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordDocumentRecordsVisited?.(1, "engine");
+    }
+    const sourceStart = cursor.from + sourceOffset;
+    if (cursor.type.name !== "FencedCode"
+      || excludedSourceStarts?.has(sourceStart)
+      || existingSourceStarts?.has(sourceStart)) continue;
+    const opening = openingFor(cursor.node, reader ??= source.snapshot(), sourceOffset);
     if (!opening) continue;
     const id = generateBlockId(`${opening.from}:code`, "code");
     const owner = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
@@ -190,9 +221,9 @@ export function createRootCodeOwners(
     OPENING_BY_OWNER.set(owner, opening);
     registerPreparedCodeLineSource(owner, opening);
     if (opening.bodyFrom < source.length) owner.accept(opening.bodyFrom, source.length);
-    owners.push(owner);
+    (owners ??= []).push(owner);
   } while (cursor.nextSibling());
-  return owners;
+  return owners ?? NO_ROOT_CODE_OWNERS;
 }
  
 function openingOf(owner: RootCodeSourceOwner): RootCodeSourceOpening {

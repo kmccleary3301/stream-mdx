@@ -187,38 +187,78 @@ export function Article({ markdown }: { markdown: string }) {
 ```
 
 ### Append-only streaming with imperative control
+
+The host handle admits each imperative `append()` string atomically in JavaScript UTF-16 units. Offers over the 262,144-unit hard limit fail with non-retryable `SourceCapacityError` and accept no partial source. Keep offers at or below 65,536 units; when an offer returns `shouldPause`, wait for capacity before the next offer.
+
 ```tsx
 "use client";
 
 import { useEffect, useRef } from "react";
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "stream-mdx";
+import { SourceCapacityError, StreamingMarkdown, type AppendResult, type StreamingMarkdownHandle } from "stream-mdx";
+
+const MAX_OFFER_UNITS = 65_536;
 
 export function LiveStream({ chunks }: { chunks: string[] }) {
   const ref = useRef<StreamingMarkdownHandle>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     async function run() {
-      ref.current?.restart();
-      for (const chunk of chunks) {
-        if (cancelled) break;
-        ref.current?.append(chunk);
-        ref.current?.flushPending();
-        await ref.current?.waitForIdle();
+      const handle = ref.current;
+      if (!handle) return;
+
+      const expectedSourceUnits = chunks.reduce((total, source) => total + source.length, 0);
+      handle.restart();
+      for (const source of chunks) {
+        for (let offset = 0; offset < source.length;) {
+          if (controller.signal.aborted) return;
+          const chunk = source.slice(offset, offset + MAX_OFFER_UNITS);
+          let admission: AppendResult;
+          while (true) {
+            try {
+              admission = handle.append(chunk);
+              break;
+            } catch (error) {
+              if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+              await handle.waitForCapacity({ units: chunk.length, signal: controller.signal });
+            }
+          }
+          offset += chunk.length;
+          if (admission.shouldPause && offset < source.length) {
+            await handle.waitForCapacity({
+              units: Math.min(MAX_OFFER_UNITS, source.length - offset),
+              signal: controller.signal,
+            });
+          }
+        }
+        handle.flushPending();
+        await handle.waitForIdle();
       }
-      ref.current?.finalize();
+      if (!controller.signal.aborted) {
+        const result = await handle.finalize();
+        if (
+          !Number.isSafeInteger(result.generation) ||
+          result.generation < 0 ||
+          result.acceptedSourceUnits !== expectedSourceUnits ||
+          result.committedSourceUnits !== expectedSourceUnits
+        ) {
+          throw new Error("Host finalization did not cover the complete source generation.");
+        }
+      }
     }
 
-    void run();
-    return () => {
-      cancelled = true;
-    };
+    void run().catch((error: unknown) => {
+      if (!controller.signal.aborted) console.error("Streaming source failed", error);
+    });
+    return () => controller.abort(new Error("Stream generation cancelled"));
   }, [chunks]);
 
   return <StreamingMarkdown ref={ref} worker="/workers/markdown-worker.js" />;
 }
 ```
+
+`append()` returns `AppendResult` with cumulative admitted session units, current pending units, and `shouldPause`. Retry only a retryable `SourceCapacityError`, using `waitForCapacity` for the exact next offer; aborts and ended sessions remain visible failures. Automatic `stream` adapters preserve larger iterator chunks by losslessly slicing them into offers; they do not impose an arbitrary source-size cap. Session counters exclude `INIT.initialContent`. `finalize()` immediately seals host admission and resolves to `FinalizeResult` only after the native semantic-store barrier; it is not a DOM-commit or enrichment barrier.
 
 ### Static / server compilation for SSR, SSG, and docs builds
 

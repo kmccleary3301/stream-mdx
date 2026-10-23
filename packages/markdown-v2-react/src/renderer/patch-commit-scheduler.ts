@@ -22,6 +22,7 @@ export interface AdaptiveBudgetState {
 
 export interface PatchBatchMeta {
   tx?: number;
+  generation?: number;
   metrics?: PatchMetrics;
   receivedAt?: number;
   priority?: "high" | "low";
@@ -101,8 +102,64 @@ const RETAIN_TOUCHED_IN_HISTORY =
   typeof process !== "undefined" && process.env ? process.env.NODE_ENV !== "production" : true;
 const EMPTY_TOUCHED_SET = new Set<string>();
 
+function semanticEnvelopeKeyForPatch(patch: Patch): string | undefined {
+  if (getPatchKind(patch) !== "semantic") return undefined;
+  const meta = patch.op === "setHTML" ? patch.patchMeta : patch.meta;
+  const streamSeq = meta?.streamSeq;
+  const parseEpoch = meta?.parseEpoch;
+  const tx = meta?.tx;
+  if (
+    typeof streamSeq !== "number" || !Number.isFinite(streamSeq) || streamSeq < 0 ||
+    typeof parseEpoch !== "number" || !Number.isFinite(parseEpoch) || parseEpoch < 0 ||
+    typeof tx !== "number" || !Number.isFinite(tx) || tx < 0
+  ) {
+    return undefined;
+  }
+  return `${streamSeq}/${parseEpoch}/${tx}`;
+}
+
 function shouldSkipCoalescing(patches: Patch[]): boolean {
-  return patches.length <= 1;
+  if (patches.length <= 1) return true;
+
+  let firstEnvelopeKey: string | undefined;
+  let hasEnvelopeKey = false;
+  let hasMultipleEnvelopes = false;
+  let hasUnsequencedSemantic = false;
+  let hasEnrichment = false;
+  const observePatch = (patch: Patch) => {
+    if (getPatchKind(patch) === "enrichment") {
+      hasEnrichment = true;
+      return;
+    }
+    const key = semanticEnvelopeKeyForPatch(patch);
+    if (key === undefined) {
+      hasUnsequencedSemantic = true;
+      return;
+    }
+    if (hasEnvelopeKey && firstEnvelopeKey !== key) hasMultipleEnvelopes = true;
+    if (!hasEnvelopeKey) {
+      firstEnvelopeKey = key;
+      hasEnvelopeKey = true;
+    }
+  };
+
+  for (const patch of patches) {
+    if (patch.op === "setPropsBatch") {
+      for (const entry of patch.entries ?? []) {
+        if (!entry || !entry.at) continue;
+        observePatch({
+          op: "setProps",
+          at: entry.at,
+          props: entry.props,
+          meta: { ...(patch.meta ?? {}), ...(entry.meta ?? {}) },
+        });
+      }
+    } else {
+      observePatch(patch);
+    }
+  }
+
+  return hasEnvelopeKey && (hasMultipleEnvelopes || hasUnsequencedSemantic || hasEnrichment);
 }
 
 function getDefaultNow(): NowFn {
@@ -135,6 +192,7 @@ function getDefaultCancelRaf(): typeof cancelAnimationFrame | null {
 export class PatchCommitScheduler {
   private readonly store: RendererStore;
   private readonly onFlush: (result: PatchFlushResult, hasNonInputSourcePatch: boolean) => void;
+  private readonly isGenerationCurrent?: (generation: number) => boolean;
   private frameBudgetMs: number;
   private maxBatchesPerFlush?: number;
   private readonly now: NowFn;
@@ -171,10 +229,12 @@ export class PatchCommitScheduler {
   constructor(params: {
     store: RendererStore;
     onFlush: (result: PatchFlushResult, hasNonInputSourcePatch: boolean) => void;
+    isGenerationCurrent?: (generation: number) => boolean;
     options?: PatchCommitSchedulerOptions;
   }) {
     this.store = params.store;
     this.onFlush = params.onFlush;
+    this.isGenerationCurrent = params.isGenerationCurrent;
     this.frameBudgetMs = Math.max(1, params.options?.frameBudgetMs ?? 10);
     this.maxBatchesPerFlush = params.options?.maxBatchesPerFlush ?? 12;
     this.now = params.options?.now ?? getDefaultNow();
@@ -386,8 +446,13 @@ export class PatchCommitScheduler {
       while (consumed < queue.length) {
         const next = queue[consumed];
         if (!next) break;
-        hasNonInputSourcePatch ||= next.hasNonInputSourcePatch;
         consumed += 1;
+        if (
+          next.meta.generation !== undefined &&
+          this.isGenerationCurrent &&
+          !this.isGenerationCurrent(next.meta.generation)
+        ) continue;
+        hasNonInputSourcePatch ||= next.hasNonInputSourcePatch;
         const applyStart = this.now();
         const queueDelayMs = Math.max(0, applyStart - next.receivedAt);
         let coalesced: Patch[];

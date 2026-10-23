@@ -312,6 +312,7 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
   return await new Promise<CompileMarkdownSnapshotResult>((resolve, reject) => {
     let snapshot: DocumentSnapshot | null = null;
     let initialized = false;
+    let generation: number | null = null;
     let settled = false;
     let idleTimer: NodeJS.Timeout | null = null;
     let timeoutTimer: NodeJS.Timeout | null = null;
@@ -391,6 +392,7 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
           }
           try {
             snapshot = createInitialSnapshot(message.snapshot);
+            generation = message.generation;
             initialized = true;
           } catch (error) {
             fail(error);
@@ -398,13 +400,13 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
           scheduleIdleFinalize();
           break;
         case "PATCH":
-          if (snapshot) {
+          if (snapshot && generation === message.generation) {
             applyPatchBatch(snapshot, message.patches);
+            scheduleIdleFinalize();
           }
-          scheduleIdleFinalize();
           break;
         case "FINALIZED":
-          if (finalize) {
+          if (finalize && generation === message.generation) {
             finalizeNow();
           }
           break;

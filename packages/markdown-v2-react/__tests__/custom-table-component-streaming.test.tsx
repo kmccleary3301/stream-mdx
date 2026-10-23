@@ -67,7 +67,7 @@ async function customTableComponentReceivesStreamedTable(): Promise<void> {
 
     await act(async () => {
       handle.current?.append(REST);
-      handle.current?.finalize();
+      await handle.current?.finalize();
     });
     await waitFor(() => readTable(container).rows.length === 3, "custom table receives appended rows");
     assert.deepEqual(readTable(container), {

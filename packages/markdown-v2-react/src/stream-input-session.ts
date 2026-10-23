@@ -2,10 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
 import type { MarkdownRenderer } from "./renderer";
 import type { StreamingMarkdownProps } from "./streaming-markdown";
+import { SourceCapacityError, type AppendResult } from "@stream-mdx/protocol";
+import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./source-admission-limits";
+
+const MAX_ITERATOR_OFFER_UNITS = Math.min(SOURCE_ADMISSION_SOFT_LIMIT, SOURCE_ADMISSION_HARD_LIMIT);
 
 export function useStreamInputSession({
   renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationEpoch, initializationError, session, managedWorker,
-  readyRendererRef,
+  readyRendererRef, onSourceSessionReset,
   imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
 }: {
   renderer: MarkdownRenderer;
@@ -19,6 +23,7 @@ export function useStreamInputSession({
   session: number;
   managedWorker: boolean;
   readyRendererRef: MutableRefObject<MarkdownRenderer | null>;
+  onSourceSessionReset: () => void;
   imperativeActivityRef: MutableRefObject<boolean>;
   onErrorRef: MutableRefObject<StreamingMarkdownProps["onError"]>;
   debug: boolean;
@@ -60,9 +65,11 @@ export function useStreamInputSession({
         };
       }
       imperativeActivityRef.current = false;
-      void renderer.renderStatic(text).then(() => {
+      onSourceSessionReset();
+      void renderer.renderStatic(text).then(async () => {
         if (cancelled || readyRendererRef.current !== renderer) return;
-        renderer.finalize();
+        await renderer.finalize();
+        if (cancelled || readyRendererRef.current !== renderer) return;
         setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
       }).catch((error: unknown) => {
         if (cancelled || readyRendererRef.current !== renderer) return;
@@ -104,20 +111,37 @@ export function useStreamInputSession({
       try {
         imperativeActivityRef.current = false;
         setStreamStatus("streaming");
+        onSourceSessionReset();
         renderer.restart();
         await renderer.whenInitialized();
         for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) {
           if (cancelled || activeIteratorRef.current !== iteratorOwner) {
             break;
           }
-          renderer.append(chunk);
-          if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
-            // eslint-disable-next-line no-console
-            console.info("[debug] streaming chunk", chunk.length);
+          const needsSlicing = chunk.length > MAX_ITERATOR_OFFER_UNITS;
+          for (let offset = 0; offset < chunk.length;) {
+            if (cancelled || activeIteratorRef.current !== iteratorOwner) return;
+            const end = Math.min(offset + MAX_ITERATOR_OFFER_UNITS, chunk.length);
+            const offer = needsSlicing ? chunk.slice(offset, end) : chunk;
+            let result: AppendResult;
+            for (;;) {
+              try {
+                result = renderer.append(offer);
+                break;
+              } catch (error) {
+                if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+                await renderer.waitForCapacity({ units: offer.length });
+                if (cancelled || activeIteratorRef.current !== iteratorOwner) return;
+              }
+            }
+            offset = end;
+            if (result.shouldPause) await renderer.waitForCapacity({ units: 0 });
+            if (cancelled || activeIteratorRef.current !== iteratorOwner) return;
           }
         }
         if (!cancelled && activeIteratorRef.current === iteratorOwner) {
-          renderer.finalize();
+          await renderer.finalize();
+          if (cancelled || activeIteratorRef.current !== iteratorOwner) return;
           setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
         }
       } catch (error) {
@@ -137,6 +161,6 @@ export function useStreamInputSession({
         setStreamStatus(imperativeActivityRef.current ? "streaming" : "idle");
       }
     };
-  }, [renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationEpoch, initializationError, session, managedWorker, readyRendererRef, imperativeActivityRef, onErrorRef, DEBUG_WORKER]);
+  }, [renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationEpoch, initializationError, session, managedWorker, readyRendererRef, onSourceSessionReset, imperativeActivityRef, onErrorRef, DEBUG_WORKER]);
   return { streamStatus, setStreamStatus, activeIteratorRef };
 }

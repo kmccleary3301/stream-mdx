@@ -177,22 +177,33 @@ export function slugifyHeading(text: string): string {
   return normalized;
 }
 
-export function buildTocHeadings(blocksInput: Block[]): TocHeading[] {
+export function tocHeadingForBlock(block: Block): TocHeading | null {
+  if (block.type !== "heading") return null;
+  const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
+  const levelRaw = typeof meta.headingLevel === "number" ? meta.headingLevel : 1;
+  const level = Math.min(Math.max(levelRaw, 1), 6);
+  const id = typeof meta.headingId === "string" ? meta.headingId : slugifyHeading(String(block.payload.raw ?? ""));
+  const text = typeof meta.headingText === "string" ? meta.headingText : String(block.payload.raw ?? "");
+  return {
+    id: id || "heading",
+    blockId: block.id,
+    level,
+    text: text.trim(),
+  };
+}
+
+export function buildTocHeadings(
+  blocksInput: Block[],
+  onHeading?: (block: Block, heading: TocHeading, blockIndex: number) => void,
+): TocHeading[] {
   const headings: TocHeading[] = [];
 
-  for (const block of blocksInput) {
-    if (block.type !== "heading") continue;
-    const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
-    const levelRaw = typeof meta.headingLevel === "number" ? meta.headingLevel : 1;
-    const level = Math.min(Math.max(levelRaw, 1), 6);
-    const id = typeof meta.headingId === "string" ? meta.headingId : slugifyHeading(String(block.payload.raw ?? ""));
-    const text = typeof meta.headingText === "string" ? meta.headingText : String(block.payload.raw ?? "");
-    headings.push({
-      id: id || "heading",
-      blockId: block.id,
-      level,
-      text: text.trim(),
-    });
+  for (let blockIndex = 0; blockIndex < blocksInput.length; blockIndex += 1) {
+    const block = blocksInput[blockIndex]!;
+    const heading = tocHeadingForBlock(block);
+    if (!heading) continue;
+    headings.push(heading);
+    onHeading?.(block, heading, blockIndex);
   }
 
   return headings;
@@ -200,26 +211,35 @@ export function buildTocHeadings(blocksInput: Block[]): TocHeading[] {
 
 export function tocSignatureFor(headings: TocHeading[]): string {
   if (headings.length === 0) return "";
-  return headings.map((heading) => `${heading.blockId}:${heading.id}:${heading.level}:${heading.text}`).join("|");
+  return JSON.stringify(headings.map((heading) => [
+    heading.blockId,
+    heading.id,
+    heading.level,
+    heading.text,
+  ])) ?? "";
+}
+
+export function createTocPatch(headings: TocHeading[]): Patch {
+  return {
+    op: "setProps",
+    at: { blockId: PATCH_ROOT_ID },
+    props: {
+      tocHeadings: headings,
+    },
+  };
 }
 
 export function maybeBuildTocPatch(
   blocksInput: Block[],
   currentSignature: string,
+  onHeading?: (block: Block, heading: TocHeading, blockIndex: number) => void,
 ): { patch: Patch | null; nextHeadings: TocHeading[]; nextSignature: string } {
-  const nextHeadings = buildTocHeadings(blocksInput);
+  const nextHeadings = buildTocHeadings(blocksInput, onHeading);
   const nextSignature = tocSignatureFor(nextHeadings);
   if (nextSignature === currentSignature) {
     return { patch: null, nextHeadings, nextSignature: currentSignature };
   }
-  const patch: Patch = {
-    op: "setProps",
-    at: { blockId: PATCH_ROOT_ID },
-    props: {
-      tocHeadings: nextHeadings,
-    },
-  };
-  return { patch, nextHeadings, nextSignature };
+  return { patch: createTocPatch(nextHeadings), nextHeadings, nextSignature };
 }
 
 /** Native code-span grammar owns braces, tags and dollars inside matching delimiters. */

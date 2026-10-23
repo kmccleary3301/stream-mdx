@@ -209,6 +209,83 @@ assert.strictEqual(sealed.completeLineCount, 131);
 assert.strictEqual(decoratedBoundary.get(130)?.isProvisional, true);
 assert.strictEqual(withTail.get(130), tailRow);
 
+const multiPageRows = Array.from({ length: 3 * 64 }, (_, index) =>
+  makeLine(index, `batch-${index}`, "\n", false, 23),
+);
+const multiPageIndex = createCodeLineIndex({ lines: multiPageRows });
+const multiPageDecorations: readonly CodeLineDecoration[] = [
+  {
+    index: 65,
+    lineId: "line-65",
+    sourceRevision: 23,
+    configurationRevision: 5,
+    exactness: "exact",
+    tokens: { spans: [{ t: "batch-65" }] },
+  },
+  {
+    index: 130,
+    lineId: "line-130",
+    sourceRevision: 23,
+    configurationRevision: 5,
+    exactness: "exact",
+    tokens: { spans: [{ t: "batch-130" }] },
+  },
+  {
+    index: 1,
+    lineId: "line-1",
+    sourceRevision: 23,
+    configurationRevision: 5,
+    exactness: "exact",
+    tokens: { spans: [{ t: "batch-1" }] },
+  },
+];
+const multiPageDecorated = multiPageIndex.decorate(multiPageDecorations);
+assert.strictEqual(multiPageDecorated.get(1)?.decoration?.tokens.spans[0]?.t, "batch-1");
+assert.strictEqual(multiPageDecorated.get(65)?.decoration?.tokens.spans[0]?.t, "batch-65");
+assert.strictEqual(multiPageDecorated.get(130)?.decoration?.tokens.spans[0]?.t, "batch-130");
+assert.strictEqual(multiPageDecorated.get(2), multiPageRows[2], "an untouched line retains its identity");
+assert.strictEqual(multiPageIndex.get(1), multiPageRows[1], "the original index keeps all source rows after decoration");
+assert.strictEqual(multiPageIndex.get(65), multiPageRows[65]);
+assert.strictEqual(multiPageIndex.get(130), multiPageRows[130]);
+const prefixOnlyRows = Array.from({ length: 64 }, (_, index) =>
+  makeLine(index, index === 0 ? "const" : `page-${index}`, "\n", false, 23),
+);
+const activeTailRow = makeLine(64, "active-tail", "", true, 29);
+const prefixAndTail = createCodeLineIndex({ lines: [...prefixOnlyRows, activeTailRow] });
+const prefixAndTailBody = prefixAndTail.materialize();
+const prefixDecorated = prefixAndTail.decorate([{
+  index: 0,
+  lineId: "line-0",
+  sourceRevision: 23,
+  configurationRevision: 6,
+  exactness: "exact",
+  tokens: tokenLine,
+}]);
+assert.strictEqual(prefixDecorated.get(0)?.text, "const");
+assert.strictEqual(prefixDecorated.get(0)?.decoration?.tokens.spans[0]?.t, "const");
+assert.strictEqual(prefixDecorated.get(64)?.id, "line-64");
+assert.strictEqual(prefixDecorated.get(64)?.text, "active-tail");
+assert.strictEqual(prefixDecorated.get(64)?.sourceRevision, 29);
+assert.strictEqual(prefixDecorated.materialize(), prefixAndTailBody);
+assert.strictEqual(prefixAndTail.get(0)?.text, "const");
+assert.strictEqual(prefixAndTail.get(0)?.decoration, undefined);
+assert.strictEqual(prefixAndTail.get(64), activeTailRow);
+assert.strictEqual(prefixAndTail.materialize(), prefixAndTailBody);
+
+const tailDecorated = prefixAndTail.decorate([{
+  index: 64,
+  lineId: "line-64",
+  sourceRevision: 29,
+  configurationRevision: 6,
+  exactness: "exact",
+  tokens: { spans: [{ t: "active-tail" }] },
+}]);
+assert.strictEqual(tailDecorated.get(64)?.decoration?.tokens.spans[0]?.t, "active-tail");
+assert.strictEqual(tailDecorated.get(0), prefixOnlyRows[0]);
+assert.strictEqual(tailDecorated.get(63)?.text, "page-63");
+assert.strictEqual(tailDecorated.materialize(), prefixAndTailBody);
+assert.strictEqual(prefixAndTail.get(64)?.decoration, undefined);
+
 function managedCodeNode(
   id: string,
   generation: number,

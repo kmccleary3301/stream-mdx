@@ -1,6 +1,7 @@
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import { type BundledLanguage, type BundledTheme, type Highlighter, type SpecialLanguage, bundledLanguages, bundledThemes, createHighlighter } from "shiki";
 import type {
+  CodeTokenLine,
   DiffBlock,
   DiffKind,
   DiffLine,
@@ -523,7 +524,7 @@ export function toDiffLineKind(kind: DiffKind): DiffLineKind {
   return kind;
 }
 
-export function toThemedLine(tokenLine: TokenLineV1 | null, theme: keyof typeof CODE_HIGHLIGHT_THEMES): ThemedLine | null {
+export function toThemedLine(tokenLine: CodeTokenLine | null, theme: keyof typeof CODE_HIGHLIGHT_THEMES): ThemedLine | null {
   if (!tokenLine) return null;
   return tokenLine.spans.map((span) => {
     const style = span.s ?? span.v?.[theme];

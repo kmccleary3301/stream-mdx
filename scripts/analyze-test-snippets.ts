@@ -1050,10 +1050,14 @@ type SnippetRuntimeState = {
   tickMs: number;
   finished?: boolean;
   isFinalizing?: boolean;
+  isHostComplete?: boolean;
+  streamError?: string | null;
   timerActive?: boolean;
   streamLimit?: number | null;
   fullTextLength?: number;
   workerSentIdx?: number;
+  nativeAdmissionGeneration?: number | null;
+  nativeFinalizedGeneration?: number | null;
 };
 
 type SnippetWorkerRun = {
@@ -1245,8 +1249,10 @@ async function renderSnippet(
   if (options?.traceFast) {
     await page.evaluate(async () => {
       const api = window.__STREAMING_DEMO__;
-      if (!api) return;
-      await api.waitForWorker?.();
+      if (!api || typeof api.waitForWorker !== "function") {
+        throw new Error("Streaming demo does not expose bounded worker readiness for trace-fast.");
+      }
+      await api.waitForWorker();
     });
   } else {
     try {
@@ -1392,12 +1398,87 @@ async function renderSnippet(
   }
 
   if (options?.traceFast) {
-    await page.evaluate(async () => {
+    const requiresHostFinalization = typeof options.streamLimit !== "number";
+    await page.evaluate(async ({ finalize, expectedSourceUnits, timeoutMs }) => {
       const api = window.__STREAMING_DEMO__;
-      if (!api) return;
-      await api.fastForward?.();
-      await api.flushPending?.();
+      if (!api || typeof api.fastForward !== "function" || typeof api.flushPending !== "function") {
+        throw new Error("Streaming demo does not expose source admission and flush operations for trace-fast.");
+      }
+      await api.fastForward();
+      await api.flushPending();
+      if (!finalize) return;
+      if (typeof api.finalize !== "function") {
+        throw new Error("Streaming demo does not expose its host finalization barrier for trace-fast.");
+      }
+      let timer: number | undefined;
+      try {
+        const result = await Promise.race([
+          api.finalize(),
+          (() => {
+            const timeout = Promise.withResolvers<never>();
+            timer = window.setTimeout(
+              () => timeout.reject(new Error(`Trace-fast host finalization exceeded ${timeoutMs}ms.`)),
+              timeoutMs,
+            );
+            return timeout.promise;
+          })(),
+        ]);
+        const state = api.getState?.();
+        if (
+          !state ||
+          state.isHostComplete !== true ||
+          state.streamError !== null ||
+          state.total !== expectedSourceUnits ||
+          result.acceptedSourceUnits !== expectedSourceUnits ||
+          result.committedSourceUnits !== result.acceptedSourceUnits
+        ) {
+          throw new Error("Trace-fast host finalization did not commit the complete snippet source.");
+        }
+        await api.flushPending();
+        if (typeof api.waitForIdle !== "function") {
+          throw new Error("Streaming demo does not expose renderer-idle observation after trace-fast finalization.");
+        }
+        await api.waitForIdle();
+      } finally {
+        if (timer !== undefined) window.clearTimeout(timer);
+      }
+    }, {
+      finalize: requiresHostFinalization,
+      expectedSourceUnits: snippetContent.length,
+      timeoutMs: FINALIZE_TIMEOUT_MS,
     });
+    if (requiresHostFinalization) {
+      await page.waitForFunction(
+        ({ expectedSourceUnits, minVisible }) => {
+          const api = window.__STREAMING_DEMO__;
+          const state = api?.getState?.();
+          const handleState = api?.getHandle?.()?.getState?.();
+          const store = window.__STREAMING_RENDERER_STORE__;
+          const blocks = store?.getBlocks?.() ?? [];
+          const output = document.querySelector('[data-testid="markdown-output"]');
+          return Boolean(
+            state &&
+              state.finished === true &&
+              state.isFinalizing === false &&
+              state.isHostComplete === true &&
+              state.streamError === null &&
+              state.total === expectedSourceUnits &&
+              state.fullTextLength === expectedSourceUnits &&
+              state.streamLimit === null &&
+              state.workerSentIdx === expectedSourceUnits &&
+              handleState &&
+              handleState.queueDepth === 0 &&
+              handleState.pendingBatches === 0 &&
+              blocks.every((block) => block.isFinalized === true) &&
+              output &&
+              (output.textContent ?? "").length >= minVisible &&
+              !document.querySelector(".streaming-partial"),
+          );
+        },
+        { expectedSourceUnits: snippetContent.length, minVisible: minVisibleLength },
+        { timeout: FINALIZE_TIMEOUT_MS },
+      );
+    }
   } else {
         const run = workerRun;
         if (!run) {
@@ -1422,12 +1503,12 @@ async function renderSnippet(
                   observer.workerIdFor(api.getWorker?.() ?? null) === workerId &&
                   state.finished === true &&
                   state.timerActive === false &&
+                  state.streamError === null &&
                   state.idx === total &&
                   state.total === total &&
                   state.fullTextLength === total &&
                   state.streamLimit === null &&
-                  typeof state.workerSentIdx === "number" &&
-                  state.workerSentIdx >= total &&
+                  state.workerSentIdx === total &&
                   observer.events.some(
                     (event) =>
                       event.workerId === workerId &&
@@ -1451,6 +1532,63 @@ async function renderSnippet(
         }
 
         try {
+          const finalizationResult = await page.evaluate(async ({ expectedTotal, timeoutMs }) => {
+            const api = window.__STREAMING_DEMO__;
+            if (!api || typeof api.finalize !== "function") {
+              throw new Error("Streaming demo does not expose its host finalization barrier.");
+            }
+            let timer: number | undefined;
+            try {
+              const result = await Promise.race([
+                api.finalize(),
+                (() => {
+                  const timeout = Promise.withResolvers<never>();
+                  timer = window.setTimeout(
+                    () => timeout.reject(new Error(`Host finalization did not resolve within ${timeoutMs}ms.`)),
+                    timeoutMs,
+                  );
+                  return timeout.promise;
+                })(),
+              ]);
+              const state = api.getState?.();
+              if (
+                !state ||
+                !Number.isSafeInteger(result.generation) ||
+                result.generation < 0 ||
+                state.isHostComplete !== true ||
+                state.isFinalizing !== false ||
+                state.streamError !== null ||
+                state.idx !== expectedTotal ||
+                state.total !== expectedTotal ||
+                state.fullTextLength !== expectedTotal ||
+                state.streamLimit !== null ||
+                state.nativeAdmissionGeneration !== result.generation ||
+                state.nativeFinalizedGeneration !== result.generation ||
+                state.workerSentIdx !== expectedTotal ||
+                result.acceptedSourceUnits !== expectedTotal ||
+                result.committedSourceUnits !== expectedTotal
+              ) {
+                throw new Error("Host finalization did not cover the complete snippet source generation.");
+              }
+              return result;
+            } finally {
+              if (timer !== undefined) window.clearTimeout(timer);
+            }
+          }, { expectedTotal: snippetContent.length, timeoutMs: FINALIZE_TIMEOUT_MS });
+          console.log(
+            `[analyze] ${diagnosticSnippetName} host generation ${finalizationResult.generation} committed ${finalizationResult.committedSourceUnits}/${finalizationResult.acceptedSourceUnits} UTF-16 units`,
+          );
+        } catch (error) {
+          await rejectIncompleteRun(
+            page,
+            diagnosticSnippetName,
+            "host FinalizeResult and exact source-count verification",
+            { rate: resolvedRate, tickMs: resolvedTickMs, sourceMode: compileMode, workerRun: run },
+            error,
+          );
+        }
+
+        try {
           await page.waitForFunction(
             ({ workerId, generation, total }) => {
               const api = window.__STREAMING_DEMO__;
@@ -1464,18 +1602,30 @@ async function renderSnippet(
                 state.finished !== true ||
                 state.timerActive !== false ||
                 state.isFinalizing !== false ||
+                state.isHostComplete !== true ||
+                state.streamError !== null ||
                 state.idx !== total ||
                 state.total !== total ||
                 state.fullTextLength !== total ||
                 state.streamLimit !== null ||
-                typeof state.workerSentIdx !== "number" ||
-                state.workerSentIdx < total
+                state.nativeAdmissionGeneration === null ||
+                state.nativeFinalizedGeneration !== state.nativeAdmissionGeneration ||
+                state.workerSentIdx !== total
               ) {
                 return false;
               }
               const events = observer.events;
+              const initSent = events.find(
+                (event) =>
+                  event.workerId === workerId &&
+                  event.generation === generation &&
+                  event.direction === "input" &&
+                  event.type === "INIT",
+              );
+              if (!initSent) return false;
               const initialized = events.find(
                 (event) =>
+                  event.sequence > initSent.sequence &&
                   event.workerId === workerId &&
                   event.generation === generation &&
                   event.direction === "output" &&
@@ -1520,7 +1670,7 @@ async function renderSnippet(
           await rejectIncompleteRun(
             page,
             diagnosticSnippetName,
-            "worker finalization and renderer queue drain",
+            "matching worker generation FINALIZED acknowledgement and renderer queue drain",
             { rate: resolvedRate, tickMs: resolvedTickMs, sourceMode: compileMode, workerRun: run },
             error,
           );

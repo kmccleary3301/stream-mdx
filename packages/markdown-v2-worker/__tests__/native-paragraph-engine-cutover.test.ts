@@ -339,6 +339,68 @@ async function runFinalizedParagraphBoundaryAndBodyExtension(): Promise<void> {
 }
 
 
+async function runClosedNestedParagraphFinalizesWhenContainerCloses(): Promise<void> {
+  const messages: WorkerOut[] = [];
+  const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
+  const store = createRendererStore();
+  const initialSource = "- first nested body\n- second item";
+  const appendedSource = "\n\n# following";
+  try {
+    await engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: initialSource,
+      prewarmLangs: [],
+      docPlugins: rootParagraphPlugins,
+    });
+    applyMessages(store, messages.splice(0));
+    const list = store.getBlocks().find((block) => block.type === "list");
+    assert.ok(list, "the source must contain an open list");
+    assert.equal(list.isFinalized, false, "the list must remain open before its root sibling arrives");
+    const itemId = store.getChildren(list.id).find((id) => store.getNode(id)?.type === "list-item");
+    assert.ok(itemId, "the list must retain its first item");
+    const paragraphId = store.getChildren(itemId).find((id) => store.getNode(id)?.type === "paragraph");
+    assert.ok(paragraphId, "the first item must retain its managed paragraph");
+    const before = store.getParagraphBlock(paragraphId);
+    assert.ok(before, "the nested paragraph must be managed");
+    assert.equal(before.source.state, "closed", "the first paragraph closes while its list remains open");
+    const beforeSpans = Array.from({ length: before.spans.length }, (_, index) => before.spans.get(index));
+    const beforeSource = before.sourceSnapshot.materialize();
+    const beforeRange = { ...before.source.sourceRange };
+    const beforeProcessedTo = before.source.processedTo;
+    const beforeGeneration = before.source.generation;
+
+    messages.length = 0;
+    await engine.handle({ type: "APPEND", text: appendedSource });
+    applyMessages(store, messages.splice(0));
+    const finalizedList = store.getBlocks().find((block) => block.id === list.id);
+    assert.ok(finalizedList, "the completed list must remain in the consumer store");
+    assert.equal(finalizedList.isFinalized, true, "the root list must finalize when its following heading arrives");
+    const after = store.getParagraphBlock(paragraphId);
+    assert.ok(after, "the same nested paragraph must remain managed");
+    assert.equal(after.source.state, "finalized", "a closed nested paragraph must settle with its root container");
+    assert.equal(after.source.generation, beforeGeneration);
+    assert.deepEqual(after.source.sourceRange, beforeRange);
+    assert.equal(after.source.processedTo, beforeProcessedTo);
+    assert.equal(after.sourceSnapshot.materialize(), beforeSource);
+    assert.deepEqual(
+      Array.from({ length: after.spans.length }, (_, index) => after.spans.get(index)),
+      beforeSpans,
+      "container closure must not replace closed paragraph spans",
+    );
+    assert.equal(store.getParagraphColdBlock(paragraphId)?.payload.raw, beforeSource);
+
+    messages.length = 0;
+    await engine.handle({ type: "FINALIZE" });
+    const finalMessages = messages.splice(0);
+    applyMessages(store, finalMessages);
+    assert.equal(finalMessages.at(-1)?.type, "FINALIZED", "the consumer must receive terminal FINALIZED");
+  } finally {
+    engine.dispose();
+  }
+}
+
+
 async function runSetextAndTableReplacement(): Promise<void> {
   const setextMessages: WorkerOut[] = [];
   const setextEngine = new MarkdownEngine({ post: (message) => setextMessages.push(message) });
@@ -486,14 +548,88 @@ async function runStreamingDefinitionTakesNextLineTitle(): Promise<void> {
 }
 
 
+async function runMixedNativeAndGenericRootsStayInSourceOrder(): Promise<void> {
+  const messages: WorkerOut[] = [];
+  const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
+  const store = createRendererStore();
+  const initialSource = "# Earlier heading\n\nNative body";
+  await engine.handle({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: initialSource,
+    prewarmLangs: [],
+    docPlugins: rootParagraphPlugins,
+  });
+  applyMessages(store, messages.splice(0));
+
+  await engine.handle({ type: "APPEND", text: "\n\n# Later heading" });
+  applyMessages(store, messages.splice(0));
+
+  const blocks = store.getBlocks();
+  assert.deepEqual(
+    blocks.map((block) => block.payload.range?.from),
+    [0, initialSource.indexOf("Native body"), initialSource.length + 2],
+    "root child indexes must follow source ranges across generic headings and a native paragraph",
+  );
+  assert.deepEqual(
+    blocks.map((block) => block.type),
+    ["heading", "paragraph", "heading"],
+    "a later generic heading must not leap ahead of an earlier native paragraph",
+  );
+  assert.equal(blocks[1]?.payload.raw, "Native body");
+  engine.dispose();
+}
+
+async function runFootnoteAndUnclosedHtmlTailKeepAllRootBlocks(): Promise<void> {
+  const source = "Footnote[^note]\n\n[^note]: a\n\nUnclosed <kbd>a";
+  const runChunks = async (chunks: readonly string[]) => {
+    const messages: WorkerOut[] = [];
+    const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
+    const store = createRendererStore();
+    await engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "",
+      prewarmLangs: [],
+      docPlugins: { ...rootParagraphPlugins, footnotes: true, html: true },
+    });
+    applyMessages(store, messages.splice(0));
+    for (const text of chunks) {
+      await engine.handle({ type: "APPEND", text });
+      applyMessages(store, messages.splice(0));
+    }
+    const blocks = store.getBlocks().map((block) => ({
+      type: block.type,
+      from: block.payload.range?.from,
+      raw: block.payload.raw,
+    }));
+    engine.dispose();
+    return blocks;
+  };
+  const streamed = await runChunks([source.slice(0, 39), source.slice(39, 42), source.slice(42)]);
+  const cold = await runChunks([source]);
+
+  assert.equal(cold.length, 3, "the cold consumer has two paragraphs and the synthesized footnotes block");
+  assert.equal(streamed.length, cold.length, "split footnote and unclosed-HTML tails must not lose a retained root child");
+  assert.deepEqual(
+    streamed.map((block) => block.type),
+    cold.map((block) => block.type),
+    "streamed root children must preserve the cold root child sequence",
+  );
+}
+
+
 async function runNativeParagraphEngineCutoverTest(): Promise<void> {
   await runNamedReferenceAndFinalize();
   await runFinalizedReferenceSemanticUpdates();
   await runFinalizedMultipleParagraphReferenceUpdatesAvoidRepreparation();
   await runFinalizedParagraphBoundaryAndBodyExtension();
+  await runClosedNestedParagraphFinalizesWhenContainerCloses();
   await runStreamingDefinitionTakesNextLineTitle();
   await runSetextAndTableReplacement();
   await runResetGeneration();
+  await runMixedNativeAndGenericRootsStayInSourceOrder();
+  await runFootnoteAndUnclosedHtmlTailKeepAllRootBlocks();
 }
 
 void runNativeParagraphEngineCutoverTest().catch((error) => {

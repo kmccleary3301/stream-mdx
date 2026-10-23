@@ -12,7 +12,7 @@ class TestMockWorker extends EventTarget {
   public terminated = false;
   public messages: WorkerIn[] = [];
   public autoRespondInit = false;
-  private generation = 0;
+  public latestGeneration = 0;
 
   postMessage(message: WorkerIn): void {
     this.messages.push(message);
@@ -40,7 +40,7 @@ class TestMockWorker extends EventTarget {
           },
         }
       : undefined;
-    const generation = ++this.generation;
+    const generation = ++this.latestGeneration;
     const initEvent = new Event("message") as MessageEvent<WorkerOut>;
     Object.defineProperty(initEvent, "data", {
       value: {
@@ -57,6 +57,25 @@ class TestMockWorker extends EventTarget {
       },
     });
     this.dispatchEvent(initEvent);
+  }
+  acknowledgeFinalize(): void {
+    let initializationIndex = -1;
+    for (let index = this.messages.length - 1; index >= 0; index -= 1) {
+      if (this.messages[index].type === "INIT") {
+        initializationIndex = index;
+        break;
+      }
+    }
+    let admittedSourceUnits = 0;
+    for (let index = initializationIndex + 1; index < this.messages.length; index += 1) {
+      const message = this.messages[index];
+      if (message.type === "APPEND") admittedSourceUnits += message.text.length;
+    }
+    this.emit({
+      type: "FINALIZED",
+      generation: this.latestGeneration,
+      admittedSourceUnits,
+    });
   }
   emit(message: WorkerOut): void {
     const event = new Event("message") as MessageEvent<WorkerOut>;
@@ -259,6 +278,240 @@ function insertParagraphPatch(text: string, id = "appended-paragraph", index = 0
   };
 }
 
+async function testDelayedOlderParseEpochCannotReplaceVisibleSemanticOutput(): Promise<void> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const source = "# Current semantic output";
+  const visibleText = "Current semantic output";
+  const received: WorkerOut[] = [];
+  let currentWorker: Worker | undefined;
+  const workerFactory = (): Worker => {
+    const inner = createTrustedWorker();
+    const transport = Object.assign(new EventTarget(), {
+      postMessage: inner.postMessage.bind(inner),
+      terminate: inner.terminate.bind(inner),
+    }) as unknown as Worker;
+    inner.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+      if (currentWorker === transport) received.push(event.data);
+      const forwarded = new Event("message") as MessageEvent<WorkerOut>;
+      Object.defineProperty(forwarded, "data", { value: event.data });
+      transport.dispatchEvent(forwarded);
+    });
+    inner.addEventListener("error", (event: ErrorEvent) => {
+      const forwarded = new Event("error");
+      Object.defineProperties(forwarded, {
+        error: { value: event.error },
+        message: { value: event.message },
+      });
+      transport.dispatchEvent(forwarded);
+    });
+    currentWorker = transport;
+    return transport;
+  };
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          engine="worker"
+          worker={workerFactory}
+          features={{ codeHighlighting: "none" }}
+          caret={false}
+        />,
+      );
+    });
+    await waitFor(
+      () => handle.current?.getState().workerReady ?? false,
+      "the real worker must establish the current input generation",
+    );
+    await act(async () => {
+      handle.current?.append(source);
+    });
+    await waitFor(
+      () => container.querySelector("h1")?.textContent === visibleText,
+      "real current-epoch output must reach the rendered DOM before stale delivery",
+    );
+
+    let frontier: Patch["meta"];
+    let latestTransaction = 0;
+    for (const message of received) {
+      if (message.type !== "PATCH") continue;
+      latestTransaction = Math.max(latestTransaction, message.tx);
+      for (const patch of message.patches) {
+        if (patch.meta?.kind === "semantic") frontier = patch.meta;
+      }
+    }
+    assert.ok(
+      frontier &&
+        typeof frontier.streamSeq === "number" &&
+        typeof frontier.parseEpoch === "number" &&
+        frontier.parseEpoch > 0,
+      "the real source commit must establish a semantic epoch frontier",
+    );
+    const heading = handle.current?.getState().store.getBlocks()[0];
+    assert.ok(heading?.type === "heading");
+    const worker = currentWorker;
+    assert.ok(worker);
+    const initialized = received.findLast(
+      (message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED",
+    );
+    assert.ok(initialized, "the real worker's acknowledged root exposes its source generation");
+    const transaction = latestTransaction + 1;
+    const delayed: WorkerOut = {
+      type: "PATCH",
+      generation: initialized.generation,
+      tx: transaction,
+      patches: [
+        {
+          op: "replaceChild",
+          at: { blockId: PATCH_ROOT_ID },
+          index: 0,
+          node: createBlockSnapshot({
+            id: heading.id,
+            type: "paragraph",
+            isFinalized: heading.isFinalized,
+            payload: {
+              raw: source,
+              range: { from: 0, to: source.length },
+              inline: [{ kind: "text", text: source }],
+            },
+          }),
+          meta: {
+            kind: "semantic",
+            streamSeq: frontier.streamSeq + 1,
+            parseEpoch: frontier.parseEpoch - 1,
+            tx: transaction,
+          },
+        } satisfies Patch,
+      ],
+    };
+    await act(async () => {
+      const event = new Event("message") as MessageEvent<WorkerOut>;
+      Object.defineProperty(event, "data", { value: delayed });
+      worker.dispatchEvent(event);
+      await handle.current?.waitForIdle();
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
+      });
+    });
+    assert.strictEqual(
+      container.querySelector("h1")?.textContent,
+      visibleText,
+      "an older parse epoch with a higher stream sequence must not replace current visible semantics",
+    );
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  }
+}
+
+async function testDelayedGenericPatchFromPriorSourceGenerationIsRejected(): Promise<void> {
+  const renderer = new MarkdownRenderer();
+  const innerWorker = createTrustedWorker();
+  const outputs: WorkerOut[] = [];
+  const transport = Object.assign(new EventTarget(), {
+    postMessage: innerWorker.postMessage.bind(innerWorker),
+    terminate: innerWorker.terminate.bind(innerWorker),
+  });
+  innerWorker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+    outputs.push(structuredClone(event.data));
+    const forwarded = new Event("message") as MessageEvent<WorkerOut>;
+    Object.defineProperty(forwarded, "data", { value: event.data });
+    transport.dispatchEvent(forwarded);
+  });
+  innerWorker.addEventListener("error", (event: ErrorEvent) => {
+    const forwarded = new Event("error");
+    Object.defineProperties(forwarded, {
+      error: { value: event.error },
+      message: { value: event.message },
+    });
+    transport.dispatchEvent(forwarded);
+  });
+
+  const oldSource = "# Old semantics";
+  const currentSource = "# Current semantics";
+  assert.ok(oldSource.length < currentSource.length, "the old heading range is shorter than the current source");
+
+  const readPublicHeadings = () =>
+    renderer.getStore().getBlocks().map((block) => ({
+      type: block.type,
+      raw: block.payload.raw,
+      headingText: block.type === "heading"
+        ? (block.payload.inline ?? []).map((node) => node.kind === "text" ? node.text : "").join("")
+        : undefined,
+    }));
+  const isSingleHeading = (source: string, text: string) => {
+    const blocks = renderer.getStore().getBlocks();
+    const heading = blocks[0];
+    return blocks.length === 1 &&
+      heading?.type === "heading" &&
+      heading.payload.raw === source &&
+      (heading.payload.inline ?? []).map((node) => node.kind === "text" ? node.text : "").join("") === text;
+  };
+  const isSemanticPatch = (message: WorkerOut): message is Extract<WorkerOut, { type: "PATCH" }> =>
+    message.type === "PATCH" && message.patches.some((patch) => {
+      const metadata = patch.op === "setHTML" ? patch.patchMeta : patch.meta;
+      return patch.op !== "appendInputSource" && metadata?.kind === "semantic";
+    });
+
+  try {
+    renderer.attachWorker(transport as unknown as Worker);
+    await waitFor(
+      () => outputs.some((message) => message.type === "INITIALIZED"),
+      "the real inline worker must initialize the public renderer",
+    );
+    await renderer.whenInitialized();
+
+    const beforeOldAppend = outputs.length;
+    renderer.append(oldSource);
+    await waitFor(
+      () => outputs.slice(beforeOldAppend).some(isSemanticPatch) && isSingleHeading(oldSource, "Old semantics"),
+      "the real old-session semantic PATCH must render its generic heading",
+    );
+    const oldSemanticPatch = outputs.slice(beforeOldAppend).find(isSemanticPatch);
+    assert.ok(oldSemanticPatch, "capture an actual semantic PATCH emitted after the old heading append");
+    const delayedOldPatch = structuredClone(oldSemanticPatch);
+
+    await renderer.renderStatic(currentSource);
+    const initializations = outputs.filter(
+      (message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED",
+    );
+    assert.equal(initializations.length, 2, "renderStatic must produce a second real INITIALIZED baseline");
+    assert.equal(
+      initializations[1]?.snapshot.inputSource?.raw,
+      currentSource,
+      "the new INITIALIZED message must carry the current authored source baseline",
+    );
+    const currentHeadings = [{ type: "heading", raw: currentSource, headingText: "Current semantics" }];
+    assert.deepEqual(
+      readPublicHeadings(),
+      currentHeadings,
+      "the public store must contain exactly the current heading before delayed old traffic",
+    );
+
+    const delayedEvent = new Event("message") as MessageEvent<WorkerOut>;
+    Object.defineProperty(delayedEvent, "data", { value: delayedOldPatch });
+    transport.dispatchEvent(delayedEvent);
+    await waitFor(
+      () => renderer.getPendingQueueSize() === 0,
+      "the public patch queue must drain after delayed prior-generation traffic",
+    );
+    assert.deepEqual(
+      readPublicHeadings(),
+      currentHeadings,
+      "replayed old-generation semantics must not add or replace the current heading",
+    );
+  } finally {
+    renderer.detachWorker({ terminate: true });
+  }
+}
+
+
 async function testAppendBeforeInitializationAckAfterRestart(): Promise<void> {
   const container = document.createElement("div");
   document.body.append(container);
@@ -305,7 +558,7 @@ async function testAppendBeforeInitializationAckAfterRestart(): Promise<void> {
     );
 
     await act(async () => {
-      workers[1].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch(text)] });
+      workers[1].emit({ type: "PATCH", generation: workers[1].latestGeneration, tx: 1, patches: [insertParagraphPatch(text)] });
     });
     await waitFor(() => container.textContent?.includes(text) ?? false, "pre-ack append should render after acknowledgement");
   } finally {
@@ -399,6 +652,7 @@ async function testSameTurnRestartFinalizeUsesFreshTrustedWorker(): Promise<void
     "<Card value={value} />",
   ].join("\n");
   const freshChunks = ["fresh first\n\n", "fresh second"];
+  let initialFinalization: Promise<unknown> | undefined;
   const render = async (text: string | undefined) => {
     await act(async () => {
       root.render(
@@ -433,12 +687,16 @@ async function testSameTurnRestartFinalizeUsesFreshTrustedWorker(): Promise<void
       handle.current?.restart();
       handle.current?.append(freshChunks[0]);
       handle.current?.append(freshChunks[1]);
-      handle.current?.finalize();
+      initialFinalization = handle.current?.finalize();
       assert.throws(
         () => handle.current?.append("too late"),
         Error,
         "a queued trusted FINALIZE seals its generation before the worker attaches",
       );
+    });
+    assert.ok(initialFinalization);
+    await act(async () => {
+      await initialFinalization;
     });
     assert.ok(handle.current, "the public handle remains mounted after removing old source");
     assert.equal(observedWorkers.length, 2, `restart should create a replacement worker; errors: ${reportedErrors.map((error) => error.message).join("; ")}`);
@@ -490,6 +748,7 @@ async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<vo
     worker.messages.filter((message) => message.type === "APPEND").map((message) => message.text);
   const freshChunks = ["fresh first\n\n", "fresh second"];
   const secondRestartChunks = ["second restart first\n\n", "second restart second"];
+  let oldFinalization: Promise<unknown> | undefined;
 
   try {
     await act(async () => {
@@ -517,18 +776,22 @@ async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<vo
     });
     assert.deepEqual(appendTexts(workers[0]), ["old generation"], "initial input reaches its attached worker once it acknowledges INIT");
     await act(async () => {
-      workers[0].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch("old generation", "old-generation")] });
+      workers[0].emit({ type: "PATCH", generation: workers[0].latestGeneration, tx: 1, patches: [insertParagraphPatch("old generation", "old-generation")] });
     });
     await waitFor(
       () => container.textContent?.includes("old generation") ?? false,
       "the initial trusted generation renders before it is finalized",
     );
     await act(async () => {
-      handle.current?.finalize();
+      oldFinalization = handle.current?.finalize();
     });
+    assert.ok(oldFinalization, "finalize returns the public completion barrier");
     assert.ok(workers[0].messages.some((message) => message.type === "FINALIZE"));
     await act(async () => {
-      workers[0].emit({ type: "FINALIZED" });
+      workers[0].acknowledgeFinalize();
+    });
+    await act(async () => {
+      await oldFinalization;
     });
 
     await act(async () => {
@@ -557,17 +820,22 @@ async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<vo
     );
 
     await act(async () => {
-      workers[1].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch("fresh first", "fresh-first")] });
-      workers[1].emit({ type: "PATCH", tx: 2, patches: [insertParagraphPatch("fresh second", "fresh-second", 1)] });
+      workers[1].emit({ type: "PATCH", generation: workers[1].latestGeneration, tx: 1, patches: [insertParagraphPatch("fresh first", "fresh-first")] });
+      workers[1].emit({ type: "PATCH", generation: workers[1].latestGeneration, tx: 2, patches: [insertParagraphPatch("fresh second", "fresh-second", 1)] });
     });
     await waitFor(
       () => Array.from(container.querySelectorAll("p"), (paragraph) => paragraph.textContent)
         .join("|") === "fresh first|fresh second",
       "the fresh generation renders both authored chunks in order",
     );
+    let firstRestartFinalization: Promise<unknown> | undefined;
     await act(async () => {
-      handle.current?.finalize();
-      workers[1].emit({ type: "FINALIZED" });
+      firstRestartFinalization = handle.current?.finalize();
+      assert.ok(firstRestartFinalization, "finalize returns the public completion barrier");
+      workers[1].acknowledgeFinalize();
+    });
+    await act(async () => {
+      await firstRestartFinalization;
     });
     assert.equal(container.textContent?.includes("old generation"), false, "the prior generation is absent after restart");
 
@@ -590,11 +858,16 @@ async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<vo
       secondRestartChunks,
       "a second restart clears the earlier pending generation while preserving later chunks in order",
     );
+    let secondRestartFinalization: Promise<unknown> | undefined;
     await act(async () => {
-      workers[2].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch("second restart first", "second-first")] });
-      workers[2].emit({ type: "PATCH", tx: 2, patches: [insertParagraphPatch("second restart second", "second-second", 1)] });
-      handle.current?.finalize();
-      workers[2].emit({ type: "FINALIZED" });
+      workers[2].emit({ type: "PATCH", generation: workers[2].latestGeneration, tx: 1, patches: [insertParagraphPatch("second restart first", "second-first")] });
+      workers[2].emit({ type: "PATCH", generation: workers[2].latestGeneration, tx: 2, patches: [insertParagraphPatch("second restart second", "second-second", 1)] });
+      secondRestartFinalization = handle.current?.finalize();
+      assert.ok(secondRestartFinalization, "finalize returns the public completion barrier");
+      workers[2].acknowledgeFinalize();
+    });
+    await act(async () => {
+      await secondRestartFinalization;
     });
     await waitFor(
       () => Array.from(container.querySelectorAll("p"), (paragraph) => paragraph.textContent)
@@ -646,7 +919,7 @@ async function testInitialAppendBeforeWorkerAttachIsQueued(): Promise<void> {
       "the initial worker receives INIT before its queued append",
     );
     await act(async () => {
-      worker.emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch(text)] });
+      worker.emit({ type: "PATCH", generation: worker.latestGeneration, tx: 1, patches: [insertParagraphPatch(text)] });
     });
     await waitFor(() => container.textContent?.includes(text) ?? false, "initial pre-attach content renders");
   } finally {
@@ -666,7 +939,10 @@ async function testNoCommitsAfterDetach(): Promise<void> {
     },
   });
 
-  renderer.attachWorker(worker as unknown as Worker, { skipInit: true });
+  renderer.attachWorker(worker as unknown as Worker);
+  await waitFor(() => worker.messages.some((message) => message.type === "INIT"), "the detach-test worker receives INIT");
+  worker.acknowledgeInit();
+  await renderer.whenInitialized();
 
   // Simulate an incoming patch batch
   const patchBatch: Patch[] = [
@@ -685,6 +961,7 @@ async function testNoCommitsAfterDetach(): Promise<void> {
   Object.defineProperty(patchMessageEvent, "data", {
     value: {
       type: "PATCH",
+      generation: worker.latestGeneration,
       patches: patchBatch,
       tx: 1,
     },
@@ -717,6 +994,7 @@ async function main(): Promise<void> {
     await testSameTurnRestartFinalizeUsesFreshTrustedWorker();
     await testSameTurnRestartAppendsUseFreshTrustedGeneration();
     await testInitialAppendBeforeWorkerAttachIsQueued();
+    await testDelayedGenericPatchFromPriorSourceGenerationIsRejected();
     await testAppendBeforeInitializationAckAfterRestart();
     await testRecoverableThemeInitErrorDoesNotBlockStaticText();
     console.log("lifecycle defect fixes tests passed successfully");

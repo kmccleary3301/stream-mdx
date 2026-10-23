@@ -59,6 +59,7 @@ import {
   readStoredCodeLines,
   refreshLegacyCodeSource,
   updateLegacyCodeLineState,
+  updateStoredDiffBlockDecorations,
   type CodeBlockViewState,
   type StoreCodeCounters,
   type StoredCodeBlockState,
@@ -1996,6 +1997,31 @@ function readPatchTx(patch: Patch): number | undefined {
   return readNumericEpoch(patch.meta?.tx);
 }
 
+interface SemanticEnvelopeTuple {
+  streamSeq: number;
+  parseEpoch: number;
+  tx: number;
+}
+
+function readSemanticEnvelopeTuple(patch: Patch): SemanticEnvelopeTuple | undefined {
+  if (getPatchKind(patch) !== "semantic") return undefined;
+  const meta = patch.op === "setHTML" ? patch.patchMeta : patch.meta;
+  const streamSeq = readNumericEpoch(meta?.streamSeq);
+  const parseEpoch = readNumericEpoch(meta?.parseEpoch);
+  const tx = readNumericEpoch(meta?.tx);
+  if (streamSeq === undefined || parseEpoch === undefined || tx === undefined) return undefined;
+  return { streamSeq, parseEpoch, tx };
+}
+
+
+function compareSemanticEnvelopeTuples(left: SemanticEnvelopeTuple, right: SemanticEnvelopeTuple): number {
+  if (left.streamSeq !== right.streamSeq) return left.streamSeq > right.streamSeq ? 1 : -1;
+  if (left.parseEpoch !== right.parseEpoch) return left.parseEpoch > right.parseEpoch ? 1 : -1;
+  if (left.tx !== right.tx) return left.tx > right.tx ? 1 : -1;
+  return 0;
+}
+
+
 const blockEpochWriteSerials = new WeakMap<NodeRecord, number>();
 let nextBlockEpochWriteSerial = 1;
 
@@ -3370,6 +3396,7 @@ function insertSnapshotAt(
   themes?: { light?: string; dark?: string },
   previous?: ReadonlyMap<string, NodeRecord>,
   onCodeOwnerInserted?: (id: string) => void,
+  retainedParentSlot = false,
 ): { record: NodeRecord; insertedIds: string[] } | null {
   if (!parent) return null;
   const previousRecord = previous?.get(snapshot.id);
@@ -3442,20 +3469,22 @@ function insertSnapshotAt(
     }
   }
 
-  const clampedIndex = Math.min(Math.max(index, 0), parent.children.length);
-  const tailAppend = currentRecord === undefined && clampedIndex === parent.children.length;
-  if (tailAppend) {
-    parent.children.push(record.id);
-  } else {
-    const children = parent.children.slice();
-    children.splice(clampedIndex, 0, record.id);
-    parent.children = children;
-  }
-  bumpVersion(parent);
-  if (!tailAppend) ensureUniqueChildren(map, parent, touched);
-  // Count the inserted reference slot only; Array#splice relocation is runtime-internal.
-  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-    paragraphCountersByMap!.get(map)?.recordRecordSlotsAllocated(1, "store");
+  if (!retainedParentSlot) {
+    const clampedIndex = Math.min(Math.max(index, 0), parent.children.length);
+    const tailAppend = currentRecord === undefined && clampedIndex === parent.children.length;
+    if (tailAppend) {
+      parent.children.push(record.id);
+    } else {
+      const children = parent.children.slice();
+      children.splice(clampedIndex, 0, record.id);
+      parent.children = children;
+    }
+    bumpVersion(parent);
+    if (!tailAppend) ensureUniqueChildren(map, parent, touched);
+    // Count the inserted reference slot only; Array#splice relocation is runtime-internal.
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      paragraphCountersByMap!.get(map)?.recordRecordSlotsAllocated(1, "store");
+    }
   }
   return { record, insertedIds };
 }
@@ -3489,16 +3518,19 @@ function replaceSnapshotAt(
     const childrenSnapshot = childrenSnapshots.get(id);
     if (childrenSnapshot) previousChildrenSnapshots.set(id, childrenSnapshot);
   }
-  const parentChildren = parent.children.slice();
-  parentChildren.splice(index, 1);
-  parent.children = parentChildren;
+  const retainParentSlot = snapshot.id === targetId;
+  if (!retainParentSlot) {
+    const parentChildren = parent.children.slice();
+    parentChildren.splice(index, 1);
+    parent.children = parentChildren;
+  }
   const continuedOwners = continuedOwnerFloors(map, previous, snapshot);
   removeSubtree(map, targetId, touched, true);
   for (const [generations, id, floor] of continuedOwners) {
     if (floor === undefined) generations.delete(id);
     else generations.set(id, floor);
   }
-  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous, onCodeOwnerReplaced);
+  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous, onCodeOwnerReplaced, retainParentSlot);
   if (inserted && onParagraphOwnerReplaced && (currentParagraphState || snapshot.paragraph)) {
     onParagraphOwnerReplaced(targetId);
     if (snapshot.paragraph && snapshot.id !== targetId) onParagraphOwnerReplaced(snapshot.id);
@@ -3522,7 +3554,7 @@ function replaceSnapshotAt(
   }
   if (parent.type === "code") {
     normalizeCodeBlockChildren(map, parent, touched);
-  } else {
+  } else if (!retainParentSlot) {
     ensureUniqueChildren(map, parent, touched);
   }
 }
@@ -3638,6 +3670,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   let structuralViolations: string[] | null = null;
   let transientDiagnostics: string[] = [];
   let nextBlockEpoch = 1;
+  let lastSemanticEnvelope: SemanticEnvelopeTuple | undefined;
   let provisionalBlockCount = 0;
   const isProvisionalRootBlock = (record: NodeRecord | undefined): boolean => {
     if (!record || record.parentId !== PATCH_ROOT_ID) return false;
@@ -3996,6 +4029,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     for (const record of previousNodes.values()) blockEpochWriteSerials.delete(record);
     clearSnapshotCaches(previousNodes);
     nodes = nextNodes;
+    if (resetsBaseline) lastSemanticEnvelope = undefined;
     if (resetsBaseline) resetVersion++;
     transientDiagnostics = [];
     structuralViolations = null;
@@ -4068,6 +4102,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     for (const record of previousNodes.values()) blockEpochWriteSerials.delete(record);
     clearSnapshotCaches(previousNodes);
     nodes = nextNodes;
+    if (resetsBaseline) lastSemanticEnvelope = undefined;
     if (resetsBaseline) resetVersion++;
     lastCoalescingMetrics = null;
     transientDiagnostics = [];
@@ -4098,7 +4133,88 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         lastCoalescingMetrics = options?.metrics ?? null;
         return touched;
       }
+      const admittedPatches: Patch[] = [];
+      const semanticEnvelopeDecisions = new Map<string, boolean>();
+      let admissionFrontier = lastSemanticEnvelope;
+      let newestAdmittedEnvelope: SemanticEnvelopeTuple | undefined;
+      let hasUnsequencedSemanticPatch = false;
+      let hasEnrichmentPatch = false;
+
+      const admitSemanticEnvelope = (tuple: SemanticEnvelopeTuple): boolean => {
+        const key = `${tuple.streamSeq}/${tuple.parseEpoch}/${tuple.tx}`;
+        const existingDecision = semanticEnvelopeDecisions.get(key);
+        if (existingDecision !== undefined) return existingDecision;
+
+        const accepted = !admissionFrontier || (
+          tuple.parseEpoch >= admissionFrontier.parseEpoch &&
+          compareSemanticEnvelopeTuples(tuple, admissionFrontier) > 0
+        );
+        semanticEnvelopeDecisions.set(key, accepted);
+        if (!accepted) {
+          debugCounters.staleEpochRejected += 1;
+          return false;
+        }
+        admissionFrontier = tuple;
+        newestAdmittedEnvelope = tuple;
+        return true;
+      };
+
+      for (const patch of patches) {
+        if (patch.op === "setPropsBatch") {
+          const entries = Array.isArray(patch.entries) ? patch.entries : [];
+          const admittedEntries: SetPropsBatchEntry[] = [];
+          for (const entry of entries) {
+            if (!entry || !entry.at) continue;
+            const entryPatch: Patch = {
+              op: "setProps",
+              at: entry.at,
+              props: entry.props,
+              meta: { ...(patch.meta ?? {}), ...(entry.meta ?? {}) },
+            };
+            const kind = getPatchKind(entryPatch);
+            const tuple = readSemanticEnvelopeTuple(entryPatch);
+            if (tuple) {
+              if (admitSemanticEnvelope(tuple)) admittedEntries.push(entry);
+            } else {
+              if (kind === "semantic") hasUnsequencedSemanticPatch = true;
+              else hasEnrichmentPatch = true;
+              admittedEntries.push(entry);
+            }
+          }
+          if (admittedEntries.length === entries.length) admittedPatches.push(patch);
+          else if (admittedEntries.length > 0) admittedPatches.push({ ...patch, entries: admittedEntries });
+          continue;
+        }
+
+        const kind = getPatchKind(patch);
+        const tuple = readSemanticEnvelopeTuple(patch);
+        if (tuple) {
+          if (admitSemanticEnvelope(tuple)) admittedPatches.push(patch);
+        } else {
+          if (kind === "semantic") hasUnsequencedSemanticPatch = true;
+          else hasEnrichmentPatch = true;
+          admittedPatches.push(patch);
+        }
+      }
+
+      if (admittedPatches.length === 0) {
+        lastCoalescingMetrics = options?.metrics ?? null;
+        return touched;
+      }
+
+      const preserveEnvelopeGroups =
+        semanticEnvelopeDecisions.size > 1 ||
+        (semanticEnvelopeDecisions.size > 0 && (hasUnsequencedSemanticPatch || hasEnrichmentPatch));
+
       activeChangedIds = pendingChangedIds;
+      let coalescedPatches = admittedPatches;
+      let metrics: CoalescingMetrics | null = options?.metrics ?? null;
+
+      if (!options?.coalesced && !preserveEnvelopeGroups) {
+        const result = coalescePatchesWithMetrics(admittedPatches, DEFAULT_COALESCE_CONFIG);
+        coalescedPatches = result.patches;
+        metrics = result.metrics;
+      }
       const perfEnabled = isPatchPerfDebugEnabled();
       const perfStart = perfEnabled ? getPerfNow() : 0;
       const opStats: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
@@ -4108,14 +4224,6 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       let applyMs = 0;
       let listNormalizeMs = 0;
 
-      let coalescedPatches = patches;
-      let metrics: CoalescingMetrics | null = options?.metrics ?? null;
-
-      if (!options?.coalesced) {
-        const result = coalescePatchesWithMetrics(patches, DEFAULT_COALESCE_CONFIG);
-        coalescedPatches = result.patches;
-        metrics = result.metrics;
-      }
 
       lastCoalescingMetrics = metrics;
 
@@ -4238,12 +4346,29 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         if (!target) return;
         const hasRangeUpdate = Object.prototype.hasOwnProperty.call(props ?? {}, "range");
         const hasMetaUpdate = Object.prototype.hasOwnProperty.call(props ?? {}, "meta");
+        const hasFinalityUpdate = Object.prototype.hasOwnProperty.call(props ?? {}, "isFinalized");
+        const finalityValue = props?.isFinalized;
+        const codeProgressMeta = props?.meta;
+        const codeProgressCandidate =
+          target.type === "code" &&
+          codeStateByRecord.get(target)?.managed &&
+          typeof codeProgressMeta === "object" &&
+          codeProgressMeta !== null &&
+          !Array.isArray(codeProgressMeta)
+            ? (codeProgressMeta as Record<string, unknown>).lazyTokenizedUntil
+            : undefined;
+        const lazyTokenizedUntil =
+          typeof codeProgressCandidate === "number" &&
+          Number.isSafeInteger(codeProgressCandidate) &&
+          codeProgressCandidate >= 0
+            ? codeProgressCandidate
+            : undefined;
         const sourceForRangeUpdate = hasRangeUpdate ? inputSourceSnapshotForMap(nodes) : undefined;
         const rangeUpdate = hasRangeUpdate && sourceForRangeUpdate
           ? parseSourceRange(props?.range, sourceForRangeUpdate.length)
           : null;
         let hasManagedSourceOwner = false;
-        if (hasRangeUpdate || hasMetaUpdate) {
+        if (hasRangeUpdate || hasMetaUpdate || hasFinalityUpdate) {
           let sourceOwner: NodeRecord | undefined = target;
           while (sourceOwner) {
             if (
@@ -4283,6 +4408,12 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           hasMetaUpdate &&
           !hasManagedSourceOwner &&
           !isManagedSourceFamily(metadataType);
+        const canUpdateRootFinality =
+          hasFinalityUpdate &&
+          typeof finalityValue === "boolean" &&
+          !hasManagedSourceOwner &&
+          target.parentId === PATCH_ROOT_ID &&
+          (target.type === "list" || target.type === "blockquote");
         let applyMetaUpdate = false;
         let nextMeta: Record<string, unknown> | undefined;
         if (canUpdateGenericMeta) {
@@ -4413,6 +4544,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           const nextProps = props ? { ...props } : {};
           delete nextProps.range;
           delete nextProps.meta;
+          delete nextProps.isFinalized;
           if ("block" in nextProps) {
             delete (nextProps as Record<string, unknown>).block;
           }
@@ -4429,6 +4561,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           const nextProps = props ? { ...props } : {};
           delete nextProps.range;
           delete nextProps.meta;
+          delete nextProps.isFinalized;
           if ("block" in nextProps) {
             delete (nextProps as Record<string, unknown>).block;
           }
@@ -4548,10 +4681,12 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             Boolean(target.parentId);
           if (shouldRebuildFinalizedTree) {
             const parent = target.parentId ? nodes.get(target.parentId) : undefined;
-            const index = parent ? parent.children.indexOf(target.id) : -1;
+            const lastIndex = (parent?.children.length ?? 0) - 1;
+            const isTailChild = Boolean(parent && lastIndex >= 0 && parent.children[lastIndex] === target.id);
+            const index = isTailChild ? lastIndex : parent ? parent.children.indexOf(target.id) : -1;
             if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && parent) {
               paragraphCountersByMap!.get(nodes)?.recordPrefixComparisons?.(
-                index === -1 ? parent.children.length : index + 1,
+                isTailChild ? 1 : index === -1 ? parent.children.length : index + 1,
                 "store",
               );
             }
@@ -4585,6 +4720,21 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           blockChanged = true;
 
         }
+        if (lazyTokenizedUntil !== undefined && target.type === "code" && target.block) {
+          const currentMeta = target.block.payload.meta;
+          if (currentMeta?.lazyTokenizedUntil !== lazyTokenizedUntil) {
+            target.block = {
+              ...target.block,
+              payload: {
+                ...target.block.payload,
+                meta: { ...(currentMeta ?? {}), lazyTokenizedUntil },
+              },
+            };
+            blockChanged = true;
+            mutatedBlocks = true;
+            blocksDirty = true;
+          }
+        }
         if (applyMetaUpdate && target.block && !hasManagedSourceOwner && !isManagedSourceFamily(target.type)) {
           const updatedBlock = blockWithExactCanonicalMetadata(target.block, metadataValue);
           if (updatedBlock !== target.block) {
@@ -4593,6 +4743,17 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             mutatedBlocks = true;
             blocksDirty = true;
           }
+        }
+        if (
+          canUpdateRootFinality &&
+          target.block &&
+          typeof finalityValue === "boolean" &&
+          target.block.isFinalized !== finalityValue
+        ) {
+          target.block = { ...target.block, isFinalized: finalityValue };
+          blockChanged = true;
+          mutatedBlocks = true;
+          blocksDirty = true;
         }
 
         if (
@@ -5254,6 +5415,12 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               break;
             }
             if (!decorated.changed || !decorated.state) break;
+            const decoratedBlock = updateStoredDiffBlockDecorations(
+              target.block,
+              decorated.state,
+              decorated.changedIndices,
+            );
+            if (decoratedBlock !== target.block) target.block = decoratedBlock;
             codeStateByRecord.set(target, decorated.state);
             if (decorated.changedIndices) invalidateCodeLineIndices(target.id, decorated.changedIndices);
             bumpVersion(target);
@@ -5345,6 +5512,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
       for (const id of touched) pendingChangedIds.add(id);
       activeChangedIds = null;
+      if (newestAdmittedEnvelope) lastSemanticEnvelope = newestAdmittedEnvelope;
 
       if (touched.size > 0 || mutatedBlocks) {
         version++;

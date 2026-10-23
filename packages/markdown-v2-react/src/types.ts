@@ -13,6 +13,7 @@ import type {
   SyntaxRuleSpec,
   TokenLineV1,
 } from "@stream-mdx/core";
+import type { FinalizeResult } from "@stream-mdx/protocol";
 import type { ContentComponentsMap } from "./components/content-components";
 import type { TrustedMdxEngine } from "./trusted-mdx-contract";
 import type { ComponentRegistry } from "./components";
@@ -295,7 +296,7 @@ export interface Renderer {
   attachWorker(worker: Worker, options?: { skipInit?: boolean }): void;
   /** Resolve after the attached worker supplies its matching initial root, before queued source dispatch. */
   whenInitialized(): Promise<void>;
-  append(text: string): void;
+  finalize(): Promise<FinalizeResult>;
   renderStatic(text: string): Promise<Block[]>;
   onUpdate(cb: (blocks: ReadonlyArray<Block>) => void): () => void;
   setBlockComponents(map: Partial<BlockComponents>): void;
