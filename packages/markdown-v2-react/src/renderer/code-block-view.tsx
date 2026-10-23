@@ -145,6 +145,59 @@ const CodeLineRangeChain: React.FC<{
 
 CodeLineRangeChain.displayName = "CodeLineRangeChain";
 
+function codeLineSelectionPoint(node: Node, offset: number): {
+  line: HTMLElement;
+  lineNumber: number;
+  textOffset: number;
+} | null {
+  const endpoint = node.nodeType === 1 ? node as Element : node.parentElement;
+  const line = endpoint?.closest<HTMLElement>(".line[data-line]");
+  const lineNumber = Number(line?.dataset.line);
+  if (!line || !Number.isSafeInteger(lineNumber) || lineNumber < 1) return null;
+
+  const prefix = line.ownerDocument.createRange();
+  prefix.selectNodeContents(line);
+  prefix.setEnd(node, offset);
+  return { line, lineNumber, textOffset: prefix.toString().length };
+}
+
+function authoredCodeOffset(source: string, lineNumber: number, textOffset: number): number | null {
+  let lineStart = 0;
+  for (let line = 1; line < lineNumber; line += 1) {
+    const separator = source.indexOf("\n", lineStart);
+    if (separator < 0) return null;
+    lineStart = separator + 1;
+  }
+  let lineEnd = source.indexOf("\n", lineStart);
+  if (lineEnd < 0) lineEnd = source.length;
+  if (lineEnd > lineStart && source.charCodeAt(lineEnd - 1) === 13) lineEnd -= 1;
+  if (textOffset < 0 || textOffset > lineEnd - lineStart) return null;
+  return lineStart + textOffset;
+}
+
+function copyAuthoredSelection(event: ClipboardEvent, viewport: HTMLElement, readSource: () => string | null): void {
+  if (event.defaultPrevented || !event.clipboardData) return;
+  const selection = viewport.ownerDocument.getSelection();
+  if (!selection || selection.isCollapsed || selection.rangeCount !== 1) return;
+
+  const range = selection.getRangeAt(0);
+  const start = codeLineSelectionPoint(range.startContainer, range.startOffset);
+  const end = codeLineSelectionPoint(range.endContainer, range.endOffset);
+  if (!start || !end || start.line.closest("code") !== end.line.closest("code")) return;
+  if (!viewport.contains(start.line) || !viewport.contains(end.line)) return;
+
+  const source = readSource();
+  if (source === null) return;
+  const sourceStart = authoredCodeOffset(source, start.lineNumber, start.textOffset);
+  const sourceEnd = authoredCodeOffset(source, end.lineNumber, end.textOffset);
+  if (sourceStart === null || sourceEnd === null || sourceEnd < sourceStart) return;
+
+  event.clipboardData.setData("text/plain", source.slice(sourceStart, sourceEnd));
+  event.preventDefault();
+}
+
+
+
 
 // Private code-rendering owner; block dispatch and finalized wrappers remain in node-views.
 export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
@@ -191,6 +244,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     configurationRevision,
     codeViewportOwner,
   );
+  const codeViewportRef = virtualization.containerRef;
   const window = virtualization.window;
   const [fullContentOwner, setFullContentOwner] = React.useState<{
     store: RendererStore;
@@ -248,6 +302,29 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     const code = readCurrentCodeSource();
     if (code !== null) downloadFile(code, getCodeSnippetFilename(lang));
   }, [lang, readCurrentCodeSource]);
+  const copyNativeSelection = React.useCallback(
+    (event: ClipboardEvent, viewport: HTMLElement) => copyAuthoredSelection(event, viewport, readCurrentCodeSource),
+    [readCurrentCodeSource],
+  );
+  const handleViewportCopy = React.useCallback(
+    (event: React.ClipboardEvent<HTMLDivElement>) => copyNativeSelection(event.nativeEvent, event.currentTarget),
+    [copyNativeSelection],
+  );
+  const shouldVirtualize =
+    virtualizationConfig.enabled &&
+    virtualization.window.totalLines >= virtualizationConfig.virtualizeThreshold;
+  React.useEffect(() => {
+    if (!shouldVirtualize) return;
+    const viewport = codeViewportRef.current;
+    if (!viewport) return;
+    const ownerDocument = viewport.ownerDocument;
+    const handleDocumentCopy = (event: ClipboardEvent) => {
+      if (event.defaultPrevented) return;
+      copyNativeSelection(event, viewport);
+    };
+    ownerDocument.addEventListener("copy", handleDocumentCopy, true);
+    return () => ownerDocument.removeEventListener("copy", handleDocumentCopy, true);
+  }, [codeViewportRef, copyNativeSelection, shouldVirtualize]);
 
   if (!node || !codeBlock) return null;
 
@@ -267,9 +344,6 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   const codeRenderer = registry.getCodeRenderer(normalizedLang);
   const resolvedCodeControls = resolveCodeControls(registry.getControls());
   const ControlsComponent = registry.getControlsComponent();
-  const shouldVirtualize =
-    virtualizationConfig.enabled &&
-    virtualization.window.totalLines >= virtualizationConfig.virtualizeThreshold;
   const codeFrameClass = "not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm";
   const codeMetricsAttrs = {
     "data-code-block": "true",
@@ -411,6 +485,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
               maxHeight: virtualization.isPrinting ? "none" : "600px",
             }}
             onScroll={handleScroll}
+            onCopy={handleViewportCopy}
           >
             <div style={{ height: spacerTopHeight }} aria-hidden="true" />
             {rendered}
@@ -473,7 +548,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
       );
       const renderCustomCode = (): React.ReactElement => {
         const rendererProps: CodeFenceRendererProps = {
-          code: readCurrentCodeSource() ?? "",
+          code: typeof blockMeta?.code === "string" ? blockMeta.code : readCurrentCodeSource() ?? "",
           language: lang ?? "",
           meta: blockMeta,
           info: infoText,

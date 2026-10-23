@@ -189,6 +189,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
+  statusMessage?: string;
 }
 
 
@@ -282,6 +283,7 @@ function StreamingMarkdownComponent(
     controls,
     controlsComponent,
     animated,
+    statusMessage,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
@@ -987,6 +989,7 @@ function StreamingMarkdownComponent(
       controls={controls}
       controlsComponent={controlsComponent}
       animated={animated}
+      statusMessage={statusMessage}
       contentComponents={normalizedContentComponents}
       allowedElements={allowedElements}
       disallowedElements={disallowedElements}

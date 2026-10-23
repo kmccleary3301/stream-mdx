@@ -102,10 +102,12 @@ export function Example() {
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
 | `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
 | `tableVirtualization` | `boolean \| Partial<TableVirtualizationConfig>` | Opt-in row virtualization for large tables while streaming or finalized. Default `false`; configured thresholds and overscan remain in effect during streaming. |
+| `codeVirtualization` | `Partial<VirtualizedCodeConfig>` | Configures the native code viewport. Code blocks over the default 200-line threshold are windowed; the full-content control is explicit. |
 | `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
 | `html` | `HtmlOptions` | Per-tag attribute allowlists and opt-in markdown parsing inside raw HTML blocks. Requires `features.html`. |
 | `syntax` | `SyntaxRuleSpec[]` | Serializable regex rules for inline plugin nodes. Map rule names in `inlineComponents`. |
 | `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |
+| `statusMessage` | `string` | Optional host-coordinated milestone text rendered in one atomic polite status region. Omit it by default; update at coarse milestones, never per token. |
 | `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. Rejected URLs never navigate. |
 | `urlTransform` | `UrlTransform` | Custom URL transformation callback `(url, attribute, context) => string \| null \| undefined`. Defaults to `defaultUrlTransform` from `@stream-mdx/core`. |
 | `deferHeavyBlocks` | `DeferHeavyBlocks` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |
@@ -429,11 +431,11 @@ import { StreamingMarkdown } from "@stream-mdx/react";
 
 ### Features
 
-- **Code blocks**: Copy button writes the raw authored code text directly to clipboard via `navigator.clipboard.writeText` (never highlighted HTML). Download saves `snippet.<ext>` matching the authored fence language (e.g. `.ts`, `.py`, `.rs`, `.sql`). Fully compatible with virtualized code.
+- **Code blocks**: The Copy button writes the full authored source. Native text selection inside a code viewport copies only that exact authored range, preserving its line endings. Download saves the complete source as `snippet.<ext>` (e.g. `.ts`, `.py`, `.rs`, `.sql`) with its original line endings and trailing newline. Both actions work with virtualized code.
 - **Tables**: Copy as TSV (ready to paste into spreadsheets) or Markdown. Download as CSV, TSV, or Markdown with strict RFC 4180 escaping (quotes, commas, newlines). Table controls become active when the native table closes, even if the surrounding document stream continues. Built-in managed-table controls read row text only when copied or downloaded.
 - **Managed custom table controls**: `ControlsComponentProps` supplies `headers`, `align`, and `getTableData()`. It intentionally omits the full `rows` array so rendering does not materialize the table prefix; call `getTableData()` inside a user action when complete row strings are needed. `onCopy` and `onDownload` retain the built-in action behavior.
 - **Mermaid / Code Fences**: Exposed through `CodeFenceRendererProps` (`controls` flags and `copy()` helper). `MermaidBlock` opts in to source diagram code copying in its toolbar and code view.
-- **Accessibility & SSR**: Buttons are real `<button type="button">` with `aria-label`, `data-stream-mdx-control`, and semantic classes. Rendering is 100% SSR-safe (no `window` access during render).
+- **Accessibility & SSR**: Buttons are real `<button type="button">` with `aria-label`, `data-stream-mdx-control`, and semantic classes. Both `StreamingMarkdown` and `MarkdownBlocksRenderer` omit live regions by default; `statusMessage` enables one atomic polite region for host-coordinated milestones. Rendering is 100% SSR-safe (no `window` access during render).
 - **Replacement slot**: Fully replaceable via `controlsComponent` prop on `<StreamingMarkdown />` or `ComponentRegistry.setControlsComponent()`.
 
 ## 3.4) Animated Streaming (`animated`)
