@@ -303,6 +303,7 @@ interface DiffGrammarCheckpoint {
   readonly newGrammarState: unknown;
   readonly configurationRevision: number;
   readonly language: string;
+  readonly highlighter: SharedHighlighter;
   readonly fileLanguage: string;
   readonly darkTheme: CodeThemePair["dark"];
   readonly lightTheme: CodeThemePair["light"];
@@ -785,6 +786,7 @@ export class RootCodeHighlighter {
       language,
       fileLanguage: grammarState.language ?? language,
       highlighter,
+      darkTheme: config.themes.dark,
       lightTheme: config.themes.light,
       prefixLineId: currentPrefix.id,
       prefixSourceRevision: currentPrefix.sourceRevision,
