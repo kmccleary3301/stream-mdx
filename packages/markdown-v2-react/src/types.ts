@@ -2,6 +2,7 @@ import type React from "react";
 
 import type {
   Block,
+  CodeNodeHandle,
   CodeHighlightOutputMode,
   CodeHighlightingMode,
   ContentPolicy,
@@ -205,6 +206,17 @@ export interface BlockComponents {
   hr: React.FC<React.HTMLAttributes<HTMLHRElement>>;
   table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;
   [k: string]: GenericComponent;
+}
+
+/** Props supplied to a headless native code view. */
+export interface CodeNodeViewProps {
+  readonly handle: CodeNodeHandle;
+}
+
+/** Explicit headless code presentation; it replaces, rather than wraps, the native code view. */
+export interface CodeNodePresentation {
+  readonly view: React.ComponentType<CodeNodeViewProps>;
+  readonly wrapper?: never;
 }
 
 export type InlineComponents = Record<string, GenericComponent> & {

@@ -959,8 +959,9 @@ export function decorateStoredCodeState(
     const line = current.view.lines.get(decoration.index);
     if (!line || line.id !== decoration.lineId || line.sourceRevision !== decoration.sourceRevision) continue;
     valid.push(decoration);
+    const clearDecoration = decoration.tokens === null && !("exactness" in decoration);
     if (
-      decoration.tokens === null
+      clearDecoration
         ? line.decoration !== undefined && line.decoration.configurationRevision === decoration.configurationRevision
         : line.decoration !== decoration
     ) changedIndices.add(decoration.index);
@@ -1017,7 +1018,7 @@ function diffTokensEqual(
 }
 
 function diffTokensFromCodeLine(
-  tokens: CodeTokenLine | undefined,
+  tokens: CodeTokenLine | null | undefined,
   kind: DiffLine["kind"],
 ): ThemedLine | null {
   if (!tokens) return null;
@@ -1157,9 +1158,10 @@ export function materializeStoredCodeBlock(
   if (state.view.info.length > 0) metadata.info = state.view.info;
   if (state.view.language !== undefined) metadata.lang = state.view.language;
   const rows = state.view.lines.readRange(0, state.view.lines.length);
-  const tokenLines = rows.map((line) => line.decoration
-    ? { spans: line.decoration.tokens.spans as TokenLineV1["spans"] }
-    : null);
+  const tokenLines = rows.map((line) => {
+    if (!line.decoration || line.decoration.exactness === "unavailable") return null;
+    return { spans: line.decoration.tokens.spans as TokenLineV1["spans"] };
+  });
   if (tokenLines.some((line) => line !== null)) metadata.tokenLines = tokenLines;
   else delete metadata.tokenLines;
   const diffKind = rows.map((line) => line.diffKind ?? null);

@@ -1748,7 +1748,7 @@ function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, Sn
 
 function codeLineTokens(line: CodeLineRecord): TokenLineV1 | undefined {
   const decoration = line.decoration;
-  if (!decoration) return undefined;
+  if (!decoration || decoration.exactness === "unavailable") return undefined;
   return {
     spans: decoration.tokens.spans.map((span) => ({
       t: span.t,

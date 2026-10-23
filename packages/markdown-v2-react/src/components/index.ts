@@ -37,6 +37,8 @@ import type {
   CodeFenceRenderer,
   CodeFenceRendererConfig,
   CodeFenceRendererProps,
+  CodeNodePresentation,
+  CodeNodeViewProps,
   ControlsComponentProps,
   ControlsConfig,
   ElementFilterOptions,
@@ -756,6 +758,7 @@ export const defaultBlockComponents: BlockComponents = {
  */
 export class ComponentRegistry {
   private blockComponents: BlockComponents;
+  private codeNodeView?: React.ComponentType<CodeNodeViewProps>;
   private inlineComponents: InlineComponents;
   private htmlElements: HtmlElements;
   private tableElements: TableElements;
@@ -1058,7 +1061,12 @@ export class ComponentRegistry {
    */
   setBlockComponents(components: Partial<BlockComponents>): void {
     this.blockComponents = { ...this.blockComponents, ...components } as BlockComponents;
+    if (components.code !== undefined) this.codeNodeView = undefined;
     this.blockComponentMapCache = null;
+  }
+
+  setCodeNodePresentation(presentation?: CodeNodePresentation): void {
+    this.codeNodeView = presentation?.view;
   }
 
   /**
@@ -1144,6 +1152,9 @@ export class ComponentRegistry {
    */
   getBlockComponent(type: string): React.ComponentType<Record<string, unknown>> {
     return this.blockComponents[type] || this.blockComponents.paragraph;
+  }
+  getCodeNodeView(): React.ComponentType<CodeNodeViewProps> | undefined {
+    return this.codeNodeView;
   }
 
   /**

@@ -21,7 +21,7 @@ import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
-import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type CodeNodePresentation, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
   resolve(): void;
@@ -161,7 +161,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   prewarmLangs?: string[];
   features?: StreamingFeatureFlags;
   themes?: { light: string; dark: string };
-  components?: Partial<BlockComponents>;
+  components?: Partial<BlockComponents> | Readonly<{ code: CodeNodePresentation }>;
   tableElements?: Partial<TableElements>;
   htmlElements?: Partial<HtmlElements>;
   inlineComponents?: Partial<InlineComponents>;
@@ -188,6 +188,13 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
+}
+
+function isHeadlessCodePresentation(
+  components: StreamingMarkdownProps["components"],
+): components is Readonly<{ code: CodeNodePresentation }> {
+  const code = components?.code;
+  return code !== undefined && typeof code === "object" && typeof code.view === "function";
 }
 
 
@@ -547,7 +554,12 @@ function StreamingMarkdownComponent(
 
   useEffect(() => {
     if (components) {
-      renderer.setBlockComponents(components);
+      const registry = renderer.getComponentRegistry();
+      if (isHeadlessCodePresentation(components)) {
+        registry.setCodeNodePresentation(components.code);
+      } else {
+        renderer.setBlockComponents(components);
+      }
     }
     if (normalizedContentComponents) {
       renderer.setContentComponents(normalizedContentComponents);

@@ -1936,6 +1936,7 @@ export class MarkdownEngine {
               && generation === this.documentGeneration
               && configurationRevision === this.rootCodeConfigurationRevision
               && this.isCurrentRootCodeOwner(rootOwner),
+            "range",
           );
           if (!this.isCurrentRootCodeOwner(rootOwner)) return;
           const patch = rootCodeDecoratePatch(rootOwner, configurationRevision, decorations);
@@ -1979,6 +1980,7 @@ export class MarkdownEngine {
               && nestedOwner.inputGeneration === generation
               && configurationRevision === this.rootCodeConfigurationRevision
               && this.nestedCodeOwners.get(nestedOwner.id) === nestedOwner,
+            "range",
           );
           const patches: Patch[] = [];
           const block = decorations.length > 0 ? this.refreshNativeNestedCodePresentation(nestedOwner) : undefined;
@@ -3456,7 +3458,8 @@ export class MarkdownEngine {
     const block = isFinalized ? owner.materializeBlock() : undefined;
     const info = typeof block?.payload.meta?.info === "string" ? block.payload.meta.info : "";
     const { lang, meta } = parseCodeFenceInfo(info);
-    const isDiff = detectDiffLanguage(lang, meta).isDiff;
+    const diffInfo = detectDiffLanguage(lang, meta);
+    const isDiff = diffInfo.isDiff;
     const isLazy = isFinalized && shouldLazyTokenizeBlock(
       this.lazyTokenizationEnabled,
       owner.getLines().length,
@@ -3464,44 +3467,95 @@ export class MarkdownEngine {
       Boolean(this.highlighter),
       owner.getLines().materialize().trim().length > 0,
     );
-    const skipRootTokenization = isLazy || (isDiff && this.highlightOutputMode !== "html");
+    const tokenizeFinalizedDiff = isFinalized && isDiff && this.highlightOutputMode !== "html";
+    const skipRootTokenization = isLazy || (isDiff && this.highlightOutputMode !== "html" && !isFinalized);
     const decorations = skipRootTokenization
       ? []
-      : await this.rootCodeHighlighter.decorateAvailable(
-          owner,
-          this.rootCodeHighlightConfiguration(finalizing || isFinalized),
-          () => !this.disposed
-            && generation === this.documentGeneration
-            && configurationRevision === this.rootCodeConfigurationRevision
-            && this.isCurrentRootCodeOwner(owner),
-        );
+      : tokenizeFinalizedDiff
+        ? await this.rootCodeHighlighter.tokenizeRange(
+            owner,
+            0,
+            owner.getLines().length,
+            this.rootCodeHighlightConfiguration(finalizing || isFinalized),
+            () => !this.disposed
+              && generation === this.documentGeneration
+              && configurationRevision === this.rootCodeConfigurationRevision
+              && this.isCurrentRootCodeOwner(owner),
+            "range",
+          )
+        : await this.rootCodeHighlighter.decorateAvailable(
+            owner,
+            this.rootCodeHighlightConfiguration(finalizing || isFinalized),
+            () => !this.disposed
+              && generation === this.documentGeneration
+              && configurationRevision === this.rootCodeConfigurationRevision
+              && this.isCurrentRootCodeOwner(owner),
+          );
     if (!this.isCurrentRootCodeOwner(owner)) return null;
 
     let patch = rootCodeDecoratePatch(owner, configurationRevision, decorations);
     if (isFinalized && block) {
-      await this.enrichCodeBlock(block);
+      await this.enrichCodeBlockInternal(block, owner);
       if (!this.isCurrentRootCodeOwner(owner)) return null;
-      owner.setPresentation(block);
-      const tokenLines = block.payload.meta?.tokenLines;
-      if (!isLazy && Array.isArray(tokenLines)) {
+      const wantsTokens = (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both")
+        && this.emitHighlightTokens;
+      if (wantsTokens) {
         const rows = owner.getLines().readRange(0, owner.getLines().length);
-        const tokenDecorations = rows.flatMap((row) => {
-          const tokens = tokenLines[row.index];
-          if (!tokens) return [];
-          return [{
-            index: row.index,
-            lineId: row.id,
-            sourceRevision: row.sourceRevision,
-            configurationRevision,
-            exactness: "exact" as const,
-            tokens,
-          }];
-        });
-        if (tokenDecorations.length > 0) {
-          owner.decorateLines(tokenDecorations);
-          patch = rootCodeDecoratePatch(owner, configurationRevision, tokenDecorations);
+        const meta = { ...(block.payload.meta ?? {}) };
+        const tokenLines = meta.tokenLines;
+        if (isDiff && this.highlighter) {
+          meta.tokenLines = rows.map((row) => {
+            const decoration = row.decoration;
+            return decoration?.configurationRevision === configurationRevision
+              && decoration.exactness !== "unavailable"
+              ? decoration.tokens
+              : null;
+          });
+          if (isLazy) {
+            meta.lazyTokenization = true;
+            let tokenizedUntil = 0;
+            while (tokenizedUntil < rows.length
+              && rows[tokenizedUntil]?.decoration?.configurationRevision === configurationRevision) {
+              tokenizedUntil += 1;
+            }
+            meta.lazyTokenizedUntil = tokenizedUntil;
+          }
+        } else if (!isLazy && Array.isArray(tokenLines)) {
+          const tokenDecorations = rows.flatMap((row) => {
+            const tokens = tokenLines[row.index];
+            if (!tokens) return [];
+            return [{
+              index: row.index,
+              lineId: row.id,
+              sourceRevision: row.sourceRevision,
+              configurationRevision,
+              exactness: "exact" as const,
+              tokens,
+            }];
+          });
+          if (tokenDecorations.length > 0) {
+            owner.decorateLines(tokenDecorations);
+            patch = rootCodeDecoratePatch(owner, configurationRevision, tokenDecorations);
+          }
         }
+        if (isDiff) {
+          meta.diffKind = rows.map((row) => row.diffKind ?? null);
+          meta.oldNo = rows.map((row) => row.oldNo ?? null);
+          meta.newNo = rows.map((row) => row.newNo ?? null);
+          if (this.emitDiffBlocks) {
+            const codeLines = rows.map((row) => row.text);
+            const cursor: DiffCursorState = { oldLine: null, newLine: null };
+            meta.diffBlocks = buildDiffBlocksFromLines(
+              codeLines.map((line) => parseUnifiedDiffLine(line, cursor)),
+              codeLines,
+              Array.isArray(meta.tokenLines) ? meta.tokenLines as Array<TokenLineV1 | null> : null,
+              diffInfo.baseLang ?? null,
+            );
+          }
+        }
+        block.payload.meta = meta;
       }
+      owner.setPresentation(block);
     }
     return patch;
   }
@@ -7191,6 +7245,7 @@ export class MarkdownEngine {
             owner.getLines().length,
             this.rootCodeHighlightConfiguration(true),
             () => !this.disposed,
+            "range",
           )
         : await this.rootCodeHighlighter.decorateAvailable(
             owner,
@@ -7881,6 +7936,10 @@ export class MarkdownEngine {
   }
 
   public async enrichCodeBlock(block: Block): Promise<void> {
+    await this.enrichCodeBlockInternal(block);
+  }
+
+  private async enrichCodeBlockInternal(block: Block, sourceOwner?: RootCodeSourceOwner): Promise<void> {
     this.performanceTimer.mark("highlight-code");
     const metrics = this.activeMetricsCollector;
 
@@ -7890,6 +7949,7 @@ export class MarkdownEngine {
     const info = typeof block.payload.meta?.info === "string" ? block.payload.meta.info : extracted.info;
     const { lang, meta } = parseCodeFenceInfo(info);
     let diffInfo = detectDiffLanguage(lang, meta);
+    const sourceDiff = diffInfo.isDiff;
     const rawCodeBody = typeof preparedCode === "string" ? block.isFinalized ? preparedCode : trimProvisionalNativeCode(raw, preparedCode)
       : extracted.hadFence ? dedentFencedCodeByClosingIndent(raw, extracted.code) : dedentIndentedCode(raw);
     const codeBody = rawCodeBody.includes("\r") ? rawCodeBody.replace(/\r\n?/g, "\n") : rawCodeBody;
@@ -7910,7 +7970,12 @@ export class MarkdownEngine {
     const hasHighlighter = Boolean(this.highlighter);
     const hasHighlightableContent = codeBody.trim().length > 0;
     const wantsHtml = this.highlightOutputMode === "html" || this.highlightOutputMode === "both";
-    const wantsTokens = (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both") && this.emitHighlightTokens;
+    const sourceDiffTokens = Boolean(sourceOwner && sourceDiff && hasHighlighter
+      && this.emitHighlightTokens
+      && (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both"));
+    const wantsTokens = (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both")
+      && this.emitHighlightTokens
+      && !sourceDiffTokens;
     const wantsTokensNow = wantsTokens && (block.isFinalized || this.liveTokenizationEnabled);
 
     if (!block.isFinalized) {
@@ -8129,7 +8194,7 @@ export class MarkdownEngine {
         if ("oldNo" in nextMeta) delete nextMeta.oldNo;
         if ("newNo" in nextMeta) delete nextMeta.newNo;
       }
-      if (this.emitDiffBlocks && diffInfo.isDiff) {
+      if (this.emitDiffBlocks && diffInfo.isDiff && !sourceDiffTokens) {
         const cursor: DiffCursorState = { oldLine: null, newLine: null };
         const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
         nextMeta.diffBlocks = buildDiffBlocksFromLines(diffLines, codeLines, wantsTokens ? state.tokenLines : null, diffInfo.baseLang ?? null);
@@ -8198,9 +8263,10 @@ export class MarkdownEngine {
         diffOldNo = diffInfoLines.map((line) => line.oldNo ?? null);
         diffNewNo = diffInfoLines.map((line) => line.newNo ?? null);
         if (!hasHighlighter || !hasHighlightableContent) {
-          tokenLines = diffInfoLines.map((line) =>
-            (line.text ?? line.raw).length > 0 ? { spans: [{ t: line.text ?? line.raw }] } : { spans: [] },
-          );
+          tokenLines = diffInfoLines.map((line) => {
+            const content = line.content ?? "";
+            return content.length > 0 ? { spans: [{ t: content }] } : { spans: [] };
+          });
         } else {
           try {
             const { tokenLines: diffTokens } = await buildDiffTokenLines(
@@ -8262,7 +8328,7 @@ export class MarkdownEngine {
       if ("oldNo" in nextMeta) delete nextMeta.oldNo;
       if ("newNo" in nextMeta) delete nextMeta.newNo;
     }
-    if (this.emitDiffBlocks && diffInfo.isDiff) {
+    if (this.emitDiffBlocks && diffInfo.isDiff && !sourceDiffTokens) {
       const cursor: DiffCursorState = { oldLine: null, newLine: null };
       const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
       nextMeta.diffBlocks = buildDiffBlocksFromLines(
@@ -9885,6 +9951,7 @@ export class MarkdownEngine {
           owner.getLines().length,
           this.rootCodeHighlightConfiguration(true),
           () => !this.disposed,
+          "range",
         )
       : await this.rootCodeHighlighter.decorateAvailable(
           owner,
@@ -10669,7 +10736,12 @@ export class MarkdownEngine {
       }
 
       if (wantsTokens && diffEnabled) {
-        const cursor = { oldLine: state.diffCursor?.oldLine ?? null, newLine: state.diffCursor?.newLine ?? null };
+        const cursor: DiffCursorState = {
+          oldLine: state.diffCursor?.oldLine ?? null,
+          newLine: state.diffCursor?.newLine ?? null,
+          ...(state.diffCursor?.oldRemaining !== undefined ? { oldRemaining: state.diffCursor.oldRemaining } : {}),
+          ...(state.diffCursor?.newRemaining !== undefined ? { newRemaining: state.diffCursor.newRemaining } : {}),
+        };
         const diffLines = segmentLines.map((line) => parseUnifiedDiffLine(line, cursor));
         const grammarObj = { context: nextGrammarState };
         const { tokenLines, grammarState: nextState } = await buildDiffTokenLines(

@@ -22,13 +22,18 @@ import type { DiffCursorState } from "./types";
 
 declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
 
-function themedDiffLine(tokens: CodeLineDecoration["tokens"], kind: DiffLine["kind"]): ThemedLine {
-  const themed = toThemedLine(tokens, "dark");
+function themedDiffLine(decoration: CodeLineDecoration, kind: DiffLine["kind"]): ThemedLine | null {
+  if (decoration.exactness === "unavailable") return null;
+  const themed = toThemedLine(decoration.tokens, "dark");
   const prefix = kind === "add" ? "+" : kind === "del" ? "-" : kind === "context" ? " " : "";
   return stripPrefixFromThemedLine(themed, prefix) ?? [];
 }
 
-function sameThemedDiffLine(left: ThemedLine | null | undefined, right: ThemedLine): boolean {
+function sameThemedDiffLine(
+  left: ThemedLine | null | undefined,
+  right: ThemedLine | null,
+): boolean {
+  if (right === null) return left === null || left === undefined;
   if (!left || left.length !== right.length) return false;
   for (let index = 0; index < right.length; index += 1) {
     const leftToken = left[index];
@@ -82,7 +87,7 @@ function updateDiffBlockPresentation(
       const sourceLine = lines.get(decoration.index);
       const lineDecoration = sourceLine?.decoration;
       if (!diffLine || !sourceLine || sourceLine.text !== diffLine.raw || !lineDecoration) continue;
-      const tokens = themedDiffLine(lineDecoration.tokens, diffLine.kind);
+      const tokens = themedDiffLine(lineDecoration, diffLine.kind);
       if (sameThemedDiffLine(diffLine.tokens, tokens)) continue;
       if (!nextLines) nextLines = diffBlock.lines.slice();
       nextLines[diffLineIndex] = { ...diffLine, tokens };
@@ -274,7 +279,7 @@ export class RootCodeSourceOwner {
   private lineStart: number;
   private pendingCR = false;
   private rawEnd: number;
-  /** Present only for diff-labeled fences: diff numbering state after the complete-line prefix. */
+  /** Diff numbering and hunk counts after the complete-line prefix. */
   private diffCursor: DiffCursorState | undefined;
   private cachedBlock: { readonly revision: number; readonly block: Block } | undefined;
   private presentation: {
@@ -435,8 +440,10 @@ export class RootCodeSourceOwner {
     };
     if (this.opening.language !== undefined) meta.lang = this.opening.language;
     const previousTokenLines = meta.tokenLines;
-    const tokenLines = this.codeLines.readRange(0, this.codeLines.length).map((line, index) =>
-      line.decoration?.tokens ?? (Array.isArray(previousTokenLines) ? previousTokenLines[index] : null));
+    const tokenLines = this.codeLines.readRange(0, this.codeLines.length).map((line, index) => {
+      if (line.decoration?.exactness === "unavailable") return null;
+      return line.decoration?.tokens ?? (Array.isArray(previousTokenLines) ? previousTokenLines[index] : null);
+    });
     meta.tokenLines = tokenLines;
 
     const block: Block = {

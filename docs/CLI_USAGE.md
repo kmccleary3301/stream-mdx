@@ -208,7 +208,9 @@ function renderTokenLine(tokens: TokenLineV1 | null): string {
 
 function renderDiffLine(text: string, tokens: TokenLineV1 | null, kind?: DiffLineKind | null): string {
   const bg = kind === "add" ? BG_ADD : kind === "del" ? BG_DEL : "";
-  return `${bg}${renderTokenLine(tokens) || text}${ANSI_RESET}`;
+  const marker = kind === "add" ? "+" : kind === "del" ? "-" : kind === "context" ? " " : "";
+  const content = tokens === null ? text : `${marker}${renderTokenLine(tokens)}`;
+  return `${bg}${content}${ANSI_RESET}`;
 }
 ```
 

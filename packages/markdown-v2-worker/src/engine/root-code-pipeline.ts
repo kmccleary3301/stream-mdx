@@ -9,8 +9,10 @@ import {
   type CodeBlockSnapshot,
   type CodeBlockSourceMetadata,
   type CodeLineDecoration,
+  type CodeDiffTokenLine,
   type CodeLineIndex,
   type CodeLineRecord,
+  type HighlightUnavailableReason,
   type TokenLineV1,
   type NodeSnapshot,
   type Patch,
@@ -19,6 +21,8 @@ import {
 import {
   buildDiffTokenLines,
   detectDiffLanguage,
+  isDiffFileBoundary,
+  parseDiffHunkHeader,
   parseUnifiedDiffLine,
   renderShikiLines,
   renderTokenLines,
@@ -33,7 +37,7 @@ import {
   type RootCodeSourceOpening,
   type RootCodeSourceOwnerOptions,
 } from "./root-code-owner";
-import type { ShikiThemedToken } from "./types";
+import type { DiffCursorState, DiffLineInfo, ShikiThemedToken } from "./types";
 
 const OPENING_BY_OWNER = new WeakMap<RootCodeSourceOwner, RootCodeSourceOpening>();
 const PREPARED_CODE_SOURCE_BY_OWNER = new WeakMap<PreparedCodeLineOwner, PreparedCodeLineSource>();
@@ -48,6 +52,7 @@ export interface PreparedCodeLineOwner {
 export interface PreparedCodeLineSource {
   readonly info: string;
   readonly language?: string;
+  readonly diff?: boolean;
 }
 
 export function registerPreparedCodeLineSource(
@@ -62,6 +67,11 @@ function preparedCodeSourceOf(owner: PreparedCodeLineOwner): PreparedCodeLineSou
   if (!source) throw new Error(`Prepared code source is unavailable for owner ${owner.id}`);
   return source;
 }
+function preparedCodeDiffInfo(source: PreparedCodeLineSource): ReturnType<typeof detectDiffLanguage> {
+  const { lang, meta } = parseCodeFenceInfo(source.info);
+  return detectDiffLanguage(lang, source.diff ? { ...meta, diff: true } : meta);
+}
+
 export interface RootCodeHighlightConfiguration {
   readonly highlighter: SharedHighlighter | null;
   readonly themes: CodeThemePair;
@@ -282,17 +292,48 @@ export function rootCodeAppendChange(
   };
 }
 
+interface DiffGrammarCheckpoint {
+  readonly line: number;
+  readonly oldLine: number | null;
+  readonly newLine: number | null;
+  readonly oldRemaining?: number;
+  readonly newRemaining?: number;
+  readonly fileStartLine: number;
+  readonly oldGrammarState: unknown;
+  readonly newGrammarState: unknown;
+  readonly configurationRevision: number;
+  readonly language: string;
+  readonly highlighter: SharedHighlighter;
+  readonly darkTheme: CodeThemePair["dark"];
+  readonly lightTheme: CodeThemePair["light"];
+  readonly prefixLineId: string;
+  readonly prefixSourceRevision: number;
+}
+
 interface HighlightOwnerState {
   processedCompleteLines: number;
   grammarState?: unknown;
   grammarStateLine: number;
+  diffCheckpoints?: DiffGrammarCheckpoint[];
+  missingDiffContext?: {
+    readonly line: number;
+    readonly lineId: string;
+    readonly sourceRevision: number;
+    readonly fileStartLine: number;
+    cursor: DiffCursorState;
+    scannedThrough: number;
+    prefixLineId: string;
+    prefixSourceRevision: number;
+  };
   resolvedLanguage?: string;
   resolution?: Promise<string>;
   work: Promise<unknown>;
 }
 
+
 type HtmlCodeLineDecoration = CodeLineDecoration & { readonly html: string | null };
 const GRAMMAR_STATE_ADVANCE_CHUNK_LINES = 64;
+const MAX_DIFF_GRAMMAR_CHECKPOINTS = 32;
 /** One continuation state per prepared code lease; range requests reuse it in source order. */
 export class RootCodeHighlighter {
   private owners = new WeakMap<PreparedCodeLineOwner, HighlightOwnerState>();
@@ -351,6 +392,7 @@ export class RootCodeHighlighter {
     toLine: number,
     config: RootCodeHighlightConfiguration,
     isCurrent: () => boolean,
+    requestMode: "isolated" | "range" = "range",
   ): Promise<readonly HtmlCodeLineDecoration[]> {
     const state = this.state(owner);
     return this.enqueue(state, async () => {
@@ -359,38 +401,168 @@ export class RootCodeHighlighter {
       const from = Math.max(0, Math.min(index.length, Math.floor(fromLine)));
       const to = Math.max(from, Math.min(index.length, Math.floor(toLine)));
       const rows = index.readRange(from, to);
+      const useSourceContext = requestMode === "range";
+      const exactness = requestMode === "isolated" ? "isolated" : "exact";
       if (rows.length === 0) return [];
       const language = await this.resolveLanguage(owner, config, state);
       if (!isCurrent()) return [];
-      const input = rows.map((row) => row.text).join("\n");
       try {
-        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-          config.counters?.recordTokenization(rows.length, input.length, "engine");
-        }
         const source = preparedCodeSourceOf(owner);
-        const { lang, meta } = parseCodeFenceInfo(source.info);
-        const diffInfo = detectDiffLanguage(lang, meta);
-        if (!diffInfo.isDiff && !this.alignGrammarState(index, from, language, config, state)) return [];
+        const diffInfo = preparedCodeDiffInfo(source);
+        if (
+          diffInfo.isDiff
+          && useSourceContext
+          && this.hasCachedMissingDiffPrefixContext(index, from, to, state)
+        ) {
+          const unavailable = this.makeUnavailableDecorations(rows, config.configurationRevision, "missing_context");
+          if (!isCurrent()) return [];
+          owner.decorateLines(unavailable);
+          return unavailable;
+        }
+
         let rendered: Array<TokenLineV1 | null>;
         let html: Array<string | null>;
+        let diffTokens: CodeDiffTokenLine[] | undefined;
         if (diffInfo.isDiff) {
-          const cursor = { oldLine: null as number | null, newLine: null as number | null };
-          const diffLines = rows.map((row) => parseUnifiedDiffLine(row.text, cursor));
-          const result = await buildDiffTokenLines(diffLines, language, {}, config.highlighter, config.themes);
-          rendered = result.tokenLines;
+          const checkpoint = useSourceContext ? this.nearestDiffCheckpoint(index, from, language, config, state) : undefined;
+          const scanFrom = useSourceContext ? (checkpoint?.line ?? 0) : from;
+          const scanRows = index.readRange(scanFrom, to);
+          const cursor: DiffCursorState = {
+            oldLine: useSourceContext ? checkpoint?.oldLine ?? null : null,
+            newLine: useSourceContext ? checkpoint?.newLine ?? null : null,
+            ...(useSourceContext && checkpoint?.oldRemaining !== undefined
+              ? { oldRemaining: checkpoint.oldRemaining }
+              : {}),
+            ...(useSourceContext && checkpoint?.newRemaining !== undefined
+              ? { newRemaining: checkpoint.newRemaining }
+              : {}),
+            ...(useSourceContext ? { fileStartLine: checkpoint?.fileStartLine ?? 0 } : {}),
+          };
+          const includesProvisionalTail = scanRows[scanRows.length - 1]?.isProvisional === true;
+          const stableLength = includesProvisionalTail ? scanRows.length - 1 : scanRows.length;
+          const stableCursor: DiffCursorState = { ...cursor };
+          const diffLines: DiffLineInfo[] = [];
+          let unavailablePrefix: { readonly row: CodeLineRecord; readonly fileStartLine: number } | undefined;
+          for (let offset = 0; offset < scanRows.length; offset += 1) {
+            const row = scanRows[offset]!;
+            if (isDiffFileBoundary(row.text, cursor)) {
+              cursor.fileStartLine = row.index;
+              if (useSourceContext && row.index <= from) {
+                unavailablePrefix = undefined;
+                state.missingDiffContext = undefined;
+              }
+            }
+            if (useSourceContext) {
+              const header = parseDiffHunkHeader(row.text);
+              if (header) {
+                const missingPrefixContext = cursor.oldLine === null || cursor.newLine === null
+                  ? header.oldStart > 1 || header.newStart > 1
+                  : header.oldStart > cursor.oldLine || header.newStart > cursor.newLine;
+                if (missingPrefixContext) {
+                  unavailablePrefix = { row, fileStartLine: cursor.fileStartLine ?? 0 };
+                }
+              }
+            }
+            diffLines.push(parseUnifiedDiffLine(row.text, cursor));
+            if (offset < stableLength) {
+              stableCursor.oldLine = cursor.oldLine;
+              stableCursor.newLine = cursor.newLine;
+              if (cursor.oldRemaining !== undefined) stableCursor.oldRemaining = cursor.oldRemaining;
+              else delete stableCursor.oldRemaining;
+              if (cursor.newRemaining !== undefined) stableCursor.newRemaining = cursor.newRemaining;
+              else delete stableCursor.newRemaining;
+              if (cursor.fileStartLine !== undefined) stableCursor.fileStartLine = cursor.fileStartLine;
+              else delete stableCursor.fileStartLine;
+            }
+          }
+          if (useSourceContext && unavailablePrefix) {
+            this.rememberMissingDiffContext(
+              owner,
+              unavailablePrefix.row,
+              unavailablePrefix.fileStartLine,
+              stableCursor,
+              scanFrom + stableLength,
+              state,
+            );
+            const unavailable = this.makeUnavailableDecorations(rows, config.configurationRevision, "missing_context");
+            if (!isCurrent()) return [];
+            owner.decorateLines(unavailable);
+            return unavailable;
+          }
+
+          const stableLines = includesProvisionalTail ? diffLines.slice(0, stableLength) : diffLines;
+          const initialGrammarState = {
+            old: checkpoint?.oldGrammarState,
+            new: checkpoint?.newGrammarState,
+          };
+          const scanTokens: Array<TokenLineV1 | null> = new Array(scanRows.length).fill(null);
+          const scanDiffTokens = new Array<CodeDiffTokenLine>(scanRows.length);
+          let completedGrammarState = initialGrammarState;
+
+          if (stableLines.length > 0) {
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              let inputLength = Math.max(0, scanRows.length - 1);
+              for (const row of scanRows) inputLength += row.text.length;
+              config.counters?.recordTokenization(scanRows.length, inputLength, "engine");
+            }
+            const completed = await buildDiffTokenLines(stableLines, language, initialGrammarState, config.highlighter, config.themes);
+            completedGrammarState = {
+              old: completed.grammarState.old,
+              new: completed.grammarState.new,
+            };
+            for (let offset = 0; offset < completed.diffTokenLines.length; offset += 1) {
+              scanTokens[offset] = completed.tokenLines[offset] ?? null;
+              scanDiffTokens[offset] = completed.diffTokenLines[offset]!;
+            }
+            if (useSourceContext && isCurrent()) {
+              this.rememberDiffCheckpoint(
+                owner,
+                index,
+                scanFrom + stableLines.length,
+                completedGrammarState,
+                stableCursor,
+                language,
+                config,
+                state,
+              );
+            }
+          }
+
+          if (includesProvisionalTail) {
+            const provisional = await buildDiffTokenLines(
+              [diffLines[diffLines.length - 1]!],
+              language,
+              { old: completedGrammarState.old, new: completedGrammarState.new },
+              config.highlighter,
+              config.themes,
+            );
+            scanTokens[scanTokens.length - 1] = provisional.tokenLines[0] ?? null;
+            scanDiffTokens[scanDiffTokens.length - 1] = provisional.diffTokenLines[0]!;
+          }
+
+          const requestedOffset = from - scanFrom;
+          rendered = scanTokens.slice(requestedOffset, requestedOffset + rows.length);
+          diffTokens = scanDiffTokens.slice(requestedOffset, requestedOffset + rows.length);
           html = rows.map(() => null);
         } else {
+          const input = rows.map((row) => row.text).join("\n");
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            config.counters?.recordTokenization(rows.length, input.length, "engine");
+          }
+          if (useSourceContext && !this.alignGrammarState(index, from, language, config, state)) return [];
           const tokenRows = config.highlighter.codeToTokensWithThemes(input, {
             lang: language as never,
             themes: config.themes,
-            grammarState: state.grammarState as never,
+            ...(useSourceContext ? { grammarState: state.grammarState as never } : {}),
           } as never) as ShikiThemedToken[][];
-          state.grammarState = config.highlighter.getLastGrammarState(tokenRows as never);
-          state.grammarStateLine = to;
+          if (useSourceContext && !rows[rows.length - 1]?.isProvisional) {
+            state.grammarState = config.highlighter.getLastGrammarState(tokenRows as never);
+            state.grammarStateLine = to;
+          }
           rendered = renderTokenLines(tokenRows);
           html = renderShikiLines(tokenRows);
         }
-        const decorations = this.makeDecorations(rows, rendered, html, config.configurationRevision, "isolated");
+        const decorations = this.makeDecorations(rows, rendered, html, config.configurationRevision, exactness, diffTokens);
         const current = owner.getLines();
         const valid = decorations.filter((decoration) => {
           const row = current.get(decoration.index);
@@ -443,18 +615,206 @@ export class RootCodeHighlighter {
     return true;
   }
 
+  private hasCachedMissingDiffPrefixContext(
+    index: CodeLineIndex,
+    fromLine: number,
+    toLine: number,
+    state: HighlightOwnerState,
+  ): boolean {
+    const missing = state.missingDiffContext;
+    if (!missing) return false;
+    const row = index.get(missing.line);
+    const prefix = missing.scannedThrough > 0 ? index.get(missing.scannedThrough - 1) : undefined;
+    if (
+      row?.id === missing.lineId
+      && row.sourceRevision === missing.sourceRevision
+      && prefix?.id === missing.prefixLineId
+      && prefix.sourceRevision === missing.prefixSourceRevision
+      && !prefix.isProvisional
+      && missing.scannedThrough <= index.completeLineCount
+      && missing.cursor.fileStartLine === missing.fileStartLine
+    ) {
+      if (toLine <= missing.line) return false;
+      if (fromLine <= missing.line || fromLine < missing.scannedThrough) return true;
+
+      const cursor = missing.cursor;
+      let scannedThrough = missing.scannedThrough;
+      while (scannedThrough <= fromLine) {
+        const next = index.get(scannedThrough);
+        if (!next || next.isProvisional) break;
+        if (isDiffFileBoundary(next.text, cursor)) {
+          state.missingDiffContext = undefined;
+          return false;
+        }
+        parseUnifiedDiffLine(next.text, cursor, true);
+        scannedThrough += 1;
+      }
+
+      const scannedPrefix = index.get(scannedThrough - 1);
+      if (scannedPrefix && !scannedPrefix.isProvisional) {
+        missing.scannedThrough = scannedThrough;
+        missing.prefixLineId = scannedPrefix.id;
+        missing.prefixSourceRevision = scannedPrefix.sourceRevision;
+      }
+      return true;
+    }
+    state.missingDiffContext = undefined;
+    return false;
+  }
+
+  private rememberMissingDiffContext(
+    owner: PreparedCodeLineOwner,
+    row: CodeLineRecord,
+    fileStartLine: number,
+    cursor: DiffCursorState,
+    scannedThrough: number,
+    state: HighlightOwnerState,
+  ): void {
+    const currentIndex = owner.getLines();
+    const current = currentIndex.get(row.index);
+    const prefix = scannedThrough > 0 ? currentIndex.get(scannedThrough - 1) : undefined;
+    if (
+      row.isProvisional
+      || current?.id !== row.id
+      || current.sourceRevision !== row.sourceRevision
+      || scannedThrough <= 0
+      || scannedThrough > currentIndex.completeLineCount
+      || !prefix
+      || prefix.isProvisional
+      || cursor.fileStartLine !== fileStartLine
+    ) {
+      return;
+    }
+    state.missingDiffContext = {
+      line: row.index,
+      lineId: row.id,
+      sourceRevision: row.sourceRevision,
+      fileStartLine,
+      cursor,
+      scannedThrough,
+      prefixLineId: prefix.id,
+      prefixSourceRevision: prefix.sourceRevision,
+    };
+  }
+
+  private nearestDiffCheckpoint(
+    index: CodeLineIndex,
+    beforeLine: number,
+    language: string,
+    config: RootCodeHighlightConfiguration,
+    state: HighlightOwnerState,
+  ): DiffGrammarCheckpoint | undefined {
+    const checkpoints = state.diffCheckpoints;
+    if (!checkpoints) return undefined;
+
+    let nearest: DiffGrammarCheckpoint | undefined;
+    let retained = 0;
+    for (let offset = 0; offset < checkpoints.length; offset += 1) {
+      const checkpoint = checkpoints[offset];
+      if (!checkpoint || !this.isDiffCheckpointCompatible(index, checkpoint, language, config)) continue;
+      checkpoints[retained] = checkpoint;
+      retained += 1;
+      if (checkpoint.line <= beforeLine && (!nearest || checkpoint.line > nearest.line)) nearest = checkpoint;
+    }
+    checkpoints.length = retained;
+    return nearest;
+  }
+
+  private isDiffCheckpointCompatible(
+    index: CodeLineIndex,
+    checkpoint: DiffGrammarCheckpoint,
+    language: string,
+    config: RootCodeHighlightConfiguration,
+  ): boolean {
+    if (
+      checkpoint.configurationRevision !== config.configurationRevision
+      || checkpoint.language !== language
+      || checkpoint.highlighter !== config.highlighter
+      || checkpoint.darkTheme !== config.themes.dark
+      || checkpoint.lightTheme !== config.themes.light
+      || checkpoint.line > index.completeLineCount
+    ) {
+      return false;
+    }
+    const prefix = index.get(checkpoint.line - 1);
+    return prefix !== undefined
+      && prefix.id === checkpoint.prefixLineId
+      && prefix.sourceRevision === checkpoint.prefixSourceRevision
+      && !prefix.isProvisional;
+  }
+
+  private rememberDiffCheckpoint(
+    owner: PreparedCodeLineOwner,
+    sourceIndex: CodeLineIndex,
+    line: number,
+    grammarState: { readonly old?: unknown; readonly new?: unknown },
+    diffCursor: DiffCursorState,
+    language: string,
+    config: RootCodeHighlightConfiguration,
+    state: HighlightOwnerState,
+  ): void {
+    const highlighter = config.highlighter;
+    if (!highlighter || line <= 0 || line > sourceIndex.completeLineCount) return;
+
+    const scannedPrefix = sourceIndex.get(line - 1);
+    const currentIndex = owner.getLines();
+    const currentPrefix = currentIndex.get(line - 1);
+    if (
+      !scannedPrefix
+      || scannedPrefix.isProvisional
+      || currentIndex.completeLineCount < line
+      || currentPrefix === undefined
+      || currentPrefix.id !== scannedPrefix.id
+      || currentPrefix.sourceRevision !== scannedPrefix.sourceRevision
+    ) {
+      return;
+    }
+
+    const checkpoint: DiffGrammarCheckpoint = {
+      line,
+      oldLine: diffCursor.oldLine,
+      newLine: diffCursor.newLine,
+      ...(diffCursor.oldRemaining !== undefined ? { oldRemaining: diffCursor.oldRemaining } : {}),
+      ...(diffCursor.newRemaining !== undefined ? { newRemaining: diffCursor.newRemaining } : {}),
+      fileStartLine: diffCursor.fileStartLine ?? 0,
+      oldGrammarState: grammarState.old,
+      newGrammarState: grammarState.new,
+      configurationRevision: config.configurationRevision,
+      language,
+      highlighter,
+      darkTheme: config.themes.dark,
+      lightTheme: config.themes.light,
+      prefixLineId: currentPrefix.id,
+      prefixSourceRevision: currentPrefix.sourceRevision,
+    };
+    const checkpoints = state.diffCheckpoints ?? (state.diffCheckpoints = []);
+    for (let offset = 0; offset < checkpoints.length; offset += 1) {
+      if (checkpoints[offset]?.line === line) {
+        checkpoints[offset] = checkpoint;
+        return;
+      }
+    }
+    if (checkpoints.length >= MAX_DIFF_GRAMMAR_CHECKPOINTS) checkpoints.shift();
+    checkpoints.push(checkpoint);
+  }
+
   private makeDecorations(
     rows: readonly CodeLineRecord[],
     rendered: readonly (TokenLineV1 | null)[],
     htmlLines: readonly (string | null)[],
     configurationRevision: number,
-    exactness: CodeLineDecoration["exactness"],
+    exactness: "exact" | "isolated",
+    diffTokens?: readonly CodeDiffTokenLine[],
   ): HtmlCodeLineDecoration[] {
     const decorations: HtmlCodeLineDecoration[] = [];
     for (let offset = 0; offset < rows.length; offset += 1) {
       const row = rows[offset];
       if (!row) continue;
       const tokens = rendered[offset] ?? { spans: row.text.length > 0 ? [{ t: row.text }] : [] };
+      const diffTokenLine = diffTokens?.[offset];
+      if (diffTokens !== undefined && diffTokenLine === undefined) {
+        throw new Error("Diff highlighting did not produce paired tokens for every requested line");
+      }
       decorations.push(Object.freeze({
         index: row.index,
         lineId: row.id,
@@ -462,10 +822,28 @@ export class RootCodeHighlighter {
         configurationRevision,
         exactness,
         tokens,
+        ...(diffTokenLine !== undefined ? { diffTokens: diffTokenLine } : {}),
         html: htmlLines[offset] ?? row.text,
       }));
     }
     return decorations;
+  }
+
+  private makeUnavailableDecorations(
+    rows: readonly CodeLineRecord[],
+    configurationRevision: number,
+    reason: HighlightUnavailableReason,
+  ): HtmlCodeLineDecoration[] {
+    return rows.map((row) => Object.freeze({
+      index: row.index,
+      lineId: row.id,
+      sourceRevision: row.sourceRevision,
+      configurationRevision,
+      exactness: "unavailable" as const,
+      tokens: null,
+      reason,
+      html: null,
+    }));
   }
 
   private state(owner: PreparedCodeLineOwner): HighlightOwnerState {
@@ -491,8 +869,7 @@ export class RootCodeHighlighter {
     if (state.resolvedLanguage) return state.resolvedLanguage;
     if (!state.resolution) {
       const source = preparedCodeSourceOf(owner);
-      const { lang, meta } = parseCodeFenceInfo(source.info);
-      const diffInfo = detectDiffLanguage(lang, meta);
+      const diffInfo = preparedCodeDiffInfo(source);
       const requested = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : source.language ?? "text";
       state.resolution = resolveHighlightLanguage(config.highlighter, requested).then((language) => {
         return language;

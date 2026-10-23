@@ -1,4 +1,40 @@
-import type { DiffLineKind, TokenStyle } from "./types";
+import type { CodeBlockSourceMetadata, DiffLineKind, TokenStyle } from "./types";
+
+const codeNodeHandleBrand: unique symbol = Symbol("CodeNodeHandle");
+
+/** Zero-based, half-open line range. Reads clamp both bounds to the current line count. */
+export interface CodeLineRange {
+  readonly from: number;
+  readonly to: number;
+}
+
+/** Bounded code-owner metadata; line records remain available through explicit range reads. */
+export interface CodeBlockMetadata extends CodeBlockSourceMetadata {
+  readonly configurationRevision: number;
+  readonly info: string;
+  readonly language?: string;
+}
+
+/** Opaque, owner-local read and observation access to prepared code state. */
+export interface CodeNodeHandle {
+  readonly [codeNodeHandleBrand]: true;
+  readonly readSource: () => string;
+  /** Stable bounded metadata, replaced when the owner source frontier or lifecycle changes. */
+  readonly readMetadata: () => CodeBlockMetadata;
+  /** Reads a bounded half-open range; retained snapshots preserve identity until invalidated or evicted. */
+  readonly readLines: (range: CodeLineRange) => readonly CodeLineRecord[];
+  /** Unsubscribe releases only this metadata listener, not the owner. */
+  readonly subscribeMetadata: (listener: () => void) => () => void;
+  /** Notifies when changed records intersect the range; unsubscribe releases only this listener. */
+  readonly subscribeLines: (range: CodeLineRange, listener: () => void) => () => void;
+}
+/** Create the branded read-only handle implemented by a code owner adapter. */
+export function createCodeNodeHandle(
+  operations: Omit<CodeNodeHandle, typeof codeNodeHandleBrand>,
+): CodeNodeHandle {
+  const handle: CodeNodeHandle = { ...operations, [codeNodeHandleBrand]: true };
+  return Object.freeze(handle);
+}
 
 export type CodeTokenSpan = {
   readonly t: string;
@@ -9,18 +45,41 @@ export type CodeTokenSpan = {
   readonly s?: Readonly<TokenStyle>;
 };
 
+export type CodeDiffTokenLine = {
+  readonly old: CodeTokenLine | null;
+  readonly new: CodeTokenLine | null;
+};
+
 export type CodeTokenLine = {
   readonly spans: readonly CodeTokenSpan[];
 };
 
-export interface CodeLineDecoration {
+interface CodeLineDecorationBase {
   readonly index: number;
   readonly lineId: string;
   readonly sourceRevision: number;
   readonly configurationRevision: number;
-  readonly exactness: "exact" | "isolated";
-  readonly tokens: CodeTokenLine;
 }
+
+export type HighlightUnavailableReason =
+  | "missing_context"
+  | "stale_generation"
+  | "evicted_checkpoint_no_source"
+  | "source_mismatch";
+
+export type CodeLineDecoration = CodeLineDecorationBase & (
+  | {
+      readonly exactness: "exact" | "isolated";
+      readonly tokens: CodeTokenLine;
+      readonly diffTokens?: CodeDiffTokenLine;
+    }
+  | {
+      readonly exactness: "unavailable";
+      readonly tokens: null;
+      readonly reason: HighlightUnavailableReason;
+    }
+);
+
 
 export type CodeLineDecorationUpdate =
   | CodeLineDecoration
@@ -760,7 +819,7 @@ class PersistentCodeLineIndex implements CodeLineIndex {
       if (current === undefined || current.id !== decoration.lineId || current.sourceRevision !== decoration.sourceRevision) {
         continue;
       }
-      const clearDecoration = decoration.tokens === null;
+      const clearDecoration = decoration.tokens === null && !("exactness" in decoration);
       if (clearDecoration) {
         if (
           current.decoration === undefined ||

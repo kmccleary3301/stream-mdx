@@ -2,7 +2,8 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import { normalizeBlockquoteText, PATCH_ROOT_ID, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
-import type { InlineComponents, TableElements } from "../types";
+import type { CodeNodeHandle } from "@stream-mdx/core";
+import type { CodeNodeViewProps, InlineComponents, TableElements } from "../types";
 import {
   TableControlsBar,
   copyToClipboard,
@@ -40,6 +41,20 @@ import {
 } from "../trusted-mdx-contract";
 import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 import { getStoreResetVersion } from "./store-reset-version";
+import { NativeCodeViewContext } from "./code-highlight-context";
+
+const HeadlessNativeCodeView: React.FC<{
+  blockId: string;
+  handle: CodeNodeHandle;
+  view: React.ComponentType<CodeNodeViewProps>;
+}> = ({ blockId, handle, view: CodeView }) => {
+  const context = React.useMemo(() => ({ blockId, handle }), [blockId, handle]);
+  return (
+    <NativeCodeViewContext.Provider value={context}>
+      <CodeView handle={handle} />
+    </NativeCodeViewContext.Provider>
+  );
+};
 
 const CustomCodeBlockView: React.FC<{
   store: RendererStore;
@@ -280,6 +295,16 @@ export const BlockNodeRenderer: React.FC<{
   ) {
     return <MdxBlockView store={store} blockId={blockId} registry={registry} />;
   }
+  if (node.type === "code") {
+    const HeadlessCodeView = registry.getCodeNodeView();
+    if (HeadlessCodeView) {
+      const handle = store.getCodeNodeHandle(blockId);
+      return handle
+        ? <HeadlessNativeCodeView blockId={blockId} handle={handle} view={HeadlessCodeView} />
+        : null;
+    }
+  }
+
   if (node.type === "paragraph" && store.getParagraphBlock(blockId)) {
     const block = node.block;
     if (!block) return null;

@@ -7,7 +7,7 @@ import { JSDOM } from "jsdom";
 import ts from "typescript";
 
 import type { DiffLineKind, Patch, TokenLineV1, WorkerOut } from "@stream-mdx/core";
-import { createBlockSnapshot } from "@stream-mdx/core";
+import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot } from "@stream-mdx/core";
 import type { Block, NodeSnapshot } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import type { RendererStore } from "../../markdown-v2-react/src/renderer/store";
@@ -59,13 +59,13 @@ async function runDiffTokenizationTest(): Promise<void> {
 
   const additionTokens = addition.decoration?.tokens;
   const additionText = additionTokens?.spans.map((span) => span.t).join("") ?? "";
-  assert.strictEqual(additionText, "+const a = 2;", "tokens must reconstruct the rendered addition row");
+  assert.strictEqual(additionText, "const a = 2;", "addition token spans must exclude the diff marker");
 
   const deletion = lines.find((line) => line.text === "-const a = 1;");
   assert.ok(deletion, "cold export must retain the deleted diff row");
   assert.strictEqual(deletion.diffKind, "del");
   const deletionTokens = deletion.decoration?.tokens;
-  assert.strictEqual(deletionTokens?.spans.map((span) => span.t).join(""), "-const a = 1;");
+  assert.strictEqual(deletionTokens?.spans.map((span) => span.t).join(""), "const a = 1;", "deletion token spans must exclude the diff marker");
 
   const rendered = projectConsumerBlocks([codeBlock])[0].markup;
   const renderedCode = new JSDOM(rendered).window.document.querySelector("pre code")?.textContent ?? "";
@@ -242,8 +242,134 @@ async function runNestedDiffRendererTest(): Promise<void> {
   }
 }
 
+async function runNativeDiffMissingPrefixContextTest(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const source = [
+    "```diff ts",
+    "@@ -100,2 +100,2 @@",
+    "-const before = 0;",
+    "+const after = 0;",
+    " keep();",
+    "```",
+  ].join("\n");
+
+  const initializedMessages = await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: ["typescript"],
+    docPlugins: {
+      footnotes: false,
+      html: false,
+      mdx: false,
+      tables: false,
+      callouts: false,
+      codeHighlighting: "incremental",
+      outputMode: "tokens",
+    },
+  });
+  const initialized = initializedMessages.find((message) => message.type === "INITIALIZED");
+  assert.ok(initialized, "native worker initialization must publish the Core snapshot");
+  const snapshot = createInitialSnapshot(initialized.snapshot);
+  const fold = (messages: WorkerOut[]) => {
+    applyMessages(store, messages);
+    for (const message of messages) {
+      if (message.type === "PATCH") applyPatchBatch(snapshot, message.patches);
+    }
+  };
+  fold(initializedMessages);
+  const appendedMessages = await harness.send({ type: "APPEND", text: source });
+  fold(appendedMessages);
+  const finalizedMessages = await harness.send({ type: "FINALIZE" });
+  fold(finalizedMessages);
+
+  const codeBlock = snapshot.getBlocks().find((block) => block.type === "code");
+  assert.ok(codeBlock, "the public Core snapshot must publish the native diff code block");
+  assert.strictEqual(codeBlock.isFinalized, true, "the native diff owner must reach full finalization");
+  const range = codeBlock.payload.range;
+  assert.ok(range, "the Core code block must retain its authored source range");
+  assert.strictEqual(
+    codeBlock.payload.raw,
+    source.slice(range.from, range.to),
+    "Core cold export must retain the canonical authored diff body and markers",
+  );
+  assert.ok(codeBlock.payload.raw.includes("@@ -100,2 +100,2 @@"));
+  assert.ok(codeBlock.payload.raw.includes("-const before = 0;"));
+  assert.ok(codeBlock.payload.raw.includes("+const after = 0;"));
+  const initialDecorateCodePatches = [...appendedMessages, ...finalizedMessages].flatMap((message) =>
+    message.type === "PATCH"
+      ? message.patches.filter((patch): patch is Extract<Patch, { op: "decorateCode" }> =>
+          patch.op === "decorateCode" && patch.codeOwnerId === codeBlock.id)
+      : []);
+  const initialLines = store.getCodeLines(codeBlock.id, 1, 4);
+  const initialWireDecorations = initialDecorateCodePatches
+    .flatMap((patch) => patch.decorations)
+    .filter((decoration) =>
+      initialLines.some((line) => line.index === decoration.index && line.id === decoration.lineId));
+  assert.ok(
+    finalizedMessages.some((message) => message.type === "FINALIZED")
+    && initialDecorateCodePatches.length > 0
+    && initialWireDecorations.every((decoration) =>
+      decoration.exactness === "unavailable"
+      && decoration.reason === "missing_context"
+      && decoration.tokens === null)
+    && initialLines.map((line) => line.text).join("\n") === [
+      "-const before = 0;",
+      "+const after = 0;",
+      " keep();",
+    ].join("\n")
+    && initialLines.every((line) =>
+      line.decoration?.exactness === "unavailable"
+      && line.decoration.reason === "missing_context"
+      && line.decoration.tokens === null
+      && initialWireDecorations.some((decoration) =>
+        decoration.index === line.index && decoration.lineId === line.id)),
+    "the settled initial native decorateCode publication and renderer store must preserve authored lines as typed missing-context unavailability",
+  );
+
+
+  const rangeMessages = await harness.send({
+    type: "TOKENIZE_RANGE",
+    blockId: codeBlock.id,
+    startLine: 1,
+    endLine: 4,
+  });
+  const wireDecorations = rangeMessages.flatMap((message) =>
+    message.type === "PATCH"
+      ? message.patches.flatMap((patch) =>
+          patch.op === "decorateCode" && patch.codeOwnerId === codeBlock.id ? patch.decorations : [])
+      : []);
+  fold(rangeMessages);
+
+  const requestedLines = store.getCodeLines(codeBlock.id, 1, 4);
+  assert.deepStrictEqual(
+    requestedLines.map((line) => line.text),
+    ["-const before = 0;", "+const after = 0;", " keep();"],
+    "the public native range must address the actual deleted, added, and shared prepared lines",
+  );
+  assert.ok(
+    wireDecorations.length === requestedLines.length
+    && wireDecorations.every((decoration) =>
+      "exactness" in decoration
+      && decoration.exactness === "unavailable"
+      && decoration.reason === "missing_context"
+      && decoration.tokens === null)
+    && requestedLines.every((line) =>
+      line.decoration?.exactness === "unavailable"
+      && line.decoration.reason === "missing_context"
+      && line.decoration.tokens === null),
+    "the public decorateCode wire and renderer store must publish typed missing-context unavailability with null tokens",
+  );
+
+  const exportedCode = snapshot.getBlocks().find((block) => block.id === codeBlock.id);
+  assert.ok(exportedCode);
+  assert.strictEqual(exportedCode.payload.raw, codeBlock.payload.raw, "range tokenization must not rewrite canonical authored markers");
+}
+
 await runDiffTokenizationTest();
 await runChunkedDiffNumberingTest();
 await runNestedChunkedDiffNumberingTest();
 await runNestedDiffRendererTest();
+await runNativeDiffMissingPrefixContextTest();
 console.log("worker-diff-tokenization test passed");
