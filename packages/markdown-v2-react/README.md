@@ -132,6 +132,22 @@ When a browser dispatches `beforeprint`, an eligible virtualized native code blo
 Print preparation mounts the whole block in the DOM, so print-time memory and layout work scale with the source length. Custom code renderers and server-rendered output control their own print behavior.
 
 Native whole-code copy/download uses cold authored source, preserving CR/LF and trailing blank lines rather than normalized display text. The test DOM exercises copy with an active selection and a Clipboard API stub; no physical browser or OS clipboard proof is claimed. Download shares the source action, but direct Blob browser proof remains pending. Native copied-status feedback cleanup prevents delayed updates after unmount.
+Each eligible virtualized table also exposes a "Show full content" toggle. It mounts every row only on request; toggling it again restores the bounded viewport without replacing the native table or changing the reader's scroll position.
+
+
+### Table controls
+
+Table controls are off by default. Enable Markdown copy or download for tables with `controls`:
+
+```tsx
+<StreamingMarkdown
+  text={content}
+  features={{ tables: true }}
+  controls={{ table: { copy: ["markdown"], download: ["markdown"] } }}
+/>
+```
+
+For native tables, Markdown copy and download use the table's authored source slice. They preserve spacing, escaped pipes, inline Markdown, and original line endings, and exclude the final row's line ending and any following document content. TSV and CSV remain cell-value transforms, not source-preserving Markdown.
 
 ## When To Use This Package Directly
 

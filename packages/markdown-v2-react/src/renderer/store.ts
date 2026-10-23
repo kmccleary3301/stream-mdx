@@ -4127,6 +4127,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       return resetVersion;
     },
 
+    getRootSourceIdentity() {
+      return inputSourceByNodeMap.get(nodes);
+    },
+
     applyPatches(patches: Patch[], options?: ApplyPatchesOptions) {
       const touched = new Set<string>();
       if (!patches || patches.length === 0) {
