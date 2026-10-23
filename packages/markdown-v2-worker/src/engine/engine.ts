@@ -4614,6 +4614,7 @@ export class MarkdownEngine {
       });
     }
     for (const owner of this.rootParagraphOwners) {
+      this.publishParagraphLinkReferences(owner);
       const metadata = owner.getMetadata();
       children.push({
         from: metadata.sourceRange.from,
@@ -6421,6 +6422,10 @@ export class MarkdownEngine {
     const previousBlock = previousCandidate?.id === block.id && previousCandidate.type === block.type
       ? previousCandidate
       : undefined;
+    if (!previousBlock && previousCandidate
+      && (previousCandidate.type === "list" || previousCandidate.type === "blockquote")) {
+      this.retireNativeContainer(previousCandidate);
+    }
     const previousPrepared = previousBlock?.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
     if (previousPrepared) block.payload.meta = { ...block.payload.meta, preparedNested: previousPrepared };
     if (typeof rootRange?.from === "number") this.nativeContainerSourceStarts.set(block.id, rootRange.from);
@@ -10083,7 +10088,7 @@ export class MarkdownEngine {
     let progressPublication: ProgressPublicationContext | undefined;
     const sourceLength = this.sourceDocument.length;
 
-    if (this.rootCodeOwners.length > 0 || this.rootTableOwners.length > 0 || this.rootParagraphOwners.length > 0) {
+    if (this.pendingRootCodeOwners.size > 0 || this.pendingRootTableOwners.size > 0 || this.pendingRootParagraphOwners.size > 0) {
       const source = this.sourceDocument.snapshot();
       const semanticPatches: Patch[] = [];
       const ownersToDecorate: RootCodeSourceOwner[] = [];
@@ -10116,7 +10121,6 @@ export class MarkdownEngine {
       }
       let remainingRootFrom: number | undefined;
       let replacementRootFrom: number | undefined;
-      const finalizedParagraphTargets: FootnoteParagraphTargetDelta[] = [];
       for (const owner of this.pendingRootTableOwners) {
         const previous = owner.getMetadata();
         let appendChange: RootTablePatchChange | undefined;
@@ -10162,9 +10166,6 @@ export class MarkdownEngine {
         }
         this.publishParagraphLinkReferences(owner);
         const appendChange = rootParagraphAppendChange(source, previous, change);
-        if (change.spans.length > 0) {
-          finalizedParagraphTargets.push(this.rootParagraphFootnoteTargetDelta(owner, change.spans));
-        }
         if (!this.emittedRootParagraphIds.has(owner.id)) {
           semanticPatches.push(this.rootParagraphInsertPatch(owner));
           this.markRootParagraphOwnerEmitted(owner);
@@ -10245,7 +10246,7 @@ export class MarkdownEngine {
         true,
         semanticPatches,
         previousRootParagraphOwners,
-        { deltas: finalizedParagraphTargets, rebuild: false },
+        undefined,
         previousRootOwnerWindow,
       );
       for (const owner of ownersToDecorate) {
