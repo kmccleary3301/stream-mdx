@@ -431,7 +431,7 @@ function legacyCodeState(
         : { from: sourceTo, to: sourceTo },
       sourceRevision: 0,
       // A last line without an authored body line yet (the opening fence is still streaming) is the open tail too.
-      isProvisional: !block?.isFinalized && !body.hasClosingFence && index === extracted.length - 1 && (rawLine === undefined || rawLine.ending === ""),
+      isProvisional: !body.hasClosingFence && index === extracted.length - 1 && (rawLine === undefined || rawLine.ending === ""),
       decoration,
       diffKind: childLines[index]?.props?.diffKind as CodeLineRecord["diffKind"],
       oldNo: childLines[index]?.props?.oldNo as CodeLineRecord["oldNo"],
