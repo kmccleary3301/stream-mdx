@@ -240,6 +240,43 @@ async function runSourceRevisionIsReportedForAllResultKindsTest(): Promise<void>
     document.dispose();
   }
 }
+async function runEmptyAndClampedRangeResultsTest(): Promise<void> {
+  const source = "const first = 1;\nconst last = 2;";
+  const themes = { dark: "github-dark", light: "github-light" } as const;
+  const oracle = await createHighlighter({
+    engine: createJavaScriptRegexEngine(),
+    langs: ["typescript"],
+    themes: [themes.dark, themes.light],
+  });
+  const document = createCodeDocument({ language: "typescript", initialContent: source, themes });
+
+  try {
+    document.finalize();
+
+    const empty = await document.highlight({ mode: "range", range: { from: 1, to: 1 } });
+    assert.strictEqual(empty.exactness, "exact");
+    assert.deepStrictEqual(empty.tokens, [], "an empty half-open line range must return no token lines");
+
+    const clampedEnd = await document.highlight({ mode: "range", range: { from: 1, to: 20 } });
+    assert.strictEqual(clampedEnd.exactness, "exact");
+    assert.deepStrictEqual(
+      clampedEnd.tokens.map(normalizePublicLine),
+      oracle.codeToTokensWithThemes(source, {
+        lang: "typescript",
+        themes: { dark: themes.dark, light: themes.light },
+      }).slice(1, 2).map(normalizeShikiLine),
+      "an end beyond source length must clamp to the final available line",
+    );
+
+    const fullyClamped = await document.highlight({ mode: "range", range: { from: 20, to: 30 } });
+    assert.strictEqual(fullyClamped.exactness, "exact");
+    assert.deepStrictEqual(fullyClamped.tokens, [], "a start beyond source length must clamp to an empty range");
+  } finally {
+    document.dispose();
+    oracle.dispose();
+  }
+}
+
 
 
 async function runIsolatedNonzeroRangeInsideCommentTest(): Promise<void> {
@@ -1258,6 +1295,7 @@ await runStandaloneCodeDocumentTest();
 await runFinalizedCodeDocumentIsSealedTest();
 await runKnownDocumentRangeTest();
 await runSourceRevisionIsReportedForAllResultKindsTest();
+await runEmptyAndClampedRangeResultsTest();
 await runIsolatedNonzeroRangeInsideCommentTest();
 await runAppendInvalidatesProvisionalGrammarTest();
 await runCapturedContextContinuationTest();
