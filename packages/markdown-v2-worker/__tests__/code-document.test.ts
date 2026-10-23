@@ -739,6 +739,69 @@ async function runGrammarAcrossDiffHunksPerSideTest(): Promise<void> {
     }
   }
 }
+async function runSourceBackedSkippedDiffHunksCatchUpPerSideTest(): Promise<void> {
+  const diffSource = [
+    "@@ -1 +1 @@",
+    "-/*",
+    "+const template = `prefix ${",
+    "@@ -2 +2 @@",
+    "- * old comment",
+    "+name",
+    "@@ -3 +3 @@",
+    "- */ const oldValue = 1;",
+    "+} suffix`;",
+  ].join("\n");
+  const oldSource = ["/*", " * old comment", " */ const oldValue = 1;"].join("\n");
+  const newSource = ["const template = `prefix ${", "name", "} suffix`;"].join("\n");
+  const themes = { dark: "github-dark", light: "github-light" } as const;
+  let disposeDocument: (() => void) | undefined;
+  let disposeOracle: (() => void) | undefined;
+
+  try {
+    const document = createCodeDocument({ language: "typescript", diff: true, initialContent: diffSource, themes });
+    disposeDocument = () => document.dispose();
+    const oracle = await createHighlighter({
+      engine: createJavaScriptRegexEngine(),
+      langs: ["typescript"],
+      themes: [themes.dark, themes.light],
+    });
+    disposeOracle = () => oracle.dispose();
+    document.finalize();
+
+    const result = await document.highlight({ mode: "range", range: { from: 6, to: 9 } });
+    assert.strictEqual(result.exactness, "exact", "a source-backed range in hunk three must catch up its unrequested source prefix");
+    assert.ok(result.diffTokens, "the range must retain old and new token tracks");
+    const oldExpected = oracle.codeToTokensWithThemes(oldSource, {
+      lang: "typescript",
+      themes: { dark: themes.dark, light: themes.light },
+    }).map(normalizeShikiLine);
+    const newExpected = oracle.codeToTokensWithThemes(newSource, {
+      lang: "typescript",
+      themes: { dark: themes.dark, light: themes.light },
+    }).map(normalizeShikiLine);
+    assert.deepStrictEqual(
+      result.diffTokens.slice(1).map((line) => line.old ? normalizePublicLine(line.old) : null),
+      [oldExpected[2], null],
+      "the hunk-three removal must catch up the old comment state and the addition must not invent old tokens",
+    );
+    assert.deepStrictEqual(
+      result.diffTokens.slice(1).map((line) => line.new ? normalizePublicLine(line.new) : null),
+      [null, newExpected[2]],
+      "the hunk-three addition must catch up the new template state and the removal must not invent new tokens",
+    );
+    assert.ok(
+      document.handle.readLines({ from: 0, to: 6 }).every((line) => line.decoration === undefined),
+      "unrequested earlier hunks must remain uncolored after range catch-up",
+    );
+  } finally {
+    try {
+      disposeDocument?.();
+    } finally {
+      disposeOracle?.();
+    }
+  }
+}
+
 
 
 async function runLaterUnifiedDiffHunkWithoutContextIsUnavailableTest(): Promise<void> {
@@ -1171,5 +1234,6 @@ await runUnifiedDiffUsesIndependentGrammarTracksTest();
 await runNonzeroDiffRangeReplaysBothTracksTest();
 await runDiffRangeExposesBothContextTokenTracksTest();
 await runGrammarAcrossDiffHunksPerSideTest();
+await runSourceBackedSkippedDiffHunksCatchUpPerSideTest();
 await runLaterUnifiedDiffHunkWithoutContextIsUnavailableTest();
 console.log("code document tests passed");
