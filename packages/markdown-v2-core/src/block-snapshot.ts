@@ -2583,9 +2583,13 @@ function applyPropsToNode(snapshot: DocumentSnapshot, node: SnapshotNode, props:
         node.block = cloneBlock(blockWithoutPreparedNested(incoming));
       } else {
         node.block = cloneBlock(incoming);
+        if (node.type === "table" && node.tableState && incoming.payload.meta?.table === undefined) {
+          node.tableState = undefined;
+          node.meta = node.block.payload.meta ? { ...node.block.payload.meta } : undefined;
+        }
       }
       // Base-path code has no owner channel and refuses generic ranges; its block carries the authored range and
-      // its code-line children the text, as the React store's legacy code state reads them.
+      // the code-line children the React store's legacy code state reads them.
       if (node.type === "code" && node.codeState && !node.codeState.managed) {
         const incomingRange = incoming.payload.range;
         if (isAdmittedAuthoredRange(incomingRange, inputSourceSnapshot(snapshot))) node.range = { from: incomingRange.from, to: incomingRange.to };
