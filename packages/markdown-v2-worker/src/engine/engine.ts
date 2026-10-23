@@ -10102,6 +10102,8 @@ export class MarkdownEngine {
         ? undefined
         : this.rootOwnerSnapshotWindow(this.rootOwnerSnapshotFrom(sourceLength));
       const previousRootParagraphOwners = previousRootOwnerWindow?.paragraphOwners ?? this.rootParagraphOwners.slice();
+      let previousRootParagraphTargets: FootnoteParagraphTargetDelta[];
+
       for (const owner of this.pendingRootCodeOwners) {
         const previous = owner.getMetadata();
         const change = owner.finalize();
@@ -10185,6 +10187,13 @@ export class MarkdownEngine {
             : Math.min(remainingRootFrom, rootResumeFrom);
         }
       }
+      previousRootParagraphTargets = previousRootParagraphOwners.flatMap((owner) => {
+        const from = owner.getMetadata().sourceRange.from;
+        return this.rootParagraphOwnersByStart.get(from) === owner
+          ? [this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize())]
+          : [];
+      });
+
 
       const managedTailOffset = this.rootManagedTailOffset() ?? sourceLength;
       let tailOffset = Math.min(
@@ -10246,7 +10255,7 @@ export class MarkdownEngine {
         true,
         semanticPatches,
         previousRootParagraphOwners,
-        undefined,
+        { deltas: previousRootParagraphTargets },
         previousRootOwnerWindow,
       );
       for (const owner of ownersToDecorate) {
