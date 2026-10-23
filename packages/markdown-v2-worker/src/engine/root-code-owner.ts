@@ -17,7 +17,6 @@ import {
   codeDiffStatus,
   detectDiffLanguage,
   parseUnifiedDiffLine,
-  stripPrefixFromThemedLine,
   toDiffLineKind,
   toThemedLine,
 } from "./highlight";
@@ -25,11 +24,9 @@ import type { DiffCursorState } from "./types";
 
 declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
 
-function themedDiffLine(decoration: CodeLineDecoration, kind: DiffLine["kind"]): ThemedLine | null {
+function themedDiffLine(decoration: CodeLineDecoration): ThemedLine | null {
   if (decoration.exactness === "unavailable") return null;
-  const themed = toThemedLine(decoration.tokens, "dark");
-  const prefix = kind === "add" ? "+" : kind === "del" ? "-" : kind === "context" ? " " : "";
-  return stripPrefixFromThemedLine(themed, prefix) ?? [];
+  return toThemedLine(decoration.tokens, "dark") ?? [];
 }
 
 function sameThemedDiffLine(
@@ -90,7 +87,7 @@ function updateDiffBlockPresentation(
       const sourceLine = lines.get(decoration.index);
       const lineDecoration = sourceLine?.decoration;
       if (!diffLine || !sourceLine || sourceLine.text !== diffLine.raw || !lineDecoration) continue;
-      const tokens = themedDiffLine(lineDecoration, diffLine.kind);
+      const tokens = themedDiffLine(lineDecoration);
       if (sameThemedDiffLine(diffLine.tokens, tokens)) continue;
       if (!nextLines) nextLines = diffBlock.lines.slice();
       nextLines[diffLineIndex] = { ...diffLine, tokens };

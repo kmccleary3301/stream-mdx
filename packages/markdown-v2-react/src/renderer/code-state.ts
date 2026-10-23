@@ -1020,21 +1020,15 @@ function diffTokensEqual(
 
 function diffTokensFromCodeLine(
   tokens: CodeTokenLine | null | undefined,
-  kind: DiffLine["kind"],
 ): ThemedLine | null {
   if (!tokens) return null;
-  const themed = tokens.spans.map((span): ThemedToken => {
+  return tokens.spans.map((span): ThemedToken => {
     const style = span.s ?? span.v?.dark;
     const token: ThemedToken = { content: span.t };
     if (style?.fg !== undefined) token.color = style.fg;
     if (style?.fs !== undefined) token.fontStyle = style.fs;
     return token;
   });
-  const prefix = kind === "add" ? "+" : kind === "del" ? "-" : kind === "context" ? " " : "";
-  const first = themed[0];
-  if (!prefix || !first || !first.content.startsWith(prefix)) return themed;
-  if (first.content.length === prefix.length) return themed.slice(1);
-  return [{ ...first, content: first.content.slice(prefix.length) }, ...themed.slice(1)];
 }
 
 /** Applies native code-line decorations to the bounded token fields in existing diff presentation metadata. */
@@ -1073,7 +1067,7 @@ export function updateStoredDiffBlockDecorations(
       const diffLine = diffBlock.lines[diffLineIndex];
       const codeLine = state.view.lines.get(index);
       if (!diffLine || !codeLine || codeLine.text !== diffLine.raw) continue;
-      const tokens = diffTokensFromCodeLine(codeLine.decoration?.tokens, diffLine.kind);
+      const tokens = diffTokensFromCodeLine(codeLine.decoration?.tokens);
       if (diffTokensEqual(diffLine.tokens, tokens)) continue;
       if (!nextLines) nextLines = diffBlock.lines.slice();
       nextLines[diffLineIndex] = { ...diffLine, tokens };

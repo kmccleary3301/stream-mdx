@@ -599,17 +599,6 @@ export function toThemedLine(tokenLine: CodeTokenLine | null, theme: keyof typeo
   });
 }
 
-export function stripPrefixFromThemedLine(tokens: ThemedLine | null, prefix: string): ThemedLine | null {
-  if (!tokens || !prefix) return tokens;
-  if (tokens.length === 0) return tokens;
-  const first = tokens[0];
-  if (!first || !first.content.startsWith(prefix)) return tokens;
-  const rest = first.content.slice(prefix.length);
-  if (rest.length === 0) {
-    return tokens.slice(1);
-  }
-  return [{ ...first, content: rest }, ...tokens.slice(1)];
-}
 
 export function buildDiffBlocksFromLines(
   lines: DiffLineInfo[],
@@ -665,10 +654,7 @@ export function buildDiffBlocksFromLines(
     if (line.kind === "add") additions += 1;
     if (line.kind === "remove") deletions += 1;
 
-    let themed = tokenLines ? toThemedLine(tokenLines[i] ?? null, "dark") : null;
-    if (line.kind === "add" || line.kind === "remove" || line.kind === "context") {
-      themed = stripPrefixFromThemedLine(themed, line.prefix ?? "");
-    }
+    const themed = tokenLines ? toThemedLine(tokenLines[i] ?? null, "dark") : null;
 
     const entry: DiffLine = {
       kind: toDiffLineKind(line.kind),
