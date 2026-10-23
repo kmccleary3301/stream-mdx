@@ -5690,7 +5690,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         },
         readMetadata: () => {
           const current = isCurrentState();
-          if (!current) return metadataSnapshot;
+          if (!current) throw new Error("Code node handle no longer refers to the current code document");
           const currentSource = current.view.source;
           const metadataChanged =
             currentSource.codeOwnerId !== metadataSource.codeOwnerId ||
@@ -5723,7 +5723,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         readLines: (range: CodeLineRange) => {
           assertCodeHandleRange(range);
           const current = isCurrentState();
-          if (!current) return EMPTY_CODE_LINES;
+          if (!current) throw new Error("Code node handle no longer refers to the current code document");
           const activeRange = activeRanges.get(`${range.from}:${range.to}`);
           if (activeRange?.lines) return activeRange.lines;
           const lines = readCodeLineSnapshot(current, range);
