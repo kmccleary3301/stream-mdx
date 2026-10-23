@@ -2371,9 +2371,17 @@ export class MarkdownEngine {
     const splitFootnoteMarker = oldLength > 0
       && appendedText.startsWith("^")
       && source.read(oldLength - 1, oldLength) === "[";
+    const containerSourceStart = block.payload.range?.from ?? this.nativeContainerSourceStarts.get(block.id);
+    const precedingRoot = change?.rootNode.prevSibling;
+    const hasRootSiblingBeforeContainer = change !== undefined
+      && precedingRoot !== null
+      && precedingRoot !== undefined
+      && typeof containerSourceStart === "number"
+      && change.window.mapping.mapOffset(precedingRoot.from) >= containerSourceStart;
     const requiresCanonicalParse = vanished
       || !change
       || change.closure !== "open"
+      || hasRootSiblingBeforeContainer
       || appendedText.includes("[^")
       || appendedText.includes("&")
       || splitFootnoteMarker
@@ -2381,8 +2389,21 @@ export class MarkdownEngine {
       || (appendedText.includes(">")
         && this.nativeContainerSourceHasHtml(source.read(change.sourceRange.from, change.sourceRange.to)));
     if (requiresCanonicalParse) {
-      this.nativeContainerTails.delete(block.id);
-      tail.clear();
+      if (vanished || hasRootSiblingBeforeContainer) this.retireNativeContainer(block);
+      else {
+        if (change?.closure !== "open") {
+          const ownerIds = this.nestedCodeOwnerIdsByContainer.get(block.id);
+          if (ownerIds) {
+            // Closing a container can invalidate its open code lease without invalidating settled paragraph leases.
+            for (const ownerId of ownerIds) {
+              const owner = this.nestedCodeOwners.get(ownerId);
+              if (owner?.state === "open") this.retireNestedCodeOwner(block.id, ownerId, owner);
+            }
+          }
+        }
+        this.nativeContainerTails.delete(block.id);
+        tail.clear();
+      }
       this.treeFragments = [];
       await this.appendAndReparse(appendedText, metrics, true, true);
       return;
