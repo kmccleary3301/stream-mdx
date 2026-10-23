@@ -398,6 +398,32 @@ function trailingNativeCodeLine(
     ...(pendingCRAt === undefined ? {} : { pendingCRAt }),
   };
 }
+function reconstructNativeCodeLine(
+  source: SourceSnapshot,
+  previous: CodeLineRecord,
+  end: number,
+  baseIndent: number,
+  requiredIndent: number,
+  closure: NativeNestedCodeState,
+): { readonly line: NativeCodeLineDraft; readonly pendingCRAt?: number } {
+  const lineStart = lineStartAt(source, previous.sourceRange.from);
+  let contentEnd = lineStart;
+  while (contentEnd < end) {
+    const character = sourceCharacterAt(source, contentEnd);
+    if (character === "\r" || character === "\n") break;
+    contentEnd += 1;
+  }
+  let ending = contentEnd < end ? lineEndingAt(source, contentEnd) ?? "" : "";
+  const pendingCRAt = ending === "\r" && closure === "open" && contentEnd + 1 === source.length
+    ? contentEnd
+    : undefined;
+  if (pendingCRAt !== undefined) ending = "";
+  const line = nativeCodeLine(source, lineStart, contentEnd, baseIndent, requiredIndent, ending);
+  return {
+    line: { ...line, isProvisional: closure === "open" && ending === "" },
+    ...(pendingCRAt === undefined ? {} : { pendingCRAt }),
+  };
+}
 
 
 function mapCodeTextEvents(nodes: readonly SyntaxNode[], mapping: NativeNestedCodeSourceMapping): NativeCodeTextEvent[] {
@@ -812,12 +838,13 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     const lastCompleted = oldComplete > 0 ? this.codeLines.get(oldComplete - 1) : undefined;
     const completedSourceTo = lastCompleted?.sourceRange.to;
     // The bounded parser tail may include a completed CodeText row again; it is already owned.
-    const desiredTail = completedSourceTo === undefined
+    let desiredTail = completedSourceTo === undefined
       ? parsed.lines.slice()
       : parsed.lines.filter((line) => line.to > completedSourceTo);
     const repeatsOldProvisional = oldProvisional !== undefined
       && desiredTail.some((line) => line.from === oldProvisional.sourceRange.from);
 
+    let reconstructedPendingCRAt: number | undefined;
     if (oldProvisional && !this.emptyPlaceholder && !repeatsOldProvisional) {
       let ending = oldProvisional.ending;
       let isProvisional = oldProvisional.isProvisional;
@@ -843,7 +870,30 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
           isProvisional = false;
         }
       }
-      desiredTail.unshift(draftFromRecord(oldProvisional, ending, isProvisional));
+      let previousTail = draftFromRecord(oldProvisional, ending, isProvisional);
+      const source = update.mapping.source;
+      const priorLineStart = lineStartAt(source, oldProvisional.sourceRange.from);
+      const nextCharacter = sourceCharacterAt(source, oldProvisional.sourceRange.to);
+      if (
+        update.sourceRange.to > oldProvisional.sourceRange.to
+        && nextCharacter !== "\r"
+        && nextCharacter !== "\n"
+      ) {
+        const reconstructed = reconstructNativeCodeLine(
+          source,
+          oldProvisional,
+          update.sourceRange.to,
+          this.baseIndent,
+          this.requiredIndent,
+          update.closure,
+        );
+        if (reconstructed.line.to > oldProvisional.sourceRange.to) {
+          previousTail = reconstructed.line;
+          reconstructedPendingCRAt = reconstructed.pendingCRAt;
+          desiredTail = desiredTail.filter((line) => lineStartAt(source, line.from) !== priorLineStart);
+        }
+      }
+      desiredTail.unshift(previousTail);
     }
 
     let sourceTailPendingCRAt: number | undefined;
@@ -923,7 +973,7 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     this.sourceRange = Object.freeze({ from: update.sourceRange.from, to: update.sourceRange.to });
     this.processedTo = update.sourceRange.to;
     this.pendingCRAt = nextState === "open"
-      ? parsed.pendingCRAt ?? sourceTailPendingCRAt ?? (priorPendingCRResolved ? undefined : this.pendingCRAt)
+      ? parsed.pendingCRAt ?? sourceTailPendingCRAt ?? reconstructedPendingCRAt ?? (priorPendingCRResolved ? undefined : this.pendingCRAt)
       : undefined;
     if (this.emptyPlaceholder && (parsed.lines.length > 0 || completedEmptyPlaceholder)) this.emptyPlaceholder = false;
     if (nextState !== "open") this.emptyPlaceholder = false;
