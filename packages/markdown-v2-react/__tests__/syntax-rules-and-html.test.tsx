@@ -460,7 +460,11 @@ async function testAnticipationOverlapAndStreamingStatus(): Promise<void> {
     post: (msg) => {
       if (msg.type === "PATCH") {
         for (const p of msg.patches) {
-          const block = (p as { node?: { props?: { block?: { id: string; payload?: { meta?: Record<string, unknown> } } } } }).node?.props?.block;
+          const patch = p as {
+            node?: { props?: { block?: { id: string; payload?: { meta?: Record<string, unknown> } } } };
+            props?: { block?: { id: string; payload?: { meta?: Record<string, unknown> } } };
+          };
+          const block = patch.node?.props?.block ?? patch.props?.block;
           if (block) {
             patches.push({ blockId: block.id, meta: block.payload?.meta });
           }
