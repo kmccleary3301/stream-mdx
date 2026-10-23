@@ -1086,7 +1086,7 @@ export class NativeContainerTailParser {
     if (!window) throw new Error("Native container marker context does not match its authored source");
     const tree = new NativeMarkdownInput(window.input).parse(this.parser);
     const rootNode = findContainer(tree, this.ownerType);
-    if (!rootNode) throw new Error("Configured native parser did not preserve the active container in its bounded window");
+    if (!rootNode) return undefined;
     const path = deriveActivePath(rootNode, source, window, contextFrames);
     const range = window.mapping.mapRange(rootNode.from, rootNode.to);
     const hasSourceAfterRoot = this.ownerType === "BulletList" || this.ownerType === "OrderedList"
