@@ -277,6 +277,9 @@ function displayLineText(
   requiredIndent: number,
 ): string {
   const lineStart = lineStartAt(source, from);
+  if (!NON_WHITESPACE.test(raw)) {
+    return nativeCodeLine(source, lineStart, from + raw.length, baseIndent, requiredIndent, "").text;
+  }
   if (sourceCharacterAt(source, lineStart) === ">") {
     return nativeCodeLine(source, lineStart, from + raw.length, baseIndent, requiredIndent, "").text;
   }
