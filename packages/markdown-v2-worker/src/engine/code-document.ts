@@ -2,6 +2,7 @@ import {
   createCodeLineIndex,
   createCodeNodeHandle,
   type CodeBlockMetadata,
+  type CodeDiffStatus,
   type CodeHighlightThemes,
   type CodeLineDecoration,
   type CodeDiffTokenLine,
@@ -15,8 +16,11 @@ import {
 import {
   DEFAULT_CODE_HIGHLIGHT_THEMES,
   getSharedHighlighter,
+  isDiffFileBoundary,
+  parseUnifiedDiffLine,
   resolveHighlightThemes,
 } from "./highlight";
+import type { DiffCursorState } from "./types";
 import {
   RootCodeHighlighter,
   registerPreparedCodeLineSource,
@@ -175,7 +179,13 @@ function rangeIntersectsIndices(from: number, to: number, indices: ReadonlySet<n
   return false;
 }
 
-
+/** Advances a diff cursor by one line; true when the line starts a new hunk or file while rows are still owed. */
+function advanceDiffCursor(text: string, cursor: DiffCursorState): boolean {
+  const owesRows = (cursor.oldRemaining ?? 0) > 0 || (cursor.newRemaining ?? 0) > 0;
+  const abandonsRows = owesRows && (text.startsWith("@@") || isDiffFileBoundary(text, cursor));
+  parseUnifiedDiffLine(text, cursor, true);
+  return abandonsRows;
+}
 
 class CodeDocumentLineOwner implements PreparedCodeLineOwner {
   readonly id = "code-document";
@@ -187,6 +197,10 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
   private disposed = false;
   private readonly language: string;
   private readonly configurationRevision: number;
+  private diffCursor: DiffCursorState | undefined;
+  private diffStatus: CodeDiffStatus | undefined;
+  /** A committed hunk header or file boundary arrived while the previous hunk still owed rows. */
+  private diffRowsAbandoned = false;
   private metadata: CodeBlockMetadata;
   private readonly metadataListeners = new Set<CodeHandleObserver>();
   private readonly lineRangeSubscriptions = new Map<string, CodeLineRangeSubscription>();
@@ -196,7 +210,11 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
     this.language = language;
     this.configurationRevision = configurationRevision;
     this.sourceLength = source.length;
-    this.lines = createCodeLineIndex({ lines: createLineRecords(source, this.id) });
+    this.diffCursor = diff ? { oldLine: null, newLine: null } : undefined;
+    const initialLines = createLineRecords(source, this.id);
+    this.lines = createCodeLineIndex({ lines: initialLines });
+    for (const line of initialLines) this.commitDiffLine(line);
+    this.diffStatus = this.getDiffStatus();
     this.metadata = this.createMetadata();
     registerPreparedCodeLineSource(this, { info: language, language, diff });
   }
@@ -321,10 +339,12 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
       sourceRevision,
     );
     const lines = this.lines.replaceTail(from, replacement);
+    for (const line of replacement) this.commitDiffLine(line);
     this.lines = lines;
     this.sourceRevision = sourceRevision;
     this.sourceLength += text.length;
     this.metadataRevision += 1;
+    this.diffStatus = this.getDiffStatus();
     this.metadata = this.createMetadata();
 
     this.invalidateRangeSnapshots(from, lines.length);
@@ -340,12 +360,13 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
     const finalLine = this.lines.get(finalLineIndex);
     const lineChanged = finalLine?.isProvisional === true;
     if (lineChanged && finalLine !== undefined) {
-      this.lines = this.lines.replaceTail(finalLineIndex, [
-        Object.freeze({ ...finalLine, isProvisional: false }),
-      ]);
+      const completedLine = Object.freeze({ ...finalLine, isProvisional: false });
+      this.commitDiffLine(completedLine);
+      this.lines = this.lines.replaceTail(finalLineIndex, [completedLine]);
     }
     this.finalized = true;
     this.metadataRevision += 1;
+    this.diffStatus = this.getDiffStatus();
     this.metadata = this.createMetadata();
 
     if (lineChanged) this.invalidateRangeSnapshots(finalLineIndex, finalLineIndex + 1);
@@ -391,6 +412,24 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
     if (this.disposed) throw new Error("Code document is disposed");
   }
 
+  private commitDiffLine(line: CodeLineRecord): void {
+    if (this.diffCursor !== undefined && !line.isProvisional && advanceDiffCursor(line.text, this.diffCursor)) {
+      this.diffRowsAbandoned = true;
+    }
+  }
+
+  private getDiffStatus(): CodeDiffStatus | undefined {
+    const cursor = this.diffCursor;
+    if (cursor === undefined) return undefined;
+    if (this.diffRowsAbandoned) return "malformed";
+    const statusCursor = { ...cursor };
+    const tail = this.lines.get(this.lines.length - 1);
+    if (tail?.isProvisional && advanceDiffCursor(tail.text, statusCursor)) return "malformed";
+    const hasOwedRows = (statusCursor.oldRemaining ?? 0) > 0 || (statusCursor.newRemaining ?? 0) > 0;
+    if (!hasOwedRows) return "complete";
+    return this.finalized ? "malformed" : "incomplete";
+  }
+
   private createMetadata(): CodeBlockMetadata {
     return Object.freeze({
       codeOwnerId: this.id,
@@ -404,6 +443,7 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
       configurationRevision: this.configurationRevision,
       info: this.language,
       language: this.language,
+      ...(this.diffStatus !== undefined ? { diffStatus: this.diffStatus } : {}),
     });
   }
 

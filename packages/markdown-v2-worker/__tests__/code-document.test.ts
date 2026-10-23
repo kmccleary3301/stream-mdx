@@ -760,6 +760,68 @@ async function runHeaderLikeDiffContentUsesHunkCountsTest(): Promise<void> {
   }
 }
 
+async function runDeclaredHunkCountsReportDiffStatusTest(): Promise<void> {
+  let disposeOpen: (() => void) | undefined;
+  let disposeTruncated: (() => void) | undefined;
+
+  try {
+    // The hunk declares three old and three new rows; the first two arrive before the third.
+    const open = createCodeDocument({
+      language: "typescript",
+      diff: true,
+      initialContent: "@@ -1,3 +1,3 @@\n const a = 1;\n-const b = 2;\n+const b = 3;\n",
+    });
+    disposeOpen = () => open.dispose();
+    assert.strictEqual(open.handle.readMetadata().diffStatus, "incomplete", "an open hunk still owed rows is incomplete");
+
+    open.append(" const c = 4;\n");
+    assert.strictEqual(open.handle.readMetadata().diffStatus, "complete", "satisfied declared counts complete the diff");
+    open.finalize();
+    assert.strictEqual(open.handle.readMetadata().diffStatus, "complete", "finalizing a balanced diff keeps it complete");
+
+    const truncated = createCodeDocument({
+      language: "typescript",
+      diff: true,
+      initialContent: "@@ -1,5 +1,5 @@\n-const answer = 41;\n+const answer = 42;",
+    });
+    disposeTruncated = () => truncated.dispose();
+    truncated.finalize();
+    assert.strictEqual(
+      truncated.handle.readMetadata().diffStatus,
+      "malformed",
+      "a sealed diff whose hunk is missing declared rows is malformed",
+    );
+    const known = await truncated.highlight({ mode: "range", range: { from: 0, to: 3 } });
+    assert.strictEqual(known.exactness, "exact", "rows already authored from line 0 keep exact tokens; malformation is reported separately");
+
+    const plain = createCodeDocument({ language: "typescript", initialContent: "const plain = true;\n" });
+    try {
+      assert.strictEqual(plain.handle.readMetadata().diffStatus, undefined, "ordinary code carries no diff status");
+    } finally {
+      plain.dispose();
+    }
+
+    // The first hunk owes a row when the second header arrives; later balance cannot repair it.
+    const cutShort = createCodeDocument({
+      language: "typescript",
+      diff: true,
+      initialContent: "@@ -1,2 +1,2 @@\n-const a = 1;\n+const a = 2;\n@@ -9 +9 @@\n-const z = 1;\n+const z = 2;\n",
+    });
+    try {
+      assert.strictEqual(
+        cutShort.handle.readMetadata().diffStatus,
+        "malformed",
+        "a hunk header that arrives while the previous hunk still owes rows is malformed",
+      );
+    } finally {
+      cutShort.dispose();
+    }
+  } finally {
+    disposeOpen?.();
+    disposeTruncated?.();
+  }
+}
+
 async function runDeletedFileHeaderLikeBodyRangePropertyTest(): Promise<void> {
   const themes = { dark: "github-dark", light: "github-light" } as const;
   let disposeOracle: (() => void) | undefined;
@@ -909,6 +971,7 @@ await runDiffFileContextAvailabilityResetsTest();
 await runHeaderLikeDiffContentUsesHunkCountsTest();
 await runDeletedFileHeaderLikeBodyRangePropertyTest();
 await runFinalizedNewFileWithoutTerminalNewlineTest();
+await runDeclaredHunkCountsReportDiffStatusTest();
 
 await runStandaloneCodeDocumentTest();
 await runFinalizedCodeDocumentIsSealedTest();

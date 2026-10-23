@@ -9,11 +9,15 @@ export interface CodeLineRange {
   readonly to: number;
 }
 
+/** Whether a diff document's declared hunk row counts are satisfied. */
+export type CodeDiffStatus = "complete" | "incomplete" | "malformed";
+
 /** Bounded code-owner metadata; line records remain available through explicit range reads. */
 export interface CodeBlockMetadata extends CodeBlockSourceMetadata {
   readonly configurationRevision: number;
   readonly info: string;
   readonly language?: string;
+  readonly diffStatus?: CodeDiffStatus;
 }
 
 /** Opaque, owner-local read and observation access to prepared code state. */
