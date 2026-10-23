@@ -11,6 +11,9 @@ import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot } from "@st
 import type { Block, NodeSnapshot } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import type { RendererStore } from "../../markdown-v2-react/src/renderer/store";
+import { MarkdownEngine } from "../src/engine/engine";
+import type { MarkdownEngineOptions } from "../src/engine/types";
+import counterSinkModule from "../../../scripts/perf/counter-sink.ts";
 
 import { projectConsumerBlocks } from "./consumer-block-projection";
 import { createWorkerHarness } from "./worker-test-harness";
@@ -367,9 +370,107 @@ async function runNativeDiffMissingPrefixContextTest(): Promise<void> {
   assert.strictEqual(exportedCode.payload.raw, codeBlock.payload.raw, "range tokenization must not rewrite canonical authored markers");
 }
 
+async function measureDeepDiffRangeTokenizedLines(prefixLines: number): Promise<number> {
+  const emitted: WorkerOut[] = [];
+  const campaignCounters = new counterSinkModule.SessionCounterSink();
+  const engine = new MarkdownEngine({
+    post: (message) => emitted.push(message),
+    campaignCounters,
+  } as MarkdownEngineOptions & { campaignCounters: typeof campaignCounters });
+  const contextLines = Array.from(
+    { length: prefixLines + 1 },
+    (_unused, index) => ` const value_${index} = ${index};`,
+  );
+  const source = [
+    "```diff ts",
+    `@@ -1,${contextLines.length} +1,${contextLines.length} @@`,
+    ...contextLines,
+    "```",
+  ].join("\n");
+  const consumeMessages = () => {
+    for (const message of emitted.splice(0)) {
+      if (message.type === "ERROR") throw new Error(message.error.message);
+    }
+  };
+
+  try {
+    await engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "",
+      prewarmLangs: [],
+      docPlugins: {
+        html: false,
+        mdx: false,
+        math: false,
+        tables: false,
+        callouts: false,
+        footnotes: false,
+        outputMode: "tokens",
+        emitHighlightTokens: true,
+        lazyTokenization: { enabled: true, thresholdLines: 1 },
+      },
+    });
+    consumeMessages();
+    await engine.handle({ type: "APPEND", text: source });
+    consumeMessages();
+    await engine.handle({ type: "FINALIZE" });
+    consumeMessages();
+
+    await engine.handle({ type: "DUMP_BLOCKS" });
+    const dump = emitted.splice(0).find((message) => message.type === "DUMP_BLOCKS");
+    assert.ok(dump, "the worker must return its authored code blocks before range requests");
+    const codeBlock = dump.blocks.find((block) => block.type === "code");
+    assert.ok(codeBlock, "the worker must publish the diff code block before range requests");
+    const checkpointLine = prefixLines + 1;
+    await engine.handle({
+      type: "TOKENIZE_RANGE",
+      blockId: codeBlock.id,
+      startLine: 0,
+      endLine: checkpointLine,
+      priority: "visible",
+    });
+    consumeMessages();
+
+    campaignCounters.reset();
+    await engine.handle({
+      type: "TOKENIZE_RANGE",
+      blockId: codeBlock.id,
+      startLine: checkpointLine,
+      endLine: checkpointLine + 1,
+      priority: "visible",
+    });
+    consumeMessages();
+    return campaignCounters.snapshot().lines_tokenized;
+  } finally {
+    engine.dispose();
+  }
+}
+
+async function runDiffCheckpointRangeLocalityCounterTest(): Promise<void> {
+  const globalWithCounters = globalThis as typeof globalThis & { __STREAM_MDX_COUNTERS__?: boolean };
+  const previousCounterFlag = globalWithCounters.__STREAM_MDX_COUNTERS__;
+  globalWithCounters.__STREAM_MDX_COUNTERS__ = true;
+
+  try {
+    const prefixWork = await measureDeepDiffRangeTokenizedLines(32);
+    const fourTimesPrefixWork = await measureDeepDiffRangeTokenizedLines(128);
+    assert.ok(prefixWork > 0, "the deep range request must record tokenized-line work");
+    assert.strictEqual(
+      fourTimesPrefixWork,
+      prefixWork,
+      "after compatible checkpoints, deep-range tokenized-line work must be independent of an N vs 4N prefix",
+    );
+  } finally {
+    if (previousCounterFlag === undefined) delete globalWithCounters.__STREAM_MDX_COUNTERS__;
+    else globalWithCounters.__STREAM_MDX_COUNTERS__ = previousCounterFlag;
+  }
+}
+
 await runDiffTokenizationTest();
 await runChunkedDiffNumberingTest();
 await runNestedChunkedDiffNumberingTest();
 await runNestedDiffRendererTest();
 await runNativeDiffMissingPrefixContextTest();
+await runDiffCheckpointRangeLocalityCounterTest();
 console.log("worker-diff-tokenization test passed");
