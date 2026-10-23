@@ -206,7 +206,7 @@ async function testCopyWritesRawCode(): Promise<void> {
   copyButton.click();
   await sleep(20);
 
-  const expectedRawCode = "const message = 'hello world';\nconsole.log(message);";
+  const expectedRawCode = "const message = 'hello world';\nconsole.log(message);\n";
   assert.strictEqual(
     clipboardText,
     expectedRawCode,
