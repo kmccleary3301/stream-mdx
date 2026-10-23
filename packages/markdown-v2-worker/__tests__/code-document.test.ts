@@ -1204,11 +1204,13 @@ async function runDeclaredHunkCountsReportDiffStatusTest(): Promise<void> {
       ["@@ -1,2 +1 @@\n-a\n+b\ndiff --git a/x.ts b/x.ts\n", "malformed", "a file boundary abandoning owed old rows is malformed"],
       ["@@ -1 +1 @@\n-a\n+b", "complete", "an authored unterminated last row satisfies the hunk"],
       ["@@ -1,2 +1,2 @@\n-a\n+b\n@@ -9 +9 @@", "malformed", "an unterminated header abandoning owed rows is malformed"],
+      ["@@ -invalid +1 @@\n", "malformed", "an invalid hunk header is malformed even with no owed rows"],
     ];
     for (const [initialContent, status, reason] of statusCases) {
       const document = createCodeDocument({ language: "typescript", diff: true, initialContent });
       try {
         assert.strictEqual(document.handle.readMetadata().diffStatus, status, reason);
+        assert.strictEqual(document.handle.readSource(), initialContent, "status evaluation retains the exact authored diff source");
       } finally {
         document.dispose();
       }

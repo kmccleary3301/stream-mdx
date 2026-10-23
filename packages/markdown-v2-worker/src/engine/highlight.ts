@@ -451,11 +451,13 @@ export function abandonsOwedRows(text: string, cursor: DiffCursorState): boolean
   return owesRows && (text.startsWith("@@") || isDiffFileBoundary(text, cursor));
 }
 
-/** Advances hunk counts and reports a new hunk or file boundary that abandoned owed rows. */
+/** Advances hunk counts and reports malformed headers or boundaries abandoning owed rows. */
 export function advanceDiffCursor(text: string, cursor: DiffCursorState): boolean {
+  const invalidHunkHeader =
+    text.startsWith("@@") && parseDiffHunkHeader(text) === null;
   const abandonsRows = abandonsOwedRows(text, cursor);
   parseUnifiedDiffLine(text, cursor, true);
-  return abandonsRows;
+  return abandonsRows || invalidHunkHeader;
 }
 
 /** Computes diff status from committed cursor state plus the current uncommitted tail. */
