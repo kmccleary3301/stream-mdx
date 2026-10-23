@@ -276,6 +276,40 @@ async function runEmptyAndClampedRangeResultsTest(): Promise<void> {
     oracle.dispose();
   }
 }
+async function runTokenSpanOffsetsUseUtf16AfterSurrogatePairTest(): Promise<void> {
+  const source = 'const icon = "🚀"; const target = 42;';
+  const document = createCodeDocument({ language: "typescript", initialContent: source });
+
+  try {
+    const result = await document.highlight({ mode: "isolated", range: { from: 0, to: 1 } });
+    assert.strictEqual(result.exactness, "isolated");
+    assert.ok(result.tokens);
+    const spans = result.tokens[0]?.spans ?? [];
+    assert.strictEqual(spans.map((span) => span.t).join(""), source);
+
+    let offset = 0;
+    let targetOffset = -1;
+    for (const span of spans) {
+      const targetInSpan = span.t.indexOf("target");
+      if (targetInSpan >= 0) targetOffset = offset + targetInSpan;
+      offset += span.t.length;
+    }
+    const expectedOffset = source.indexOf("target");
+    assert.notStrictEqual(
+      expectedOffset,
+      Array.from(source.slice(0, expectedOffset)).length,
+      "the astral prefix must distinguish UTF-16 units from Unicode code points",
+    );
+    assert.strictEqual(
+      targetOffset,
+      expectedOffset,
+      "the public token span position must use line-relative UTF-16 code units",
+    );
+  } finally {
+    document.dispose();
+  }
+}
+
 
 
 
@@ -1296,6 +1330,7 @@ await runFinalizedCodeDocumentIsSealedTest();
 await runKnownDocumentRangeTest();
 await runSourceRevisionIsReportedForAllResultKindsTest();
 await runEmptyAndClampedRangeResultsTest();
+await runTokenSpanOffsetsUseUtf16AfterSurrogatePairTest();
 await runIsolatedNonzeroRangeInsideCommentTest();
 await runAppendInvalidatesProvisionalGrammarTest();
 await runCapturedContextContinuationTest();
