@@ -4,6 +4,7 @@ import type { CodeLineDecorationUpdate, CodeLineRecord } from "./code-records";
 import type { TableBlockSnapshot, TableBlockSourceMetadata, TableHeaderRecord, TableRowRecord } from "./table-records";
 import type { ParagraphBlockSnapshot, ParagraphBlockSourceMetadata, ParagraphSpanRecord, ParagraphSpanUpdate } from "./paragraph-records";
 import type { TableRowIndexUpdate } from "./table-row-index";
+import type { CodeDiffStatus } from "./node-handles";
 
 /** Matching worker, renderer and NDJSON schema identity; protocol re-exports this value. */
 export const STREAM_MDX_SCHEMA_VERSION = "2.0";
@@ -410,6 +411,7 @@ export interface CodeBlockSourceMetadata {
   readonly completeLineCount: number;
   readonly lineCount: number;
   readonly sourceRange: { readonly from: number; readonly to: number };
+  readonly diffStatus?: CodeDiffStatus;
 }
 
 /** Cold initial/replacement transport; routine appends carry only their changed tail. */

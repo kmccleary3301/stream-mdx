@@ -6,6 +6,7 @@ import {
   parseCodeFenceInfo,
   type Block,
   type CodeBlockSnapshot,
+  type CodeDiffStatus,
   type CodeBlockSourceMetadata,
   type CodeLineDecoration,
   type CodeLineIndex,
@@ -14,7 +15,13 @@ import {
   type Patch,
   type SourceSnapshot,
 } from "@stream-mdx/core";
-import { detectDiffLanguage, parseUnifiedDiffLine, toDiffLineKind } from "./highlight";
+import {
+  abandonsOwedRows,
+  codeDiffStatus,
+  detectDiffLanguage,
+  parseUnifiedDiffLine,
+  toDiffLineKind,
+} from "./highlight";
 import type { DiffCursorState } from "./types";
 import {
   registerPreparedCodeLineSource,
@@ -635,6 +642,7 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
   private revision = 0;
   private codeLines: CodeLineIndex;
   private diffCursor: DiffCursorState | undefined;
+  private diffRowsAbandoned = false;
   /** Unified-diff fences tokenize diff-aware, as root code does. */
   readonly isDiff: boolean;
   private pendingCRAt: number | undefined;
@@ -697,13 +705,26 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     );
     let cursor = initialDiffCursor;
     let committedDiffCursor = initialDiffCursor;
+    let workingDiffRowsAbandoned = false;
+    let committedDiffRowsAbandoned = false;
     const initialRecords = initialDrafts.map((draft, index) => {
       const before = cursor ? { ...cursor } : undefined;
+      const abandonedBefore = workingDiffRowsAbandoned;
+      if (cursor && !workingDiffRowsAbandoned && abandonsOwedRows(draft.text, cursor)) {
+        workingDiffRowsAbandoned = true;
+      }
       const diff = cursor ? diffLineFields(draft.text, cursor) : undefined;
-      committedDiffCursor = draft.isProvisional ? before : cursor ? { ...cursor } : undefined;
+      if (draft.isProvisional) {
+        committedDiffCursor = before;
+        committedDiffRowsAbandoned = abandonedBefore;
+      } else {
+        committedDiffCursor = cursor ? { ...cursor } : undefined;
+        committedDiffRowsAbandoned = workingDiffRowsAbandoned;
+      }
       return recordFromDraft(this.id, index, draft, 0, diff);
     });
     this.diffCursor = committedDiffCursor;
+    this.diffRowsAbandoned = committedDiffRowsAbandoned;
     this.codeLines = createCodeLineIndex({ lines: initialRecords });
     registerPreparedCodeLineSource(this, { info, ...(parsedInfo.lang ? { language: parsedInfo.lang } : {}) });
   }
@@ -748,6 +769,7 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
   }
 
   getMetadata(): CodeBlockSourceMetadata {
+    const diffStatus = this.getDiffStatus();
     return Object.freeze({
       codeOwnerId: this.id,
       generation: this.generation,
@@ -757,7 +779,20 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
       completeLineCount: this.codeLines.completeLineCount,
       lineCount: this.codeLines.length,
       sourceRange: Object.freeze({ from: this.sourceRange.from, to: this.sourceRange.to }),
+      ...(diffStatus !== undefined ? { diffStatus } : {}),
     });
+  }
+
+  private getDiffStatus(): CodeDiffStatus | undefined {
+    const cursor = this.diffCursor;
+    if (cursor === undefined) return undefined;
+    const tail = this.codeLines.get(this.codeLines.length - 1);
+    return codeDiffStatus(
+      cursor,
+      this.diffRowsAbandoned,
+      tail?.isProvisional ? tail.text : undefined,
+      this.sourceState !== "open",
+    );
   }
 
   getSourceSnapshot(): SourceSnapshot {
@@ -927,15 +962,25 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     const nextTail = desiredTail;
     const diffRows = this.diffCursor ? new Array<DiffLineFields>(nextTail.length) : undefined;
     let committedDiffCursor = this.diffCursor;
+    let committedDiffRowsAbandoned = this.diffRowsAbandoned;
     if (diffRows && this.diffCursor) {
       const working = { ...this.diffCursor };
+      let workingDiffRowsAbandoned = this.diffRowsAbandoned;
       for (let offset = 0; offset < nextTail.length; offset += 1) {
         const draft = nextTail[offset];
-        if (draft.isProvisional) committedDiffCursor = { ...working };
+        if (draft.isProvisional) {
+          committedDiffCursor = { ...working };
+          committedDiffRowsAbandoned = workingDiffRowsAbandoned;
+        }
+        if (!workingDiffRowsAbandoned && abandonsOwedRows(draft.text, working)) {
+          workingDiffRowsAbandoned = true;
+        }
         diffRows[offset] = diffLineFields(draft.text, working);
+        if (!draft.isProvisional) committedDiffRowsAbandoned = workingDiffRowsAbandoned;
       }
       if (nextTail.length === 0 || !nextTail[nextTail.length - 1]?.isProvisional) {
         committedDiffCursor = { ...working };
+        committedDiffRowsAbandoned = workingDiffRowsAbandoned;
       }
     }
     const reusable = new Array<CodeLineRecord | undefined>(nextTail.length);

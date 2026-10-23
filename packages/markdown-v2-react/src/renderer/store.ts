@@ -5702,6 +5702,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             currentSource.lineCount !== metadataSource.lineCount ||
             currentSource.sourceRange.from !== metadataSource.sourceRange.from ||
             currentSource.sourceRange.to !== metadataSource.sourceRange.to ||
+            currentSource.diffStatus !== metadataSource.diffStatus ||
             current.view.configurationRevision !== metadataConfigurationRevision ||
             current.view.info !== metadataInfo ||
             current.view.language !== metadataLanguage;

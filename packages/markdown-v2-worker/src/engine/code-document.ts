@@ -16,8 +16,8 @@ import {
 import {
   DEFAULT_CODE_HIGHLIGHT_THEMES,
   getSharedHighlighter,
-  isDiffFileBoundary,
-  parseUnifiedDiffLine,
+  advanceDiffCursor,
+  codeDiffStatus,
   resolveHighlightThemes,
 } from "./highlight";
 import type { DiffCursorState } from "./types";
@@ -179,13 +179,6 @@ function rangeIntersectsIndices(from: number, to: number, indices: ReadonlySet<n
   return false;
 }
 
-/** Advances a diff cursor by one line; true when the line starts a new hunk or file while rows are still owed. */
-function advanceDiffCursor(text: string, cursor: DiffCursorState): boolean {
-  const owesRows = (cursor.oldRemaining ?? 0) > 0 || (cursor.newRemaining ?? 0) > 0;
-  const abandonsRows = owesRows && (text.startsWith("@@") || isDiffFileBoundary(text, cursor));
-  parseUnifiedDiffLine(text, cursor, true);
-  return abandonsRows;
-}
 
 class CodeDocumentLineOwner implements PreparedCodeLineOwner {
   readonly id = "code-document";
@@ -421,13 +414,13 @@ class CodeDocumentLineOwner implements PreparedCodeLineOwner {
   private getDiffStatus(): CodeDiffStatus | undefined {
     const cursor = this.diffCursor;
     if (cursor === undefined) return undefined;
-    if (this.diffRowsAbandoned) return "malformed";
-    const statusCursor = { ...cursor };
     const tail = this.lines.get(this.lines.length - 1);
-    if (tail?.isProvisional && advanceDiffCursor(tail.text, statusCursor)) return "malformed";
-    const hasOwedRows = (statusCursor.oldRemaining ?? 0) > 0 || (statusCursor.newRemaining ?? 0) > 0;
-    if (!hasOwedRows) return "complete";
-    return this.finalized ? "malformed" : "incomplete";
+    return codeDiffStatus(
+      cursor,
+      this.diffRowsAbandoned,
+      tail?.isProvisional ? tail.text : undefined,
+      this.finalized,
+    );
   }
 
   private createMetadata(): CodeBlockMetadata {

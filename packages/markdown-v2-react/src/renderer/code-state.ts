@@ -97,6 +97,7 @@ function metadataSnapshot(source: CodeBlockSourceMetadata): CodeBlockSourceMetad
     completeLineCount: source.completeLineCount,
     lineCount: source.lineCount,
     sourceRange: Object.freeze({ from: source.sourceRange.from, to: source.sourceRange.to }),
+    ...(source.diffStatus !== undefined ? { diffStatus: source.diffStatus } : {}),
   });
 }
 

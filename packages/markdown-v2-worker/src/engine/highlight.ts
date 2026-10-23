@@ -1,6 +1,7 @@
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import { type BundledLanguage, type BundledTheme, type Highlighter, type SpecialLanguage, bundledLanguages, bundledThemes, createHighlighter } from "shiki";
 import type {
+  CodeDiffStatus,
   CodeDiffTokenLine,
   CodeTokenLine,
   DiffBlock,
@@ -442,6 +443,36 @@ export function parseUnifiedDiffLine(
   }
   if (cursorOnly) return;
   return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null, raw: line };
+}
+
+/** Reports whether this line starts a new hunk or file while rows are still owed. */
+export function abandonsOwedRows(text: string, cursor: DiffCursorState): boolean {
+  const owesRows = (cursor.oldRemaining ?? 0) > 0 || (cursor.newRemaining ?? 0) > 0;
+  return owesRows && (text.startsWith("@@") || isDiffFileBoundary(text, cursor));
+}
+
+/** Advances hunk counts and reports a new hunk or file boundary that abandoned owed rows. */
+export function advanceDiffCursor(text: string, cursor: DiffCursorState): boolean {
+  const abandonsRows = abandonsOwedRows(text, cursor);
+  parseUnifiedDiffLine(text, cursor, true);
+  return abandonsRows;
+}
+
+/** Computes diff status from committed cursor state plus the current uncommitted tail. */
+export function codeDiffStatus(
+  cursor: DiffCursorState,
+  rowsAbandoned: boolean,
+  provisionalTailText: string | undefined,
+  sealed: boolean,
+): CodeDiffStatus {
+  const statusCursor = { ...cursor };
+  let abandoned = rowsAbandoned;
+  if (provisionalTailText !== undefined && advanceDiffCursor(provisionalTailText, statusCursor)) {
+    abandoned = true;
+  }
+  const hasOwedRows = (statusCursor.oldRemaining ?? 0) > 0 || (statusCursor.newRemaining ?? 0) > 0;
+  if (abandoned || (sealed && hasOwedRows)) return "malformed";
+  return hasOwedRows ? "incomplete" : "complete";
 }
 
 export function normalizeDiffPath(value: string | null): string | null {

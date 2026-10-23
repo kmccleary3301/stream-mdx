@@ -3,6 +3,7 @@ import {
   createCodeLineIndex,
   parseCodeFenceInfo,
   type Block,
+  type CodeDiffStatus,
   type CodeLineIndex,
   type CodeLineDecoration,
   type CodeLineRecord,
@@ -12,6 +13,8 @@ import {
   type SourceSnapshot,
 } from "@stream-mdx/core";
 import {
+  abandonsOwedRows,
+  codeDiffStatus,
   detectDiffLanguage,
   parseUnifiedDiffLine,
   stripPrefixFromThemedLine,
@@ -164,11 +167,11 @@ export interface RootCodeSourceMetadata {
   readonly processedTo: number;
   readonly completeLineCount: number;
   readonly lineCount: number;
-  /** Native FencedCode source range: marker start through closing text, excluding its final LF. */
   readonly sourceRange: {
     readonly from: number;
     readonly to: number;
   };
+  readonly diffStatus?: CodeDiffStatus;
 }
 
 type FenceTailKind = "close" | "prefix" | undefined;
@@ -281,6 +284,7 @@ export class RootCodeSourceOwner {
   private rawEnd: number;
   /** Diff numbering and hunk counts after the complete-line prefix. */
   private diffCursor: DiffCursorState | undefined;
+  private diffRowsAbandoned = false;
   private cachedBlock: { readonly revision: number; readonly block: Block } | undefined;
   private presentation: {
     readonly revision: number;
@@ -403,6 +407,7 @@ export class RootCodeSourceOwner {
 
   /** Small immutable owner snapshot, without retaining a SourceSnapshot. */
   getMetadata(): RootCodeSourceMetadata {
+    const diffStatus = this.getDiffStatus();
     return Object.freeze({
       codeOwnerId: this.id,
       generation: this.generation,
@@ -412,7 +417,20 @@ export class RootCodeSourceOwner {
       completeLineCount: this.codeLines.completeLineCount,
       lineCount: this.codeLines.length,
       sourceRange: Object.freeze({ from: this.opening.from, to: this.rawEnd }),
+      ...(diffStatus !== undefined ? { diffStatus } : {}),
     });
+  }
+
+  private getDiffStatus(): CodeDiffStatus | undefined {
+    const cursor = this.diffCursor;
+    if (cursor === undefined) return undefined;
+    const tail = this.codeLines.get(this.codeLines.length - 1);
+    return codeDiffStatus(
+      cursor,
+      this.diffRowsAbandoned,
+      tail?.isProvisional ? tail.text : undefined,
+      this.state === "finalized",
+    );
   }
 
   /** Seal an open owner, finishing only its pending line (and unaccepted suffix, if any). */
@@ -612,14 +630,27 @@ export class RootCodeSourceOwner {
     const oldTail = this.codeLines.readRange(oldCompleteLineCount, this.codeLines.length);
     const diffRows = this.diffCursor ? new Array<DiffLineFields>(desiredTail.length) : undefined;
     let committedDiffCursor = this.diffCursor;
+    let committedDiffRowsAbandoned = this.diffRowsAbandoned;
     if (diffRows && this.diffCursor) {
       const working: DiffCursorState = { ...this.diffCursor };
+      let workingDiffRowsAbandoned = this.diffRowsAbandoned;
       for (let offset = 0; offset < desiredTail.length; offset += 1) {
         const draft = desiredTail[offset];
-        if (draft.isProvisional) committedDiffCursor = { ...working };
-        diffRows[offset] = diffLineFields(stripOpeningIndent(draft.raw, this.opening.indent), working);
+        const text = stripOpeningIndent(draft.raw, this.opening.indent);
+        if (draft.isProvisional) {
+          committedDiffCursor = { ...working };
+          committedDiffRowsAbandoned = workingDiffRowsAbandoned;
+        }
+        if (!workingDiffRowsAbandoned && abandonsOwedRows(text, working)) {
+          workingDiffRowsAbandoned = true;
+        }
+        diffRows[offset] = diffLineFields(text, working);
+        if (!draft.isProvisional) committedDiffRowsAbandoned = workingDiffRowsAbandoned;
       }
-      if (desiredTail.length === 0 || !desiredTail[desiredTail.length - 1].isProvisional) committedDiffCursor = working;
+      if (desiredTail.length === 0 || !desiredTail[desiredTail.length - 1].isProvisional) {
+        committedDiffCursor = working;
+        committedDiffRowsAbandoned = workingDiffRowsAbandoned;
+      }
     }
     const reusableRecords = new Array<CodeLineRecord | undefined>(desiredTail.length);
     let rowsChanged = oldTail.length !== desiredTail.length;
@@ -653,6 +684,7 @@ export class RootCodeSourceOwner {
     this.lineStart = lineStart;
     this.pendingCR = pendingCR;
     this.diffCursor = committedDiffCursor;
+    this.diffRowsAbandoned = committedDiffRowsAbandoned;
     this.rawEnd = nextRawEnd;
     if (semanticChanged) this.cachedBlock = undefined;
 

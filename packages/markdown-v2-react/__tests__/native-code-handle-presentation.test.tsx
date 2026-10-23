@@ -116,6 +116,23 @@ async function waitFor(predicate: () => boolean, message: string, timeoutMs = 10
   }
 }
 
+type NativeCodeStatusCapture = {
+  readonly metadata: CodeBlockMetadata;
+  readonly handle: CodeNodeHandle;
+};
+type CaptureNativeCodeStatus = (entry: NativeCodeStatusCapture) => void;
+type NativeCodeStatusProps = { readonly handle: CodeNodeHandle };
+
+const NativeCodeStatusContext = React.createContext<CaptureNativeCodeStatus>(() => {});
+
+function NativeCodeStatusView({ handle }: NativeCodeStatusProps): React.ReactElement {
+  const metadata = useCodeBlock(handle);
+  const capture = React.useContext(NativeCodeStatusContext);
+  capture({ metadata, handle });
+  return <div data-native-code-owner={metadata.codeOwnerId} data-diff-status={metadata.diffStatus} />;
+}
+
+
 async function runNativeCodeHandlePresentationTest(): Promise<void> {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
   const globals = {
@@ -322,5 +339,142 @@ async function runNativeCodeHandlePresentationTest(): Promise<void> {
   }
 }
 
+async function runNativeCodeDiffStatusTest(): Promise<void> {
+  const dom = new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
+  const globals = {
+    window: dom.window,
+    document: dom.window.document,
+    navigator: dom.window.navigator,
+    Element: dom.window.Element,
+    HTMLElement: dom.window.HTMLElement,
+    Node: dom.window.Node,
+    Worker: NodeWorker,
+    requestAnimationFrame: dom.window.requestAnimationFrame.bind(dom.window),
+    cancelAnimationFrame: dom.window.cancelAnimationFrame.bind(dom.window),
+    IS_REACT_ACT_ENVIRONMENT: true,
+  };
+  const globalKeys = Object.keys(globals) as Array<keyof typeof globals>;
+  const previousGlobals = Object.fromEntries(
+    globalKeys.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
+  ) as Record<keyof typeof globals, PropertyDescriptor | undefined>;
+  for (const [key, value] of Object.entries(globals)) {
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
+  }
+
+  const container = dom.window.document.createElement("div");
+  dom.window.document.body.append(container);
+  const entries = new Map<string, NativeCodeStatusCapture>();
+  const capture: CaptureNativeCodeStatus = (entry) => {
+    entries.set(entry.metadata.codeOwnerId, entry);
+  };
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const workerErrors: Error[] = [];
+  let root: Root | undefined;
+  let worker: Worker | undefined;
+  const latestEntry = (): NativeCodeStatusCapture | undefined => {
+    let latest: NativeCodeStatusCapture | undefined;
+    for (const entry of entries.values()) latest = entry;
+    return latest;
+  };
+
+  try {
+    worker = createInlineEngineWorker() as unknown as Worker;
+    root = createRoot(container);
+    await act(async () => {
+      root!.render(
+        <NativeCodeStatusContext.Provider value={capture}>
+          <StreamingMarkdown
+            ref={handle}
+            engine="worker"
+            worker={() => worker!}
+            components={{ code: { view: NativeCodeStatusView } }}
+            features={{ html: false, mdx: false, tables: false, math: false }}
+            caret={false}
+            onError={(error) => workerErrors.push(error)}
+          />
+        </NativeCodeStatusContext.Provider>,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "the real inline worker to become ready for diff status");
+    assert.equal(workerErrors.length, 0, "the native worker initializes without errors");
+    const streamHandle = handle.current;
+    assert.ok(streamHandle, "the public streaming handle is available for native diff status");
+
+    await act(async () => {
+      streamHandle.append("```diff\n@@ -1,3 +1,3 @@\n a\n b\n");
+    });
+    await waitFor(() => entries.size >= 1, "the first native diff code handle");
+    let entry = latestEntry();
+    assert.ok(entry);
+    assert.equal(entry.metadata.diffStatus, "incomplete", "the React code metadata reports rows still owed");
+    assert.equal(entry.handle.readMetadata().diffStatus, "incomplete", "the retained native handle reports rows still owed");
+
+    await act(async () => {
+      streamHandle.append(" c\n");
+    });
+    await waitFor(
+      () => latestEntry()?.metadata.completeLineCount === 4,
+      "the third declared diff row to reach the React code metadata",
+    );
+    entry = latestEntry();
+    assert.ok(entry);
+    assert.equal(entry.metadata.diffStatus, "complete", "the React code metadata reports satisfied row counts");
+    assert.equal(entry.handle.readMetadata().diffStatus, "complete", "the retained native handle reports satisfied row counts");
+
+    await act(async () => {
+      streamHandle.append("```\n```diff\n@@ -1,3 +1,3 @@\n a\n@@ -10,1 +10,1 @@\n");
+    });
+    await waitFor(() => entries.size >= 2, "the second native diff code handle");
+    entry = latestEntry();
+    assert.ok(entry);
+    assert.equal(entry.metadata.diffStatus, "malformed", "a later hunk header abandons owed rows");
+    assert.equal(entry.handle.readMetadata().diffStatus, "malformed", "the retained handle preserves abandoned-row status");
+
+    await act(async () => {
+      streamHandle.append("```\n```typescript\nconst plain = true;\n```\n");
+    });
+    await waitFor(() => entries.size >= 3, "the native ordinary code handle");
+    entry = latestEntry();
+    assert.ok(entry);
+    assert.equal(Object.hasOwn(entry.metadata, "diffStatus"), false, "ordinary React code metadata omits diff status");
+    assert.equal(Object.hasOwn(entry.handle.readMetadata(), "diffStatus"), false, "ordinary native code metadata omits diff status");
+
+    await act(async () => {
+      streamHandle.append("```diff\n@@ -1,3 +1,3 @@\n a\n");
+    });
+    await waitFor(() => entries.size >= 4, "the short native diff code handle");
+    await act(async () => {
+      await streamHandle.finalize();
+    });
+    await waitFor(
+      () => latestEntry()?.metadata.state === "finalized",
+      "the short diff document to finalize",
+    );
+    entry = latestEntry();
+    assert.ok(entry);
+    assert.equal(entry.metadata.diffStatus, "malformed", "finalizing with owed rows marks the diff malformed");
+    assert.equal(entry.handle.readMetadata().diffStatus, "malformed", "the retained handle reports finalized malformation");
+    assert.equal(workerErrors.length, 0, "the worker completes the native diff status stream without errors");
+  } finally {
+    try {
+      if (root) await act(async () => root!.unmount());
+    } finally {
+      try {
+        await worker?.terminate();
+      } finally {
+        container.remove();
+        for (const key of globalKeys) {
+          const descriptor = previousGlobals[key];
+          if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+          else Reflect.deleteProperty(globalThis, key);
+        }
+        dom.window.close();
+      }
+    }
+  }
+}
+
 await runNativeCodeHandlePresentationTest();
+await runNativeCodeDiffStatusTest();
+
 console.log("native-code-handle-presentation test passed");
