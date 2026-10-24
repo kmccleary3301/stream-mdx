@@ -163,7 +163,7 @@ Math support typically involves:
 - optional delayed rendering / stabilization during streaming
 
 See:
-- `features.math` and `mathRenderer` in `docs/PUBLIC_API.md`
+- `features.math`, `engines.math`, and `components["inline:math"]` in `docs/PUBLIC_API.md`
 - `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
 ### 6.5 MDX
 

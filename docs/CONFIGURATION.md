@@ -50,7 +50,7 @@ Full MDX evaluation requires `contentPolicy="trusted-mdx"` and an explicit `engi
 - `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.
 - `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.
 - `disableAutolinkProtocols`: protocols (e.g. `["mailto"]`) whose autolinks render as plain text while explicit markdown links remain active.
-- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).
+- `engines.math`: synchronous, server-render-safe TeX output adapter; KaTeX remains the default.
 
 Mermaid is an **opt-in add-on** that renders fenced ` ```mermaid ` code blocks as diagrams (with a Diagram/Code toggle).
 

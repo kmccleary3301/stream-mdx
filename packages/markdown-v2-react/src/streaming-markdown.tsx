@@ -21,7 +21,7 @@ import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
-import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type InlineComponents, type NodePresentations, type RendererConfig, type SyntaxRuleSpec, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type InlineComponents, type MathEngine, type NodePresentations, type RendererConfig, type SyntaxRuleSpec, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
   resolve(): void;
@@ -166,6 +166,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   contentPolicy?: ContentPolicy;
   contentComponents?: ContentComponentsMap;
   engines?: {
+    math?: MathEngine;
     mdx?: TrustedMdxEngine;
   };
   onMetrics?: (metrics: RendererMetrics) => void;
@@ -311,6 +312,7 @@ function StreamingMarkdownComponent(
     renderer: MarkdownRenderer;
     signature: string;
     trustedEngine: TrustedMdxEngine | undefined;
+    mathEngine: MathEngine | undefined;
   }>();
   const [session, setSession] = useState(0);
   const sessionRef = useRef(session);
@@ -323,8 +325,14 @@ function StreamingMarkdownComponent(
 
   const historyLimit = effectiveScheduling.historyLimit ?? DEFAULT_HISTORY_LIMIT;
   const trustedEngine = contentPolicy === "trusted-mdx" ? engines?.mdx : undefined;
+  const mathEngine = engines?.math;
 
-  if (!rendererRef.current || rendererRef.current.signature !== rendererKey || rendererRef.current.trustedEngine !== trustedEngine) {
+  if (
+    !rendererRef.current ||
+    rendererRef.current.signature !== rendererKey ||
+    rendererRef.current.trustedEngine !== trustedEngine ||
+    rendererRef.current.mathEngine !== mathEngine
+  ) {
     const rendererConfig: RendererConfig = {
       themes: effectiveThemes,
       components,
@@ -363,6 +371,7 @@ function StreamingMarkdownComponent(
       renderer: nextRenderer,
       signature: rendererKey,
       trustedEngine,
+      mathEngine,
     };
   }
 
