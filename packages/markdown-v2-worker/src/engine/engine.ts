@@ -204,6 +204,7 @@ import {
   trimProvisionalNativeCode,
 } from "./parse-extract";
 import {
+  buildDiffTokenLinesWithCodeEngine,
   createRootCodeOwners,
   rootCodeAppendChange,
   rootCodeAppendPatch,
@@ -211,6 +212,7 @@ import {
   rootCodeNodeSnapshot,
   RootCodeHighlighter,
   SourceRangeInput,
+  tokenizeCodeLines,
   type RootCodeHighlightConfiguration,
 } from "./root-code-pipeline";
 import type { RootCodeSourceOwner } from "./root-code-owner";
@@ -3424,9 +3426,10 @@ export class MarkdownEngine {
   private rootCodeHighlightConfiguration(finalizing = false): RootCodeHighlightConfiguration {
     const configuration = {
       highlighter: this.highlighter,
+      codeEngine: this.extensions?.code,
       themes: this.codeThemes,
       configurationRevision: this.rootCodeConfigurationRevision,
-      enabled: this.emitHighlightTokens && Boolean(this.highlighter)
+      enabled: this.emitHighlightTokens && Boolean(this.highlighter || this.extensions?.code)
         && (finalizing || (this.codeHighlightingMode !== "final" && this.liveTokenizationEnabled)),
     };
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -3440,7 +3443,7 @@ export class MarkdownEngine {
       this.lazyTokenizationEnabled,
       metadata.lineCount,
       this.lazyTokenizationThresholdLines,
-      Boolean(this.highlighter),
+      Boolean(this.highlighter || this.extensions?.code),
       owner.hasHighlightableContent,
     );
   }
@@ -3516,7 +3519,7 @@ export class MarkdownEngine {
       this.lazyTokenizationEnabled,
       owner.getLines().length,
       this.lazyTokenizationThresholdLines,
-      Boolean(this.highlighter),
+      Boolean(this.highlighter || this.extensions?.code),
       owner.getLines().materialize().trim().length > 0,
     );
     const tokenizeFinalizedDiff = isFinalized && isDiff && this.highlightOutputMode !== "html";
@@ -3555,7 +3558,7 @@ export class MarkdownEngine {
         const rows = owner.getLines().readRange(0, owner.getLines().length);
         const meta = { ...(block.payload.meta ?? {}) };
         const tokenLines = meta.tokenLines;
-        if (isDiff && this.highlighter) {
+        if (isDiff && (this.highlighter || this.extensions?.code)) {
           meta.tokenLines = rows.map((row) => {
             const decoration = row.decoration;
             return decoration?.configurationRevision === configurationRevision
@@ -8497,7 +8500,25 @@ export class MarkdownEngine {
 
     if (wantsTokens) {
       let diffLines: string[] = [];
-      if (diffInfo.isDiff) {
+      if (sourceOwner && this.extensions?.code) {
+        const ownerLines = sourceOwner.getLines();
+        tokenLines = ownerLines.readRange(0, ownerLines.length).map(({ decoration }) => {
+          if (
+            !decoration
+            || decoration.configurationRevision !== this.rootCodeConfigurationRevision
+            || decoration.exactness === "unavailable"
+          ) return null;
+          return decoration.tokens;
+        }) as unknown as Array<TokenLineV1 | null>;
+        if (diffInfo.isDiff) {
+          diffLines = codeBody.length > 0 ? codeBody.split("\n") : [];
+          const cursor: DiffCursorState = { oldLine: null, newLine: null };
+          const diffInfoLines = diffLines.map((line) => parseUnifiedDiffLine(line, cursor));
+          diffKind = diffInfoLines.map((line) => toDiffLineKind(line.kind));
+          diffOldNo = diffInfoLines.map((line) => line.oldNo ?? null);
+          diffNewNo = diffInfoLines.map((line) => line.newNo ?? null);
+        }
+      } else if (diffInfo.isDiff) {
         diffLines = codeBody.length > 0 ? codeBody.split("\n") : [];
         const cursor: DiffCursorState = { oldLine: null, newLine: null };
         const diffInfoLines = diffLines.map((line) => parseUnifiedDiffLine(line, cursor));
@@ -10916,7 +10937,10 @@ export class MarkdownEngine {
   }
 
   private async handleLazyTokenizationRequest(request: LazyTokenizationRequest): Promise<void> {
-    if (!this.lazyTokenizationEnabled || !this.highlighter) return;
+    const codeEngine = this.extensions?.code;
+    const highlighter = this.highlighter;
+    if (!this.lazyTokenizationEnabled || (!highlighter && !codeEngine)) return;
+    if (!codeEngine && !highlighter) return;
     const generation = this.documentGeneration;
     const target = this.findPreparedCode(request.blockId);
     if (!target) return;
@@ -10958,12 +10982,13 @@ export class MarkdownEngine {
     const highlightLanguage = diffInfo.isDiff ? diffInfo.diffLang : (normalizeLang(lang) || "text");
     const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : highlightLanguage;
     const hasHighlightableContent = codeBody.trim().length > 0;
-    if (!shouldLazyTokenizeBlock(this.lazyTokenizationEnabled, codeLines.length, this.lazyTokenizationThresholdLines, Boolean(this.highlighter), hasHighlightableContent)) {
+    if (!shouldLazyTokenizeBlock(this.lazyTokenizationEnabled, codeLines.length, this.lazyTokenizationThresholdLines, Boolean(this.highlighter || this.extensions?.code), hasHighlightableContent)) {
       return;
     }
 
-    const wantsHtml = this.highlightOutputMode === "html" || this.highlightOutputMode === "both";
-    const wantsTokens = (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both") && this.emitHighlightTokens;
+    const wantsHtml = !codeEngine && (this.highlightOutputMode === "html" || this.highlightOutputMode === "both");
+    const wantsTokens = this.emitHighlightTokens
+      && (Boolean(codeEngine) || this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both");
     const diffEnabled = diffInfo.isDiff && wantsTokens;
     if (!wantsHtml && !wantsTokens) return;
 
@@ -10972,13 +10997,15 @@ export class MarkdownEngine {
 
     let resolvedLanguage = highlightLanguage;
     let resolvedTokenLanguage = tokenLanguage;
-    if (wantsHtml) {
-      resolvedLanguage = await resolveHighlightLanguage(this.highlighter, highlightLanguage);
-      if (!currentTarget()) return;
-    }
-    if (wantsTokens) {
-      resolvedTokenLanguage = await resolveHighlightLanguage(this.highlighter, tokenLanguage);
-      if (!currentTarget()) return;
+    if (!codeEngine) {
+      if (wantsHtml) {
+        resolvedLanguage = await resolveHighlightLanguage(highlighter, highlightLanguage);
+        if (!currentTarget()) return;
+      }
+      if (wantsTokens) {
+        resolvedTokenLanguage = await resolveHighlightLanguage(highlighter, tokenLanguage);
+        if (!currentTarget()) return;
+      }
     }
 
     const signature = makeLazySignature(codeBody, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
@@ -11006,21 +11033,30 @@ export class MarkdownEngine {
     let diffSegment: DiffLineInfo[] | undefined;
 
     if (segmentLines.length > 0) {
-      if (wantsHtml || (wantsTokens && !diffEnabled)) {
+      if (codeEngine && wantsTokens && !diffEnabled) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          let inputLength = Math.max(0, segmentLines.length - 1);
+          for (const line of segmentLines) inputLength += line.length;
+          this.campaignCounters?.recordTokenization(segmentLines.length, inputLength, "engine");
+        }
+        const result = tokenizeCodeLines(codeEngine, resolvedTokenLanguage, segmentLines, nextGrammarState);
+        tokenizedSegment = result.lines as unknown as Array<TokenLineV1 | null>;
+        nextGrammarState = result.state;
+      } else if (!codeEngine && (wantsHtml || (wantsTokens && !diffEnabled))) {
         try {
           const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
           const segmentText = segmentLines.join("\n");
           if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
             this.campaignCounters?.recordTokenization(segmentLines.length, segmentText.length, "engine");
           }
-          const tokens = this.highlighter.codeToTokensWithThemes(segmentText, {
+          const tokens = highlighter!.codeToTokensWithThemes(segmentText, {
             lang: sharedLanguage as never,
             themes: this.codeThemes,
             grammarState: nextGrammarState as never,
           } as never) as ShikiThemedToken[][];
           if (wantsHtml) highlightedSegment = renderShikiLines(tokens);
           if (wantsTokens && !diffEnabled) tokenizedSegment = renderTokenLines(tokens);
-          nextGrammarState = this.highlighter.getLastGrammarState(tokens as never);
+          nextGrammarState = highlighter!.getLastGrammarState(tokens as never);
         } catch (error) {
           console.warn("Lazy tokenization failed for", requestedLanguage, error);
         }
@@ -11034,22 +11070,28 @@ export class MarkdownEngine {
           ...(state.diffCursor?.newRemaining !== undefined ? { newRemaining: state.diffCursor.newRemaining } : {}),
         };
         const diffLines = segmentLines.map((line) => parseUnifiedDiffLine(line, cursor));
-        const grammarObj = { context: nextGrammarState };
-        const { tokenLines, grammarState: nextState } = await buildDiffTokenLines(
-          diffLines,
-          resolvedTokenLanguage,
-          grammarObj,
-          this.highlighter,
-          this.codeThemes,
-        );
-        if (!currentTarget()) {
-          if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
-          return;
+        if (codeEngine) {
+          const completed = buildDiffTokenLinesWithCodeEngine(diffLines, resolvedTokenLanguage, nextGrammarState, codeEngine);
+          nextGrammarState = completed.grammarState;
+          tokenizedSegment = completed.tokenLines as unknown as Array<TokenLineV1 | null>;
+        } else {
+          const grammarObj = { context: nextGrammarState };
+          const completed = await buildDiffTokenLines(
+            diffLines,
+            resolvedTokenLanguage,
+            grammarObj,
+            highlighter!,
+            this.codeThemes,
+          );
+          if (!currentTarget()) {
+            if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
+            return;
+          }
+          nextGrammarState = completed.grammarState.context;
+          tokenizedSegment = completed.tokenLines;
         }
-        nextGrammarState = nextState.context;
         nextDiffCursor = cursor;
         diffSegment = diffLines;
-        tokenizedSegment = tokenLines;
       }
     }
 

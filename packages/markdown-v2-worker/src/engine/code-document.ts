@@ -20,7 +20,8 @@ import {
   codeDiffStatus,
   resolveHighlightThemes,
 } from "./highlight";
-import type { DiffCursorState } from "./types";
+import type { CodeThemePair, SharedHighlighter } from "./highlight";
+import type { CodeEngine, DiffCursorState } from "./types";
 import {
   RootCodeHighlighter,
   registerPreparedCodeLineSource,
@@ -51,6 +52,7 @@ export interface CreateCodeDocumentOptions {
   readonly initialContent: string;
   /** Creation-time theme names, copied independently of caller-owned configuration. */
   readonly themes?: CodeHighlightThemes;
+  readonly codeEngine?: CodeEngine;
 }
 
 export type HighlightRequest =
@@ -500,7 +502,7 @@ class CodeDocumentControllerImpl implements CodeDocumentController {
   private readonly language: string;
   private readonly themes: Readonly<CodeHighlightThemes>;
   private readonly diff: boolean;
-
+  private readonly codeEngine: CodeEngine | undefined;
   private readonly generationToken = Symbol("code-document-generation");
   private readonly configurationRevision = 0;
   private owner: CodeDocumentLineOwner | undefined;
@@ -511,6 +513,7 @@ class CodeDocumentControllerImpl implements CodeDocumentController {
     const themes = options.themes;
     this.themes = themes ? { ...themes } : DEFAULT_CODE_HIGHLIGHT_THEMES;
     this.diff = options.diff === true;
+    this.codeEngine = options.codeEngine;
     this.owner = new CodeDocumentLineOwner(
       options.initialContent,
       options.language,
@@ -569,13 +572,19 @@ class CodeDocumentControllerImpl implements CodeDocumentController {
       }
     }
 
-    const highlighter = await getSharedHighlighter([this.language]);
-    if (this.disposed || this.owner !== owner) throw new Error("Code document is disposed");
-    const { themes } = await resolveHighlightThemes(highlighter, this.themes);
-    if (this.disposed || this.owner !== owner) throw new Error("Code document is disposed");
+    let highlighter: SharedHighlighter | null = null;
+    let themes: CodeThemePair = DEFAULT_CODE_HIGHLIGHT_THEMES;
+    if (!this.codeEngine) {
+      highlighter = await getSharedHighlighter([this.language]);
+      if (this.disposed || this.owner !== owner) throw new Error("Code document is disposed");
+      const resolvedThemes = await resolveHighlightThemes(highlighter, this.themes);
+      if (this.disposed || this.owner !== owner) throw new Error("Code document is disposed");
+      themes = resolvedThemes.themes;
+    }
 
     const config: RootCodeHighlightConfiguration = {
       highlighter,
+      codeEngine: this.codeEngine,
       themes,
       configurationRevision: this.configurationRevision,
       enabled: true,

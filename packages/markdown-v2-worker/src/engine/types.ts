@@ -1,6 +1,7 @@
 import type { MarkdownConfig } from "@lezer/markdown";
 import type {
   Block,
+  CodeTokenLine,
   DiffKind,
   DiffLineKind,
   InlineExtension,
@@ -9,14 +10,26 @@ import type {
   WorkerOut,
 } from "@stream-mdx/core";
 import type { DocumentPlugin } from "@stream-mdx/plugins";
-
 export type { InlineExtension, SyntaxRuleSpec, SyntaxExtensionDescriptor, ContainerExtensionSpec, HtmlOptions } from "@stream-mdx/core";
+
+export interface CodeEngine {
+  readonly id: string;
+  tokenizeLines(request: {
+    readonly language: string;
+    readonly lines: readonly string[];
+    readonly state: unknown | null;
+  }): {
+    readonly lines: readonly CodeTokenLine[];
+    readonly state: unknown;
+  };
+}
 
 export interface EngineExtensions {
   markdown?: MarkdownConfig[];
   inline?: InlineExtension[];
   documentPlugins?: DocumentPlugin[];
   syntax?: SyntaxExtensionDescriptor;
+  code?: CodeEngine;
 }
 
 export interface MarkdownEngineOptions {

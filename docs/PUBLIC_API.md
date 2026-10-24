@@ -99,6 +99,7 @@ export function Example() {
 | `contentComponents` | `ContentComponentsMap` | Host registrations for restricted source components. Separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator required with `contentPolicy="trusted-mdx"`. |
 | `engines.math` | `MathEngine` | Synchronous, server-render-safe TeX adapter. KaTeX remains the default when omitted. |
+| `engines.code` | `CodeEngine` | Custom code-line tokenization. Main-realm only; requires `engine="main"`. |
 | `components` | `NodePresentations` | Semantic block, inline, extension, and HTML wrappers or headless views. |
 | `tableVirtualization` | `boolean \| Partial<TableVirtualizationConfig>` | Opt-in row virtualization for large tables while streaming or finalized. Default `false`; configured thresholds and overscan remain in effect during streaming. |
 | `codeVirtualization` | `Partial<VirtualizedCodeConfig>` | Configures the native code viewport. Code blocks over the default 200-line threshold are windowed; the full-content control is explicit. |
@@ -118,6 +119,28 @@ export function Example() {
 | `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |
 | `onError` | `(error: Error) => void` | Render-time errors. Updating the callback does not restart the engine or discard streamed content. (Worker runtime errors surface via `error` events on the Worker.) |
 | `className`, `style` | React props forwarded to the root container. |
+
+`CodeEngine` has this contract:
+
+```ts
+import type { CodeTokenLine } from "stream-mdx/core";
+
+interface CodeEngine {
+  readonly id: string;
+  tokenizeLines(request: {
+    readonly language: string;
+    readonly lines: readonly string[];
+    readonly state: unknown | null;
+  }): {
+    readonly lines: readonly CodeTokenLine[];
+    readonly state: unknown;
+  };
+}
+```
+
+The initial `state` is `null`; return the next state to pass to the next call for that code block. Return one token line per requested source line. Keep `id` stable for the same tokenizer: changing it invalidates prepared tokens and re-tokenizes affected lines.
+
+`engines.code` runs in the main realm and is accepted only with `engine="main"`. Using it with `"auto"` or `"worker"` throws `EngineCompatibilityError`. For worker-realm tokenization, register the adapter in a custom worker with `serveMarkdownWorker({ extensions: { code } })`; worker functions are not passed through `engines.code`.
 Notes:
 - When `linkSafety.enabled` is on, the component replaces the `inline:link` presentation, including a supplied `components["inline:link"]`, with its confirmation-aware link renderer.
 - Owned `text` renders initialize the complete document in one parse, then finalize the tail. Replacing text does not simulate chunked streaming. Rapid replacements match initialization acknowledgements in order; only the current source generation finalizes or reports a rejected initialization. Async iterators and imperative `append()` retain incremental parsing.

@@ -12,8 +12,8 @@ import {
   type CodeDiffTokenLine,
   type CodeLineIndex,
   type CodeLineRecord,
+  type CodeTokenLine,
   type HighlightUnavailableReason,
-  type TokenLineV1,
   type NodeSnapshot,
   type Patch,
   type SourceSnapshot,
@@ -21,6 +21,8 @@ import {
 import {
   buildDiffTokenLines,
   detectDiffLanguage,
+  extractDiffFilePath,
+  guessLanguageFromPath,
   isDiffFileBoundary,
   parseDiffHunkHeader,
   parseUnifiedDiffLine,
@@ -37,7 +39,7 @@ import {
   type RootCodeSourceOpening,
   type RootCodeSourceOwnerOptions,
 } from "./root-code-owner";
-import type { DiffCursorState, DiffLineInfo, ShikiThemedToken } from "./types";
+import type { CodeEngine, DiffCursorState, DiffLineInfo, ShikiThemedToken } from "./types";
 
 const OPENING_BY_OWNER = new WeakMap<RootCodeSourceOwner, RootCodeSourceOpening>();
 const PREPARED_CODE_SOURCE_BY_OWNER = new WeakMap<PreparedCodeLineOwner, PreparedCodeLineSource>();
@@ -74,6 +76,7 @@ function preparedCodeDiffInfo(source: PreparedCodeLineSource): ReturnType<typeof
 
 export interface RootCodeHighlightConfiguration {
   readonly highlighter: SharedHighlighter | null;
+  readonly codeEngine?: CodeEngine;
   readonly themes: CodeThemePair;
   readonly configurationRevision: number;
   readonly enabled: boolean;
@@ -303,8 +306,9 @@ interface DiffGrammarCheckpoint {
   readonly newGrammarState: unknown;
   readonly configurationRevision: number;
   readonly language: string;
-  readonly highlighter: SharedHighlighter;
   readonly fileLanguage: string;
+  readonly highlighter: SharedHighlighter | null;
+  readonly codeEngineId?: string;
   readonly darkTheme: CodeThemePair["dark"];
   readonly lightTheme: CodeThemePair["light"];
   readonly prefixLineId: string;
@@ -315,6 +319,7 @@ interface HighlightOwnerState {
   processedCompleteLines: number;
   grammarState?: unknown;
   grammarStateLine: number;
+  codeEngineId?: string;
   diffCheckpoints?: DiffGrammarCheckpoint[];
   missingDiffContext?: {
     readonly line: number;
@@ -335,6 +340,109 @@ interface HighlightOwnerState {
 type HtmlCodeLineDecoration = CodeLineDecoration & { readonly html: string | null };
 const GRAMMAR_STATE_ADVANCE_CHUNK_LINES = 64;
 const MAX_DIFF_GRAMMAR_CHECKPOINTS = 32;
+interface CodeEngineDiffState {
+  old?: unknown;
+  new?: unknown;
+  language?: string;
+}
+
+export function tokenizeCodeLines(
+  engine: CodeEngine,
+  language: string,
+  lines: readonly string[],
+  state: unknown,
+): { readonly lines: readonly CodeTokenLine[]; readonly state: unknown } {
+  const result = engine.tokenizeLines({ language, lines, state: state ?? null });
+  if (result.lines.length !== lines.length) {
+    throw new Error(`CodeEngine ${engine.id} returned ${result.lines.length} token lines for ${lines.length} source lines`);
+  }
+  return result;
+}
+
+export function buildDiffTokenLinesWithCodeEngine(
+  lines: readonly DiffLineInfo[],
+  language: string,
+  grammarState: unknown,
+  codeEngine: CodeEngine,
+): {
+  readonly tokenLines: readonly (CodeTokenLine | null)[];
+  readonly diffTokenLines: readonly CodeDiffTokenLine[];
+  readonly grammarState: CodeEngineDiffState;
+} {
+  const state: CodeEngineDiffState = typeof grammarState === "object" && grammarState !== null
+    ? grammarState as CodeEngineDiffState
+    : {};
+  const tokenLines: Array<CodeTokenLine | null> = new Array(lines.length).fill(null);
+  const diffTokenLines = new Array<CodeDiffTokenLine>(lines.length);
+  let oldState = state.old;
+  let newState = state.new;
+  let currentLanguage = state.language ?? language;
+  let currentKind: DiffLineInfo["kind"] | null = null;
+  let currentRun: DiffLineInfo[] = [];
+  let startIndex = 0;
+
+  const flush = (): void => {
+    if (!currentKind || currentRun.length === 0) return;
+    const contents = currentRun.map((line) => line.content ?? "");
+    let oldLines: readonly CodeTokenLine[] | undefined;
+    let newLines: readonly CodeTokenLine[] | undefined;
+    if (currentKind === "context") {
+      const oldResult = tokenizeCodeLines(codeEngine, currentLanguage, contents, oldState);
+      oldState = oldResult.state;
+      oldLines = oldResult.lines;
+      const newResult = tokenizeCodeLines(codeEngine, currentLanguage, contents, newState);
+      newState = newResult.state;
+      newLines = newResult.lines;
+    } else if (currentKind === "add") {
+      const result = tokenizeCodeLines(codeEngine, currentLanguage, contents, newState);
+      newState = result.state;
+      newLines = result.lines;
+    } else {
+      const result = tokenizeCodeLines(codeEngine, currentLanguage, contents, oldState);
+      oldState = result.state;
+      oldLines = result.lines;
+    }
+    for (let offset = 0; offset < currentRun.length; offset += 1) {
+      const oldTokens = oldLines?.[offset] ?? null;
+      const newTokens = newLines?.[offset] ?? null;
+      const lineIndex = startIndex + offset;
+      tokenLines[lineIndex] = currentKind === "remove" ? oldTokens : newTokens;
+      diffTokenLines[lineIndex] = { old: oldTokens, new: newTokens };
+    }
+    currentRun = [];
+    currentKind = null;
+  };
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]!;
+    if (line.kind === "meta" || line.kind === "hunk" || line.hunkHeader) {
+      flush();
+      const fileBoundary = line.kind === "meta"
+        && (line.raw.startsWith("diff --git") || line.raw.startsWith("--- ") || line.raw.startsWith("+++ "));
+      if (fileBoundary) {
+        oldState = undefined;
+        newState = undefined;
+        const filePath = extractDiffFilePath(line.raw);
+        if (filePath) currentLanguage = guessLanguageFromPath(filePath) ?? language;
+      }
+      tokenLines[index] = null;
+      diffTokenLines[index] = { old: null, new: null };
+      continue;
+    }
+    if (currentKind !== line.kind) {
+      flush();
+      currentKind = line.kind;
+      startIndex = index;
+    }
+    currentRun.push(line);
+  }
+  flush();
+  state.old = oldState;
+  state.new = newState;
+  state.language = currentLanguage;
+  return { tokenLines, diffTokenLines, grammarState: state };
+}
+
 /** One continuation state per prepared code lease; range requests reuse it in source order. */
 export class RootCodeHighlighter {
   private owners = new WeakMap<PreparedCodeLineOwner, HighlightOwnerState>();
@@ -346,7 +454,8 @@ export class RootCodeHighlighter {
   ): Promise<readonly HtmlCodeLineDecoration[]> {
     const state = this.state(owner);
     return this.enqueue(state, async () => {
-      if (!config.enabled || !config.highlighter || !isCurrent()) return [];
+      this.prepareCodeEngineState(state, config);
+      if (!config.enabled || (!config.codeEngine && !config.highlighter) || !isCurrent()) return [];
       const index = owner.getLines();
       const to = index.completeLineCount;
       const from = state.processedCompleteLines;
@@ -361,15 +470,26 @@ export class RootCodeHighlighter {
         if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
           config.counters?.recordTokenization(rows.length, input.length, "engine");
         }
-        const tokenRows = config.highlighter.codeToTokensWithThemes(input, {
-          lang: language as never,
-          themes: config.themes,
-          grammarState: state.grammarState as never,
-        } as never) as ShikiThemedToken[][];
-        state.grammarState = config.highlighter.getLastGrammarState(tokenRows as never);
-        state.grammarStateLine = to;
-        const rendered = renderTokenLines(tokenRows);
-        const html = renderShikiLines(tokenRows);
+        let rendered: readonly (CodeTokenLine | null)[];
+        let html: readonly (string | null)[];
+        if (config.codeEngine) {
+          const result = tokenizeCodeLines(config.codeEngine, language, rows.map((row) => row.text), state.grammarState);
+          state.grammarState = result.state;
+          state.grammarStateLine = to;
+          rendered = result.lines;
+          html = rows.map(() => null);
+        } else {
+          const highlighter = config.highlighter!;
+          const tokenRows = highlighter.codeToTokensWithThemes(input, {
+            lang: language as never,
+            themes: config.themes,
+            grammarState: state.grammarState as never,
+          } as never) as ShikiThemedToken[][];
+          state.grammarState = highlighter.getLastGrammarState(tokenRows as never);
+          state.grammarStateLine = to;
+          rendered = renderTokenLines(tokenRows);
+          html = renderShikiLines(tokenRows);
+        }
         const decorations = this.makeDecorations(rows, rendered, html, config.configurationRevision, "exact");
         const current = owner.getLines();
         const valid = decorations.filter((decoration) => {
@@ -397,7 +517,8 @@ export class RootCodeHighlighter {
   ): Promise<readonly HtmlCodeLineDecoration[]> {
     const state = this.state(owner);
     return this.enqueue(state, async () => {
-      if (!config.enabled || !config.highlighter || !isCurrent()) return [];
+      this.prepareCodeEngineState(state, config);
+      if (!config.enabled || (!config.codeEngine && !config.highlighter) || !isCurrent()) return [];
       const index = owner.getLines();
       const from = Math.max(0, Math.min(index.length, Math.floor(fromLine)));
       const to = Math.max(from, Math.min(index.length, Math.floor(toLine)));
@@ -421,7 +542,7 @@ export class RootCodeHighlighter {
           return unavailable;
         }
 
-        let rendered: Array<TokenLineV1 | null>;
+        let rendered: readonly (CodeTokenLine | null)[];
         let html: Array<string | null>;
         let diffTokens: CodeDiffTokenLine[] | undefined;
         if (diffInfo.isDiff) {
@@ -492,12 +613,12 @@ export class RootCodeHighlighter {
           }
 
           const stableLines = includesProvisionalTail ? diffLines.slice(0, stableLength) : diffLines;
-          const initialGrammarState = {
+          const initialGrammarState: CodeEngineDiffState = {
             old: checkpoint?.oldGrammarState,
             new: checkpoint?.newGrammarState,
             language: checkpoint?.fileLanguage ?? language,
           };
-          const scanTokens: Array<TokenLineV1 | null> = new Array(scanRows.length).fill(null);
+          const scanTokens: Array<CodeTokenLine | null> = new Array(scanRows.length).fill(null);
           const scanDiffTokens = new Array<CodeDiffTokenLine>(scanRows.length);
           let completedGrammarState = initialGrammarState;
 
@@ -507,7 +628,9 @@ export class RootCodeHighlighter {
               for (const row of scanRows) inputLength += row.text.length;
               config.counters?.recordTokenization(scanRows.length, inputLength, "engine");
             }
-            const completed = await buildDiffTokenLines(stableLines, language, initialGrammarState, config.highlighter, config.themes);
+            const completed = config.codeEngine
+              ? buildDiffTokenLinesWithCodeEngine(stableLines, language, initialGrammarState, config.codeEngine)
+              : await buildDiffTokenLines(stableLines, language, initialGrammarState, config.highlighter!, config.themes);
             completedGrammarState = {
               old: completed.grammarState.old,
               new: completed.grammarState.new,
@@ -532,13 +655,21 @@ export class RootCodeHighlighter {
           }
 
           if (includesProvisionalTail) {
-            const provisional = await buildDiffTokenLines(
-              [diffLines[diffLines.length - 1]!],
-              language,
-              { old: completedGrammarState.old, new: completedGrammarState.new },
-              config.highlighter,
-              config.themes,
-            );
+            const provisionalLines = [diffLines[diffLines.length - 1]!];
+            const provisional = config.codeEngine
+              ? buildDiffTokenLinesWithCodeEngine(
+                  provisionalLines,
+                  language,
+                  { old: completedGrammarState.old, new: completedGrammarState.new },
+                  config.codeEngine,
+                )
+              : await buildDiffTokenLines(
+                  provisionalLines,
+                  language,
+                  { old: completedGrammarState.old, new: completedGrammarState.new },
+                  config.highlighter!,
+                  config.themes,
+                );
             scanTokens[scanTokens.length - 1] = provisional.tokenLines[0] ?? null;
             scanDiffTokens[scanDiffTokens.length - 1] = provisional.diffTokenLines[0]!;
           }
@@ -553,17 +684,33 @@ export class RootCodeHighlighter {
             config.counters?.recordTokenization(rows.length, input.length, "engine");
           }
           if (useSourceContext && !this.alignGrammarState(index, from, language, config, state)) return [];
-          const tokenRows = config.highlighter.codeToTokensWithThemes(input, {
-            lang: language as never,
-            themes: config.themes,
-            ...(useSourceContext ? { grammarState: state.grammarState as never } : {}),
-          } as never) as ShikiThemedToken[][];
-          if (useSourceContext && !rows[rows.length - 1]?.isProvisional) {
-            state.grammarState = config.highlighter.getLastGrammarState(tokenRows as never);
-            state.grammarStateLine = to;
+          if (config.codeEngine) {
+            const result = tokenizeCodeLines(
+              config.codeEngine,
+              language,
+              rows.map((row) => row.text),
+              useSourceContext ? state.grammarState : null,
+            );
+            if (useSourceContext && !rows[rows.length - 1]?.isProvisional) {
+              state.grammarState = result.state;
+              state.grammarStateLine = to;
+            }
+            rendered = result.lines;
+            html = rows.map(() => null);
+          } else {
+            const highlighter = config.highlighter!;
+            const tokenRows = highlighter.codeToTokensWithThemes(input, {
+              lang: language as never,
+              themes: config.themes,
+              ...(useSourceContext ? { grammarState: state.grammarState as never } : {}),
+            } as never) as ShikiThemedToken[][];
+            if (useSourceContext && !rows[rows.length - 1]?.isProvisional) {
+              state.grammarState = highlighter.getLastGrammarState(tokenRows as never);
+              state.grammarStateLine = to;
+            }
+            rendered = renderTokenLines(tokenRows);
+            html = renderShikiLines(tokenRows);
           }
-          rendered = renderTokenLines(tokenRows);
-          html = renderShikiLines(tokenRows);
         }
         const decorations = this.makeDecorations(rows, rendered, html, config.configurationRevision, exactness, diffTokens);
         const current = owner.getLines();
@@ -584,6 +731,18 @@ export class RootCodeHighlighter {
   clear(): void {
     this.owners = new WeakMap<PreparedCodeLineOwner, HighlightOwnerState>();
   }
+  private prepareCodeEngineState(state: HighlightOwnerState, config: RootCodeHighlightConfiguration): void {
+    const codeEngineId = config.codeEngine?.id;
+    if (state.codeEngineId === codeEngineId) return;
+    state.codeEngineId = codeEngineId;
+    state.processedCompleteLines = 0;
+    state.grammarState = undefined;
+    state.grammarStateLine = 0;
+    state.diffCheckpoints = undefined;
+    state.missingDiffContext = undefined;
+    state.resolvedLanguage = undefined;
+    state.resolution = undefined;
+  }
 
   private alignGrammarState(
     index: CodeLineIndex,
@@ -592,8 +751,7 @@ export class RootCodeHighlighter {
     config: RootCodeHighlightConfiguration,
     state: HighlightOwnerState,
   ): boolean {
-    const highlighter = config.highlighter;
-    if (!highlighter) return false;
+    if (!config.highlighter && !config.codeEngine) return false;
     if (fromLine < state.grammarStateLine) {
       state.grammarState = undefined;
       state.grammarStateLine = 0;
@@ -607,12 +765,18 @@ export class RootCodeHighlighter {
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
         config.counters?.recordTokenization(rows.length, input.length, "engine");
       }
-      const tokenRows = highlighter.codeToTokensWithThemes(input, {
-        lang: language as never,
-        themes: config.themes,
-        grammarState: state.grammarState as never,
-      } as never) as ShikiThemedToken[][];
-      state.grammarState = highlighter.getLastGrammarState(tokenRows as never);
+      if (config.codeEngine) {
+        const result = tokenizeCodeLines(config.codeEngine, language, rows.map((row) => row.text), state.grammarState);
+        state.grammarState = result.state;
+      } else {
+        const highlighter = config.highlighter!;
+        const tokenRows = highlighter.codeToTokensWithThemes(input, {
+          lang: language as never,
+          themes: config.themes,
+          grammarState: state.grammarState as never,
+        } as never) as ShikiThemedToken[][];
+        state.grammarState = highlighter.getLastGrammarState(tokenRows as never);
+      }
       state.grammarStateLine = to;
     }
     return true;
@@ -733,6 +897,7 @@ export class RootCodeHighlighter {
       checkpoint.configurationRevision !== config.configurationRevision
       || checkpoint.language !== language
       || checkpoint.highlighter !== config.highlighter
+      || checkpoint.codeEngineId !== config.codeEngine?.id
       || checkpoint.darkTheme !== config.themes.dark
       || checkpoint.lightTheme !== config.themes.light
       || checkpoint.line > index.completeLineCount
@@ -757,7 +922,7 @@ export class RootCodeHighlighter {
     state: HighlightOwnerState,
   ): void {
     const highlighter = config.highlighter;
-    if (!highlighter || line <= 0 || line > sourceIndex.completeLineCount) return;
+    if ((!highlighter && !config.codeEngine) || line <= 0 || line > sourceIndex.completeLineCount) return;
 
     const scannedPrefix = sourceIndex.get(line - 1);
     const currentIndex = owner.getLines();
@@ -786,6 +951,7 @@ export class RootCodeHighlighter {
       language,
       fileLanguage: grammarState.language ?? language,
       highlighter,
+      codeEngineId: config.codeEngine?.id,
       darkTheme: config.themes.dark,
       lightTheme: config.themes.light,
       prefixLineId: currentPrefix.id,
@@ -804,7 +970,7 @@ export class RootCodeHighlighter {
 
   private makeDecorations(
     rows: readonly CodeLineRecord[],
-    rendered: readonly (TokenLineV1 | null)[],
+    rendered: readonly (CodeTokenLine | null)[],
     htmlLines: readonly (string | null)[],
     configurationRevision: number,
     exactness: "exact" | "isolated",
@@ -875,9 +1041,9 @@ export class RootCodeHighlighter {
       const source = preparedCodeSourceOf(owner);
       const diffInfo = preparedCodeDiffInfo(source);
       const requested = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : source.language ?? "text";
-      state.resolution = resolveHighlightLanguage(config.highlighter, requested).then((language) => {
-        return language;
-      });
+      state.resolution = config.codeEngine
+        ? Promise.resolve(requested)
+        : resolveHighlightLanguage(config.highlighter, requested);
     }
     return state.resolution;
   }

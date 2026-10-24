@@ -3,12 +3,13 @@ import type { MutableRefObject } from "react";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
 import type { MarkdownRenderer } from "./renderer";
 import type { MarkdownEngineMode, StreamingMarkdownProps } from "./streaming-markdown";
+import type { CodeEngine } from "@stream-mdx/worker/engine";
 
 type WorkerSource = StreamingMarkdownProps["worker"];
 
 export class EngineCompatibilityError extends Error {
-  constructor() {
-    super('Unable to create a worker for automatic bootstrap takeover; pass engine="main" when workers are unavailable.');
+  constructor(message?: string) {
+    super(message ?? 'Unable to create a worker for automatic bootstrap takeover; pass engine="main" when workers are unavailable.');
     this.name = "EngineCompatibilityError";
   }
 }
@@ -42,7 +43,7 @@ export interface WorkerFactories {
   fromUrl(url: string | URL): Worker;
   defaultWorker(): Worker | null;
   releaseDefault(worker: Worker): void;
-  inline(): Promise<Worker>;
+  inline(codeEngine?: CodeEngine): Promise<Worker>;
 }
 
 const workerFactories: WorkerFactories = {
@@ -50,10 +51,10 @@ const workerFactories: WorkerFactories = {
   fromUrl: (url) => new Worker(url, { type: "module", name: "markdown-v2" }),
   defaultWorker: createDefaultWorker,
   releaseDefault: releaseDefaultWorker,
-  async inline() {
+  async inline(codeEngine) {
     // Static import would pull the inline engine into worker-only browser bundles.
     const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
-    return createInlineEngineWorker();
+    return createInlineEngineWorker(codeEngine ? { extensions: { code: codeEngine } } : undefined);
   },
 };
 
@@ -91,9 +92,13 @@ export function resolveWorkerSetup(
   cancelled: () => boolean,
   factories: WorkerFactories = workerFactories,
   managedWorker = false,
+  codeEngine?: CodeEngine,
 ): WorkerLease | null | Promise<WorkerLease | null> {
   if (managedWorker && (engine === "main" || !source || source instanceof URL || typeof source === "string")) {
     throw new Error("managedWorker requires a caller-initialized Worker instance or worker factory and cannot use engine='main', a worker URL, or the default worker");
+  }
+  if (codeEngine && engine !== "main") {
+    throw new EngineCompatibilityError('The main-realm CodeEngine requires engine="main".');
   }
   let lease: WorkerLease | null = null;
   const inlineBootstrap = engine === "auto" && !managedWorker;
@@ -118,7 +123,7 @@ export function resolveWorkerSetup(
   }
   if (cancelled()) return null;
   // Only loading the inline engine is asynchronous. Available workers stay synchronous.
-  return factories.inline().then((worker) => {
+  return factories.inline(codeEngine).then((worker) => {
     const inlineLease = createWorkerLease(worker, true);
     if (cancelled()) {
       inlineLease.dispose();
@@ -129,13 +134,14 @@ export function resolveWorkerSetup(
 }
 
 export function useWorkerSession({
-  renderer, workerSource, engine, session, managedWorker, onErrorRef, debug, factories = workerFactories,
+  renderer, workerSource, engine, session, managedWorker, codeEngine, onErrorRef, debug, factories = workerFactories,
 }: {
   renderer: MarkdownRenderer;
   workerSource: WorkerSource;
   engine: MarkdownEngineMode;
   session: number;
   managedWorker: boolean;
+  codeEngine?: CodeEngine;
   onErrorRef: MutableRefObject<StreamingMarkdownProps["onError"]>;
   debug: boolean;
   factories?: WorkerFactories;
@@ -152,7 +158,12 @@ export function useWorkerSession({
   const workerReadyRef = useRef(false);
   const readyRendererRef = useRef<MarkdownRenderer | null>(null);
   const activeInstanceRef = useRef<{
-    lease: WorkerLease; source: WorkerSource; engine: MarkdownEngineMode; session: number; managedWorker: boolean;
+    lease: WorkerLease;
+    source: WorkerSource;
+    engine: MarkdownEngineMode;
+    session: number;
+    managedWorker: boolean;
+    codeEngine?: CodeEngine;
   } | null>(null);
 
   useEffect(() => {
@@ -233,7 +244,7 @@ export function useWorkerSession({
               lease.dispose();
               return;
             }
-            activeInstanceRef.current = { lease, source: workerSource, engine, session, managedWorker };
+            activeInstanceRef.current = { lease, source: workerSource, engine, session, managedWorker, codeEngine };
             takeoverLease = null;
             takeoverRequest = null;
             if (bootstrapLease !== lease) bootstrapLease?.dispose();
@@ -266,7 +277,7 @@ export function useWorkerSession({
       }
     };
     const existing = activeInstanceRef.current;
-    if (existing && existing.source === workerSource && existing.engine === engine && existing.managedWorker === managedWorker && (managedWorker || existing.session === session)) {
+    if (existing && existing.source === workerSource && existing.engine === engine && existing.managedWorker === managedWorker && existing.codeEngine === codeEngine && (managedWorker || existing.session === session)) {
       attach(existing.lease);
     } else {
       existing?.lease.dispose();
@@ -277,11 +288,11 @@ export function useWorkerSession({
           lease.dispose();
           return;
         }
-        activeInstanceRef.current = { lease, source: workerSource, engine, session, managedWorker };
+        activeInstanceRef.current = { lease, source: workerSource, engine, session, managedWorker, codeEngine };
         attach(lease);
       };
       try {
-        const resolved = resolveWorkerSetup(engine, workerSource, () => cancelled, factories, managedWorker);
+        const resolved = resolveWorkerSetup(engine, workerSource, () => cancelled, factories, managedWorker, codeEngine);
         if (resolved instanceof Promise) {
           void resolved.then(setup).catch(reportError);
         } else {
@@ -306,7 +317,7 @@ export function useWorkerSession({
       if (readyRendererRef.current === renderer) readyRendererRef.current = null;
       renderer.detachWorker();
     };
-  }, [renderer, workerSource, engine, session, managedWorker, debug, onErrorRef, factories]);
+  }, [renderer, workerSource, engine, session, managedWorker, codeEngine, debug, onErrorRef, factories]);
 
   useEffect(() => () => {
     activeInstanceRef.current?.lease.dispose();
