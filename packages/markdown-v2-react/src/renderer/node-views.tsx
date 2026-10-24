@@ -3,7 +3,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 import { normalizeBlockquoteText, PATCH_ROOT_ID, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { CodeNodeHandle, TableNodeHandle } from "@stream-mdx/core";
-import type { CodeNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
+import type { HeadlessNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
 import {
   TableControlsBar,
   copyToClipboard,
@@ -46,7 +46,7 @@ import { mergeNodePresentationProps } from "./node-presentations";
 const HeadlessNativeCodeView: React.FC<{
   blockId: string;
   handle: CodeNodeHandle;
-  view: React.ComponentType<CodeNodeViewProps>;
+  view: React.ComponentType<HeadlessNodeViewProps<"code">>;
 }> = ({ blockId, handle, view: CodeView }) => {
   const context = React.useMemo(() => ({ blockId, handle }), [blockId, handle]);
   return (
@@ -55,9 +55,12 @@ const HeadlessNativeCodeView: React.FC<{
     </NativeCodeViewContext.Provider>
   );
 };
+type NodeViewHandle = NodeHandle | CodeNodeHandle | TableNodeHandle;
 const NodeViewRenderContext = React.createContext<{
   readonly store: RendererStore;
   readonly registry: ComponentRegistry;
+  readonly blockId: string;
+  readonly handle: NodeViewHandle;
 } | null>(null);
 type NodePresentationRenderer = (nativeView: React.ReactNode) => React.ReactNode;
 export function renderNodePresentation(
@@ -79,7 +82,7 @@ export function renderNodePresentation(
     if (!handle) return null;
     const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: TableNodeHandle }>;
     return (
-      <NodeViewRenderContext.Provider value={{ store, registry }}>
+      <NodeViewRenderContext.Provider value={{ store, registry, blockId: id, handle }}>
         <HeadlessView handle={handle} />
       </NodeViewRenderContext.Provider>
     );
@@ -89,7 +92,7 @@ export function renderNodePresentation(
     if (!handle) return null;
     const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: NodeHandle }>;
     return (
-      <NodeViewRenderContext.Provider value={{ store, registry }}>
+      <NodeViewRenderContext.Provider value={{ store, registry, blockId: id, handle }}>
         <HeadlessView handle={handle} />
       </NodeViewRenderContext.Provider>
     );
@@ -347,7 +350,11 @@ export const BlockNodeRenderer: React.FC<{
     if (HeadlessCodeView) {
       const handle = store.getCodeNodeHandle(blockId);
       if (!handle) return null;
-      const nativeView = <HeadlessNativeCodeView blockId={blockId} handle={handle} view={HeadlessCodeView} />;
+      const nativeView = (
+        <NodeViewRenderContext.Provider value={{ store, registry, blockId, handle }}>
+          <HeadlessNativeCodeView blockId={blockId} handle={handle} view={HeadlessCodeView} />
+        </NodeViewRenderContext.Provider>
+      );
       if (!registry.hasElementFilters()) return nativeView;
       return registry.filterElement(
         { tagName: "pre", properties: {}, blockType: "code" },
@@ -438,18 +445,25 @@ export const BlockNodeRenderer: React.FC<{
     ? <>{element}</>
     : <>{renderNodePresentation(block, element, store, registry, undefined, bypassPresentationFor === blockId)}</>;
 };
-export const NativeNodeView: React.FC<{ readonly handle: NodeHandle }> = ({ handle }) => {
+export const NativeNodeView: React.FC<{ readonly handle: NodeViewHandle }> = ({ handle }) => {
   const context = React.useContext(NodeViewRenderContext);
   if (!context) {
     throw new Error("NativeNodeView must be rendered inside a headless node presentation view");
   }
-  if (context.store.getNodeHandle(handle.id) !== handle) return null;
+  const blockId = "id" in handle ? handle.id : context.blockId;
+  if (!("id" in handle) && context.handle !== handle) return null;
+  const currentHandle = "id" in handle
+    ? context.store.getNodeHandle(blockId)
+    : "readLines" in handle
+      ? context.store.getCodeNodeHandle(blockId)
+      : context.store.getTableNodeHandle(blockId);
+  if (currentHandle !== handle) return null;
   return (
     <BlockNodeRenderer
       store={context.store}
-      blockId={handle.id}
+      blockId={blockId}
       registry={context.registry}
-      bypassPresentationFor={handle.id}
+      bypassPresentationFor={blockId}
     />
   );
 };

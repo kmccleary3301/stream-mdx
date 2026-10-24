@@ -32,7 +32,7 @@ import { TrustedMdxInlineOwner } from "../trusted-mdx/native-inline";
 import type {
   AllowElementFn,
   AnimatedProp,
-  CodeNodeViewProps,
+  HeadlessNodeViewProps,
   ControlsComponentProps,
   ControlsConfig,
   ElementFilterOptions,
@@ -1228,7 +1228,7 @@ export class ComponentRegistry {
   getBlockComponent(type: string): GenericComponent {
     return defaultBlockComponents[type as keyof DefaultBlockComponents] ?? defaultBlockComponents.paragraph;
   }
-  getCodeNodeView(): React.ComponentType<CodeNodeViewProps> | undefined {
+  getCodeNodeView(): React.ComponentType<HeadlessNodeViewProps<"code">> | undefined {
     const presentation = this.getNodePresentation("code");
     return presentation && "view" in presentation ? presentation.view : undefined;
   }

@@ -287,8 +287,6 @@ export type NodePresentations = Partial<{
   [K in NodePresentationKey]: NodePresentation<K>;
 }>;
 
-/** Retained only until existing code consumers are migrated to HeadlessNodeViewProps<\"code\">. */
-export type CodeNodeViewProps = HeadlessNodeViewProps<"code">;
 
 
 

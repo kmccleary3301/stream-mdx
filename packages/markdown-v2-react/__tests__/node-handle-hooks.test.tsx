@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { StreamingMarkdown, NativeNodeView, useNode, useNodeChildren, type NodeHandle, type NodeHandleMetadata, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { StreamingMarkdown, NativeNodeView, useNode, useNodeChildren, createRendererStore, type NodeHandle, type NodeHandleMetadata, type StreamingMarkdownHandle } from "@stream-mdx/react";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import type { Block } from "@stream-mdx/core";
 
 type QuoteSnapshot = {
   readonly metadata: NodeHandleMetadata;
@@ -30,7 +31,37 @@ async function waitFor(predicate: () => boolean, message: string): Promise<void>
   }
 }
 
+
+function createMetadataTestBlock(text: string): Block {
+  return {
+    id: "shared-node",
+    type: "paragraph",
+    isFinalized: true,
+    payload: { raw: text, inline: [{ kind: "text", text }] },
+  };
+}
+
+async function staleMetadataSubscriptionsStayBoundToTheirGeneration(): Promise<void> {
+  const store = createRendererStore([createMetadataTestBlock("A")]);
+  const staleHandle = store.getNodeHandle("shared-node");
+  assert.ok(staleHandle);
+  let notifications = 0;
+  staleHandle.subscribeMetadata(() => { notifications += 1; });
+
+  store.reset([createMetadataTestBlock("B")]);
+  await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  assert.equal(notifications, 0, "metadata listeners stop when their captured record is replaced");
+
+  store.reset([createMetadataTestBlock("A")]);
+  await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  staleHandle.subscribeMetadata(() => { notifications += 1; });
+  store.reset([createMetadataTestBlock("A again")]);
+  await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  assert.equal(notifications, 0, "a stale handle cannot subscribe to a reused node ID after an A-B-A reset");
+}
+
 async function runNodeHandleHooksTest(): Promise<void> {
+  await staleMetadataSubscriptionsStayBoundToTheirGeneration();
   const dom = new JSDOM("<!doctype html><html><body><div id=\"root\"></div></body></html>", { pretendToBeVisual: true });
   const globals = {
     window: dom.window,
