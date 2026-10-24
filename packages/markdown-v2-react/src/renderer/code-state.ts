@@ -935,9 +935,19 @@ export function decorateStoredCodeState(
   readonly state?: StoredCodeBlockState;
   readonly changed: boolean;
   readonly changedIndices?: ReadonlySet<number>;
+  readonly stale?: true;
   readonly reason?: string;
 } {
   const old = current.view.source;
+  if (
+    current.managed &&
+    patch.codeOwnerId === old.codeOwnerId &&
+    (patch.generation < old.generation ||
+      (patch.generation === old.generation && patch.configurationRevision < current.view.configurationRevision))
+  ) {
+    // Enrichment is applied after later semantic patches, so results for a superseded owner state are expected.
+    return { changed: false, stale: true };
+  }
   if (
     !current.managed ||
     patch.codeOwnerId !== old.codeOwnerId ||

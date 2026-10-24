@@ -5598,6 +5598,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               break;
             }
             const decorated = decorateStoredCodeState(codeState, patch);
+            if (decorated.stale) {
+              debugCounters.staleEpochRejected += 1;
+              break;
+            }
             if (decorated.reason) {
               appendDiagnostic(`decorateCode guard rejected:${target.id}:${decorated.reason}`);
               break;

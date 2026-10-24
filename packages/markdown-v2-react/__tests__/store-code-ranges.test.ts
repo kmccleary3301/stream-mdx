@@ -245,6 +245,8 @@ assert.strictEqual(store.getBlocks()[0]?.payload.raw, nextRaw);
 
 
 const revisionBeforeStaleOwner = store.getCodeBlock(OWNER_ID)?.source.revision;
+const violationsBeforeStaleOwner = store.getInvariantViolations().length;
+const staleRejectionsBeforeStaleOwner = store.getDebugCounters().staleEpochRejected;
 store.applyPatches([
   {
     ...decoratePatch,
@@ -254,6 +256,23 @@ store.applyPatches([
 ]);
 assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.revision, revisionBeforeStaleOwner);
 assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.generation, 7, "stale decoration cannot replace the current owner");
+assert.strictEqual(
+  store.getInvariantViolations().length,
+  violationsBeforeStaleOwner,
+  "a decoration computed for an older owner generation is expected staleness, not an invariant violation",
+);
+assert.strictEqual(store.getDebugCounters().staleEpochRejected, staleRejectionsBeforeStaleOwner + 1);
+store.applyPatches([
+  {
+    ...decoratePatch,
+    generation: 8,
+    decorations: [decoratePatch.decorations[0]],
+  },
+]);
+assert.ok(
+  store.getInvariantViolations().some((violation) => violation.startsWith(`decorateCode guard rejected:${OWNER_ID}:`)),
+  "a decoration for a generation the store has not seen is still an invariant violation",
+);
 store.resetSnapshot(rootSnapshot(6));
 assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.generation, 6, "an explicit snapshot reset starts a fresh document baseline");
 assert.strictEqual(store.getBlocks()[0]?.payload.raw, INITIAL_RAW, "a fresh baseline restores its own authored source");
