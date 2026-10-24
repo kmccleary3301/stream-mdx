@@ -59,6 +59,7 @@
     "test:regression:seeded-smoke:server": "tsx scripts/regression/run-seeded-smoke-with-server.ts",
     "test:regression:shell-accessibility": "tsx scripts/regression/run-shell-accessibility.ts",
     "test:regression:p4-viewport-browser": "tsx scripts/p4-viewport-browser-smoke.ts",
+    "p7:syntax-smoke": "tsx scripts/p7-syntax-extension-browser-smoke.ts",
     "test:regression:style-invariants": "tsx scripts/regression/run-style-invariants.ts",
     "test:regression:styles": "tsx scripts/regression/run-style-snapshots.ts",
     "test:regression:styles:update": "UPDATE_SNAPSHOTS=1 tsx scripts/regression/run-style-snapshots.ts",
