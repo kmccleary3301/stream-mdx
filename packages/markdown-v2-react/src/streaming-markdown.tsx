@@ -204,18 +204,18 @@ function isHeadlessCodePresentation(
 const DEFAULT_HISTORY_LIMIT =
   typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production" ? 80 : 200;
 const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
-  batch: "microtask",
-  frameBudgetMs: 10,
+  batch: "rAF",
+  frameBudgetMs: 4,
   maxBatchesPerFlush: 12,
-  lowPriorityFrameBudgetMs: 6,
+  lowPriorityFrameBudgetMs: 2,
   maxLowPriorityBatchesPerFlush: 2,
   urgentQueueThreshold: 4,
 };
 const DEFAULT_SCHEDULING_SMOOTH: StreamingSchedulerOptions = {
   batch: "rAF",
-  frameBudgetMs: 6,
+  frameBudgetMs: 4,
   maxBatchesPerFlush: 4,
-  lowPriorityFrameBudgetMs: 3,
+  lowPriorityFrameBudgetMs: 2,
   maxLowPriorityBatchesPerFlush: 1,
   urgentQueueThreshold: 2,
 };
