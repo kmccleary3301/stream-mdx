@@ -118,10 +118,80 @@ async function nativeTablePartPresentationsRetainTableNesting(): Promise<void> {
   }
 }
 
+async function savedTableActionsRejectAfterResetWithReusedNodeIds(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const stream = React.createRef<StreamingMarkdownHandle>();
+  const tableActions: Array<{ id: string; copy: NodeViewActions["copy"] }> = [];
+  const presentations = {
+    table: {
+      wrapper: ({ children, metadata, actions }) => {
+        if (metadata.type === "table") tableActions.push({ id: metadata.id, copy: actions.copy });
+        return <>{children}</>;
+      },
+    },
+  } satisfies NodePresentations;
+  const copied: string[] = [];
+  const clipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  try {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async (value: string) => { copied.push(value); } },
+    });
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={stream}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ tables: true }}
+          tableVirtualization={false}
+          caret={false}
+          components={presentations}
+        />,
+      );
+    });
+    await waitFor(() => stream.current?.getState().workerReady === true, "table action worker is ready");
+    await act(async () => {
+      stream.current?.append(HEADER + tableRows(0, 2));
+      await stream.current?.finalize();
+    });
+    await waitFor(() => tableActions.length > 0, "the initial table wrapper receives its source-bound action");
+
+    const initialTableAction = tableActions[0];
+    assert.ok(initialTableAction);
+    const nextSource = HEADER + tableRows(0, 1, "Replacement");
+    await act(async () => {
+      stream.current?.restart();
+    });
+    await waitFor(
+      () => stream.current?.getState().workerReady === true && stream.current.getState().blocks.length === 0,
+      "restart installs a fresh document generation",
+    );
+    await act(async () => {
+      stream.current?.append(nextSource);
+      await stream.current?.finalize();
+    });
+    await waitFor(() => tableActions.length > 1, "replacement table wrapper is presented");
+    assert.equal(tableActions.at(-1)?.id, initialTableAction.id, "reset reuses the table node ID");
+    await assert.rejects(initialTableAction.copy(), /replaced or disposed owner/,
+      "a saved wrapper action rejects after its store generation is reset");
+    assert.deepEqual(copied, [], "a stale wrapper action cannot copy replacement document source");
+  } finally {
+    root.unmount();
+    if (clipboard) Object.defineProperty(navigator, "clipboard", clipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
+    restore();
+  }
+}
+
 try {
   await filteredManagedTablesRenderNoShellOrControls();
   await nativeTablePartPresentationsRetainTableNesting();
-  console.log("table presentation regressions passed");
+  await savedTableActionsRejectAfterResetWithReusedNodeIds();
+  console.log("managed table presentation regressions passed");
 } catch (error) {
   console.error(error);
   process.exit(1);

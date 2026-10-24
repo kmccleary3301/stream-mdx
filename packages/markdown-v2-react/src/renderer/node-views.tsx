@@ -106,6 +106,7 @@ export function renderNodePresentation(
   const codeHandle = type === "code" ? store.getCodeNodeHandle(id) : undefined;
   const tableState = type === "table" ? store.getTableBlock(id) : undefined;
   const codeMetadata = codeHandle?.readMetadata();
+  const tableResetVersion = tableState ? getStoreResetVersion(store) : undefined;
   const blockLanguage = block?.payload.meta?.lang;
   const language = codeMetadata?.language ??
     (typeof blockLanguage === "string" ? blockLanguage : undefined);
@@ -123,12 +124,23 @@ export function renderNodePresentation(
   });
   const readSource = () => {
     if (codeHandle) return codeHandle.readSource();
-    if (tableState) return store.getTableBlock(id)?.sourceSnapshot.materialize() ?? block?.payload.raw ?? "";
+    if (tableState) {
+      const current = store.getTableBlock(id);
+      if (
+        tableResetVersion === undefined ||
+        getStoreResetVersion(store) !== tableResetVersion ||
+        !current ||
+        current.source.generation !== tableState.source.generation
+      ) {
+        throw new Error("Table content belongs to a replaced or disposed owner");
+      }
+      return current.sourceSnapshot.materialize();
+    }
     const raw = block?.payload.raw;
     return typeof raw === "string" ? raw : "";
   };
   const actions: NodeViewActions = Object.freeze({
-    copy: () => copyToClipboard(readSource()),
+    copy: async () => copyToClipboard(readSource()),
     download: () => downloadFile(readSource(), `${type}.txt`),
   });
   return React.createElement(presentation.wrapper, { children, metadata, actions, block });
