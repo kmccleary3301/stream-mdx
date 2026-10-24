@@ -1,6 +1,6 @@
 ---
 "@stream-mdx/react": patch
-"@stream-mdx/mermaid": patch
+"@stream-mdx/mermaid": minor
 "stream-mdx": patch
 ---
 

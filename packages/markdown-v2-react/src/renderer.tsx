@@ -402,6 +402,7 @@ export class MarkdownRenderer implements Renderer {
       this.workerAdmittedSourceUnits = sourceAdmissionOffset;
       this.workerAdmissionGeneration = null;
       this.admissionFailure = null;
+      this.settleSourceAdmissionWaiters();
     } else {
       this.resetSourceAdmission();
       this.inputSealed = false;
@@ -1121,6 +1122,7 @@ export class MarkdownRenderer implements Renderer {
             this.workerAdmittedSourceUnits = this.workerAdmissionSourceOffset;
             this.workerAdmissionBaselineSourceUnits = 0;
             this.settleCapacityWaiters();
+            this.settleSourceAdmissionWaiters();
           } else {
             if (this.workerAdmissionGeneration !== null) {
               this.resetSourceAdmission();
