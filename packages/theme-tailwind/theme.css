@@ -1400,3 +1400,10 @@
     visibility: hidden;
   }
 }
+
+@media print {
+  .markdown-table-container[data-table-printing="true"] {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}

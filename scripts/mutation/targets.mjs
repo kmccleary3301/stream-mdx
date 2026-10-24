@@ -57,4 +57,22 @@ export const targets = {
       "packages/markdown-v2-react/__tests__/native-code-handle-presentation.test.tsx",
     ],
   },
+  "react-viewport-index": {
+    package: "packages/markdown-v2-react",
+    mutate: [
+      "src/renderer/viewport-height-index.ts",
+      "src/renderer/virtualized-table.ts:31-47",
+      "src/renderer/virtualized-table.ts:82-95",
+      "src/renderer/virtualized-table.ts:367-427",
+    ],
+    redirects: {
+      "@stream-mdx/react": "src/index.ts",
+      "@stream-mdx/react/server": "../../dist/server.mjs",
+      "@stream-mdx/react/_internal/trusted-mdx-native-children": "../../dist/trusted-mdx/native-children-slot.mjs",
+    },
+    tests: [
+      "__tests__/virtualized-code-metadata.test.ts",
+      "__tests__/table-virtualization.test.tsx",
+    ],
+  },
 };

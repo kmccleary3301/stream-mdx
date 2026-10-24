@@ -508,6 +508,7 @@ export interface TableControlsBarProps {
   rows: string[][];
   align?: Array<"left" | "center" | "right" | null>;
   getTableData?: () => TableControlsData;
+  getMarkdownSource?: () => string;
   isFinalized: boolean;
   config: ResolvedTableControls;
   className?: string;
@@ -518,50 +519,82 @@ export const TableControlsBar: React.FC<TableControlsBarProps> = ({
   rows,
   align,
   getTableData,
+  getMarkdownSource,
   isFinalized,
   config,
   className,
 }) => {
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
+  const copiedFeedbackTimeout = React.useRef<number | undefined>(undefined);
+  const mounted = React.useRef(true);
   const { labels } = config;
+
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      window.clearTimeout(copiedFeedbackTimeout.current);
+    };
+  }, []);
 
   const handleCopy = useCallback(
     async (format: TableCopyFormat) => {
       if (!isFinalized) return;
-      const data = getTableData?.() ?? { headers, rows, align };
-      const text = format === "markdown"
-        ? tableToMarkdown(data.headers, data.rows, data.align)
-        : tableToTsv(data.headers, data.rows);
+      let text: string;
+      if (format === "markdown") {
+        const source = getMarkdownSource?.();
+        if (source !== undefined) {
+          text = source;
+        } else {
+          const data = getTableData?.() ?? { headers, rows, align };
+          text = tableToMarkdown(data.headers, data.rows, data.align);
+        }
+      } else {
+        const data = getTableData?.() ?? { headers, rows, align };
+        text = tableToTsv(data.headers, data.rows);
+      }
       const success = await copyToClipboard(text);
       if (success) {
+        if (!mounted.current) return;
         setCopiedFormat(format);
-        setTimeout(() => setCopiedFormat(null), 2000);
+        window.clearTimeout(copiedFeedbackTimeout.current);
+        copiedFeedbackTimeout.current = window.setTimeout(() => {
+          copiedFeedbackTimeout.current = undefined;
+          setCopiedFormat(null);
+        }, 2000);
       }
     },
-    [headers, rows, align, getTableData, isFinalized],
+    [headers, rows, align, getTableData, getMarkdownSource, isFinalized],
   );
 
   const handleDownload = useCallback(
     (format: TableDownloadFormat) => {
       if (!isFinalized) return;
-      const data = getTableData?.() ?? { headers, rows, align };
       let text = "";
       let filename = "table.csv";
       let mimeType = "text/csv;charset=utf-8";
-      if (format === "tsv") {
+      if (format === "markdown") {
+        const source = getMarkdownSource?.();
+        if (source !== undefined) {
+          text = source;
+        } else {
+          const data = getTableData?.() ?? { headers, rows, align };
+          text = tableToMarkdown(data.headers, data.rows, data.align);
+        }
+        filename = "table.md";
+        mimeType = "text/markdown;charset=utf-8";
+      } else if (format === "tsv") {
+        const data = getTableData?.() ?? { headers, rows, align };
         text = tableToTsv(data.headers, data.rows);
         filename = "table.tsv";
         mimeType = "text/tab-separated-values;charset=utf-8";
-      } else if (format === "markdown") {
-        text = tableToMarkdown(data.headers, data.rows, data.align);
-        filename = "table.md";
-        mimeType = "text/markdown;charset=utf-8";
       } else {
+        const data = getTableData?.() ?? { headers, rows, align };
         text = tableToCsv(data.headers, data.rows);
       }
       downloadFile(text, filename, mimeType);
     },
-    [headers, rows, align, getTableData, isFinalized],
+    [headers, rows, align, getTableData, getMarkdownSource, isFinalized],
   );
 
   return (

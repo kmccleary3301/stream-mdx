@@ -31,7 +31,7 @@ import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 import { CodeBlockView } from "./code-block-view";
 import { ManagedParagraphBlockView, ManagedParagraphContentView } from "./paragraph-block-view";
-import { ManagedTableBlockView } from "./table-block-view";
+import { ManagedTableBlockView, TableFullContentToggle, useTableFullContentMode } from "./table-block-view";
 import { TrustedMdxProjectionContext } from "../trusted-mdx-boundary";
 import { renderTrustedMdxInlineChild, TrustedMdxInlineBlockView } from "./trusted-mdx-inline-child";
 import {
@@ -1626,6 +1626,14 @@ ListProjectionRoot.displayName = "ListProjectionRoot";
 
 const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
+  const [fullContentMode, toggleFullContentMode] = useTableFullContentMode(
+    store,
+    blockId,
+    undefined,
+    node?.blockEpoch,
+    getStoreResetVersion(store),
+  );
+  const viewportId = React.useId();
   const streamingActive = React.useContext(StreamingActivityContext);
   const tableElements = registry.getTableElements();
   const childIds = useRendererChildren(store, blockId);
@@ -1688,28 +1696,32 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
 
   const virtualization = useVirtualizedTable(rowIds, virtualizationConfig, canVirtualize);
   const { isEligible, isVirtualized, containerRef, handleScroll, window: virtualWindow, config, naturalLayout, headerBackgroundColor } = virtualization;
-
+  const renderAllRows = isVirtualized && fullContentMode;
+  const fullContentRowRanges = React.useMemo(
+    () => [{ startIndex: 0, endIndex: rowCount, spacerBeforeHeight: 0 }],
+    [rowCount],
+  );
+  const displayedRowRanges = renderAllRows ? fullContentRowRanges : virtualWindow.rowRanges;
+  const bottomSpacerHeight = renderAllRows ? 0 : virtualWindow.bottomSpacerHeight;
   const virtualizationProps: TableVirtualizationProps | undefined = React.useMemo(() => {
     if (!isVirtualized) return undefined;
     return {
       isVirtualized: true,
-      startIndex: virtualWindow.startIndex,
-      endIndex: virtualWindow.endIndex,
-      topSpacerHeight: virtualWindow.topSpacerHeight,
-      bottomSpacerHeight: virtualWindow.bottomSpacerHeight,
+      rowRanges: displayedRowRanges,
+      bottomSpacerHeight,
       columnCount,
       headerBackgroundColor,
     };
-  }, [isVirtualized, virtualWindow, columnCount, headerBackgroundColor]);
+  }, [isVirtualized, renderAllRows, displayedRowRanges, bottomSpacerHeight, columnCount, headerBackgroundColor]);
 
   const tableAttrs = {
     "data-table-block": "true",
     "data-block-id": blockId,
     "data-table-virtualized": isVirtualized ? "true" : "false",
     "data-table-total-rows": String(rowCount),
-    "data-table-mounted-rows": String(isVirtualized ? virtualWindow.mountedRows : rowCount),
-    "data-table-start-index": String(isVirtualized ? virtualWindow.startIndex : 0),
-    "data-table-end-index": String(isVirtualized ? virtualWindow.endIndex : rowCount),
+    "data-table-mounted-rows": String(renderAllRows ? rowCount : isVirtualized ? virtualWindow.mountedRows : rowCount),
+    "data-table-start-index": String(renderAllRows ? 0 : isVirtualized ? virtualWindow.startIndex : 0),
+    "data-table-end-index": String(renderAllRows ? rowCount : isVirtualized ? virtualWindow.endIndex : rowCount),
   };
 
   const tableElement = (
@@ -1737,6 +1749,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
             registry={registry}
             tableElements={tableElements}
             virtualization={virtualizationProps}
+            indexRows={isEligible}
           />
         );
       })}
@@ -1771,6 +1784,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
                   registry={registry}
                   tableElements={tableElements}
                   virtualization={virtualizationProps}
+                  indexRows={isEligible}
                 />
               );
             })}
@@ -1794,6 +1808,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
       tabIndex={0}
       role="region"
       aria-label="Scrollable table"
+      id={viewportId}
       {...tableAttrs}
     >
       {filteredTable}
@@ -1804,6 +1819,9 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     <>{filteredTable}</>
   );
 
+  const fullContentToggle = isVirtualized ? (
+    <TableFullContentToggle controlId={viewportId} pressed={renderAllRows} onClick={toggleFullContentMode} />
+  ) : null;
   if (tableData) {
     const tableControlsElement = ControlsComponent ? (
       <ControlsComponent
@@ -1843,12 +1861,13 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     return (
       <div className="stream-mdx-table-wrapper relative">
         {tableControlsElement}
+        {fullContentToggle}
         {renderedContent}
       </div>
     );
   }
 
-  return renderedContent;
+  return <>{fullContentToggle}{renderedContent}</>;
 });
 
 TableBlockView.displayName = "TableBlockView";
@@ -1891,7 +1910,8 @@ const TableSectionView: React.FC<{
   registry: ComponentRegistry;
   tableElements: TableElements;
   virtualization?: TableVirtualizationProps;
-}> = React.memo(({ store, nodeId, registry, tableElements, virtualization }) => {
+  indexRows: boolean;
+}> = React.memo(({ store, nodeId, registry, tableElements, virtualization, indexRows }) => {
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
   if (node.type === "table-header") {
@@ -1924,49 +1944,67 @@ const TableSectionView: React.FC<{
     if (!virtualization?.isVirtualized) {
       return (
         <tableElements.Tbody>
-          {rowIds.map((rowId) => {
+          {rowIds.map((rowId, rowIndex) => {
             if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
               recordViewRecords(store, 1);
             }
-            return <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} tableElements={tableElements} />;
+            return (
+              <TableRowView
+                key={rowId}
+                store={store}
+                nodeId={rowId}
+                registry={registry}
+                rowIndex={indexRows ? rowIndex : undefined}
+                tableElements={tableElements}
+              />
+            );
           })}
         </tableElements.Tbody>
       );
     }
 
-    const { startIndex, endIndex, topSpacerHeight, bottomSpacerHeight, columnCount } = virtualization;
-    const visibleRowIds = rowIds.slice(startIndex, endIndex);
-
-    return (
-      <tableElements.Tbody>
-        {topSpacerHeight > 0 && (
+    const { rowRanges, bottomSpacerHeight, columnCount } = virtualization;
+    const renderedRows: React.ReactElement[] = [];
+    const appendRow = (rowId: string, rowIndex: number) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordViewRecords(store, 1);
+      }
+      renderedRows.push(
+        <TableRowView
+          key={rowId}
+          store={store}
+          nodeId={rowId}
+          registry={registry}
+          rowIndex={rowIndex}
+          tableElements={tableElements}
+        />,
+      );
+    };
+    for (let rangeIndex = 0; rangeIndex < rowRanges.length; rangeIndex++) {
+      const range = rowRanges[rangeIndex];
+      if (range.spacerBeforeHeight > 0) {
+        renderedRows.push(
           <tableElements.Tr
-            key={`${nodeId}::spacer-top`}
+            key={`${nodeId}::spacer-before-${range.startIndex}`}
             aria-hidden="true"
-            className="markdown-table-spacer markdown-table-spacer-top"
-            style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0 }}
+            className={`markdown-table-spacer markdown-table-spacer-${rangeIndex === 0 ? "top" : "focus"}`}
+            style={{ height: `${range.spacerBeforeHeight}px`, padding: 0, border: 0 }}
           >
             <tableElements.Td
               colSpan={columnCount}
-              style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0, margin: 0, lineHeight: 0 }}
+              style={{ height: `${range.spacerBeforeHeight}px`, padding: 0, border: 0, margin: 0, lineHeight: 0 }}
             />
-          </tableElements.Tr>
-        )}
-        {visibleRowIds.map((rowId, offset) => {
-          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-            recordViewRecords(store, 1);
-          }
-          return (
-            <TableRowView
-              key={rowId}
-              store={store}
-              nodeId={rowId}
-              registry={registry}
-              rowIndex={startIndex + offset}
-              tableElements={tableElements}
-            />
-          );
-        })}
+          </tableElements.Tr>,
+        );
+      }
+      for (let rowIndex = range.startIndex; rowIndex < range.endIndex; rowIndex++) {
+        const rowId = rowIds[rowIndex];
+        if (rowId !== undefined) appendRow(rowId, rowIndex);
+      }
+    }
+    return (
+      <tableElements.Tbody>
+        <React.Fragment key={`${nodeId}::rows`}>{renderedRows}</React.Fragment>
         {bottomSpacerHeight > 0 && (
           <tableElements.Tr
             key={`${nodeId}::spacer-bottom`}

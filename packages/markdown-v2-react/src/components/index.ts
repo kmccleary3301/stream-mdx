@@ -56,6 +56,11 @@ import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
 import { DEFAULT_TABLE_VIRTUALIZATION_CONFIG, resolveTableVirtualizationConfig, type TableVirtualizationConfig, type TableVirtualizationOptions } from "../renderer/virtualized-table";
 import {
+  DEFAULT_VIRTUALIZED_CODE_CONFIG,
+  resolveVirtualizedCodeConfig,
+  type VirtualizedCodeConfig,
+} from "../renderer/virtualized-code";
+import {
   CodeControlsBar,
   TableControlsBar,
   copyToClipboard,
@@ -770,6 +775,8 @@ export class ComponentRegistry {
   private blockComponentMapCache: BlockComponents | null = null;
   private tableVirtualization: TableVirtualizationConfig = DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
   private tableVirtualizationListeners = new Set<() => void>();
+  private codeVirtualization: VirtualizedCodeConfig = DEFAULT_VIRTUALIZED_CODE_CONFIG;
+  private codeVirtualizationListeners = new Set<() => void>();
   private inlineComponentMapCache: InlineComponents | null = null;
   private urlTransform?: UrlTransform;
   private controls: ControlsConfig = false;
@@ -792,6 +799,7 @@ export class ComponentRegistry {
       mathRenderer?: MathRenderer;
       blockRenderer?: BlockRendererOverride;
       tableVirtualization?: TableVirtualizationOptions;
+      codeVirtualization?: Partial<VirtualizedCodeConfig>;
       urlTransform?: UrlTransform;
       controls?: ControlsConfig;
       controlsComponent?: React.ComponentType<ControlsComponentProps>;
@@ -824,6 +832,9 @@ export class ComponentRegistry {
     }
     if (options?.tableVirtualization !== undefined) {
       this.setTableVirtualization(options.tableVirtualization);
+    }
+    if (options?.codeVirtualization !== undefined) {
+      this.setCodeVirtualization(options.codeVirtualization);
     }
     if (options?.controls !== undefined) {
       this.setControls(options.controls);
@@ -1240,6 +1251,24 @@ export class ComponentRegistry {
 
   getTableVirtualization(): TableVirtualizationConfig {
     return this.tableVirtualization;
+  }
+
+  subscribeCodeVirtualization(listener: () => void): () => void {
+    this.codeVirtualizationListeners.add(listener);
+    return () => {
+      this.codeVirtualizationListeners.delete(listener);
+    };
+  }
+
+  setCodeVirtualization(options: Partial<VirtualizedCodeConfig> | undefined): void {
+    this.codeVirtualization = resolveVirtualizedCodeConfig(options);
+    for (const listener of this.codeVirtualizationListeners) {
+      listener();
+    }
+  }
+
+  getCodeVirtualization(): VirtualizedCodeConfig {
+    return this.codeVirtualization;
   }
 
   /**

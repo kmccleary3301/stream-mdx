@@ -24,6 +24,7 @@ export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
+  statusMessage?: string;
   contentComponents?: ContentComponentsMap;
 }
 
@@ -53,6 +54,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     controls,
     controlsComponent,
     animated,
+    statusMessage,
     contentComponents,
     className = "markdown-renderer",
     style,
@@ -133,9 +135,21 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
         style: { contain: "content", ...(style ?? {}) }, // CSS containment for performance
       },
       React.createElement(
-        RenderConfigVersionContext.Provider,
-        { value: renderConfigVersion },
-        React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry, blockRenderer }),
+        React.Fragment,
+        null,
+        statusMessage
+          ? React.createElement("p", {
+              role: "status",
+              "aria-live": "polite",
+              "aria-atomic": "true",
+              className: "sr-only",
+            }, statusMessage)
+          : null,
+        React.createElement(
+          RenderConfigVersionContext.Provider,
+          { value: renderConfigVersion },
+          React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry, blockRenderer }),
+        ),
       ),
     );
   },
