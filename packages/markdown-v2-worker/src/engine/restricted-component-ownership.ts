@@ -314,6 +314,7 @@ type RestrictedAdmissionOptions = {
   literalTagContent?: readonly string[];
   protectedRanges?: readonly SourceRange[];
   htmlOptions?: HtmlOptions;
+  trailingLineTerminator?: boolean;
 };
 
 export type RegisteredContainerDelimiterEvent =
@@ -330,6 +331,7 @@ export function scanRegisteredContainerSource(
     readonly blockStartOffsets?: readonly number[];
     readonly literalTagContent?: readonly string[];
     readonly openStack?: RegisteredContainerOpening[];
+    readonly trailingLineTerminator?: boolean;
   },
 ): RegisteredContainerDelimiterEvent[] {
   const inlineElements = parser?.parseInline(source, 0);
@@ -349,11 +351,11 @@ export function scanRegisteredContainerSource(
 
   while (lineStart <= source.length) {
     const newline = source.indexOf("\n", lineStart);
-    const hasLineTerminator = newline >= 0;
-    const lineEnd = hasLineTerminator ? newline : source.length;
+    const hasLineTerminator = newline >= 0 || (newline < 0 && options?.trailingLineTerminator === true);
+    const lineEnd = newline >= 0 ? newline : source.length;
     const contentEnd = lineEnd > lineStart && source[lineEnd - 1] === "\r" ? lineEnd - 1 : lineEnd;
     const line = source.slice(lineStart, contentEnd);
-    const protectedTo = hasLineTerminator ? newline + 1 : lineEnd;
+    const protectedTo = newline >= 0 ? newline + 1 : lineEnd;
     while (rangeIndex < protectedRanges.length && protectedRanges[rangeIndex]!.to <= lineStart) rangeIndex++;
     const protectedRange = protectedRanges[rangeIndex];
     const isProtected = protectedRange !== undefined && protectedRange.from < protectedTo && protectedRange.to > lineStart;
@@ -383,7 +385,7 @@ export function scanRegisteredContainerSource(
 
     previousLineBlank = line.trim().length === 0;
     previousWasFence = wasFence;
-    if (!hasLineTerminator) break;
+    if (newline < 0) break;
     lineStart = newline + 1;
   }
   return events;
@@ -1105,7 +1107,7 @@ export function buildRegisteredContainerTree(
   const delimiters = scanRegisteredContainerSource(rawSource, extensions, contentComponents, options?.parser, {
     literalTagContent: options?.literalTagContent,
     protectedRanges: [...(options?.protectedRanges ?? []), ...protectedCodeRanges],
-    blockStartOffsets: childRanges.flatMap((range) => range ? [range.from] : []),
+    trailingLineTerminator: options?.trailingLineTerminator,
   });
   const openingEvent = delimiters.find(
     (event) => event.kind === "open" && rawSource.slice(0, event.from).trim().length === 0,
@@ -1156,7 +1158,37 @@ export function buildRegisteredContainerTree(
       for (const block of childBlocks) children.push({ kind: "block", block });
     }
   } else {
-    children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, bodyStart, closeStart, options));
+    const nestedOpenings = delimiters.filter(
+      (event): event is Extract<RegisteredContainerDelimiterEvent, { kind: "open" }> =>
+        event.kind === "open"
+        && event.opening !== opening
+        && event.from >= bodyStart
+        && event.from < closeStart,
+    );
+    let nestedCursor = bodyStart;
+    for (const nestedOpening of nestedOpenings) {
+      if (nestedOpening.from < nestedCursor) continue;
+      const nestedClosing = delimiters.find(
+        (event) => event.kind === "close" && event.opening === nestedOpening.opening,
+      );
+      if (!nestedClosing || nestedClosing.to > closeStart) continue;
+      children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, nestedCursor, nestedOpening.from, options));
+      const nestedTree = buildRegisteredContainerTree(
+        rawSource.slice(nestedOpening.from, nestedClosing.to),
+        contentComponents,
+        extensions,
+        {
+          forceFinalize: options?.forceFinalize,
+          parseInline: options?.parseInline,
+          parser: options?.parser,
+          literalTagContent: options?.literalTagContent,
+          htmlOptions: options?.htmlOptions,
+        },
+      );
+      if (nestedTree) children.push(...nestedTree);
+      nestedCursor = nestedClosing.to;
+    }
+    children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, nestedCursor, closeStart, options));
   }
 
   const firstNonWhitespace = rawSource.search(/\S/);

@@ -7,6 +7,25 @@ import { escapeHtml, inlineHtml, normalizeNativeInlineParagraph } from "./native
 
 const VOID: Record<string, true> = { area: true, base: true, br: true, col: true, embed: true, hr: true, img: true, input: true, link: true, meta: true, param: true, source: true, track: true, wbr: true };
 
+function hasSourceLineTerminatorAfterBlock(
+  block: Block,
+  content: string | SourceSnapshot,
+  sourceOffset: number,
+): boolean {
+  const rangeTo = block.payload.range?.to;
+  if (typeof rangeTo !== "number") return false;
+  const localEnd = rangeTo - sourceOffset;
+  if (localEnd < 0 || localEnd >= content.length) return false;
+  const unit = typeof content === "string"
+    ? content[localEnd]
+    : content.read(localEnd, localEnd + 1);
+  if (unit === "\n") return true;
+  if (unit !== "\r" || localEnd + 1 >= content.length) return false;
+  return typeof content === "string"
+    ? content[localEnd + 1] === "\n"
+    : content.read(localEnd + 1, localEnd + 2) === "\n";
+}
+
 function isCompleteHtmlTag(tag: string): boolean {
   if (!tag.endsWith(">")) return false;
   let quote: "'" | '"' | null = null;
@@ -279,6 +298,45 @@ export function getActiveHtmlTreeKey(
   if (Array.isArray(meta?.htmlParagraphTree)) return "htmlParagraphTree";
   if (Array.isArray(meta?.htmlTree)) return "htmlTree";
 }
+export function finalizeOpenRegisteredContainerTree(nodes: readonly HtmlTreeNode[]): readonly HtmlTreeNode[] {
+  let next: HtmlTreeNode[] | undefined;
+  for (let index = 0; index < nodes.length; index += 1) {
+    const node = nodes[index]!;
+    let replacement = node;
+    if (node.kind === "component" || node.kind === "element") {
+      const children = finalizeOpenRegisteredContainerTree(node.children);
+      if (node.kind === "component") {
+        const containerName = /^:{3,}([A-Za-z][\w-]*)/.exec(node.rawSource?.trimStart() ?? "")?.[1];
+        replacement = node.status === "open" && containerName
+          ? { ...node, status: "incomplete", diagnostic: `Unclosed container :::${containerName}`, children: [...children] }
+          : children === node.children ? node : { ...node, children: [...children] };
+      } else {
+        replacement = children === node.children ? node : { ...node, children: [...children] };
+      }
+    } else if (node.kind === "block") {
+      const meta = node.block.payload.meta;
+      const key = getActiveHtmlTreeKey(meta);
+      const tree = key ? meta?.[key] : undefined;
+      if (key && Array.isArray(tree)) {
+        const children = finalizeOpenRegisteredContainerTree(tree as HtmlTreeNode[]);
+        if (children !== tree) {
+          replacement = {
+            ...node,
+            block: { ...node.block, payload: { ...node.block.payload, meta: { ...meta, [key]: children } } },
+          };
+        }
+      }
+    }
+    if (replacement !== node) {
+      next ??= nodes.slice(0, index);
+      next.push(replacement);
+    } else {
+      next?.push(node);
+    }
+  }
+  return next ?? nodes;
+}
+
 
 function withHtmlOwnership(
   meta: Block["payload"]["meta"],
@@ -306,6 +364,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     childrenBlocks?: Block[],
     childBlockRanges?: readonly { readonly block: Block; readonly from: number; readonly to: number }[],
     componentSourceOffset?: number,
+    trailingLineTerminator = false,
   ) => {
     if (!contentComponents) return null;
     const containerTree = syntaxContainers.length > 0
@@ -317,6 +376,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
           sourceOffset: componentSourceOffset,
           parser,
           literalTagContent: options?.literalTagContent,
+          trailingLineTerminator,
           htmlOptions: options,
         })
       : null;
@@ -328,6 +388,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       sourceOffset: componentSourceOffset,
       parser,
       literalTagContent: options?.literalTagContent,
+      trailingLineTerminator,
       htmlOptions: options,
       containerClosed,
     });
@@ -348,6 +409,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       parser,
       literalTagContent: options?.literalTagContent,
       htmlOptions: options,
+      trailingLineTerminator: hasSourceLineTerminatorAfterBlock(block, content, sourceOffset),
     };
     const headingText = block.payload.meta?.headingText;
     const inlineSource = block.type === "heading"
@@ -388,7 +450,14 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       for (const block of region) result.push(block);
     } else if (region.length === 1) {
       const single = region[0];
-      const compTree = buildComponentTree(single.payload.raw, stack.length === 0);
+      const compTree = buildComponentTree(
+        single.payload.raw,
+        stack.length === 0,
+        undefined,
+        undefined,
+        undefined,
+        hasSourceLineTerminatorAfterBlock(single, content, sourceOffset),
+      );
       result.push(compTree ? retainComponentTree(single, compTree) : single);
     } else if (region.length > 1) {
       const first = region[0];
@@ -444,6 +513,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         childrenBlocks,
         childBlockRanges,
         rawParts ? undefined : firstSourceOffset,
+        !rawParts && hasSourceLineTerminatorAfterBlock(last, content, sourceOffset),
       );
       if (compTree) {
         const retained = retainComponentTree(first, compTree);
@@ -483,6 +553,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     if (block.type !== "code" && contentComponents && syntaxContainers.length > 0) {
       scanRegisteredContainerSource(block.payload.raw, syntaxContainers, contentComponents, parser, {
         openStack: containerStack,
+        trailingLineTerminator: hasSourceLineTerminatorAfterBlock(block, content, sourceOffset),
         literalTagContent: options?.literalTagContent,
       });
     }

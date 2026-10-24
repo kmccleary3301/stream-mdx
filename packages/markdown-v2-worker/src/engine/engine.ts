@@ -137,6 +137,7 @@ import {
   groupHtmlOwnership,
   normalizeHtmlParagraph,
   preserveInlineComponentSource,
+  finalizeOpenRegisteredContainerTree,
 } from "./html-ownership";
 import { parseTrustedMdxSourceSpans } from "../mdx-source-spans";
 import { buildRestrictedComponentInlineTree, buildRestrictedComponentTree } from "./restricted-component-ownership";
@@ -10691,6 +10692,27 @@ export class MarkdownEngine {
       this.recordParsedProgressPublication(progressPublication);
     }
 
+    const incompleteContainerPatches: Patch[] = [];
+    for (const block of this.blocks) {
+      const key = getActiveHtmlTreeKey(block.payload.meta);
+      const tree = key ? block.payload.meta?.[key] : undefined;
+      if (!key || !Array.isArray(tree)) continue;
+      const finalizedTree = finalizeOpenRegisteredContainerTree(tree as HtmlTreeNode[]);
+      if (finalizedTree === tree) continue;
+      block.payload = {
+        ...block.payload,
+        meta: { ...block.payload.meta, [key]: finalizedTree },
+      };
+      incompleteContainerPatches.push({
+        op: "setProps",
+        at: { blockId: block.id },
+        props: { block },
+        meta: { kind: "enrichment" },
+      });
+    }
+    if (incompleteContainerPatches.length > 0) {
+      this.dispatchPatchBatch(incompleteContainerPatches, metricsCollector);
+    }
     reportWorkerStructuralInvariantViolations("finalizeAllBlocks", this.blocks, this.lastWorkerInvariantSignature);
     this.post({
       type: "FINALIZED",
