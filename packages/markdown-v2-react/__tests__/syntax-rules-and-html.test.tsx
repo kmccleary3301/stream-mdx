@@ -74,35 +74,55 @@ function waitForMutation(container: HTMLElement, predicate: () => boolean, timeo
   return promise;
 }
 
-async function testInvalidRegexYieldsErrorMessage(): Promise<void> {
-  const errors: unknown[] = [];
-  const engine = new MarkdownEngine({
-    post: (msg) => {
-      if (msg.type === "ERROR") {
-        errors.push(msg);
-      }
-    },
-  });
+async function testInvalidRegexFailsInitialization(): Promise<void> {
+  const messages: Array<{ type: string; phase?: string }> = [];
+  const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
 
   await engine.handle({
     type: "INIT",
     schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     syntax: {
       contractVersion: 1,
-      inline: [
-        {
-          name: "invalidRule",
-          pattern: { source: "[unclosed-bracket(" },
-        },
-      ],
+      inline: [{ name: "invalidRule", pattern: { source: "[unclosed-bracket(" } }],
     },
   });
 
-  assert.ok(errors.length > 0, "expected an ERROR message for invalid regex pattern");
-  const firstError = errors[0];
-  assert.ok(firstError && typeof firstError === "object" && "type" in firstError && "phase" in firstError);
-  assert.strictEqual(firstError.type, "ERROR");
-  assert.strictEqual(firstError.phase, "INIT");
+  const initError = messages.find((message) => message.type === "ERROR" && message.phase === "INIT");
+  assert.ok(initError, "invalid regex syntax must report an INIT error");
+  assert.equal(messages.some((message) => message.type === "INITIALIZED"), false,
+    "invalid regex syntax must not publish INITIALIZED");
+
+  await engine.handle({ type: "APPEND", text: "Must not be admitted." });
+  assert.equal(messages.some((message) => message.type === "SOURCE_ADMITTED"), false,
+    "APPEND after invalid INIT must not admit input");
+  assert.ok(messages.some((message) => message.type === "ERROR" && message.phase === "APPEND"),
+    "APPEND after invalid INIT must report an error");
+  engine.dispose();
+}
+async function testInvalidContainerTargetFailsInitialization(): Promise<void> {
+  const messages: Array<{ type: string; phase?: string }> = [];
+  const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
+
+  await engine.handle({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    syntax: {
+      contractVersion: 1,
+      containers: [{ name: "note", component: "Ghost" }],
+    },
+  });
+
+  assert.ok(messages.some((message) => message.type === "ERROR" && message.phase === "INIT"),
+    "unregistered container component must report an INIT error");
+  assert.equal(messages.some((message) => message.type === "INITIALIZED"), false,
+    "invalid container target must not publish INITIALIZED");
+
+  await engine.handle({ type: "APPEND", text: "Must not be admitted." });
+  assert.equal(messages.some((message) => message.type === "SOURCE_ADMITTED"), false,
+    "APPEND after invalid INIT must not admit input");
+  assert.ok(messages.some((message) => message.type === "ERROR" && message.phase === "APPEND"),
+    "APPEND after invalid INIT must report an error");
+  engine.dispose();
 }
 
 async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
@@ -582,67 +602,59 @@ async function testDynamicPropUpdatesReInits(): Promise<void> {
   root.unmount();
 }
 
-async function testInvalidRegexRecoveryWithValidRule(): Promise<void> {
-  const errors: unknown[] = [];
-  const engine = new MarkdownEngine({
-    post: (msg) => {
-      if (msg.type === "ERROR") {
-        errors.push(msg);
-      }
-    },
-  });
+async function testInvalidContainerErrorSurfacesThroughReact(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "missing render root");
+  const errors: Error[] = [];
+  const root = createRoot(container);
 
-  await engine.handle({
-    type: "INIT",
-    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
-    syntax: {
-      contractVersion: 1,
-      inline: [
-        {
-          name: "badRule",
-          pattern: { source: "[invalid(regex" },
-        },
-        {
-          name: "ticket",
-          pattern: { source: "#([A-Z]+-\\d+)" },
-          attrs: { id: 1 },
-        },
-      ],
-    },
-  });
-
-  assert.ok(errors.length > 0, "should report error for badRule");
-
-  // Test that ticket rule is still registered and active
-  const parsed = engine.inlineParser.parse("Resolves #FIX-888 now");
-  const pluginNode = parsed.find((n) => n.kind === "plugin" && n.name === "ticket");
-  assert.ok(pluginNode, "valid rule must still be active and parse nodes despite prior invalid rule");
-  assert.strictEqual(pluginNode.attrs?.id, "FIX-888");
+  try {
+    root.render(
+      <StreamingMarkdown
+        engine="main-thread"
+        text=""
+        syntax={{ contractVersion: 1, containers: [{ name: "note", component: "Ghost" }] }}
+        onError={(error) => errors.push(error)}
+      />,
+    );
+    const deadline = Date.now() + 5000;
+    while (errors.length === 0 && Date.now() < deadline) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    }
+    assert.ok(errors.length > 0, "React onError must receive the invalid INIT error");
+    assert.match(errors[0]!.message, /unregistered component/);
+  } finally {
+    root.unmount();
+    window.close();
+  }
 }
 
-console.log("1: testInvalidRegexYieldsErrorMessage");
-await testInvalidRegexYieldsErrorMessage();
-console.log("2: testInvalidRegexRecoveryWithValidRule");
-await testInvalidRegexRecoveryWithValidRule();
-console.log("3: testSyntaxRuleStaticAndStreamedIdentical");
+console.log("1: testInvalidRegexFailsInitialization");
+await testInvalidRegexFailsInitialization();
+console.log("2: testInvalidContainerTargetFailsInitialization");
+await testInvalidContainerTargetFailsInitialization();
+console.log("3: testInvalidContainerErrorSurfacesThroughReact");
+await testInvalidContainerErrorSurfacesThroughReact();
+console.log("4: testSyntaxRuleStaticAndStreamedIdentical");
 await testSyntaxRuleStaticAndStreamedIdentical();
-console.log("4: testSyntaxRuleNestedInBold");
+console.log("5: testSyntaxRuleNestedInBold");
 await testSyntaxRuleNestedInBold();
-console.log("5: testNestedSyntaxRuleWithCaptureAndCursorOffset");
+console.log("6: testNestedSyntaxRuleWithCaptureAndCursorOffset");
 await testNestedSyntaxRuleWithCaptureAndCursorOffset();
-console.log("6: testHeadingRendersPluginNodes");
+console.log("7: testHeadingRendersPluginNodes");
 await testHeadingRendersPluginNodes();
-console.log("7: testAllowedTagsAndHtmlElements");
+console.log("8: testAllowedTagsAndHtmlElements");
 await testAllowedTagsAndHtmlElements();
-console.log("8: testHtmlChildrenPreservedInMapping");
+console.log("9: testHtmlChildrenPreservedInMapping");
 await testHtmlChildrenPreservedInMapping();
-console.log("9: testLiteralTagContent");
+console.log("10: testLiteralTagContent");
 await testLiteralTagContent();
-console.log("10: testBlockHtmlAllowedTagsAndAttributes");
+console.log("11: testBlockHtmlAllowedTagsAndAttributes");
 await testBlockHtmlAllowedTagsAndAttributes();
-console.log("11: testAnticipationOverlapAndStreamingStatus");
+console.log("12: testAnticipationOverlapAndStreamingStatus");
 await testAnticipationOverlapAndStreamingStatus();
-console.log("12: testDynamicPropUpdatesReInits");
+console.log("13: testDynamicPropUpdatesReInits");
 await testDynamicPropUpdatesReInits();
 console.log("All syntax rules and HTML allowlist acceptance tests passed successfully.");
 

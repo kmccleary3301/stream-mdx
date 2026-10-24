@@ -43,7 +43,7 @@ A bare closer is a line containing only colons (with up to three leading spaces 
 
 On `FINALIZE`, an unclosed container remains rendered with status `incomplete` and diagnostic `Unclosed container :::<name>`; its parsed children are retained.
 
-During `INIT`, an invalid regex in `syntax.inline` emits a protocol `ERROR` with `phase: "INIT"` and `meta: { rule: rule.name }`. The engine skips that rule and continues initializing valid rules. This recovery applies to rules supplied through `INIT`; invalid native `extensions.syntax.inline` rules can fail engine construction and should be validated before bundling.
+During `INIT`, invalid regex syntax or an invalid syntax descriptor (including a container that references an unregistered component) fails initialization with a protocol `ERROR` in phase `INIT`; the engine does not publish `INITIALIZED` or accept subsequent `APPEND` input. This applies to syntax supplied through `INIT` and instance extensions; validate bundled native syntax before shipping.
 
 The emitted `InlineNode` has `kind: "plugin"`, `name`, `attrs: Record<string, string>`, optional `children: InlineNode[]`, and `raw: string`. React passes the named component `{ name, attrs, children, raw }`, with parsed children already rendered as React nodes. A generic `inlineComponents.plugin` can handle unmapped names. Without either mapping, the renderer returns raw matched text.
 

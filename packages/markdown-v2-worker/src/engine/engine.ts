@@ -1305,6 +1305,7 @@ export class MarkdownEngine {
   private inputPolicy: ContentPolicy = "restricted";
   private inputSealed = false;
   private disposed = false;
+  private initialized = false;
   declare private campaignCounters?: CampaignCounterSink;
   declare private progressPublicationId?: number;
 
@@ -1785,6 +1786,7 @@ export class MarkdownEngine {
   private async processMessage(msg: WorkerIn): Promise<void> {
     switch (msg.type) {
       case "INIT":
+        this.initialized = false;
         if (msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
           this.reportError(
             new Error(`Unsupported stream-mdx schema version: ${String(msg.schemaVersion)}`),
@@ -1805,6 +1807,7 @@ export class MarkdownEngine {
         );
         return;
       case "APPEND":
+        if (!this.initialized) throw new Error("Cannot append before a successful INIT.");
         if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
           this.campaignCounters.recordEngineEntered?.(this.documentGeneration, this.sourceDocument.length + msg.text.length);
         }
@@ -2050,6 +2053,7 @@ export class MarkdownEngine {
     contentPolicy?: ContentPolicy,
     contentComponents?: readonly RestrictedComponentDescriptor[],
   ): Promise<void> {
+    this.initialized = false;
     this.contentPolicy = contentPolicy ?? "restricted";
     this.contentComponents = new Map();
     if (contentComponents && Array.isArray(contentComponents)) {
@@ -2114,30 +2118,17 @@ export class MarkdownEngine {
     );
     const containerSpecs: ContainerExtensionSpec[] = [];
     for (const descriptor of syntaxDescriptors) {
-      try {
-        containerSpecs.push(...validateSyntaxExtensionDescriptor(descriptor, this.contentComponents));
-      } catch (err) {
-        this.reportError(err, "INIT");
-      }
+      containerSpecs.push(...validateSyntaxExtensionDescriptor(descriptor, this.contentComponents));
     }
-    try {
-      this.syntaxContainers = validateSyntaxExtensionDescriptor(
-        { contractVersion: 1, containers: containerSpecs },
-        this.contentComponents,
-      );
-    } catch (err) {
-      this.reportError(err, "INIT");
-      this.syntaxContainers = [];
-    }
+    this.syntaxContainers = validateSyntaxExtensionDescriptor(
+      { contractVersion: 1, containers: containerSpecs },
+      this.contentComponents,
+    );
     if (syntax?.inline && Array.isArray(syntax.inline)) {
       for (const rule of syntax.inline) {
-        try {
-          const cleanedFlags = (rule.pattern?.flags || "").replace(/[gy]/g, "");
-          new RegExp(rule.pattern?.source ?? "", `${cleanedFlags}y`);
-          this.syntaxRules.push(rule);
-        } catch (err) {
-          this.reportError(err, "INIT", { rule: rule.name });
-        }
+        const cleanedFlags = (rule.pattern?.flags || "").replace(/[gy]/g, "");
+        new RegExp(rule.pattern?.source ?? "", `${cleanedFlags}y`);
+        this.syntaxRules.push(rule);
       }
     }
     this.htmlConfig = html;
@@ -2273,6 +2264,7 @@ export class MarkdownEngine {
       generation: this.documentGeneration,
       snapshot,
     });
+    this.initialized = true;
     if (initialTocPatch) this.dispatchPatchBatch([initialTocPatch]);
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && initialProgressPublication) {
       this.recordParsedProgressPublication(initialProgressPublication);
