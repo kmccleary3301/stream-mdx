@@ -25,6 +25,7 @@ export * from "./renderer/deferred-render-context";
 export * from "./renderer/hooks";
 export * from "./renderer/node-handle-hooks";
 export { NativeNodeView, renderNodePresentation } from "./renderer/node-views";
+export * from "./preview-slot";
 export * from "./renderer/code-handle-hooks";
 export * from "./renderer/table-handle-hooks";
 export * from "./renderer/patch-batching";

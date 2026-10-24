@@ -56,6 +56,39 @@ const HeadlessNativeCodeView: React.FC<{
     </NativeCodeViewContext.Provider>
   );
 };
+function readAuthoredNodeSource(store: RendererStore, id: string): string {
+  const paragraphSource = store.getParagraphColdBlock(id)?.payload.raw;
+  if (typeof paragraphSource === "string") return paragraphSource;
+  const raw = store.getNode(id)?.block?.payload.raw;
+  if (typeof raw === "string") return raw;
+  throw new Error("Node has no authored source");
+}
+
+export function useNodePresentationSourceReader(handle: NodeHandle | CodeNodeHandle): () => string {
+  const context = React.useContext(NodeViewRenderContext);
+  const store = context?.store;
+  const blockId = context?.blockId;
+  const contextHandle = context?.handle;
+  const sourceBlockEpoch = store && blockId !== undefined ? store.getNode(blockId)?.blockEpoch : undefined;
+  return React.useCallback(() => {
+    if ("readSource" in handle) return handle.readSource();
+    if (!store || blockId === undefined || contextHandle !== handle) {
+      throw new Error("Node source reads require the matching node presentation view");
+    }
+    handle.readMetadata();
+    const currentNode = store.getNode(blockId);
+    if (
+      !currentNode ||
+      sourceBlockEpoch === undefined ||
+      currentNode.type !== handle.type ||
+      currentNode.blockEpoch !== sourceBlockEpoch
+    ) {
+      throw new Error("Cannot read source from a stale or removed node");
+    }
+    return readAuthoredNodeSource(store, blockId);
+  }, [handle, store, blockId, contextHandle, sourceBlockEpoch]);
+}
+
 type NodePresentationRenderer = (nativeView: React.ReactNode) => React.ReactNode;
 function applyNativePresentationProps(
   nativeView: React.ReactNode,
@@ -170,11 +203,7 @@ export function renderNodePresentation(
       if (!current) throw new Error("Cannot read source from a stale or removed node");
       return current.sourceSnapshot.materialize();
     }
-    const paragraphSource = store.getParagraphColdBlock(id)?.payload.raw;
-    if (typeof paragraphSource === "string") return paragraphSource;
-    const raw = store.getNode(id)?.block?.payload.raw;
-    if (typeof raw === "string") return raw;
-    throw new Error("Node has no authored source");
+    return readAuthoredNodeSource(store, id);
   };
   const actions: NodeViewActions = Object.freeze({
     readSource,
