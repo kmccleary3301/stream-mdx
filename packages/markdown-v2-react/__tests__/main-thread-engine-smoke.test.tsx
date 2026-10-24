@@ -711,12 +711,15 @@ async function runAutoCodeHighlightTakeover(): Promise<void> {
       "worker-only mode did not render the short fenced TypeScript block",
     );
     await workerHandle.current!.finalize();
+    // Highlight decorations are enrichment patches committed after finalization, as in the automatic case above.
+    await waitForCondition(
+      () => workerContainer.querySelector("pre code span[style]") !== null,
+      "worker-only finalization did not commit syntax-highlighted code",
+    );
 
     const autoCode = autoContainer.querySelector("pre code");
     const workerCode = workerContainer.querySelector("pre code");
     assert.ok(autoCode && workerCode);
-    assert.ok(workerCode.querySelectorAll("span[style]").length > 0,
-      "worker-only finalization emits syntax highlight spans");
     assert.equal(autoCode.innerHTML, workerCode.innerHTML,
       "automatic mode finalizes to the worker-only highlighted output");
   } finally {
