@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import type { TableBlockMetadata, TableNodeHandle, TableRowRange, TableRowRecord } from "@stream-mdx/core";
-import { StreamingMarkdown, useTableBlock, useTableRows, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { NativeNodeView, StreamingMarkdown, useTableBlock, useTableRows, type StreamingMarkdownHandle } from "@stream-mdx/react";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-native-fixture";
@@ -49,6 +49,7 @@ function HeadlessTable({ handle }: { readonly handle: TableNodeHandle }): React.
     >
       <button type="button" data-next-range onClick={() => setRange(SECOND_RANGE)}>Next range</button>
       <TableRowsView handle={handle} range={range} onRender={captureRows} />
+      <NativeNodeView handle={handle} />
     </section>
   );
 }
@@ -82,6 +83,10 @@ async function headlessTableHooksTrackOnlyTheRequestedRows(): Promise<void> {
     });
     await waitFor(() => Number(container.querySelector("[data-headless-table]")?.getAttribute("data-row-count")) >= 10,
       "headless table receives the first ten rows");
+    await waitFor(
+      () => container.querySelector("[data-headless-table] table") !== null,
+      "the specialized table handle selects the native table fallback without presentation recursion",
+    );
     assert.ok(rowRenderCount >= 1, "the requested row range renders while its first rows arrive");
     const rowRenderCountAtTen = rowRenderCount;
     assert.deepEqual(rowSnapshots.at(-1)?.map((row) => row.index), Array.from({ length: 10 }, (_, index) => index));

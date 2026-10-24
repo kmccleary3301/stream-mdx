@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { Worker as NodeWorker } from "node:worker_threads";
 import type { CodeBlockMetadata, CodeLineRange, CodeLineRecord, CodeNodeHandle } from "@stream-mdx/core";
 import {
+  NativeNodeView,
   StreamingMarkdown,
   useCodeBlock,
   useCodeDiff,
@@ -143,7 +144,11 @@ function NativeCodeStatusView({ handle }: NativeCodeStatusProps): React.ReactEle
   renderCount.current += 1;
   const capture = React.useContext(NativeCodeStatusContext);
   capture({ metadata: handle.readMetadata(), handle, diff, renderCount: renderCount.current });
-  return <div data-native-code-owner={handle.readMetadata().codeOwnerId} data-diff-status={diff.diffStatus} />;
+  return (
+    <div data-native-code-owner={handle.readMetadata().codeOwnerId} data-diff-status={diff.diffStatus}>
+      <NativeNodeView handle={handle} />
+    </div>
+  );
 }
 
 async function runNativeCodeHandlePresentationTest(): Promise<void> {
@@ -417,6 +422,10 @@ async function runNativeCodeDiffStatusTest(): Promise<void> {
       streamHandle.append("```diff ts\n@@ -10,4 +20,4 @@\n context\n-old\n+new\n");
     });
     await waitFor(() => entries.size >= 1 && latestEntry()?.diff.lines.length === 3, "the first native diff code handle rows");
+    await waitFor(
+      () => container.querySelector("[data-native-code-owner] pre code")?.textContent?.includes("context") === true,
+      "the specialized code handle selects the native code fallback without presentation recursion",
+    );
     let entry = latestEntry();
     assert.ok(entry);
     assert.equal(entry.metadata.diffStatus, "incomplete", "the React code metadata reports rows still owed");

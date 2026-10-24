@@ -55,9 +55,12 @@ const HeadlessNativeCodeView: React.FC<{
     </NativeCodeViewContext.Provider>
   );
 };
+type NodeViewHandle = NodeHandle | CodeNodeHandle | TableNodeHandle;
 const NodeViewRenderContext = React.createContext<{
   readonly store: RendererStore;
   readonly registry: ComponentRegistry;
+  readonly blockId: string;
+  readonly handle: NodeViewHandle;
 } | null>(null);
 type NodePresentationRenderer = (nativeView: React.ReactNode) => React.ReactNode;
 export function renderNodePresentation(
@@ -79,7 +82,7 @@ export function renderNodePresentation(
     if (!handle) return null;
     const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: TableNodeHandle }>;
     return (
-      <NodeViewRenderContext.Provider value={{ store, registry }}>
+      <NodeViewRenderContext.Provider value={{ store, registry, blockId: id, handle }}>
         <HeadlessView handle={handle} />
       </NodeViewRenderContext.Provider>
     );
@@ -89,7 +92,7 @@ export function renderNodePresentation(
     if (!handle) return null;
     const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: NodeHandle }>;
     return (
-      <NodeViewRenderContext.Provider value={{ store, registry }}>
+      <NodeViewRenderContext.Provider value={{ store, registry, blockId: id, handle }}>
         <HeadlessView handle={handle} />
       </NodeViewRenderContext.Provider>
     );
@@ -347,7 +350,11 @@ export const BlockNodeRenderer: React.FC<{
     if (HeadlessCodeView) {
       const handle = store.getCodeNodeHandle(blockId);
       if (!handle) return null;
-      const nativeView = <HeadlessNativeCodeView blockId={blockId} handle={handle} view={HeadlessCodeView} />;
+      const nativeView = (
+        <NodeViewRenderContext.Provider value={{ store, registry, blockId, handle }}>
+          <HeadlessNativeCodeView blockId={blockId} handle={handle} view={HeadlessCodeView} />
+        </NodeViewRenderContext.Provider>
+      );
       if (!registry.hasElementFilters()) return nativeView;
       return registry.filterElement(
         { tagName: "pre", properties: {}, blockType: "code" },
@@ -438,18 +445,25 @@ export const BlockNodeRenderer: React.FC<{
     ? <>{element}</>
     : <>{renderNodePresentation(block, element, store, registry, undefined, bypassPresentationFor === blockId)}</>;
 };
-export const NativeNodeView: React.FC<{ readonly handle: NodeHandle }> = ({ handle }) => {
+export const NativeNodeView: React.FC<{ readonly handle: NodeViewHandle }> = ({ handle }) => {
   const context = React.useContext(NodeViewRenderContext);
   if (!context) {
     throw new Error("NativeNodeView must be rendered inside a headless node presentation view");
   }
-  if (context.store.getNodeHandle(handle.id) !== handle) return null;
+  const blockId = "id" in handle ? handle.id : context.blockId;
+  if (!("id" in handle) && context.handle !== handle) return null;
+  const currentHandle = "id" in handle
+    ? context.store.getNodeHandle(blockId)
+    : "readLines" in handle
+      ? context.store.getCodeNodeHandle(blockId)
+      : context.store.getTableNodeHandle(blockId);
+  if (currentHandle !== handle) return null;
   return (
     <BlockNodeRenderer
       store={context.store}
-      blockId={handle.id}
+      blockId={blockId}
       registry={context.registry}
-      bypassPresentationFor={handle.id}
+      bypassPresentationFor={blockId}
     />
   );
 };
