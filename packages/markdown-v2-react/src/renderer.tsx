@@ -1066,6 +1066,7 @@ export class MarkdownRenderer implements Renderer {
             this.workerAdmissionSourceOffset = acceptedInitialization.sourceAdmissionOffset ?? 0;
             this.workerAdmittedSourceUnits = this.workerAdmissionSourceOffset;
             this.workerAdmissionBaselineSourceUnits = 0;
+            this.settleCapacityWaiters();
           } else {
             if (this.workerAdmissionGeneration !== null) {
               this.resetSourceAdmission();

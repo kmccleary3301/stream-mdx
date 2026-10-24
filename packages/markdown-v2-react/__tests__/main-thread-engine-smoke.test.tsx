@@ -214,6 +214,38 @@ function createRecordingWorker(initDelayMs: number): RecordingWorker {
   }) as Worker["postMessage"];
   return { worker, commands, isReady: () => isReady };
 }
+interface GatedRecordingWorker extends RecordingWorker {
+  releaseInitialization(): void;
+}
+
+function createGatedRecordingWorker(): GatedRecordingWorker {
+  const worker = createInlineEngineWorker();
+  const commands: WorkerIn[] = [];
+  const originalPostMessage = worker.postMessage.bind(worker);
+  let initialized = false;
+  let pendingInitialization: unknown = null;
+  worker.addEventListener("message", (event) => {
+    if ((event as MessageEvent<WorkerOut>).data.type === "INITIALIZED") initialized = true;
+  });
+  worker.postMessage = ((message: unknown) => {
+    const command = message as WorkerIn;
+    commands.push(command);
+    if (command.type === "INIT") pendingInitialization = message;
+    else originalPostMessage(message);
+  }) as Worker["postMessage"];
+  return {
+    worker,
+    commands,
+    isReady: () => initialized,
+    releaseInitialization() {
+      assert.notEqual(pendingInitialization, null, "the takeover INIT is waiting at the gate");
+      const message = pendingInitialization;
+      pendingInitialization = null;
+      originalPostMessage(message);
+    },
+  };
+}
+
 
 function sourceFromWorkerCommands(commands: readonly WorkerIn[]): string {
   let source = "";
@@ -369,6 +401,71 @@ async function runAutoWorkerTakeover(): Promise<void> {
 }
 
 await runAutoWorkerTakeover();
+async function runAutoWorkerTakeoverCapacityWaiter(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const root = createRoot(container);
+  const handle = createRef<StreamingMarkdownHandle>();
+  const previousWorker = Object.getOwnPropertyDescriptor(globalThis, "Worker");
+  Object.defineProperty(globalThis, "Worker", {
+    configurable: true,
+    writable: true,
+    value: class {},
+  });
+  let recorder: GatedRecordingWorker | null = null;
+  let pulledChunks = 0;
+  let finished = false;
+  const errors: Error[] = [];
+  async function* input(): AsyncGenerator<string> {
+    pulledChunks++;
+    yield "a".repeat(65_536);
+    pulledChunks++;
+    yield "b".repeat(65_536);
+    pulledChunks++;
+    yield "c".repeat(65_536);
+    finished = true;
+  }
+  try {
+    root.render(
+      <StreamingMarkdown
+        ref={handle}
+        engine="auto"
+        worker={() => {
+          recorder = createGatedRecordingWorker();
+          return recorder.worker;
+        }}
+        stream={input()}
+        onError={(error) => errors.push(error)}
+      />,
+    );
+    await waitForCondition(
+      () => recorder?.commands.some((command) => command.type === "INIT") === true && pulledChunks === 2,
+      "the first two 65,536-unit chunks did not reach the gated takeover",
+    );
+    assert.equal(recorder!.isReady(), false, "takeover initialization remains gated");
+    assert.equal(pulledChunks, 2, "the iterator waits for capacity before pulling its third chunk");
+
+    recorder!.releaseInitialization();
+    await waitForCondition(
+      () => pulledChunks === 3 && finished,
+      "takeover initialization did not release the capacity waiter to consume another chunk",
+    );
+    const result = await handle.current!.finalize();
+    assert.equal(result.acceptedSourceUnits, 196_608);
+    assert.equal(result.committedSourceUnits, 196_608);
+    assert.deepEqual(errors, []);
+  } finally {
+    root.unmount();
+    container.remove();
+    if (previousWorker) Object.defineProperty(globalThis, "Worker", previousWorker);
+    else Reflect.deleteProperty(globalThis, "Worker");
+    window.close();
+  }
+}
+
+await runAutoWorkerTakeoverCapacityWaiter();
+
 
 
 
