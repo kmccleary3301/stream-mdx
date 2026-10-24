@@ -1230,6 +1230,31 @@ export class ComponentRegistry {
       viewProps: { tagName: tagName.toLowerCase(), properties: viewProperties, children, metadata, actions },
     });
   }
+  renderComponentPresentation(
+    name: string,
+    nativeView: React.ReactElement,
+    children: React.ReactNode,
+    key: React.Key,
+    status: "open" | "closed" | "incomplete",
+    rawSource?: string,
+    ownerId?: string,
+  ): React.ReactNode {
+    const keyName = `component:${name}` as const;
+    const presentation = this.getNodePresentation(keyName);
+    if (!presentation || !("wrapper" in presentation) || !presentation.wrapper) return nativeView;
+
+    const source = rawSource ?? presentationText(children);
+    const metadata: NodeViewMetadata = Object.freeze({
+      id: `${ownerId ?? "component"}:${String(key)}`,
+      type: keyName,
+      isFinalized: status === "closed",
+    });
+    const actions: NodeViewActions = Object.freeze({
+      copy: () => copyToClipboard(source),
+      download: () => downloadFile(source, `${name}.txt`),
+    });
+    return React.createElement(presentation.wrapper, { key, children: nativeView, metadata, actions });
+  }
 
 
 
@@ -1337,6 +1362,16 @@ export class ComponentRegistry {
           key,
           renderContext?.nodeKeyPrefix ?? String(paragraph?.id ?? parentTagName ?? "html"),
           renderContext?.isFinalized ?? paragraph?.isFinalized ?? false,
+        ),
+      renderComponentPresentation: (name, nativeView, children, key, status, rawSource) =>
+        this.renderComponentPresentation(
+          name,
+          nativeView,
+          children,
+          key,
+          status,
+          rawSource,
+          renderContext?.nodeKeyPrefix ?? String(paragraph?.id ?? parentTagName ?? "html"),
         ),
       inlineComponents: this.inlineComponents,
       urlTransform: this.urlTransform,

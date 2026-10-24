@@ -82,6 +82,15 @@ export function renderHtmlInlineNode(
   );
 }
 
+export type RenderComponentPresentation = (
+  name: string,
+  nativeView: React.ReactElement,
+  children: React.ReactNode,
+  key: React.Key,
+  status: "open" | "closed" | "incomplete",
+  rawSource?: string,
+) => React.ReactNode;
+
 export function renderHtmlOwnershipTree(
   nodes: HtmlTreeNode[],
   elements: HtmlElements,
@@ -106,6 +115,7 @@ export function renderHtmlOwnershipTree(
     key: React.Key,
   ) => React.ReactNode,
   parentPath = "html",
+  renderComponentPresentation?: RenderComponentPresentation,
 ): React.ReactNode {
   return nodes.map((node, index) => {
     const nodeKey = `${parentPath}:${index}`;
@@ -134,6 +144,7 @@ export function renderHtmlOwnershipTree(
           contentComponents,
           renderPresentation,
           nodeKey,
+          renderComponentPresentation,
         ),
         status: node.status,
         diagnostic: node.diagnostic,
@@ -144,12 +155,23 @@ export function renderHtmlOwnershipTree(
       if (result.kind === "suppressed") {
         return null;
       }
-      return result.element;
+      return renderComponentPresentation
+        ? renderComponentPresentation(
+            node.name,
+            result.element,
+            React.isValidElement<{ readonly children?: React.ReactNode }>(result.element)
+              ? result.element.props.children
+              : undefined,
+            nodeKey,
+            node.status,
+            node.rawSource,
+          )
+        : result.element;
     }
     const tag = node.tagName.toLowerCase();
     const props = mapAttributesToProps(node.attributes, urlTransform);
     props.key = nodeKey;
-    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform, filterElement, tag, contentComponents, renderPresentation, nodeKey);
+    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform, filterElement, tag, contentComponents, renderPresentation, nodeKey, renderComponentPresentation);
     if (node.paragraphRoot && renderParagraph) {
       const paragraph = filterElement
         ? filterElement(

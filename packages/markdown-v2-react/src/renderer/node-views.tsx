@@ -998,6 +998,8 @@ const MixedSegmentView: React.FC<{
             registry.renderInlinePresentation(inlineNode, nativeView, key, inlineContext, children),
           renderHtmlPresentation: (tagName, properties, nativeView, children, key) =>
             registry.renderHtmlPresentation(tagName, properties, nativeView, children, key, node.id, inlineContext?.isFinalized ?? isFinalized),
+          renderComponentPresentation: (name, nativeView, children, key, status, rawSource) =>
+            registry.renderComponentPresentation(name, nativeView, children, key, status, rawSource, node.id),
         })}</>;
       }
       const raw = typeof node.props?.raw === "string" ? (node.props.raw as string) : undefined;

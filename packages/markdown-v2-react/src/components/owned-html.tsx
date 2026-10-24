@@ -1,6 +1,6 @@
 import React from "react";
 import { defaultUrlTransform, type Block, type HtmlTreeNode, type InlineNode, type UrlTransform } from "@stream-mdx/core";
-import { renderHtmlOwnershipTree } from "../utils/inline-html";
+import { renderHtmlOwnershipTree, type RenderComponentPresentation } from "../utils/inline-html";
 import type { ElementFilterContext, ElementFilterDescriptor, HtmlElements, InlineComponents } from "../types";
 import type { ContentComponentsMap } from "./content-components";
 
@@ -33,6 +33,7 @@ export type OwnedHtmlRenderContext = {
     children: React.ReactNode,
     key: React.Key,
   ) => React.ReactNode;
+  renderComponentPresentation?: RenderComponentPresentation;
 };
 
 export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRenderContext): React.ReactNode {
@@ -96,5 +97,7 @@ export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRend
     context.parentTagName,
     context.contentComponents,
     context.renderHtmlPresentation,
+    undefined,
+    context.renderComponentPresentation,
   );
 }
