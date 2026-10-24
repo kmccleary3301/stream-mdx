@@ -1171,10 +1171,11 @@ export function buildRegisteredContainerTree(
       const nestedClosing = delimiters.find(
         (event) => event.kind === "close" && event.opening === nestedOpening.opening,
       );
-      if (!nestedClosing || nestedClosing.to > closeStart) continue;
+      if (nestedClosing && nestedClosing.to > closeStart) continue;
       children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, nestedCursor, nestedOpening.from, options));
+      const nestedEnd = nestedClosing?.to ?? closeStart;
       const nestedTree = buildRegisteredContainerTree(
-        rawSource.slice(nestedOpening.from, nestedClosing.to),
+        rawSource.slice(nestedOpening.from, nestedEnd),
         contentComponents,
         extensions,
         {
@@ -1186,7 +1187,8 @@ export function buildRegisteredContainerTree(
         },
       );
       if (nestedTree) children.push(...nestedTree);
-      nestedCursor = nestedClosing.to;
+      nestedCursor = nestedEnd;
+      if (!nestedClosing) break;
     }
     children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, nestedCursor, closeStart, options));
   }

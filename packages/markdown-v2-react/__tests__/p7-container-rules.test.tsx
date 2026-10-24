@@ -115,6 +115,54 @@ async function nestedContainersCloseInnermostFirst(): Promise<void> {
     assert.equal(inner.textContent, "Inner body.");
   });
 }
+async function differentLengthNestedContainersCloseIndependently(): Promise<void> {
+  await withMarkdown(async (container, handle) => {
+    await appendAndIdle(
+      handle,
+      [
+        '::::outer {"title":"outer"}',
+        "",
+        ':::inner {"title":"inner"}',
+        "Inner body.",
+        ":::",
+        "",
+        "Outer after.",
+        "::::",
+      ].join("\n"),
+    );
+    await waitFor(
+      () => container.querySelector('aside[data-container-title="outer"]')?.getAttribute("data-component-status") === "closed",
+      "the four-colon outer container closes",
+    );
+    const outer = container.querySelector<HTMLElement>('aside[data-container-title="outer"]');
+    const inner = container.querySelector<HTMLElement>('aside[data-container-title="inner"]');
+    assert.ok(outer, "the four-colon outer container renders");
+    assert.ok(inner, "the nested three-colon container renders");
+    assert.equal(outer.getAttribute("data-component-status"), "closed");
+    assert.equal(inner.getAttribute("data-component-status"), "closed");
+    assert.equal(outer.contains(inner), true, "the inner container remains nested in its outer owner");
+    assert.equal(inner.textContent, "Inner body.");
+    assert.match(outer.textContent ?? "", /Outer after\./);
+  });
+}
+
+async function longerCloserDoesNotCloseShorterContainer(): Promise<void> {
+  await withMarkdown(async (container, handle) => {
+    await appendAndIdle(
+      handle,
+      [':::outer {"title":"outer"}', ':::inner {"title":"inner"}', "Inner body.", "::::"].join("\n"),
+    );
+    await waitFor(
+      () => container.querySelector('aside[data-container-title="inner"]') !== null,
+      "the nested open container renders",
+    );
+    const inner = container.querySelector<HTMLElement>('aside[data-container-title="inner"]');
+    assert.ok(inner, "the nested container renders");
+    assert.equal(inner.getAttribute("data-component-status"), "open");
+    assert.ok(inner.textContent?.includes("::::"), "a four-colon closer remains literal inside a three-colon container");
+  });
+}
+
 
 async function unmatchedCloserStaysLiteral(): Promise<void> {
   await withMarkdown(async (container, handle) => {
@@ -221,4 +269,6 @@ await containerHeaderNeedsParagraphSeparation();
 await finalizingOpenContainerKeepsChildrenAndDiagnostic();
 await partialOpeningLineWaitsForNewlineWithoutCommittedLiteral();
 await nestedContainersCloseInnermostFirst();
+await differentLengthNestedContainersCloseIndependently();
+await longerCloserDoesNotCloseShorterContainer();
 console.log("p7 container rules test passed");
