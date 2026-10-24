@@ -121,7 +121,7 @@ export function renderNodePresentation(
     if (!handle) return null;
     const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: CodeNodeHandle }>;
     return (
-      <NodeViewRenderContext.Provider value={{ store, registry }}>
+      <NodeViewRenderContext.Provider value={{ store, registry, blockId: id, handle }}>
         <HeadlessView handle={handle} />
       </NodeViewRenderContext.Provider>
     );
