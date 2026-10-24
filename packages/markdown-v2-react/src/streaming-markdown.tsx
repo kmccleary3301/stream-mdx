@@ -406,6 +406,8 @@ function StreamingMarkdownComponent(
   }
 
   const renderer = rendererRef.current.renderer;
+  const sessionDisposedRef = useRef(false);
+  const sessionHandleTokenRef = useRef<object | null>(null);
   const trustedRevisionFeed = getTrustedRevisionFeed(renderer);
   const highlightRequester = useCallback(
     (request: CodeHighlightRequest) => {
@@ -652,11 +654,15 @@ function StreamingMarkdownComponent(
     pending.resolveFinalization = undefined;
     pending.rejectFinalization = undefined;
   }, [rejectPendingCapacityWaiters]);
-  useEffect(() => () => {
-    const pending = pendingCommandsRef.current;
-    if (!pending) return;
-    pendingCommandsRef.current = null;
-    invalidatePendingCommands(pending, new StreamSessionError("disposed", "The source session was unmounted"));
+  useEffect(() => {
+    sessionDisposedRef.current = false;
+    return () => {
+      sessionDisposedRef.current = true;
+      const pending = pendingCommandsRef.current;
+      if (!pending) return;
+      pendingCommandsRef.current = null;
+      invalidatePendingCommands(pending, new StreamSessionError("disposed", "The source session was unmounted"));
+    };
   }, [invalidatePendingCommands]);
   const resetPendingSourceSession = useCallback(() => {
     const pending = pendingCommandsRef.current;
@@ -883,14 +889,28 @@ function StreamingMarkdownComponent(
   }, [rendererKey, workerReady, initializationError, flushPendingCommands, onErrorRef, invalidatePendingCommands]);
   useImperativeHandle(
     ref,
-    () => ({
+    () => {
+      const handleToken = {};
+      sessionHandleTokenRef.current = handleToken;
+      const assertSessionActive = (): void => {
+        if (sessionDisposedRef.current) {
+          throw new StreamSessionError("disposed", "The source session was unmounted");
+        }
+        if (sessionHandleTokenRef.current !== handleToken) {
+          throw new StreamSessionError("stale-generation", "The source session belongs to an ended generation");
+        }
+      };
+      return {
       pause() {
+        assertSessionActive();
         renderer.pause();
       },
       resume() {
+        assertSessionActive();
         renderer.resume();
       },
       restart() {
+        assertSessionActive();
         workerReadyRef.current = false;
         inputReadyRef.current = false;
         const pending = pendingCommandsRef.current;
@@ -906,6 +926,11 @@ function StreamingMarkdownComponent(
         setSession(sessionRef.current);
       },
       finalize(): Promise<FinalizeResult> {
+        try {
+          assertSessionActive();
+        } catch (error) {
+          return Promise.reject(error);
+        }
         const promise = queuePendingFinalize();
         if (workerReadyRef.current) flushPendingCommands();
         imperativeActivityRef.current = false;
@@ -913,6 +938,7 @@ function StreamingMarkdownComponent(
         return promise;
       },
       append(text: string) {
+        assertSessionActive();
         const pending = pendingCommandsRef.current;
         const result = workerReadyRef.current && pending === null
           ? renderer.append(text)
@@ -925,21 +951,35 @@ function StreamingMarkdownComponent(
         return result;
       },
       waitForCapacity(options: WaitForCapacityOptions) {
+        try {
+          assertSessionActive();
+        } catch (error) {
+          return Promise.reject(error);
+        }
         return waitForCapacity(options);
       },
       setCredits(value: number) {
+        assertSessionActive();
         renderer.setCredits(value);
       },
       flushPending() {
+        assertSessionActive();
         return renderer.flushPendingPatches();
       },
       waitForIdle() {
+        try {
+          assertSessionActive();
+        } catch (error) {
+          return Promise.reject(error);
+        }
         return renderer.waitForPatchQueueIdle();
       },
       onFlush(listener: (result: PatchFlushResult) => void) {
+        assertSessionActive();
         return renderer.addFlushListener(listener);
       },
       getState() {
+        assertSessionActive();
         const currentBlocks = store.getBlocks();
         return {
           blocks: currentBlocks,
@@ -953,12 +993,14 @@ function StreamingMarkdownComponent(
         };
       },
       getPatchHistory(limit) {
+        assertSessionActive();
         if (limit === undefined || limit >= patchHistoryRef.current.length) {
           return [...patchHistoryRef.current];
         }
         return patchHistoryRef.current.slice(patchHistoryRef.current.length - limit);
       },
-    }),
+      };
+    },
     [renderer, rendererKey, store, flushPendingCommands, queuePendingAppend, queuePendingFinalize, waitForCapacity, invalidatePendingCommands, workerReadyRef, inputReadyRef, activeIteratorRef, imperativeActivityRef, setStreamStatus, sessionRef, setSession],
   );
 
