@@ -89,7 +89,7 @@ export const targets = {
       "__tests__/native-table-handle-presentation.test.tsx",
       "__tests__/native-code-highlight-lifecycle.test.ts",
       "__tests__/node-handle-hooks.test.tsx",
-      "__tests__/mixed-paragraph-custom-inlines.test.tsx",
+      "__tests__/lifecycle-defect-fixes.test.tsx",
     ],
   },
 };
