@@ -20,50 +20,116 @@ export type StreamMdxSnapshotStore = {
   applyEvents(events: StreamMdxEvent[]): void;
 };
 
-const snapshotFrom = (input: Block[] | NodeSnapshot): DocumentSnapshot =>
-  Array.isArray(input) ? createInitialSnapshot(input) : createInitialSnapshot(input);
+function nativeGenerationFrom(input: Block[] | NodeSnapshot): number | null {
+  return !Array.isArray(input) && input.inputSource ? input.inputSource.generation : null;
+}
+
+function clearGenerationMetadata(meta: StreamMdxStoreMeta): void {
+  delete meta.lastTx;
+  delete meta.metrics;
+  delete meta.error;
+  delete meta.done;
+}
 
 export function createSnapshotStore(initial: Block[] | NodeSnapshot = []): StreamMdxSnapshotStore {
-  let snapshot = snapshotFrom(initial);
+  let snapshot = Array.isArray(initial) ? createInitialSnapshot(initial) : createInitialSnapshot(initial);
+  let sourceGeneration = nativeGenerationFrom(initial);
+  let generationFloor = sourceGeneration;
+  let retiredNativeGeneration: number | null = null;
+  let streamId: string | null = null;
   const meta: StreamMdxStoreMeta = {};
 
+  const isAdmissibleNativeGeneration = (generation: number): boolean =>
+    (generationFloor === null || generation >= generationFloor)
+    && (retiredNativeGeneration === null || generation > retiredNativeGeneration);
+
+  const replaceSnapshot = (
+    input: Block[] | NodeSnapshot,
+    nextGeneration = nativeGenerationFrom(input),
+  ): boolean => {
+    if (nextGeneration !== null && !isAdmissibleNativeGeneration(nextGeneration)) return false;
+    const nextSnapshot = Array.isArray(input) ? createInitialSnapshot(input) : createInitialSnapshot(input);
+    if (nextGeneration === null) {
+      if (sourceGeneration !== null &&
+        (retiredNativeGeneration === null || sourceGeneration > retiredNativeGeneration)) {
+        retiredNativeGeneration = sourceGeneration;
+      }
+      sourceGeneration = null;
+      clearGenerationMetadata(meta);
+    } else {
+      if (sourceGeneration !== nextGeneration) clearGenerationMetadata(meta);
+      sourceGeneration = nextGeneration;
+      if (generationFloor === null || nextGeneration > generationFloor) generationFloor = nextGeneration;
+    }
+    snapshot = nextSnapshot;
+    return true;
+  };
+
   const setSnapshot = (input: Block[] | NodeSnapshot): void => {
-    snapshot = snapshotFrom(input);
+    replaceSnapshot(input);
   };
 
   const applyPatches = (patches: Patch[]): void => {
     applyPatchBatch(snapshot, patches);
+  };
+  const isAdmissibleEvent = (event: StreamMdxEvent): boolean => {
+    if (!Number.isSafeInteger(event.generation) || event.generation < 0) {
+      throw new Error("Incompatible stream-mdx event: native generation is missing or invalid");
+    }
+    if (typeof event.streamId !== "string") {
+      throw new Error("Incompatible stream-mdx event: stream ID is missing or invalid");
+    }
+    return (streamId === null || event.streamId === streamId)
+      && isAdmissibleNativeGeneration(event.generation);
+  };
+
+  const acceptStream = (event: StreamMdxEvent): void => {
+    if (streamId === null) streamId = event.streamId;
   };
 
   const applyEvent = (event: StreamMdxEvent): void => {
     if (event.protocol !== STREAM_MDX_PROTOCOL_ID || event.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
       throw new Error(`Unsupported stream-mdx wire identity: ${event.protocol}/${event.schemaVersion}`);
     }
+    if (!isAdmissibleEvent(event)) return;
     switch (event.event) {
       case "init":
+        if (generationFloor === null || event.generation > generationFloor) {
+          clearGenerationMetadata(meta);
+          generationFloor = event.generation;
+        }
+        acceptStream(event);
         meta.init = event;
         break;
       case "snapshot": {
-        const inputSource = event.snapshot.inputSource;
-        if (
-          !Number.isSafeInteger(inputSource?.generation) ||
-          (inputSource?.generation ?? -1) < 0 ||
-          typeof inputSource?.raw !== "string"
-        ) throw new Error("Incompatible stream-mdx snapshot: canonical input baseline is missing or invalid");
-        setSnapshot(event.snapshot);
+        const nativeGeneration = nativeGenerationFrom(event.snapshot);
+        if (nativeGeneration === null) {
+          throw new Error("Incompatible stream-mdx snapshot: canonical input baseline is missing or invalid");
+        }
+        if (nativeGeneration !== event.generation) return;
+        if (!replaceSnapshot(event.snapshot, nativeGeneration)) return;
+        acceptStream(event);
         break;
       }
       case "patch":
+        if (event.generation !== sourceGeneration) return;
+        acceptStream(event);
         applyPatches(event.patches);
         meta.lastTx = event.tx;
         break;
       case "metrics":
+        if (event.generation !== sourceGeneration) return;
+        acceptStream(event);
         meta.metrics = event.metrics;
         break;
       case "error":
+        if (event.generation !== sourceGeneration) return;
+        acceptStream(event);
         meta.error = event;
         break;
       case "done":
+        if (event.generation !== sourceGeneration) return;
+        acceptStream(event);
         meta.done = event;
         break;
     }

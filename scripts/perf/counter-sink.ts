@@ -56,6 +56,7 @@ export interface StageCounters {
   table_rows_rendered: number;
   table_cells_rendered: number;
   blocks_reprepared: number;
+  document_records_visited: number;
 }
 
 export interface SessionCountersSnapshot {
@@ -72,6 +73,7 @@ export interface SessionCountersSnapshot {
   patches_emitted: number;
   store_records_touched: number;
   blocks_reprepared: number;
+  document_records_visited: number;
   stages: Record<CounterStage, StageCounters>;
   invalidations: InvalidationRecord[];
   processed_frontier: number;
@@ -96,6 +98,7 @@ function createEmptyStageCounters(): StageCounters {
     table_rows_rendered: 0,
     table_cells_rendered: 0,
     blocks_reprepared: 0,
+    document_records_visited: 0,
   };
 }
 
@@ -123,6 +126,7 @@ export class SessionCounterSink {
   patches_emitted = 0;
   store_records_touched = 0;
   blocks_reprepared = 0;
+  document_records_visited = 0;
   readonly invalidations: InvalidationRecord[] = [];
   readonly publications: PublicationRecord[] = [];
   readonly stages: Record<CounterStage, StageCounters> = createEmptyStages();
@@ -223,6 +227,10 @@ export class SessionCounterSink {
       s.prefix_comparisons += count;
     }
   }
+  recordDocumentRecordsVisited(count: number, stage: CounterStage = "engine"): void {
+    this.document_records_visited += count;
+    this.stages[stage].document_records_visited += count;
+  }
 
   recordPatchesEmitted(count: number, stage: CounterStage = "patch"): void {
     this.patches_emitted += count;
@@ -298,6 +306,7 @@ export class SessionCounterSink {
       patches_emitted: this.patches_emitted,
       store_records_touched: this.store_records_touched,
       blocks_reprepared: this.blocks_reprepared,
+      document_records_visited: this.document_records_visited,
       stages: {
         engine: { ...this.stages.engine },
         snapshot: { ...this.stages.snapshot },
@@ -326,6 +335,7 @@ export class SessionCounterSink {
     this.patches_emitted = 0;
     this.store_records_touched = 0;
     this.blocks_reprepared = 0;
+    this.document_records_visited = 0;
     this.processed_frontier = 0;
     this.last_tx = 0;
     this.invalidations.length = 0;
@@ -347,6 +357,7 @@ export class SessionCounterSink {
       s.table_rows_rendered = 0;
       s.table_cells_rendered = 0;
       s.blocks_reprepared = 0;
+      s.document_records_visited = 0;
     }
   }
 }

@@ -60,3 +60,6 @@ playwright/.cache/
 
 # Private scratch docs
 docs_tmp/
+
+# Stryker mutation sandboxes (npm run mutation)
+.stryker-*/

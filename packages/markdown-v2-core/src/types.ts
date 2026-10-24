@@ -4,6 +4,7 @@ import type { CodeLineDecorationUpdate, CodeLineRecord } from "./code-records";
 import type { TableBlockSnapshot, TableBlockSourceMetadata, TableHeaderRecord, TableRowRecord } from "./table-records";
 import type { ParagraphBlockSnapshot, ParagraphBlockSourceMetadata, ParagraphSpanRecord, ParagraphSpanUpdate } from "./paragraph-records";
 import type { TableRowIndexUpdate } from "./table-row-index";
+import type { CodeDiffStatus } from "./node-handles";
 
 /** Matching worker, renderer and NDJSON schema identity; protocol re-exports this value. */
 export const STREAM_MDX_SCHEMA_VERSION = "2.0";
@@ -173,10 +174,22 @@ export interface SyntaxRuleSpec {
   name: string;
   pattern: { source: string; flags?: string };
   trigger?: string /* first char(s) for fast dispatch */;
+  /** Maximum UTF-16 code units passed to this rule's RegExp; omitted means unbounded. */
+  maxCandidateUnits?: number;
   before?: string /* Lezer inline parser to precede, e.g. 'Emphasis' */;
   attrs?: Record<string, number | string> /* capture group index or literal */;
   content?: number /* capture group parsed as inline children */;
   anticipation?: { open: string; close: string };
+}
+export interface ContainerExtensionSpec {
+  readonly name: string;
+  readonly component: string;
+}
+
+export interface SyntaxExtensionDescriptor {
+  readonly contractVersion: 1;
+  readonly inline?: readonly SyntaxRuleSpec[];
+  readonly containers?: readonly ContainerExtensionSpec[];
 }
 
 export interface HtmlOptions {
@@ -240,6 +253,7 @@ export type WorkerIn =
       schemaVersion: typeof STREAM_MDX_SCHEMA_VERSION;
       initialContent?: string;
       prewarmLangs?: string[];
+      bootstrap?: boolean;
       themes?: CodeHighlightThemes;
       docPlugins?: {
         footnotes?: boolean;
@@ -263,7 +277,7 @@ export type WorkerIn =
       };
       contentPolicy?: ContentPolicy;
       contentComponents?: readonly RestrictedComponentDescriptor[];
-      syntax?: SyntaxRuleSpec[];
+      syntax?: SyntaxExtensionDescriptor;
       html?: HtmlOptions;
     }
   | { type: "APPEND"; text: string }
@@ -283,8 +297,9 @@ export interface WorkerErrorPayload {
 
 export type WorkerOut =
   | { type: "INITIALIZED"; schemaVersion: typeof STREAM_MDX_SCHEMA_VERSION; generation: number; snapshot: NodeSnapshot }
-  | { type: "FINALIZED"; generation: number }
-  | { type: "PATCH"; tx: number; patches: Patch[]; metrics?: PatchMetrics }
+  | { type: "SOURCE_ADMITTED"; generation: number; admittedSourceUnits: number }
+  | { type: "FINALIZED"; generation: number; admittedSourceUnits: number }
+  | { type: "PATCH"; generation: number; tx: number; patches: Patch[]; metrics?: PatchMetrics }
   | { type: "RESET"; reason: string }
   | { type: "METRICS"; metrics: PerformanceMetrics }
   | { type: "DUMP_BLOCKS"; blocks: Block[]; tocHeadings?: TocHeading[] }
@@ -409,6 +424,7 @@ export interface CodeBlockSourceMetadata {
   readonly completeLineCount: number;
   readonly lineCount: number;
   readonly sourceRange: { readonly from: number; readonly to: number };
+  readonly diffStatus?: CodeDiffStatus;
 }
 
 /** Cold initial/replacement transport; routine appends carry only their changed tail. */

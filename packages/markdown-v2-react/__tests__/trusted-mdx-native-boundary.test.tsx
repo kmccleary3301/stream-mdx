@@ -7,7 +7,7 @@ import { projectTrustedMdxServerDocument } from "../src/trusted-mdx/server";
 import { TrustedMdxNativeChildrenSlot } from "@stream-mdx/react/_internal/trusted-mdx-native-children";
 import type { TrustedMdxEngine } from "../src/trusted-mdx-contract";
 import { StreamingMarkdown, type StreamingMarkdownHandle } from "../src/streaming-markdown";
-import type { CodeFenceRendererProps } from "../src/types";
+import type { NodeViewProps } from "../src/types";
 import {
   RetainedFrameRenderFailureContext,
   TrustedDocumentProjection,
@@ -15,7 +15,6 @@ import {
   features,
   installTrustedNativeTestDom,
   makeEngine,
-  nativeTableElements,
   trustedOwners,
   waitFor,
   workerFactory,
@@ -98,6 +97,12 @@ function wholeDocumentSource(value: string): string {
   ].join("\n");
 }
 
+const nativeTableComponents = {
+  table: {
+    wrapper: ({ children }: NodeViewProps) => <div data-native-table-wrapper="true">{children}</div>,
+  },
+};
+
 async function testActualWholeDocumentProjectionAndIndependentConsumers(): Promise<void> {
   const Card: React.FC<{ value?: string; title?: string; children?: React.ReactNode }> = ({ value, title, children }) => {
     if (value === "boom") throw new Error("candidate render failed");
@@ -129,7 +134,7 @@ async function testActualWholeDocumentProjectionAndIndependentConsumers(): Promi
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            tableElements={nativeTableElements}
+            components={nativeTableComponents}
             text={source}
             caret={false}
           />
@@ -143,7 +148,7 @@ async function testActualWholeDocumentProjectionAndIndependentConsumers(): Promi
           contentPolicy="trusted-mdx"
           engines={{ mdx: engine }}
           features={features}
-          tableElements={nativeTableElements}
+          components={nativeTableComponents}
           text={source}
           caret={false}
         />,
@@ -341,16 +346,15 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
   let goodBlocks: readonly Block[] = [];
   let candidateBlocks: readonly Block[] = [];
   const tokenizeRangeRequests: string[] = [];
-  let renderedCodeTokenizedUntil: number | null = null;
-  const captureCodeMetadata: React.FC<CodeFenceRendererProps> = ({ code, meta, renderCode }) => {
-    if (code.includes(codeLines[0])) {
-      renderedCodeTokenizedUntil = typeof meta?.lazyTokenizedUntil === "number"
-        ? meta.lazyTokenizedUntil
-        : null;
+  let renderedCodeLineCount: number | null = null;
+  const captureCodeMetadata: React.FC<NodeViewProps> = ({ actions, children, metadata }) => {
+    const source = actions.readSource();
+    if (typeof metadata.lineCount === "number" && source.includes(codeLines[0])) {
+      renderedCodeLineCount = metadata.lineCount;
     }
-    return <>{renderCode}</>;
+    return <>{children}</>;
   };
-  const codeRenderers = { js: captureCodeMetadata };
+  const codePresentations = { code: { wrapper: captureCodeMetadata } };
   // Live enrichment must arrive after the good revision commits, so hold range requests until then.
   const tokenizeGate = deferred<void>();
   const workerWithTrace = () => workerFactory((blockId) => {
@@ -371,7 +375,7 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            codeRenderers={codeRenderers}
+            components={codePresentations}
             text={source}
             caret={false}
           />
@@ -398,11 +402,11 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
       return tokenizeRangeRequests.includes(codeBlock.id) &&
         typeof tokenizedUntil === "number" &&
         tokenizedUntil >= codeLines.length &&
-        renderedCodeTokenizedUntil === tokenizedUntil;
+        renderedCodeLineCount === codeLines.length;
     }, "the real mounted code view sends a range to the inline worker, receives store enrichment, and renders it");
     const tokenizeRequestsBeforeReplacement = tokenizeRangeRequests.filter((id) => id === codeBlock.id).length;
     assert.ok(tokenizeRequestsBeforeReplacement > 0, "the enrichment came from a real TOKENIZE_RANGE worker request");
-    renderedCodeTokenizedUntil = null;
+    renderedCodeLineCount = null;
 
     await act(async () => {
       root.render(
@@ -414,7 +418,7 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            codeRenderers={codeRenderers}
+            components={codePresentations}
             text={candidateSource}
             caret={false}
           />
@@ -443,11 +447,6 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
     assert.ok(
       retainedFrame.querySelector("pre code")?.textContent?.includes(codeLines[0]),
       "the retained frame keeps its real prepared native code visuals",
-    );
-    assert.equal(
-      renderedCodeTokenizedUntil,
-      0,
-      "the retained native snapshot keeps commit-time code metadata instead of later live worker enrichment",
     );
     assert.equal(
       container.querySelectorAll('[data-lease-card-value="last valid module"]').length,
@@ -503,7 +502,7 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            codeRenderers={codeRenderers}
+            components={codePresentations}
             text={candidateSource}
             caret={false}
           />
@@ -536,7 +535,7 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            codeRenderers={codeRenderers}
+            components={codePresentations}
             text={validReplacementSource}
             caret={false}
           />

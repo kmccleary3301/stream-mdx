@@ -2,62 +2,52 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
-  CodeFenceRenderer,
+  AppendResult,
   MarkdownEngineMode,
+  NodeViewProps,
   StreamingMarkdownHandle,
   StreamingMarkdownProps,
 } from "@stream-mdx/react";
-import { StreamingMarkdown } from "@stream-mdx/react";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { SourceCapacityError, StreamingMarkdown } from "@stream-mdx/react";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 import "katex/dist/katex.min.css";
 
 import { BottomStickScrollArea } from "@/components/layout/bottom-stick-scroll-area";
 import { Button } from "@/components/ui/button";
-import { DocsCodeBlock } from "@/components/markdown/docs-code-block";
 import { cn } from "@/lib/utils";
 import { AlertCircle, Cpu, Pause, Play, RotateCcw, ShieldCheck, Terminal } from "lucide-react";
 
 const USER_PROMPT =
   "Can you provide an architectural walkthrough of the StreamMDX engine-v2 pipeline? Include Bayes' Theorem with concrete mathematical notation, the engine flow diagram, a custom code fence renderer example, and an HTML visualization example in an inert fenced code block.";
 
-/**
- * Custom code fence renderer example for language "metric".
- * Replaces standard code block with a structured metrics grid when valid JSON is provided.
- */
-const CustomMetricRenderer: CodeFenceRenderer = ({ code, language, isFinalized, renderCode }) => {
-  try {
-    const data = JSON.parse(code.trim());
-    if (typeof data !== "object" || data === null || Array.isArray(data)) {
-      return <>{renderCode}</>;
-    }
-    return (
-      <div className="my-4 rounded-xl border border-border/80 bg-muted/20 p-4 shadow-sm not-prose">
-        <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-3">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-              Custom Code Fence Renderer ({language})
-            </span>
-          </div>
-          <span className="rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
-            {isFinalized ? "Finalized AST" : "Streaming..."}
+const assistantMermaidEngine = createMermaidEngine();
+
+function CustomMetricRenderer({ metadata, children }: NodeViewProps) {
+  return (
+    <div className="my-4 rounded-xl border border-border/80 bg-muted/20 p-4 shadow-sm not-prose">
+      <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-3">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+            Custom Code Fence Renderer ({metadata.language ?? "metric"})
           </span>
         </div>
-        <div className="text-[10px] text-muted-foreground italic mb-2">Example data, not a benchmark</div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Object.entries(data).map(([key, val]) => (
-            <div key={key} className="rounded-lg border border-border/50 bg-background/60 p-3">
-              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{key}</div>
-              <div className="mt-1 font-mono text-base font-semibold text-foreground">{String(val)}</div>
-            </div>
-          ))}
-        </div>
+        <span className="rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
+          {metadata.isFinalized ? "Finalized" : "Streaming..."}
+        </span>
       </div>
-    );
-  } catch {
-    return <>{renderCode}</>;
+      <div className="text-[10px] text-muted-foreground italic mb-2">Metric source remains native code.</div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function AssistantCodePresentation(props: NodeViewProps) {
+  if (props.metadata.language?.toLowerCase() === "metric") {
+    return <CustomMetricRenderer {...props} />;
   }
-};
+  return props.children;
+}
 
 const STREAMING_INTERVAL_MS = 25;
 const CHUNK_SIZE_CHARS = 45;
@@ -93,6 +83,7 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
     streamIndexRef.current = 0;
 
     let cancelled = false;
+    const capacityAbort = new AbortController();
 
     const runStream = async () => {
       const startWait = Date.now();
@@ -101,15 +92,7 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
       // Wait until the handle is mounted and the engine/worker is ready
       while (!cancelled && currentGeneration === generationRef.current) {
         const handle = handleRef.current;
-        if (handle) {
-          try {
-            if (handle.getState().workerReady) {
-              break;
-            }
-          } catch {
-            // Worker is still instantiating
-          }
-        }
+        if (handle?.getState().workerReady) break;
 
         if (Date.now() - startWait > timeoutMs) {
           if (!cancelled && currentGeneration === generationRef.current) {
@@ -132,6 +115,15 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
       }
 
       setStatus(isPausedRef.current ? "paused" : "streaming");
+      const finalizeAndComplete = async (): Promise<void> => {
+        const result = await handle.finalize();
+        if (result.acceptedSourceUnits !== fullContent.length || result.committedSourceUnits !== fullContent.length) {
+          throw new Error(
+            `Host finalization covered ${result.committedSourceUnits}/${result.acceptedSourceUnits} source units; expected ${fullContent.length}.`,
+          );
+        }
+        if (!cancelled && currentGeneration === generationRef.current) setStatus("complete");
+      };
 
       // Incrementally stream chunks
       while (!cancelled && currentGeneration === generationRef.current) {
@@ -142,21 +134,38 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
 
         const currentIndex = streamIndexRef.current;
         if (currentIndex >= fullContent.length) {
-          handle.finalize();
-          setStatus("complete");
+          await finalizeAndComplete();
           break;
         }
 
         const nextIndex = Math.min(fullContent.length, currentIndex + CHUNK_SIZE_CHARS);
         const chunk = fullContent.slice(currentIndex, nextIndex);
-        handle.append(chunk);
+        let admission: AppendResult;
+        while (true) {
+          try {
+            admission = handle.append(chunk);
+            break;
+          } catch (error) {
+            if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+            await handle.waitForCapacity({ units: chunk.length, signal: capacityAbort.signal });
+            if (cancelled || currentGeneration !== generationRef.current) return;
+          }
+        }
+        if (admission.acceptedSourceUnits !== nextIndex) {
+          throw new Error(`Host admitted ${admission.acceptedSourceUnits} source units; expected ${nextIndex}.`);
+        }
 
         streamIndexRef.current = nextIndex;
         setStreamIndex(nextIndex);
 
+        if (admission.shouldPause && nextIndex < fullContent.length) {
+          const nextUnits = Math.min(CHUNK_SIZE_CHARS, fullContent.length - nextIndex);
+          await handle.waitForCapacity({ units: nextUnits, signal: capacityAbort.signal });
+          if (cancelled || currentGeneration !== generationRef.current) return;
+        }
+
         if (nextIndex >= fullContent.length) {
-          handle.finalize();
-          setStatus("complete");
+          await finalizeAndComplete();
           break;
         }
 
@@ -164,12 +173,18 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
       }
     };
 
-    void runStream();
+    void runStream().catch((error: unknown) => {
+      if (cancelled || currentGeneration !== generationRef.current) return;
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+      setStatus("error");
+    });
 
     return () => {
       cancelled = true;
+      capacityAbort.abort(new Error("Stream generation cancelled"));
     };
   }, [fullContent, engineMode, sessionKey]);
+
 
   const handleRestart = useCallback(() => {
     isPausedRef.current = false;
@@ -199,15 +214,7 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
 
   const components = useMemo(
     () => ({
-      code: DocsCodeBlock,
-    }),
-    [],
-  );
-
-  const codeRenderers = useMemo(
-    () => ({
-      mermaid: MermaidBlock,
-      metric: CustomMetricRenderer,
+      code: { wrapper: AssistantCodePresentation },
     }),
     [],
   );
@@ -275,10 +282,10 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
             </button>
             <button
               type="button"
-              onClick={() => handleEngineChange("main-thread")}
+              onClick={() => handleEngineChange("main")}
               className={cn(
                 "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                engineMode === "main-thread"
+                engineMode === "main"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
               )}
@@ -398,7 +405,7 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
                 worker={engineMode === "worker" ? "/workers/markdown-worker.js" : undefined}
                 className="markdown-v2-output"
                 components={components}
-                codeRenderers={codeRenderers}
+                engines={{ mermaid: assistantMermaidEngine }}
                 features={features}
                 linkSafety={linkSafety}
                 onError={(error) => {

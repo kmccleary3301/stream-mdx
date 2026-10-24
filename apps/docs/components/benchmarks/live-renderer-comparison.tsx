@@ -12,7 +12,7 @@ import { BottomStickScrollArea } from "@/components/layout/bottom-stick-scroll-a
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { StreamingMarkdown, type StreamingMarkdownHandle, type StreamingSchedulerOptions } from "@stream-mdx/react";
+import { SourceCapacityError, StreamingMarkdown, type AppendResult, type StreamingMarkdownHandle, type StreamingSchedulerOptions } from "@stream-mdx/react";
 import ReactMarkdown from "react-markdown";
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
@@ -377,7 +377,10 @@ export function LiveRendererComparison() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerDeadlineRef = useRef<number | null>(null);
   const engineTransitioningRef = useRef(false);
+  const startTimerRef = useRef<(() => void) | null>(null);
   const runCountRef = useRef(1);
+  const runGenerationRef = useRef(0);
+  const runAbortControllerRef = useRef<AbortController | null>(null);
   const runIndexRef = useRef(0);
   const engineQueueRef = useRef<EngineKey[]>([]);
   const engineQueueIndexRef = useRef(0);
@@ -525,53 +528,91 @@ export function LiveRendererComparison() {
     [getOrderForRun, startEngine],
   );
 
-  const moveToNextEnginePhase = useCallback(() => {
-    if (engineTransitioningRef.current) return;
-    engineTransitioningRef.current = true;
-    const current = activeEngineRef.current;
-    const currentPhase = activePhaseRef.current;
-    if (!current) {
-      completeRun();
-      return;
-    }
-
-    if (currentPhase === "measured") {
-      engineTimingRef.current[current] = {
-        ...engineTimingRef.current[current],
-        endAt: performance.now(),
+  const moveToNextEnginePhase = useCallback(
+    async (runGeneration: number) => {
+      if (runGeneration !== runGenerationRef.current || engineTransitioningRef.current) return;
+      engineTransitioningRef.current = true;
+      const current = activeEngineRef.current;
+      const currentPhase = activePhaseRef.current;
+      const restartTimerIfRunning = () => {
+        engineTransitioningRef.current = false;
+        if (runGeneration === runGenerationRef.current && runStateRef.current === "running") {
+          startTimerRef.current?.();
+        }
       };
-      appendMeasuredEngineStats(current);
-    }
+      if (!current) {
+        engineTransitioningRef.current = false;
+        completeRun();
+        return;
+      }
 
-    if (current === "streammdx") {
-      streamHandleRef.current?.finalize();
-    }
+      if (current === "streammdx") {
+        const handle = streamHandleRef.current;
+        if (!handle) {
+          console.error("Live renderer benchmark could not finalize: StreamMDX handle is missing.");
+          engineTransitioningRef.current = false;
+          setRunStateBoth("idle");
+          return;
+        }
+        const timeout = Promise.withResolvers<never>();
+        const timer = window.setTimeout(() => timeout.reject(new Error("StreamMDX finalization or renderer queue drain timed out.")), 15_000);
+        try {
+          const result = await Promise.race([handle.finalize(), timeout.promise]);
+          if (result.acceptedSourceUnits !== fixture.length || result.committedSourceUnits !== fixture.length) {
+            throw new Error(
+              `StreamMDX finalization covered ${result.committedSourceUnits}/${result.acceptedSourceUnits} source units; expected ${fixture.length}.`,
+            );
+          }
+          handle.flushPending();
+          await Promise.race([handle.waitForIdle(), timeout.promise]);
+        } catch (error) {
+          if (runGeneration === runGenerationRef.current) {
+            console.error("Live renderer benchmark finalization failed", error);
+            engineTransitioningRef.current = false;
+            setRunStateBoth("idle");
+          }
+          return;
+        } finally {
+          window.clearTimeout(timer);
+        }
+        if (runGeneration !== runGenerationRef.current) return;
+      }
 
-    if (currentPhase === "warmup") {
-      startEngine(current, "measured");
+      if (currentPhase === "measured") {
+        engineTimingRef.current[current] = {
+          ...engineTimingRef.current[current],
+          endAt: performance.now(),
+        };
+        appendMeasuredEngineStats(current);
+      }
+
+      if (currentPhase === "warmup") {
+        startEngine(current, "measured");
+        restartTimerIfRunning();
+        return;
+      }
+
+      const nextQueueIndex = engineQueueIndexRef.current + 1;
+      const nextEngine = engineQueueRef.current[nextQueueIndex];
+      if (nextEngine) {
+        engineQueueIndexRef.current = nextQueueIndex;
+        startEngine(nextEngine, "warmup");
+        restartTimerIfRunning();
+        return;
+      }
+
+      const nextRunIndex = runIndexRef.current + 1;
+      if (nextRunIndex < runCountRef.current) {
+        startRunCycle(nextRunIndex);
+        restartTimerIfRunning();
+        return;
+      }
+
       engineTransitioningRef.current = false;
-      return;
-    }
-
-    const nextQueueIndex = engineQueueIndexRef.current + 1;
-    const nextEngine = engineQueueRef.current[nextQueueIndex];
-    if (nextEngine) {
-      engineQueueIndexRef.current = nextQueueIndex;
-      startEngine(nextEngine, "warmup");
-      engineTransitioningRef.current = false;
-      return;
-    }
-
-    const nextRunIndex = runIndexRef.current + 1;
-    if (nextRunIndex < runCountRef.current) {
-      startRunCycle(nextRunIndex);
-      engineTransitioningRef.current = false;
-      return;
-    }
-
-    engineTransitioningRef.current = false;
-    completeRun();
-  }, [appendMeasuredEngineStats, completeRun, startEngine, startRunCycle]);
+      completeRun();
+    },
+    [appendMeasuredEngineStats, completeRun, setRunStateBoth, startEngine, startRunCycle],
+  );
 
   const markCommitted = useCallback(
     (engine: EngineKey, seqCommitted: number) => {
@@ -633,9 +674,12 @@ export function LiveRendererComparison() {
   const settleThenMoveToNextEngine = useCallback(() => {
     if (engineTransitioningRef.current) return;
     engineTransitioningRef.current = true;
+    const runGeneration = runGenerationRef.current;
+    stopTimer();
 
     let framesRemaining = ENGINE_SETTLE_FRAMES;
     const waitForCommitFrame = () => {
+      if (runGeneration !== runGenerationRef.current) return;
       if (runStateRef.current === "idle" || runStateRef.current === "done") {
         engineTransitioningRef.current = false;
         return;
@@ -647,7 +691,7 @@ export function LiveRendererComparison() {
           markCommitted(currentEngine, seqRef.current);
         }
         engineTransitioningRef.current = false;
-        moveToNextEnginePhase();
+        void moveToNextEnginePhase(runGeneration);
         return;
       }
       framesRemaining -= 1;
@@ -655,22 +699,18 @@ export function LiveRendererComparison() {
     };
 
     requestAnimationFrame(waitForCommitFrame);
-  }, [markCommitted, moveToNextEnginePhase]);
+  }, [markCommitted, moveToNextEnginePhase, stopTimer]);
 
-  const emitDelta = useCallback(() => {
+  const emitDelta = useCallback(async () => {
     if (engineTransitioningRef.current) return;
     const engine = activeEngineRef.current;
     if (!engine || runStateRef.current !== "running") return;
     const phase = activePhaseRef.current;
+    const runGeneration = runGenerationRef.current;
+    const runSignal = runAbortControllerRef.current?.signal;
+    const handle = engine === "streammdx" ? streamHandleRef.current : null;
 
-    if (engine === "streammdx") {
-      const handle = streamHandleRef.current;
-      if (!handle) return;
-      const state = handle.getState();
-      if (!state.workerReady) {
-        return;
-      }
-    }
+    if (engine === "streammdx" && (!handle || !handle.getState().workerReady)) return;
 
     if (cursorRef.current >= fixture.length) {
       settleThenMoveToNextEngine();
@@ -688,14 +728,36 @@ export function LiveRendererComparison() {
     const nextCursor = cursorRef.current + nextChunk.length;
     let ingestedAt = performance.now();
 
-    if (engine === "streammdx") {
+    if (handle) {
       const appendStartedAt = ingestedAt;
-      try {
-        streamHandleRef.current?.append(nextChunk);
-      } catch {
-        // Worker can briefly detach during restart; retry next timer tick.
-        return;
+      let sourceOffset = 0;
+      while (sourceOffset < nextChunk.length) {
+        if (runGeneration !== runGenerationRef.current) return;
+        const sourcePart = nextChunk.slice(sourceOffset, sourceOffset + 65_536);
+        let admission: AppendResult;
+        for (;;) {
+          try {
+            admission = handle.append(sourcePart);
+            if (admission.acceptedSourceUnits !== cursorRef.current + sourceOffset + sourcePart.length) {
+              throw new Error(
+                `StreamMDX host admitted ${admission.acceptedSourceUnits} source units; expected ${cursorRef.current + sourceOffset + sourcePart.length}.`,
+              );
+            }
+            break;
+          } catch (error) {
+            if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+            await handle.waitForCapacity({ units: sourcePart.length, signal: runSignal });
+            if (runGeneration !== runGenerationRef.current) return;
+          }
+        }
+        sourceOffset += sourcePart.length;
+        if (admission.shouldPause && nextCursor + sourceOffset - nextChunk.length < fixture.length) {
+          const remainingSourceUnits = fixture.length - (cursorRef.current + sourceOffset);
+          await handle.waitForCapacity({ units: Math.min(65_536, remainingSourceUnits), signal: runSignal });
+          if (runGeneration !== runGenerationRef.current) return;
+        }
       }
+      if (runGeneration !== runGenerationRef.current) return;
       const appendEndedAt = performance.now();
       stageBreakdownRef.current.streammdx.appendOverhead.push(Math.max(0, appendEndedAt - appendStartedAt));
       ingestedAt = appendEndedAt;
@@ -757,19 +819,37 @@ export function LiveRendererComparison() {
         } else {
           timerDeadlineRef.current = now + intervalMs;
         }
-        emitDelta();
-        if (runStateRef.current === "running" && timerDeadlineRef.current !== null) {
-          scheduleNextTick();
-          return;
-        }
-        timerRef.current = null;
+        const runGeneration = runGenerationRef.current;
+        void emitDelta().then(
+          () => {
+            if (
+              runGeneration === runGenerationRef.current &&
+              runStateRef.current === "running" &&
+              timerDeadlineRef.current !== null
+            ) {
+              scheduleNextTick();
+              return;
+            }
+            timerRef.current = null;
+          },
+          (error) => {
+            if (runGeneration !== runGenerationRef.current) return;
+            console.error("Live renderer benchmark source admission failed", error);
+            stopTimer();
+            engineTransitioningRef.current = false;
+            setRunStateBoth("idle");
+          },
+        );
       }, delay);
     };
     scheduleNextTick();
-  }, [emitDelta, intervalMs, stopTimer]);
+  }, [emitDelta, intervalMs, setRunStateBoth, stopTimer]);
 
   const resetState = useCallback(() => {
     stopTimer();
+    runGenerationRef.current += 1;
+    runAbortControllerRef.current?.abort(new Error("Benchmark run reset."));
+    runAbortControllerRef.current = null;
     setPoints([]);
     setActiveSeq(0);
     setActiveRun(0);
@@ -818,11 +898,13 @@ export function LiveRendererComparison() {
       return;
     }
     resetState();
+    runAbortControllerRef.current = new AbortController();
     runStartAtRef.current = performance.now();
     runEndAtRef.current = null;
     runCountRef.current = scoredRuns;
     setRunStateBoth("running");
     startRunCycle(0);
+    startTimerRef.current = startTimer;
     startTimer();
   }, [resetState, scoredRuns, setRunStateBoth, startRunCycle, startTimer]);
 
@@ -834,6 +916,7 @@ export function LiveRendererComparison() {
   const resumeRun = useCallback(() => {
     if (runStateRef.current === "done") return;
     setRunStateBoth("running");
+    startTimerRef.current = startTimer;
     startTimer();
   }, [setRunStateBoth, startTimer]);
 
@@ -866,6 +949,9 @@ export function LiveRendererComparison() {
   useEffect(() => {
     return () => {
       stopTimer();
+      runGenerationRef.current += 1;
+      runAbortControllerRef.current?.abort(new Error("Benchmark component unmounted."));
+      runAbortControllerRef.current = null;
     };
   }, [stopTimer]);
 

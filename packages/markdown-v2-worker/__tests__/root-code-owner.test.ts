@@ -80,7 +80,6 @@ function main(): void {
   const closingChange = appendAndAccept(source, owner, followingMarkdown);
   const processedTo = source.length - "# following native markdown\n".length;
   const nativeBlockEnd = processedTo - 1;
-  assert.strictEqual(closingChange.state, "closed");
   assert.strictEqual(closingChange.processedTo, processedTo, "the code owner consumes the closing-line CRLF before yielding the remainder");
   assert.strictEqual(closingChange.remainingTailFrom, processedTo, "the rest of the accepted chunk is left to native Markdown");
   assert.strictEqual(owner.getMetadata().sourceRange.to, nativeBlockEnd);

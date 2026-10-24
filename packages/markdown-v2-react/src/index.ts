@@ -23,6 +23,11 @@ export * from "./math/display-wrapper";
 export * from "./renderer";
 export * from "./renderer/deferred-render-context";
 export * from "./renderer/hooks";
+export * from "./renderer/node-handle-hooks";
+export { NativeNodeView, renderNodePresentation } from "./renderer/node-views";
+export * from "./preview-slot";
+export * from "./renderer/code-handle-hooks";
+export * from "./renderer/table-handle-hooks";
 export * from "./renderer/patch-batching";
 export * from "./renderer/patch-coalescing";
 export * from "./renderer/patch-commit-scheduler";
@@ -38,25 +43,32 @@ export type {
   AnimatedAnimationName,
   AnimatedOptions,
   AnimatedProp,
-  BlockComponents,
-  BlockRendererOverride,
-  CodeFenceRenderer,
-  CodeFenceRendererConfig,
-  CodeFenceRendererProps,
   ElementFilterContext,
   ElementFilterDescriptor,
   ElementFilterOptions,
-  FinalizedBlockRenderProps,
-  HtmlElements,
-  HtmlOptions,
-  InlineComponents,
-  InlineHtmlRenderer,
-  InlineHtmlRendererMap,
-  MathRenderer,
-  MathRendererProps,
+  MathEngine,
+  CodeEngine,
+  MathEngineOutput,
+  MathOptions,
+  MermaidEngine,
+  MermaidEngineProps,
   Renderer,
   RendererConfig,
   SyntaxRuleSpec,
-  TableElements,
   TableVirtualizationOptions,
+  HeadlessNodeViewProps,
+  HtmlNodeViewProps,
+  InlineNodeViewProps,
+  NativeNodeKey,
+  NodeChildRange,
+  NodeHandle,
+  NodeHandleMetadata,
+  NodePresentation,
+  NodePresentationKey,
+  NodePresentations,
+  NativeActionSlot,
+  NodeViewActions,
+  NodeViewMetadata,
+  NodeViewProps,
+  PresentationProps,
 } from "./types";

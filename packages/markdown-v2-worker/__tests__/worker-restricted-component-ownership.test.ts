@@ -4,13 +4,24 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 import { JSDOM } from "jsdom";
 import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
-import type { Block, HtmlTreeNode, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type {
+  Block,
+  ContainerExtensionSpec,
+  HtmlTreeNode,
+  RestrictedComponentDescriptor,
+  WorkerIn,
+  WorkerOut,
+} from "@stream-mdx/core";
 import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { ComponentRegistry } from "@stream-mdx/react";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
-import { defineContentComponent, type ContentComponentProps } from "../../markdown-v2-react/src/components/content-components";
+import { defineContentComponent, type ContentComponentProps } from "@stream-mdx/react";
 import { createWorkerHarness } from "./worker-test-harness";
 import { buildRestrictedComponentTree } from "../src/engine/restricted-component-ownership";
+import {
+  matchRegisteredContainerCloser,
+  matchRegisteredContainerOpening,
+} from "../src/engine/registered-component-owner";
 
 function findMessage<T extends WorkerOut["type"]>(
   messages: WorkerOut[],
@@ -28,6 +39,64 @@ function findInitialized(messages: WorkerOut[]): { blocks: Block[] } | undefined
   return { blocks: [...store.getBlocks()] };
 }
 
+function assertRegisteredContainerDelimiters(): void {
+  const extensions: readonly ContainerExtensionSpec[] = [{ name: "thought", component: "Card" }];
+  const components: ReadonlyMap<string, RestrictedComponentDescriptor> = new Map([
+    ["Card", { name: "Card" }],
+  ]);
+
+  assert.equal(
+    matchRegisteredContainerOpening(":::thought", extensions, components, false, true),
+    null,
+    "an opener outside a block start is rejected",
+  );
+  assert.equal(
+    matchRegisteredContainerOpening(":::thought", extensions, components, true, false),
+    null,
+    "an opener without a completed line is rejected",
+  );
+  assert.equal(
+    matchRegisteredContainerOpening("prefix:::thought", extensions, components, true, true),
+    null,
+    "an opener must begin at the start of its line",
+  );
+  assert.equal(
+    matchRegisteredContainerOpening(":::unlisted", extensions, components, true, true),
+    null,
+    "an opener must name a registered container",
+  );
+  assert.equal(
+    matchRegisteredContainerOpening(':::thought {"onClick":"blocked"}', extensions, components, true, true),
+    null,
+    "container props must pass restricted-tag validation",
+  );
+  assert.equal(
+    matchRegisteredContainerOpening(":::thought {invalid}", extensions, components, true, true),
+    null,
+    "container props must be valid JSON",
+  );
+
+  const opening = matchRegisteredContainerOpening(
+    ':::thought {"title":"Note"}',
+    extensions,
+    components,
+    true,
+    true,
+  );
+  assert.ok(opening, "a registered opener with valid props is admitted");
+  assert.equal(opening.name, "thought");
+  assert.equal(opening.component, "Card");
+  assert.equal(opening.fenceLength, 3);
+  assert.equal(opening.props.title, "Note");
+
+  assert.equal(matchRegisteredContainerCloser("prefix :::", 3), false, "a closer must start at line start");
+  assert.equal(matchRegisteredContainerCloser("::: trailing", 3), false, "a closer cannot have trailing text");
+  assert.equal(matchRegisteredContainerCloser(":::trailing", 3), false, "a closer cannot have an attached suffix");
+  assert.equal(matchRegisteredContainerCloser("  ::: \t", 3), true, "a closer allows bounded indentation and whitespace");
+}
+
+assertRegisteredContainerDelimiters();
+
 describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
   const registeredComponents = [
     { name: "Card", renderWhen: "open" as const },
@@ -35,6 +104,7 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     { name: "Alert", renderWhen: "closed" as const },
     { name: "Link", renderWhen: "open" as const },
   ];
+
 
   it("produces kind:component HtmlTreeNode with case-sensitive name and JSON props", async () => {
     const harness = await createWorkerHarness();
@@ -479,7 +549,11 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     };
     const Strong = ({ children }: { children?: React.ReactNode }) =>
       React.createElement("strong", { "data-inline-owner": "configured" }, children);
-    const componentRegistry = new ComponentRegistry({}, { strong: Strong });
+    const componentRegistry = new ComponentRegistry({
+      components: {
+        "inline:strong": { view: Strong },
+      },
+    });
     const content = [
       '<Card title="root">',
       "",
@@ -578,7 +652,7 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     assert.ok(initialized);
     const Input = () => React.createElement("input", { "data-policy-owner": true });
     const contentComponents = { Input: defineContentComponent({ component: Input }) };
-    const componentRegistry = new ComponentRegistry({}, {}, {}, {
+    const componentRegistry = new ComponentRegistry({
       disableAutolinkProtocols: ["mailto"],
       allowElement: (element, context) => !(element.tagName === "a" && (
         (context.parentTagName === "li" && element.properties.href === "https://example.invalid/") ||

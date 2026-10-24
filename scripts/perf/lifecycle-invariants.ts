@@ -12,7 +12,8 @@ import {
   createRendererStore,
   StreamingMarkdown,
 } from "./diagnostic-dist/index.mjs";
-import type { StreamingMarkdownHandle } from "@stream-mdx/react";
+import { SourceCapacityError } from "@stream-mdx/react";
+import type { AppendResult, StreamingMarkdownHandle } from "@stream-mdx/react";
 import { DENSE_FIXTURES, type ChunkingPlan, type DenseFixture } from "./replay-fixtures";
 import type { DivergenceReport } from "./replay-fixtures";
 
@@ -102,6 +103,18 @@ async function waitForCondition(predicate: () => boolean, timeoutMs = 5000): Pro
     await delay(15);
   }
   return predicate();
+}
+
+async function waitForPromise<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
@@ -271,7 +284,7 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
       root?.render(
         createElement(StreamingMarkdown, {
           ref: handleRef,
-          engine: "main-thread",
+          engine: "main",
           prewarmLangs: ["typescript", "javascript", "markdown"],
           themes: { dark: "github-dark", light: "github-light" },
           features: {
@@ -301,11 +314,39 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
     unsubscribe = handle.onFlush(() => {
       flushCount += 1;
     });
+
+    let acceptedSourceUnits = 0;
     const idleAppend = async (text: string): Promise<void> => {
       await act(async () => {
-        handle.append(text);
+        let offset = 0;
+        while (offset < text.length) {
+          const chunk = text.slice(offset, offset + 65_536);
+          let admission: AppendResult;
+          while (true) {
+            try {
+              admission = handle.append(chunk);
+              break;
+            } catch (error) {
+              if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+              await handle.waitForCapacity({ units: chunk.length });
+            }
+          }
+          const expectedAcceptedSourceUnits = acceptedSourceUnits + chunk.length;
+          assert.strictEqual(
+            admission.acceptedSourceUnits,
+            expectedAcceptedSourceUnits,
+            "host admission count must include the complete imperative offer",
+          );
+          acceptedSourceUnits = admission.acceptedSourceUnits;
+          offset += chunk.length;
+          if (admission.shouldPause && offset < text.length) {
+            await handle.waitForCapacity({ units: Math.min(65_536, text.length - offset) });
+          }
+        }
         await handle.waitForIdle();
-        await new Promise<void>((resolve) => dom.window.requestAnimationFrame(() => resolve()));
+        await new Promise<void>((resolve) => {
+          dom.window.requestAnimationFrame(() => resolve());
+        });
       });
     };
 
@@ -365,7 +406,7 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
     assert.strictEqual(store.getCodeLines(rootCode.id, 0, 1)[0], completedRow);
     assert.strictEqual(renderedCodeRow(completedRow.index), completedRowElement);
     await idleAppend(closeAndFollowingProse);
-    assert.equal(store.getCodeBlock(rootCode.id)?.source.state, "closed");
+    assert.equal(store.getCodeBlock(rootCode.id)?.source.state, "finalized", "a complete closing fence settles the code owner");
 
     const authored = fixture.expectations?.codeBlocks?.[0];
     assert.ok(authored, "fixture includes independently specified CommonMark code expectations");
@@ -394,7 +435,13 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
     );
 
     await act(async () => {
-      handle.finalize();
+      assert.strictEqual(acceptedSourceUnits, source.length, "host must accept every authored fixture unit");
+      const finalizationPromise = handle.finalize();
+      assert.strictEqual(handle.finalize(), finalizationPromise, "same host generation returns one finalization promise");
+      const finalization = await waitForPromise(finalizationPromise, 5000, "Host finalize barrier timed out");
+      assert.ok(Number.isSafeInteger(finalization.generation) && finalization.generation >= 0);
+      assert.strictEqual(finalization.acceptedSourceUnits, source.length);
+      assert.strictEqual(finalization.committedSourceUnits, finalization.acceptedSourceUnits);
       const finalizationApplied = await waitForCondition(
         () => store.getCodeBlock(rootCode.id)?.source.state === "finalized",
       );
@@ -413,9 +460,23 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
     const flushesBeforeDisposal = flushCount;
     await act(async () => root?.unmount());
     unmounted = true;
-    handle.append("\npost-disposal mutation must be ignored\n");
-    await handle.waitForIdle();
-    await delay(20);
+    assert.throws(
+      () => handle.append("\npost-disposal mutation must be ignored\n"),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.name === "StreamSessionError" &&
+        "reason" in error &&
+        error.reason === "disposed",
+    );
+    await assert.rejects(
+      handle.waitForIdle(),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.name === "StreamSessionError" &&
+        "reason" in error &&
+        error.reason === "disposed",
+      "disposed handle rejects waitForIdle (session generation contract)",
+    );
     assert.equal(store.getVersion(), versionBeforeDisposal, "disposed native engine cannot mutate its store");
     assert.deepStrictEqual(store.getCodeLines(rootCode.id, 0, authored.codeLines.length), rowsBeforeDisposal);
     assert.equal(flushCount, flushesBeforeDisposal, "disposed handle emits no later flush");

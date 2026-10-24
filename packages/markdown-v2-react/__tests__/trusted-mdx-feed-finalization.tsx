@@ -157,7 +157,7 @@ export async function testTrustedFeedFinalizationBarrier(): Promise<void> {
     );
     await act(async () => {
       handle.current?.append(nextGenerationSource);
-      handle.current?.finalize();
+      await handle.current?.finalize();
     });
     await waitFor(
       () => container.querySelector('[data-feed-barrier-value="same tick accepted"]') !== null

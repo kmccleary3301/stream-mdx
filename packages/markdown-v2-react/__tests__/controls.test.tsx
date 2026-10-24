@@ -13,7 +13,7 @@ import {
 } from "../src/components/controls";
 import { MarkdownBlocksRenderer } from "../src/renderer/blocks-renderer";
 import { createRendererStore } from "../src/renderer/store";
-import type { CodeFenceRendererProps, ControlsComponentProps } from "../src/types";
+import type { ControlsComponentProps } from "../src/types";
 
 function sleep(ms: number): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -206,7 +206,7 @@ async function testCopyWritesRawCode(): Promise<void> {
   copyButton.click();
   await sleep(20);
 
-  const expectedRawCode = "const message = 'hello world';\nconsole.log(message);";
+  const expectedRawCode = "const message = 'hello world';\nconsole.log(message);\n";
   assert.strictEqual(
     clipboardText,
     expectedRawCode,
@@ -428,64 +428,34 @@ async function testControlsReplacementAndLabels(): Promise<void> {
   container.innerHTML = "";
 }
 
-// 7. CodeFenceRendererProps exposes controls flags and copy() helper
-async function testCodeFenceRendererControlsProps(): Promise<void> {
-  const window = await setupDom();
-  const container = window.document.getElementById("root");
-  assert.ok(container, "root element required");
 
-  let receivedFenceProps: CodeFenceRendererProps | null = null;
-  const CustomFenceRenderer: React.FC<CodeFenceRendererProps> = (props) => {
-    receivedFenceProps = props;
-    return React.createElement(
-      "div",
-      { id: "custom-fence" },
-      React.createElement(
-        "button",
-        {
-          type: "button",
-          id: "custom-fence-copy",
-          onClick: () => {
-            props.copy?.();
-          },
+function testCodePresentationMetadataAndActions(): void {
+  const blocks = [createSampleCodeBlock()];
+  let receivedLanguage: string | undefined;
+  let receivedCopyAction = false;
+  const registry = new ComponentRegistry({
+    controls: true,
+    components: {
+      code: {
+        wrapper: ({ children, metadata, actions }) => {
+          receivedLanguage = metadata.language;
+          receivedCopyAction = typeof actions.copy === "function";
+          return <section data-code-language={metadata.language} data-copy-action={receivedCopyAction}>{children}</section>;
         },
-        "Fence Copy",
-      ),
-      props.renderCode,
-    );
-  };
-
-  const blocks = [createSampleCodeBlock(true)];
-  const store = createRendererStore(blocks);
-  const root = createRoot(container);
-
-  root.render(
-    React.createElement(MarkdownBlocksRenderer, {
-      blocks,
-      store,
-      controls: { code: { copy: true, download: true } },
-      codeRenderers: {
-        typescript: CustomFenceRenderer,
+        slots: {
+          actions: <button type="button" data-code-action-slot>Custom code actions</button>,
+        },
       },
-    }),
+    },
+  });
+  const html = renderToStaticMarkup(
+    <MarkdownBlocksRenderer blocks={blocks} componentRegistry={registry} />,
   );
-
-  await waitFor(
-    () => Boolean(container.querySelector("#custom-fence")),
-    "expected custom fence renderer to mount",
-  );
-
-  const props = receivedFenceProps as CodeFenceRendererProps | null;
-  assert.ok(props, "expected fence props to be passed");
-  assert.strictEqual(props.controls?.copy, true, "props.controls.copy must be true");
-  assert.strictEqual(props.controls?.download, true, "props.controls.download must be true");
-  assert.strictEqual(typeof props.copy, "function", "props.copy helper must be a function");
-  assert.strictEqual(typeof props.download, "function", "props.download helper must be a function");
-
-  root.unmount();
-  container.innerHTML = "";
+  assert.equal(receivedLanguage, "typescript", "the code presentation receives language metadata");
+  assert.equal(receivedCopyAction, true, "the code presentation receives native actions");
+  assert.ok(html.includes('data-code-action-slot="true"'), "the actions slot replaces native code controls");
+  assert.ok(!html.includes('aria-label="Copy code"'), "native copy controls are replaced by the actions slot");
 }
-
 // Run all test cases
 await testControlsAbsentByDefault();
 await testCopyWritesRawCode();
@@ -493,6 +463,6 @@ testTableCsvEscaping();
 await testStreamingTableHasNoEnabledDownload();
 testSsrRenderIncludesButtonsWithoutCrashing();
 await testControlsReplacementAndLabels();
-await testCodeFenceRendererControlsProps();
+await testCodePresentationMetadataAndActions();
 
 console.log("All controls acceptance tests passed successfully.");

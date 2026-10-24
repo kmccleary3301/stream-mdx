@@ -32,17 +32,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.9000000059604645,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.9000000357627869,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -51,8 +52,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -61,12 +60,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bul</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bul</li></ul></div>",
       "textSample": "Root bul",
       "structure": {
         "topLevelTags": [
@@ -83,7 +80,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -96,17 +92,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0.3999999761581421,
-        "lastDurationMs": 0.3999999761581421,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 4,
+        "lastPatchToDomMs": 2.599999964237213,
+        "lastDurationMs": 0.8999999761581421,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -115,8 +112,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -125,12 +120,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with p</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with p</li></ul></div>",
       "textSample": "Root bullet with p",
       "structure": {
         "topLevelTags": [
@@ -147,7 +140,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -160,17 +152,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 3,
-        "lastPatchToDomMs": 12,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 6,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.30000001192092896,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -179,8 +172,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -189,12 +180,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emp</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emp</li></ul></div>",
       "textSample": "Root bullet with partial emp",
       "structure": {
         "topLevelTags": [
@@ -211,7 +200,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -224,17 +212,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 5,
-        "lastPatchToDomMs": 14,
-        "lastDurationMs": 0.20000001788139343,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 10,
+        "lastPatchToDomMs": 1.199999988079071,
+        "lastDurationMs": 0.2999999523162842,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -243,8 +232,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -253,13 +240,11 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blo</p></blockquote></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlo",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blo</p></blockquote></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlo",
       "structure": {
         "topLevelTags": [
           "div"
@@ -275,7 +260,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -288,17 +272,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 7,
-        "lastPatchToDomMs": 15.600000023841858,
-        "lastDurationMs": 0.30000001192092896,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 14,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -307,8 +292,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -317,13 +300,11 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with p</p></blockquote></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with p",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with p</p></blockquote></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with p",
       "structure": {
         "topLevelTags": [
           "div"
@@ -339,7 +320,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -352,17 +332,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 13,
-        "lastPatchToDomMs": 14.799999982118607,
-        "lastDurationMs": 0.19999998807907104,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 26,
+        "lastPatchToDomMs": 1.199999988079071,
+        "lastDurationMs": 0.09999996423721313,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -371,8 +352,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -381,13 +360,11 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite</li></ul></blockquote></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite</li></ul></blockquote></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite",
       "structure": {
         "topLevelTags": [
           "div"
@@ -403,7 +380,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -416,17 +392,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 18,
-        "lastPatchToDomMs": 14,
-        "lastDurationMs": 0.29999998211860657,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 36,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -435,8 +412,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": true
       },
@@ -445,13 +420,11 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span></li></ul></blockquote></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math xxx",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span></li></ul></blockquote></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math xxx",
       "structure": {
         "topLevelTags": [
           "div"
@@ -467,7 +440,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -480,17 +452,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 19,
-        "lastPatchToDomMs": 9.400000005960464,
-        "lastDurationMs": 0.20000001788139343,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 38,
+        "lastPatchToDomMs": 0.8999999761581421,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -499,23 +472,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Re</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yRe",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Re</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yRe",
       "structure": {
         "topLevelTags": [
           "div"
@@ -524,14 +493,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -544,17 +512,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 22,
-        "lastPatchToDomMs": 15.200000017881393,
-        "lastDurationMs": 0.30000001192092896,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 44,
+        "lastPatchToDomMs": 0.7999999523162842,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -563,23 +532,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with",
       "structure": {
         "topLevelTags": [
           "div"
@@ -588,14 +553,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -608,17 +572,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 25,
-        "lastPatchToDomMs": 14.199999988079071,
-        "lastDurationMs": 0.19999998807907104,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 50,
+        "lastPatchToDomMs": 0.699999988079071,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -627,23 +592,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -652,14 +613,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -672,28 +632,27 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
     "runtimeState": {
-      "rendererVersion": 30,
+      "rendererVersion": 29,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 27,
-      "lastPatchToDomMs": 14.199999988079071,
-      "lastDurationMs": 1.5999999940395355,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
+      "lastTx": 51,
+      "lastPatchToDomMs": 8.800000011920929,
+      "lastDurationMs": 0.10000002384185791,
       "meta": {
         "fixtureId": "nested-blockquote-list-crossover",
-        "scenarioId": "S1_slow_small",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S1_slow_small"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -715,13 +674,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "9113841c452d01eefd504772ebc9320a01ce0881b90aa639a81e6541a18a146f",
+        "hash": "540cd1908f1ea6f6a8b8737e62e146f4ec22e28ba18e51161624917d8e01ec76",
         "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12A"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

@@ -1,0 +1,16 @@
+{
+  "suppressions": [
+    {
+      "snippet": "complete-append-frontier.md",
+      "rule": "coalescing/duration/not-applicable",
+      "reason": "One unbroken paragraph: every flush is a singleton append batch, which the scheduler never coalesces.",
+      "addedBy": "release-gates 1.0.0"
+    },
+    {
+      "snippet": "math-left-right-trace.md",
+      "rule": "coalescing/duration/not-applicable",
+      "reason": "15-unit fixture: every flush is a singleton batch, which the scheduler never coalesces.",
+      "addedBy": "release-gates 1.0.0"
+    }
+  ]
+}

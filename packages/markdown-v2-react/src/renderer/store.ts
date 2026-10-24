@@ -1,7 +1,8 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import type { CodeBlockSnapshot } from "@stream-mdx/core";
 import {
+  createTableNodeHandle,
+  createCodeNodeHandle,
   AppendSourceDocument,
   appendManagedParagraphSpans,
   appendManagedTableRows,
@@ -18,7 +19,11 @@ import {
   updateManagedParagraphSpans,
   updateManagedTableRows,
   type Block,
+  type CodeBlockSnapshot,
+  type CodeBlockMetadata,
+  type CodeLineRange,
   type CodeLineRecord,
+  type CodeNodeHandle,
   type InlineNode,
   type ManagedParagraphPatchResult,
   type ManagedParagraphViewState,
@@ -34,6 +39,9 @@ import {
   type PreparedNestedSnapshot,
   type SetPropsBatchEntry,
   type SourceSnapshot,
+  type TableBlockMetadata,
+  type TableNodeHandle,
+  type TableRowRange,
   type TableRowRecord,
   type TokenLineV1,
   type MixedContentSegment,
@@ -59,15 +67,17 @@ import {
   readStoredCodeLines,
   refreshLegacyCodeSource,
   updateLegacyCodeLineState,
+  updateStoredDiffBlockDecorations,
   type CodeBlockViewState,
   type StoreCodeCounters,
   type StoredCodeBlockState,
 } from "./code-state";
 import { normalizeAllListDepths, normalizeListDepthsForIds } from "./list-utils";
-import { registerNodeSubscriptions } from "./node-subscriptions";
+import { registerNodeSubscriptions, subscribeRendererNode } from "./node-subscriptions";
 import { type CoalescingMetrics, DEFAULT_COALESCE_CONFIG, coalescePatchesWithMetrics } from "./patch-coalescing";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
 import type { PrivateRendererStore } from "./store-reset-version";
+import type { NodeChildRange, NodeHandle, NodeHandleMetadata } from "../types";
 export interface ParagraphSegmentPlanEvent {
   readonly id: string;
   readonly type: string;
@@ -119,6 +129,18 @@ export interface NodeRecord {
   blockEpoch: number;
   block?: Block;
 }
+function assertNodeChildRange(range: NodeChildRange): void {
+  if (
+    range === null ||
+    typeof range !== "object" ||
+    !Number.isSafeInteger(range.from) ||
+    !Number.isSafeInteger(range.to) ||
+    range.from < 0 ||
+    range.to < range.from
+  ) {
+    throw new RangeError("Node child range must be ordered non-negative safe integers");
+  }
+}
 const serializedBlockOwnership = Symbol("serializedBlockOwnership");
 type NodeRecordWithSerializedBlock = NodeRecord & { [serializedBlockOwnership]?: boolean };
 function hasSerializedBlock(record: NodeRecord): boolean {
@@ -143,8 +165,10 @@ export interface RendererStore {
   getBlocks(): ReadonlyArray<Block>;
   hasProvisionalBlocks(): boolean;
   getCodeBlock(id: string): CodeBlockViewState | undefined;
-  subscribeCodeLines(id: string, from: number, to: number, listener: () => void): () => void;
+  getCodeNodeHandle(id: string): CodeNodeHandle | undefined;
+  getTableNodeHandle(id: string): TableNodeHandle | undefined;
   getCodeLines(id: string, from: number, to: number): ReadonlyArray<CodeLineRecord>;
+  subscribeCodeLines(id: string, from: number, to: number, listener: () => void): () => void;
   getTableBlock(id: string): ManagedTableViewState | undefined;
   getTableColdBlock(id: string): Block | undefined;
   getTableRows(id: string, from: number, to: number): ReadonlyArray<TableRowRecord>;
@@ -160,6 +184,7 @@ export interface RendererStore {
   getNodeWithVersion(id: string): { version: number; node?: NodeRecord };
   getChildren(id: string): ReadonlyArray<string>;
   getChildrenWithVersion(id: string): { version: number; children: ReadonlyArray<string> };
+  getNodeHandle(id: string): NodeHandle | undefined;
   getInvariantViolations(): string[];
   getDebugCounters(): Readonly<Record<string, number>>;
   subscribe(listener: () => void): () => void;
@@ -673,7 +698,9 @@ function propsWithSourceRange(
 
 function nativeContainerProjectionRoot(map: NodeMap, id: string): NodeRecord | undefined {
   let record = map.get(id);
+  let parentSteps = 0;
   while (record && record.parentId && record.parentId !== PATCH_ROOT_ID) {
+    if (parentSteps++ >= map.size) return undefined;
     record = map.get(record.parentId);
   }
   return record && isNativeContainerType(record.type) ? record : undefined;
@@ -779,7 +806,7 @@ function nodeRecordWithEffectiveEpoch(
 }
 
 function nodeRecordForRead(map: NodeMap, record: NodeRecord): NodeRecord {
-  const effectiveEpoch = effectiveBlockEpoch(map, record);
+  const effectiveEpoch = effectiveBlockEpoch(map, record) ?? record.blockEpoch;
   let view: NodeRecord;
   const state = paragraphStateByRecord.get(record);
   if (state) {
@@ -1424,6 +1451,19 @@ interface TableRowRangeSubscription {
 interface CodeLineRangeSubscription {
   readonly listeners: Set<() => void>;
 }
+interface ActiveCodeLineRange {
+  readonly from: number;
+  readonly to: number;
+  consumers: number;
+  lines: readonly CodeLineRecord[] | undefined;
+}
+interface ActiveTableRowRange {
+  readonly from: number;
+  readonly to: number;
+  consumers: number;
+  rows: readonly TableRowRecord[] | undefined;
+}
+const TABLE_ROW_RANGE_SNAPSHOT_LIMIT = 64;
 function createFreshNodeMap(): NodeMap {
   const map: NodeMap = new Map();
   retiredCodeGenerationsByMap.set(map, new Map<string, number>());
@@ -1714,6 +1754,18 @@ function clearSnapshotCaches(map: NodeMap) {
 }
 const EMPTY_CHILDREN: ReadonlyArray<string> = Object.freeze([]);
 const EMPTY_CODE_LINES: ReadonlyArray<CodeLineRecord> = Object.freeze([]);
+function assertCodeHandleRange(range: CodeLineRange): void {
+  if (
+    range === null ||
+    typeof range !== "object" ||
+    !Number.isSafeInteger(range.from) ||
+    !Number.isSafeInteger(range.to) ||
+    range.from < 0 ||
+    range.to < range.from
+  ) {
+    throw new RangeError("Code line range must be ordered non-negative safe integers");
+  }
+}
 const EMPTY_NODE_SNAPSHOT = Object.freeze<{ version: number; node?: NodeRecord }>({ version: -1, node: undefined });
 const EMPTY_CHILDREN_SNAPSHOT = Object.freeze<{ version: number; children: ReadonlyArray<string> }>({
   version: -1,
@@ -1996,14 +2048,85 @@ function readPatchTx(patch: Patch): number | undefined {
   return readNumericEpoch(patch.meta?.tx);
 }
 
+interface SemanticEnvelopeTuple {
+  streamSeq: number;
+  parseEpoch: number;
+  tx: number;
+}
+
+function readSemanticEnvelopeTuple(patch: Patch): SemanticEnvelopeTuple | undefined {
+  if (getPatchKind(patch) !== "semantic") return undefined;
+  const meta = patch.op === "setHTML" ? patch.patchMeta : patch.meta;
+  const streamSeq = readNumericEpoch(meta?.streamSeq);
+  const parseEpoch = readNumericEpoch(meta?.parseEpoch);
+  const tx = readNumericEpoch(meta?.tx);
+  if (streamSeq === undefined || parseEpoch === undefined || tx === undefined) return undefined;
+  return { streamSeq, parseEpoch, tx };
+}
+
+
+function compareSemanticEnvelopeTuples(left: SemanticEnvelopeTuple, right: SemanticEnvelopeTuple): number {
+  if (left.streamSeq !== right.streamSeq) return left.streamSeq > right.streamSeq ? 1 : -1;
+  if (left.parseEpoch !== right.parseEpoch) return left.parseEpoch > right.parseEpoch ? 1 : -1;
+  if (left.tx !== right.tx) return left.tx > right.tx ? 1 : -1;
+  return 0;
+}
+
+
 const blockEpochWriteSerials = new WeakMap<NodeRecord, number>();
 let nextBlockEpochWriteSerial = 1;
 
-function effectiveBlockEpoch(map: NodeMap, record: NodeRecord): number {
+function hasParentCycle(map: NodeMap, record: NodeRecord): boolean {
+  let current: NodeRecord | undefined = record;
+  let visited = 0;
+  while (current) {
+    if (visited++ >= map.size) return true;
+    if (!current.parentId) return false;
+    current = map.get(current.parentId);
+  }
+  return false;
+}
+
+function snapshotWouldCreateParentCycle(map: NodeMap, parent: NodeRecord, snapshot: NodeSnapshot): boolean {
+  const ancestors = new Set<string>();
+  let ancestor: NodeRecord | undefined = parent;
+  let visited = 0;
+  while (ancestor) {
+    if (visited++ >= map.size) return true;
+    ancestors.add(ancestor.id);
+    if (!ancestor.parentId) break;
+    ancestor = map.get(ancestor.parentId);
+  }
+
+  const activeIds = new Set<string>();
+  const pending: Array<{ snapshot: NodeSnapshot; exiting: boolean }> = [{ snapshot, exiting: false }];
+  while (pending.length > 0) {
+    const entry = pending.pop();
+    if (!entry) continue;
+    const node = entry.snapshot;
+    if (entry.exiting) {
+      activeIds.delete(node.id);
+      continue;
+    }
+    if (ancestors.has(node.id) || activeIds.has(node.id)) return true;
+    activeIds.add(node.id);
+    pending.push({ snapshot: node, exiting: true });
+    const children = Array.isArray(node.children) ? node.children : [];
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      const child = children[index];
+      if (child) pending.push({ snapshot: child, exiting: false });
+    }
+  }
+  return false;
+}
+
+function effectiveBlockEpoch(map: NodeMap, record: NodeRecord): number | undefined {
   let epoch = record.blockEpoch;
   let latestSerial = blockEpochWriteSerials.get(record) ?? 0;
   let ancestor = record.parentId ? map.get(record.parentId) : undefined;
+  let parentSteps = 0;
   while (ancestor) {
+    if (parentSteps++ >= map.size) return undefined;
     const serial = blockEpochWriteSerials.get(ancestor) ?? 0;
     if (serial > latestSerial) {
       epoch = ancestor.blockEpoch;
@@ -3002,7 +3125,7 @@ function removeSubtree(
 // internal block object stays valid until that record changes; unchanged blocks keep their identity across reads.
 function codeLineTokensForSnapshot(line: CodeLineRecord): TokenLineV1 | undefined {
   const decoration = line.decoration;
-  if (!decoration) return undefined;
+  if (!decoration || decoration.exactness === "unavailable") return undefined;
   return {
     spans: decoration.tokens.spans.map((span) => ({
       t: span.t,
@@ -3370,6 +3493,7 @@ function insertSnapshotAt(
   themes?: { light?: string; dark?: string },
   previous?: ReadonlyMap<string, NodeRecord>,
   onCodeOwnerInserted?: (id: string) => void,
+  retainedParentSlot = false,
 ): { record: NodeRecord; insertedIds: string[] } | null {
   if (!parent) return null;
   const previousRecord = previous?.get(snapshot.id);
@@ -3442,20 +3566,22 @@ function insertSnapshotAt(
     }
   }
 
-  const clampedIndex = Math.min(Math.max(index, 0), parent.children.length);
-  const tailAppend = currentRecord === undefined && clampedIndex === parent.children.length;
-  if (tailAppend) {
-    parent.children.push(record.id);
-  } else {
-    const children = parent.children.slice();
-    children.splice(clampedIndex, 0, record.id);
-    parent.children = children;
-  }
-  bumpVersion(parent);
-  if (!tailAppend) ensureUniqueChildren(map, parent, touched);
-  // Count the inserted reference slot only; Array#splice relocation is runtime-internal.
-  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-    paragraphCountersByMap!.get(map)?.recordRecordSlotsAllocated(1, "store");
+  if (!retainedParentSlot) {
+    const clampedIndex = Math.min(Math.max(index, 0), parent.children.length);
+    const tailAppend = currentRecord === undefined && clampedIndex === parent.children.length;
+    if (tailAppend) {
+      parent.children.push(record.id);
+    } else {
+      const children = parent.children.slice();
+      children.splice(clampedIndex, 0, record.id);
+      parent.children = children;
+    }
+    bumpVersion(parent);
+    if (!tailAppend) ensureUniqueChildren(map, parent, touched);
+    // Count the inserted reference slot only; Array#splice relocation is runtime-internal.
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      paragraphCountersByMap!.get(map)?.recordRecordSlotsAllocated(1, "store");
+    }
   }
   return { record, insertedIds };
 }
@@ -3489,16 +3615,19 @@ function replaceSnapshotAt(
     const childrenSnapshot = childrenSnapshots.get(id);
     if (childrenSnapshot) previousChildrenSnapshots.set(id, childrenSnapshot);
   }
-  const parentChildren = parent.children.slice();
-  parentChildren.splice(index, 1);
-  parent.children = parentChildren;
+  const retainParentSlot = snapshot.id === targetId;
+  if (!retainParentSlot) {
+    const parentChildren = parent.children.slice();
+    parentChildren.splice(index, 1);
+    parent.children = parentChildren;
+  }
   const continuedOwners = continuedOwnerFloors(map, previous, snapshot);
   removeSubtree(map, targetId, touched, true);
   for (const [generations, id, floor] of continuedOwners) {
     if (floor === undefined) generations.delete(id);
     else generations.set(id, floor);
   }
-  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous, onCodeOwnerReplaced);
+  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous, onCodeOwnerReplaced, retainParentSlot);
   if (inserted && onParagraphOwnerReplaced && (currentParagraphState || snapshot.paragraph)) {
     onParagraphOwnerReplaced(targetId);
     if (snapshot.paragraph && snapshot.id !== targetId) onParagraphOwnerReplaced(snapshot.id);
@@ -3522,7 +3651,7 @@ function replaceSnapshotAt(
   }
   if (parent.type === "code") {
     normalizeCodeBlockChildren(map, parent, touched);
-  } else {
+  } else if (!retainParentSlot) {
     ensureUniqueChildren(map, parent, touched);
   }
 }
@@ -3619,6 +3748,31 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   let version = 0;
   // Owner generations and worker input generations are independent; this version identifies a store baseline.
   let resetVersion = 0;
+  const codeNodeHandlesByRecord = new WeakMap<NodeRecord, {
+    readonly nodes: NodeMap;
+    readonly resetVersion: number;
+    readonly document: object;
+    readonly codeOwnerId: string;
+    readonly generation: number;
+    readonly handle: CodeNodeHandle;
+    readonly activeRanges: Map<string, ActiveCodeLineRange>;
+  }>();
+  const tableNodeHandlesByRecord = new WeakMap<NodeRecord, {
+    readonly nodes: NodeMap;
+    readonly resetVersion: number;
+    readonly document: object;
+    readonly tableOwnerId: string;
+    readonly generation: number;
+    readonly handle: TableNodeHandle;
+    readonly activeRanges: Map<string, ActiveTableRowRange>;
+  }>();
+  const nodeHandlesByRecord = new WeakMap<NodeRecord, {
+    readonly nodes: NodeMap;
+    readonly resetVersion: number;
+    readonly document: object;
+    readonly type: string;
+    readonly handle: NodeHandle;
+  }>();
   let blocksCache: Block[] = [];
   let blocksDirty = true;
   const publicBlocks = new WeakMap<Block, Block>();
@@ -3638,6 +3792,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   let structuralViolations: string[] | null = null;
   let transientDiagnostics: string[] = [];
   let nextBlockEpoch = 1;
+  let lastSemanticEnvelope: SemanticEnvelopeTuple | undefined;
   let provisionalBlockCount = 0;
   const isProvisionalRootBlock = (record: NodeRecord | undefined): boolean => {
     if (!record || record.parentId !== PATCH_ROOT_ID) return false;
@@ -3834,8 +3989,26 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     }
     starts.add(rangeStart);
   }
+  function activeCodeLineRangesForBlock(blockId: string): Map<string, ActiveCodeLineRange> | undefined {
+    const record = nodes.get(blockId);
+    return record ? codeNodeHandlesByRecord.get(record)?.activeRanges : undefined;
+  }
+  function invalidateActiveCodeLineRange(blockId: string, from: number, to: number): void {
+    if (from >= to) return;
+    const ranges = activeCodeLineRangesForBlock(blockId);
+    if (!ranges) return;
+    for (const range of ranges.values()) {
+      if (range.from < to && from < range.to) range.lines = undefined;
+    }
+  }
+  function invalidateAllActiveCodeLineRanges(blockId: string): void {
+    const ranges = activeCodeLineRangesForBlock(blockId);
+    if (!ranges) return;
+    for (const range of ranges.values()) range.lines = undefined;
+  }
   function invalidateCodeLineRange(blockId: string, from: number, to: number): void {
     if (from >= to) return;
+    invalidateActiveCodeLineRange(blockId, from, to);
     const ranges = codeLineRangesByBlock.get(blockId);
     if (!ranges) return;
     const firstRange = Math.floor(from / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
@@ -3846,6 +4019,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   }
   function invalidateCodeLineIndex(blockId: string, index: number): void {
     if (!Number.isSafeInteger(index) || index < 0) return;
+    invalidateActiveCodeLineRange(blockId, index, index + 1);
     const rangeStart = Math.floor(index / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
     if (codeLineRangesByBlock.get(blockId)?.has(rangeStart)) queueCodeLineRange(blockId, rangeStart);
   }
@@ -3996,6 +4170,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     for (const record of previousNodes.values()) blockEpochWriteSerials.delete(record);
     clearSnapshotCaches(previousNodes);
     nodes = nextNodes;
+    if (resetsBaseline) lastSemanticEnvelope = undefined;
     if (resetsBaseline) resetVersion++;
     transientDiagnostics = [];
     structuralViolations = null;
@@ -4068,6 +4243,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     for (const record of previousNodes.values()) blockEpochWriteSerials.delete(record);
     clearSnapshotCaches(previousNodes);
     nodes = nextNodes;
+    if (resetsBaseline) lastSemanticEnvelope = undefined;
     if (resetsBaseline) resetVersion++;
     lastCoalescingMetrics = null;
     transientDiagnostics = [];
@@ -4092,13 +4268,98 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       return resetVersion;
     },
 
+    getRootSourceIdentity() {
+      return inputSourceByNodeMap.get(nodes);
+    },
+
     applyPatches(patches: Patch[], options?: ApplyPatchesOptions) {
       const touched = new Set<string>();
       if (!patches || patches.length === 0) {
         lastCoalescingMetrics = options?.metrics ?? null;
         return touched;
       }
+      const admittedPatches: Patch[] = [];
+      const semanticEnvelopeDecisions = new Map<string, boolean>();
+      let admissionFrontier = lastSemanticEnvelope;
+      let newestAdmittedEnvelope: SemanticEnvelopeTuple | undefined;
+      let hasUnsequencedSemanticPatch = false;
+      let hasEnrichmentPatch = false;
+
+      const admitSemanticEnvelope = (tuple: SemanticEnvelopeTuple): boolean => {
+        const key = `${tuple.streamSeq}/${tuple.parseEpoch}/${tuple.tx}`;
+        const existingDecision = semanticEnvelopeDecisions.get(key);
+        if (existingDecision !== undefined) return existingDecision;
+
+        const accepted = !admissionFrontier || (
+          tuple.parseEpoch >= admissionFrontier.parseEpoch &&
+          compareSemanticEnvelopeTuples(tuple, admissionFrontier) > 0
+        );
+        semanticEnvelopeDecisions.set(key, accepted);
+        if (!accepted) {
+          debugCounters.staleEpochRejected += 1;
+          return false;
+        }
+        admissionFrontier = tuple;
+        newestAdmittedEnvelope = tuple;
+        return true;
+      };
+
+      for (const patch of patches) {
+        if (patch.op === "setPropsBatch") {
+          const entries = Array.isArray(patch.entries) ? patch.entries : [];
+          const admittedEntries: SetPropsBatchEntry[] = [];
+          for (const entry of entries) {
+            if (!entry || !entry.at) continue;
+            const entryPatch: Patch = {
+              op: "setProps",
+              at: entry.at,
+              props: entry.props,
+              meta: { ...(patch.meta ?? {}), ...(entry.meta ?? {}) },
+            };
+            const kind = getPatchKind(entryPatch);
+            const tuple = readSemanticEnvelopeTuple(entryPatch);
+            if (tuple) {
+              if (admitSemanticEnvelope(tuple)) admittedEntries.push(entry);
+            } else {
+              if (kind === "semantic") hasUnsequencedSemanticPatch = true;
+              else hasEnrichmentPatch = true;
+              admittedEntries.push(entry);
+            }
+          }
+          if (admittedEntries.length === entries.length) admittedPatches.push(patch);
+          else if (admittedEntries.length > 0) admittedPatches.push({ ...patch, entries: admittedEntries });
+          continue;
+        }
+
+        const kind = getPatchKind(patch);
+        const tuple = readSemanticEnvelopeTuple(patch);
+        if (tuple) {
+          if (admitSemanticEnvelope(tuple)) admittedPatches.push(patch);
+        } else {
+          if (kind === "semantic") hasUnsequencedSemanticPatch = true;
+          else hasEnrichmentPatch = true;
+          admittedPatches.push(patch);
+        }
+      }
+
+      if (admittedPatches.length === 0) {
+        lastCoalescingMetrics = options?.metrics ?? null;
+        return touched;
+      }
+
+      const preserveEnvelopeGroups =
+        semanticEnvelopeDecisions.size > 1 ||
+        (semanticEnvelopeDecisions.size > 0 && (hasUnsequencedSemanticPatch || hasEnrichmentPatch));
+
       activeChangedIds = pendingChangedIds;
+      let coalescedPatches = admittedPatches;
+      let metrics: CoalescingMetrics | null = options?.metrics ?? null;
+
+      if (!options?.coalesced && !preserveEnvelopeGroups) {
+        const result = coalescePatchesWithMetrics(admittedPatches, DEFAULT_COALESCE_CONFIG);
+        coalescedPatches = result.patches;
+        metrics = result.metrics;
+      }
       const perfEnabled = isPatchPerfDebugEnabled();
       const perfStart = perfEnabled ? getPerfNow() : 0;
       const opStats: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
@@ -4108,14 +4369,6 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       let applyMs = 0;
       let listNormalizeMs = 0;
 
-      let coalescedPatches = patches;
-      let metrics: CoalescingMetrics | null = options?.metrics ?? null;
-
-      if (!options?.coalesced) {
-        const result = coalescePatchesWithMetrics(patches, DEFAULT_COALESCE_CONFIG);
-        coalescedPatches = result.patches;
-        metrics = result.metrics;
-      }
 
       lastCoalescingMetrics = metrics;
 
@@ -4151,7 +4404,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       const findNearestListNode = (nodeId: string | undefined): NodeRecord | undefined => {
         if (!nodeId) return undefined;
         let current = nodes.get(nodeId);
+        let parentSteps = 0;
         while (current) {
+          if (parentSteps++ >= nodes.size) return undefined;
           if (current.type === "list") return current;
           if (!current.parentId) return undefined;
           current = nodes.get(current.parentId);
@@ -4189,6 +4444,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         const target = resolveBlockEpochTarget(patch, at);
         if (!target) return false;
         const actualBlockEpoch = effectiveBlockEpoch(nodes, target);
+        if (actualBlockEpoch === undefined) {
+          appendDiagnostic(`parent cycle rejected:${patch.op}:${target.id}`);
+          return true;
+        }
         if (actualBlockEpoch === expectedBlockEpoch) return false;
         // A root insert/replace targets the block it carries, which is where its transaction's epoch was recorded.
         const epochBlockId = at.blockId === PATCH_ROOT_ID ? target.id : at.blockId;
@@ -4238,14 +4497,36 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         if (!target) return;
         const hasRangeUpdate = Object.prototype.hasOwnProperty.call(props ?? {}, "range");
         const hasMetaUpdate = Object.prototype.hasOwnProperty.call(props ?? {}, "meta");
+        const hasFinalityUpdate = Object.prototype.hasOwnProperty.call(props ?? {}, "isFinalized");
+        const finalityValue = props?.isFinalized;
+        const codeProgressMeta = props?.meta;
+        const codeProgressCandidate =
+          target.type === "code" &&
+          codeStateByRecord.get(target)?.managed &&
+          typeof codeProgressMeta === "object" &&
+          codeProgressMeta !== null &&
+          !Array.isArray(codeProgressMeta)
+            ? (codeProgressMeta as Record<string, unknown>).lazyTokenizedUntil
+            : undefined;
+        const lazyTokenizedUntil =
+          typeof codeProgressCandidate === "number" &&
+          Number.isSafeInteger(codeProgressCandidate) &&
+          codeProgressCandidate >= 0
+            ? codeProgressCandidate
+            : undefined;
         const sourceForRangeUpdate = hasRangeUpdate ? inputSourceSnapshotForMap(nodes) : undefined;
         const rangeUpdate = hasRangeUpdate && sourceForRangeUpdate
           ? parseSourceRange(props?.range, sourceForRangeUpdate.length)
           : null;
         let hasManagedSourceOwner = false;
-        if (hasRangeUpdate || hasMetaUpdate) {
+        if (hasRangeUpdate || hasMetaUpdate || hasFinalityUpdate) {
           let sourceOwner: NodeRecord | undefined = target;
+          let parentSteps = 0;
           while (sourceOwner) {
+            if (parentSteps++ >= nodes.size) {
+              appendDiagnostic(`parent cycle rejected:setProps:${target.id}`);
+              return;
+            }
             if (
               paragraphStateByRecord.has(sourceOwner) ||
               tableStateByRecord.has(sourceOwner) ||
@@ -4283,6 +4564,12 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           hasMetaUpdate &&
           !hasManagedSourceOwner &&
           !isManagedSourceFamily(metadataType);
+        const canUpdateRootFinality =
+          hasFinalityUpdate &&
+          typeof finalityValue === "boolean" &&
+          !hasManagedSourceOwner &&
+          target.parentId === PATCH_ROOT_ID &&
+          (target.type === "list" || target.type === "blockquote");
         let applyMetaUpdate = false;
         let nextMeta: Record<string, unknown> | undefined;
         if (canUpdateGenericMeta) {
@@ -4413,6 +4700,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           const nextProps = props ? { ...props } : {};
           delete nextProps.range;
           delete nextProps.meta;
+          delete nextProps.isFinalized;
           if ("block" in nextProps) {
             delete (nextProps as Record<string, unknown>).block;
           }
@@ -4429,6 +4717,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           const nextProps = props ? { ...props } : {};
           delete nextProps.range;
           delete nextProps.meta;
+          delete nextProps.isFinalized;
           if ("block" in nextProps) {
             delete (nextProps as Record<string, unknown>).block;
           }
@@ -4511,6 +4800,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 : refreshLegacyCodeSource(existingCodeState, target.block, canonicalSource);
             }
             codeStateByRecord.set(target, nextCodeState);
+            if (nextCodeState.view.lines !== existingCodeState.view.lines) {
+              invalidateAllActiveCodeLineRanges(target.id);
+            }
             if (linesChanged || (target.block?.isFinalized && existingCodeState.view.source.state !== "finalized")) {
               invalidateAllCodeLineRanges(target.id);
             }
@@ -4534,6 +4826,16 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               recordSetPropsStage("code:apply-metadata", getPerfNow() - metadataStart);
             }
           }
+          if (target.type === "code" && target.block?.isFinalized) {
+            const currentCodeState = codeStateByRecord.get(target);
+            if (currentCodeState) {
+              const finalized = finalizeStoredCodeState(currentCodeState);
+              if (finalized !== currentCodeState) {
+                codeStateByRecord.set(target, finalized);
+                invalidateAllCodeLineRanges(target.id);
+              }
+            }
+          }
           if (semanticUpdate) {
             advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
             blockEpochAdvanced = true;
@@ -4548,10 +4850,12 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             Boolean(target.parentId);
           if (shouldRebuildFinalizedTree) {
             const parent = target.parentId ? nodes.get(target.parentId) : undefined;
-            const index = parent ? parent.children.indexOf(target.id) : -1;
+            const lastIndex = (parent?.children.length ?? 0) - 1;
+            const isTailChild = Boolean(parent && lastIndex >= 0 && parent.children[lastIndex] === target.id);
+            const index = isTailChild ? lastIndex : parent ? parent.children.indexOf(target.id) : -1;
             if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && parent) {
               paragraphCountersByMap!.get(nodes)?.recordPrefixComparisons?.(
-                index === -1 ? parent.children.length : index + 1,
+                isTailChild ? 1 : index === -1 ? parent.children.length : index + 1,
                 "store",
               );
             }
@@ -4585,6 +4889,21 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           blockChanged = true;
 
         }
+        if (lazyTokenizedUntil !== undefined && target.type === "code" && target.block) {
+          const currentMeta = target.block.payload.meta;
+          if (currentMeta?.lazyTokenizedUntil !== lazyTokenizedUntil) {
+            target.block = {
+              ...target.block,
+              payload: {
+                ...target.block.payload,
+                meta: { ...(currentMeta ?? {}), lazyTokenizedUntil },
+              },
+            };
+            blockChanged = true;
+            mutatedBlocks = true;
+            blocksDirty = true;
+          }
+        }
         if (applyMetaUpdate && target.block && !hasManagedSourceOwner && !isManagedSourceFamily(target.type)) {
           const updatedBlock = blockWithExactCanonicalMetadata(target.block, metadataValue);
           if (updatedBlock !== target.block) {
@@ -4593,6 +4912,17 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             mutatedBlocks = true;
             blocksDirty = true;
           }
+        }
+        if (
+          canUpdateRootFinality &&
+          target.block &&
+          typeof finalityValue === "boolean" &&
+          target.block.isFinalized !== finalityValue
+        ) {
+          target.block = { ...target.block, isFinalized: finalityValue };
+          blockChanged = true;
+          mutatedBlocks = true;
+          blocksDirty = true;
         }
 
         if (
@@ -4681,6 +5011,21 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
       };
       const applyPatch = (patch: Patch) => {
+        const parent = "at" in patch ? resolveParent(nodes, patch.at) : undefined;
+        if (parent && hasParentCycle(nodes, parent)) {
+          appendDiagnostic(`parent cycle rejected:${patch.op}:${parent.id}`);
+          return;
+        }
+        if (
+          parent &&
+          (patch.op === "insertChild" || patch.op === "replaceChild") &&
+          typeof patch.node === "object" &&
+          patch.node !== null &&
+          snapshotWouldCreateParentCycle(nodes, parent, patch.node)
+        ) {
+          appendDiagnostic(`parent cycle rejected:${patch.op}:${patch.node.id}`);
+          return;
+        }
         switch (patch.op) {
           case "appendInputSource": {
             const source = inputSourceByNodeMap.get(nodes);
@@ -4914,10 +5259,13 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               if (fromSpan < changedSpanEnd) invalidateParagraphSpanRange(target.id, fromSpan, changedSpanEnd);
               changed = true;
             }
-            if (codeState && codeState.view.source.state !== "finalized") {
-              codeStateByRecord.set(target, finalizeStoredCodeState(codeState));
-              invalidateAllCodeLineRanges(target.id);
-              changed = true;
+            if (codeState) {
+              const finalized = finalizeStoredCodeState(codeState);
+              if (finalized !== codeState) {
+                codeStateByRecord.set(target, finalized);
+                invalidateAllCodeLineRanges(target.id);
+                changed = true;
+              }
             }
             if (!paragraphState && !tableState && target.block && !target.block.isFinalized) {
               target.block = cloneBlock(target.block);
@@ -5034,6 +5382,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             }
             codeStateByRecord.set(target, appended.state);
             if (appended.state.view.source.state === "finalized") {
+              invalidateActiveCodeLineRange(target.id, patch.fromLine, appended.state.view.lines.length);
               invalidateAllCodeLineRanges(target.id);
             } else {
               invalidateCodeLineRange(target.id, patch.fromLine, appended.state.view.lines.length);
@@ -5249,11 +5598,21 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               break;
             }
             const decorated = decorateStoredCodeState(codeState, patch);
+            if (decorated.stale) {
+              debugCounters.staleEpochRejected += 1;
+              break;
+            }
             if (decorated.reason) {
               appendDiagnostic(`decorateCode guard rejected:${target.id}:${decorated.reason}`);
               break;
             }
             if (!decorated.changed || !decorated.state) break;
+            const decoratedBlock = updateStoredDiffBlockDecorations(
+              target.block,
+              decorated.state,
+              decorated.changedIndices,
+            );
+            if (decoratedBlock !== target.block) target.block = decoratedBlock;
             codeStateByRecord.set(target, decorated.state);
             if (decorated.changedIndices) invalidateCodeLineIndices(target.id, decorated.changedIndices);
             bumpVersion(target);
@@ -5345,6 +5704,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
       for (const id of touched) pendingChangedIds.add(id);
       activeChangedIds = null;
+      if (newestAdmittedEnvelope) lastSemanticEnvelope = newestAdmittedEnvelope;
 
       if (touched.size > 0 || mutatedBlocks) {
         version++;
@@ -5395,9 +5755,478 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     hasProvisionalBlocks() {
       return provisionalBlockCount > 0;
     },
+    getNodeHandle(id: string) {
+      const record = nodes.get(id);
+      if (!record) return undefined;
+      const ownerNodes = nodes;
+      const ownerResetVersion = resetVersion;
+      const document = inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+      const type = record.type;
+      const cached = nodeHandlesByRecord.get(record);
+      if (
+        cached &&
+        cached.nodes === ownerNodes &&
+        cached.resetVersion === ownerResetVersion &&
+        cached.document === document &&
+        cached.type === type
+      ) {
+        return cached.handle;
+      }
+
+      const isCurrentRecord = (): NodeRecord | undefined => {
+        if (nodes !== ownerNodes || resetVersion !== ownerResetVersion) return undefined;
+        const current = nodes.get(id);
+        if (current !== record || current.type !== type) return undefined;
+        const currentDocument = inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+        return currentDocument === document ? current : undefined;
+      };
+      let metadataSnapshot: NodeHandleMetadata | undefined;
+      const childRangeSnapshots = new Map<string, readonly NodeHandle[]>();
+      const readChildren = (range: NodeChildRange): readonly NodeHandle[] => {
+        assertNodeChildRange(range);
+        const current = isCurrentRecord();
+        if (!current) throw new Error("Node handle no longer refers to the current document");
+        const key = `${range.from}:${range.to}`;
+        const from = Math.min(range.from, current.children.length);
+        const to = Math.min(range.to, current.children.length);
+        const next: NodeHandle[] = [];
+        for (let index = from; index < to; index++) {
+          const child = store.getNodeHandle(current.children[index]!);
+          if (child) next.push(child);
+        }
+        const previous = childRangeSnapshots.get(key);
+        if (previous && previous.length === next.length && next.every((child, index) => child === previous[index])) {
+          childRangeSnapshots.delete(key);
+          childRangeSnapshots.set(key, previous);
+          return previous;
+        }
+        const snapshot = Object.freeze(next);
+        childRangeSnapshots.set(key, snapshot);
+        if (childRangeSnapshots.size > 64) {
+          const oldest = childRangeSnapshots.keys().next().value;
+          if (oldest !== undefined) childRangeSnapshots.delete(oldest);
+        }
+        return snapshot;
+      };
+      const handle: NodeHandle = Object.freeze({
+        id,
+        type,
+        generation: ownerResetVersion,
+        readMetadata: () => {
+          const current = isCurrentRecord();
+          if (!current) throw new Error("Node handle no longer refers to the current document");
+          const revision = current.version;
+          const childCount = current.children.length;
+          const isFinalized = current.block?.isFinalized ?? true;
+          if (
+            metadataSnapshot &&
+            metadataSnapshot.revision === revision &&
+            metadataSnapshot.childCount === childCount &&
+            metadataSnapshot.isFinalized === isFinalized
+          ) {
+            return metadataSnapshot;
+          }
+          metadataSnapshot = Object.freeze({
+            id,
+            type,
+            generation: ownerResetVersion,
+            revision,
+            childCount,
+            isFinalized,
+          });
+          return metadataSnapshot;
+        },
+        readChildren,
+        subscribeMetadata: (listener: () => void) => {
+          if (!isCurrentRecord()) return () => {};
+          return subscribeRendererNode(store, id, () => {
+            if (isCurrentRecord()) listener();
+          });
+        },
+        subscribeChildren: (range: NodeChildRange, listener: () => void) => {
+          assertNodeChildRange(range);
+          let previous = readChildren(range);
+          return subscribeRendererNode(store, id, () => {
+            if (!isCurrentRecord()) {
+              listener();
+              return;
+            }
+            const next = readChildren(range);
+            if (next !== previous) {
+              previous = next;
+              listener();
+            }
+          });
+        },
+      });
+      nodeHandlesByRecord.set(record, {
+        nodes: ownerNodes,
+        resetVersion: ownerResetVersion,
+        document,
+        type,
+        handle,
+      });
+      return handle;
+    },
     getCodeBlock(id: string) {
       const record = nodes.get(id);
       return record?.type === "code" ? codeStateByRecord.get(record)?.view : undefined;
+    },
+    getCodeNodeHandle(id: string) {
+      const record = nodes.get(id);
+      const state = record?.type === "code" ? codeStateByRecord.get(record) : undefined;
+      if (!record || !state) return undefined;
+      const { codeOwnerId, generation } = state.view.source;
+      const ownerNodes = nodes;
+      const ownerResetVersion = resetVersion;
+      const document = state.document ?? inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+      const cached = codeNodeHandlesByRecord.get(record);
+      if (
+        cached &&
+        cached.nodes === ownerNodes &&
+        cached.resetVersion === ownerResetVersion &&
+        cached.document === document &&
+        cached.codeOwnerId === codeOwnerId &&
+        cached.generation === generation
+      ) {
+        return cached.handle;
+      }
+
+      const isCurrentState = (): StoredCodeBlockState | undefined => {
+        if (nodes !== ownerNodes || resetVersion !== ownerResetVersion || nodes.get(id) !== record) return undefined;
+        const current = codeStateByRecord.get(record);
+        if (!current) return undefined;
+        const currentSource = current.view.source;
+        if (currentSource.codeOwnerId !== codeOwnerId || currentSource.generation !== generation) return undefined;
+        const currentDocument = current.document ?? inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+        return currentDocument === document ? current : undefined;
+      };
+      const activeRanges = new Map<string, ActiveCodeLineRange>();
+      const readCodeLineSnapshot = (current: StoredCodeBlockState, range: CodeLineRange) => {
+        const lineCount = current.view.source.lineCount;
+        const from = Math.min(range.from, lineCount);
+        const to = Math.min(range.to, lineCount);
+        return from < to ? readStoredCodeLines(current, from, to) : EMPTY_CODE_LINES;
+      };
+
+      let metadataSource = state.view.source;
+      let metadataConfigurationRevision = state.view.configurationRevision;
+      let metadataInfo = state.view.info;
+      let metadataLanguage = state.view.language;
+      let metadataSnapshot: CodeBlockMetadata = Object.freeze({
+        ...metadataSource,
+        configurationRevision: metadataConfigurationRevision,
+        info: metadataInfo,
+        language: metadataLanguage,
+      });
+      const handle = createCodeNodeHandle({
+        readSource: () => {
+          const current = isCurrentState();
+          if (!current) throw new Error("Code node handle no longer refers to the current code document");
+          return current.sourceSnapshot.materialize();
+        },
+        readMetadata: () => {
+          const current = isCurrentState();
+          if (!current) throw new Error("Code node handle no longer refers to the current code document");
+          const currentSource = current.view.source;
+          const metadataChanged =
+            currentSource.codeOwnerId !== metadataSource.codeOwnerId ||
+            currentSource.generation !== metadataSource.generation ||
+            currentSource.revision !== metadataSource.revision ||
+            currentSource.state !== metadataSource.state ||
+            currentSource.processedTo !== metadataSource.processedTo ||
+            currentSource.completeLineCount !== metadataSource.completeLineCount ||
+            currentSource.lineCount !== metadataSource.lineCount ||
+            currentSource.sourceRange.from !== metadataSource.sourceRange.from ||
+            currentSource.sourceRange.to !== metadataSource.sourceRange.to ||
+            currentSource.diffStatus !== metadataSource.diffStatus ||
+            current.view.configurationRevision !== metadataConfigurationRevision ||
+            current.view.info !== metadataInfo ||
+            current.view.language !== metadataLanguage;
+          if (metadataChanged) {
+            metadataSource = currentSource;
+            metadataConfigurationRevision = current.view.configurationRevision;
+            metadataInfo = current.view.info;
+            metadataLanguage = current.view.language;
+            metadataSnapshot = Object.freeze({
+              ...metadataSource,
+              configurationRevision: metadataConfigurationRevision,
+              info: metadataInfo,
+              language: metadataLanguage,
+            });
+          }
+          return metadataSnapshot;
+        },
+        readLines: (range: CodeLineRange) => {
+          assertCodeHandleRange(range);
+          const current = isCurrentState();
+          if (!current) throw new Error("Code node handle no longer refers to the current code document");
+          const activeRange = activeRanges.get(`${range.from}:${range.to}`);
+          if (activeRange?.lines) return activeRange.lines;
+          const lines = readCodeLineSnapshot(current, range);
+          if (activeRange) activeRange.lines = lines;
+          return lines;
+        },
+        subscribeMetadata: (listener: () => void) => {
+          if (!isCurrentState()) return () => {};
+          let nodeSet = nodeListeners.get(id);
+          if (!nodeSet) {
+            nodeSet = new Set();
+            nodeListeners.set(id, nodeSet);
+          }
+          const notifyIfCurrent = () => {
+            if (isCurrentState()) listener();
+          };
+          nodeSet.add(notifyIfCurrent);
+          let subscribed = true;
+          return () => {
+            if (!subscribed) return;
+            subscribed = false;
+            nodeSet!.delete(notifyIfCurrent);
+            if (nodeSet!.size === 0 && nodeListeners.get(id) === nodeSet) nodeListeners.delete(id);
+          };
+        },
+        subscribeLines: (range: CodeLineRange, listener: () => void) => {
+          assertCodeHandleRange(range);
+          const current = isCurrentState();
+          if (!current || range.from === range.to) return () => {};
+          const notifyIfCurrent = () => {
+            if (isCurrentState()) listener();
+          };
+          const pageStart = Math.floor(range.from / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
+          if (!Number.isSafeInteger(pageStart + CODE_LINE_RANGE_SIZE)) {
+            throw new RangeError("Code line range cannot be represented by aligned store pages");
+          }
+          const unsubscribePages: Array<() => void> = [];
+          for (let from = pageStart; from < range.to; from += CODE_LINE_RANGE_SIZE) {
+            if (!Number.isSafeInteger(from + CODE_LINE_RANGE_SIZE)) {
+              for (const unsubscribe of unsubscribePages) unsubscribe();
+              throw new RangeError("Code line range cannot be represented by aligned store pages");
+            }
+            unsubscribePages.push(
+              store.subscribeCodeLines(id, from, from + CODE_LINE_RANGE_SIZE, notifyIfCurrent),
+            );
+          }
+          const key = `${range.from}:${range.to}`;
+          let activeRange = activeRanges.get(key);
+          if (!activeRange) {
+            activeRange = {
+              from: range.from,
+              to: range.to,
+              consumers: 0,
+              lines: readCodeLineSnapshot(current, range),
+            };
+            activeRanges.set(key, activeRange);
+          } else if (!activeRange.lines) {
+            activeRange.lines = readCodeLineSnapshot(current, range);
+          }
+          activeRange.consumers += 1;
+          const retainedRange = activeRange;
+          let subscribed = true;
+          return () => {
+            if (!subscribed) return;
+            subscribed = false;
+            for (const unsubscribe of unsubscribePages) unsubscribe();
+            retainedRange.consumers -= 1;
+            if (retainedRange.consumers === 0 && activeRanges.get(key) === retainedRange) {
+              activeRanges.delete(key);
+            }
+          };
+        },
+      });
+      codeNodeHandlesByRecord.set(record, {
+        nodes: ownerNodes,
+        resetVersion: ownerResetVersion,
+        document,
+        codeOwnerId,
+        generation,
+        handle,
+        activeRanges,
+      });
+      return handle;
+    },
+    getTableNodeHandle(id: string) {
+      const record = nodes.get(id);
+      const state = record?.type === "table" ? tableStateByRecord.get(record) : undefined;
+      if (!record || !state) return undefined;
+      const { tableOwnerId, generation } = state.source;
+      const ownerNodes = nodes;
+      const ownerResetVersion = resetVersion;
+      const document = inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+      const cached = tableNodeHandlesByRecord.get(record);
+      if (
+        cached &&
+        cached.nodes === ownerNodes &&
+        cached.resetVersion === ownerResetVersion &&
+        cached.document === document &&
+        cached.tableOwnerId === tableOwnerId &&
+        cached.generation === generation
+      ) {
+        return cached.handle;
+      }
+
+      const isCurrentState = (): ManagedTableViewState | undefined => {
+        if (nodes !== ownerNodes || resetVersion !== ownerResetVersion || nodes.get(id) !== record) return undefined;
+        const current = tableStateByRecord.get(record);
+        if (!current || current.source.tableOwnerId !== tableOwnerId || current.source.generation !== generation) {
+          return undefined;
+        }
+        return (inputSourceByNodeMap.get(ownerNodes)?.document ?? record) === document ? current : undefined;
+      };
+      const activeRanges = new Map<string, ActiveTableRowRange>();
+      const assertRange = (range: TableRowRange) => {
+        if (
+          !range ||
+          !Number.isSafeInteger(range.from) ||
+          range.from < 0 ||
+          !Number.isSafeInteger(range.to) ||
+          range.to < range.from
+        ) throw new RangeError("Table row range must be a non-negative half-open range");
+      };
+      const readRowSnapshot = (
+        current: ManagedTableViewState,
+        range: TableRowRange,
+        activeRange?: ActiveTableRowRange,
+      ): ReadonlyArray<TableRowRecord> => {
+        const from = Math.min(range.from, current.rows.length);
+        const to = Math.min(range.to, current.rows.length);
+        if (activeRange?.rows && activeRange.rows.length === to - from) {
+          let unchanged = true;
+          for (let index = from; index < to; index += 1) {
+            if (current.rows.get(index) !== activeRange.rows[index - from]) {
+              unchanged = false;
+              break;
+            }
+          }
+          if (unchanged) return activeRange.rows;
+        }
+        const rows = from < to ? current.rows.readRange(from, to) : EMPTY_TABLE_ROWS;
+        if (activeRange) activeRange.rows = rows;
+        return rows;
+      };
+      let metadataSource = state.source;
+      let metadataHeader = state.header;
+      let metadataSnapshot: TableBlockMetadata = Object.freeze({
+        ...metadataSource,
+        header: metadataHeader,
+      });
+      const handle = createTableNodeHandle({
+        readMetadata: () => {
+          const current = isCurrentState();
+          if (!current) throw new Error("Table node handle no longer refers to the current table document");
+          const currentSource = current.source;
+          const metadataChanged =
+            currentSource.tableOwnerId !== metadataSource.tableOwnerId ||
+            currentSource.generation !== metadataSource.generation ||
+            currentSource.revision !== metadataSource.revision ||
+            currentSource.state !== metadataSource.state ||
+            currentSource.processedTo !== metadataSource.processedTo ||
+            currentSource.completeRowCount !== metadataSource.completeRowCount ||
+            currentSource.rowCount !== metadataSource.rowCount ||
+            currentSource.sourceRange.from !== metadataSource.sourceRange.from ||
+            currentSource.sourceRange.to !== metadataSource.sourceRange.to ||
+            current.header !== metadataHeader;
+          if (metadataChanged) {
+            metadataSource = currentSource;
+            metadataHeader = current.header;
+            metadataSnapshot = Object.freeze({
+              ...metadataSource,
+              header: metadataHeader,
+            });
+          }
+          return metadataSnapshot;
+        },
+        readRows: (range: TableRowRange) => {
+          assertRange(range);
+          const current = isCurrentState();
+          if (!current) throw new Error("Table node handle no longer refers to the current table document");
+          const key = `${range.from}:${range.to}`;
+          let activeRange = activeRanges.get(key);
+          if (!activeRange) {
+            if (activeRanges.size >= TABLE_ROW_RANGE_SNAPSHOT_LIMIT) {
+              for (const [cachedKey, cachedRange] of activeRanges) {
+                if (cachedRange.consumers === 0) {
+                  activeRanges.delete(cachedKey);
+                  break;
+                }
+              }
+            }
+            activeRange = { from: range.from, to: range.to, consumers: 0, rows: undefined };
+            activeRanges.set(key, activeRange);
+          }
+          return readRowSnapshot(current, range, activeRange);
+        },
+        subscribeMetadata: (listener: () => void) => {
+          if (!isCurrentState()) return () => {};
+          let nodeSet = nodeListeners.get(id);
+          if (!nodeSet) {
+            nodeSet = new Set();
+            nodeListeners.set(id, nodeSet);
+          }
+          const notifyIfCurrent = () => {
+            if (isCurrentState()) listener();
+          };
+          nodeSet.add(notifyIfCurrent);
+          let subscribed = true;
+          return () => {
+            if (!subscribed) return;
+            subscribed = false;
+            nodeSet!.delete(notifyIfCurrent);
+            if (nodeSet!.size === 0 && nodeListeners.get(id) === nodeSet) nodeListeners.delete(id);
+          };
+        },
+        subscribeRows: (range: TableRowRange, listener: () => void) => {
+          assertRange(range);
+          const current = isCurrentState();
+          if (!current || range.from === range.to) return () => {};
+          const notifyIfCurrent = () => {
+            if (isCurrentState()) listener();
+          };
+          const pageStart = Math.floor(range.from / TABLE_ROW_RANGE_SIZE) * TABLE_ROW_RANGE_SIZE;
+          if (!Number.isSafeInteger(pageStart + TABLE_ROW_RANGE_SIZE)) {
+            throw new RangeError("Table row range cannot be represented by aligned store pages");
+          }
+          const unsubscribePages: Array<() => void> = [];
+          for (let from = pageStart; from < range.to; from += TABLE_ROW_RANGE_SIZE) {
+            if (!Number.isSafeInteger(from + TABLE_ROW_RANGE_SIZE)) {
+              for (const unsubscribe of unsubscribePages) unsubscribe();
+              throw new RangeError("Table row range cannot be represented by aligned store pages");
+            }
+            unsubscribePages.push(
+              store.subscribeTableRows(id, from, from + TABLE_ROW_RANGE_SIZE, notifyIfCurrent),
+            );
+          }
+          const key = `${range.from}:${range.to}`;
+          let activeRange = activeRanges.get(key);
+          if (!activeRange) {
+            activeRange = { from: range.from, to: range.to, consumers: 0, rows: undefined };
+            activeRanges.set(key, activeRange);
+          }
+          activeRange.consumers += 1;
+          readRowSnapshot(current, range, activeRange);
+          const retainedRange = activeRange;
+          let subscribed = true;
+          return () => {
+            if (!subscribed) return;
+            subscribed = false;
+            for (const unsubscribe of unsubscribePages) unsubscribe();
+            retainedRange.consumers -= 1;
+            if (retainedRange.consumers === 0 && activeRanges.get(key) === retainedRange) {
+              activeRanges.delete(key);
+            }
+          };
+        },
+      });
+      tableNodeHandlesByRecord.set(record, {
+        nodes: ownerNodes,
+        resetVersion: ownerResetVersion,
+        document,
+        tableOwnerId,
+        generation,
+        handle,
+        activeRanges,
+      });
+      return handle;
     },
 
     getCodeLines(id: string, from: number, to: number) {

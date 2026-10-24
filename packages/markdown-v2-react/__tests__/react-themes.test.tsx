@@ -1,6 +1,10 @@
 import assert from "node:assert";
 import { JSDOM } from "jsdom";
 import { createRoot } from "react-dom/client";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import postcss from "postcss";
+
 import { StreamingMarkdown } from "../src/streaming-markdown";
 
 async function setupDom(): Promise<Window & typeof globalThis> {
@@ -64,6 +68,101 @@ function waitForMutation(container: HTMLElement, predicate: () => boolean, timeo
   return promise;
 }
 
+function assertThemeCssContract(): void {
+  const cssPath = fileURLToPath(new URL("../../theme-tailwind/theme.css", import.meta.url));
+  const stylesheet = postcss.parse(readFileSync(cssPath, "utf8"), { from: cssPath });
+  let variableRuleCount = 0;
+  const shikiRules: postcss.Rule[] = [];
+
+  stylesheet.walkRules((rule) => {
+    if (rule.nodes?.some((node) => node.type === "decl" && node.prop.startsWith("--"))) {
+      variableRuleCount++;
+      assert.ok(
+        rule.selectors.every((selector) => selector.includes("[data-stream-mdx]")),
+        `custom property selector must be scoped to StreamMDX: ${rule.selector}`,
+      );
+    }
+    if (rule.selector.includes(".markdown-v2-output")) {
+      assert.ok(
+        rule.selectors.every((selector) => selector.includes("[data-stream-mdx]")),
+        `native output selector must be scoped to StreamMDX: ${rule.selector}`,
+      );
+    }
+    if (rule.selector.includes(".shiki")) {
+      assert.ok(
+        rule.selectors.every((selector) => selector.includes("[data-stream-mdx]")),
+        `Shiki selector must be scoped to StreamMDX: ${rule.selector}`,
+      );
+      shikiRules.push(rule);
+    }
+  });
+
+  assert.ok(variableRuleCount > 0, "theme CSS must expose scoped custom properties");
+  const lightDeclarations = shikiRules
+    .flatMap((rule) => rule.nodes ?? [])
+    .filter((node): node is postcss.Declaration => node.type === "decl");
+  for (const [property, value] of [
+    ["color", "var(--shiki-light)"],
+    ["background-color", "var(--shiki-light-bg)"],
+    ["font-style", "var(--shiki-light-font-style)"],
+    ["font-weight", "var(--shiki-light-font-weight)"],
+    ["text-decoration", "var(--shiki-light-text-decoration)"],
+  ]) {
+    assert.ok(
+      lightDeclarations.some((declaration) => declaration.prop === property && declaration.value === value),
+      `light Shiki styles must include ${property}: ${value}`,
+    );
+
+  }
+  const assertDarkShikiDeclarations = (rules: postcss.Rule[], context: string) => {
+    const declarations = rules
+      .flatMap((rule) => rule.nodes ?? [])
+      .filter((node): node is postcss.Declaration => node.type === "decl");
+    for (const [property, value] of [
+      ["color", "var(--shiki-dark)"],
+      ["background-color", "var(--shiki-dark-bg)"],
+      ["font-style", "var(--shiki-dark-font-style)"],
+      ["font-weight", "var(--shiki-dark-font-weight)"],
+      ["text-decoration", "var(--shiki-dark-text-decoration)"],
+    ]) {
+      assert.ok(
+        declarations.some((declaration) => declaration.prop === property && declaration.value === value),
+        `${context} Shiki styles must include ${property}: ${value}`,
+      );
+    }
+  };
+
+  const explicitDarkRules = shikiRules.filter((rule) =>
+    rule.selector.includes("[data-stream-mdx][data-color-scheme=\"dark\"]"),
+  );
+  assertDarkShikiDeclarations(explicitDarkRules, "explicit dark");
+
+  const legacyDarkRules = shikiRules.filter((rule) =>
+    rule.selector.includes(".dark [data-stream-mdx]:not([data-color-scheme])"),
+  );
+  assertDarkShikiDeclarations(legacyDarkRules, "legacy .dark");
+
+  const systemDarkRules: postcss.Rule[] = [];
+  stylesheet.walkAtRules("media", (media) => {
+    if (!media.params.includes("prefers-color-scheme: dark")) return;
+    media.walkRules((rule) => {
+      if (rule.selector.includes("[data-stream-mdx][data-color-scheme=\"system\"]")) {
+        systemDarkRules.push(rule);
+      }
+    });
+  });
+  assertDarkShikiDeclarations(systemDarkRules, "system dark");
+}
+
+function assertNativeRoot(container: HTMLElement, colorScheme?: "light" | "dark" | "system"): void {
+  const nativeRoot = container.querySelector<HTMLElement>("[data-stream-mdx]");
+  assert.ok(nativeRoot, "native output root must carry data-stream-mdx");
+  assert.ok(nativeRoot.classList.contains("not-prose"), "native output root must opt out of enclosing prose styles");
+  assert.equal(nativeRoot.getAttribute("data-color-scheme"), colorScheme ?? null);
+}
+
+
+
 async function runReactThemesTest(): Promise<void> {
   const window = await setupDom();
   const container = window.document.getElementById("root");
@@ -76,7 +175,7 @@ async function runReactThemesTest(): Promise<void> {
     // 1. Initial render with custom themes
     root.render(
       <StreamingMarkdown
-        engine="main-thread"
+        engine="main"
         text={code}
         themes={{ light: "min-light", dark: "nord" }}
       />,
@@ -90,10 +189,31 @@ async function runReactThemesTest(): Promise<void> {
     assert.ok(htmlWithCustom.includes("nord") && htmlWithCustom.includes("min-light"), "DOM must reflect custom nord and min-light themes");
     assert.ok(!htmlWithCustom.includes("github-dark"), "DOM must not contain default github-dark when custom themes are set");
 
+    assertNativeRoot(container);
+
+    for (const colorScheme of ["light", "dark", "system"] as const) {
+      root.render(<StreamingMarkdown engine="main" text={code} colorScheme={colorScheme} />);
+      await waitForMutation(container, () => {
+        return container
+          .querySelector("[data-stream-mdx]")
+          ?.getAttribute("data-color-scheme") === colorScheme;
+      });
+      assertNativeRoot(container, colorScheme);
+    }
+
+    root.render(<StreamingMarkdown engine="main" text={code} />);
+    await waitForMutation(container, () => {
+      return container.querySelector("[data-stream-mdx]")?.getAttribute("data-color-scheme") === null;
+    });
+    assertNativeRoot(container);
+    assertThemeCssContract();
+
+
+
     // 2. Change themes prop to default themes -> restarts / re-inits
     root.render(
       <StreamingMarkdown
-        engine="main-thread"
+        engine="main"
         text={code}
         themes={{ light: "github-light", dark: "github-dark" }}
       />,

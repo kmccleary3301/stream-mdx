@@ -4,6 +4,8 @@
 
 ### Major Changes
 
+- 31c997f: Add the native root theme policy, isolate native output styles and custom properties, and map Shiki light/dark foreground, background, font-style, font-weight, and text-decoration tokens to the selected color scheme.
+
 - Release the coordinated 1.0.0 package line. Upgrade all installed StreamMDX packages together and recopy the hosted worker from the matching version. Internal runtime dependencies remain exact versions; the optional unified adapter's StreamMDX peers require the 1.x line.
 
   Migration from 0.5.0:
@@ -21,6 +23,8 @@
   The remaining consumed changesets describe the new opt-in renderers, controls, animation, table virtualization, themes, native extension APIs, and correctness/security fixes. These features do not enable themselves when upgrading. See the root README migration section and the generated package changelogs before upgrading custom integrations.
 
 ### Patch Changes
+
+- 24f5b42: Apply the theme's typography rules inside native `[data-stream-mdx]` roots. The roots' `not-prose` class had also excluded the theme's own paragraph, blockquote, list, table and code spacing. Nested `not-prose` islands and host content outside a root stay excluded.
 
 - 9c482bd: Keep long documents streaming at high input rates. On a 1 MB document fed at 20,000 characters per second, the worker previously needed about 127 seconds of parse time for a stream that lasts about 50 seconds, so it fell further behind with every append.
 

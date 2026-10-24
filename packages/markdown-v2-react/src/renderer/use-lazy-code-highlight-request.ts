@@ -12,7 +12,6 @@ type LazyCodeHighlightRequestOptions = {
   lazyEnabled: boolean;
   lazyTokenizedUntil: number;
   totalLazyLineCount: number;
-  shouldVirtualize: boolean;
 };
 
 export function useLazyCodeHighlightRequest({
@@ -24,7 +23,6 @@ export function useLazyCodeHighlightRequest({
   lazyEnabled,
   lazyTokenizedUntil,
   totalLazyLineCount,
-  shouldVirtualize,
 }: LazyCodeHighlightRequestOptions): void {
   const highlightRequester = useCodeHighlightRequester();
   const lastRangeRef = React.useRef<{
@@ -37,7 +35,8 @@ export function useLazyCodeHighlightRequest({
   const rafRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
-    if (shouldVirtualize || !blockIsFinalized || !lazyEnabled || !highlightRequester) return;
+    // Virtualized views demand visible rows first; this requests the rest of a finalized lazy block as background work.
+    if (!blockIsFinalized || !lazyEnabled || !highlightRequester) return;
     if (totalLazyLineCount <= 0 || lazyTokenizedUntil >= totalLazyLineCount) return;
 
     const last = lastRangeRef.current;
@@ -66,7 +65,7 @@ export function useLazyCodeHighlightRequest({
         blockId,
         startLine: 0,
         endLine: totalLazyLineCount,
-        priority: "visible",
+        priority: "prefetch",
         reason: "finalize-full",
       });
     };
@@ -89,7 +88,6 @@ export function useLazyCodeHighlightRequest({
     highlightRequester,
     lazyEnabled,
     lazyTokenizedUntil,
-    shouldVirtualize,
     store,
     totalLazyLineCount,
   ]);

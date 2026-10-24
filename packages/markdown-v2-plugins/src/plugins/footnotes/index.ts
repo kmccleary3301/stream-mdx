@@ -1,12 +1,22 @@
-import type { Block, FootnoteItem, HtmlTreeNode, InlineNode, NodeSnapshot, ParagraphSpanChildSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
+declare const __STREAM_MDX_COUNTERS__: boolean;
+
+import type { Block, FootnoteItem, HtmlTreeNode, InlineNode, NodeSnapshot, ParagraphSpanChildSnapshot, PreparedNestedSnapshot, SourceSnapshot } from "@stream-mdx/core";
 import { generateBlockId } from "@stream-mdx/core";
 import type {
   DocumentPlugin,
   DocumentPluginRegistry,
   FootnoteParagraphSpanTarget,
   FootnoteParagraphTargetDelta,
+  FootnoteParagraphTargetBridge,
   FootnoteParagraphTargetUpdate,
 } from "../document";
+type WorkerFootnoteParagraphTargetBridge = FootnoteParagraphTargetBridge & {
+  readonly noFootnoteArtifactsForSource?: SourceSnapshot;
+  readonly retainedGenericSourceBefore?: number;
+  readonly hasNativeTargets?: boolean;
+  readonly recordDocumentRecordsVisited?: (count: number) => void;
+};
+type DocumentRecordVisit = NonNullable<WorkerFootnoteParagraphTargetBridge["recordDocumentRecordsVisited"]>;
 
 /**
  * Footnotes document plugin
@@ -45,25 +55,81 @@ export const FootnotesPlugin: DocumentPlugin = {
 
   process(ctx) {
     const state = ctx.state.footnotes as FootnoteState;
-    const bridge = ctx.footnoteParagraphTargets;
-    for (const ownerId of bridge?.removedOwnerIds ?? []) retireParagraphOwner(state, ownerId);
-    const targetChanges = mergeParagraphTargetDeltas(state, bridge?.deltas ?? []);
+    const bridge: WorkerFootnoteParagraphTargetBridge | undefined = ctx.footnoteParagraphTargets;
+    const recordVisited = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? bridge?.recordDocumentRecordsVisited
+      : undefined;
+    if (bridge?.noFootnoteArtifactsForSource === ctx.source) {
+      for (const ownerId of bridge.removedOwnerIds ?? []) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        retireParagraphOwnerWithoutReferences(state, ownerId);
+      }
+      mergeParagraphTargetDeltasWithoutReferences(state, bridge.deltas ?? [], recordVisited);
+      // This fast path receives only the changed root suffix; HTML-declined quotes retain a consumer-visible root inline field.
+      // Native container paths remain child-patch-only and are excluded by the prepared HTML-content guard below.
+      const retainedBefore = bridge.retainedGenericSourceBefore;
+      if (typeof retainedBefore === "number"
+        && Number.isSafeInteger(retainedBefore)
+        && retainedBefore >= 0
+        && retainedBefore <= ctx.source.length) {
+        for (const block of ctx.blocks) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+          const range = block.payload.range;
+          if (block.type !== "blockquote"
+            || !range
+            || !Number.isSafeInteger(range.from)
+            || !Number.isSafeInteger(range.to)
+            || range.from < 0
+            || range.to <= range.from
+            || range.to <= retainedBefore
+            || range.to > ctx.source.length) continue;
+          const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
+          if (!prepared || !hasPreparedHtmlContent(prepared.children, recordVisited)) continue;
+          const inline = collectPreparedInlineNodes(prepared.children, recordVisited);
+          const currentInline = block.payload.inline;
+          if (Array.isArray(currentInline)
+            && currentInline.length === inline.length
+            && currentInline.every((node, index) => node === inline[index])) continue;
+          block.payload.inline = inline;
+        }
+      }
+      state.hasProvisionalTail = ctx.hasProvisionalTail;
+      state.noFootnoteArtifactsSource = ctx.source;
+      return undefined;
+    }
+    for (const ownerId of bridge?.removedOwnerIds ?? []) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      retireParagraphOwner(state, ownerId);
+    }
+    const targetChanges = mergeParagraphTargetDeltas(state, bridge?.deltas ?? [], recordVisited);
     const changedTargets = targetChanges.targets;
     const changedReferenceLabels = targetChanges.referenceLabels;
-    const changedDefinitions = collectDefinitionsFromBlocks(ctx.blocks, state);
+    const changedDefinitions = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? collectDefinitionsFromBlocks(ctx.blocks, state, recordVisited)
+      : collectDefinitionsFromBlocks(ctx.blocks, state);
     const publicationChanged = state.hasProvisionalTail !== ctx.hasProvisionalTail;
     state.hasProvisionalTail = ctx.hasProvisionalTail;
     const rebuildAllTargets = Boolean(bridge?.rebuild)
       || (bridge?.removedOwnerIds?.length ?? 0) > 0
       || publicationChanged;
-    const affectedTargets = collectAffectedParagraphTargets(
-      state,
-      changedTargets,
-      changedDefinitions,
-      rebuildAllTargets,
-      changedReferenceLabels,
-    );
+    const affectedTargets = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? collectAffectedParagraphTargets(
+          state,
+          changedTargets,
+          changedDefinitions,
+          rebuildAllTargets,
+          changedReferenceLabels,
+          recordVisited,
+        )
+      : collectAffectedParagraphTargets(
+          state,
+          changedTargets,
+          changedDefinitions,
+          rebuildAllTargets,
+          changedReferenceLabels,
+        );
     const shouldRebuild = !bridge
+      || (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && bridge.hasNativeTargets === false)
       || Boolean(bridge.rebuild)
       || (bridge.removedOwnerIds?.length ?? 0) > 0
       || publicationChanged
@@ -71,30 +137,66 @@ export const FootnotesPlugin: DocumentPlugin = {
       || changedReferenceLabels.size > 0;
     let numbers: Map<string, number>;
     if (shouldRebuild) {
-      const scopes = assignNumbersFromReferencesInBlocks(ctx.blocks, state, state.paragraphTargetEvents);
-      numbers = numberInlineReferences(ctx.blocks, state, scopes, ctx.hasProvisionalTail);
-      addChangedFootnoteNumberTargets(state, numbers, affectedTargets);
-      const paragraphUpdates = numberParagraphTargets(
-        state,
-        scopes,
-        numbers,
-        ctx.hasProvisionalTail,
-        affectedTargets,
-      );
+      const scopes = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? assignNumbersFromReferencesInBlocks(ctx.blocks, state, state.paragraphTargetEvents, recordVisited)
+        : assignNumbersFromReferencesInBlocks(ctx.blocks, state, state.paragraphTargetEvents);
+      numbers = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? numberInlineReferences(ctx.blocks, state, scopes, ctx.hasProvisionalTail, recordVisited)
+        : numberInlineReferences(ctx.blocks, state, scopes, ctx.hasProvisionalTail);
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        addChangedFootnoteNumberTargets(state, numbers, affectedTargets, recordVisited);
+      } else {
+        addChangedFootnoteNumberTargets(state, numbers, affectedTargets);
+      }
+      const paragraphUpdates = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? numberParagraphTargets(
+            state,
+            scopes,
+            numbers,
+            ctx.hasProvisionalTail,
+            affectedTargets,
+            recordVisited,
+          )
+        : numberParagraphTargets(state, scopes, numbers, ctx.hasProvisionalTail, affectedTargets);
       if (paragraphUpdates.length > 0) bridge?.applyUpdates(paragraphUpdates);
     } else {
       numbers = new Map<string, number>();
       for (const label of state.labelToNumber.keys()) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
         if (state.definitions.has(label) && (state.referenceCounts.get(label) ?? 0) > 0) {
           numbers.set(label, numbers.size + 1);
         }
       }
-      addChangedFootnoteNumberTargets(state, numbers, affectedTargets);
+      for (const refresh of bridge?.inlineRefreshes ?? []) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        reapplyCachedFootnoteAnnotations(refresh.previous, refresh.current);
+      }
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        addChangedFootnoteNumberTargets(state, numbers, affectedTargets, recordVisited);
+      } else {
+        addChangedFootnoteNumberTargets(state, numbers, affectedTargets);
+      }
     }
 
     // Build the synthetic footer after the current pass has updated definitions and references.
-    const items = buildFootnoteItems(state, numbers);
-    const rawSignature = JSON.stringify(items.map((item) => ({ n: item.number, l: item.label })));
+    const items = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? buildFootnoteItems(state, numbers, recordVisited)
+      : buildFootnoteItems(state, numbers);
+    state.noFootnoteArtifactsSource = state.labelToNumber.size === 0
+      && state.definitions.size === 0
+      && state.definitionOrigins.size === 0
+      && state.referenceCounts.size === 0
+      && state.definitionInlines.size === 0
+      && state.publishedNumbers.size === 0
+      && state.paragraphTargetEvents.length === 0
+      && state.paragraphDependents.size === 0
+      ? ctx.source
+      : undefined;
+    if (items.length === 0) return undefined;
+    const rawSignature = JSON.stringify(items.map((item) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      return { n: item.number, l: item.label };
+    }));
     const id = generateBlockId(`FOOTNOTES:${rawSignature}`, "footnotes");
 
     const footnotesBlock: Block = {
@@ -106,8 +208,7 @@ export const FootnotesPlugin: DocumentPlugin = {
         meta: { items },
       },
     };
-
-    return { syntheticBlocks: items.length > 0 ? [footnotesBlock] : [] };
+    return { syntheticBlocks: [footnotesBlock] };
   },
 };
 
@@ -126,6 +227,7 @@ type FootnoteState = {
   publishedNumbers: Map<string, number>;
   retiredParagraphGenerations: Map<string, number>;
   hasProvisionalTail?: boolean;
+  noFootnoteArtifactsSource?: SourceSnapshot;
 };
 
 interface FootnoteParagraphSpanState extends FootnoteParagraphSpanTarget {
@@ -133,6 +235,9 @@ interface FootnoteParagraphSpanState extends FootnoteParagraphSpanTarget {
   readonly positions: ReadonlyMap<string, number>;
   readonly childReferences?: ReadonlyMap<string, readonly string[]>;
 }
+const EMPTY_FOOTNOTE_REFERENCES: readonly string[] = Object.freeze([]);
+const EMPTY_FOOTNOTE_POSITIONS: ReadonlyMap<string, number> = new Map();
+
 
 interface FootnoteParagraphOwnerState {
   readonly generation: number;
@@ -297,6 +402,14 @@ function retireParagraphOwner(state: FootnoteState, ownerId: string): void {
   }
   removeParagraphOwner(state, ownerId);
 }
+function retireParagraphOwnerWithoutReferences(state: FootnoteState, ownerId: string): void {
+  const owner = state.paragraphTargets.get(ownerId);
+  if (!owner) return;
+  const retiredGeneration = state.retiredParagraphGenerations.get(ownerId) ?? -1;
+  state.retiredParagraphGenerations.set(ownerId, Math.max(retiredGeneration, owner.generation));
+  state.paragraphTargets.delete(ownerId);
+}
+
 
 function rebuildParagraphOwnerPositions(owner: FootnoteParagraphOwnerState): void {
   const counts = new Map<string, number>();
@@ -317,10 +430,12 @@ function rebuildParagraphOwnerPositions(owner: FootnoteParagraphOwnerState): voi
 function mergeParagraphTargetDeltas(
   state: FootnoteState,
   deltas: readonly FootnoteParagraphTargetDelta[],
+  recordVisited?: DocumentRecordVisit,
 ): { targets: Map<string, Set<number>>; referenceLabels: Set<string> } {
   const changed = new Map<string, Set<number>>();
   const referenceLabels = new Set<string>();
   for (const delta of deltas) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const retiredGeneration = state.retiredParagraphGenerations.get(delta.ownerId);
     if (retiredGeneration !== undefined) {
       if (delta.generation <= retiredGeneration) continue;
@@ -329,7 +444,13 @@ function mergeParagraphTargetDeltas(
     let owner = state.paragraphTargets.get(delta.ownerId);
     if (owner && delta.generation < owner.generation) continue;
     if (owner && owner.generation !== delta.generation) {
-      for (const span of owner.spans.values()) for (const label of span.references) referenceLabels.add(label);
+      for (const span of owner.spans.values()) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        for (const label of span.references) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+          referenceLabels.add(label);
+        }
+      }
       removeParagraphOwner(state, delta.ownerId);
       owner = undefined;
     }
@@ -349,6 +470,7 @@ function mergeParagraphTargetDeltas(
       changed.set(delta.ownerId, indices);
     }
     for (const target of delta.spans) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
       const outOfOrder = target.index < owner.maxSpanIndex;
       const previous = owner.spans.get(target.index);
       if (previous && target.sourceRevision < previous.sourceRevision) continue;
@@ -356,6 +478,7 @@ function mergeParagraphTargetDeltas(
         removeParagraphTargetEvents(state, delta.ownerId, target.index);
         removeParagraphSpanDependencies(state, delta.ownerId, previous);
         for (const label of previous.references) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
           referenceLabels.add(label);
           const count = owner.referenceCounts.get(label) ?? 0;
           if (count <= 1) owner.referenceCounts.delete(label);
@@ -366,6 +489,7 @@ function mergeParagraphTargetDeltas(
       const childReferences = new Map<string, readonly string[]>();
       if (target.children?.length) {
         for (const child of target.children) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
           const childLabels: string[] = [];
           collectParagraphSnapshotReferences(child, childLabels);
           childReferences.set(child.id, Object.freeze(childLabels));
@@ -374,9 +498,13 @@ function mergeParagraphTargetDeltas(
       } else {
         collectParagraphReferences(target.nodes, references);
       }
-      for (const label of references) referenceLabels.add(label);
+      for (const label of references) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        referenceLabels.add(label);
+      }
       const positions = new Map<string, number>();
       for (const label of references) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
         const count = owner.referenceCounts.get(label) ?? 0;
         if (!positions.has(label)) positions.set(label, count);
         owner.referenceCounts.set(label, count + 1);
@@ -397,6 +525,49 @@ function mergeParagraphTargetDeltas(
   }
   return { targets: changed, referenceLabels };
 }
+function mergeParagraphTargetDeltasWithoutReferences(
+  state: FootnoteState,
+  deltas: readonly FootnoteParagraphTargetDelta[],
+  recordVisited?: DocumentRecordVisit,
+): void {
+  for (const delta of deltas) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+    const retiredGeneration = state.retiredParagraphGenerations.get(delta.ownerId);
+    if (retiredGeneration !== undefined) {
+      if (delta.generation <= retiredGeneration) continue;
+      state.retiredParagraphGenerations.delete(delta.ownerId);
+    }
+    let owner = state.paragraphTargets.get(delta.ownerId);
+    if (owner && delta.generation < owner.generation) continue;
+    if (owner && owner.generation !== delta.generation) {
+      state.paragraphTargets.delete(delta.ownerId);
+      owner = undefined;
+    }
+    if (!owner) {
+      owner = {
+        generation: delta.generation,
+        spans: new Map(),
+        referenceCounts: new Map(),
+        eventsBySpan: new Map(),
+        maxSpanIndex: -1,
+      };
+      state.paragraphTargets.set(delta.ownerId, owner);
+    }
+    for (const target of delta.spans) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      const previous = owner.spans.get(target.index);
+      if (previous && target.sourceRevision < previous.sourceRevision) continue;
+      owner.eventsBySpan.delete(target.index);
+      owner.spans.set(target.index, {
+        ...target,
+        references: EMPTY_FOOTNOTE_REFERENCES,
+        positions: EMPTY_FOOTNOTE_POSITIONS,
+      });
+      owner.maxSpanIndex = Math.max(owner.maxSpanIndex, target.index);
+    }
+  }
+}
+
 
 
 function collectAffectedParagraphTargets(
@@ -405,6 +576,7 @@ function collectAffectedParagraphTargets(
   changedDefinitions: ReadonlySet<string>,
   rebuildAll: boolean,
   changedReferenceLabels: ReadonlySet<string>,
+  recordVisited?: DocumentRecordVisit,
 ): Map<string, Set<number>> {
   const affected = new Map<string, Set<number>>();
   const add = (ownerId: string, index: number) => {
@@ -417,24 +589,46 @@ function collectAffectedParagraphTargets(
   };
   if (rebuildAll) {
     for (const [ownerId, owner] of state.paragraphTargets) {
-      for (const span of owner.spans.values()) if (span.references.length > 0) add(ownerId, span.index);
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      for (const span of owner.spans.values()) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        if (span.references.length > 0) add(ownerId, span.index);
+      }
     }
     return affected;
   }
   for (const [ownerId, indices] of changedTargets) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const owner = state.paragraphTargets.get(ownerId);
     if (!owner) continue;
-    for (const index of indices) if ((owner.spans.get(index)?.references.length ?? 0) > 0) add(ownerId, index);
+    for (const index of indices) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      if ((owner.spans.get(index)?.references.length ?? 0) > 0) add(ownerId, index);
+    }
   }
   for (const label of changedDefinitions) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const owners = state.paragraphDependents.get(label);
     if (!owners) continue;
-    for (const [ownerId, indices] of owners) for (const index of indices) add(ownerId, index);
+    for (const [ownerId, indices] of owners) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      for (const index of indices) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        add(ownerId, index);
+      }
+    }
   }
   for (const label of changedReferenceLabels) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const owners = state.paragraphDependents.get(label);
     if (!owners) continue;
-    for (const [ownerId, indices] of owners) for (const index of indices) add(ownerId, index);
+    for (const [ownerId, indices] of owners) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      for (const index of indices) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        add(ownerId, index);
+      }
+    }
   }
   return affected;
 }
@@ -443,38 +637,52 @@ function addChangedFootnoteNumberTargets(
   state: FootnoteState,
   numbers: Map<string, number>,
   affected: Map<string, Set<number>>,
+  recordVisited?: DocumentRecordVisit,
 ): void {
   const current = new Map<string, number>();
   for (const [label, referenceNumber] of state.labelToNumber) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const number = numbers.get(label) ?? referenceNumber;
     current.set(label, number);
     if (state.publishedNumbers.get(label) === number) continue;
     const owners = state.paragraphDependents.get(label);
     if (!owners) continue;
     for (const [ownerId, indices] of owners) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
       let targets = affected.get(ownerId);
       if (!targets) {
         targets = new Set<number>();
         affected.set(ownerId, targets);
       }
-      for (const index of indices) targets.add(index);
+      for (const index of indices) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        targets.add(index);
+      }
     }
   }
   for (const label of state.publishedNumbers.keys()) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     if (current.has(label)) continue;
     const owners = state.paragraphDependents.get(label);
     if (!owners) continue;
     for (const [ownerId, indices] of owners) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
       let targets = affected.get(ownerId);
       if (!targets) {
         targets = new Set<number>();
         affected.set(ownerId, targets);
       }
-      for (const index of indices) targets.add(index);
+      for (const index of indices) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        targets.add(index);
+      }
     }
   }
   state.publishedNumbers.clear();
-  for (const [label, number] of current) state.publishedNumbers.set(label, number);
+  for (const [label, number] of current) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+    state.publishedNumbers.set(label, number);
+  }
 }
 
 function numberParagraphTargets(
@@ -483,14 +691,17 @@ function numberParagraphTargets(
   numbers: Map<string, number>,
   hasProvisionalTail: boolean,
   affectedTargets: Map<string, Set<number>>,
+  recordVisited?: DocumentRecordVisit,
 ): FootnoteParagraphTargetUpdate[] {
   const updates: FootnoteParagraphTargetUpdate[] = [];
   for (const [ownerId, indices] of affectedTargets) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const owner = state.paragraphTargets.get(ownerId);
     if (!owner) continue;
     const scope = scopes.get(ownerId);
     const ownerUpdates: FootnoteParagraphTargetUpdate["updates"][number][] = [];
     for (const index of Array.from(indices).sort((left, right) => left - right)) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
       const span = owner.spans.get(index);
       if (!span) continue;
       if (span.children?.length) {
@@ -627,11 +838,16 @@ function numberParagraphTargetChild(
   return changed ? { ...child, ...(props ? { props } : {}) } : child;
 }
 
-function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState): Set<string> {
+function collectDefinitionsFromBlocks(
+  blocks: Block[],
+  state: FootnoteState,
+  recordVisited?: DocumentRecordVisit,
+): Set<string> {
   const changedLabels = new Set<string>();
   const defStartRe = /^\[\^([A-Za-z0-9_-]+)\]:[ \t]*(.*)$/;
 
   for (let i = 0; i < blocks.length; i++) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const block = blocks[i];
     if (block.type !== "paragraph") continue;
     // Definitions start the paragraph; reject the common case before splitting the whole raw into lines.
@@ -659,6 +875,7 @@ function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState): Se
     // Cross-paragraph continuation: subsequent paragraphs fully indented (or blank)
     let j = i + 1;
     while (j < blocks.length) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
       const continuation = blocks[j];
       if (continuation.type !== "paragraph") break;
       const continuationLines = continuation.payload.raw.split("\n");
@@ -677,6 +894,7 @@ function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState): Se
     i = j - 1;
 
     for (const definition of definitions) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
       const content = definition.parts.join("\n").trim();
       const previousOrigin = state.definitionOrigins.get(definition.label);
       if (previousOrigin === undefined) {
@@ -722,7 +940,12 @@ function snapshotHtmlTree(snapshot: NodeSnapshot): HtmlTreeNode[] | undefined {
   return key ? meta?.[key] as HtmlTreeNode[] : undefined;
 }
 
-function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteState, paragraphTargets: readonly ParagraphTargetReferenceEvent[]) {
+function assignNumbersFromReferencesInBlocks(
+  blocks: Block[],
+  state: FootnoteState,
+  paragraphTargets: readonly ParagraphTargetReferenceEvent[],
+  recordVisited?: DocumentRecordVisit,
+) {
   const scopes = new Map<string, FootnoteReferenceScope>();
   state.labelToNumber.clear();
   state.referenceCounts.clear();
@@ -749,11 +972,13 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
   };
   const scanInline = (nodes: InlineNode[], parents: FootnoteReferenceScope[]) => {
     for (const node of nodes) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
       if (node.kind === "footnote-ref") recordReference(node.label, parents);
       if (hasInlineChildren(node)) scanInline(node.children, parents);
     }
   };
   const visitHtml = (tree: HtmlTreeNode[], parents: FootnoteReferenceScope[]): FootnoteReferenceScope[] => tree.map((node) => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const scope: FootnoteReferenceScope = { references: new Map() };
     const owners = [...parents, scope];
     if (node.kind === "text") {
@@ -770,6 +995,7 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
     return scope;
   });
   const visitSnapshot = (snapshot: NodeSnapshot, parents: FootnoteReferenceScope[]): void => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     if (snapshot.type === "code" || snapshot.type === "footnote-def") return;
     const scope = scopeFor(snapshot.id);
     const owners = parents.includes(scope) ? parents : [...parents, scope];
@@ -795,6 +1021,7 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
     }
   };
   const visitBlock = (block: Block, parents: FootnoteReferenceScope[]): void => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     if (block.type === "code" || block.type === "footnote-def" || block.type === "footnotes") return;
     const scope = scopeFor(block.id);
     const owners = parents.includes(scope) ? parents : [...parents, scope];
@@ -833,22 +1060,38 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
     }
   };
   const orderedEvents: Array<{ readonly from: number; readonly block: Block } | { readonly from: number; readonly target: ParagraphTargetReferenceEvent }> = [
-    ...blocks.map((block) => ({ from: block.payload.range?.from ?? Number.POSITIVE_INFINITY, block })),
-    ...paragraphTargets.map((target) => ({ from: target.from, target })),
+    ...blocks.map((block) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      return { from: block.payload.range?.from ?? Number.POSITIVE_INFINITY, block };
+    }),
+    ...paragraphTargets.map((target) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      return { from: target.from, target };
+    }),
   ];
-  orderedEvents.sort((left, right) => left.from - right.from);
+  orderedEvents.sort((left, right) => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(2);
+    return left.from - right.from;
+  });
   for (const event of orderedEvents) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     if ("block" in event) {
       if (mayReferenceFootnotes(event.block)) visitBlock(event.block, []);
     } else {
       const scope = scopeFor(event.target.ownerId);
       if (event.target.snapshot) visitSnapshot(event.target.snapshot, [scope]);
-      else for (const label of event.target.references) recordReference(label, [scope]);
+      else {
+        for (const label of event.target.references) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+          recordReference(label, [scope]);
+        }
+      }
     }
   }
   const queuedDefinitions = new Set(pendingDefinitions);
   const discoverDefinitions = (nodes: InlineNode[]): void => {
     for (const node of nodes) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
       if (node.kind === "footnote-ref" && state.definitions.has(node.label) && !queuedDefinitions.has(node.label)) {
         queuedDefinitions.add(node.label);
         pendingDefinitions.push(node.label);
@@ -857,6 +1100,7 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
     }
   };
   for (let index = 0; index < pendingDefinitions.length; index++) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const label = pendingDefinitions[index];
     const raw = state.definitions.get(label) ?? "";
     let inline: InlineNode[];
@@ -870,6 +1114,7 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
   }
   // Count bodies in the current canonical footer order, not definition discovery order.
   for (const label of state.labelToNumber.keys()) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const inline = state.definitionInlines.get(label);
     if (inline) scanInline(inline, [scopeFor(`footnote-definition:${label}`)]);
   }
@@ -881,13 +1126,16 @@ function numberInlineReferences(
   state: FootnoteState,
   scopes: Map<string, FootnoteReferenceScope>,
   hasProvisionalTail: boolean,
+  recordVisited?: DocumentRecordVisit,
 ): Map<string, number> {
   const numbers = new Map<string, number>();
   for (const label of state.labelToNumber.keys()) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     if (state.definitions.has(label) && (state.referenceCounts.get(label) ?? 0) > 0) numbers.set(label, numbers.size + 1);
   }
   const definitionsPublished = !hasProvisionalTail;
   const numberInlineNode = (node: InlineNode, scope: FootnoteReferenceScope, positions: Map<string, number>): InlineNode => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     let result = node;
     if (hasInlineChildren(node)) {
       const children = mapChanged(node.children, (child) => numberInlineNode(child, scope, positions));
@@ -921,6 +1169,7 @@ function numberInlineReferences(
     return { ...fields, ...(inline !== props.inline ? { inline } : {}), ...(block !== props.block ? { block } : {}) };
   };
   const numberSnapshot = (snapshot: NodeSnapshot, parentScope?: FootnoteReferenceScope): NodeSnapshot => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const cached = numbered.get(snapshot) as NodeSnapshot | undefined;
     if (cached) return cached;
     const scope = scopes.get(snapshot.id) ?? parentScope;
@@ -933,6 +1182,7 @@ function numberInlineReferences(
     return result;
   };
   const numberHtmlNode = (node: HtmlTreeNode, scope: FootnoteReferenceScope | undefined): HtmlTreeNode => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const cached = numbered.get(node) as HtmlTreeNode | undefined;
     if (cached) return cached;
     let result = node;
@@ -956,6 +1206,7 @@ function numberInlineReferences(
     return result;
   };
   const numberMeta = (meta: Record<string, unknown>, scope: FootnoteReferenceScope | undefined): Record<string, unknown> => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const cached = numbered.get(meta) as Record<string, unknown> | undefined;
     if (cached) return cached;
     let result = meta;
@@ -998,16 +1249,16 @@ function numberInlineReferences(
     return result;
   };
   const numberBlock = (block: Block): Block => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const cached = numbered.get(block) as Block | undefined;
     if (cached) return cached;
     const scope = scopes.get(block.id);
     let inline = applyNumbers(block.payload.inline, scope);
     const meta = block.payload.meta ? numberMeta(block.payload.meta, scope) : block.payload.meta;
     const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
-    if (block.type === "blockquote" && prepared && (meta !== block.payload.meta || !inline)) {
-      const collected: InlineNode[] = [];
-      visitPreparedInline(prepared.children, (nodes) => collected.push(...nodes));
-      inline = collected;
+    if (block.type === "blockquote" && prepared
+      && (meta !== block.payload.meta || !inline)) {
+      inline = collectPreparedInlineNodes(prepared.children, recordVisited);
     }
     const result = inline === block.payload.inline && meta === block.payload.meta
       ? block : { ...block, payload: { ...block.payload, ...(inline !== block.payload.inline ? { inline } : {}), ...(meta !== block.payload.meta ? { meta } : {}) } };
@@ -1015,18 +1266,68 @@ function numberInlineReferences(
     return result;
   };
   for (let index = 0; index < blocks.length; index++) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const block = blocks[index];
     if (mayReferenceFootnotes(block) || mayContainBlockquote(block)) blocks[index] = numberBlock(block);
   }
   for (const [label, inline] of state.definitionInlines) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     state.definitionInlines.set(label, applyNumbers(inline, scopes.get(`footnote-definition:${label}`)) ?? inline);
   }
   return numbers;
 }
 
+
+
+/** Detect HTML-bearing generic child views without treating ordinary native quote children as fallback content. */
+function hasPreparedHtmlContent(children: NodeSnapshot[], recordVisited?: DocumentRecordVisit): boolean {
+  for (const snapshot of children) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+    const nested = snapshot.props?.block as Block | undefined;
+    const meta = nested?.payload.meta;
+    if (snapshot.type === "html"
+      || snapshot.type.endsWith("-html")
+      || Array.isArray(meta?.htmlTree)
+      || Array.isArray(meta?.htmlParagraphTree)
+      || (meta?.mixedHtmlTrees !== undefined && meta.mixedHtmlTrees !== null)) return true;
+    if (Array.isArray(meta?.mixedSegments)) {
+      for (const segment of meta.mixedSegments) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        if (!segment || typeof segment !== "object") continue;
+        const kind = (segment as Record<string, unknown>).kind;
+        if (kind === "html" || kind === "mdx") return true;
+      }
+    }
+    if (snapshot.children && hasPreparedHtmlContent(snapshot.children, recordVisited)) return true;
+  }
+  return false;
+}
+
+function collectPreparedInlineNodes(
+  children: NodeSnapshot[],
+  recordVisited?: DocumentRecordVisit,
+): InlineNode[] {
+  const collected: InlineNode[] = [];
+  const visitNodes = (nodes: InlineNode[]) => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(nodes.length);
+    collected.push(...nodes);
+  };
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    visitPreparedInline(children, visitNodes, recordVisited);
+  } else {
+    visitPreparedInline(children, visitNodes);
+  }
+  return collected;
+}
+
 /** Visit the inline nodes consumed by prepared child views, once and in source order. */
-function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode[]) => void): void {
+function visitPreparedInline(
+  children: NodeSnapshot[],
+  visit: (nodes: InlineNode[]) => void,
+  recordVisited?: DocumentRecordVisit,
+): void {
   const visitBlock = (block: Block): void => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     if (block.type === "code" || block.type === "footnote-def" || block.type === "footnotes") return;
     const meta = block.payload.meta;
     const treeKey = getActiveHtmlTreeKey(meta);
@@ -1036,16 +1337,35 @@ function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode
       return;
     }
     const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
-    if (prepared) visitPreparedInline(prepared.children, visit);
+    if (prepared) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        visitPreparedInline(prepared.children, visit, recordVisited);
+      } else {
+        visitPreparedInline(prepared.children, visit);
+      }
+    }
     else if (block.type === "table") {
-      for (const cell of (meta?.header as InlineNode[][] | undefined) ?? []) visit(cell);
-      for (const row of (meta?.rows as InlineNode[][][] | undefined) ?? []) for (const cell of row) visit(cell);
+      for (const cell of (meta?.header as InlineNode[][] | undefined) ?? []) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        visit(cell);
+      }
+      for (const row of (meta?.rows as InlineNode[][][] | undefined) ?? []) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        for (const cell of row) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+          visit(cell);
+        }
+      }
     } else if (Array.isArray(meta?.mixedSegments)) {
-      for (const segment of meta.mixedSegments as { inline?: InlineNode[] }[]) if (segment.inline) visit(segment.inline);
+      for (const segment of meta.mixedSegments as { inline?: InlineNode[] }[]) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+        if (segment.inline) visit(segment.inline);
+      }
     } else if (block.type !== "html" && block.payload.inline) visit(block.payload.inline);
   };
   const visitHtml = (tree: HtmlTreeNode[]): void => {
     for (const node of tree) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
       if (node.kind === "block") visitBlock(node.block);
       else if (node.kind === "text") {
         if (node.inline) visit(node.inline);
@@ -1058,9 +1378,13 @@ function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode
     }
   };
   for (const snapshot of children) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     if (snapshot.type === "code" || snapshot.type === "footnote-def") continue;
     const nestedChildren = snapshot.children ?? [];
-    const segmented = nestedChildren.some((child) => child.type.startsWith("list-item-") || child.type.startsWith("paragraph-"));
+    const segmented = nestedChildren.some((child) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
+      return child.type.startsWith("list-item-") || child.type.startsWith("paragraph-");
+    });
     const block = snapshot.props?.block as Block | undefined;
     const tree = snapshotHtmlTree(snapshot);
     if (Array.isArray(tree)) {
@@ -1075,7 +1399,11 @@ function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode
       const inline = snapshot.props?.inline ?? block?.payload.inline;
       if (Array.isArray(inline)) visit(inline as InlineNode[]);
     }
-    visitPreparedInline(nestedChildren, visit);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      visitPreparedInline(nestedChildren, visit, recordVisited);
+    } else {
+      visitPreparedInline(nestedChildren, visit);
+    }
   }
 }
 
@@ -1118,9 +1446,124 @@ function hasInlineChildren(node: InlineNode): node is InlineNode & { children: I
   return Array.isArray((node as { children?: InlineNode[] }).children);
 }
 
-function buildFootnoteItems(state: FootnoteState, numbers: Map<string, number>): FootnoteItem[] {
+type CachedFootnoteReference = {
+  readonly number?: number;
+  readonly occurrence?: number;
+  readonly defined: boolean;
+};
+
+function reapplyCachedFootnoteAnnotations(previous: Block, current: Block): boolean {
+  if (previous.type !== current.type || previous.payload.raw !== current.payload.raw) return false;
+  const inline = reapplyCachedInlineAnnotations(previous.payload.inline, current.payload.inline);
+  const previousMeta = previous.payload.meta;
+  const currentMeta = current.payload.meta;
+  const previousTreeKey = getActiveHtmlTreeKey(previousMeta);
+  const currentTreeKey = getActiveHtmlTreeKey(currentMeta);
+  let meta = currentMeta;
+  if (previousTreeKey && previousTreeKey === currentTreeKey) {
+    const previousTree = previousMeta?.[previousTreeKey];
+    const currentTree = currentMeta?.[currentTreeKey];
+    if (Array.isArray(previousTree) && Array.isArray(currentTree)) {
+      const tree = reapplyCachedHtmlTreeAnnotations(previousTree as HtmlTreeNode[], currentTree as HtmlTreeNode[]);
+      if (tree !== currentTree) meta = { ...(currentMeta ?? {}), [currentTreeKey]: tree };
+    }
+  }
+  const changed = inline !== current.payload.inline || meta !== currentMeta;
+  if (changed) {
+    current.payload.inline = inline;
+    current.payload.meta = meta;
+  }
+  return changed;
+}
+
+function reapplyCachedInlineAnnotations(
+  previous: readonly InlineNode[] | undefined,
+  current: InlineNode[] | undefined,
+): InlineNode[] | undefined {
+  if (!previous || !current) return current;
+  const annotations = new Map<string, CachedFootnoteReference[]>();
+  let valid = true;
+  const collect = (nodes: readonly InlineNode[]) => {
+    for (const node of nodes) {
+      if (node.kind === "footnote-ref") {
+        if (typeof node.defined !== "boolean") {
+          valid = false;
+          return;
+        }
+        let entries = annotations.get(node.label);
+        if (!entries) {
+          entries = [];
+          annotations.set(node.label, entries);
+        }
+        entries.push({ number: node.number, occurrence: node.occurrence, defined: node.defined });
+      }
+      if (hasInlineChildren(node)) collect(node.children);
+      if (!valid) return;
+    }
+  };
+  collect(previous);
+  if (!valid || annotations.size === 0) return current;
+  const positions = new Map<string, number>();
+  const restore = (node: InlineNode): InlineNode => {
+    let result = node;
+    if (hasInlineChildren(node)) {
+      const children = mapChanged(node.children, restore);
+      if (children !== node.children) result = { ...node, children } as InlineNode;
+    }
+    if (result.kind !== "footnote-ref") return result;
+    const index = positions.get(result.label) ?? 0;
+    positions.set(result.label, index + 1);
+    const annotation = annotations.get(result.label)?.[index];
+    if (!annotation
+      || (result.number === annotation.number
+        && result.occurrence === annotation.occurrence
+        && result.defined === annotation.defined)) return result;
+    const updated = { ...result, defined: annotation.defined };
+    if (annotation.number === undefined) delete updated.number;
+    else updated.number = annotation.number;
+    if (annotation.occurrence === undefined) delete updated.occurrence;
+    else updated.occurrence = annotation.occurrence;
+    return updated;
+  };
+  return mapChanged(current, restore);
+}
+
+function reapplyCachedHtmlTreeAnnotations(previous: HtmlTreeNode[], current: HtmlTreeNode[]): HtmlTreeNode[] {
+  return mapChanged(current, (node, index) => {
+    const oldNode = previous[index];
+    if (!oldNode || oldNode.kind !== node.kind) return node;
+    if (node.kind === "text" && oldNode.kind === "text") {
+      const inline = reapplyCachedInlineAnnotations(oldNode.inline, node.inline);
+      return inline === node.inline ? node : { ...node, inline };
+    }
+    if (node.kind === "element" && oldNode.kind === "element") {
+      const inlineNode = oldNode.inlineNode && node.inlineNode
+        ? reapplyCachedInlineAnnotations([oldNode.inlineNode], [node.inlineNode])?.[0]
+        : node.inlineNode;
+      const children = reapplyCachedHtmlTreeAnnotations(oldNode.children, node.children);
+      if (inlineNode === node.inlineNode && children === node.children) return node;
+      return { ...node, children, ...(inlineNode !== node.inlineNode ? { inlineNode } : {}) };
+    }
+    if (node.kind === "component" && oldNode.kind === "component") {
+      const children = reapplyCachedHtmlTreeAnnotations(oldNode.children, node.children);
+      return children === node.children ? node : { ...node, children };
+    }
+    if (node.kind === "block" && oldNode.kind === "block"
+      && reapplyCachedFootnoteAnnotations(oldNode.block, node.block)) {
+      return { ...node, block: node.block };
+    }
+    return node;
+  });
+}
+
+function buildFootnoteItems(
+  state: FootnoteState,
+  numbers: Map<string, number>,
+  recordVisited?: DocumentRecordVisit,
+): FootnoteItem[] {
   const items: FootnoteItem[] = [];
   for (const [label, number] of numbers) {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordVisited?.(1);
     const refCount = state.referenceCounts.get(label) ?? 0;
     const inlines = state.definitionInlines.get(label) ?? [];
     items.push({ number, inlines, label, refCount });

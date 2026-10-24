@@ -3,20 +3,109 @@ import {
   createCodeLineIndex,
   parseCodeFenceInfo,
   type Block,
+  type CodeDiffStatus,
   type CodeLineIndex,
   type CodeLineDecoration,
   type CodeLineRecord,
+  type DiffBlock,
+  type DiffLine,
+  type ThemedLine,
   type SourceSnapshot,
 } from "@stream-mdx/core";
-import { detectDiffLanguage, parseUnifiedDiffLine, toDiffLineKind } from "./highlight";
+import {
+  abandonsOwedRows,
+  codeDiffStatus,
+  detectDiffLanguage,
+  parseUnifiedDiffLine,
+  toDiffLineKind,
+  toThemedLine,
+} from "./highlight";
 import type { DiffCursorState } from "./types";
 
 declare const __STREAM_MDX_COUNTERS__: boolean | undefined;
 
+function themedDiffLine(decoration: CodeLineDecoration): ThemedLine | null {
+  if (decoration.exactness === "unavailable") return null;
+  return toThemedLine(decoration.tokens, "dark") ?? [];
+}
+
+function sameThemedDiffLine(
+  left: ThemedLine | null | undefined,
+  right: ThemedLine | null,
+): boolean {
+  if (right === null) return left === null || left === undefined;
+  if (!left || left.length !== right.length) return false;
+  for (let index = 0; index < right.length; index += 1) {
+    const leftToken = left[index];
+    const rightToken = right[index];
+    if (
+      !leftToken ||
+      !rightToken ||
+      leftToken.content !== rightToken.content ||
+      leftToken.color !== rightToken.color ||
+      leftToken.fontStyle !== rightToken.fontStyle
+    ) return false;
+  }
+  return true;
+}
+
+function updateDiffBlockPresentation(
+  value: unknown,
+  decorations: readonly CodeLineDecoration[],
+  lines: CodeLineIndex,
+): DiffBlock[] | undefined {
+  if (!Array.isArray(value) || decorations.length === 0) return undefined;
+  const diffBlocks = value as DiffBlock[];
+  let orderedDecorations = decorations;
+  for (let index = 1; index < decorations.length; index += 1) {
+    if ((decorations[index - 1]?.index ?? -1) > (decorations[index]?.index ?? -1)) {
+      orderedDecorations = [...decorations].sort((left, right) => left.index - right.index);
+      break;
+    }
+  }
+  let nextDiffBlocks: DiffBlock[] | undefined;
+  let decorationCursor = 0;
+  let sourceLineOffset = 0;
+  let previousIndex: number | undefined;
+  for (let blockIndex = 0; blockIndex < diffBlocks.length; blockIndex += 1) {
+    const diffBlock = diffBlocks[blockIndex];
+    if (!diffBlock || !Array.isArray(diffBlock.lines)) continue;
+    const blockEnd = sourceLineOffset + diffBlock.lines.length;
+    while (
+      decorationCursor < orderedDecorations.length &&
+      (orderedDecorations[decorationCursor]?.index ?? Number.POSITIVE_INFINITY) < sourceLineOffset
+    ) decorationCursor += 1;
+    let nextLines: DiffLine[] | undefined;
+    while (decorationCursor < orderedDecorations.length) {
+      const decoration = orderedDecorations[decorationCursor];
+      if (!decoration || decoration.index >= blockEnd) break;
+      decorationCursor += 1;
+      if (decoration.index === previousIndex) continue;
+      previousIndex = decoration.index;
+      const diffLineIndex = decoration.index - sourceLineOffset;
+      const diffLine = diffBlock.lines[diffLineIndex];
+      const sourceLine = lines.get(decoration.index);
+      const lineDecoration = sourceLine?.decoration;
+      if (!diffLine || !sourceLine || sourceLine.text !== diffLine.raw || !lineDecoration) continue;
+      const tokens = themedDiffLine(lineDecoration);
+      if (sameThemedDiffLine(diffLine.tokens, tokens)) continue;
+      if (!nextLines) nextLines = diffBlock.lines.slice();
+      nextLines[diffLineIndex] = { ...diffLine, tokens };
+    }
+    if (nextLines) {
+      nextDiffBlocks ??= diffBlocks.slice();
+      nextDiffBlocks[blockIndex] = { ...diffBlock, lines: nextLines };
+    }
+    sourceLineOffset = blockEnd;
+  }
+  return nextDiffBlocks;
+}
+
 const SOURCE_SCAN_WINDOW_UNITS = 4096;
 const EMPTY_CHANGED_LINES: readonly CodeLineRecord[] = Object.freeze([]);
 
-export type RootCodeSourceOwnerState = "open" | "closed" | "finalized";
+/** A complete closing fence is terminal, so a closed fence is already finalized. */
+export type RootCodeSourceOwnerState = "open" | "finalized";
 
 export interface RootCodeSourceOpening {
   /** Native FencedCode node start at the marker; its opening indentation precedes this offset. */
@@ -75,11 +164,11 @@ export interface RootCodeSourceMetadata {
   readonly processedTo: number;
   readonly completeLineCount: number;
   readonly lineCount: number;
-  /** Native FencedCode source range: marker start through closing text, excluding its final LF. */
   readonly sourceRange: {
     readonly from: number;
     readonly to: number;
   };
+  readonly diffStatus?: CodeDiffStatus;
 }
 
 type FenceTailKind = "close" | "prefix" | undefined;
@@ -190,8 +279,9 @@ export class RootCodeSourceOwner {
   private lineStart: number;
   private pendingCR = false;
   private rawEnd: number;
-  /** Present only for diff-labeled fences: diff numbering state after the complete-line prefix. */
+  /** Diff numbering and hunk counts after the complete-line prefix. */
   private diffCursor: DiffCursorState | undefined;
+  private diffRowsAbandoned = false;
   private cachedBlock: { readonly revision: number; readonly block: Block } | undefined;
   private presentation: {
     readonly revision: number;
@@ -287,10 +377,34 @@ export class RootCodeSourceOwner {
     const presentation = this.presentation;
     return presentation?.revision === this.revision ? presentation : undefined;
   }
+  /** Apply lazy progress and touched diff tokens without materializing the source-backed Block. */
+  updateLazyTokenizationPresentation(
+    lineCount: number,
+    decorations: readonly CodeLineDecoration[],
+  ): void {
+    const presentation = this.presentation;
+    if (presentation?.revision !== this.revision) return;
+    const meta = { ...(presentation.meta ?? {}) };
+    let changed = meta.lazyTokenizedUntil !== lineCount;
+    if (changed) meta.lazyTokenizedUntil = lineCount;
+    const diffBlocks = updateDiffBlockPresentation(meta.diffBlocks, decorations, this.codeLines);
+    if (diffBlocks) {
+      meta.diffBlocks = diffBlocks;
+      changed = true;
+    }
+    if (!changed) return;
+    this.presentation = {
+      revision: this.revision,
+      highlightedHtml: presentation.highlightedHtml,
+      meta,
+    };
+    this.cachedBlock = undefined;
+  }
 
 
   /** Small immutable owner snapshot, without retaining a SourceSnapshot. */
   getMetadata(): RootCodeSourceMetadata {
+    const diffStatus = this.getDiffStatus();
     return Object.freeze({
       codeOwnerId: this.id,
       generation: this.generation,
@@ -300,19 +414,25 @@ export class RootCodeSourceOwner {
       completeLineCount: this.codeLines.completeLineCount,
       lineCount: this.codeLines.length,
       sourceRange: Object.freeze({ from: this.opening.from, to: this.rawEnd }),
+      ...(diffStatus !== undefined ? { diffStatus } : {}),
     });
   }
 
-  /** Seal the owner, finishing only its pending line (and unaccepted suffix, if any). */
+  private getDiffStatus(): CodeDiffStatus | undefined {
+    const cursor = this.diffCursor;
+    if (cursor === undefined) return undefined;
+    const tail = this.codeLines.get(this.codeLines.length - 1);
+    return codeDiffStatus(
+      cursor,
+      this.diffRowsAbandoned,
+      tail?.isProvisional ? tail.text : undefined,
+      this.state === "finalized",
+    );
+  }
+
+  /** Seal an open owner, finishing only its pending line (and unaccepted suffix, if any). */
   finalize(): CodeSourceChange {
     if (this.state === "finalized") return this.noChange(this.codeLines.completeLineCount);
-    if (this.state === "closed") {
-      const expectedRevision = this.revision;
-      this.state = "finalized";
-      this.revision = nextOwnerRevision(this.revision);
-      this.cachedBlock = undefined;
-      return this.change(expectedRevision, this.codeLines.completeLineCount, EMPTY_CHANGED_LINES);
-    }
 
     const from = this.processedTo;
     const to = this.source.length;
@@ -335,8 +455,10 @@ export class RootCodeSourceOwner {
     };
     if (this.opening.language !== undefined) meta.lang = this.opening.language;
     const previousTokenLines = meta.tokenLines;
-    const tokenLines = this.codeLines.readRange(0, this.codeLines.length).map((line, index) =>
-      line.decoration?.tokens ?? (Array.isArray(previousTokenLines) ? previousTokenLines[index] : null));
+    const tokenLines = this.codeLines.readRange(0, this.codeLines.length).map((line, index) => {
+      if (line.decoration?.exactness === "unavailable") return null;
+      return line.decoration?.tokens ?? (Array.isArray(previousTokenLines) ? previousTokenLines[index] : null);
+    });
     meta.tokenLines = tokenLines;
 
     const block: Block = {
@@ -456,7 +578,7 @@ export class RootCodeSourceOwner {
     let finalTail: DraftCodeLine | undefined;
 
     if (closeBoundary !== undefined) {
-      nextState = finalizeAtEnd ? "finalized" : "closed";
+      nextState = "finalized";
       nextRawEnd = closeRawEnd ?? closeBoundary;
       pendingCR = false;
     } else if (finalizeAtEnd) {
@@ -505,14 +627,27 @@ export class RootCodeSourceOwner {
     const oldTail = this.codeLines.readRange(oldCompleteLineCount, this.codeLines.length);
     const diffRows = this.diffCursor ? new Array<DiffLineFields>(desiredTail.length) : undefined;
     let committedDiffCursor = this.diffCursor;
+    let committedDiffRowsAbandoned = this.diffRowsAbandoned;
     if (diffRows && this.diffCursor) {
       const working: DiffCursorState = { ...this.diffCursor };
+      let workingDiffRowsAbandoned = this.diffRowsAbandoned;
       for (let offset = 0; offset < desiredTail.length; offset += 1) {
         const draft = desiredTail[offset];
-        if (draft.isProvisional) committedDiffCursor = { ...working };
-        diffRows[offset] = diffLineFields(stripOpeningIndent(draft.raw, this.opening.indent), working);
+        const text = stripOpeningIndent(draft.raw, this.opening.indent);
+        if (draft.isProvisional) {
+          committedDiffCursor = { ...working };
+          committedDiffRowsAbandoned = workingDiffRowsAbandoned;
+        }
+        if (!workingDiffRowsAbandoned && abandonsOwedRows(text, working)) {
+          workingDiffRowsAbandoned = true;
+        }
+        diffRows[offset] = diffLineFields(text, working);
+        if (!draft.isProvisional) committedDiffRowsAbandoned = workingDiffRowsAbandoned;
       }
-      if (desiredTail.length === 0 || !desiredTail[desiredTail.length - 1].isProvisional) committedDiffCursor = working;
+      if (desiredTail.length === 0 || !desiredTail[desiredTail.length - 1].isProvisional) {
+        committedDiffCursor = working;
+        committedDiffRowsAbandoned = workingDiffRowsAbandoned;
+      }
     }
     const reusableRecords = new Array<CodeLineRecord | undefined>(desiredTail.length);
     let rowsChanged = oldTail.length !== desiredTail.length;
@@ -546,6 +681,7 @@ export class RootCodeSourceOwner {
     this.lineStart = lineStart;
     this.pendingCR = pendingCR;
     this.diffCursor = committedDiffCursor;
+    this.diffRowsAbandoned = committedDiffRowsAbandoned;
     this.rawEnd = nextRawEnd;
     if (semanticChanged) this.cachedBlock = undefined;
 

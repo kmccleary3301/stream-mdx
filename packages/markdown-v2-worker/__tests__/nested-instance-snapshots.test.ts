@@ -54,7 +54,10 @@ async function run(): Promise<void> {
   } });
   const markdown = "- @@ #ABC-12 [forward]\n\n  > # @@ #ABC-12 [forward]\n\n  ```js\n  const nested = 1;\n  ```";
   await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: markdown, prewarmLangs: [],
-    syntax: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
+    syntax: {
+      contractVersion: 1,
+      inline: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
+    },
     docPlugins: { html: true, tables: true, mdx: false, math: true, callouts: false, footnotes: false } });
   assert.equal(emitted.some((message) => message.type === "ERROR"), false);
   const initialList = store.getBlocks().find((block) => block.type === "list");
@@ -85,8 +88,20 @@ async function run(): Promise<void> {
   assert.deepEqual(store.getInvariantViolations(), []);
   assert.deepStrictEqual(snapshot.getBlocks(), store.getBlocks(), "core and React patch consumers must retain equivalent blocks");
   const resetStore = createRendererStore(JSON.parse(JSON.stringify(store.getBlocks())) as Block[]);
-  const registry = new ComponentRegistry({}, { "native-badge": ({ label }: { label?: string }) => React.createElement("b", null, label),
-    ticket: ({ id }: { id?: string }) => React.createElement("i", null, id) });
+  const registry = new ComponentRegistry({
+    components: {
+      "extension:native-badge": {
+        view: ({ node }: { node: InlineNode }) => node.kind === "plugin"
+          ? React.createElement("b", null, String(node.attrs.label ?? ""))
+          : null,
+      },
+      "extension:ticket": {
+        view: ({ node }: { node: InlineNode }) => node.kind === "plugin"
+          ? React.createElement("i", null, String(node.attrs.id ?? ""))
+          : null,
+      },
+    },
+  });
   const htmlFromPatches = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store, componentRegistry: registry }));
   const htmlFromSerialized = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: resetStore.getBlocks(), store: resetStore, componentRegistry: registry }));
   assert.equal(htmlFromSerialized, htmlFromPatches);

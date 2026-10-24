@@ -11,17 +11,18 @@ import {
 import type { ComponentRegistry } from "../components";
 import type { ResolvedCodeControls } from "../components/controls";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
-import type { CodeFenceRendererProps } from "../types";
 import { DeferredRenderContext } from "./deferred-render-context";
 import { useRendererNode } from "./hooks";
 import { subscribeRendererNode } from "./node-subscriptions";
 import { CodeLineRangeView } from "./code-line-range";
 import { CODE_LINE_RANGE_SIZE } from "./code-state";
-import { nativeCodeBlockHtml } from "./native-code-line";
 import type { RendererStore } from "./store";
 import { getStoreResetVersion } from "./store-reset-version";
 import { useDeferredRender } from "./use-deferred-render";
-import { DEFAULT_VIRTUALIZED_CODE_CONFIG, useVirtualizedCode } from "./virtualized-code";
+import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
+import { useVirtualizedCode } from "./virtualized-code";
+import { mergeNodePresentationProps } from "./node-presentations";
+import type { NodeViewActions, NodeViewMetadata } from "../types";
 
 type CodeBlockViewCounters = {
   recordRecordSlotsAllocated?(count: number, stage: "view"): void;
@@ -145,33 +146,172 @@ const CodeLineRangeChain: React.FC<{
 
 CodeLineRangeChain.displayName = "CodeLineRangeChain";
 
+function codeLineSelectionPoint(node: Node, offset: number): {
+  line: HTMLElement;
+  lineNumber: number;
+  textOffset: number;
+} | null {
+  const endpoint = node.nodeType === 1 ? node as Element : node.parentElement;
+  const line = endpoint?.closest<HTMLElement>(".line[data-line]");
+  if (!line && node.nodeType === 3 && node.parentElement?.tagName === "CODE" && node.textContent === "\n") {
+    if (offset !== 0 && offset !== 1) return null;
+    const previousSibling = node.previousSibling;
+    const previousLine = previousSibling?.nodeType === 1
+      ? (previousSibling as Element).closest<HTMLElement>(".line[data-line]")
+      : null;
+    const nextSibling = node.nextSibling;
+    const nextLine = nextSibling?.nodeType === 1
+      ? (nextSibling as Element).closest<HTMLElement>(".line[data-line]")
+      : null;
+    const selectedLine = offset === 0 ? previousLine : nextLine ?? previousLine;
+    const adjacentLineNumber = Number(selectedLine?.dataset.line);
+    if (!selectedLine || !Number.isSafeInteger(adjacentLineNumber) || adjacentLineNumber < 1) return null;
+    return {
+      line: selectedLine,
+      lineNumber: offset === 1 && !nextLine ? adjacentLineNumber + 1 : adjacentLineNumber,
+      textOffset: offset === 0 ? selectedLine.textContent?.length ?? 0 : 0,
+    };
+  }
+  const lineNumber = Number(line?.dataset.line);
+  if (!line || !Number.isSafeInteger(lineNumber) || lineNumber < 1) return null;
+
+  const prefix = line.ownerDocument.createRange();
+  prefix.selectNodeContents(line);
+  prefix.setEnd(node, offset);
+  return { line, lineNumber, textOffset: prefix.toString().length };
+}
+
+function authoredCodeOffset(source: string, lineNumber: number, textOffset: number): number | null {
+  let lineStart = 0;
+  for (let line = 1; line < lineNumber; line += 1) {
+    const separator = source.indexOf("\n", lineStart);
+    if (separator < 0) return null;
+    lineStart = separator + 1;
+  }
+  let lineEnd = source.indexOf("\n", lineStart);
+  if (lineEnd < 0) lineEnd = source.length;
+  if (lineEnd > lineStart && source.charCodeAt(lineEnd - 1) === 13) lineEnd -= 1;
+  if (textOffset < 0 || textOffset > lineEnd - lineStart) return null;
+  return lineStart + textOffset;
+}
+
+function copyAuthoredSelection(event: ClipboardEvent, viewport: HTMLElement, readSource: () => string | null): void {
+  if (event.defaultPrevented || !event.clipboardData) return;
+  const selection = viewport.ownerDocument.getSelection();
+  if (!selection || selection.isCollapsed || selection.rangeCount !== 1) return;
+
+  const range = selection.getRangeAt(0);
+  const start = codeLineSelectionPoint(range.startContainer, range.startOffset);
+  const end = codeLineSelectionPoint(range.endContainer, range.endOffset);
+  if (!start || !end || start.line.closest("code") !== end.line.closest("code")) return;
+  if (!viewport.contains(start.line) || !viewport.contains(end.line)) return;
+
+  const source = readSource();
+  if (source === null) return;
+  const sourceStart = authoredCodeOffset(source, start.lineNumber, start.textOffset);
+  const sourceEnd = authoredCodeOffset(source, end.lineNumber, end.textOffset);
+  if (sourceStart === null || sourceEnd === null || sourceEnd < sourceStart) return;
+
+  event.clipboardData.setData("text/plain", source.slice(sourceStart, sourceEnd));
+  event.preventDefault();
+}
+
+
+
 
 // Private code-rendering owner; block dispatch and finalized wrappers remain in node-views.
-export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+export const CodeBlockView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  renderPresentation?: (nativeView: React.ReactNode) => React.ReactNode;
+}> = React.memo(({ store, blockId, registry, renderPresentation }) => {
   const node = useRendererNode(store, blockId);
   const codeBlock = store.getCodeBlock(blockId);
   const codeGeneration = codeBlock?.source.generation ?? null;
   const resetVersion = getStoreResetVersion(store);
   const lineCount = codeBlock?.source.lineCount ?? 0;
+  const effectiveLineCount = Math.max(1, lineCount);
   const configurationRevision = codeBlock?.configurationRevision ?? 0;
   const blockMeta = (node?.block?.payload.meta as Record<string, unknown> | undefined) ?? undefined;
-  const lazyEnabled = Boolean(blockMeta?.lazyTokenization);
   const blockIsFinalized = codeBlock?.source.state !== "open";
-  const canVirtualize = Boolean(codeBlock && blockIsFinalized && !lazyEnabled);
+  const canVirtualize = Boolean(codeBlock);
+  useLazyCodeHighlightRequest({
+    store,
+    blockId,
+    resetVersion,
+    blockEpoch: node?.blockEpoch ?? 0,
+    blockIsFinalized: node?.block?.isFinalized === true,
+    lazyEnabled: blockMeta?.lazyTokenization === true,
+    lazyTokenizedUntil: typeof blockMeta?.lazyTokenizedUntil === "number" ? blockMeta.lazyTokenizedUntil : 0,
+    totalLazyLineCount: lineCount,
+  });
+  const subscribeCodeVirtualization = React.useCallback(
+    (listener: () => void) => registry.subscribeCodeVirtualization(listener),
+    [registry],
+  );
+  const getCodeVirtualization = React.useCallback(
+    () => registry.getCodeVirtualization(),
+    [registry],
+  );
+  const codeVirtualization = React.useSyncExternalStore(
+    subscribeCodeVirtualization,
+    getCodeVirtualization,
+    getCodeVirtualization,
+  );
   const virtualizationDisabled =
     typeof process !== "undefined" && typeof process.env === "object" && process.env.STREAM_MDX_DISABLE_VIRTUALIZED_CODE === "true";
   const virtualizationConfig = React.useMemo(
     () => virtualizationDisabled || !canVirtualize
-      ? { ...DEFAULT_VIRTUALIZED_CODE_CONFIG, enabled: false }
-      : DEFAULT_VIRTUALIZED_CODE_CONFIG,
-    [virtualizationDisabled, canVirtualize],
+      ? { ...codeVirtualization, enabled: false }
+      : codeVirtualization,
+    [canVirtualize, codeVirtualization, virtualizationDisabled],
+  );
+  const codeViewportOwner = React.useMemo(
+    () => ({}),
+    [blockId, codeGeneration, resetVersion, store],
   );
   const virtualization = useVirtualizedCode(
     lineCount,
     codeGeneration ?? -1,
     virtualizationConfig,
+    blockId,
+    configurationRevision,
+    codeViewportOwner,
   );
+  const codeViewportRef = virtualization.containerRef;
   const window = virtualization.window;
+  const [fullContentOwner, setFullContentOwner] = React.useState<{
+    store: RendererStore;
+    blockId: string;
+    sourceGeneration: number | null;
+    resetVersion: number;
+  } | null>(null);
+  const fullContentMode = fullContentOwner?.store === store &&
+    fullContentOwner.blockId === blockId &&
+    fullContentOwner.sourceGeneration === codeGeneration &&
+    fullContentOwner.resetVersion === resetVersion;
+  const toggleFullContentMode = React.useCallback(() => {
+    setFullContentOwner((current) =>
+      current?.store === store &&
+      current.blockId === blockId &&
+      current.sourceGeneration === codeGeneration &&
+      current.resetVersion === resetVersion
+        ? null
+        : { store, blockId, sourceGeneration: codeGeneration, resetVersion },
+    );
+  }, [blockId, codeGeneration, resetVersion, store]);
+  const viewportId = React.useId();
+  const fullContentRanges = React.useMemo(
+    () => [{
+      startIndex: 0,
+      endIndex: lineCount,
+      visibleStart: window.visibleStart,
+      visibleEnd: window.visibleEnd,
+      spacerBeforeHeight: 0,
+    }],
+    [lineCount, window.visibleEnd, window.visibleStart],
+  );
   const deferredConfig = React.useContext(DeferredRenderContext);
   const deferredRef = React.useRef<HTMLDivElement | null>(null);
   const shouldRenderDeferred = useDeferredRender(
@@ -187,7 +327,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     if (getStoreResetVersion(store) !== resetVersion || codeGeneration === null) return null;
     const current = store.getCodeBlock(blockId);
     if (!current || current.source.generation !== codeGeneration) return null;
-    return current.lines.materialize().replace(/\r\n?/g, "\n").replace(/\n$/, "");
+    return current.lines.materialize();
   }, [blockId, codeGeneration, resetVersion, store]);
   const copyCurrentCode = React.useCallback(async (): Promise<boolean> => {
     const code = readCurrentCodeSource();
@@ -197,14 +337,32 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     const code = readCurrentCodeSource();
     if (code !== null) downloadFile(code, getCodeSnippetFilename(lang));
   }, [lang, readCurrentCodeSource]);
+  const copyNativeSelection = React.useCallback(
+    (event: ClipboardEvent, viewport: HTMLElement) => copyAuthoredSelection(event, viewport, readCurrentCodeSource),
+    [readCurrentCodeSource],
+  );
+  const handleViewportCopy = React.useCallback(
+    (event: React.ClipboardEvent<HTMLDivElement>) => copyNativeSelection(event.nativeEvent, event.currentTarget),
+    [copyNativeSelection],
+  );
+  const shouldVirtualize =
+    virtualizationConfig.enabled &&
+    virtualization.window.totalLines >= virtualizationConfig.virtualizeThreshold;
+  React.useEffect(() => {
+    if (!shouldVirtualize) return;
+    const viewport = codeViewportRef.current;
+    if (!viewport) return;
+    const ownerDocument = viewport.ownerDocument;
+    const handleDocumentCopy = (event: ClipboardEvent) => {
+      if (event.defaultPrevented) return;
+      copyNativeSelection(event, viewport);
+    };
+    ownerDocument.addEventListener("copy", handleDocumentCopy, true);
+    return () => ownerDocument.removeEventListener("copy", handleDocumentCopy, true);
+  }, [codeViewportRef, copyNativeSelection, shouldVirtualize]);
 
   if (!node || !codeBlock) return null;
 
-  const infoText =
-    codeBlock.info ||
-    (typeof blockMeta?.info === "string" ? blockMeta.info : undefined) ||
-    lang ||
-    "";
   const preAttrs = (node.props?.preAttrs as Record<string, string> | undefined) ?? undefined;
   const codeAttrs = (node.props?.codeAttrs as Record<string, string> | undefined) ?? undefined;
   const storeThemes = store.getThemes?.();
@@ -212,29 +370,32 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   const composedPreAttrs = preAttrs ?? defaultWrapperAttrs.preAttrs;
   const composedCodeAttrs = codeAttrs ?? defaultWrapperAttrs.codeAttrs;
   const CodeComponent = registry.getBlockComponent("code");
-  const normalizedLang = (lang ?? "").trim().toLowerCase();
-  const codeRenderer = registry.getCodeRenderer(normalizedLang);
   const resolvedCodeControls = resolveCodeControls(registry.getControls());
   const ControlsComponent = registry.getControlsComponent();
-  const shouldVirtualize =
-    virtualizationConfig.enabled &&
-    virtualization.window.totalLines >= virtualizationConfig.virtualizeThreshold;
-  const effectiveLineCount = Math.max(1, lineCount);
   const codeFrameClass = "not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm";
   const codeMetricsAttrs = {
     "data-code-block": "true",
     "data-block-id": blockId,
     "data-code-virtualized": shouldVirtualize ? "true" : "false",
     "data-code-total-lines": String(effectiveLineCount),
-    "data-code-mounted-lines": String(shouldVirtualize ? virtualization.window.mountedLines : effectiveLineCount),
+    "data-code-mounted-lines": String(
+      shouldVirtualize && !fullContentMode && !virtualization.isPrinting
+        ? virtualization.mountedLineCount
+        : effectiveLineCount,
+    ),
     "data-code-window-size": String(virtualization.config.windowSize),
   };
+  const codeFrameProps = mergeNodePresentationProps(
+    { className: codeFrameClass, ...codeMetricsAttrs },
+    registry.getNodePresentation("code")?.props,
+  ) as React.HTMLAttributes<HTMLDivElement>;
 
-  const useIncrementalRanges =
-    !shouldVirtualize &&
-    !registry.hasCustomBlockComponent("code") &&
-    !codeRenderer &&
-    !registry.hasElementFilters();
+  const useIncrementalRanges = !shouldVirtualize && !registry.hasElementFilters();
+  const showFullContent = fullContentMode || virtualization.isPrinting;
+  const renderWindow = showFullContent
+    ? { ...window, startIndex: 0, endIndex: lineCount }
+    : window;
+  const renderRanges = showFullContent ? fullContentRanges : virtualization.renderRanges;
   let codeLineRanges: React.ReactNode;
   if (useIncrementalRanges) {
     codeLineRanges = (
@@ -248,10 +409,56 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
       />
     );
   } else {
-    const ranges: React.ReactElement[] = [];
-    const firstChunkStart = Math.floor(window.startIndex / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
-    for (let chunkStart = firstChunkStart; chunkStart < window.endIndex; chunkStart += CODE_LINE_RANGE_SIZE) {
+    const ranges: React.ReactNode[] = [];
+    const chunkGroups = new Map<number, {
+      chunkStart: number;
+      spacerBeforeHeight: number;
+      segments: Array<{
+        startIndex: number;
+        endIndex: number;
+        visibleStart: number;
+        visibleEnd: number;
+        spacerBeforeHeight: number;
+      }>;
+    }>();
+    for (const viewportRange of renderRanges) {
+      const firstChunkStart = Math.floor(viewportRange.startIndex / CODE_LINE_RANGE_SIZE) * CODE_LINE_RANGE_SIZE;
+      for (let chunkStart = firstChunkStart; chunkStart < viewportRange.endIndex; chunkStart += CODE_LINE_RANGE_SIZE) {
+        const chunkEnd = chunkStart + CODE_LINE_RANGE_SIZE;
+        const startIndex = Math.max(viewportRange.startIndex, chunkStart);
+        const endIndex = Math.min(viewportRange.endIndex, chunkEnd);
+        const gapBeforeHeight = startIndex === viewportRange.startIndex ? viewportRange.spacerBeforeHeight : 0;
+        let group = chunkGroups.get(chunkStart);
+        if (!group) {
+          group = { chunkStart, spacerBeforeHeight: gapBeforeHeight, segments: [] };
+          chunkGroups.set(chunkStart, group);
+        }
+        group.segments.push({
+          startIndex,
+          endIndex,
+          visibleStart: Math.max(viewportRange.visibleStart, startIndex),
+          visibleEnd: Math.min(viewportRange.visibleEnd, endIndex),
+          spacerBeforeHeight: group.segments.length === 0 ? 0 : gapBeforeHeight,
+        });
+      }
+    }
+    for (const group of chunkGroups.values()) {
+      const { chunkStart } = group;
       const chunkEnd = chunkStart + CODE_LINE_RANGE_SIZE;
+      if (group.spacerBeforeHeight > 0) {
+        ranges.push(
+          <span
+            key={`viewport-gap-${chunkStart}`}
+            aria-hidden="true"
+            style={{ display: "block", height: group.spacerBeforeHeight }}
+          />,
+        );
+      }
+      const hasPrimaryRange = renderWindow.startIndex < chunkEnd && renderWindow.endIndex > chunkStart;
+      const rangeStart = hasPrimaryRange ? Math.max(renderWindow.startIndex, chunkStart) : chunkStart;
+      const rangeEnd = hasPrimaryRange ? Math.min(renderWindow.endIndex, chunkEnd) : chunkStart;
+      const visibleStart = hasPrimaryRange ? Math.max(renderWindow.visibleStart, chunkStart) : chunkStart;
+      const visibleEnd = hasPrimaryRange ? Math.min(renderWindow.visibleEnd, chunkEnd) : chunkStart;
       ranges.push(
         <CodeLineRangeView
           key={`${resetVersion}:${codeGeneration}:${chunkStart}`}
@@ -261,10 +468,12 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
           resetVersion={resetVersion}
           configurationRevision={configurationRevision}
           chunkStart={chunkStart}
-          rangeStart={Math.max(window.startIndex, chunkStart)}
-          rangeEnd={Math.min(window.endIndex, chunkEnd)}
-          visibleStart={Math.max(window.visibleStart, chunkStart)}
-          visibleEnd={Math.min(window.visibleEnd, chunkEnd)}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          visibleStart={visibleStart}
+          visibleEnd={visibleEnd}
+          renderSegments={group.segments}
+          selectedLineIndices={virtualization.selectionLineIndices}
         />,
       );
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -275,45 +484,63 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     }
     codeLineRanges = ranges;
   }
-  // Registered code components predate prepared children and may render `html`; give them the highlighted markup.
-  const customCodeLines = registry.hasCustomBlockComponent("code") ? store.getCodeLines(blockId, 0, lineCount) : undefined;
-  const nativeCodeProps: React.ComponentProps<typeof CodeComponent> = {
-    html: customCodeLines ? nativeCodeBlockHtml(customCodeLines, composedPreAttrs, composedCodeAttrs) : "",
-    lines: customCodeLines,
-    children: codeLineRanges,
-    lang,
-    preAttrs: composedPreAttrs,
-    codeAttrs: composedCodeAttrs,
-  };
-  const rendered = <CodeComponent {...nativeCodeProps} />;
+  const rendered = (
+    <CodeComponent
+      children={codeLineRanges}
+      lang={lang}
+      preAttrs={composedPreAttrs}
+      codeAttrs={composedCodeAttrs}
+    />
+  );
 
   const codeView = shouldVirtualize ? (
     (() => {
-      const { containerRef, window, handleScroll, lineHeight } = virtualization;
-      const spacerTop = window.startIndex * lineHeight;
-      const spacerBottom = (window.totalLines - window.endIndex) * lineHeight;
+      const { containerRef, handleScroll } = virtualization;
+      const spacerTopHeight = showFullContent ? 0 : virtualization.spacerTopHeight;
+      const spacerBottomHeight = showFullContent ? 0 : virtualization.spacerBottomHeight;
       return (
-        <div className={codeFrameClass} {...codeMetricsAttrs}>
+        <div {...codeFrameProps} ref={deferredRef}>
           <div
             ref={containerRef}
+            id={viewportId}
             className="markdown-code-block-container relative"
-            style={{ overflowY: "auto", overflowX: "hidden", maxHeight: "600px" }}
+            style={{
+              overflowY: virtualization.isPrinting ? "visible" : "auto",
+              overflowX: virtualization.isPrinting ? "visible" : "hidden",
+              maxHeight: virtualization.isPrinting ? "none" : "600px",
+            }}
             onScroll={handleScroll}
+            onCopy={handleViewportCopy}
           >
-            <div style={{ height: spacerTop }} aria-hidden="true" />
+            <div style={{ height: spacerTopHeight }} aria-hidden="true" />
             {rendered}
-            <div style={{ height: spacerBottom }} aria-hidden="true" />
+            <div style={{ height: spacerBottomHeight }} aria-hidden="true" />
           </div>
         </div>
       );
     })()
   ) : (
-    <div className={codeFrameClass} {...codeMetricsAttrs}>
+    <div {...codeFrameProps} ref={deferredRef}>
       {rendered}
     </div>
   );
+  const fullContentToggle = shouldVirtualize ? (
+    <div className="stream-mdx-code-content-toggle flex items-center justify-end gap-1 px-2 py-1 text-xs select-none">
+      <button
+        type="button"
+        className="stream-mdx-control stream-mdx-control-code-full-content inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs hover:bg-muted focus:outline-none"
+        aria-controls={viewportId}
+        aria-pressed={fullContentMode}
+        onClick={toggleFullContentMode}
+      >
+        Show full content
+      </button>
+    </div>
+  ) : null;
 
   const renderControls = (): React.ReactNode => {
+    const actionsSlot = registry.getNodePresentation("code")?.slots?.actions;
+    if (actionsSlot !== undefined) return actionsSlot;
     if (!resolvedCodeControls.enabled) return null;
     if (ControlsComponent) {
       const code = readCurrentCodeSource() ?? "";
@@ -340,57 +567,10 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   };
 
   const elementToFilter = (() => {
-    if (codeRenderer) {
-      const CustomComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
-      const shouldOptInDefer = Boolean(
-        (typeof codeRenderer === "object" && codeRenderer !== null && codeRenderer.defer) ||
-          (CustomComponent && typeof CustomComponent === "function" && "defer" in CustomComponent && Boolean(CustomComponent.defer)),
-      );
-      const renderCustomCode = (): React.ReactElement => {
-        const rendererProps: CodeFenceRendererProps = {
-          code: readCurrentCodeSource() ?? "",
-          language: lang ?? "",
-          meta: blockMeta,
-          info: infoText,
-          isFinalized: blockIsFinalized,
-          blockId,
-          renderCode: codeView,
-          openLink: registry.getLinkHandler(),
-          controls: {
-            copy: resolvedCodeControls.copy,
-            download: resolvedCodeControls.download,
-          },
-          copy: copyCurrentCode,
-          download: downloadCurrentCode,
-        };
-        return React.createElement(CustomComponent, rendererProps);
-      };
-
-      if (shouldOptInDefer && deferredConfig) {
-        return (
-          <div ref={deferredRef}>
-            {shouldRenderDeferred ? renderCustomCode() : codeView}
-          </div>
-        );
-      }
-      return renderCustomCode();
-    }
-
     if (Array.isArray(blockMeta?.diffBlocks) && blockMeta.diffBlocks.length > 0) {
       const diffView = React.createElement(DefaultDiffRenderer, {
-        code: "",
-        language: lang ?? "",
         meta: blockMeta,
-        info: infoText,
-        isFinalized: blockIsFinalized,
-        blockId,
         renderCode: codeView,
-        controls: {
-          copy: resolvedCodeControls.copy,
-          download: resolvedCodeControls.download,
-        },
-        copy: copyCurrentCode,
-        download: downloadCurrentCode,
       });
       const controls = renderControls();
       return controls ? wrapWithCodeControls(controls, diffView) : diffView;
@@ -399,18 +579,64 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     const controls = renderControls();
     return controls ? wrapWithCodeControls(controls, codeView) : codeView;
   })();
+  const withFullContentToggle = (content: React.ReactNode): React.ReactElement => {
+    if (fullContentToggle) return <>{fullContentToggle}{content}</>;
+    return React.isValidElement(content) ? content : <>{content}</>;
+  };
 
+
+  const mermaidEngine = registry.getMermaidEngine();
+  const mermaidMetadata: NodeViewMetadata = Object.freeze({
+    id: blockId,
+    type: "code",
+    isFinalized: blockIsFinalized,
+    ...(lang === undefined ? {} : { language: lang }),
+    lineCount,
+  });
+  const mermaidActions: NodeViewActions = Object.freeze({
+    readSource: () => {
+      const source = readCurrentCodeSource();
+      if (source === null) {
+        throw new Error("Code node handle no longer refers to the current code document");
+      }
+      return source;
+    },
+    copy: copyCurrentCode,
+    download: downloadCurrentCode,
+  });
+  const presentNativeView = (nativeView: React.ReactNode): React.ReactNode => {
+    const source = lang?.toLowerCase() === "mermaid" ? readCurrentCodeSource() : null;
+    const withMermaid = mermaidEngine && source !== null
+      ? React.createElement(mermaidEngine.view, {
+          source,
+          children: nativeView,
+          metadata: mermaidMetadata,
+          actions: mermaidActions,
+        })
+      : nativeView;
+    return renderPresentation && (!registry.getNodePresentation("code") || shouldRenderDeferred)
+      ? renderPresentation(withMermaid)
+      : withMermaid;
+  };
   if (!registry.hasElementFilters()) {
-    return React.isValidElement(elementToFilter) ? elementToFilter : <>{elementToFilter}</>;
+    const nativeView = withFullContentToggle(
+      React.isValidElement(elementToFilter) ? elementToFilter : <>{elementToFilter}</>,
+    );
+    return presentNativeView(nativeView);
   }
+  let hostAllowed = false;
   const filtered = registry.filterElement(
     { tagName: "div", properties: { className: codeFrameClass }, blockType: "code" },
     { source: "markdown" },
-    () => elementToFilter,
+    () => {
+      hostAllowed = true;
+      return elementToFilter;
+    },
     () => readCurrentCodeSource() ?? "",
   );
   if (filtered === null || filtered === undefined) return null;
-  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
+  const nativeView = withFullContentToggle(React.isValidElement(filtered) ? filtered : <>{filtered}</>);
+  return hostAllowed ? presentNativeView(nativeView) : nativeView;
 });
 
 CodeBlockView.displayName = "CodeBlockView";
@@ -426,11 +652,21 @@ function NativeCodeControls({
 }): React.ReactElement {
   const [copied, setCopied] = React.useState(false);
   const { labels } = config;
+  const copyLease = React.useRef(0);
+  const copyResetTimeout = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  React.useEffect(() => {
+    return () => {
+      copyLease.current += 1;
+      clearTimeout(copyResetTimeout.current);
+    };
+  }, [readCode]);
   const handleCopy = React.useCallback(async () => {
     const code = readCode();
-    if (code === null || !(await copyToClipboard(code))) return;
+    const lease = copyLease.current;
+    if (code === null || !(await copyToClipboard(code)) || lease !== copyLease.current) return;
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    clearTimeout(copyResetTimeout.current);
+    copyResetTimeout.current = setTimeout(() => setCopied(false), 2000);
   }, [readCode]);
   const handleDownload = React.useCallback(() => {
     const code = readCode();

@@ -416,9 +416,15 @@ function lowerNestedBlockSnapshot(
         const itemId = itemIdentity.id;
         const content = childrenOf(item).filter((child) => !["ListMark", "QuoteMark", "LinkReference"].includes(child.type.name));
         const first = content[0];
-        const primary = first && (first.type.name === "Paragraph" || first.type.name === "Task") ? first : undefined;
+        const candidate = first && (first.type.name === "Paragraph" || first.type.name === "Task") ? first : undefined;
+        const candidateRange = candidate ? sourceRange(mapping, candidate.from, candidate.to) : undefined;
+        const itemMark = item.getChild("ListMark");
+        const itemContentStart = itemMark ? sourceRange(mapping, itemMark.from, itemMark.to).to : range.from;
+        const primary = candidate && candidateRange && mapping.source.read(itemContentStart, candidateRange.from).trim() === ""
+          ? candidate
+          : undefined;
         const primarySemanticIndex = primary ? content.indexOf(primary) : -1;
-        const primaryRange = primary ? sourceRange(mapping, primary.from, primary.to) : undefined;
+        const primaryRange = primary ? candidateRange : undefined;
         const taskMarker = primary?.type.name === "Task" ? primary.getChild("TaskMarker") : null;
         const taskMarkerRange = taskMarker ? sourceRange(mapping, taskMarker.from, taskMarker.to) : undefined;
         const taskValue = taskMarkerRange

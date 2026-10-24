@@ -22,6 +22,8 @@
 
 ### Minor Changes
 
+- 072e0f1: Add an optional Mermaid engine capability that routes Mermaid fences through the native code owner while Markdown parsing remains in the selected worker or main-thread engine.
+
 - 05f4cfb: Add `createMermaidBlock` factory supporting custom Mermaid configuration, custom error components with retry, default view settings, debounce options, and custom Mermaid module instances or loaders. Serialize Mermaid rendering through a module queue so concurrent blocks with different configurations do not interleave, and preserve `securityLevel: 'strict'` by default.
 - e2c13e5: Add `controls` prop to `StreamingMarkdown` and `MarkdownBlocksRenderer` (+ RendererConfig/registry) for code block, table, and Mermaid diagram copy and download actions.
   - Code blocks: copy raw authored code text (not highlighted HTML), download snippet with language-derived extension. Works for virtualized code.
@@ -31,6 +33,8 @@
   - Customization: support full replacement slot via `controlsComponent` prop / registry, and i18n label overrides via `controls.labels`.
 
 ### Patch Changes
+
+- fa820ac: Cancel obsolete diagram jobs before provider side effects and invoke returned binding disposers when an artifact is replaced, Diagram view ends, or the block unmounts.
 
 - 7879ed5: Add isolated MarkdownEngine instances, the public worker/engine entry, custom bundled worker serving, and a main-thread Worker adapter. React supports explicit worker, main-thread, and auto execution modes with a dynamically imported creation-time fallback. Updating onError no longer restarts streamed content.
 

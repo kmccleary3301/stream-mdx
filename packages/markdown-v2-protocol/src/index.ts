@@ -44,6 +44,7 @@ export type StreamMdxEventBase = {
   protocol: typeof STREAM_MDX_PROTOCOL_ID;
   schemaVersion: typeof STREAM_MDX_SCHEMA_VERSION;
   streamId: string;
+  generation: number;
   event: StreamMdxEventType;
   tx?: number;
 };
@@ -95,3 +96,5 @@ export type StreamMdxEvent =
   | StreamMdxDoneEvent;
 
 export type { DiffBlock, DiffKind, DiffLine, DiffLineKind, ThemedLine, ThemedToken, TokenLineV1, TokenSpan, TokenStyle };
+export { SourceCapacityError, StreamSessionError } from "./stream-admission";
+export type { AppendResult, FinalizeResult, StreamSessionErrorReason, WaitForCapacityOptions } from "./stream-admission";

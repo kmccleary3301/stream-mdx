@@ -10,6 +10,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | --- | --- | --- |
 | New to the repo | [`GETTING_STARTED.md`](./GETTING_STARTED.md) | [`PUBLIC_API.md`](./PUBLIC_API.md), [`REACT_INTEGRATION_GUIDE.md`](./REACT_INTEGRATION_GUIDE.md) |
 | Integrating into a React app | [`PUBLIC_API.md`](./PUBLIC_API.md) | [`REACT_INTEGRATION_GUIDE.md`](./REACT_INTEGRATION_GUIDE.md), [`SECURITY_MODEL.md`](./SECURITY_MODEL.md) |
+| Upgrading from 0.5.x | [`MIGRATION.md`](./MIGRATION.md) | [`PUBLIC_API.md`](./PUBLIC_API.md), [`SECURITY_MODEL.md`](./SECURITY_MODEL.md) |
 | Working on plugins / worker behavior | [`STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](./STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md) | [`PLUGIN_ABI.md`](./PLUGIN_ABI.md), [`STREAMING_MARKDOWN_V2_STATUS.md`](./STREAMING_MARKDOWN_V2_STATUS.md) |
 | Validating correctness / regressions | [`REGRESSION_TESTING.md`](./REGRESSION_TESTING.md) | [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md), [`STREAMING_CORRECTNESS_EXECUTION_PLAN.md`](./STREAMING_CORRECTNESS_EXECUTION_PLAN.md) |
 | Working on perf claims or harnesses | [`PERF_HARNESS.md`](./PERF_HARNESS.md) | [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md), [`PERF_QUALITY_CHANGELOG.md`](./PERF_QUALITY_CHANGELOG.md) |
@@ -25,6 +26,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | Getting started | [`GETTING_STARTED.md`](./GETTING_STARTED.md) | <https://stream-mdx.vercel.app/docs/getting-started> |
 | Configuration | [`CONFIGURATION.md`](./CONFIGURATION.md) | <https://stream-mdx.vercel.app/docs/configuration> |
 | Public API | [`PUBLIC_API.md`](./PUBLIC_API.md) | <https://stream-mdx.vercel.app/docs/public-api> |
+| Migration guide | [`MIGRATION.md`](./MIGRATION.md) | Breaking changes from the published 0.5.x line |
 | React integration | [`REACT_INTEGRATION_GUIDE.md`](./REACT_INTEGRATION_GUIDE.md) | <https://stream-mdx.vercel.app/docs/react-integration> |
 | Security model | [`SECURITY_MODEL.md`](./SECURITY_MODEL.md) | <https://stream-mdx.vercel.app/docs/security-model> |
 | TUI guide | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | <https://stream-mdx.vercel.app/docs/tui-guide> |

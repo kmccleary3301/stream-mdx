@@ -75,6 +75,11 @@ Coalescing must preserve that replacement boundary rather than merge metadata ke
 Core and React consume both fields separately from presentation props and retain
 historical cold values. Managed source owners still require their typed operations
 and source guards.
+`props.isFinalized` is the scalar lifecycle field for source-backed root lists and
+blockquotes. Core and React apply it to canonical block state; it carries no raw
+body or prepared descendants, and cold block projections retain the updated flag.
+It remains semantic and belongs in the same ordered atomic batch as related child
+changes.
 
 `Patch.meta` remains the control envelope. A metadata payload does not change the
 default semantic classification or expand the audited enrichment allowlist.

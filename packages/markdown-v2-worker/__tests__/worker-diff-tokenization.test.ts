@@ -1,19 +1,31 @@
 import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 
+import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { createHighlighter } from "shiki";
 import { runInNewContext } from "node:vm";
 import { JSDOM } from "jsdom";
 import ts from "typescript";
 
 import type { DiffLineKind, Patch, TokenLineV1, WorkerOut } from "@stream-mdx/core";
-import { createBlockSnapshot } from "@stream-mdx/core";
+import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot } from "@stream-mdx/core";
 import type { Block, NodeSnapshot } from "@stream-mdx/core";
-import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
-import type { RendererStore } from "../../markdown-v2-react/src/renderer/store";
+import { createRendererStore } from "@stream-mdx/react/renderer/store";
+import type { RendererStore } from "@stream-mdx/react/renderer/store";
+import { MarkdownEngine } from "../src/engine/engine";
+import type { MarkdownEngineOptions } from "../src/engine/types";
 
 import { projectConsumerBlocks } from "./consumer-block-projection";
 import { createWorkerHarness } from "./worker-test-harness";
+
+// The mutation sandbox copies only this package, so resolve the shared test fixture from the live repo.
+const repoRoot = process.env.STREAM_MDX_MUTATION_LIVE_PACKAGE
+  ? resolve(process.env.STREAM_MDX_MUTATION_LIVE_PACKAGE, "../..")
+  : resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+const counterSinkModule = await import(pathToFileURL(resolve(repoRoot, "scripts/perf/counter-sink.ts")).href);
 
 function applyMessages(store: RendererStore, messages: WorkerOut[]): void {
   for (const message of messages) {
@@ -59,20 +71,20 @@ async function runDiffTokenizationTest(): Promise<void> {
 
   const additionTokens = addition.decoration?.tokens;
   const additionText = additionTokens?.spans.map((span) => span.t).join("") ?? "";
-  assert.strictEqual(additionText, "+const a = 2;", "tokens must reconstruct the rendered addition row");
+  assert.strictEqual(additionText, "const a = 2;", "addition token spans must exclude the diff marker");
 
   const deletion = lines.find((line) => line.text === "-const a = 1;");
   assert.ok(deletion, "cold export must retain the deleted diff row");
   assert.strictEqual(deletion.diffKind, "del");
   const deletionTokens = deletion.decoration?.tokens;
-  assert.strictEqual(deletionTokens?.spans.map((span) => span.t).join(""), "-const a = 1;");
+  assert.strictEqual(deletionTokens?.spans.map((span) => span.t).join(""), "const a = 1;", "deletion token spans must exclude the diff marker");
 
   const rendered = projectConsumerBlocks([codeBlock])[0].markup;
   const renderedCode = new JSDOM(rendered).window.document.querySelector("pre code")?.textContent ?? "";
   assert.ok(renderedCode.includes("+const a = 2;"), "static block output must preserve the added diff row");
   assert.ok(renderedCode.includes("-const a = 1;"), "static block output must preserve the deleted diff row");
 
-  const docs = readFileSync(new URL("../../../docs/CLI_USAGE.md", import.meta.url), "utf8");
+  const docs = readFileSync(resolve(repoRoot, "docs/CLI_USAGE.md"), "utf8");
   const ansiExample = [...docs.matchAll(/```ts\n([\s\S]*?)\n```/g)].find((match) => match[1].includes("function renderDiffLine("))?.[1];
   assert.ok(ansiExample, "the authored public CLI ANSI consumer must be exercised");
   const compiled = ts.transpileModule(ansiExample, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
@@ -242,8 +254,341 @@ async function runNestedDiffRendererTest(): Promise<void> {
   }
 }
 
+async function runNativeDiffMissingPrefixContextTest(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const source = [
+    "```diff ts",
+    "@@ -100,2 +100,2 @@",
+    "-const before = 0;",
+    "+const after = 0;",
+    " keep();",
+    "```",
+  ].join("\n");
+
+  const initializedMessages = await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: ["typescript"],
+    docPlugins: {
+      footnotes: false,
+      html: false,
+      mdx: false,
+      tables: false,
+      callouts: false,
+      codeHighlighting: "incremental",
+      outputMode: "tokens",
+    },
+  });
+  const initialized = initializedMessages.find((message) => message.type === "INITIALIZED");
+  assert.ok(initialized, "native worker initialization must publish the Core snapshot");
+  const snapshot = createInitialSnapshot(initialized.snapshot);
+  const fold = (messages: WorkerOut[]) => {
+    applyMessages(store, messages);
+    for (const message of messages) {
+      if (message.type === "PATCH") applyPatchBatch(snapshot, message.patches);
+    }
+  };
+  fold(initializedMessages);
+  const appendedMessages = await harness.send({ type: "APPEND", text: source });
+  fold(appendedMessages);
+  const finalizedMessages = await harness.send({ type: "FINALIZE" });
+  fold(finalizedMessages);
+
+  const codeBlock = snapshot.getBlocks().find((block) => block.type === "code");
+  assert.ok(codeBlock, "the public Core snapshot must publish the native diff code block");
+  assert.strictEqual(codeBlock.isFinalized, true, "the native diff owner must reach full finalization");
+  const range = codeBlock.payload.range;
+  assert.ok(range, "the Core code block must retain its authored source range");
+  assert.strictEqual(
+    codeBlock.payload.raw,
+    source.slice(range.from, range.to),
+    "Core cold export must retain the canonical authored diff body and markers",
+  );
+  assert.ok(codeBlock.payload.raw.includes("@@ -100,2 +100,2 @@"));
+  assert.ok(codeBlock.payload.raw.includes("-const before = 0;"));
+  assert.ok(codeBlock.payload.raw.includes("+const after = 0;"));
+  const initialDecorateCodePatches = [...appendedMessages, ...finalizedMessages].flatMap((message) =>
+    message.type === "PATCH"
+      ? message.patches.filter((patch): patch is Extract<Patch, { op: "decorateCode" }> =>
+          patch.op === "decorateCode" && patch.codeOwnerId === codeBlock.id)
+      : []);
+  const initialLines = store.getCodeLines(codeBlock.id, 1, 4);
+  const initialWireDecorations = initialDecorateCodePatches
+    .flatMap((patch) => patch.decorations)
+    .filter((decoration) =>
+      initialLines.some((line) => line.index === decoration.index && line.id === decoration.lineId));
+  assert.ok(
+    finalizedMessages.some((message) => message.type === "FINALIZED")
+    && initialDecorateCodePatches.length > 0
+    && initialWireDecorations.every((decoration) =>
+      decoration.exactness === "unavailable"
+      && decoration.reason === "missing_context"
+      && decoration.tokens === null)
+    && initialLines.map((line) => line.text).join("\n") === [
+      "-const before = 0;",
+      "+const after = 0;",
+      " keep();",
+    ].join("\n")
+    && initialLines.every((line) =>
+      line.decoration?.exactness === "unavailable"
+      && line.decoration.reason === "missing_context"
+      && line.decoration.tokens === null
+      && initialWireDecorations.some((decoration) =>
+        decoration.index === line.index && decoration.lineId === line.id)),
+    "the settled initial native decorateCode publication and renderer store must preserve authored lines as typed missing-context unavailability",
+  );
+
+
+  const rangeMessages = await harness.send({
+    type: "TOKENIZE_RANGE",
+    blockId: codeBlock.id,
+    startLine: 1,
+    endLine: 4,
+  });
+  const wireDecorations = rangeMessages.flatMap((message) =>
+    message.type === "PATCH"
+      ? message.patches.flatMap((patch) =>
+          patch.op === "decorateCode" && patch.codeOwnerId === codeBlock.id ? patch.decorations : [])
+      : []);
+  fold(rangeMessages);
+
+  const requestedLines = store.getCodeLines(codeBlock.id, 1, 4);
+  assert.deepStrictEqual(
+    requestedLines.map((line) => line.text),
+    ["-const before = 0;", "+const after = 0;", " keep();"],
+    "the public native range must address the actual deleted, added, and shared prepared lines",
+  );
+  assert.ok(
+    wireDecorations.length === requestedLines.length
+    && wireDecorations.every((decoration) =>
+      "exactness" in decoration
+      && decoration.exactness === "unavailable"
+      && decoration.reason === "missing_context"
+      && decoration.tokens === null)
+    && requestedLines.every((line) =>
+      line.decoration?.exactness === "unavailable"
+      && line.decoration.reason === "missing_context"
+      && line.decoration.tokens === null),
+    "the public decorateCode wire and renderer store must publish typed missing-context unavailability with null tokens",
+  );
+
+  const exportedCode = snapshot.getBlocks().find((block) => block.id === codeBlock.id);
+  assert.ok(exportedCode);
+  assert.strictEqual(exportedCode.payload.raw, codeBlock.payload.raw, "range tokenization must not rewrite canonical authored markers");
+}
+
+async function runDiffFileLanguageSurvivesChunkBoundaryTest(): Promise<void> {
+  const themes = { dark: "github-dark", light: "github-light" } as const;
+  const firstChunk = [
+    "```diff-typescript",
+    "diff --git a/app.py b/app.py",
+    "--- a/app.py",
+    "+++ b/app.py",
+    "@@ -1,2 +1,2 @@",
+    "-old",
+    '+message = """open',
+    " context line",
+  ].join("\n");
+  const secondChunk = ['@@ -3,2 +3,2 @@', "-old2", '+return 1"""', " context after"].join("\n");
+  const emitted: WorkerOut[] = [];
+  const engine = new MarkdownEngine({ post: (message) => emitted.push(message) });
+  const oracle = await createHighlighter({
+    engine: createJavaScriptRegexEngine(),
+    langs: ["python"],
+    themes: [themes.dark, themes.light],
+  });
+  const drainMessages = () => {
+    const messages = emitted.splice(0);
+    const error = messages.find((message) => message.type === "ERROR");
+    if (error?.type === "ERROR") throw new Error(error.error.message);
+  };
+
+  try {
+    await engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "",
+      prewarmLangs: ["python", "typescript"],
+      themes,
+      docPlugins: {
+        html: false,
+        mdx: false,
+        math: false,
+        tables: false,
+        callouts: false,
+        footnotes: false,
+        codeHighlighting: "incremental",
+        outputMode: "tokens",
+        emitHighlightTokens: true,
+        liveTokenization: true,
+      },
+    });
+    drainMessages();
+    await engine.handle({ type: "APPEND", text: firstChunk });
+    drainMessages();
+    await engine.handle({ type: "DUMP_BLOCKS" });
+    const dump = emitted.splice(0).find((message) => message.type === "DUMP_BLOCKS");
+    assert.ok(dump);
+    const code = dump.blocks.find((block) => block.type === "code");
+    assert.ok(code);
+
+    const firstCode = firstChunk.slice(firstChunk.indexOf("\n") + 1);
+    const chunkedCode = {
+      ...code,
+      id: `${code.id}:language-checkpoint`,
+      isFinalized: false,
+      payload: {
+        ...code.payload,
+        raw: firstChunk,
+        meta: { ...(code.payload.meta ?? {}), info: "diff-typescript", code: firstCode },
+      },
+    };
+    await engine.enrichCodeBlock(chunkedCode);
+
+    chunkedCode.payload.raw = `${firstChunk}\n${secondChunk}`;
+    chunkedCode.payload.meta = {
+      ...(chunkedCode.payload.meta ?? {}),
+      code: `${firstCode}\n${secondChunk}`,
+    };
+    await engine.enrichCodeBlock(chunkedCode);
+    const tokenLines = chunkedCode.payload.meta?.tokenLines as Array<TokenLineV1 | null> | undefined;
+    const actual = tokenLines?.[9];
+    assert.ok(actual, "the second streamed chunk must publish tokens for its added row");
+
+    const firstTokens = oracle.codeToTokensWithThemes('message = """open\ncontext line', {
+      lang: "python",
+      themes,
+    });
+    const expectedTokens = oracle.codeToTokensWithThemes('return 1"""', {
+      lang: "python",
+      themes,
+      grammarState: oracle.getLastGrammarState(firstTokens),
+    })[0] ?? [];
+    const expectedReturn = expectedTokens.find((token) => token.content.includes("return"));
+    const actualReturn = actual.spans.find((span) => span.t.includes("return"));
+    assert.ok(expectedReturn);
+    assert.ok(actualReturn);
+    assert.deepStrictEqual(
+      {
+        dark: actualReturn.v?.dark?.fg ?? null,
+        light: actualReturn.v?.light?.fg ?? null,
+      },
+      {
+        dark: expectedReturn.variants.dark?.color ?? null,
+        light: expectedReturn.variants.light?.color ?? null,
+      },
+      "a detected Python file keeps its grammar across appended source chunks",
+    );
+  } finally {
+    engine.dispose();
+    oracle.dispose();
+  }
+}
+
+async function measureDeepDiffRangeTokenizedLines(prefixLines: number): Promise<number> {
+  const emitted: WorkerOut[] = [];
+  const campaignCounters = new counterSinkModule.SessionCounterSink();
+  const engine = new MarkdownEngine({
+    post: (message) => emitted.push(message),
+    campaignCounters,
+  } as MarkdownEngineOptions & { campaignCounters: typeof campaignCounters });
+  const contextLines = Array.from(
+    { length: prefixLines + 1 },
+    (_unused, index) => ` const value_${index} = ${index};`,
+  );
+  const source = [
+    "```diff ts",
+    `@@ -1,${contextLines.length} +1,${contextLines.length} @@`,
+    ...contextLines,
+    "```",
+  ].join("\n");
+  const consumeMessages = () => {
+    for (const message of emitted.splice(0)) {
+      if (message.type === "ERROR") throw new Error(message.error.message);
+    }
+  };
+
+  try {
+    await engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "",
+      prewarmLangs: [],
+      docPlugins: {
+        html: false,
+        mdx: false,
+        math: false,
+        tables: false,
+        callouts: false,
+        footnotes: false,
+        outputMode: "tokens",
+        emitHighlightTokens: true,
+        lazyTokenization: { enabled: true, thresholdLines: 1 },
+      },
+    });
+    consumeMessages();
+    await engine.handle({ type: "APPEND", text: source });
+    consumeMessages();
+    await engine.handle({ type: "FINALIZE" });
+    consumeMessages();
+
+    await engine.handle({ type: "DUMP_BLOCKS" });
+    const dump = emitted.splice(0).find((message) => message.type === "DUMP_BLOCKS");
+    assert.ok(dump, "the worker must return its authored code blocks before range requests");
+    const codeBlock = dump.blocks.find((block) => block.type === "code");
+    assert.ok(codeBlock, "the worker must publish the diff code block before range requests");
+    const checkpointLine = prefixLines + 1;
+    await engine.handle({
+      type: "TOKENIZE_RANGE",
+      blockId: codeBlock.id,
+      startLine: 0,
+      endLine: checkpointLine,
+      priority: "visible",
+    });
+    consumeMessages();
+
+    campaignCounters.reset();
+    await engine.handle({
+      type: "TOKENIZE_RANGE",
+      blockId: codeBlock.id,
+      startLine: checkpointLine,
+      endLine: checkpointLine + 1,
+      priority: "visible",
+    });
+    consumeMessages();
+    return campaignCounters.snapshot().lines_tokenized;
+  } finally {
+    engine.dispose();
+  }
+}
+
+async function runDiffCheckpointRangeLocalityCounterTest(): Promise<void> {
+  const globalWithCounters = globalThis as typeof globalThis & { __STREAM_MDX_COUNTERS__?: boolean };
+  const previousCounterFlag = globalWithCounters.__STREAM_MDX_COUNTERS__;
+  globalWithCounters.__STREAM_MDX_COUNTERS__ = true;
+
+  try {
+    const prefixWork = await measureDeepDiffRangeTokenizedLines(32);
+    const fourTimesPrefixWork = await measureDeepDiffRangeTokenizedLines(128);
+    assert.ok(prefixWork > 0, "the deep range request must record tokenized-line work");
+    assert.strictEqual(
+      fourTimesPrefixWork,
+      prefixWork,
+      "after compatible checkpoints, deep-range tokenized-line work must be independent of an N vs 4N prefix",
+    );
+  } finally {
+    if (previousCounterFlag === undefined) delete globalWithCounters.__STREAM_MDX_COUNTERS__;
+    else globalWithCounters.__STREAM_MDX_COUNTERS__ = previousCounterFlag;
+  }
+}
+
 await runDiffTokenizationTest();
 await runChunkedDiffNumberingTest();
 await runNestedChunkedDiffNumberingTest();
 await runNestedDiffRendererTest();
+await runNativeDiffMissingPrefixContextTest();
+await runDiffFileLanguageSurvivesChunkBoundaryTest();
+await runDiffCheckpointRangeLocalityCounterTest();
 console.log("worker-diff-tokenization test passed");

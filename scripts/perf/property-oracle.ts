@@ -265,13 +265,20 @@ async function parseCold(source: string, finalize: boolean): Promise<Block[]> {
   }
 }
 
-function compareBlockLists(current: readonly Block[], cold: readonly Block[]): string | undefined {
+function compareBlockLists(
+  current: readonly Block[],
+  cold: readonly Block[],
+  requireFinalizedParity = false,
+): string | undefined {
   if (current.length !== cold.length) {
     return `block count mismatch (folded=${current.length}, cold=${cold.length})`;
   }
   for (let index = 0; index < current.length; index++) {
     const currentBlock = current[index];
     const coldBlock = cold[index];
+    if (requireFinalizedParity && currentBlock.isFinalized !== coldBlock.isFinalized) {
+      return `block ${index} ${currentBlock.id} finality differs after FINALIZE (folded=${currentBlock.isFinalized}, cold=${coldBlock.isFinalized})`;
+    }
     if (currentBlock.isFinalized && !coldBlock.isFinalized) {
       return `block ${index} ${currentBlock.id} finalized while the cold prefix tail is provisional`;
     }
@@ -346,7 +353,7 @@ async function runPlan(source: string, chunkPlan: ChunkPlan, mutateFirstBatch = 
     } catch (cause) {
       return failure(source.length, -1, `Cold finalized parse failed: ${String(cause)}`);
     }
-    const difference = compareBlockLists(snapshot.getBlocks(), coldFinalBlocks);
+    const difference = compareBlockLists(snapshot.getBlocks(), coldFinalBlocks, true);
     if (difference) return failure(source.length, -1, `Finalized divergence: ${difference}`);
     return undefined;
   } catch (cause) {
@@ -470,6 +477,7 @@ async function main(): Promise<void> {
   markdownEngineConstructor = await markdownEngineConstructorPromise;
   const startedAt = performance.now();
   const corpus = loadCorpus();
+  const corpusCaseCount = corpus.length;
   const corpusFailureCount = await runCorpus(corpus, options.seed);
   let generatedFailureCount = 0;
   let mutationKilled = false;
@@ -519,7 +527,8 @@ async function main(): Promise<void> {
 
   const durationMs = Math.round(performance.now() - startedAt);
   console.log(
-    `Property oracle: ${corpus.length} corpus cases, ${options.runs} generated runs (seed ${options.seed}), ` +
+    `Property oracle: ${corpusCaseCount} corpus cases, ${result.numRuns}/${options.runs} generated runs ` +
+      `(${result.numShrinks} successful shrinks, seed ${options.seed}), ` +
       `${corpusFailureCount + generatedFailureCount} divergence(s), ${durationMs} ms${options.mutation ? ", mutation mode" : ""}.`,
   );
 

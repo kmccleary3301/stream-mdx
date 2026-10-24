@@ -177,8 +177,11 @@ function firstWorkerError(messages: WorkerOut[]): string | null {
   return `Worker error (${errorMessage.phase}): ${errorMessage.error.message}`;
 }
 
-function extractPatches(messages: WorkerOut[]): Extract<WorkerOut, { type: "PATCH" }>[] {
-  return messages.filter((message): message is Extract<WorkerOut, { type: "PATCH" }> => message.type === "PATCH");
+function extractPatches(messages: WorkerOut[], generation: number): Extract<WorkerOut, { type: "PATCH" }>[] {
+  return messages.filter(
+    (message): message is Extract<WorkerOut, { type: "PATCH" }> =>
+      message.type === "PATCH" && message.generation === generation,
+  );
 }
 
 function stableStringify(value: unknown): string {
@@ -360,7 +363,7 @@ export async function compileMarkdownSnapshotDirect(
       throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
     }
     const snapshot = createInitialSnapshot(initialized.snapshot);
-    for (const patch of extractPatches(initMessages)) {
+    for (const patch of extractPatches(initMessages, initialized.generation)) {
       applyPatchBatch(snapshot, patch.patches);
     }
 
@@ -370,7 +373,14 @@ export async function compileMarkdownSnapshotDirect(
       if (finalizeError) {
         throw new Error(finalizeError);
       }
-      for (const patch of extractPatches(finalizeMessages)) {
+      if (
+        !finalizeMessages.some(
+          (message) => message.type === "FINALIZED" && message.generation === initialized.generation,
+        )
+      ) {
+        throw new Error("The direct compile worker did not finalize the initialized document generation.");
+      }
+      for (const patch of extractPatches(finalizeMessages, initialized.generation)) {
         applyPatchBatch(snapshot, patch.patches);
       }
     } else {

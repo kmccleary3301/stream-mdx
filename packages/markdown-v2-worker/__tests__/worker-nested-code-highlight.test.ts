@@ -14,7 +14,7 @@ import {
 } from "@stream-mdx/core";
 import { createRendererStore, type RendererStore } from "@stream-mdx/react/renderer/store";
 import { CODE_HIGHLIGHT_THEMES, getSharedHighlighter } from "../src/engine/highlight";
-import { NativeContainerTailParser, type NativeContainerTailChange } from "../src/engine/native-container-tail";
+import { NATIVE_CONTAINER_TAIL_VANISHED, NativeContainerTailParser, type NativeContainerTailChange } from "../src/engine/native-container-tail";
 import { NativeMarkdownInput } from "../src/engine/native-markdown-input";
 import {
   NativeNestedCodeSourceOwner,
@@ -151,6 +151,7 @@ function appendNativeTail(
   fixture.document.append(text);
   const source = fixture.document.snapshot();
   const nativeChange = tailParser.append(source, text, source.length);
+  if (nativeChange === NATIVE_CONTAINER_TAIL_VANISHED) throw new Error("nested-code test input lost its bounded root");
   assert.ok(nativeChange, "the native container parser must publish the appended code tail");
   assert.equal(nativeChange.leafNode.type.name, "FencedCode", "the active native leaf must remain the fenced code node");
 

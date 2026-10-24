@@ -35,6 +35,7 @@ interface CampaignCounterSink {
     readonly semanticPatchCount: number;
   }): void;
   reset(): void;
+  recordDocumentRecordsVisited(count: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
 }
 
 import { type Input, type SyntaxNode, type Tree, TreeFragment } from "@lezer/common";
@@ -51,7 +52,9 @@ import type {
   InlineNode,
   InlineStreamingInlineStatus,
   InlineLookaheadPrepareResult,
+  ContainerExtensionSpec,
   SyntaxRuleSpec,
+  SyntaxExtensionDescriptor,
   NormalizedFormatAnticipation,
   LinkReferenceDefinition,
   Patch,
@@ -78,6 +81,7 @@ import type {
   ContentPolicy,
   RestrictedComponentDescriptor,
 } from "@stream-mdx/core";
+import { validateSyntaxExtensionDescriptor } from "./registered-component-owner";
 import {
   AppendSourceDocument,
   STREAM_MDX_SCHEMA_VERSION,
@@ -111,8 +115,11 @@ import {
 } from "@stream-mdx/core";
 import {
   CalloutsPlugin,
+  FootnotesPlugin,
   DocumentPluginRegistry,
+  type DocumentPlugin,
   type DocumentState,
+  type FootnoteParagraphTargetBridge,
   type FootnoteParagraphTargetDelta,
   type FootnoteParagraphTargetUpdate,
   HTMLBlockPlugin,
@@ -130,6 +137,7 @@ import {
   groupHtmlOwnership,
   normalizeHtmlParagraph,
   preserveInlineComponentSource,
+  finalizeOpenRegisteredContainerTree,
 } from "./html-ownership";
 import { parseTrustedMdxSourceSpans } from "../mdx-source-spans";
 import { buildRestrictedComponentInlineTree, buildRestrictedComponentTree } from "./restricted-component-ownership";
@@ -170,6 +178,7 @@ import {
   pruneLazyTokenizationStates,
   selectNextLazyRequest,
   shouldLazyTokenizeBlock,
+  type LazyTokenizationQueue,
 } from "./lazy-tokenization";
 import {
   WorkerMetricsCollector,
@@ -183,15 +192,19 @@ import {
   collectHtmlProtectedRangesFromSegments,
   collectMathProtectedRanges,
   collectNestedListItemInlineSources,
+  createTocPatch,
   getNativeHeadingContentRange,
   maybeBuildTocPatch,
   parseGfmTableFromTree,
   reportWorkerStructuralInvariantViolations,
   slugifyHeading,
+  tocHeadingForBlock,
+  tocSignatureFor,
   trimProvisionalFenceTail,
   trimProvisionalNativeCode,
 } from "./parse-extract";
 import {
+  buildDiffTokenLinesWithCodeEngine,
   createRootCodeOwners,
   rootCodeAppendChange,
   rootCodeAppendPatch,
@@ -199,6 +212,7 @@ import {
   rootCodeNodeSnapshot,
   RootCodeHighlighter,
   SourceRangeInput,
+  tokenizeCodeLines,
   type RootCodeHighlightConfiguration,
 } from "./root-code-pipeline";
 import type { RootCodeSourceOwner } from "./root-code-owner";
@@ -206,7 +220,12 @@ import {
   NativeNestedCodeSourceOwner,
   type NativeNestedCodeSourceMapping,
 } from "./native-nested-code-owner";
-import { NativeContainerTailParser, type NativeContainerTailChange } from "./native-container-tail";
+import {
+  NATIVE_CONTAINER_TAIL_VANISHED,
+  NativeContainerTailParser,
+  type NativeContainerTailChange,
+  type NativeContainerTailResult,
+} from "./native-container-tail";
 import {
   nativeParagraphSourceContext,
   nativeParagraphSpaceTabIndentationRangesFromInput,
@@ -277,6 +296,12 @@ import type {
   ParseOptions,
   ShikiThemedToken,
 } from "./types";
+type WorkerFootnoteParagraphTargetBridge = FootnoteParagraphTargetBridge & {
+  readonly retainedGenericSourceBefore?: number;
+  readonly noFootnoteArtifactsForSource?: SourceSnapshot;
+  readonly hasNativeTargets?: boolean;
+  readonly recordDocumentRecordsVisited?: (count: number) => void;
+};
 
 const NO_ROOT_PARAGRAPH_OWNERS: readonly RootParagraphSourceOwner[] = Object.freeze([]);
 
@@ -285,7 +310,7 @@ const MAX_DEFERRED_PATCHES = 400;
 const MAX_DEFERRED_FLUSH_PATCHES = 120;
 const MAX_MDX_SKIP_LOGS = 20;
 const MIXED_CONTENT_AUTOCLOSE_NEWLINES = 2;
-const DEFAULT_APPEND_CHUNK_SIZE = 1400;
+const DEFAULT_APPEND_CHUNK_SIZE = 4096;
 const DEFAULT_APPEND_BATCH_MS = 12;
 const MIN_APPEND_CHUNK_SIZE = 256;
 const MAX_APPEND_CHUNK_SIZE = 12000;
@@ -313,6 +338,86 @@ const LINK_REFERENCE_FREE_BLOCKS = new Set([
 ]);
 
 type SourceText = string | SourceSnapshot;
+
+function rootBlockSourceFrom(block: Block): number {
+  return block.payload.range?.from ?? Number.POSITIVE_INFINITY;
+}
+
+function addNativeOwnerIdToContainer(
+  ownerIdsByContainer: Map<string, Set<string>>,
+  ownerId: string,
+  containerId: string,
+  previousContainerId?: string,
+): void {
+  if (previousContainerId !== undefined && previousContainerId !== containerId) {
+    removeNativeOwnerIdFromContainer(ownerIdsByContainer, ownerId, previousContainerId);
+  }
+  let ownerIds = ownerIdsByContainer.get(containerId);
+  if (!ownerIds) {
+    ownerIds = new Set();
+    ownerIdsByContainer.set(containerId, ownerIds);
+  }
+  ownerIds.add(ownerId);
+}
+
+function removeNativeOwnerIdFromContainer(
+  ownerIdsByContainer: Map<string, Set<string>>,
+  ownerId: string,
+  containerId: string,
+): void {
+  const ownerIds = ownerIdsByContainer.get(containerId);
+  if (!ownerIds) return;
+  ownerIds.delete(ownerId);
+  if (ownerIds.size === 0) ownerIdsByContainer.delete(containerId);
+}
+
+function rootOwnerSourceFrom(owner: RootCodeSourceOwner | RootTableSourceOwner | RootParagraphSourceOwner): number {
+  return owner.getMetadata().sourceRange.from;
+}
+
+/** Source-ordered root families retain their prefix when only the native tail is reparsed. */
+function rootSourceBoundary<T>(
+  entries: readonly T[],
+  from: number,
+  sourceFrom: (entry: T) => number,
+  counters?: CampaignCounterSink,
+  knownBoundary?: number,
+): number {
+  if (from <= 0) return 0;
+  if (knownBoundary !== undefined && Number.isSafeInteger(knownBoundary)
+    && knownBoundary >= 0 && knownBoundary <= entries.length) {
+    let boundaryIsValid = true;
+    if (knownBoundary > 0) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        counters?.recordPrefixComparisons(1, "engine");
+        counters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      if (sourceFrom(entries[knownBoundary - 1]) >= from) boundaryIsValid = false;
+    }
+    if (boundaryIsValid && knownBoundary < entries.length) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        counters?.recordPrefixComparisons(1, "engine");
+        counters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      if (sourceFrom(entries[knownBoundary]) < from) boundaryIsValid = false;
+    }
+    if (boundaryIsValid) return knownBoundary;
+  }
+  let low = 0;
+  let high = entries.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordPrefixComparisons(1, "engine");
+    }
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      counters?.recordDocumentRecordsVisited(1, "engine");
+    }
+    if (sourceFrom(entries[middle]) < from) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
 
 function readSourceRange(source: SourceText, from: number, to: number): string {
   return typeof source === "string" ? source.slice(from, to) : source.read(from, to);
@@ -515,6 +620,13 @@ function sliceAppendChunk(text: string, maxChars: number): { chunk: string; rest
     rest: text.slice(maxChars),
   };
 }
+
+type RootHeadingFrontierEntry = {
+  readonly sourceFrom: number;
+  readonly baseSlug: string;
+  readonly heading: TocHeading;
+  readonly blockIndex: number;
+};
 
 type LookaheadContainerContext = InlineLookaheadPrepareResult["container"];
 type LookaheadDecisionTrace = InlineLookaheadPrepareResult["trace"][number];
@@ -1056,6 +1168,18 @@ function nativeOwnerType(root: NodeSnapshot): "code" | "table" | "paragraph" | u
   return undefined;
 }
 
+function isCustomDocumentPlugin(plugin: DocumentPlugin): boolean {
+  return plugin !== FootnotesPlugin
+    && plugin !== TablesPlugin
+    && plugin !== CalloutsPlugin
+    && plugin !== HTMLBlockPlugin
+    && plugin !== MDXDetectionPlugin;
+}
+
+
+const LAZY_TOKENIZATION_SLICE_TARGET_MS = 4;
+const DEFAULT_LAZY_TOKENIZATION_SLICE_LINES = 32;
+const MAX_LAZY_TOKENIZATION_SLICE_LINES = 128;
 
 export class MarkdownEngine {
   private readonly postFn: (message: WorkerOut) => void;
@@ -1067,6 +1191,7 @@ export class MarkdownEngine {
   private readonly documentPluginState: DocumentState = {};
   private inlineParser!: InlineParser;
   private syntaxRules: SyntaxRuleSpec[] = [];
+  private syntaxContainers: readonly ContainerExtensionSpec[] = [];
   private htmlConfig?: HtmlOptions;
   private mixedHtmlConfig: HtmlOptions = { literalTagContent: [] };
   private performanceTimer = new PerformanceTimer();
@@ -1082,6 +1207,14 @@ export class MarkdownEngine {
   private rootCodeOwners: RootCodeSourceOwner[] = [];
   private rootTableOwners: RootTableSourceOwner[] = [];
   private rootParagraphOwners: RootParagraphSourceOwner[] = [];
+  // Root owners still in flight or not yet represented in the public root store.
+  private readonly pendingRootCodeOwners = new Set<RootCodeSourceOwner>();
+  private readonly pendingRootTableOwners = new Set<RootTableSourceOwner>();
+  private readonly pendingRootParagraphOwners = new Set<RootParagraphSourceOwner>();
+  private readonly openRootCodeOwners = new Set<RootCodeSourceOwner>();
+  private readonly openRootTableOwners = new Set<RootTableSourceOwner>();
+  private readonly openRootParagraphOwners = new Set<RootParagraphSourceOwner>();
+  private readonly rootParagraphOwnersById = new Map<string, RootParagraphSourceOwner>();
   private readonly rootParagraphOwnersByStart = new Map<number, RootParagraphSourceOwner>();
   private readonly emittedRootParagraphIds = new Set<string>();
   private pendingRootParagraphPatches: Patch[] = [];
@@ -1089,9 +1222,18 @@ export class MarkdownEngine {
   private readonly emittedRootTableIds = new Set<string>();
   private pendingRootTablePatches: Patch[] = [];
   private rootNativeFragmentOffset: number | null = null;
+  /** Tags each root HTML block leaves open when balanced from an empty stack, keyed by the raw it was computed for. */
+  private readonly htmlBlockOpenTags = new WeakMap<Block, { readonly raw: string; readonly openTags: string[] }>();
   private readonly rootCodeOwnersByStart = new Map<number, RootCodeSourceOwner>();
   private readonly emittedRootCodeIds = new Set<string>();
   private readonly nativeContainerTails = new Map<string, NativeContainerTailParser>();
+  private readonly nativeContainerSourceStarts = new Map<string, number>();
+  private readonly nestedCodeOwnerIdsByContainer = new Map<string, Set<string>>();
+  private readonly unfinishedNestedCodeOwnerIds = new Set<string>();
+  private readonly nestedTableOwnerIdsByContainer = new Map<string, Set<string>>();
+  private readonly unfinishedNestedTableOwnerIds = new Set<string>();
+  private readonly nestedParagraphOwnerIdsByContainer = new Map<string, Set<string>>();
+  private readonly unfinishedNestedParagraphOwnerIds = new Set<string>();
   private readonly nativeContainerActiveSnapshots = new Map<string, NodeSnapshot>();
   private readonly nativeContainerActivePathSnapshots = new Map<string, readonly NodeSnapshot[]>();
   private readonly nativeContainerActivePathFrames = new Map<string, NativeContainerTailChange["frames"]>();
@@ -1099,8 +1241,12 @@ export class MarkdownEngine {
   private readonly nestedCodeOwners = new Map<string, NativeNestedCodeSourceOwner>();
   private readonly activeNestedCodeByContainer = new Map<string, string>();
   private readonly nestedTableOwners = new Map<string, RootTableSourceOwner>();
+  private readonly nestedTableOwnerContainers = new Map<string, string>();
   private readonly activeNestedTableByContainer = new Map<string, string>();
   private readonly nestedParagraphOwners = new Map<string, RootParagraphSourceOwner>();
+  private readonly nestedParagraphOwnerContainers = new Map<string, string>();
+  private readonly pendingFootnoteParagraphOwnerRemovals = new Set<string>();
+  private readonly nestedParagraphFootnoteTargetOwnerIds = new Set<string>();
   private readonly activeNestedParagraphByContainer = new Map<string, string>();
   private pendingNativeNestedPatches: Patch[] = [];
   private pendingNativeNestedOwnerPatches: Patch[] = [];
@@ -1109,6 +1255,7 @@ export class MarkdownEngine {
   private rootCodeConfigurationRevision = 0;
   private rootNativeOwnerGeneration = 0;
   private documentGeneration = 0;
+  private admittedSourceUnits = 0;
 
   private txCounter = 0;
   private parseEpochCounter = 0;
@@ -1125,10 +1272,11 @@ export class MarkdownEngine {
   private readonly incrementalHighlightStates = new Map<string, IncrementalHighlightState>();
 
   private readonly lazyTokenizationStates = new Map<string, LazyTokenizationState>();
-  private readonly lazyTokenizationQueue = new Map<string, LazyTokenizationRequest>();
+  private readonly lazyTokenizationQueue: LazyTokenizationQueue = new Map();
   private lazyTokenizationScheduled = false;
   private lazyTokenizationProcessing = false;
   private lazyTokenizationThresholdLines = DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
+  private lazyTokenizationSliceLines = DEFAULT_LAZY_TOKENIZATION_SLICE_LINES;
   private lazyTokenizationEnabled = true;
   private mdxEnabled = true;
   private loggedMdxSkipCount = 0;
@@ -1144,6 +1292,13 @@ export class MarkdownEngine {
   private tocHeadings: TocHeading[] = [];
   private tocSignature = "";
   private headingIdCounts = new Map<string, number>();
+  private rootHeadingFrontier: RootHeadingFrontierEntry[] = [];
+  private rootHeadingCountOffsets = new Map<string, number[]>();
+  private rootHeadingFrontierGeneration = -1;
+  private rootHeadingFrontierSourceLength = -1;
+  private rootHeadingFrontierValid = false;
+  private rootHeadingIdCountOverrides: Map<string, number> | null = null;
+  private rootHeadingIdCountBoundary = 0;
 
   private lastDiffSummary: unknown = null;
   private lastStructuralDiffSummary: unknown = null;
@@ -1160,6 +1315,7 @@ export class MarkdownEngine {
   private inputPolicy: ContentPolicy = "restricted";
   private inputSealed = false;
   private disposed = false;
+  private initialized = false;
   declare private campaignCounters?: CampaignCounterSink;
   declare private progressPublicationId?: number;
 
@@ -1184,7 +1340,7 @@ export class MarkdownEngine {
       }
     }
     if (this.extensions?.syntax) {
-      this.syntaxRules.push(...this.extensions.syntax);
+      this.syntaxRules.push(...(this.extensions.syntax.inline ?? []));
     }
 
     this.buildInlineParser();
@@ -1327,6 +1483,7 @@ export class MarkdownEngine {
       this.rootNativeOwnerGeneration,
       this.rootParagraphPipelineOptions(sourceOffset, finalized),
       htmlDependentStarts,
+      this.rootParagraphOwnersByStart,
     );
   }
 
@@ -1449,15 +1606,26 @@ export class MarkdownEngine {
 
   private clearNativeContainerOwnership(): void {
     this.nativeContainerTails.clear();
+    this.nativeContainerSourceStarts.clear();
     this.nativeContainerActiveSnapshots.clear();
     this.nativeContainerActivePathSnapshots.clear();
     this.nativeContainerActivePathFrames.clear();
     this.nativeFenceHeaderFrontiers.clear();
     this.nestedCodeOwners.clear();
+    this.nestedCodeOwnerIdsByContainer.clear();
+    this.unfinishedNestedCodeOwnerIds.clear();
     this.activeNestedCodeByContainer.clear();
     this.nestedTableOwners.clear();
+    this.nestedTableOwnerContainers.clear();
+    this.nestedTableOwnerIdsByContainer.clear();
+    this.unfinishedNestedTableOwnerIds.clear();
     this.activeNestedTableByContainer.clear();
     this.nestedParagraphOwners.clear();
+    this.nestedParagraphOwnerIdsByContainer.clear();
+    this.unfinishedNestedParagraphOwnerIds.clear();
+    this.nestedParagraphOwnerContainers.clear();
+    this.nestedParagraphFootnoteTargetOwnerIds.clear();
+    this.pendingFootnoteParagraphOwnerRemovals.clear();
     this.activeNestedParagraphByContainer.clear();
     this.pendingNativeNestedPatches = [];
     this.pendingNativeNestedOwnerPatches = [];
@@ -1489,6 +1657,9 @@ export class MarkdownEngine {
     this.deferredPatchQueue = [];
     this.incrementalHighlightStates.clear();
     this.documentPluginRegistry.clear();
+    for (const key of Object.keys(this.documentPluginState)) {
+      delete this.documentPluginState[key];
+    }
     this.blocks = [];
     this.lastTree = null;
     this.treeFragments = [];
@@ -1499,6 +1670,7 @@ export class MarkdownEngine {
     this.rootCodeOwners = [];
     this.rootParagraphOwners = [];
     this.rootParagraphOwnersByStart.clear();
+    this.rootParagraphOwnersById.clear();
     this.emittedRootParagraphIds.clear();
     this.pendingRootParagraphPatches = [];
     this.rootCodeOwnersByStart.clear();
@@ -1507,6 +1679,12 @@ export class MarkdownEngine {
     this.rootTableOwnersByStart.clear();
     this.emittedRootTableIds.clear();
     this.pendingRootTablePatches = [];
+    this.pendingRootCodeOwners.clear();
+    this.pendingRootTableOwners.clear();
+    this.pendingRootParagraphOwners.clear();
+    this.openRootCodeOwners.clear();
+    this.openRootTableOwners.clear();
+    this.openRootParagraphOwners.clear();
     this.rootCodeHighlighter.clear();
     this.currentLinkReferences.clear();
     this.currentLinkReferenceStarts.clear();
@@ -1514,6 +1692,7 @@ export class MarkdownEngine {
     this.emittedBlockEpochs.clear();
     this.tocHeadings = [];
     this.headingIdCounts.clear();
+    this.clearRootHeadingFrontier();
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       this.campaignCounters?.reset();
     }
@@ -1617,6 +1796,7 @@ export class MarkdownEngine {
   private async processMessage(msg: WorkerIn): Promise<void> {
     switch (msg.type) {
       case "INIT":
+        this.initialized = false;
         if (msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
           this.reportError(
             new Error(`Unsupported stream-mdx schema version: ${String(msg.schemaVersion)}`),
@@ -1634,13 +1814,21 @@ export class MarkdownEngine {
           msg.themes ?? msg.docPlugins?.themes,
           msg.contentPolicy,
           msg.contentComponents,
+          msg.bootstrap ?? false,
         );
         return;
       case "APPEND":
+        if (!this.initialized) throw new Error("Cannot append before a successful INIT.");
         if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
           this.campaignCounters.recordEngineEntered?.(this.documentGeneration, this.sourceDocument.length + msg.text.length);
         }
         await this.handleAppend(msg.text);
+        this.admittedSourceUnits += msg.text.length;
+        this.post({
+          type: "SOURCE_ADMITTED",
+          generation: this.documentGeneration,
+          admittedSourceUnits: this.admittedSourceUnits,
+        });
         return;
       case "FINALIZE":
         await this.finalizeAllBlocks();
@@ -1767,53 +1955,31 @@ export class MarkdownEngine {
               && generation === this.documentGeneration
               && configurationRevision === this.rootCodeConfigurationRevision
               && this.isCurrentRootCodeOwner(rootOwner),
+            "range",
           );
           if (!this.isCurrentRootCodeOwner(rootOwner)) return;
           const patch = rootCodeDecoratePatch(rootOwner, configurationRevision, decorations);
           const patches: Patch[] = [];
-          const block = cloneBlock(rootOwner.materializeBlock());
-          const blockMeta = { ...(block.payload.meta ?? {}) };
-          if (blockMeta.lazyTokenization === true && decorations.length > 0) {
-            const info = typeof blockMeta.info === "string" ? blockMeta.info : "";
-            const { lang, meta } = parseCodeFenceInfo(info);
-            const diffInfo = detectDiffLanguage(lang, meta);
-            if (this.emitDiffBlocks && diffInfo.isDiff) {
-              const code = typeof blockMeta.code === "string" ? blockMeta.code : "";
-              const codeLines = code.split("\n");
-              const cursor: DiffCursorState = { oldLine: null, newLine: null };
-              const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
-              blockMeta.diffBlocks = buildDiffBlocksFromLines(
-                diffLines,
-                codeLines,
-                Array.isArray(blockMeta.tokenLines) ? blockMeta.tokenLines as Array<TokenLineV1 | null> : null,
-                diffInfo.baseLang ?? null,
-              );
-            }
+          const presentationMeta = rootOwner.getPresentation()?.meta;
+          if (presentationMeta?.lazyTokenization === true && decorations.length > 0) {
+            const lines = rootOwner.getLines();
             let tokenizedUntil = 0;
-            for (let index = 0; index < rootOwner.getLines().length; index += 1) {
-              const line = rootOwner.getLines().get(index);
+            while (tokenizedUntil < lines.length) {
+              const line = lines.get(tokenizedUntil);
               if (line?.decoration?.configurationRevision !== configurationRevision) break;
               tokenizedUntil += 1;
             }
-            blockMeta.lazyTokenizedUntil = tokenizedUntil;
-            block.payload.meta = blockMeta;
-            rootOwner.setPresentation(block);
-            patches.push({
-              op: "setProps",
-              at: { blockId: rootOwner.id },
-              props: { block },
-              meta: { kind: "enrichment" },
-            });
+            rootOwner.updateLazyTokenizationPresentation(tokenizedUntil, decorations);
+            if (presentationMeta.lazyTokenizedUntil !== tokenizedUntil) {
+              patches.push({
+                op: "setProps",
+                at: { blockId: rootOwner.id },
+                props: { meta: { lazyTokenizedUntil: tokenizedUntil } },
+                meta: { kind: "enrichment" },
+              });
+            }
           }
           if (patch) patches.push(patch);
-          for (const decoration of decorations) {
-            patches.push({
-              op: "setProps",
-              at: { blockId: `${rootOwner.id}::line:${decoration.index}` },
-              props: { html: decoration.html },
-              meta: { kind: "enrichment" },
-            });
-          }
           if (patches.length > 0) this.dispatchPatchBatch(patches);
           return;
         }
@@ -1833,6 +1999,7 @@ export class MarkdownEngine {
               && nestedOwner.inputGeneration === generation
               && configurationRevision === this.rootCodeConfigurationRevision
               && this.nestedCodeOwners.get(nestedOwner.id) === nestedOwner,
+            "range",
           );
           const patches: Patch[] = [];
           const block = decorations.length > 0 ? this.refreshNativeNestedCodePresentation(nestedOwner) : undefined;
@@ -1891,12 +2058,14 @@ export class MarkdownEngine {
       lazyTokenization?: { enabled?: boolean; thresholdLines?: number };
       themes?: CodeHighlightThemes;
     },
-    syntax?: SyntaxRuleSpec[],
+    syntax?: SyntaxExtensionDescriptor,
     html?: HtmlOptions,
     themes?: CodeHighlightThemes,
     contentPolicy?: ContentPolicy,
     contentComponents?: readonly RestrictedComponentDescriptor[],
+    bootstrap = false,
   ): Promise<void> {
+    this.initialized = false;
     this.contentPolicy = contentPolicy ?? "restricted";
     this.contentComponents = new Map();
     if (contentComponents && Array.isArray(contentComponents)) {
@@ -1905,6 +2074,7 @@ export class MarkdownEngine {
       }
     }
     this.documentGeneration += 1;
+    this.admittedSourceUnits = 0;
     let initialProgressPublication: ProgressPublicationContext | undefined;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
       this.progressPublicationId = 0;
@@ -1932,8 +2102,15 @@ export class MarkdownEngine {
     this.pendingRootTablePatches = [];
     this.rootParagraphOwners = [];
     this.rootParagraphOwnersByStart.clear();
+    this.rootParagraphOwnersById.clear();
     this.emittedRootParagraphIds.clear();
     this.pendingRootParagraphPatches = [];
+    this.pendingRootCodeOwners.clear();
+    this.pendingRootTableOwners.clear();
+    this.pendingRootParagraphOwners.clear();
+    this.openRootCodeOwners.clear();
+    this.openRootTableOwners.clear();
+    this.openRootParagraphOwners.clear();
     this.rootCodeHighlighter.clear();
     this.rootCodeConfigurationRevision += 1;
     this.deferredPatchQueue = [];
@@ -1942,20 +2119,28 @@ export class MarkdownEngine {
     this.patchStreamSeq = 0;
     this.tocHeadings = [];
     this.tocSignature = "";
+    this.clearRootHeadingFrontier();
 
     this.syntaxRules = [];
     if (this.extensions?.syntax) {
-      this.syntaxRules.push(...this.extensions.syntax);
+      this.syntaxRules.push(...(this.extensions.syntax.inline ?? []));
     }
-    if (syntax && Array.isArray(syntax)) {
-      for (const rule of syntax) {
-        try {
-          const cleanedFlags = (rule.pattern?.flags || "").replace(/[gy]/g, "");
-          new RegExp(rule.pattern?.source ?? "", `${cleanedFlags}y`);
-          this.syntaxRules.push(rule);
-        } catch (err) {
-          this.reportError(err, "INIT", { rule: rule.name });
-        }
+    const syntaxDescriptors = [this.extensions?.syntax, syntax].filter(
+      (descriptor): descriptor is SyntaxExtensionDescriptor => descriptor !== undefined,
+    );
+    const containerSpecs: ContainerExtensionSpec[] = [];
+    for (const descriptor of syntaxDescriptors) {
+      containerSpecs.push(...validateSyntaxExtensionDescriptor(descriptor, this.contentComponents));
+    }
+    this.syntaxContainers = validateSyntaxExtensionDescriptor(
+      { contractVersion: 1, containers: containerSpecs },
+      this.contentComponents,
+    );
+    if (syntax?.inline && Array.isArray(syntax.inline)) {
+      for (const rule of syntax.inline) {
+        const cleanedFlags = (rule.pattern?.flags || "").replace(/[gy]/g, "");
+        new RegExp(rule.pattern?.source ?? "", `${cleanedFlags}y`);
+        this.syntaxRules.push(rule);
       }
     }
     this.htmlConfig = html;
@@ -1969,6 +2154,7 @@ export class MarkdownEngine {
     this.incrementalHighlightStates.clear();
     this.lazyTokenizationStates.clear();
     this.lazyTokenizationQueue.clear();
+    this.lazyTokenizationSliceLines = DEFAULT_LAZY_TOKENIZATION_SLICE_LINES;
     this.lazyTokenizationScheduled = false;
     this.lazyTokenizationProcessing = false;
 
@@ -2029,19 +2215,24 @@ export class MarkdownEngine {
       }
     }
 
-    this.performanceTimer.mark("highlighter-init");
-    this.highlighter = await getSharedHighlighter(prewarmLangs);
-    this.performanceTimer.measure("highlighter-init");
+    if (bootstrap) {
+      this.highlighter = null;
+      this.codeThemes = DEFAULT_CODE_HIGHLIGHT_THEMES;
+    } else {
+      this.performanceTimer.mark("highlighter-init");
+      this.highlighter = await getSharedHighlighter(prewarmLangs);
+      this.performanceTimer.measure("highlighter-init");
 
-    const requestedThemes = themes ?? docPlugins?.themes;
-    const { themes: resolvedThemes, errors: themeErrors } = await resolveHighlightThemes(
-      this.highlighter,
-      requestedThemes,
-    );
-    for (const error of themeErrors) {
-      this.reportError(error, "INIT", { theme: requestedThemes });
+      const requestedThemes = themes ?? docPlugins?.themes;
+      const { themes: resolvedThemes, errors: themeErrors } = await resolveHighlightThemes(
+        this.highlighter,
+        requestedThemes,
+      );
+      for (const error of themeErrors) {
+        this.reportError(error, "INIT", { theme: requestedThemes });
+      }
+      this.codeThemes = resolvedThemes;
     }
-    this.codeThemes = resolvedThemes;
     if (initialContent) {
       this.sourceDocument.append(initialContent);
       const result = await this.parseAll(initialContent, {
@@ -2065,10 +2256,10 @@ export class MarkdownEngine {
         await this.resetRootNativeTailFragments();
         for (const owner of owners) {
           await this.decorateRootCode(owner);
-          this.emittedRootCodeIds.add(owner.id);
+          this.markRootCodeOwnerEmitted(owner);
         }
-        for (const owner of tableOwners) this.emittedRootTableIds.add(owner.id);
-        for (const owner of paragraphOwners) this.emittedRootParagraphIds.add(owner.id);
+        for (const owner of tableOwners) this.markRootTableOwnerEmitted(owner);
+        for (const owner of paragraphOwners) this.markRootParagraphOwnerEmitted(owner);
       }
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
         initialProgressPublication = this.createProgressPublication(initialContent.length);
@@ -2082,7 +2273,7 @@ export class MarkdownEngine {
       generation: this.documentGeneration,
       raw: initialContent ?? "",
     };
-    const { patch: initialTocPatch, nextHeadings, nextSignature } = maybeBuildTocPatch(this.blocks, this.tocSignature);
+    const { patch: initialTocPatch, nextHeadings, nextSignature } = this.maybeBuildTocPatchForBlocks(this.blocks);
     this.tocHeadings = nextHeadings;
     this.tocSignature = nextSignature;
     this.post({
@@ -2091,6 +2282,7 @@ export class MarkdownEngine {
       generation: this.documentGeneration,
       snapshot,
     });
+    this.initialized = true;
     if (initialTocPatch) this.dispatchPatchBatch([initialTocPatch]);
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && initialProgressPublication) {
       this.recordParsedProgressPublication(initialProgressPublication);
@@ -2129,15 +2321,15 @@ export class MarkdownEngine {
       } else if (activeRootParagraph) {
         await this.appendRootParagraph(activeRootParagraph, chunk, metricsCollector);
       } else {
-        const finalizedParagraph = this.terminalFinalizedRootParagraph();
-        if (finalizedParagraph) {
-          await this.reopenFinalizedRootParagraph(finalizedParagraph, chunk, metricsCollector);
-        } else if (this.rootCodeOwners.length > 0 || this.rootTableOwners.length > 0 || this.rootParagraphOwners.length > 0) {
-          await this.appendRootNativeTail(chunk, metricsCollector);
+        const activeNativeContainer = this.openNativeContainerTail();
+        if (activeNativeContainer) {
+          await this.appendNativeContainerTail(activeNativeContainer, chunk, metricsCollector);
         } else {
-          const activeNativeContainer = this.openNativeContainerTail();
-          if (activeNativeContainer) {
-            await this.appendNativeContainerTail(activeNativeContainer, chunk, metricsCollector);
+          const finalizedParagraph = this.terminalFinalizedRootParagraph();
+          if (finalizedParagraph) {
+            await this.reopenFinalizedRootParagraph(finalizedParagraph, chunk, metricsCollector);
+          } else if (this.rootCodeOwners.length > 0 || this.rootTableOwners.length > 0 || this.rootParagraphOwners.length > 0) {
+            await this.appendRootNativeTail(chunk, metricsCollector);
           } else {
             await this.appendAndReparse(chunk, metricsCollector);
           }
@@ -2179,9 +2371,7 @@ export class MarkdownEngine {
     if (!block || block.isFinalized || (block.type !== "list" && block.type !== "blockquote")) return undefined;
     const tail = this.nativeContainerTails.get(block.id);
     if (!tail || tail.state.phase !== "open" || tail.state.sourceLength !== this.sourceDocument.length) return undefined;
-    const activeParagraphId = this.activeNestedParagraphByContainer.get(block.id);
-    const activeParagraph = activeParagraphId ? this.nestedParagraphOwners.get(activeParagraphId) : undefined;
-    if (activeParagraph?.getMetadata().state !== "open") return undefined;
+    // A nested paragraph can close at a chunk boundary while its enclosing list/quote tail remains open.
     return { block, tail };
   }
 
@@ -2196,7 +2386,9 @@ export class MarkdownEngine {
     metrics?.markParseStart();
     this.sourceDocument.append(appendedText);
     const source = this.sourceDocument.snapshot();
-    const change = tail.append(source, appendedText, source.length);
+    const tailResult = tail.append(source, appendedText, source.length);
+    const vanished = tailResult === NATIVE_CONTAINER_TAIL_VANISHED;
+    const change = vanished ? undefined : tailResult;
     const engine = this;
     const hasNewLinkReference = (candidate: NativeContainerTailChange): boolean => {
       let found = false;
@@ -2216,8 +2408,17 @@ export class MarkdownEngine {
     const splitFootnoteMarker = oldLength > 0
       && appendedText.startsWith("^")
       && source.read(oldLength - 1, oldLength) === "[";
-    const requiresCanonicalParse = !change
+    const containerSourceStart = block.payload.range?.from ?? this.nativeContainerSourceStarts.get(block.id);
+    const precedingRoot = change?.rootNode.prevSibling;
+    const hasRootSiblingBeforeContainer = change !== undefined
+      && precedingRoot !== null
+      && precedingRoot !== undefined
+      && typeof containerSourceStart === "number"
+      && change.window.mapping.mapOffset(precedingRoot.from) >= containerSourceStart;
+    const requiresCanonicalParse = vanished
+      || !change
       || change.closure !== "open"
+      || hasRootSiblingBeforeContainer
       || appendedText.includes("[^")
       || appendedText.includes("&")
       || splitFootnoteMarker
@@ -2225,8 +2426,21 @@ export class MarkdownEngine {
       || (appendedText.includes(">")
         && this.nativeContainerSourceHasHtml(source.read(change.sourceRange.from, change.sourceRange.to)));
     if (requiresCanonicalParse) {
-      this.nativeContainerTails.delete(block.id);
-      tail.clear();
+      if (vanished || hasRootSiblingBeforeContainer) this.retireNativeContainer(block);
+      else {
+        if (change?.closure !== "open") {
+          const ownerIds = this.nestedCodeOwnerIdsByContainer.get(block.id);
+          if (ownerIds) {
+            // Closing a container can invalidate its open code lease without invalidating settled paragraph leases.
+            for (const ownerId of ownerIds) {
+              const owner = this.nestedCodeOwners.get(ownerId);
+              if (owner?.state === "open") this.retireNestedCodeOwner(block.id, ownerId, owner);
+            }
+          }
+        }
+        this.nativeContainerTails.delete(block.id);
+        tail.clear();
+      }
       this.treeFragments = [];
       await this.appendAndReparse(appendedText, metrics, true, true);
       return;
@@ -2278,20 +2492,45 @@ export class MarkdownEngine {
       const from = owner.getMetadata().sourceRange.from;
       if (this.rootCodeOwnersByStart.has(from)) continue;
       this.rootCodeOwnersByStart.set(from, owner);
-      this.rootCodeOwners.push(owner);
+      const last = this.rootCodeOwners[this.rootCodeOwners.length - 1];
+      if (!last || last.getMetadata().sourceRange.from < from) {
+        this.rootCodeOwners.push(owner);
+      } else {
+        let low = 0;
+        let high = this.rootCodeOwners.length;
+        while (low < high) {
+          const middle = (low + high) >>> 1;
+          const middleFrom = this.rootCodeOwners[middle]?.getMetadata().sourceRange.from ?? Number.POSITIVE_INFINITY;
+          if (middleFrom < from) low = middle + 1;
+          else high = middle;
+        }
+        this.rootCodeOwners.splice(low, 0, owner);
+      }
+      this.refreshPendingRootCodeOwner(owner);
     }
-    this.rootCodeOwners.sort((a, b) => a.getMetadata().sourceRange.from - b.getMetadata().sourceRange.from);
   }
-
 
   private registerRootTableOwners(owners: readonly RootTableSourceOwner[]): void {
     for (const owner of owners) {
       const from = owner.getMetadata().sourceRange.from;
       if (this.rootTableOwnersByStart.has(from)) continue;
       this.rootTableOwnersByStart.set(from, owner);
-      this.rootTableOwners.push(owner);
+      const last = this.rootTableOwners[this.rootTableOwners.length - 1];
+      if (!last || last.getMetadata().sourceRange.from < from) {
+        this.rootTableOwners.push(owner);
+      } else {
+        let low = 0;
+        let high = this.rootTableOwners.length;
+        while (low < high) {
+          const middle = (low + high) >>> 1;
+          const middleFrom = this.rootTableOwners[middle]?.getMetadata().sourceRange.from ?? Number.POSITIVE_INFINITY;
+          if (middleFrom < from) low = middle + 1;
+          else high = middle;
+        }
+        this.rootTableOwners.splice(low, 0, owner);
+      }
+      this.refreshPendingRootTableOwner(owner);
     }
-    this.rootTableOwners.sort((a, b) => a.getMetadata().sourceRange.from - b.getMetadata().sourceRange.from);
   }
   private registerRootParagraphOwners(
     owners: readonly RootParagraphSourceOwner[],
@@ -2305,6 +2544,8 @@ export class MarkdownEngine {
         continue;
       }
       this.rootParagraphOwnersByStart.set(from, owner);
+      this.rootParagraphOwnersById.set(owner.id, owner);
+      this.refreshPendingRootParagraphOwner(owner);
       (registered ??= []).push(owner);
     }
     if (!registered) return NO_ROOT_PARAGRAPH_OWNERS;
@@ -2327,6 +2568,59 @@ export class MarkdownEngine {
     }
     return registered;
   }
+  private refreshPendingRootCodeOwner(owner: RootCodeSourceOwner): void {
+    const metadata = owner.getMetadata();
+    const current = this.rootCodeOwnersByStart.get(metadata.sourceRange.from) === owner;
+    if (!current || metadata.state !== "open") this.openRootCodeOwners.delete(owner);
+    else this.openRootCodeOwners.add(owner);
+    if (!current) this.pendingRootCodeOwners.delete(owner);
+    else if (metadata.state === "open" || !this.emittedRootCodeIds.has(owner.id)) {
+      this.pendingRootCodeOwners.add(owner);
+    } else {
+      this.pendingRootCodeOwners.delete(owner);
+    }
+  }
+
+  private refreshPendingRootTableOwner(owner: RootTableSourceOwner): void {
+    const metadata = owner.getMetadata();
+    const current = this.rootTableOwnersByStart.get(metadata.sourceRange.from) === owner;
+    if (!current || metadata.state !== "open") this.openRootTableOwners.delete(owner);
+    else this.openRootTableOwners.add(owner);
+    if (!current) this.pendingRootTableOwners.delete(owner);
+    else if (metadata.state === "open" || !this.emittedRootTableIds.has(owner.id)) {
+      this.pendingRootTableOwners.add(owner);
+    } else {
+      this.pendingRootTableOwners.delete(owner);
+    }
+  }
+
+  private refreshPendingRootParagraphOwner(owner: RootParagraphSourceOwner): void {
+    const metadata = owner.getMetadata();
+    const current = this.rootParagraphOwnersByStart.get(metadata.sourceRange.from) === owner;
+    if (!current || metadata.state !== "open") this.openRootParagraphOwners.delete(owner);
+    else this.openRootParagraphOwners.add(owner);
+    if (!current) this.pendingRootParagraphOwners.delete(owner);
+    else if (metadata.state !== "finalized" || !this.emittedRootParagraphIds.has(owner.id)) {
+      this.pendingRootParagraphOwners.add(owner);
+    } else {
+      this.pendingRootParagraphOwners.delete(owner);
+    }
+  }
+
+  private markRootCodeOwnerEmitted(owner: RootCodeSourceOwner): void {
+    this.emittedRootCodeIds.add(owner.id);
+    this.refreshPendingRootCodeOwner(owner);
+  }
+
+  private markRootTableOwnerEmitted(owner: RootTableSourceOwner): void {
+    this.emittedRootTableIds.add(owner.id);
+    this.refreshPendingRootTableOwner(owner);
+  }
+
+  private markRootParagraphOwnerEmitted(owner: RootParagraphSourceOwner): void {
+    this.emittedRootParagraphIds.add(owner.id);
+    this.refreshPendingRootParagraphOwner(owner);
+  }
 
   private advanceRootNativeOwnerGeneration(): void {
     if (!Number.isSafeInteger(this.rootNativeOwnerGeneration + 1)) {
@@ -2348,6 +2642,8 @@ export class MarkdownEngine {
     const index = this.rootCodeOwners.indexOf(owner);
     if (index >= 0) this.rootCodeOwners.splice(index, 1);
     this.emittedRootCodeIds.delete(owner.id);
+    this.pendingRootCodeOwners.delete(owner);
+    this.openRootCodeOwners.delete(owner);
   }
 
   private retireRootTableOwner(owner: RootTableSourceOwner): void {
@@ -2359,6 +2655,8 @@ export class MarkdownEngine {
     const index = this.rootTableOwners.indexOf(owner);
     if (index >= 0) this.rootTableOwners.splice(index, 1);
     this.emittedRootTableIds.delete(owner.id);
+    this.pendingRootTableOwners.delete(owner);
+    this.openRootTableOwners.delete(owner);
     this.pendingRootTablePatches = this.pendingRootTablePatches.filter((patch) => {
       if (patch.op === "appendTableRows") {
         return patch.table.tableOwnerId !== owner.id || patch.table.generation !== generation;
@@ -2377,6 +2675,9 @@ export class MarkdownEngine {
     const index = this.rootParagraphOwners.indexOf(owner);
     if (index >= 0) this.rootParagraphOwners.splice(index, 1);
     this.emittedRootParagraphIds.delete(owner.id);
+    this.pendingRootParagraphOwners.delete(owner);
+    this.rootParagraphOwnersById.delete(owner.id);
+    this.openRootParagraphOwners.delete(owner);
     this.pendingRootParagraphPatches = this.pendingRootParagraphPatches.filter((patch) =>
       !((patch.op === "appendParagraph" || patch.op === "updateParagraphSpans")
         && patch.paragraphOwnerId === owner.id
@@ -2397,6 +2698,42 @@ export class MarkdownEngine {
     }
     const block = blocks[low];
     return block?.payload.range?.from === sourceOffset ? block : undefined;
+  }
+  private rootBlockBeforeSourceOffset(sourceOffset: number): Block | undefined {
+    const blocks = this.blocks;
+    let low = 0;
+    let high = blocks.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      const block = blocks[middle];
+      const from = block ? rootBlockSourceFrom(block) : Number.POSITIVE_INFINITY;
+      if (from < sourceOffset) low = middle + 1;
+      else high = middle;
+    }
+    return blocks[low - 1];
+  }
+  private nativeContainerBlockAtSourceStart(containerId: string): Block | undefined {
+    const sourceStart = this.nativeContainerSourceStarts.get(containerId);
+    if (sourceStart === undefined) return undefined;
+    const block = this.rootBlockAtSourceStart(sourceStart);
+    return block?.id === containerId
+      && ((block.type === "list" || block.type === "blockquote") || this.hasRegisteredContainerOwnership(block))
+      ? block
+      : undefined;
+  }
+  private syncNestedCodeOwnerLedger(owner: NativeNestedCodeSourceOwner): void {
+    if (owner.state === "finalized") this.unfinishedNestedCodeOwnerIds.delete(owner.id);
+    else this.unfinishedNestedCodeOwnerIds.add(owner.id);
+  }
+
+  private syncNestedTableOwnerLedger(owner: RootTableSourceOwner): void {
+    if (owner.getMetadata().state === "finalized") this.unfinishedNestedTableOwnerIds.delete(owner.id);
+    else this.unfinishedNestedTableOwnerIds.add(owner.id);
+  }
+
+  private syncNestedParagraphOwnerLedger(owner: RootParagraphSourceOwner): void {
+    if (owner.getMetadata().state === "finalized") this.unfinishedNestedParagraphOwnerIds.delete(owner.id);
+    else this.unfinishedNestedParagraphOwnerIds.add(owner.id);
   }
 
   private retireRootOwnersInHtmlRegions(htmlDependentStarts: ReadonlySet<number>): void {
@@ -2466,8 +2803,12 @@ export class MarkdownEngine {
   // Retires a list/blockquote's nested native leases, tail and pending native patches.
   private retireNativeContainer(block: Block): void {
     if (block.type !== "list" && block.type !== "blockquote") return;
+    const sourceStart = block.payload.range?.from ?? this.nativeContainerSourceStarts.get(block.id);
+    const canonicalBlock = typeof sourceStart === "number" ? this.rootBlockAtSourceStart(sourceStart) : undefined;
     const prepared = (block.payload.meta?.preparedNested
-      ?? this.blocks.find((candidate) => candidate.id === block.id)?.payload.meta?.preparedNested) as PreparedNestedSnapshot | undefined;
+      ?? (canonicalBlock?.id === block.id && canonicalBlock.type === block.type
+        ? canonicalBlock.payload.meta?.preparedNested
+        : undefined)) as PreparedNestedSnapshot | undefined;
     for (const child of prepared?.children ?? []) this.retireNativeOwnersInSnapshot(block.id, child);
     const active = this.nativeContainerActiveSnapshots.get(block.id);
     if (active) this.retireNativeOwnersInSnapshot(block.id, active);
@@ -2476,18 +2817,103 @@ export class MarkdownEngine {
       for (const snapshot of activePath) this.retireNativeOwnersInSnapshot(block.id, snapshot);
     }
 
+    const paragraphOwnerIds = this.nestedParagraphOwnerIdsByContainer.get(block.id);
+    if (paragraphOwnerIds) {
+      for (const ownerId of paragraphOwnerIds) {
+        const owner = this.nestedParagraphOwners.get(ownerId);
+        if (owner) this.retireNestedParagraphOwner(block.id, ownerId, owner);
+        else {
+          this.pendingFootnoteParagraphOwnerRemovals.add(ownerId);
+          if (this.nestedParagraphOwnerContainers.get(ownerId) === block.id) {
+            this.nestedParagraphOwnerContainers.delete(ownerId);
+          }
+          this.unfinishedNestedParagraphOwnerIds.delete(ownerId);
+          this.nestedParagraphFootnoteTargetOwnerIds.delete(ownerId);
+          removeNativeOwnerIdFromContainer(this.nestedParagraphOwnerIdsByContainer, ownerId, block.id);
+        }
+      }
+    }
+    const codeOwnerIds = this.nestedCodeOwnerIdsByContainer.get(block.id);
+    if (codeOwnerIds) {
+      for (const ownerId of codeOwnerIds) {
+        const owner = this.nestedCodeOwners.get(ownerId);
+        if (owner) this.retireNestedCodeOwner(block.id, ownerId, owner);
+        else {
+          this.unfinishedNestedCodeOwnerIds.delete(ownerId);
+          removeNativeOwnerIdFromContainer(this.nestedCodeOwnerIdsByContainer, ownerId, block.id);
+        }
+      }
+    }
+    const tableOwnerIds = this.nestedTableOwnerIdsByContainer.get(block.id);
+    if (tableOwnerIds) {
+      for (const ownerId of tableOwnerIds) {
+        const owner = this.nestedTableOwners.get(ownerId);
+        if (owner) this.retireNestedTableOwner(block.id, ownerId, owner);
+        else {
+          if (this.nestedTableOwnerContainers.get(ownerId) === block.id) {
+            this.nestedTableOwnerContainers.delete(ownerId);
+          }
+          this.unfinishedNestedTableOwnerIds.delete(ownerId);
+          removeNativeOwnerIdFromContainer(this.nestedTableOwnerIdsByContainer, ownerId, block.id);
+        }
+      }
+    }
+
     this.nativeContainerTails.get(block.id)?.clear();
     this.nativeContainerTails.delete(block.id);
     this.nativeContainerActiveSnapshots.delete(block.id);
     this.nativeContainerActivePathSnapshots.delete(block.id);
     this.nativeContainerActivePathFrames.delete(block.id);
     this.nativeFenceHeaderFrontiers.delete(block.id);
+    this.nativeContainerSourceStarts.delete(block.id);
     this.activeNestedCodeByContainer.delete(block.id);
     this.activeNestedTableByContainer.delete(block.id);
     this.activeNestedParagraphByContainer.delete(block.id);
     const retired = new Set([block.id]);
     this.pendingNativeNestedPatches = this.retainPatchesOutsideRetiredContainers(this.pendingNativeNestedPatches, retired);
     this.pendingNativeNestedOwnerPatches = this.retainPatchesOutsideRetiredContainers(this.pendingNativeNestedOwnerPatches, retired);
+  }
+  private retireDisplacedNativeContainers(
+    previousBlocks: readonly Block[],
+    nextBlocks: readonly Block[],
+    tailOffset: number,
+  ): void {
+    const nextTailStart = rootSourceBoundary(
+      nextBlocks,
+      tailOffset,
+      rootBlockSourceFrom,
+      typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? this.campaignCounters
+        : undefined,
+    );
+    const nextTailContainerIds = new Set<string>();
+    for (let index = nextTailStart; index < nextBlocks.length; index += 1) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      const block = nextBlocks[index];
+      if (block && (block.type === "list" || block.type === "blockquote")) {
+        nextTailContainerIds.add(block.id);
+      }
+    }
+    const previousTailStart = rootSourceBoundary(
+      previousBlocks,
+      tailOffset,
+      rootBlockSourceFrom,
+      typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? this.campaignCounters
+        : undefined,
+    );
+    for (let index = previousTailStart; index < previousBlocks.length; index += 1) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      const block = previousBlocks[index];
+      if (!block
+        || (block.type !== "list" && block.type !== "blockquote")
+        || nextTailContainerIds.has(block.id)) continue;
+      this.retireNativeContainer(block);
+    }
   }
   // MDX grouping absorbs these containers, so retire their nested leases before rebuilding the region.
   private retireNativeOwnersInMdxContainers(nestedContainerStarts: ReadonlySet<number>): void {
@@ -2627,13 +3053,35 @@ export class MarkdownEngine {
     };
   }
 
+  private syncNestedParagraphFootnoteTargetOwner(owner: RootParagraphSourceOwner): void {
+    if (owner.hasFootnoteReferences()) this.nestedParagraphFootnoteTargetOwnerIds.add(owner.id);
+    else this.nestedParagraphFootnoteTargetOwnerIds.delete(owner.id);
+  }
+
   private nestedParagraphFootnoteTargetDeltas(
     blocks: readonly Block[] = this.blocks,
+    ownerIds: Iterable<string> = this.nestedParagraphFootnoteTargetOwnerIds,
   ): FootnoteParagraphTargetDelta[] {
     const deltas: FootnoteParagraphTargetDelta[] = [];
-    for (const owner of this.nestedParagraphOwners.values()) {
-      const target = this.findNestedParagraphSnapshot(owner.id, blocks);
-      if (target?.snapshot.paragraph?.generation !== owner.getMetadata().generation) continue;
+    if (this.nestedParagraphOwners.size === 0) return deltas;
+    let blockIds: Set<string> | undefined;
+    for (const ownerId of ownerIds) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      const owner = this.nestedParagraphOwners.get(ownerId);
+      const containerId = this.nestedParagraphOwnerContainers.get(ownerId);
+      if (!owner || !containerId) continue;
+      if (!blockIds) {
+        blockIds = new Set<string>();
+        for (const block of blocks) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          blockIds.add(block.id);
+        }
+      }
+      if (!blockIds.has(containerId)) continue;
       deltas.push(this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize()));
     }
     return deltas;
@@ -2654,6 +3102,12 @@ export class MarkdownEngine {
     const tablePatches: Patch[] = [];
     const paragraphTargets: FootnoteParagraphTargetDelta[] = [];
     if (labels.size === 0) return { paragraphPatches, tablePatches, paragraphTargets };
+    const nestedContainerIds = this.nestedParagraphOwners.size > 0 || this.nestedTableOwners.size > 0
+      ? new Set<string>()
+      : undefined;
+    if (nestedContainerIds) {
+      for (const block of this.blocks) nestedContainerIds.add(block.id);
+    }
 
     for (let index = 0; index < rootParagraphCount; index += 1) {
       const owner = this.rootParagraphOwners[index];
@@ -2665,15 +3119,13 @@ export class MarkdownEngine {
       if (patch && this.emittedRootParagraphIds.has(owner.id)) paragraphPatches.push(patch);
     }
     for (const owner of this.nestedParagraphOwners.values()) {
-      const target = this.findNestedParagraphSnapshot(owner.id);
-      if (target?.snapshot.paragraph?.generation !== owner.getMetadata().generation) continue;
+      const blockId = this.nestedParagraphOwnerContainers.get(owner.id);
+      if (!blockId || !nestedContainerIds?.has(blockId)) continue;
       this.publishParagraphLinkReferences(owner);
       const change = owner.invalidateLinkReferences(labels);
       if (change) paragraphTargets.push(this.rootParagraphFootnoteTargetDelta(owner, change.updates.map((update) => update.span)));
       const patch = rootParagraphSemanticPatch(owner, change);
-      if (patch) {
-        paragraphPatches.push({ ...patch, at: { blockId: target.blockId, nodeId: owner.id } });
-      }
+      if (patch) paragraphPatches.push({ ...patch, at: { blockId, nodeId: owner.id } });
     }
     for (let index = 0; index < rootTableCount; index += 1) {
       const owner = this.rootTableOwners[index];
@@ -2682,12 +3134,10 @@ export class MarkdownEngine {
       if (patch && this.emittedRootTableIds.has(owner.id)) tablePatches.push(patch);
     }
     for (const owner of this.nestedTableOwners.values()) {
-      const target = this.findNestedNativeOwnerSnapshot(owner.id);
-      if (target?.snapshot.table?.generation !== owner.getMetadata().generation) continue;
+      const blockId = this.nestedTableOwnerContainers.get(owner.id);
+      if (!blockId || !nestedContainerIds?.has(blockId)) continue;
       const patch = rootTableSemanticPatch(owner, owner.invalidateLinkReferences(labels));
-      if (patch) {
-        tablePatches.push({ ...patch, at: { blockId: target.blockId, nodeId: owner.id } });
-      }
+      if (patch) tablePatches.push({ ...patch, at: { blockId, nodeId: owner.id } });
     }
     return { paragraphPatches, tablePatches, paragraphTargets };
   }
@@ -2708,7 +3158,27 @@ export class MarkdownEngine {
       || metadata.processedTo !== this.sourceDocument.length
       || !isFinalizedRootParagraphAppendCandidate(candidate)
     ) return undefined;
+    for (const start of this.currentLinkReferenceStarts.values()) {
+      if (start >= metadata.sourceRange.to) return undefined;
+    }
     return candidate;
+  }
+
+  private trailingLinkReferenceContinuationStart(source: SourceSnapshot, oldLength: number): number | undefined {
+    let lastDefinitionStart = -1;
+    for (const start of this.currentLinkReferenceStarts.values()) {
+      if (start < oldLength && start > lastDefinitionStart) lastDefinitionStart = start;
+    }
+    if (lastDefinitionStart < 0) return undefined;
+
+    const definitionTail = source.read(lastDefinitionStart, oldLength);
+    const firstNewline = definitionTail.indexOf("\n");
+    if (firstNewline < 0) return sourceLineStart(source, lastDefinitionStart);
+    const continuation = definitionTail.slice(firstNewline + 1);
+    if (continuation.length === 0 || /^[ \t]+["'(][^\r\n]*(?:\r?\n)?$/.test(continuation)) {
+      return sourceLineStart(source, lastDefinitionStart);
+    }
+    return undefined;
   }
 
   private async reopenFinalizedRootParagraph(
@@ -2748,14 +3218,23 @@ export class MarkdownEngine {
   private isRootOwnedBlock(block: Block): boolean {
     if (block.type === "code") {
       for (const owner of this.rootCodeOwnersByStart.values()) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
         if (owner.id === block.id) return true;
       }
     } else if (block.type === "table") {
       for (const owner of this.rootTableOwnersByStart.values()) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
         if (owner.id === block.id) return true;
       }
     } else if (block.type === "paragraph") {
       for (const owner of this.rootParagraphOwnersByStart.values()) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
         if (owner.id === block.id) return true;
       }
     }
@@ -2765,9 +3244,16 @@ export class MarkdownEngine {
     blocks: Block[],
     candidates: readonly RootCodeSourceOwner[],
   ): Block[] {
+    if (candidates.length > 0
+      && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(candidates.length, "engine");
+    }
     const candidateIds = candidates.length > 0
       ? new Set(candidates.map((owner) => owner.id))
       : undefined;
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(blocks.length, "engine");
+    }
     return blocks.filter((block) => block.type !== "code" || (
       !this.isRootOwnedBlock(block) && !candidateIds?.has(block.id)
     ));
@@ -2781,51 +3267,171 @@ export class MarkdownEngine {
   }
 
   private rootManagedTailOffset(): number | null {
-    if (this.rootCodeOwners.length === 0
-      && this.rootTableOwners.length === 0
-      && this.rootParagraphOwners.length === 0) return null;
+    for (const owner of this.pendingRootCodeOwners) {
+      if (owner.getMetadata().state === "open") return null;
+    }
+    for (const owner of this.pendingRootTableOwners) {
+      if (owner.getMetadata().state === "open") return null;
+    }
+    for (const owner of this.pendingRootParagraphOwners) {
+      if (owner.getMetadata().state === "open") return null;
+    }
+
     let latestFrom = -1;
     let processedTo: number | null = null;
-    for (const owner of this.rootCodeOwners) {
-      const metadata = owner.getMetadata();
+    let latestParagraph: RootParagraphSourceOwner | undefined;
+    const latestCode = this.rootCodeOwners[this.rootCodeOwners.length - 1];
+    if (latestCode) {
+      const metadata = latestCode.getMetadata();
       if (metadata.state === "open") return null;
-      if (metadata.sourceRange.from >= latestFrom) {
-        latestFrom = metadata.sourceRange.from;
-        processedTo = metadata.processedTo;
-      }
+      latestFrom = metadata.sourceRange.from;
+      processedTo = metadata.processedTo;
     }
-    for (const owner of this.rootTableOwners) {
-      const metadata = owner.getMetadata();
+    const latestTable = this.rootTableOwners[this.rootTableOwners.length - 1];
+    if (latestTable) {
+      const metadata = latestTable.getMetadata();
       if (metadata.state === "open") return null;
       if (metadata.sourceRange.from >= latestFrom) {
         latestFrom = metadata.sourceRange.from;
         // A table may consume trailing source while classifying its interrupt; restart at its owned end.
         processedTo = metadata.sourceRange.to;
+        latestParagraph = undefined;
       }
     }
-    for (const owner of this.rootParagraphOwners) {
-      const metadata = owner.getMetadata();
+    const latestRootParagraph = this.rootParagraphOwners[this.rootParagraphOwners.length - 1];
+    if (latestRootParagraph) {
+      const metadata = latestRootParagraph.getMetadata();
       if (metadata.state === "open") return null;
       if (metadata.sourceRange.from >= latestFrom) {
         latestFrom = metadata.sourceRange.from;
         processedTo = metadata.processedTo;
-        const pendingRootOffset = rootParagraphPendingRootOffset(owner);
-        if (pendingRootOffset !== undefined) {
-          // Native block node offsets can omit indentation needed when reparsing a continuation.
-          processedTo = sourceLineStart(this.sourceDocument.snapshot(), pendingRootOffset);
-        }
+        latestParagraph = latestRootParagraph;
       }
+    }
+    const pendingRootOffset = latestParagraph ? rootParagraphPendingRootOffset(latestParagraph) : undefined;
+    if (pendingRootOffset !== undefined) {
+      // Native block node offsets can omit indentation needed when reparsing a continuation.
+      processedTo = sourceLineStart(this.sourceDocument.snapshot(), pendingRootOffset);
     }
     return processedTo;
   }
 
+  private forEachUnfinishedRootBlock(visitor: (block: Block) => void): void {
+    const blocks = this.blocks;
+    if ((this.extensions?.documentPlugins?.length ?? 0) > 0) {
+      for (const block of blocks) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        if (!block.isFinalized) visitor(block);
+      }
+      return;
+    }
+
+    // applyUpdate enforces that only the trailing real root can remain dirty; synthetic
+    // footnotes are finalized and may trail that root, so they are skipped while walking back.
+    for (let index = blocks.length - 1; index >= 0; index -= 1) {
+      const block = blocks[index];
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      if (!block) continue;
+      if (block.type === "footnotes") {
+        if (!block.isFinalized) visitor(block);
+        continue;
+      }
+      if (block.isFinalized) break;
+      visitor(block);
+    }
+  }
+
+
+  private rootOwnerSnapshotFrom(fallback: number): number {
+    const source = this.sourceDocument.snapshot();
+    let from = this.rootManagedTailOffset() ?? fallback;
+    const includeOwnerStart = (
+      owner: RootCodeSourceOwner | RootTableSourceOwner,
+    ): void => {
+      from = Math.min(from, sourceLineStart(source, owner.getMetadata().sourceRange.from));
+    };
+    for (const owner of this.pendingRootCodeOwners) includeOwnerStart(owner);
+    for (const owner of this.pendingRootTableOwners) includeOwnerStart(owner);
+    for (const owner of this.pendingRootParagraphOwners) {
+      const paragraphFrom = owner.getMetadata().sourceRange.from;
+      from = Math.min(
+        from,
+        sourceLineStart(source, paragraphFrom),
+        this.rootParagraphReplacementFrom(source, paragraphFrom),
+      );
+    }
+    this.forEachUnfinishedRootBlock((block) => {
+      const blockFrom = block.payload.range?.from;
+      if (typeof blockFrom === "number") from = Math.min(from, blockFrom);
+    });
+    return from;
+  }
+
+  // Root registration keeps all three owner families source-ordered for bounded EOF windows.
+  private rootOwnerSnapshotWindow(from: number): {
+    readonly from: number;
+    readonly codeOwners: RootCodeSourceOwner[];
+    readonly tableOwners: RootTableSourceOwner[];
+    readonly paragraphOwners: RootParagraphSourceOwner[];
+    readonly prefixCounts: {
+      readonly code: number;
+      readonly table: number;
+      readonly paragraph: number;
+    };
+  } {
+    const codeStart = rootSourceBoundary(
+      this.rootCodeOwners,
+      from,
+      rootOwnerSourceFrom,
+      typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ ? this.campaignCounters : undefined,
+    );
+    const tableStart = rootSourceBoundary(
+      this.rootTableOwners,
+      from,
+      rootOwnerSourceFrom,
+      typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ ? this.campaignCounters : undefined,
+    );
+    const paragraphStart = rootSourceBoundary(
+      this.rootParagraphOwners,
+      from,
+      rootOwnerSourceFrom,
+      typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ ? this.campaignCounters : undefined,
+    );
+    const codeOwners: RootCodeSourceOwner[] = [];
+    const tableOwners: RootTableSourceOwner[] = [];
+    const paragraphOwners: RootParagraphSourceOwner[] = [];
+    for (let index = codeStart; index < this.rootCodeOwners.length; index += 1) {
+      const owner = this.rootCodeOwners[index];
+      if (owner && this.emittedRootCodeIds.has(owner.id)) codeOwners.push(owner);
+    }
+    for (let index = tableStart; index < this.rootTableOwners.length; index += 1) {
+      const owner = this.rootTableOwners[index];
+      if (owner && this.emittedRootTableIds.has(owner.id)) tableOwners.push(owner);
+    }
+    for (let index = paragraphStart; index < this.rootParagraphOwners.length; index += 1) {
+      const owner = this.rootParagraphOwners[index];
+      if (owner) paragraphOwners.push(owner);
+    }
+    return {
+      from,
+      codeOwners,
+      tableOwners,
+      paragraphOwners,
+      prefixCounts: { code: codeStart, table: tableStart, paragraph: paragraphStart },
+    };
+  }
 
   private rootCodeHighlightConfiguration(finalizing = false): RootCodeHighlightConfiguration {
     const configuration = {
       highlighter: this.highlighter,
+      codeEngine: this.extensions?.code,
       themes: this.codeThemes,
       configurationRevision: this.rootCodeConfigurationRevision,
-      enabled: this.emitHighlightTokens && Boolean(this.highlighter)
+      enabled: this.emitHighlightTokens && Boolean(this.highlighter || this.extensions?.code)
         && (finalizing || (this.codeHighlightingMode !== "final" && this.liveTokenizationEnabled)),
     };
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -2839,7 +3445,7 @@ export class MarkdownEngine {
       this.lazyTokenizationEnabled,
       metadata.lineCount,
       this.lazyTokenizationThresholdLines,
-      Boolean(this.highlighter),
+      Boolean(this.highlighter || this.extensions?.code),
       owner.hasHighlightableContent,
     );
   }
@@ -2909,52 +3515,104 @@ export class MarkdownEngine {
     const block = isFinalized ? owner.materializeBlock() : undefined;
     const info = typeof block?.payload.meta?.info === "string" ? block.payload.meta.info : "";
     const { lang, meta } = parseCodeFenceInfo(info);
-    const isDiff = detectDiffLanguage(lang, meta).isDiff;
+    const diffInfo = detectDiffLanguage(lang, meta);
+    const isDiff = diffInfo.isDiff;
     const isLazy = isFinalized && shouldLazyTokenizeBlock(
       this.lazyTokenizationEnabled,
       owner.getLines().length,
       this.lazyTokenizationThresholdLines,
-      Boolean(this.highlighter),
+      Boolean(this.highlighter || this.extensions?.code),
       owner.getLines().materialize().trim().length > 0,
     );
-    const skipRootTokenization = isLazy || (isDiff && this.highlightOutputMode !== "html");
+    const tokenizeFinalizedDiff = isFinalized && isDiff && this.highlightOutputMode !== "html";
+    const skipRootTokenization = isLazy || (isDiff && this.highlightOutputMode !== "html" && !isFinalized);
     const decorations = skipRootTokenization
       ? []
-      : await this.rootCodeHighlighter.decorateAvailable(
-          owner,
-          this.rootCodeHighlightConfiguration(finalizing || isFinalized),
-          () => !this.disposed
-            && generation === this.documentGeneration
-            && configurationRevision === this.rootCodeConfigurationRevision
-            && this.isCurrentRootCodeOwner(owner),
-        );
+      : tokenizeFinalizedDiff
+        ? await this.rootCodeHighlighter.tokenizeRange(
+            owner,
+            0,
+            owner.getLines().length,
+            this.rootCodeHighlightConfiguration(finalizing || isFinalized),
+            () => !this.disposed
+              && generation === this.documentGeneration
+              && configurationRevision === this.rootCodeConfigurationRevision
+              && this.isCurrentRootCodeOwner(owner),
+            "range",
+          )
+        : await this.rootCodeHighlighter.decorateAvailable(
+            owner,
+            this.rootCodeHighlightConfiguration(finalizing || isFinalized),
+            () => !this.disposed
+              && generation === this.documentGeneration
+              && configurationRevision === this.rootCodeConfigurationRevision
+              && this.isCurrentRootCodeOwner(owner),
+          );
     if (!this.isCurrentRootCodeOwner(owner)) return null;
 
     let patch = rootCodeDecoratePatch(owner, configurationRevision, decorations);
     if (isFinalized && block) {
-      await this.enrichCodeBlock(block);
+      await this.enrichCodeBlockInternal(block, owner);
       if (!this.isCurrentRootCodeOwner(owner)) return null;
-      owner.setPresentation(block);
-      const tokenLines = block.payload.meta?.tokenLines;
-      if (!isLazy && Array.isArray(tokenLines)) {
+      const wantsTokens = (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both")
+        && this.emitHighlightTokens;
+      if (wantsTokens) {
         const rows = owner.getLines().readRange(0, owner.getLines().length);
-        const tokenDecorations = rows.flatMap((row) => {
-          const tokens = tokenLines[row.index];
-          if (!tokens) return [];
-          return [{
-            index: row.index,
-            lineId: row.id,
-            sourceRevision: row.sourceRevision,
-            configurationRevision,
-            exactness: "exact" as const,
-            tokens,
-          }];
-        });
-        if (tokenDecorations.length > 0) {
-          owner.decorateLines(tokenDecorations);
-          patch = rootCodeDecoratePatch(owner, configurationRevision, tokenDecorations);
+        const meta = { ...(block.payload.meta ?? {}) };
+        const tokenLines = meta.tokenLines;
+        if (isDiff && (this.highlighter || this.extensions?.code)) {
+          meta.tokenLines = rows.map((row) => {
+            const decoration = row.decoration;
+            return decoration?.configurationRevision === configurationRevision
+              && decoration.exactness !== "unavailable"
+              ? decoration.tokens
+              : null;
+          });
+          if (isLazy) {
+            meta.lazyTokenization = true;
+            let tokenizedUntil = 0;
+            while (tokenizedUntil < rows.length
+              && rows[tokenizedUntil]?.decoration?.configurationRevision === configurationRevision) {
+              tokenizedUntil += 1;
+            }
+            meta.lazyTokenizedUntil = tokenizedUntil;
+          }
+        } else if (!isLazy && Array.isArray(tokenLines)) {
+          const tokenDecorations = rows.flatMap((row) => {
+            const tokens = tokenLines[row.index];
+            if (!tokens) return [];
+            return [{
+              index: row.index,
+              lineId: row.id,
+              sourceRevision: row.sourceRevision,
+              configurationRevision,
+              exactness: "exact" as const,
+              tokens,
+            }];
+          });
+          if (tokenDecorations.length > 0) {
+            owner.decorateLines(tokenDecorations);
+            patch = rootCodeDecoratePatch(owner, configurationRevision, tokenDecorations);
+          }
         }
+        if (isDiff) {
+          meta.diffKind = rows.map((row) => row.diffKind ?? null);
+          meta.oldNo = rows.map((row) => row.oldNo ?? null);
+          meta.newNo = rows.map((row) => row.newNo ?? null);
+          if (this.emitDiffBlocks) {
+            const codeLines = rows.map((row) => row.text);
+            const cursor: DiffCursorState = { oldLine: null, newLine: null };
+            meta.diffBlocks = buildDiffBlocksFromLines(
+              codeLines.map((line) => parseUnifiedDiffLine(line, cursor)),
+              codeLines,
+              Array.isArray(meta.tokenLines) ? meta.tokenLines as Array<TokenLineV1 | null> : null,
+              diffInfo.baseLang ?? null,
+            );
+          }
+        }
+        block.payload.meta = meta;
       }
+      owner.setPresentation(block);
     }
     return patch;
   }
@@ -3055,6 +3713,7 @@ export class MarkdownEngine {
     const source = this.sourceDocument.snapshot();
     const newLength = this.sourceDocument.length;
     const change = owner.accept(previous.processedTo, newLength);
+    this.refreshPendingRootCodeOwner(owner);
     const appendChange = rootCodeAppendChange(owner, source, previous, change);
     const semanticPatch = rootCodeAppendPatch(owner, appendChange);
 
@@ -3096,6 +3755,7 @@ export class MarkdownEngine {
     const source = this.sourceDocument.snapshot();
     const newLength = this.sourceDocument.length;
     const change = owner.accept(previousMetadata.processedTo, newLength);
+    this.refreshPendingRootTableOwner(owner);
     const appendChange = rootTableAppendChange(source, previousMetadata, change);
     const appendPatch = rootTableAppendPatch(owner, appendChange);
     if (change.table.state !== "open") {
@@ -3147,6 +3807,7 @@ export class MarkdownEngine {
     const source = this.sourceDocument.snapshot();
     const newLength = this.sourceDocument.length;
     const change = advanceRootParagraphOwner(owner, source, appendedText);
+    this.refreshPendingRootParagraphOwner(owner);
     if (rootParagraphChangeNeedsReplacement(change) || this.rootParagraphChangeContainsInlineHtml(change, source, appendedText)) {
       const previousOwners = this.rootParagraphOwners.slice();
       this.retireRootParagraphOwner(owner);
@@ -3212,15 +3873,108 @@ export class MarkdownEngine {
     );
   }
 
+  /**
+   * Source start of the HTML region whose authored tags are still open at the document tail. A later block can
+   * close that region and join it, as in a single-shot parse, so tail parsing must restart at the region start.
+   */
+  private openHtmlRegionStart(): number | undefined {
+    const contentComponents = this.contentPolicy === "markdown" || this.contentPolicy === "trusted-mdx"
+      ? undefined
+      : this.getActiveContentComponents();
+    const mdxComponents = this.mdxEnabled && this.contentPolicy === "trusted-mdx";
+    const stack: string[] = [];
+    let regionStart: number | undefined;
+    for (const block of this.blocks) {
+      if (block.type === "code" || (stack.length === 0 && block.type !== "html")) continue;
+      const raw = block.payload.raw ?? "";
+      if (!raw.includes("<")) continue;
+      if (stack.length === 0) {
+        // Most HTML blocks balance on their own; remember what each leaves open so appends stay O(blocks).
+        const cached = this.htmlBlockOpenTags.get(block);
+        const openTags = cached?.raw === raw ? cached.openTags : [];
+        if (cached?.raw !== raw) {
+          applyHtmlTagBalance(raw, this.mdParser, openTags, mdxComponents, contentComponents, this.htmlConfig?.literalTagContent);
+          this.htmlBlockOpenTags.set(block, { raw, openTags });
+        }
+        stack.push(...openTags);
+        if (stack.length > 0) regionStart = block.payload.range?.from;
+        continue;
+      }
+      applyHtmlTagBalance(raw, this.mdParser, stack, mdxComponents, contentComponents, this.htmlConfig?.literalTagContent);
+    }
+    return stack.length > 0 ? regionStart : undefined;
+  }
+
   private async appendRootNativeTail(
     appendedText: string,
     metrics?: WorkerMetricsCollector,
   ): Promise<void> {
-    const tailOffset = this.rootNativeFragmentOffset ?? this.rootManagedTailOffset();
+    let tailOffset = this.rootNativeFragmentOffset ?? this.rootManagedTailOffset();
     if (tailOffset === null) throw new Error("Cannot parse a native tail while a root source owner is open");
     const oldLength = this.sourceDocument.length;
+    const hasCustomDocumentPlugins = (this.extensions?.documentPlugins?.length ?? 0) > 0
+      || this.documentPluginRegistry.getAll().some((plugin) => plugin !== FootnotesPlugin
+        && plugin !== TablesPlugin
+        && plugin !== CalloutsPlugin
+        && plugin !== HTMLBlockPlugin
+        && plugin !== MDXDetectionPlugin);
+    if (!hasCustomDocumentPlugins) {
+      const boundaryIndex = rootSourceBoundary(
+        this.blocks,
+        tailOffset,
+        rootBlockSourceFrom,
+        typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+          ? this.campaignCounters
+          : undefined,
+      );
+      const previousRootBlock = boundaryIndex > 0 ? this.blocks[boundaryIndex - 1] : undefined;
+      const previousRange = previousRootBlock?.payload.range;
+      if (previousRootBlock?.isFinalized
+        && typeof previousRange?.from === "number"
+        && Number.isSafeInteger(previousRange.from)
+        && previousRange.from >= 0
+        && typeof previousRange.to === "number"
+        && Number.isSafeInteger(previousRange.to)
+        && previousRange.to > previousRange.from
+        && previousRange.to <= oldLength
+        && previousRange.from < tailOffset
+        && tailOffset < previousRange.to) {
+        tailOffset = previousRange.to;
+      }
+    }
     this.sourceDocument.append(appendedText);
-    await this.parseRootNativeTail(tailOffset, oldLength, this.sourceDocument.length, metrics);
+    const source = this.sourceDocument.snapshot();
+    const referenceContinuationStart = this.trailingLinkReferenceContinuationStart(source, oldLength);
+    if (referenceContinuationStart !== undefined) tailOffset = Math.min(tailOffset, referenceContinuationStart);
+    const openHtmlRegionStart = this.openHtmlRegionStart();
+    if (openHtmlRegionStart !== undefined) tailOffset = Math.min(tailOffset, openHtmlRegionStart);
+    // A provisional block (such as a grouped HTML region) cannot be reparsed from inside its own range.
+    for (const block of this.blocks) {
+      const range = block.payload.range;
+      if (!block.isFinalized && range && range.from < tailOffset && tailOffset < range.to) tailOffset = range.from;
+    }
+    // A block interrupted on the unterminated last line is provisional: "</P" opens an HTML block, "</Pre>" may not.
+    const previousRootParagraphOwners = this.rootParagraphOwners.slice();
+    if (oldLength > 0 && !/[\r\n]/.test(source.read(oldLength - 1, oldLength)) && tailOffset >= sourceLineStart(source, oldLength)) {
+      const previous = this.rootBlockBeforeSourceOffset(tailOffset);
+      const previousRange = previous?.payload.range;
+      let paragraphOwner: RootParagraphSourceOwner | undefined;
+      for (const owner of this.rootParagraphOwners) {
+        const from = owner.getMetadata().sourceRange.from;
+        if (from < tailOffset && (!paragraphOwner || from > paragraphOwner.getMetadata().sourceRange.from)) paragraphOwner = owner;
+      }
+      const paragraphRange = paragraphOwner?.getMetadata().sourceRange;
+      if (paragraphOwner && paragraphRange && (!previousRange || paragraphRange.from > previousRange.from)) {
+        if (isSingleNativeContainerBridge(source, paragraphRange.to, tailOffset)) {
+          this.retireRootParagraphOwner(paragraphOwner);
+          tailOffset = Math.min(tailOffset, paragraphRange.from);
+        }
+      } else if (previousRange && (previous.type === "list" || previous.type === "blockquote" || previous.type === "paragraph")
+        && isSingleNativeContainerBridge(source, previousRange.to, tailOffset)) {
+        tailOffset = Math.min(tailOffset, previousRange.from);
+      }
+    }
+    await this.parseRootNativeTail(tailOffset, oldLength, source.length, metrics, false, [], previousRootParagraphOwners);
   }
   /**
    * Where to reparse a replaced root paragraph: its line start, so indentation before the paragraph text still counts,
@@ -3229,12 +3983,8 @@ export class MarkdownEngine {
   private rootParagraphReplacementFrom(source: SourceSnapshot, paragraphFrom: number): number {
     const lineFrom = sourceLineStart(source, paragraphFrom);
     if (!LIST_ITEM_START.test(source.read(paragraphFrom, Math.min(source.length, paragraphFrom + 12)))) return lineFrom;
-    for (let index = this.blocks.length - 1; index >= 0; index -= 1) {
-      const range = this.blocks[index]?.payload.range;
-      if (!range || range.from >= lineFrom) continue;
-      return this.blocks[index]?.type === "list" ? range.from : lineFrom;
-    }
-    return lineFrom;
+    const previous = this.rootBlockBeforeSourceOffset(lineFrom);
+    return previous?.type === "list" ? previous.payload.range?.from ?? lineFrom : lineFrom;
   }
   private rootQuoteContinuationStart(
     source: SourceSnapshot,
@@ -3276,6 +4026,135 @@ export class MarkdownEngine {
   }
 
 
+  private clearRootHeadingFrontier(): void {
+    this.rootHeadingFrontier = [];
+    this.rootHeadingCountOffsets.clear();
+    this.rootHeadingFrontierGeneration = -1;
+    this.rootHeadingFrontierSourceLength = -1;
+    this.rootHeadingFrontierValid = false;
+    this.rootHeadingIdCountOverrides = null;
+    this.rootHeadingIdCountBoundary = 0;
+  }
+
+  private hasKnownRootHeadingDocumentPlugins(): boolean {
+    if ((this.extensions?.documentPlugins?.length ?? 0) > 0) return false;
+    return this.documentPluginRegistry.getAll().every((plugin) =>
+      plugin === FootnotesPlugin
+      || plugin === TablesPlugin
+      || plugin === CalloutsPlugin
+      || plugin === HTMLBlockPlugin
+      || plugin === MDXDetectionPlugin,
+    );
+  }
+
+  private canSeedRootHeadingCounts(oldLength: number): boolean {
+    return this.rootHeadingFrontierValid
+      && this.rootHeadingFrontierGeneration === this.documentGeneration
+      && this.rootHeadingFrontierSourceLength <= oldLength
+      && this.hasKnownRootHeadingDocumentPlugins();
+  }
+
+  private rootHeadingBaseSlug(block: Block): string {
+    const headingMeta = block.payload.meta as { headingText?: string } | undefined;
+    return slugifyHeading(headingMeta?.headingText ?? block.payload.raw) || "heading";
+  }
+
+  private rootHeadingFrontierEntry(
+    block: Block,
+    heading: TocHeading,
+    blockIndex: number,
+  ): RootHeadingFrontierEntry | null {
+    const sourceFrom = block.payload.range?.from;
+    if (typeof sourceFrom !== "number" || !Number.isSafeInteger(sourceFrom)
+      || sourceFrom < 0 || sourceFrom > this.sourceDocument.length) {
+      return null;
+    }
+    return {
+      sourceFrom,
+      baseSlug: this.rootHeadingBaseSlug(block),
+      heading,
+      blockIndex,
+    };
+  }
+
+  private replaceRootHeadingFrontier(
+    entries: RootHeadingFrontierEntry[],
+    headingCount: number,
+    sourceQualified: boolean,
+  ): void {
+    const offsetsBySlug = new Map<string, number[]>();
+    let valid = sourceQualified && entries.length === headingCount;
+    let previousFrom = -1;
+    let previousBlockIndex = -1;
+    for (const entry of entries) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      if (entry.sourceFrom < previousFrom || entry.blockIndex <= previousBlockIndex) {
+        valid = false;
+      }
+      previousFrom = entry.sourceFrom;
+      previousBlockIndex = entry.blockIndex;
+      let offsets = offsetsBySlug.get(entry.baseSlug);
+      if (!offsets) {
+        offsets = [];
+        offsetsBySlug.set(entry.baseSlug, offsets);
+      }
+      offsets.push(entry.sourceFrom);
+    }
+    this.rootHeadingFrontier = valid ? entries : [];
+    this.rootHeadingCountOffsets = valid ? offsetsBySlug : new Map<string, number[]>();
+    this.rootHeadingFrontierGeneration = this.documentGeneration;
+    this.rootHeadingFrontierSourceLength = this.sourceDocument.length;
+    this.rootHeadingFrontierValid = valid;
+  }
+
+  private maybeBuildTocPatchForBlocks(
+    blocks: Block[],
+  ): { patch: Patch | null; nextHeadings: TocHeading[]; nextSignature: string } {
+    const entries: RootHeadingFrontierEntry[] = [];
+    let sourceQualified = true;
+    const result = maybeBuildTocPatch(blocks, this.tocSignature, (block, heading, blockIndex) => {
+      const entry = this.rootHeadingFrontierEntry(block, heading, blockIndex);
+      if (!entry) {
+        sourceQualified = false;
+        return;
+      }
+      entries.push(entry);
+    });
+    this.replaceRootHeadingFrontier(entries, result.nextHeadings.length, sourceQualified);
+    return result;
+  }
+
+  private rootHeadingCountBefore(baseSlug: string, sourceBefore: number): number {
+    const offsets = this.rootHeadingCountOffsets.get(baseSlug);
+    if (!offsets) return 0;
+    let low = 0;
+    let high = offsets.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      if (offsets[middle]! < sourceBefore) low = middle + 1;
+      else high = middle;
+    }
+    return low;
+  }
+
+  private nextHeadingIdCount(baseSlug: string): number {
+    const overrides = this.rootHeadingIdCountOverrides;
+    if (!overrides) {
+      const count = (this.headingIdCounts.get(baseSlug) ?? 0) + 1;
+      this.headingIdCounts.set(baseSlug, count);
+      return count;
+    }
+    const count = (overrides.get(baseSlug) ?? this.rootHeadingCountBefore(baseSlug, this.rootHeadingIdCountBoundary)) + 1;
+    overrides.set(baseSlug, count);
+    return count;
+  }
+
+
   private async parseRootNativeTail(
     tailOffset: number,
     oldLength: number,
@@ -3287,18 +4166,42 @@ export class MarkdownEngine {
     footnoteTargets: {
       readonly deltas?: readonly FootnoteParagraphTargetDelta[];
       readonly removedOwnerIds?: readonly string[];
+      readonly inlineRefreshes?: readonly { readonly previous: Block; readonly current: Block }[];
       readonly rebuild?: boolean;
     } = {},
+    previousRootOwnerWindow?: {
+      readonly codeOwners: readonly RootCodeSourceOwner[];
+      readonly tableOwners: readonly RootTableSourceOwner[];
+      readonly prefixCounts: {
+        readonly code: number;
+        readonly table: number;
+        readonly paragraph: number;
+      };
+    },
   ): Promise<void> {
     this.performanceTimer.mark("incremental-parse");
     metrics?.markParseStart();
     this.deferredPatchQueue = [];
     const previousBlocks = this.blocks;
+    if (previousRootParagraphOwners === this.rootParagraphOwners
+      && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(this.rootParagraphOwners.length, "engine");
+    }
     const previousRootParagraphOwnerSnapshot = previousRootParagraphOwners === this.rootParagraphOwners
       ? this.rootParagraphOwners.slice()
       : previousRootParagraphOwners;
-    const previousRootCodeOwnerSnapshot = this.rootCodeOwners.filter((owner) => this.emittedRootCodeIds.has(owner.id));
-    const previousRootTableOwnerSnapshot = this.rootTableOwners.filter((owner) => this.emittedRootTableIds.has(owner.id));
+    if (!previousRootOwnerWindow?.codeOwners
+      && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(this.rootCodeOwners.length, "engine");
+    }
+    const previousRootCodeOwnerSnapshot = previousRootOwnerWindow?.codeOwners
+      ?? this.rootCodeOwners.filter((owner) => this.emittedRootCodeIds.has(owner.id));
+    if (!previousRootOwnerWindow?.tableOwners
+      && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(this.rootTableOwners.length, "engine");
+    }
+    const previousRootTableOwnerSnapshot = previousRootOwnerWindow?.tableOwners
+      ?? this.rootTableOwners.filter((owner) => this.emittedRootTableIds.has(owner.id));
     const source = this.sourceDocument.snapshot();
     if (oldLength > 0
       && newLength > oldLength
@@ -3309,12 +4212,51 @@ export class MarkdownEngine {
     const continuationStart = this.rootQuoteContinuationStart(source, oldLength, newLength, previousBlocks);
     if (continuationStart !== undefined) tailOffset = Math.min(tailOffset, continuationStart);
     if (this.rootNativeFragmentOffset !== tailOffset) this.treeFragments = [];
+    let fragmentRestartFrom = continuationStart ?? oldLength;
+    if (continuationStart === undefined && this.treeFragments.length > 0) {
+      // Root-tail fragments must reopen the trailing unfinished generic root on append.
+      if ((this.extensions?.documentPlugins?.length ?? 0) > 0) {
+        this.forEachUnfinishedRootBlock((block) => {
+          const from = block.payload.range?.from;
+          if (typeof from !== "number" || !Number.isSafeInteger(from) || from < 0 || from > oldLength) return;
+          if (from < tailOffset) {
+            tailOffset = from;
+            this.treeFragments = [];
+          } else {
+            fragmentRestartFrom = Math.min(fragmentRestartFrom, from);
+          }
+        });
+      } else {
+        const previousRootIndex = rootSourceBoundary(
+          this.blocks,
+          oldLength,
+          rootBlockSourceFrom,
+          typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+            ? this.campaignCounters
+            : undefined,
+        );
+        const previousRootBlock = previousRootIndex > 0 ? this.blocks[previousRootIndex - 1] : undefined;
+        const from = previousRootBlock?.payload.range?.from;
+        if (previousRootBlock && !previousRootBlock.isFinalized
+          && typeof from === "number"
+          && Number.isSafeInteger(from)
+          && from >= 0
+          && from <= oldLength) {
+          if (from < tailOffset) {
+            tailOffset = from;
+            this.treeFragments = [];
+          } else {
+            fragmentRestartFrom = Math.min(fragmentRestartFrom, from);
+          }
+        }
+      }
+    }
     const sourceInput = new SourceRangeInput(source, tailOffset, newLength);
     const input = new NativeMarkdownInput(sourceInput);
     const updatedFragments = TreeFragment.applyChanges(
       this.treeFragments,
-      [appendFragmentChange(source, tailOffset, oldLength, newLength, continuationStart ?? oldLength)],
-      continuationStart === undefined ? 128 : 0,
+      [appendFragmentChange(source, tailOffset, oldLength, newLength, fragmentRestartFrom)],
+      continuationStart === undefined && fragmentRestartFrom === oldLength ? 128 : 0,
     );
     const tree = input.parse(this.mdParser, updatedFragments);
     const nestedNativeContainerStarts = new Set<number>();
@@ -3335,8 +4277,8 @@ export class MarkdownEngine {
     let createdOwners = this.nativeOwnershipDeclinedByContentPolicy()
       ? []
       : typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-      ? createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset, this.campaignCounters, htmlDependentStarts)
-      : createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset, undefined, htmlDependentStarts);
+      ? createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset, this.campaignCounters, htmlDependentStarts, this.rootCodeOwnersByStart)
+      : createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset, undefined, htmlDependentStarts, this.rootCodeOwnersByStart);
 
     const tailReferences = collectLinkReferences(tree, sourceInput);
     const tailReferenceStarts = collectLinkReferenceStarts(tree, sourceInput, tailOffset, tailReferences);
@@ -3410,24 +4352,43 @@ export class MarkdownEngine {
       linkReferenceTargets.push(...linkReferencePatches.paragraphTargets);
     }
 
-    // Tail headings dedupe against the retained prefix, as a single-shot parse would.
+    // This source-qualified frontier contains only top-level generic headings retained in the current generation.
+    const reuseRootHeadingFrontier = this.canSeedRootHeadingCounts(oldLength);
     this.headingIdCounts = new Map<string, number>();
-    for (const block of previousBlocks) {
-      if (block.type !== "heading" || (block.payload.range?.from ?? tailOffset) >= tailOffset) continue;
-      const headingText = (block.payload.meta as { headingText?: string } | undefined)?.headingText ?? block.payload.raw;
-      const baseSlug = slugifyHeading(headingText) || "heading";
-      this.headingIdCounts.set(baseSlug, (this.headingIdCounts.get(baseSlug) ?? 0) + 1);
+    if (reuseRootHeadingFrontier) {
+      this.rootHeadingIdCountOverrides = new Map<string, number>();
+      this.rootHeadingIdCountBoundary = tailOffset;
+    } else {
+      this.rootHeadingIdCountOverrides = null;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(previousBlocks.length, "engine");
+      }
+      for (const block of previousBlocks) {
+        if (block.type !== "heading" || (block.payload.range?.from ?? tailOffset) >= tailOffset) continue;
+        const headingText = (block.payload.meta as { headingText?: string } | undefined)?.headingText ?? block.payload.raw;
+        const baseSlug = slugifyHeading(headingText) || "heading";
+        this.headingIdCounts.set(baseSlug, (this.headingIdCounts.get(baseSlug) ?? 0) + 1);
+      }
     }
-    const parsedTailBlocks = await this.extractBlocks(
-      tree,
-      sourceInput,
-      {
-        sourceOffset: tailOffset,
-        continueHeadingIds: true,
-        ...(forceFinalize ? { forceFinalize: true } : {}),
-      },
-      nestedNativeContainerStarts,
-    );
+    let parsedTailBlocks: Block[];
+    try {
+      parsedTailBlocks = await this.extractBlocks(
+        tree,
+        sourceInput,
+        {
+          sourceOffset: tailOffset,
+          continueHeadingIds: true,
+          ...(forceFinalize ? { forceFinalize: true } : {}),
+        },
+        nestedNativeContainerStarts,
+      );
+    } finally {
+      this.rootHeadingIdCountOverrides = null;
+      this.rootHeadingIdCountBoundary = 0;
+    }
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(parsedTailBlocks.length, "engine");
+    }
     const tailBlocks = parsedTailBlocks.filter((block) => {
       const from = block.payload.range?.from;
       return !this.isRootOwnedBlock(block) && (
@@ -3438,57 +4399,205 @@ export class MarkdownEngine {
       );
     });
     const documentContextTailBlocks = this.excludeRootCodeBlocksFromDocumentContext(tailBlocks, createdOwners);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(createdTableOwners.length, "engine");
+    }
     const activeCreatedTableOwners = createdTableOwners.filter((owner) =>
       this.rootTableOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(createdParagraphOwners.length, "engine");
+    }
     const activeCreatedParagraphOwners = createdParagraphOwners.filter((owner) =>
       this.rootParagraphOwnersByStart.get(owner.getMetadata().sourceRange.from) === owner);
 
     // Root-tail parsing can leave the just-closed container in the stable prefix; finalize only that predecessor.
     let closedStableNativePredecessorId: string | undefined;
-    for (const block of this.blocks) {
-      const range = block.payload.range;
-      if (!block.isFinalized
-        && (block.type === "list" || block.type === "blockquote")
-        && this.nativeContainerActivePathSnapshots.has(block.id)
-        && !this.nativeContainerTails.has(block.id)
-        && typeof range?.from === "number"
-        && range.from < tailOffset
-        && typeof range.to === "number"
-        && range.to <= tailOffset
-        && hasSourceAfterRange(source, range.to)) {
-        closedStableNativePredecessorId = block.id;
+    if (this.nativeContainerActivePathSnapshots.size > 0) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(this.blocks.length, "engine");
+      }
+      for (const block of this.blocks) {
+        const range = block.payload.range;
+        if (!block.isFinalized
+          && (block.type === "list" || block.type === "blockquote")
+          && this.nativeContainerActivePathSnapshots.has(block.id)
+          && !this.nativeContainerTails.has(block.id)
+          && typeof range?.from === "number"
+          && range.from < tailOffset
+          && typeof range.to === "number"
+          && range.to <= tailOffset
+          && hasSourceAfterRange(source, range.to)) {
+          closedStableNativePredecessorId = block.id;
+        }
       }
     }
-    const stableBlocks = this.blocks
-      .filter((block) => {
-        const from = block.payload.range?.from;
-        return !this.isRootOwnedBlock(block) && (
-          typeof from !== "number" || (
-            from < tailOffset &&
-            !this.rootCodeOwnersByStart.has(from) &&
-            !this.rootTableOwnersByStart.has(from) &&
-            !this.rootParagraphOwnersByStart.has(from)
-          )
-        );
-      })
-      .map((block) => {
-        const stable = cloneBlock(block);
-        if (forceFinalize || block.id === closedStableNativePredecessorId) stable.isFinalized = true;
-        return stable;
-      });
+    const hasCustomDocumentPlugins = (this.extensions?.documentPlugins?.length ?? 0) > 0
+      || this.documentPluginRegistry.some(isCustomDocumentPlugin);
+    let stableBlocks: Block[];
     const createdParagraphTargets = activeCreatedParagraphOwners
       .map((owner) => this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize()));
     const removedParagraphOwners = previousRootParagraphOwnerSnapshot
-      .filter((owner) => !this.rootParagraphOwners.includes(owner))
-      .map((owner) => owner.id);
+      .filter((owner) => {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        return this.rootParagraphOwnersByStart.get(owner.getMetadata().sourceRange.from) !== owner;
+      })
+      .map((owner) => {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        return owner.id;
+      });
     const removedOwnerIds = Array.from(new Set([
       ...(footnoteTargets.removedOwnerIds ?? []),
       ...removedParagraphOwners,
     ]));
-    const previouslyProvisionalIds = new Set(this.blocks.filter((block) => !block.isFinalized).map((block) => block.id));
-    const nativeFootnotesChanged = tailBlocks.some((block) =>
-      this.footnoteSourceNeedsNumbering(block, oldLength, previouslyProvisionalIds));
+    let previousBlockPrefixCount: number | undefined;
+    let previousGenericSuffix: Block[] | undefined;
+    // Finalized snapshots remain for diffing; tails, frontiers, and owner ledgers track unfinished work.
+    const nativeContainerActiveStateEmpty = this.nativeContainerTails.size === 0
+      && this.nativeFenceHeaderFrontiers.size === 0
+      && this.unfinishedNestedCodeOwnerIds.size === 0
+      && this.unfinishedNestedTableOwnerIds.size === 0
+      && this.unfinishedNestedParagraphOwnerIds.size === 0;
+    const nativeParagraphTargetsAreBounded = this.nestedParagraphFootnoteTargetOwnerIds.size === 0
+      && (previousRootOwnerWindow !== undefined
+        || (this.rootParagraphOwners.length === 0
+          && previousRootParagraphOwnerSnapshot.length === 0
+          && activeCreatedParagraphOwners.length === 0
+          && removedOwnerIds.length === 0));
+    const rootInsertBeforeTail = extraPatches.some((patch) =>
+      patch.op === "insertChild"
+      && patch.at.blockId === PATCH_ROOT_ID
+      && (patch.node.range?.from ?? 0) < tailOffset);
+    if (forceFinalize
+      && changedLabels.size === 0
+      && nativeContainerActiveStateEmpty
+      && nativeParagraphTargetsAreBounded
+      && this.openRootCodeOwners.size === 0
+      && this.openRootTableOwners.size === 0
+      && this.openRootParagraphOwners.size === 0
+      && this.activeNestedCodeByContainer.size === 0
+      && this.activeNestedParagraphByContainer.size === 0
+      && this.activeNestedTableByContainer.size === 0
+      && !rootInsertBeforeTail
+      && Number.isSafeInteger(tailOffset)
+      && tailOffset >= 0
+      && tailOffset <= source.length
+      && this.hasNoFootnoteArtifactsForSource(source, false, tailOffset, footnoteTargets)) {
+      let unfinishedTailIsReparsed = true;
+      this.forEachUnfinishedRootBlock((block) => {
+        const from = block.payload.range?.from;
+        if (typeof from !== "number" || from < tailOffset) unfinishedTailIsReparsed = false;
+      });
+      const counters = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? this.campaignCounters
+        : undefined;
+      const retainedPrefixCount = rootSourceBoundary(
+        previousBlocks,
+        tailOffset,
+        rootBlockSourceFrom,
+        counters,
+      );
+      const retainedPrefixTail = retainedPrefixCount > 0 ? previousBlocks[retainedPrefixCount - 1] : undefined;
+      if (unfinishedTailIsReparsed && (!retainedPrefixTail || retainedPrefixTail.isFinalized)) {
+        previousBlockPrefixCount = retainedPrefixCount;
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(previousBlocks.length - retainedPrefixCount, "engine");
+        }
+        previousGenericSuffix = previousBlocks.slice(retainedPrefixCount);
+      }
+    }
+    stableBlocks = [];
+    if (previousBlockPrefixCount === undefined) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(this.blocks.length, "engine");
+      }
+      stableBlocks = this.blocks
+        .filter((block) => {
+          const from = block.payload.range?.from;
+          return !this.isRootOwnedBlock(block) && (
+            typeof from !== "number" || (
+              from < tailOffset &&
+              !this.rootCodeOwnersByStart.has(from) &&
+              !this.rootTableOwnersByStart.has(from) &&
+              !this.rootParagraphOwnersByStart.has(from)
+            )
+          );
+        })
+        .map((block) => {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          const finalized = forceFinalize || block.id === closedStableNativePredecessorId;
+          if (hasCustomDocumentPlugins) {
+            const stable = cloneBlock(block);
+            if (finalized) stable.isFinalized = true;
+            return stable;
+          }
+          return finalized && !block.isFinalized ? { ...block, isFinalized: true } : block;
+        });
+    }
+    if (previousBlockPrefixCount === undefined
+      && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(this.blocks.length, "engine");
+    }
+    const previouslyProvisionalIds = previousBlockPrefixCount === undefined
+      ? new Set(this.blocks
+        .filter((block) => !block.isFinalized)
+        .map((block) => {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          return block.id;
+        }))
+      : new Set<string>();
+    const inlineRefreshes: { previous: Block; current: Block }[] = [];
+    let nativeFootnotesChanged = false;
+    if (previousBlockPrefixCount === undefined) {
+      for (const block of tailBlocks) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        if (this.footnoteSourceNeedsNumbering(block, oldLength, previouslyProvisionalIds)) {
+          nativeFootnotesChanged = true;
+          break;
+        }
+        const sourceStart = block.payload.range?.from;
+        if (typeof sourceStart !== "number" || (!block.payload.raw.includes("[^") && !block.payload.raw.includes("&"))) continue;
+        let low = 0;
+        let high = previousBlocks.length;
+        while (low < high) {
+          const middle = (low + high) >>> 1;
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          const previousStart = previousBlocks[middle]?.payload.range?.from ?? Number.POSITIVE_INFINITY;
+          if (previousStart < sourceStart) low = middle + 1;
+          else high = middle;
+        }
+        for (let index = low; index < previousBlocks.length; index += 1) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          const previous = previousBlocks[index];
+          if (!previous || previous.payload.range?.from !== sourceStart) break;
+          if (previous.type === block.type && previous.payload.raw === block.payload.raw) {
+            inlineRefreshes.push({ previous, current: block });
+            break;
+          }
+        }
+      }
+    }
+    if (nativeFootnotesChanged) inlineRefreshes.length = 0;
     // Invalidated spans follow the caller's append deltas, which can predate them.
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(
+        (footnoteTargets.deltas?.length ?? 0) + linkReferenceTargets.length + createdParagraphTargets.length,
+        "engine",
+      );
+    }
     const paragraphDeltas = [...(footnoteTargets.deltas ?? []), ...linkReferenceTargets, ...createdParagraphTargets];
     const rebuildParagraphTargets = Boolean(footnoteTargets.rebuild)
       || nativeFootnotesChanged
@@ -3498,30 +4607,74 @@ export class MarkdownEngine {
       || this.nestedParagraphOwners.size > 0
       || this.nestedTableOwners.size > 0
       || removedOwnerIds.length > 0
+      || inlineRefreshes.length > 0
       ? {
           deltas: paragraphDeltas,
           ...(removedOwnerIds.length > 0 ? { removedOwnerIds } : {}),
+          ...(inlineRefreshes.length > 0 ? { inlineRefreshes } : {}),
           rebuild: rebuildParagraphTargets,
         }
       : undefined;
-    await this.prepareTrustedMdxFlowChildrenForBlocks(tailBlocks, this.blocks, changedLabels);
-    const documentBlocks = [...stableBlocks, ...documentContextTailBlocks];
+    await this.prepareTrustedMdxFlowChildrenForBlocks(
+      tailBlocks,
+      previousGenericSuffix ?? this.blocks,
+      changedLabels,
+    );
+    let documentBlocks: Block[];
+    if (previousBlockPrefixCount !== undefined) {
+      // `blocks` is private worker state; only snapshots/materializations escape this engine.
+      this.blocks.length = previousBlockPrefixCount;
+      for (const block of documentContextTailBlocks) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        this.blocks.push(block);
+      }
+      documentBlocks = this.blocks;
+    } else {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(stableBlocks.length + documentContextTailBlocks.length, "engine");
+      }
+      documentBlocks = [...stableBlocks, ...documentContextTailBlocks];
+    }
+    if (changedLabels.size > 0
+      && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(documentBlocks.length, "engine");
+    }
     if (changedLabels.size > 0 && await this.refreshLinkReferenceDependents(documentBlocks, changedLabels) && paragraphBridge) {
       paragraphBridge.rebuild = true;
     }
     this.pendingRootParagraphPatches = [];
-    let changedBlocks = this.runDocumentPlugins(documentBlocks, source, paragraphBridge);
+    let changedBlocks = this.runDocumentPlugins(
+      documentBlocks,
+      source,
+      paragraphBridge,
+      previousBlockPrefixCount === undefined ? undefined : tailOffset,
+      previousBlockPrefixCount !== undefined,
+      previousBlockPrefixCount,
+      previousRootOwnerWindow?.prefixCounts.code,
+    );
     rootParagraphSemanticPatches.push(...this.takePendingRootParagraphPatches());
     this.registerRootCodeOwners(createdOwners);
-    if (createdOwners.length > 0) {
+    if (createdOwners.length > 0 && previousBlockPrefixCount === undefined) {
       const rootCodeIds = new Set(createdOwners.map((owner) => owner.id));
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(changedBlocks.length, "engine");
+      }
       changedBlocks = changedBlocks.filter((block) => !rootCodeIds.has(block.id));
     }
     tableSemanticPatches.push(...this.takePendingRootTablePatches());
+    if (previousBlockPrefixCount === undefined) {
+      this.retireDisplacedNativeContainers(previousBlocks, changedBlocks, tailOffset);
+    }
     this.blocks = changedBlocks;
     this.treeFragments = TreeFragment.addTree(tree, updatedFragments);
     this.rootNativeFragmentOffset = tailOffset;
     this.lastTree = tree;
+    if (this.lazyTokenizationStates.size > 0
+      && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(this.blocks.length, "engine");
+    }
     pruneLazyTokenizationStates(this.lazyTokenizationStates, this.blocks);
 
     const rootCodePatches: Patch[] = [];
@@ -3529,20 +4682,20 @@ export class MarkdownEngine {
       await this.decorateRootCode(owner);
       if (!this.emittedRootCodeIds.has(owner.id)) {
         rootCodePatches.push(this.rootCodeInsertPatch(owner));
-        this.emittedRootCodeIds.add(owner.id);
+        this.markRootCodeOwnerEmitted(owner);
       }
     }
     for (const owner of activeCreatedTableOwners) {
       if (!this.emittedRootTableIds.has(owner.id)) {
         tableSemanticPatches.push(this.rootTableInsertPatch(owner));
-        this.emittedRootTableIds.add(owner.id);
+        this.markRootTableOwnerEmitted(owner);
       }
     }
     const rootParagraphPatches: Patch[] = [];
     for (const owner of activeCreatedParagraphOwners) {
       if (!this.emittedRootParagraphIds.has(owner.id)) {
         rootParagraphPatches.push(this.rootParagraphInsertPatch(owner));
-        this.emittedRootParagraphIds.add(owner.id);
+        this.markRootParagraphOwnerEmitted(owner);
       }
     }
     let progressPublication: ProgressPublicationContext | undefined;
@@ -3555,7 +4708,7 @@ export class MarkdownEngine {
     metrics?.markParseEnd();
     metrics?.setBlocksProduced(this.blocks.length);
     await this.emitBlockDiffPatches(
-      previousBlocks,
+      previousGenericSuffix ?? previousBlocks,
       changedBlocks,
       changeRanges,
       metrics,
@@ -3565,6 +4718,9 @@ export class MarkdownEngine {
       previousRootParagraphOwnerSnapshot,
       previousRootCodeOwnerSnapshot,
       previousRootTableOwnerSnapshot,
+      forceFinalize && (this.extensions?.documentPlugins?.length ?? 0) === 0 ? tailOffset : undefined,
+      previousRootOwnerWindow?.prefixCounts,
+      previousBlockPrefixCount,
     );
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
       this.recordParsedProgressPublication(progressPublication);
@@ -3639,10 +4795,22 @@ export class MarkdownEngine {
     return projected;
   }
 
+  private createBlockSnapshotWithNativeCodeOwners(
+    block: Block,
+    onNodeCreated?: (node: NodeSnapshot) => void,
+  ): NodeSnapshot {
+    return createBlockSnapshot(block, onNodeCreated, (nestedBlock) => {
+      const owner = this.nestedCodeOwners.get(nestedBlock.id);
+      return owner
+        ? mutableNativeOwnerSnapshot(owner.snapshot(this.rootCodeConfigurationRevision), owner.getMetadata().sourceRange)
+        : undefined;
+    });
+  }
+
   private createRootSnapshot(blocks: readonly Block[]): NodeSnapshot {
     const children: Array<{ from: number; node: NodeSnapshot }> = [];
     for (const block of blocks) {
-      const node = createBlockSnapshot(this.projectNativeContainerBlockForExport(block));
+      const node = this.createBlockSnapshotWithNativeCodeOwners(this.projectNativeContainerBlockForExport(block));
       children.push({ from: block.payload.range?.from ?? Number.POSITIVE_INFINITY, node });
     }
     const source = this.sourceDocument.snapshot();
@@ -3660,6 +4828,7 @@ export class MarkdownEngine {
       });
     }
     for (const owner of this.rootParagraphOwners) {
+      this.publishParagraphLinkReferences(owner);
       const metadata = owner.getMetadata();
       children.push({
         from: metadata.sourceRange.from,
@@ -3727,8 +4896,8 @@ export class MarkdownEngine {
     this.retireNativeOwnersInMdxContainers(nestedNativeContainerStarts);
     let createdRootCodeOwners = options.admitRootCodeOwners && !this.nativeOwnershipDeclinedByContentPolicy()
       ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-        ? createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, this.campaignCounters, htmlDependentStarts)
-        : createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, undefined, htmlDependentStarts)
+        ? createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, this.campaignCounters, htmlDependentStarts, this.rootCodeOwnersByStart)
+        : createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, undefined, htmlDependentStarts, this.rootCodeOwnersByStart)
       : [];
     if (options.admitRootTableOwners && !this.nativeOwnershipDeclinedByContentPolicy()) {
       this.registerRootTableOwners(
@@ -3836,16 +5005,49 @@ export class MarkdownEngine {
     const source = this.sourceDocument.snapshot();
     const newLen = this.sourceDocument.length;
     const continuationStart = this.rootQuoteContinuationStart(source, oldLen, newLen, this.blocks);
-    // Append-only: restart at an adjacent open quote only when native parsing confirms continuation.
+    // Semantic source remains append-only even when fragment reuse restarts at an open root.
     const changeRanges: ContentChangeRange[] = appendedText.length > 0 ? [{ fromA: oldLen, toA: oldLen, fromB: oldLen, toB: newLen }] : [];
     // Root native tail parses leave fragments positioned relative to their tail window; a document-rooted
     // parse cannot reuse them. The fragments stored below are document-rooted, so no tail window applies.
     if (this.rootNativeFragmentOffset !== null && this.rootNativeFragmentOffset !== 0) this.treeFragments = [];
     this.rootNativeFragmentOffset = null;
+    let fragmentRestartFrom = continuationStart ?? oldLen;
+    if (continuationStart === undefined && this.treeFragments.length > 0) {
+      // Later lines can reclassify the trailing unfinished root, so don't reuse its old tree node.
+      if ((this.extensions?.documentPlugins?.length ?? 0) > 0) {
+        this.forEachUnfinishedRootBlock((block) => {
+          const from = block.payload.range?.from;
+          if (typeof from === "number"
+            && Number.isSafeInteger(from)
+            && from >= 0
+            && from <= oldLen) {
+            fragmentRestartFrom = Math.min(fragmentRestartFrom, from);
+          }
+        });
+      } else {
+        const previousRootIndex = rootSourceBoundary(
+          this.blocks,
+          oldLen,
+          rootBlockSourceFrom,
+          typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+            ? this.campaignCounters
+            : undefined,
+        );
+        const previousRootBlock = previousRootIndex > 0 ? this.blocks[previousRootIndex - 1] : undefined;
+        const from = previousRootBlock?.payload.range?.from;
+        if (previousRootBlock && !previousRootBlock.isFinalized
+          && typeof from === "number"
+          && Number.isSafeInteger(from)
+          && from >= 0
+          && from <= oldLen) {
+          fragmentRestartFrom = Math.min(fragmentRestartFrom, from);
+        }
+      }
+    }
     const updatedFragments = TreeFragment.applyChanges(
       this.treeFragments,
-      [appendFragmentChange(source, 0, oldLen, newLen, continuationStart ?? oldLen)],
-      continuationStart === undefined ? 128 : 0,
+      [appendFragmentChange(source, 0, oldLen, newLen, fragmentRestartFrom)],
+      continuationStart === undefined && fragmentRestartFrom === oldLen ? 128 : 0,
     );
     const nativeInput = new NativeMarkdownInput(source);
     let newTree = nativeInput.parse(this.mdParser, updatedFragments);
@@ -3864,10 +5066,10 @@ export class MarkdownEngine {
     this.retireRootOwnersReclassifiedBy(newTree, 0);
     this.retireRootOwnersInHtmlRegions(htmlDependentStarts);
     this.retireNativeOwnersInMdxContainers(nestedNativeContainerStarts);
-    let createdRootCodeOwners = this.rootCodeOwners.length === 0 && !this.nativeOwnershipDeclinedByContentPolicy()
+    let createdRootCodeOwners = !this.nativeOwnershipDeclinedByContentPolicy()
       ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-        ? createRootCodeOwners(newTree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, this.campaignCounters, htmlDependentStarts)
-        : createRootCodeOwners(newTree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, undefined, htmlDependentStarts)
+        ? createRootCodeOwners(newTree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, this.campaignCounters, htmlDependentStarts, this.rootCodeOwnersByStart, fragmentRestartFrom)
+        : createRootCodeOwners(newTree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, undefined, htmlDependentStarts, this.rootCodeOwnersByStart, fragmentRestartFrom)
       : [];
     this.treeFragments = TreeFragment.addTree(newTree, updatedFragments);
     const newReferences = collectLinkReferences(newTree, source);
@@ -3907,9 +5109,9 @@ export class MarkdownEngine {
         )
       : [];
     this.registerRootTableOwners(createdRootTableOwners);
-    let createdRootParagraphOwners = this.rootParagraphOwners.length === 0
-      ? this.registerRootParagraphOwners(this.admitRootParagraphOwners(newTree, 0, false, htmlDependentStarts))
-      : [];
+    const createdRootParagraphOwners = this.registerRootParagraphOwners(
+      this.admitRootParagraphOwners(newTree, 0, false, htmlDependentStarts),
+    );
 
     let changedBlocks = await this.extractBlocks(
       newTree,
@@ -4084,20 +5286,20 @@ export class MarkdownEngine {
       await this.decorateRootCode(owner);
       if (!this.emittedRootCodeIds.has(owner.id)) {
         rootCodePatches.push(this.rootCodeInsertPatch(owner));
-        this.emittedRootCodeIds.add(owner.id);
+        this.markRootCodeOwnerEmitted(owner);
       }
     }
     for (const owner of activeCreatedRootTableOwners) {
       if (!this.emittedRootTableIds.has(owner.id)) {
         rootCodePatches.push(this.rootTableInsertPatch(owner));
-        this.emittedRootTableIds.add(owner.id);
+        this.markRootTableOwnerEmitted(owner);
       }
     }
     const rootParagraphPatches: Patch[] = [];
     for (const owner of activeCreatedRootParagraphOwners) {
       if (!this.emittedRootParagraphIds.has(owner.id)) {
         rootParagraphPatches.push(this.rootParagraphInsertPatch(owner));
-        this.emittedRootParagraphIds.add(owner.id);
+        this.markRootParagraphOwnerEmitted(owner);
       }
     }
 
@@ -4148,6 +5350,11 @@ export class MarkdownEngine {
       const sourceOffset = options.sourceOffset ?? 0;
       if (!options.continueHeadingIds) this.headingIdCounts = new Map<string, number>();
       const extracted: Block[] = [];
+      const nativeCodeNodes = new Map<string, {
+        readonly node: SyntaxNode;
+        readonly sourceOffset: number;
+        readonly range: { readonly from: number; readonly to: number };
+      }>();
       const cursor = tree.cursor();
       const footnotesEnabled = this.documentPluginRegistry.getAll().some((plugin) => plugin.name === "footnotes");
       let hasRecognizedNodes = false;
@@ -4155,6 +5362,9 @@ export class MarkdownEngine {
         options.firstChangedPos !== undefined && options.previousBlocks
           ? new Map(options.previousBlocks.map((block) => [`${block.payload.range?.from ?? -1}:${block.payload.range?.to ?? -1}`, block]))
           : null;
+      const cloneReusableBlocks = reusableBlockMap !== null
+        && ((this.extensions?.documentPlugins?.length ?? 0) > 0
+          || this.documentPluginRegistry.some(isCustomDocumentPlugin));
 
       if (cursor.firstChild()) {
         do {
@@ -4213,17 +5423,24 @@ export class MarkdownEngine {
             const previous = reusableBlockMap.get(`${globalFrom}:${globalTo}`);
             if (previous && previous.isFinalized && previous.type === blockType
               && !nestedNativeContainerStarts?.has(globalFrom)) {
-              block = previous;
+              block = cloneReusableBlocks ? cloneBlock(previous) : previous;
               if (blockType === "heading") {
                 const headingMeta = previous.payload.meta as { headingText?: string } | undefined;
                 const headingText = headingMeta?.headingText ?? previous.payload.raw;
                 const baseSlug = slugifyHeading(headingText);
-                this.headingIdCounts.set(baseSlug, (this.headingIdCounts.get(baseSlug) ?? 0) + 1);
+                this.nextHeadingIdCount(baseSlug);
               }
             }
           }
 
           if (block) {
+            if (block.type === "code") {
+              nativeCodeNodes.set(block.id, {
+                node: cursor.node,
+                sourceOffset,
+                range: { from: globalFrom, to: globalTo },
+              });
+            }
             extracted.push(block);
             continue;
           }
@@ -4248,6 +5465,13 @@ export class MarkdownEngine {
             throw error;
           }
           if (block) extracted.push(block);
+          if (block?.type === "code") {
+            nativeCodeNodes.set(block.id, {
+              node: cursor.node,
+              sourceOffset,
+              range: { from: globalFrom, to: globalTo },
+            });
+          }
         } while (cursor.nextSibling());
       }
 
@@ -4255,17 +5479,175 @@ export class MarkdownEngine {
         return await this.extractBlocksSimple(content, options);
       }
 
-      return groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, sourceOffset, (text) => this.inlineParser.parse(text), {
-        forceFinalize: options.forceFinalize,
-        mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
-        contentPolicy: this.contentPolicy,
-        contentComponents: this.getActiveContentComponents(),
-      });
+      const grouped = groupHtmlOwnership(
+        extracted,
+        this.mdParser,
+        content,
+        this.htmlConfig,
+        sourceOffset,
+        (text) => this.inlineParser.parse(text),
+        {
+          forceFinalize: options.forceFinalize,
+          mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
+          contentPolicy: this.contentPolicy,
+          contentComponents: this.getActiveContentComponents(),
+          syntaxContainers: this.syntaxContainers,
+        },
+      );
+      await this.prepareRegisteredContainerCodeOwners(grouped, nativeCodeNodes, options);
+      return grouped;
     } catch (error) {
       if (nativeContainerPreparationFailed) throw error;
       console.warn("Lezer parsing failed, falling back to simple parsing:", error);
       return await this.extractBlocksSimple(content, options);
     }
+  }
+
+  private async prepareRegisteredContainerCodeOwners(
+    blocks: readonly Block[],
+    syntaxNodes: ReadonlyMap<string, {
+      readonly node: SyntaxNode;
+      readonly sourceOffset: number;
+      readonly range: { readonly from: number; readonly to: number };
+    }>,
+    options: ParseOptions,
+  ): Promise<void> {
+    const candidates: Array<{ readonly container: Block; readonly code: Block }> = [];
+    const seenCodes = new Set<string>();
+    for (const container of blocks) {
+      const tree = container.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
+      if (!Array.isArray(tree)) continue;
+      const pending = tree.map((node) => ({ node, registered: false }));
+      while (pending.length > 0) {
+        const current = pending.pop();
+        if (!current) continue;
+        const { node, registered } = current;
+        if (node.kind === "element" || node.kind === "component") {
+          const isRegistered = registered
+            || (node.kind === "component" && node.rawSource?.trimStart().startsWith(":::") === true);
+          pending.push(...node.children.map((child) => ({ node: child, registered: isRegistered })));
+        } else if (node.kind === "block") {
+          if (registered && node.block.type === "code" && !seenCodes.has(node.block.id)) {
+            seenCodes.add(node.block.id);
+            candidates.push({ container, code: node.block });
+          }
+          const nested = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
+          if (Array.isArray(nested)) {
+            pending.push(...nested.map((child) => ({ node: child, registered })));
+          }
+        }
+      }
+    }
+
+    if (candidates.length === 0) return;
+    const source = this.sourceDocument.snapshot();
+    const ownersToDecorate = new Set<NativeNestedCodeSourceOwner>();
+    const existedBeforeUpdate = new Set<NativeNestedCodeSourceOwner>();
+    for (const { container, code } of candidates) {
+      const native = syntaxNodes.get(code.id);
+      if (!native) throw new Error(`Registered container code block ${code.id} has no native parser node`);
+      const sourceOffset = native.sourceOffset;
+      const mapping: NativeNestedCodeSourceMapping = {
+        input: new SourceRangeInput(source, sourceOffset),
+        source,
+        mapOffset: (offset) => sourceOffset + offset,
+        mapRange: (from, to) => ({ from: sourceOffset + from, to: sourceOffset + to }),
+      };
+      const range = code.payload.range ?? native.range;
+      const closure = options.forceFinalize ? "finalized" : code.isFinalized ? "closed" : "open";
+      let owner = this.nestedCodeOwners.get(code.id);
+      if (owner && owner.containerId !== container.id) {
+        this.retireNestedCodeOwner(owner.containerId, code.id, owner);
+        owner = undefined;
+      } else if (owner) {
+        existedBeforeUpdate.add(owner);
+      }
+
+      if (owner?.state === "open") {
+        const previousRange = owner.getMetadata().sourceRange;
+        const ownedNodes: SyntaxNode[] = [];
+        for (let child = native.node.firstChild; child; child = child.nextSibling) {
+          if (child.type.name === "CodeText" || child.type.name === "CodeMark") ownedNodes.push(child);
+        }
+        const update = owner.acceptNativeTail({
+          nodes: ownedNodes,
+          mapping,
+          inputGeneration: this.documentGeneration,
+          sourceDocument: this.sourceDocument,
+          closure,
+          sourceRange: { from: previousRange.from, to: Math.max(previousRange.to, range.to) },
+        });
+        this.syncNestedCodeOwnerLedger(owner);
+        if (update.revision !== update.expectedRevision || update.sourceAppend.length > 0) {
+          this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(update));
+        }
+      } else if (owner?.state === "closed" && closure === "finalized") {
+        const update = owner.finalize(mapping);
+        this.syncNestedCodeOwnerLedger(owner);
+        if (update.revision !== update.expectedRevision) this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(update));
+      } else if (!owner) {
+        owner = NativeNestedCodeSourceOwner.admit({
+          id: code.id,
+          containerId: container.id,
+          generation: ++this.nestedLeaseGeneration,
+          inputGeneration: this.documentGeneration,
+          source: this.sourceDocument,
+          node: native.node,
+          mapping,
+          closure,
+          range,
+        });
+        this.nestedCodeOwners.set(code.id, owner);
+        addNativeOwnerIdToContainer(this.nestedCodeOwnerIdsByContainer, code.id, container.id);
+        this.syncNestedCodeOwnerLedger(owner);
+      }
+
+      if (!owner) continue;
+      this.nativeContainerSourceStarts.set(container.id, container.payload.range?.from ?? range.from);
+      if (owner.state === "open") this.activeNestedCodeByContainer.set(container.id, owner.id);
+      else if (this.activeNestedCodeByContainer.get(container.id) === owner.id) this.activeNestedCodeByContainer.delete(container.id);
+      owner.setPresentation(code);
+      if (!this.shouldDeferNativeNestedCodeHighlight(owner)) ownersToDecorate.add(owner);
+    }
+
+    for (const owner of ownersToDecorate) {
+      const decorations = owner.isDiff && owner.state !== "open" && this.highlightOutputMode !== "html"
+        ? await this.rootCodeHighlighter.tokenizeRange(
+            owner,
+            0,
+            owner.getLines().length,
+            this.rootCodeHighlightConfiguration(true),
+            () => !this.disposed,
+            "range",
+          )
+        : await this.rootCodeHighlighter.decorateAvailable(
+            owner,
+            this.rootCodeHighlightConfiguration(owner.state !== "open"),
+            () => !this.disposed,
+          );
+      if (decorations.length === 0) continue;
+      if (existedBeforeUpdate.has(owner)) {
+        const patch = owner.decoratePatch(this.rootCodeConfigurationRevision, decorations);
+        if (patch) this.pendingNativeNestedOwnerPatches.push(patch);
+      }
+    }
+  }
+
+  private hasRegisteredContainerOwnership(block: Block): boolean {
+    const tree = block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
+    if (!Array.isArray(tree)) return false;
+    const pending = [...tree];
+    while (pending.length > 0) {
+      const node = pending.pop();
+      if (!node) continue;
+      if (node.kind === "component") {
+        if (node.rawSource?.trimStart().startsWith(":::")) return true;
+        pending.push(...node.children);
+      } else if (node.kind === "element") {
+        pending.push(...node.children);
+      }
+    }
+    return false;
   }
 
   private async extractBlocksSimple(content: SourceText, options: ParseOptions = {}): Promise<Block[]> {
@@ -4484,8 +5866,14 @@ export class MarkdownEngine {
     previousBlocks: readonly Block[],
     changedLabels?: ReadonlySet<string>,
   ): Promise<void> {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(previousBlocks.length, "engine");
+    }
     const previousById = new Map(previousBlocks.map((block) => [block.id, block]));
     for (const block of blocks) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
       const previous = previousById.get(block.id);
       const previousRange = previous?.payload.range;
       const currentRange = block.payload.range;
@@ -5026,8 +6414,7 @@ export class MarkdownEngine {
         }
         headingLevel = Math.min(Math.max(headingLevel, 1), 6);
         const baseSlug = slugifyHeading(normalizedHeading) || "heading";
-        const nextCount = (this.headingIdCounts.get(baseSlug) ?? 0) + 1;
-        this.headingIdCounts.set(baseSlug, nextCount);
+        const nextCount = this.nextHeadingIdCount(baseSlug);
         const headingId = nextCount > 1 ? `${baseSlug}-${nextCount}` : baseSlug;
         block.payload.meta = {
           ...(block.payload.meta ?? {}),
@@ -5418,9 +6805,21 @@ export class MarkdownEngine {
 
     const name = nativeNode.type.name;
     if (!["BulletList", "OrderedList", "Blockquote"].includes(name)) return;
-    const previousBlock = this.blocks.find((candidate) => candidate.id === block.id && candidate.type === block.type);
+    const rootRange = block.payload.range;
+    const previousSourceStart = this.nativeContainerSourceStarts.get(block.id) ?? rootRange?.from;
+    const previousCandidate = typeof previousSourceStart === "number"
+      ? this.rootBlockAtSourceStart(previousSourceStart)
+      : undefined;
+    const previousBlock = previousCandidate?.id === block.id && previousCandidate.type === block.type
+      ? previousCandidate
+      : undefined;
+    if (!previousBlock && previousCandidate
+      && (previousCandidate.type === "list" || previousCandidate.type === "blockquote")) {
+      this.retireNativeContainer(previousCandidate);
+    }
     const previousPrepared = previousBlock?.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
     if (previousPrepared) block.payload.meta = { ...block.payload.meta, preparedNested: previousPrepared };
+    if (typeof rootRange?.from === "number") this.nativeContainerSourceStarts.set(block.id, rootRange.from);
     const sourceOffset = options?.sourceOffset ?? 0;
     const source = this.sourceDocument.snapshot();
     const input: Input = new SourceRangeInput(source, sourceOffset);
@@ -5430,10 +6829,9 @@ export class MarkdownEngine {
       mapOffset: (offset) => sourceOffset + offset,
       mapRange: (from, to) => ({ from: sourceOffset + from, to: sourceOffset + to }),
     };
-    const rootRange = block.payload.range;
     const tailTo = rootRange?.to ?? source.length;
     let tail = this.nativeContainerTails.get(block.id);
-    let change: NativeContainerTailChange | undefined;
+    let result: NativeContainerTailResult = undefined;
     if (!precomputedChange && !options?.forceFinalize && tail && tail.state.tailFrom > tailTo) {
       // This tail belongs to a suffix that the canonical parse moved outside the container.
       this.nativeContainerTails.delete(block.id);
@@ -5444,7 +6842,7 @@ export class MarkdownEngine {
     let admittedOpenList = false;
     if (precomputedChange) {
       if (!tail) throw new Error(`Native container ${block.id} lost its active tail before applying the parsed window`);
-      change = precomputedChange;
+      result = precomputedChange;
     } else if (!tail) {
       const paragraphOwnerSupported = this.rootParagraphOwnershipSupported();
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -5476,10 +6874,15 @@ export class MarkdownEngine {
       }
     } else {
       const priorState = tail.state;
-      change = options?.forceFinalize
+      result = options?.forceFinalize
         ? tail.finalize(source, tailTo)
         : tail.append(source, source.read(priorState.sourceLength, source.length), tailTo);
     }
+    if (result === NATIVE_CONTAINER_TAIL_VANISHED) {
+      // No reachable input in the scan produced this; never silently reuse stale state if one does.
+      throw new Error(`Native container ${block.id} (${tail.state.ownerType}) vanished from its bounded window`);
+    }
+    const change = result;
 
     const frames = change?.frames ?? tail.state.frames;
     const activeLeaf = change?.leafNode ?? tail.activeLeafNode;
@@ -5510,9 +6913,10 @@ export class MarkdownEngine {
           },
         }
       : baseMapping;
-    const closure = options?.forceFinalize
+    const tailClosure = change?.closure ?? tail.state.phase;
+    const closure = options?.forceFinalize || (block.isFinalized && tailClosure !== "open")
       ? "finalized"
-      : change?.closure ?? (block.isFinalized && !admittedOpenList ? "closed" : tail.state.phase);
+      : tailClosure;
     const codeEvents = change
       ? nativeCodeEventsInTail(change.rootNode, change.window.prefixLength)
       : [];
@@ -5627,7 +7031,7 @@ export class MarkdownEngine {
         : nextSibling !== null || (kind !== "code" && hasSourceAfterRange(source, range.to)) || codeHasClosingFence;
       const nodeClosure = options?.forceFinalize
         ? "finalized"
-        : isActive && closure === "finalized"
+        : closure === "finalized"
           ? "finalized"
           : isActive && closure === "open" && !nodeEnded
             ? "open"
@@ -5674,6 +7078,7 @@ export class MarkdownEngine {
             closure: nodeClosure,
             sourceRange: { from: previousRange.from, to: Math.max(previousRange.to, range.to) },
           });
+          this.syncNestedCodeOwnerLedger(owner);
           if (update.revision !== update.expectedRevision || update.sourceAppend.length > 0) {
             this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(update));
           }
@@ -5681,6 +7086,7 @@ export class MarkdownEngine {
         }
         if (owner?.state === "closed" && nodeClosure === "finalized") {
           const update = owner.finalize(mapping);
+          this.syncNestedCodeOwnerLedger(owner);
           if (update.revision !== update.expectedRevision) {
             this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(update));
           }
@@ -5698,6 +7104,8 @@ export class MarkdownEngine {
             range,
           });
           this.nestedCodeOwners.set(id, owner);
+          addNativeOwnerIdToContainer(this.nestedCodeOwnerIdsByContainer, id, block.id);
+          this.syncNestedCodeOwnerLedger(owner);
           this.refreshNativeNestedCodePresentation(owner);
           if (owner.state !== "open" && !this.shouldDeferNativeNestedCodeHighlight(owner)) {
             nestedCodeOwnersToDecorate.add(owner);
@@ -5726,10 +7134,16 @@ export class MarkdownEngine {
       }
       if (kind === "table") {
         let owner = this.nestedTableOwners.get(id);
+        if (owner) {
+          const previousContainerId = this.nestedTableOwnerContainers.get(id);
+          addNativeOwnerIdToContainer(this.nestedTableOwnerIdsByContainer, id, block.id, previousContainerId);
+          this.nestedTableOwnerContainers.set(id, block.id);
+        }
         if (owner?.getMetadata().state === "open") {
           const before = owner.getMetadata();
           const state = isActive && nodeClosure === "open" ? "open" : nodeClosure === "finalized" ? "finalized" : "closed";
           const advanced = advanceNativeNestedTableOwner(owner, node, this.sourceDocument, mapping, state);
+          this.syncNestedTableOwnerLedger(owner);
           if (advanced) {
             this.pendingNativeNestedOwnerPatches.push(rootTableAppendPatch(owner, rootTableAppendChange(source, before, advanced)));
           }
@@ -5752,6 +7166,9 @@ export class MarkdownEngine {
           });
           if (!owner) return undefined;
           this.nestedTableOwners.set(id, owner);
+          this.nestedTableOwnerContainers.set(id, block.id);
+          addNativeOwnerIdToContainer(this.nestedTableOwnerIdsByContainer, id, block.id);
+          this.syncNestedTableOwnerLedger(owner);
           if (owner.getMetadata().state === "open") this.activeNestedTableByContainer.set(block.id, id);
           const snapshot = mutableNativeOwnerSnapshot(rootTableNodeSnapshot(owner), range);
           if (isActive) this.nativeContainerActiveSnapshots.set(block.id, snapshot);
@@ -5783,6 +7200,11 @@ export class MarkdownEngine {
       }
       if (!this.rootParagraphOwnershipSupported()) return undefined;
       let owner = this.nestedParagraphOwners.get(id);
+      if (owner) {
+        const previousContainerId = this.nestedParagraphOwnerContainers.get(id);
+        addNativeOwnerIdToContainer(this.nestedParagraphOwnerIdsByContainer, id, block.id, previousContainerId);
+        this.nestedParagraphOwnerContainers.set(id, block.id);
+      }
       const previousParagraphId = node.type.name === "Task"
         ? id.replace(/::task:(\d+)$/, "::paragraph:$1")
         : id;
@@ -5837,11 +7259,13 @@ export class MarkdownEngine {
           requiresOwnerReplacement: false,
         };
         const accepted = owner.accept(previous.processedTo, source.length, transition, source, reader);
+        this.syncNestedParagraphOwnerLedger(owner);
         if (accepted.requiresOwnerReplacement) {
           this.retireNestedParagraphOwner(block.id, id, owner);
           owner = undefined;
           previousOwnerReleased = true;
         } else {
+          this.syncNestedParagraphFootnoteTargetOwner(owner);
           this.publishParagraphLinkReferences(owner);
           const appendChange = rootParagraphAppendChange(source, previous, accepted);
           const appendPatch = rootParagraphAppendPatch(owner, appendChange);
@@ -5866,11 +7290,13 @@ export class MarkdownEngine {
           closure: "finalized",
           requiresOwnerReplacement: false,
         }, source, reader);
+        this.syncNestedParagraphOwnerLedger(owner);
         if (finalized.requiresOwnerReplacement) {
           this.retireNestedParagraphOwner(block.id, id, owner);
           owner = undefined;
           previousOwnerReleased = true;
         } else {
+          this.syncNestedParagraphFootnoteTargetOwner(owner);
           this.publishParagraphLinkReferences(owner);
           const appendChange = rootParagraphAppendChange(source, previous, finalized);
           const appendPatch = rootParagraphAppendPatch(owner, appendChange);
@@ -5943,6 +7369,11 @@ export class MarkdownEngine {
         this.retireNestedParagraphOwner(block.id, previousOwnerForReader.id, previousOwnerForReader);
       }
       this.nestedParagraphOwners.set(id, owner);
+      const previousContainerId = this.nestedParagraphOwnerContainers.get(id);
+      addNativeOwnerIdToContainer(this.nestedParagraphOwnerIdsByContainer, id, block.id, previousContainerId);
+      this.nestedParagraphOwnerContainers.set(id, block.id);
+      this.syncNestedParagraphOwnerLedger(owner);
+      this.syncNestedParagraphFootnoteTargetOwner(owner);
       if (owner.getMetadata().state === "open") this.activeNestedParagraphByContainer.set(block.id, id);
       this.publishParagraphLinkReferences(owner);
       const snapshot = mutableNativeOwnerSnapshot(rootParagraphNodeSnapshot(owner), paragraphRange);
@@ -6064,13 +7495,16 @@ export class MarkdownEngine {
     let rawPrepared = lower(preparedRoot, preparedMapping, nativeLeafFactory, idForChild);
     if (options?.forceFinalize) {
       // Finalize closed siblings before the terminal highlight pass, even when they precede the bounded tail.
-      for (const owner of this.nestedCodeOwners.values()) {
-        if (owner.containerId !== block.id) continue;
+      const ownerIds = this.nestedCodeOwnerIdsByContainer.get(block.id);
+      for (const ownerId of ownerIds ?? []) {
+        const owner = this.nestedCodeOwners.get(ownerId);
+        if (!owner || owner.containerId !== block.id) continue;
         if (owner.state === "open") {
           throw new Error(`Native code owner ${owner.id} is still open outside the finalized container tail`);
         }
         if (owner.state === "closed") {
           const finalized = owner.finalize(mapping);
+          this.syncNestedCodeOwnerLedger(owner);
           if (finalized.revision !== finalized.expectedRevision) {
             this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(finalized));
           }
@@ -6117,6 +7551,7 @@ export class MarkdownEngine {
             owner.getLines().length,
             this.rootCodeHighlightConfiguration(true),
             () => !this.disposed,
+            "range",
           )
         : await this.rootCodeHighlighter.decorateAvailable(
             owner,
@@ -6388,71 +7823,109 @@ export class MarkdownEngine {
     expectedOwner?: RootParagraphSourceOwner,
   ): void {
     const owner = this.nestedParagraphOwners.get(ownerId);
-    if (!owner || (expectedOwner && owner !== expectedOwner)) return;
+    const containerId = this.nestedParagraphOwnerContainers.get(ownerId);
+    if (!owner || (expectedOwner && owner !== expectedOwner)
+      || (containerId !== undefined && containerId !== blockId)) return;
     const generation = owner.getMetadata().generation;
+    this.pendingFootnoteParagraphOwnerRemovals.add(owner.id);
     this.pendingNativeNestedOwnerPatches = this.pendingNativeNestedOwnerPatches.filter((patch) =>
       !((patch.op === "appendParagraph" || patch.op === "updateParagraphSpans")
         && patch.paragraphOwnerId === owner.id
         && patch.generation === generation)
     );
     this.nestedParagraphOwners.delete(ownerId);
+    this.unfinishedNestedParagraphOwnerIds.delete(ownerId);
+    removeNativeOwnerIdFromContainer(this.nestedParagraphOwnerIdsByContainer, ownerId, blockId);
+    this.nestedParagraphOwnerContainers.delete(ownerId);
+    this.nestedParagraphFootnoteTargetOwnerIds.delete(ownerId);
     if (this.activeNestedParagraphByContainer.get(blockId) === ownerId) {
       this.activeNestedParagraphByContainer.delete(blockId);
     }
     releaseRootParagraphOwner(owner);
   }
 
+  private retireNestedCodeOwner(
+    blockId: string,
+    ownerId: string,
+    expectedOwner?: NativeNestedCodeSourceOwner,
+  ): void {
+    const owner = this.nestedCodeOwners.get(ownerId);
+    if (!owner || (expectedOwner && owner !== expectedOwner) || owner.containerId !== blockId) return;
+    const generation = owner.generation;
+    this.pendingNativeNestedOwnerPatches = this.pendingNativeNestedOwnerPatches.filter((patch) => {
+      if (patch.op === "appendCode") {
+        return patch.code.codeOwnerId !== owner.id || patch.code.generation !== generation;
+      }
+      return patch.op !== "decorateCode"
+        || patch.codeOwnerId !== owner.id
+        || patch.generation !== generation;
+    });
+    this.nestedCodeOwners.delete(ownerId);
+    this.unfinishedNestedCodeOwnerIds.delete(ownerId);
+    removeNativeOwnerIdFromContainer(this.nestedCodeOwnerIdsByContainer, ownerId, blockId);
+    if (this.activeNestedCodeByContainer.get(blockId) === ownerId) {
+      this.activeNestedCodeByContainer.delete(blockId);
+    }
+  }
+
+  private retireNestedTableOwner(
+    blockId: string,
+    ownerId: string,
+    expectedOwner?: RootTableSourceOwner,
+  ): void {
+    const owner = this.nestedTableOwners.get(ownerId);
+    const containerId = this.nestedTableOwnerContainers.get(ownerId);
+    if (!owner || (expectedOwner && owner !== expectedOwner)
+      || (containerId !== undefined && containerId !== blockId)) return;
+    const generation = owner.getMetadata().generation;
+    this.pendingRootTablePatches = this.pendingRootTablePatches.filter((patch) => {
+      if (patch.op === "appendTableRows") {
+        return patch.table.tableOwnerId !== owner.id || patch.table.generation !== generation;
+      }
+      return patch.op !== "updateTableRows"
+        || patch.tableOwnerId !== owner.id
+        || patch.generation !== generation;
+    });
+    this.pendingNativeNestedOwnerPatches = this.pendingNativeNestedOwnerPatches.filter((patch) => {
+      if (patch.op === "appendTableRows") {
+        return patch.table.tableOwnerId !== owner.id || patch.table.generation !== generation;
+      }
+      return patch.op !== "updateTableRows"
+        || patch.tableOwnerId !== owner.id
+        || patch.generation !== generation;
+    });
+    this.nestedTableOwners.delete(ownerId);
+    this.nestedTableOwnerContainers.delete(ownerId);
+    this.unfinishedNestedTableOwnerIds.delete(ownerId);
+    removeNativeOwnerIdFromContainer(this.nestedTableOwnerIdsByContainer, ownerId, blockId);
+    if (this.activeNestedTableByContainer.get(blockId) === ownerId) {
+      this.activeNestedTableByContainer.delete(blockId);
+    }
+  }
+
   private retireNativeOwnersInSnapshot(blockId: string, snapshot: NodeSnapshot): void {
     for (const child of snapshot.children ?? []) this.retireNativeOwnersInSnapshot(blockId, child);
-
     const paragraphOwner = this.nestedParagraphOwners.get(snapshot.id);
+
     if (paragraphOwner
+      && this.nestedParagraphOwnerContainers.get(snapshot.id) === blockId
       && snapshot.paragraph?.paragraphOwnerId === paragraphOwner.id
       && snapshot.paragraph.generation === paragraphOwner.getMetadata().generation) {
       this.retireNestedParagraphOwner(blockId, snapshot.id, paragraphOwner);
     }
     const codeOwner = this.nestedCodeOwners.get(snapshot.id);
     if (codeOwner
+      && codeOwner.containerId === blockId
       && snapshot.code?.codeOwnerId === codeOwner.id
       && snapshot.code.generation === codeOwner.generation) {
-      this.pendingNativeNestedOwnerPatches = this.pendingNativeNestedOwnerPatches.filter((patch) => {
-        if (patch.op === "appendCode") {
-          return patch.code.codeOwnerId !== codeOwner.id || patch.code.generation !== codeOwner.generation;
-        }
-        return patch.op !== "decorateCode"
-          || patch.codeOwnerId !== codeOwner.id
-          || patch.generation !== codeOwner.generation;
-      });
-      this.nestedCodeOwners.delete(snapshot.id);
-      if (this.activeNestedCodeByContainer.get(blockId) === snapshot.id) {
-        this.activeNestedCodeByContainer.delete(blockId);
-      }
+      this.retireNestedCodeOwner(blockId, snapshot.id, codeOwner);
     }
     const tableOwner = this.nestedTableOwners.get(snapshot.id);
     if (tableOwner
+      && this.nestedTableOwnerContainers.get(snapshot.id) === blockId
       && snapshot.table?.tableOwnerId === tableOwner.id
       && snapshot.table.generation === tableOwner.getMetadata().generation) {
-      const generation = tableOwner.getMetadata().generation;
-      this.pendingRootTablePatches = this.pendingRootTablePatches.filter((patch) => {
-        if (patch.op === "appendTableRows") {
-          return patch.table.tableOwnerId !== tableOwner.id || patch.table.generation !== generation;
-        }
-        return patch.op !== "updateTableRows"
-          || patch.tableOwnerId !== tableOwner.id
-          || patch.generation !== generation;
-      });
-      this.pendingNativeNestedOwnerPatches = this.pendingNativeNestedOwnerPatches.filter((patch) => {
-        if (patch.op === "appendTableRows") {
-          return patch.table.tableOwnerId !== tableOwner.id || patch.table.generation !== generation;
-        }
-        return patch.op !== "updateTableRows"
-          || patch.tableOwnerId !== tableOwner.id
-          || patch.generation !== generation;
-      });
-      this.nestedTableOwners.delete(snapshot.id);
-      if (this.activeNestedTableByContainer.get(blockId) === snapshot.id) {
-        this.activeNestedTableByContainer.delete(blockId);
-      }
+      this.retireNestedTableOwner(blockId, snapshot.id, tableOwner);
     }
     const activeSnapshot = this.nativeContainerActiveSnapshots.get(blockId);
     if (activeSnapshot?.id === snapshot.id) {
@@ -6561,6 +8034,7 @@ export class MarkdownEngine {
           mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
           contentPolicy: this.contentPolicy,
           contentComponents,
+          syntaxContainers: this.syntaxContainers,
         });
         const retained = new Set<Block>(owned);
         // Markdown leaves absorbed into an owner keep their consumer metadata (code highlighting,
@@ -6769,6 +8243,10 @@ export class MarkdownEngine {
   }
 
   public async enrichCodeBlock(block: Block): Promise<void> {
+    await this.enrichCodeBlockInternal(block);
+  }
+
+  private async enrichCodeBlockInternal(block: Block, sourceOwner?: RootCodeSourceOwner): Promise<void> {
     this.performanceTimer.mark("highlight-code");
     const metrics = this.activeMetricsCollector;
 
@@ -6778,8 +8256,10 @@ export class MarkdownEngine {
     const info = typeof block.payload.meta?.info === "string" ? block.payload.meta.info : extracted.info;
     const { lang, meta } = parseCodeFenceInfo(info);
     let diffInfo = detectDiffLanguage(lang, meta);
-    const codeBody = typeof preparedCode === "string" ? block.isFinalized ? preparedCode : trimProvisionalNativeCode(raw, preparedCode)
+    const sourceDiff = diffInfo.isDiff;
+    const rawCodeBody = typeof preparedCode === "string" ? block.isFinalized ? preparedCode : trimProvisionalNativeCode(raw, preparedCode)
       : extracted.hadFence ? dedentFencedCodeByClosingIndent(raw, extracted.code) : dedentIndentedCode(raw);
+    const codeBody = rawCodeBody.includes("\r") ? rawCodeBody.replace(/\r\n?/g, "\n") : rawCodeBody;
     const codeLines = codeBody.split("\n");
     if (!diffInfo.isDiff && this.emitDiffBlocks && looksLikeUnifiedDiff(codeLines)) {
       diffInfo = {
@@ -6797,7 +8277,12 @@ export class MarkdownEngine {
     const hasHighlighter = Boolean(this.highlighter);
     const hasHighlightableContent = codeBody.trim().length > 0;
     const wantsHtml = this.highlightOutputMode === "html" || this.highlightOutputMode === "both";
-    const wantsTokens = (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both") && this.emitHighlightTokens;
+    const sourceDiffTokens = Boolean(sourceOwner && sourceDiff && hasHighlighter
+      && this.emitHighlightTokens
+      && (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both"));
+    const wantsTokens = (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both")
+      && this.emitHighlightTokens
+      && !sourceDiffTokens;
     const wantsTokensNow = wantsTokens && (block.isFinalized || this.liveTokenizationEnabled);
 
     if (!block.isFinalized) {
@@ -7016,7 +8501,7 @@ export class MarkdownEngine {
         if ("oldNo" in nextMeta) delete nextMeta.oldNo;
         if ("newNo" in nextMeta) delete nextMeta.newNo;
       }
-      if (this.emitDiffBlocks && diffInfo.isDiff) {
+      if (this.emitDiffBlocks && diffInfo.isDiff && !sourceDiffTokens) {
         const cursor: DiffCursorState = { oldLine: null, newLine: null };
         const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
         nextMeta.diffBlocks = buildDiffBlocksFromLines(diffLines, codeLines, wantsTokens ? state.tokenLines : null, diffInfo.baseLang ?? null);
@@ -7077,7 +8562,25 @@ export class MarkdownEngine {
 
     if (wantsTokens) {
       let diffLines: string[] = [];
-      if (diffInfo.isDiff) {
+      if (sourceOwner && this.extensions?.code) {
+        const ownerLines = sourceOwner.getLines();
+        tokenLines = ownerLines.readRange(0, ownerLines.length).map(({ decoration }) => {
+          if (
+            !decoration
+            || decoration.configurationRevision !== this.rootCodeConfigurationRevision
+            || decoration.exactness === "unavailable"
+          ) return null;
+          return decoration.tokens;
+        }) as unknown as Array<TokenLineV1 | null>;
+        if (diffInfo.isDiff) {
+          diffLines = codeBody.length > 0 ? codeBody.split("\n") : [];
+          const cursor: DiffCursorState = { oldLine: null, newLine: null };
+          const diffInfoLines = diffLines.map((line) => parseUnifiedDiffLine(line, cursor));
+          diffKind = diffInfoLines.map((line) => toDiffLineKind(line.kind));
+          diffOldNo = diffInfoLines.map((line) => line.oldNo ?? null);
+          diffNewNo = diffInfoLines.map((line) => line.newNo ?? null);
+        }
+      } else if (diffInfo.isDiff) {
         diffLines = codeBody.length > 0 ? codeBody.split("\n") : [];
         const cursor: DiffCursorState = { oldLine: null, newLine: null };
         const diffInfoLines = diffLines.map((line) => parseUnifiedDiffLine(line, cursor));
@@ -7085,9 +8588,10 @@ export class MarkdownEngine {
         diffOldNo = diffInfoLines.map((line) => line.oldNo ?? null);
         diffNewNo = diffInfoLines.map((line) => line.newNo ?? null);
         if (!hasHighlighter || !hasHighlightableContent) {
-          tokenLines = diffInfoLines.map((line) =>
-            (line.text ?? line.raw).length > 0 ? { spans: [{ t: line.text ?? line.raw }] } : { spans: [] },
-          );
+          tokenLines = diffInfoLines.map((line) => {
+            const content = line.content ?? "";
+            return content.length > 0 ? { spans: [{ t: content }] } : { spans: [] };
+          });
         } else {
           try {
             const { tokenLines: diffTokens } = await buildDiffTokenLines(
@@ -7149,7 +8653,7 @@ export class MarkdownEngine {
       if ("oldNo" in nextMeta) delete nextMeta.oldNo;
       if ("newNo" in nextMeta) delete nextMeta.newNo;
     }
-    if (this.emitDiffBlocks && diffInfo.isDiff) {
+    if (this.emitDiffBlocks && diffInfo.isDiff && !sourceDiffTokens) {
       const cursor: DiffCursorState = { oldLine: null, newLine: null };
       const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
       nextMeta.diffBlocks = buildDiffBlocksFromLines(
@@ -7165,16 +8669,126 @@ export class MarkdownEngine {
     block.payload.meta = nextMeta;
   }
 
+  private hasNoFootnoteArtifactsForSource(
+    source: SourceSnapshot,
+    hasProvisionalTail: boolean,
+    retainedGenericSourceBefore: number | undefined,
+    footnoteTargets?: {
+      readonly deltas?: readonly FootnoteParagraphTargetDelta[];
+      readonly removedOwnerIds?: readonly string[];
+      readonly inlineRefreshes?: readonly { readonly previous: Block; readonly current: Block }[];
+      readonly rebuild?: boolean;
+    },
+  ): boolean {
+    const plugins = this.documentPluginRegistry.getAll();
+    const hasFootnotesPlugin = plugins.some((plugin) => plugin.name === FootnotesPlugin.name);
+    const hasCustomDocumentPlugins = (this.extensions?.documentPlugins?.length ?? 0) > 0
+      || plugins.some((plugin) => plugin !== FootnotesPlugin
+        && plugin !== TablesPlugin
+        && plugin !== CalloutsPlugin
+        && plugin !== HTMLBlockPlugin
+        && plugin !== MDXDetectionPlugin);
+    if (hasProvisionalTail || !hasFootnotesPlugin || hasCustomDocumentPlugins) return false;
+    const previousFootnoteState = this.documentPluginState.footnotes as {
+      hasProvisionalTail?: boolean;
+      noFootnoteArtifactsSource?: SourceSnapshot;
+      labelToNumber?: ReadonlyMap<string, number>;
+      definitions?: ReadonlyMap<string, string>;
+      definitionOrigins?: ReadonlyMap<string, number>;
+      referenceCounts?: ReadonlyMap<string, number>;
+      definitionInlines?: ReadonlyMap<string, readonly InlineNode[]>;
+      publishedNumbers?: ReadonlyMap<string, number>;
+      paragraphTargetEvents?: readonly unknown[];
+      paragraphDependents?: ReadonlyMap<string, unknown>;
+    } | undefined;
+    const emptyFootnoteSource = previousFootnoteState?.noFootnoteArtifactsSource;
+    if (!emptyFootnoteSource
+      || (previousFootnoteState?.labelToNumber?.size ?? 0) > 0
+      || (previousFootnoteState?.definitions?.size ?? 0) > 0
+      || (previousFootnoteState?.definitionOrigins?.size ?? 0) > 0
+      || (previousFootnoteState?.referenceCounts?.size ?? 0) > 0
+      || (previousFootnoteState?.definitionInlines?.size ?? 0) > 0
+      || (previousFootnoteState?.publishedNumbers?.size ?? 0) > 0
+      || (previousFootnoteState?.paragraphTargetEvents?.length ?? 0) > 0
+      || (previousFootnoteState?.paragraphDependents?.size ?? 0) > 0
+      || retainedGenericSourceBefore === undefined
+      || !Number.isSafeInteger(retainedGenericSourceBefore)
+      || retainedGenericSourceBefore < 0
+      || retainedGenericSourceBefore > source.length) {
+      return false;
+    }
+    const sourceChanged = emptyFootnoteSource !== source || previousFootnoteState?.hasProvisionalTail === true;
+    if (sourceChanged && (
+      emptyFootnoteSource.length > source.length
+      || retainedGenericSourceBefore > emptyFootnoteSource.length
+    )) {
+      return false;
+    }
+    const hasMarkers = (from: number, to: number): boolean => {
+      if (!Number.isSafeInteger(from)
+        || !Number.isSafeInteger(to)
+        || from < 0
+        || to < from
+        || to > source.length) return true;
+      const raw = source.read(from, to);
+      return raw.includes("[^") || raw.includes("&");
+    };
+    if (sourceChanged && hasMarkers(Math.max(0, retainedGenericSourceBefore - 1), source.length)) return false;
+    const changedRangeHasMarkers = (from: number, to: number): boolean => {
+      if (!Number.isSafeInteger(from)
+        || !Number.isSafeInteger(to)
+        || from < 0
+        || to < from
+        || to > source.length) return true;
+      const scanFrom = Math.max(0, from - 1);
+      if (sourceChanged && scanFrom >= retainedGenericSourceBefore - 1) return false;
+      return hasMarkers(scanFrom, to);
+    };
+    for (const delta of footnoteTargets?.deltas ?? []) {
+      for (const span of delta.spans) {
+        if (changedRangeHasMarkers(span.sourceRange.from, span.sourceRange.to)) return false;
+      }
+    }
+    for (const refresh of footnoteTargets?.inlineRefreshes ?? []) {
+      const range = refresh.current.payload.range;
+      if (!range || changedRangeHasMarkers(range.from, range.to)) return false;
+    }
+    return true;
+  }
+
   private runDocumentPlugins(
     inputBlocks: Block[],
     source: SourceSnapshot,
     footnoteTargets?: {
       readonly deltas?: readonly FootnoteParagraphTargetDelta[];
       readonly removedOwnerIds?: readonly string[];
+      readonly inlineRefreshes?: readonly { readonly previous: Block; readonly current: Block }[];
       readonly rebuild?: boolean;
     },
+    retainedGenericSourceBefore?: number,
+    reuseInputArrayForNoFootnoteArtifacts = false,
+    knownRetainedBlockStart?: number,
+    knownRetainedCodeStart?: number,
   ): Block[] {
     const documentGeneration = this.documentGeneration;
+    let targetUpdates = footnoteTargets;
+    if (this.pendingFootnoteParagraphOwnerRemovals.size > 0) {
+      const removedOwnerIds = new Set(footnoteTargets?.removedOwnerIds ?? []);
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(
+          (footnoteTargets?.removedOwnerIds?.length ?? 0) + this.pendingFootnoteParagraphOwnerRemovals.size,
+          "engine",
+        );
+      }
+      for (const ownerId of this.pendingFootnoteParagraphOwnerRemovals) removedOwnerIds.add(ownerId);
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(removedOwnerIds.size, "engine");
+      }
+      targetUpdates = {
+        ...(footnoteTargets ?? {}),
+        removedOwnerIds: Array.from(removedOwnerIds),
+      };
+    }
     const tableProjections = new Map<string, { owner: RootTableSourceOwner; projection: RootTableFootnoteProjection }>();
     const tableBlocks: Block[] = [];
     const changedNestedContainerIds = new Set<string>();
@@ -7192,14 +8806,18 @@ export class MarkdownEngine {
             },
           };
     };
-    let hasProvisionalTail = this.rootCodeOwners.some((owner) => owner.getMetadata().state === "open")
-      || this.rootTableOwners.some((owner) => owner.getMetadata().state === "open")
-      || this.rootParagraphOwners.some((owner) => owner.getMetadata().state === "open")
+    let hasProvisionalTail = this.openRootCodeOwners.size > 0
+      || this.openRootTableOwners.size > 0
+      || this.openRootParagraphOwners.size > 0
+      || this.activeNestedCodeByContainer.size > 0
       || this.activeNestedParagraphByContainer.size > 0
       || this.activeNestedTableByContainer.size > 0;
     if (!hasProvisionalTail) {
       for (let index = inputBlocks.length - 1; index >= 0; index -= 1) {
         const block = inputBlocks[index];
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
         if (block?.type === "footnotes") continue;
         hasProvisionalTail = Boolean(block && !block.isFinalized);
         break;
@@ -7208,22 +8826,47 @@ export class MarkdownEngine {
     const previousFootnoteState = this.documentPluginState.footnotes as {
       hasProvisionalTail?: boolean;
       labelToNumber?: ReadonlyMap<string, number>;
+      noFootnoteArtifactsSource?: SourceSnapshot;
     } | undefined;
+    const plugins = this.documentPluginRegistry.getAll();
+    const hasFootnotesPlugin = plugins.some((plugin) => plugin.name === FootnotesPlugin.name);
+    const hasCustomDocumentPlugins = (this.extensions?.documentPlugins?.length ?? 0) > 0
+      || plugins.some((plugin) => plugin !== FootnotesPlugin
+        && plugin !== TablesPlugin
+        && plugin !== CalloutsPlugin
+        && plugin !== HTMLBlockPlugin
+        && plugin !== MDXDetectionPlugin);
     const hasTrackedFootnoteReferences = (previousFootnoteState?.labelToNumber?.size ?? 0) > 0;
-    const projectsFootnoteTables = this.documentPluginRegistry.getAll().some((plugin) => plugin.name === "footnotes")
+    const noFootnoteArtifactsForSource = this.hasNoFootnoteArtifactsForSource(
+      source,
+      hasProvisionalTail,
+      retainedGenericSourceBefore,
+      targetUpdates,
+    );
+    const projectsFootnoteTables = !noFootnoteArtifactsForSource
+      && hasFootnotesPlugin
       && (
         !previousFootnoteState
         || (hasTrackedFootnoteReferences && previousFootnoteState.hasProvisionalTail !== hasProvisionalTail)
-        || Boolean(footnoteTargets?.rebuild)
-        || (footnoteTargets?.removedOwnerIds?.length ?? 0) > 0
-        || Boolean(footnoteTargets?.deltas?.some((delta) =>
-          delta.spans.some((span) =>
-            source.read(span.sourceRange.from, span.sourceRange.to).includes("[^"),
-          ),
-        ))
+        || Boolean(targetUpdates?.rebuild)
+        || (targetUpdates?.removedOwnerIds?.length ?? 0) > 0
+        || Boolean(targetUpdates?.deltas?.some((delta) => {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          return delta.spans.some((span) => {
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+            }
+            return source.read(span.sourceRange.from, span.sourceRange.to).includes("[^");
+          });
+        }))
       );
     if (projectsFootnoteTables) {
       for (const owner of this.rootTableOwners) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
         const projection = owner.getFootnoteProjection();
         if (!projection) continue;
         const footnoteProjection = withFootnoteSource(projection);
@@ -7231,95 +8874,230 @@ export class MarkdownEngine {
         tableBlocks.push(footnoteProjection.block);
       }
     }
-    let blocks = [...inputBlocks, ...tableBlocks].sort((left, right) =>
-      (left.payload.range?.from ?? Number.POSITIVE_INFINITY) - (right.payload.range?.from ?? Number.POSITIVE_INFINITY));
-    const aggregatedProtected: ProtectedRange[] = [];
-    for (const block of blocks) {
-      const meta = block.payload.meta as Record<string, unknown> | undefined;
-      const rawRanges = Array.isArray(meta?.protectedRanges) ? (meta.protectedRanges as ProtectedRange[]) : undefined;
-      if (!rawRanges || rawRanges.length === 0) continue;
-      const base = typeof block.payload.range?.from === "number" ? block.payload.range.from : null;
-      if (base === null) continue;
-      for (const range of rawRanges) {
-        if (typeof range.from !== "number" || typeof range.to !== "number") continue;
-        aggregatedProtected.push({
-          ...range,
-          from: base + range.from,
-          to: base + range.to,
-        });
+    let blocks: Block[];
+    let retainedBlockStart = 0;
+    if (noFootnoteArtifactsForSource) {
+      retainedBlockStart = rootSourceBoundary(
+        inputBlocks,
+        retainedGenericSourceBefore!,
+        rootBlockSourceFrom,
+        typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+          ? this.campaignCounters
+          : undefined,
+        knownRetainedBlockStart,
+      );
+      blocks = [];
+      for (let index = retainedBlockStart; index < inputBlocks.length; index += 1) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        blocks.push(inputBlocks[index]!);
       }
+    } else {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(inputBlocks.length + tableBlocks.length, "engine");
+      }
+      blocks = [...inputBlocks, ...tableBlocks].sort((left, right) => {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(2, "engine");
+        }
+        return (left.payload.range?.from ?? Number.POSITIVE_INFINITY) - (right.payload.range?.from ?? Number.POSITIVE_INFINITY);
+      });
     }
-    for (const owner of this.rootCodeOwners) {
-      const range = owner.getMetadata().sourceRange;
-      aggregatedProtected.push({ from: range.from, to: range.to, kind: "code-fence" });
+    const aggregatedProtected: ProtectedRange[] = [];
+    if (noFootnoteArtifactsForSource) {
+      for (const block of blocks) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        const meta = block.payload.meta as Record<string, unknown> | undefined;
+        const rawRanges = Array.isArray(meta?.protectedRanges) ? (meta.protectedRanges as ProtectedRange[]) : undefined;
+        const base = typeof block.payload.range?.from === "number" ? block.payload.range.from : null;
+        if (!rawRanges || base === null) continue;
+        for (const range of rawRanges) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          if (typeof range.from !== "number" || typeof range.to !== "number") continue;
+          aggregatedProtected.push({
+            ...range,
+            from: base + range.from,
+            to: base + range.to,
+          });
+        }
+      }
+      const codeStart = rootSourceBoundary(
+        this.rootCodeOwners,
+        retainedGenericSourceBefore!,
+        rootOwnerSourceFrom,
+        typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+          ? this.campaignCounters
+          : undefined,
+        knownRetainedCodeStart,
+      );
+      const precedingCodeOwner = codeStart > 0 ? this.rootCodeOwners[codeStart - 1] : undefined;
+      if (precedingCodeOwner) {
+        const range = precedingCodeOwner.getMetadata().sourceRange;
+        if (range.to > retainedGenericSourceBefore!) {
+          aggregatedProtected.push({ from: range.from, to: range.to, kind: "code-fence" });
+        }
+      }
+      for (let index = codeStart; index < this.rootCodeOwners.length; index += 1) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        const range = this.rootCodeOwners[index]!.getMetadata().sourceRange;
+        aggregatedProtected.push({ from: range.from, to: range.to, kind: "code-fence" });
+      }
+    } else {
+      for (const block of blocks) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        const meta = block.payload.meta as Record<string, unknown> | undefined;
+        const rawRanges = Array.isArray(meta?.protectedRanges) ? (meta.protectedRanges as ProtectedRange[]) : undefined;
+        if (!rawRanges || rawRanges.length === 0) continue;
+        const base = typeof block.payload.range?.from === "number" ? block.payload.range.from : null;
+        if (base === null) continue;
+        for (const range of rawRanges) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          if (typeof range.from !== "number" || typeof range.to !== "number") continue;
+          aggregatedProtected.push({
+            ...range,
+            from: base + range.from,
+            to: base + range.to,
+          });
+        }
+      }
+      for (const owner of this.rootCodeOwners) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        const range = owner.getMetadata().sourceRange;
+        aggregatedProtected.push({ from: range.from, to: range.to, kind: "code-fence" });
+      }
     }
 
     if (projectsFootnoteTables) {
       for (const owner of this.nestedTableOwners.values()) {
-        const metadata = owner.getMetadata();
-        let target = this.findNestedNativeOwnerSnapshot(owner.id, inputBlocks);
-        if (target?.snapshot.type !== "table" || target.snapshot.table?.generation !== metadata.generation) {
-          target = this.findNestedNativeOwnerSnapshot(owner.id);
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
         }
-        if (target?.snapshot.type !== "table" || target.snapshot.table?.generation !== metadata.generation) continue;
+        if (!this.nestedTableOwnerContainers.has(owner.id)) continue;
         const projection = owner.getFootnoteProjection();
         if (!projection) continue;
         const footnoteProjection = withFootnoteSource(projection);
         tableProjections.set(owner.id, { owner, projection: footnoteProjection });
         tableBlocks.push(footnoteProjection.block);
       }
-      blocks = [...inputBlocks, ...tableBlocks].sort((left, right) =>
-        (left.payload.range?.from ?? Number.POSITIVE_INFINITY) - (right.payload.range?.from ?? Number.POSITIVE_INFINITY));
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(inputBlocks.length + tableBlocks.length, "engine");
+      }
+      blocks = [...inputBlocks, ...tableBlocks].sort((left, right) => {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(2, "engine");
+        }
+        return (left.payload.range?.from ?? Number.POSITIVE_INFINITY) - (right.payload.range?.from ?? Number.POSITIVE_INFINITY);
+      });
     }
-    const nestedParagraphDeltas = footnoteTargets?.rebuild
+    const nestedParagraphDeltas = !noFootnoteArtifactsForSource && targetUpdates?.rebuild
       ? this.nestedParagraphFootnoteTargetDeltas(inputBlocks)
       : [];
-    const paragraphDeltas = nestedParagraphDeltas.length === 0
-      ? footnoteTargets?.deltas ?? []
-      : [...(footnoteTargets?.deltas ?? []), ...nestedParagraphDeltas];
+    const paragraphDeltas = noFootnoteArtifactsForSource
+      ? targetUpdates?.deltas ?? []
+      : nestedParagraphDeltas.length === 0
+        ? targetUpdates?.deltas ?? []
+        : [...(targetUpdates?.deltas ?? []), ...nestedParagraphDeltas];
 
-    const footnoteParagraphTargets = footnoteTargets
+    const hasNativeFootnoteTargets = !noFootnoteArtifactsForSource && Boolean(
+      targetUpdates
       || this.rootParagraphOwners.length > 0
       || this.nestedParagraphOwners.size > 0
-      || this.nestedTableOwners.size > 0
+      || this.nestedTableOwners.size > 0,
+    );
+    const applyFootnoteTargetUpdates = (updates: readonly FootnoteParagraphTargetUpdate[]) => {
+      if (documentGeneration !== this.documentGeneration || source !== this.sourceDocument.snapshot()) return;
+      for (const update of updates) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        const candidateRootOwner = this.rootParagraphOwnersById.get(update.ownerId);
+        const rootOwner = candidateRootOwner?.generation === update.generation ? candidateRootOwner : undefined;
+        const nestedOwner = rootOwner ? undefined : this.nestedParagraphOwners.get(update.ownerId);
+        const owner = rootOwner ?? nestedOwner;
+        if (!owner) continue;
+        const metadata = owner.getMetadata();
+        if (metadata.generation !== update.generation) continue;
+        if (rootOwner) {
+          if (this.rootParagraphOwnersByStart.get(metadata.sourceRange.from) !== owner) continue;
+        } else if (this.nestedParagraphOwners.get(owner.id) !== owner) {
+          continue;
+        }
+        const change = owner.applyPreparedSpanUpdates(update.updates, "footnote_reference_numbering");
+        const patch = rootParagraphSemanticPatch(owner, change);
+        if (!patch) continue;
+        if (rootOwner) {
+          if (this.emittedRootParagraphIds.has(owner.id)) this.pendingRootParagraphPatches.push(patch);
+        } else {
+          const blockId = this.nestedParagraphOwnerContainers.get(owner.id);
+          if (!blockId) continue;
+          changedNestedContainerIds.add(blockId);
+          this.pendingRootParagraphPatches.push({
+            ...patch,
+            at: { blockId, nodeId: owner.id },
+          });
+        }
+      }
+    };
+    const footnoteParagraphTargets: WorkerFootnoteParagraphTargetBridge | undefined = noFootnoteArtifactsForSource
       ? {
           deltas: paragraphDeltas,
-          ...(footnoteTargets?.removedOwnerIds ? { removedOwnerIds: footnoteTargets.removedOwnerIds } : {}),
-          ...(footnoteTargets?.rebuild === undefined ? {} : { rebuild: footnoteTargets.rebuild }),
-          applyUpdates: (updates: readonly FootnoteParagraphTargetUpdate[]) => {
-            if (documentGeneration !== this.documentGeneration || source !== this.sourceDocument.snapshot()) return;
-            for (const update of updates) {
-              const rootOwner = this.rootParagraphOwners.find((candidate) =>
-                candidate.id === update.ownerId && candidate.generation === update.generation);
-              const nestedOwner = rootOwner ? undefined : this.nestedParagraphOwners.get(update.ownerId);
-              const owner = rootOwner ?? nestedOwner;
-              if (!owner) continue;
-              const metadata = owner.getMetadata();
-              if (metadata.generation !== update.generation) continue;
-              if (rootOwner) {
-                if (this.rootParagraphOwnersByStart.get(metadata.sourceRange.from) !== owner) continue;
-              } else if (this.nestedParagraphOwners.get(owner.id) !== owner) {
-                continue;
-              }
-              const change = owner.applyPreparedSpanUpdates(update.updates, "footnote_reference_numbering");
-              const patch = rootParagraphSemanticPatch(owner, change);
-              if (!patch) continue;
-              if (rootOwner) {
-                if (this.emittedRootParagraphIds.has(owner.id)) this.pendingRootParagraphPatches.push(patch);
-              } else {
-                let target = this.findNestedNativeOwnerSnapshot(owner.id, inputBlocks);
-                if (!target) target = this.findNestedNativeOwnerSnapshot(owner.id);
-                if (!target) continue;
-                changedNestedContainerIds.add(target.blockId);
-                this.pendingRootParagraphPatches.push({
-                  ...patch,
-                  at: { blockId: target.blockId, nodeId: owner.id },
-                });
-              }
-            }
-          },
+          ...(targetUpdates?.removedOwnerIds ? { removedOwnerIds: targetUpdates.removedOwnerIds } : {}),
+          retainedGenericSourceBefore: retainedGenericSourceBefore!,
+          noFootnoteArtifactsForSource: source,
+          ...(typeof __STREAM_MDX_COUNTERS__ !== "undefined"
+            && __STREAM_MDX_COUNTERS__
+            && this.campaignCounters !== undefined
+            && hasFootnotesPlugin ? {
+            hasNativeTargets: false,
+            recordDocumentRecordsVisited: (count: number) => {
+              this.campaignCounters?.recordDocumentRecordsVisited(count, "engine");
+            },
+          } : {}),
+          applyUpdates: applyFootnoteTargetUpdates,
         }
-      : undefined;
+      : hasNativeFootnoteTargets
+        || (typeof __STREAM_MDX_COUNTERS__ !== "undefined"
+          && __STREAM_MDX_COUNTERS__
+          && this.campaignCounters !== undefined
+          && hasFootnotesPlugin)
+        ? {
+            deltas: paragraphDeltas,
+            ...(retainedGenericSourceBefore === undefined ? {} : { retainedGenericSourceBefore }),
+            ...(targetUpdates?.removedOwnerIds ? { removedOwnerIds: targetUpdates.removedOwnerIds } : {}),
+            ...(targetUpdates?.inlineRefreshes ? { inlineRefreshes: targetUpdates.inlineRefreshes } : {}),
+            ...(targetUpdates?.rebuild === undefined ? {} : { rebuild: targetUpdates.rebuild }),
+            ...(typeof __STREAM_MDX_COUNTERS__ !== "undefined"
+              && __STREAM_MDX_COUNTERS__
+              && this.campaignCounters !== undefined
+              && hasFootnotesPlugin ? {
+              hasNativeTargets: hasNativeFootnoteTargets,
+              recordDocumentRecordsVisited: (count: number) => {
+                this.campaignCounters?.recordDocumentRecordsVisited(count, "engine");
+              },
+            } : {}),
+            applyUpdates: applyFootnoteTargetUpdates,
+          }
+        : undefined;
+    if (noFootnoteArtifactsForSource && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      for (const plugin of plugins) {
+        if (plugin === CalloutsPlugin || plugin === HTMLBlockPlugin || plugin === MDXDetectionPlugin) {
+          this.campaignCounters?.recordDocumentRecordsVisited(blocks.length, "engine");
+        }
+      }
+    }
     const { syntheticBlocks } = this.documentPluginRegistry.run({
       source,
       blocks,
@@ -7329,12 +9107,47 @@ export class MarkdownEngine {
       protectedRanges: aggregatedProtected,
       footnoteParagraphTargets,
     });
+    this.pendingFootnoteParagraphOwnerRemovals.clear();
+
+    if (noFootnoteArtifactsForSource && tableProjections.size === 0) {
+      if (syntheticBlocks?.length) {
+        if (reuseInputArrayForNoFootnoteArtifacts) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(syntheticBlocks.length, "engine");
+          }
+          inputBlocks.push(...syntheticBlocks);
+          return inputBlocks;
+        }
+        return [...inputBlocks, ...syntheticBlocks];
+      }
+      return inputBlocks;
+    }
+
+    if (noFootnoteArtifactsForSource && tableProjections.size === 0) {
+      if (syntheticBlocks?.length) {
+        if (reuseInputArrayForNoFootnoteArtifacts) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(syntheticBlocks.length, "engine");
+          }
+          inputBlocks.push(...syntheticBlocks);
+          return inputBlocks;
+        }
+        return [...inputBlocks, ...syntheticBlocks];
+      }
+      return inputBlocks;
+    }
 
     const updatedTableBlocks = new Map<string, Block>();
     for (const block of blocks) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
       if (tableProjections.has(block.id)) updatedTableBlocks.set(block.id, block);
     }
     for (const [tableId, entry] of tableProjections) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
       const pluginBlock = updatedTableBlocks.get(tableId);
       if (!pluginBlock) continue;
       const change = entry.owner.applyFootnoteProjection({ ...entry.projection, block: pluginBlock });
@@ -7343,20 +9156,26 @@ export class MarkdownEngine {
       if (this.emittedRootTableIds.has(entry.owner.id)) {
         this.pendingRootTablePatches.push(patch);
       } else if (this.nestedTableOwners.get(entry.owner.id) === entry.owner) {
-        let target = this.findNestedNativeOwnerSnapshot(entry.owner.id, inputBlocks);
-        if (!target) target = this.findNestedNativeOwnerSnapshot(entry.owner.id);
-        if (target) {
-          changedNestedContainerIds.add(target.blockId);
-          this.pendingRootTablePatches.push({
-            ...patch,
-            at: { blockId: target.blockId, nodeId: entry.owner.id },
-          });
-        }
+        const blockId = this.nestedTableOwnerContainers.get(entry.owner.id);
+        if (!blockId) continue;
+        changedNestedContainerIds.add(blockId);
+        this.pendingRootTablePatches.push({
+          ...patch,
+          at: { blockId, nodeId: entry.owner.id },
+        });
       }
     }
 
-    const filtered = blocks.filter((block) => block.type !== "footnotes" && !tableProjections.has(block.id));
+    const filtered = blocks.filter((block) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      return block.type !== "footnotes" && !tableProjections.has(block.id);
+    });
     for (let index = 0; index < filtered.length; index += 1) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
       const block = filtered[index]!;
       if (changedNestedContainerIds.has(block.id)) {
         filtered[index] = this.projectNativeContainerBlockForExport(block);
@@ -7372,6 +9191,133 @@ export class MarkdownEngine {
   }
 
 
+  private reconcileRootHeadingSuffixToc(
+    blocks: Block[],
+    stableBlockPrefixCount: number,
+    sourceBefore: number,
+  ): { patch: Patch | null; nextHeadings: TocHeading[]; nextSignature: string } | null {
+    const sourceLength = this.sourceDocument.length;
+    if (!this.canSeedRootHeadingCounts(sourceLength)
+      || this.rootHeadingFrontier.length !== this.tocHeadings.length
+      || !Number.isSafeInteger(stableBlockPrefixCount)
+      || stableBlockPrefixCount < 0
+      || stableBlockPrefixCount > blocks.length
+      || !Number.isSafeInteger(sourceBefore)
+      || sourceBefore < 0
+      || sourceBefore > sourceLength) {
+      return null;
+    }
+
+    // parseRootNativeTail supplies its source-qualified stable block prefix. Within this document generation,
+    // append-only source changes and the known built-in plugins keep entries before this boundary unchanged.
+    let low = 0;
+    let high = this.rootHeadingFrontier.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      if (this.rootHeadingFrontier[middle]!.sourceFrom < sourceBefore) low = middle + 1;
+      else high = middle;
+    }
+    const prefixHeadingCount = low;
+    const retainedHeading = this.rootHeadingFrontier[prefixHeadingCount - 1];
+    const changedHeading = this.rootHeadingFrontier[prefixHeadingCount];
+    if ((retainedHeading && retainedHeading.blockIndex >= stableBlockPrefixCount)
+      || (changedHeading && changedHeading.blockIndex < stableBlockPrefixCount)) {
+      return null;
+    }
+
+    const suffixEntries: RootHeadingFrontierEntry[] = [];
+    let oldSuffixIndex = prefixHeadingCount;
+    let unchanged = true;
+    let previousSourceFrom = sourceBefore;
+    for (let blockIndex = stableBlockPrefixCount; blockIndex < blocks.length; blockIndex += 1) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      const block = blocks[blockIndex]!;
+      const heading = tocHeadingForBlock(block);
+      if (!heading) continue;
+      const sourceFrom = block.payload.range?.from;
+      if (typeof sourceFrom !== "number" || !Number.isSafeInteger(sourceFrom)
+        || sourceFrom < sourceBefore || sourceFrom < previousSourceFrom || sourceFrom > sourceLength) {
+        return null;
+      }
+      previousSourceFrom = sourceFrom;
+      const entry = this.rootHeadingFrontierEntry(block, heading, blockIndex);
+      if (!entry) return null;
+      suffixEntries.push(entry);
+      if (this.rootHeadingFrontier[oldSuffixIndex] && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      const previous = this.rootHeadingFrontier[oldSuffixIndex];
+      if (!previous
+        || previous.heading.blockId !== heading.blockId
+        || previous.heading.id !== heading.id
+        || previous.heading.level !== heading.level
+        || previous.heading.text !== heading.text) {
+        unchanged = false;
+      }
+      oldSuffixIndex += 1;
+    }
+    if (oldSuffixIndex !== this.rootHeadingFrontier.length) unchanged = false;
+
+    let tocResult: { patch: Patch | null; nextHeadings: TocHeading[]; nextSignature: string };
+    if (unchanged) {
+      tocResult = {
+        patch: null,
+        nextHeadings: this.tocHeadings,
+        nextSignature: this.tocSignature,
+      };
+    } else {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(prefixHeadingCount, "engine");
+      }
+      const nextHeadings = this.tocHeadings.slice(0, prefixHeadingCount);
+      for (const entry of suffixEntries) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        nextHeadings.push(entry.heading);
+      }
+      tocResult = {
+        patch: createTocPatch(nextHeadings),
+        nextHeadings,
+        nextSignature: tocSignatureFor(nextHeadings),
+      };
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(nextHeadings.length, "engine");
+      }
+    }
+
+    for (let index = this.rootHeadingFrontier.length - 1; index >= prefixHeadingCount; index -= 1) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      const entry = this.rootHeadingFrontier[index]!;
+      const offsets = this.rootHeadingCountOffsets.get(entry.baseSlug)!;
+      offsets.pop();
+      if (offsets.length === 0) this.rootHeadingCountOffsets.delete(entry.baseSlug);
+    }
+    this.rootHeadingFrontier.length = prefixHeadingCount;
+    for (const entry of suffixEntries) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      this.rootHeadingFrontier.push(entry);
+      let offsets = this.rootHeadingCountOffsets.get(entry.baseSlug);
+      if (!offsets) {
+        offsets = [];
+        this.rootHeadingCountOffsets.set(entry.baseSlug, offsets);
+      }
+      offsets.push(entry.sourceFrom);
+    }
+    this.rootHeadingFrontierSourceLength = sourceLength;
+    return tocResult;
+  }
+
+
   private async emitBlockDiffPatches(
     previousBlocks: Block[],
     nextBlocks: Block[],
@@ -7383,9 +9329,28 @@ export class MarkdownEngine {
     previousRootParagraphOwners: readonly RootParagraphSourceOwner[] = this.rootParagraphOwners,
     previousRootCodeOwners: readonly RootCodeSourceOwner[] = this.rootCodeOwners.filter((owner) => this.emittedRootCodeIds.has(owner.id)),
     previousRootTableOwners: readonly RootTableSourceOwner[] = this.rootTableOwners.filter((owner) => this.emittedRootTableIds.has(owner.id)),
+    retainedRootSourceBefore?: number,
+    previousRootOwnerPrefixCounts?: {
+      readonly code: number;
+      readonly table: number;
+      readonly paragraph: number;
+    },
+    previousBlockPrefixCount?: number,
   ): Promise<void> {
     const patches: Patch[] = [];
-    const { patch: tocPatch, nextHeadings, nextSignature } = maybeBuildTocPatch(nextBlocks, this.tocSignature);
+    let tocResult = previousBlockPrefixCount !== undefined && retainedRootSourceBefore !== undefined
+      ? this.reconcileRootHeadingSuffixToc(nextBlocks, previousBlockPrefixCount, retainedRootSourceBefore)
+      : null;
+    if (!tocResult) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(nextBlocks.length, "engine");
+      }
+      tocResult = this.maybeBuildTocPatchForBlocks(nextBlocks);
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(tocResult.nextHeadings.length, "engine");
+      }
+    }
+    const { patch: tocPatch, nextHeadings, nextSignature } = tocResult;
     this.tocHeadings = nextHeadings;
     this.tocSignature = nextSignature;
 
@@ -7433,62 +9398,263 @@ export class MarkdownEngine {
       owners: readonly RootCodeSourceOwner[],
       tableOwners: readonly RootTableSourceOwner[],
       paragraphOwners: readonly RootParagraphSourceOwner[],
-    ): RootChildEntry[] => {
-      const entries: RootChildEntry[] = blocks.map((block) => ({
-        id: block.id,
-        from: block.payload.range?.from ?? Number.POSITIVE_INFINITY,
-        block,
-      }));
-      for (const owner of owners) {
-        if (owners === this.rootCodeOwners && !this.emittedRootCodeIds.has(owner.id) && !insertedRootCodeNodes.has(owner.id)) continue;
-        entries.push({
-          id: owner.id,
-          from: owner.getMetadata().sourceRange.from,
-          owner,
-        });
+      retainedBefore: number,
+      ownerPrefixCounts?: {
+        readonly code: number;
+        readonly table: number;
+        readonly paragraph: number;
+      },
+      retainedBlockPrefixCount = 0,
+      retainedPrefixIsInArrays = false,
+    ): { readonly entries: RootChildEntry[]; readonly retainedCount: number } => {
+      const counters = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+        ? this.campaignCounters
+        : undefined;
+      const blockStart = rootSourceBoundary(
+        blocks,
+        retainedBefore,
+        rootBlockSourceFrom,
+        counters,
+        retainedPrefixIsInArrays ? retainedBlockPrefixCount : undefined,
+      );
+      const codeStart = rootSourceBoundary(
+        owners,
+        retainedBefore,
+        rootOwnerSourceFrom,
+        counters,
+        retainedPrefixIsInArrays ? ownerPrefixCounts?.code : undefined,
+      );
+      const tableStart = rootSourceBoundary(
+        tableOwners,
+        retainedBefore,
+        rootOwnerSourceFrom,
+        counters,
+        retainedPrefixIsInArrays ? ownerPrefixCounts?.table : undefined,
+      );
+      const paragraphStart = rootSourceBoundary(
+        paragraphOwners,
+        retainedBefore,
+        rootOwnerSourceFrom,
+        counters,
+        retainedPrefixIsInArrays ? ownerPrefixCounts?.paragraph : undefined,
+      );
+      const entries: RootChildEntry[] = [];
+      let blockIndex = blockStart;
+      let codeIndex = codeStart;
+      let tableIndex = tableStart;
+      let paragraphIndex = paragraphStart;
+      let block = blocks[blockIndex];
+      const nextRootCodeOwner = (): RootCodeSourceOwner | undefined => {
+        while (codeIndex < owners.length) {
+          const owner = owners[codeIndex];
+          if (!owner || (owners === this.rootCodeOwners
+            && !this.emittedRootCodeIds.has(owner.id)
+            && !insertedRootCodeNodes.has(owner.id))) {
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+            }
+            codeIndex += 1;
+            continue;
+          }
+          return owner;
+        }
+        return undefined;
+      };
+      const nextRootTableOwner = (): RootTableSourceOwner | undefined => {
+        while (tableIndex < tableOwners.length) {
+          const owner = tableOwners[tableIndex];
+          if (!owner || (tableOwners === this.rootTableOwners
+            && !this.emittedRootTableIds.has(owner.id)
+            && !insertedRootTableNodes.has(owner.id))) {
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+            }
+            tableIndex += 1;
+            continue;
+          }
+          return owner;
+        }
+        return undefined;
+      };
+      const nextRootParagraphOwner = (): RootParagraphSourceOwner | undefined => {
+        while (paragraphIndex < paragraphOwners.length) {
+          const owner = paragraphOwners[paragraphIndex];
+          if (!owner || (paragraphOwners === this.rootParagraphOwners
+            && !this.emittedRootParagraphIds.has(owner.id)
+            && !insertedRootParagraphNodes.has(owner.id))) {
+            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+              this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+            }
+            paragraphIndex += 1;
+            continue;
+          }
+          return owner;
+        }
+        return undefined;
+      };
+      let codeOwner = nextRootCodeOwner();
+      let codeFrom = codeOwner ? rootOwnerSourceFrom(codeOwner) : undefined;
+      let tableOwner = nextRootTableOwner();
+      let tableFrom = tableOwner ? rootOwnerSourceFrom(tableOwner) : undefined;
+      let paragraphOwner = nextRootParagraphOwner();
+      let paragraphFrom = paragraphOwner ? rootOwnerSourceFrom(paragraphOwner) : undefined;
+      while (block !== undefined || codeOwner !== undefined || tableOwner !== undefined || paragraphOwner !== undefined) {
+        let nextKind: "block" | "code" | "table" | "paragraph" | undefined;
+        let nextFrom = Number.POSITIVE_INFINITY;
+        if (block !== undefined) {
+          nextKind = "block";
+          nextFrom = rootBlockSourceFrom(block);
+        }
+        if (codeOwner !== undefined && codeFrom !== undefined
+          && (nextKind === undefined || codeFrom < nextFrom)) {
+          nextKind = "code";
+          nextFrom = codeFrom;
+        }
+        if (tableOwner !== undefined && tableFrom !== undefined
+          && (nextKind === undefined || tableFrom < nextFrom)) {
+          nextKind = "table";
+          nextFrom = tableFrom;
+        }
+        if (paragraphOwner !== undefined && paragraphFrom !== undefined
+          && (nextKind === undefined || paragraphFrom < nextFrom)) {
+          nextKind = "paragraph";
+          nextFrom = paragraphFrom;
+        }
+        if (nextKind === "block" && block !== undefined) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          entries.push({ id: block.id, from: nextFrom, block });
+          blockIndex += 1;
+          block = blocks[blockIndex];
+        } else if (nextKind === "code" && codeOwner !== undefined) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          entries.push({ id: codeOwner.id, from: nextFrom, owner: codeOwner });
+          codeIndex += 1;
+          codeOwner = nextRootCodeOwner();
+          codeFrom = codeOwner ? rootOwnerSourceFrom(codeOwner) : undefined;
+        } else if (nextKind === "table" && tableOwner !== undefined) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          entries.push({ id: tableOwner.id, from: nextFrom, tableOwner });
+          tableIndex += 1;
+          tableOwner = nextRootTableOwner();
+          tableFrom = tableOwner ? rootOwnerSourceFrom(tableOwner) : undefined;
+        } else if (nextKind === "paragraph" && paragraphOwner !== undefined) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          entries.push({ id: paragraphOwner.id, from: nextFrom, paragraphOwner });
+          paragraphIndex += 1;
+          paragraphOwner = nextRootParagraphOwner();
+          paragraphFrom = paragraphOwner ? rootOwnerSourceFrom(paragraphOwner) : undefined;
+        } else {
+          break;
+        }
       }
-      for (const owner of tableOwners) {
-        if (tableOwners === this.rootTableOwners && !this.emittedRootTableIds.has(owner.id) && !insertedRootTableNodes.has(owner.id)) continue;
-        entries.push({
-          id: owner.id,
-          from: owner.getMetadata().sourceRange.from,
-          tableOwner: owner,
-        });
-      }
-      for (const owner of paragraphOwners) {
-        if (paragraphOwners === this.rootParagraphOwners
-          && !this.emittedRootParagraphIds.has(owner.id)
-          && !insertedRootParagraphNodes.has(owner.id)) continue;
-        entries.push({
-          id: owner.id,
-          from: owner.getMetadata().sourceRange.from,
-          paragraphOwner: owner,
-        });
-      }
-      entries.sort((a, b) => a.from - b.from);
-      return entries;
+      const ownerPrefixCount = ownerPrefixCounts
+        ? ownerPrefixCounts.code + ownerPrefixCounts.table + ownerPrefixCounts.paragraph
+        : 0;
+      return {
+        entries,
+        retainedCount: retainedPrefixIsInArrays
+          ? blockStart + codeStart + tableStart + paragraphStart
+          : retainedBlockPrefixCount + blockStart + codeStart + tableStart + paragraphStart + ownerPrefixCount,
+      };
     };
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(
+        previousRootCodeOwners.length + previousRootTableOwners.length + previousRootParagraphOwners.length,
+        "engine",
+      );
+    }
     const previousOwners = previousRootCodeOwners.filter((owner) => !insertedRootCodeNodes.has(owner.id));
     const previousTableOwners = previousRootTableOwners.filter((owner) => !insertedRootTableNodes.has(owner.id));
     const previousParagraphOwners = previousRootParagraphOwners.filter((owner) =>
       !insertedRootParagraphNodes.has(owner.id)
         || this.rootParagraphOwnersByStart.get(owner.getMetadata().sourceRange.from) !== owner
     );
-    const previousChildren = orderedChildren(previousBlocks, previousOwners, previousTableOwners, previousParagraphOwners);
-    const nextChildren = orderedChildren(nextBlocks, this.rootCodeOwners, this.rootTableOwners, this.rootParagraphOwners);
-    const lifecyclePatches: Patch[] = [];
-    const hasFinalizedNativeContainer = nextBlocks.some((block) =>
-      (block.type === "list" || block.type === "blockquote")
-        && block.isFinalized
-        && this.nativeContainerActivePathSnapshots.has(block.id)
+    // An explicit earlier root insertion invalidates the retained-prefix promise.
+    let retainedBefore = retainedRootSourceBefore ?? 0;
+    for (const patch of extraPatches) {
+      if (patch.op !== "insertChild" || patch.at.blockId !== PATCH_ROOT_ID) continue;
+      retainedBefore = Math.min(retainedBefore, patch.node.range?.from ?? 0);
+    }
+    let previousBlocksForDiff = previousBlocks;
+    let previousBlockPrefixForDiff = previousBlockPrefixCount;
+    let previousRoot = orderedChildren(
+      previousBlocks,
+      previousOwners,
+      previousTableOwners,
+      previousParagraphOwners,
+      retainedBefore,
+      previousRootOwnerPrefixCounts,
+      previousBlockPrefixCount,
     );
+    const reuseRetainedPrefixStarts = retainedRootSourceBefore !== undefined
+      && retainedBefore === retainedRootSourceBefore
+      && previousRootOwnerPrefixCounts !== undefined
+      && previousBlockPrefixCount !== undefined;
+    let nextRoot = orderedChildren(
+      nextBlocks,
+      this.rootCodeOwners,
+      this.rootTableOwners,
+      this.rootParagraphOwners,
+      retainedBefore,
+      reuseRetainedPrefixStarts ? previousRootOwnerPrefixCounts : undefined,
+      reuseRetainedPrefixStarts ? previousBlockPrefixCount : 0,
+      reuseRetainedPrefixStarts,
+    );
+    if (previousRoot.retainedCount !== nextRoot.retainedCount
+      && (!previousRootOwnerPrefixCounts || previousBlockPrefixCount !== undefined)) {
+      if (previousBlockPrefixCount !== undefined) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(
+            previousBlockPrefixCount * 2 + previousBlocks.length,
+            "engine",
+          );
+        }
+        previousBlocksForDiff = nextBlocks.slice(0, previousBlockPrefixCount).concat(previousBlocks);
+        previousBlockPrefixForDiff = undefined;
+      }
+      previousRoot = orderedChildren(previousBlocksForDiff, previousOwners, previousTableOwners, previousParagraphOwners, 0);
+      nextRoot = orderedChildren(nextBlocks, this.rootCodeOwners, this.rootTableOwners, this.rootParagraphOwners, 0);
+    }
+    const rootIndexOffset = previousRoot.retainedCount;
+    const previousChildren = previousRoot.entries;
+    const nextChildren = nextRoot.entries;
+    const lifecyclePatches: Patch[] = [];
+    const lifecycleStart = previousBlockPrefixForDiff ?? 0;
+    let hasFinalizedNativeContainer = false;
+    for (let index = lifecycleStart; index < nextBlocks.length; index += 1) {
+      const block = nextBlocks[index]!;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      if ((block.type === "list" || block.type === "blockquote")
+        && block.isFinalized
+        && this.nativeContainerActivePathSnapshots.has(block.id)) {
+        hasFinalizedNativeContainer = true;
+        break;
+      }
+    }
     if (hasFinalizedNativeContainer) {
       const explicitlyFinalizedBlockIds = new Set<string>();
       for (const patch of extraPatches) {
         if (patch.op === "finalize") explicitlyFinalizedBlockIds.add(patch.at.blockId);
       }
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(previousBlocks.length, "engine");
+      }
       const previousBlocksById = new Map(previousBlocks.map((block) => [block.id, block]));
-      for (const nextBlock of nextBlocks) {
+      for (let index = lifecycleStart; index < nextBlocks.length; index += 1) {
+        const nextBlock = nextBlocks[index]!;
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
         if ((nextBlock.type !== "list" && nextBlock.type !== "blockquote")
           || !nextBlock.isFinalized
           || !this.nativeContainerActivePathSnapshots.has(nextBlock.id)) continue;
@@ -7518,12 +9684,12 @@ export class MarkdownEngine {
         ? this.projectNativeContainerBlockForExport(sourceBlock)
         : sourceBlock;
       if ((typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters) {
-        return (createBlockSnapshot as (value: Block, callback?: (node: NodeSnapshot) => void) => NodeSnapshot)(
+        return this.createBlockSnapshotWithNativeCodeOwners(
           block,
           () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
         );
       }
-      return createBlockSnapshot(block);
+      return this.createBlockSnapshotWithNativeCodeOwners(block);
     };
 
     let prefix = 0;
@@ -7531,6 +9697,7 @@ export class MarkdownEngine {
     while (prefix < maxPrefix) {
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
         this.campaignCounters?.recordPrefixComparisons(1, "engine");
+        this.campaignCounters?.recordDocumentRecordsVisited(2, "engine");
       }
       if (previousChildren[prefix]?.id !== nextChildren[prefix]?.id ||
         Boolean(previousChildren[prefix]?.owner) !== Boolean(nextChildren[prefix]?.owner) ||
@@ -7540,10 +9707,16 @@ export class MarkdownEngine {
     }
 
 
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(nextChildren.length, "engine");
+    }
     const nextPositionById = new Map(nextChildren.map((entry, index) => [entry.id, index]));
     let lastNextPosition = -1;
     let commonOrderStable = true;
     for (const entry of previousChildren) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
       const nextPosition = nextPositionById.get(entry.id);
       if (nextPosition === undefined) continue;
       if (nextPosition <= lastNextPosition) {
@@ -7552,24 +9725,42 @@ export class MarkdownEngine {
       }
       lastNextPosition = nextPosition;
     }
-    const hasRootOwner = previousChildren.some((entry) => entry.owner || entry.tableOwner || entry.paragraphOwner) ||
-      nextChildren.some((entry) => entry.owner || entry.tableOwner || entry.paragraphOwner);
+    const hasRootOwner = previousChildren.some((entry) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      return Boolean(entry.owner || entry.tableOwner || entry.paragraphOwner);
+    }) || nextChildren.some((entry) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
+      return Boolean(entry.owner || entry.tableOwner || entry.paragraphOwner);
+    });
     let removeCount = 0;
     let addCount = 0;
     if (hasRootOwner && commonOrderStable) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(nextChildren.length + previousChildren.length, "engine");
+      }
       const nextIds = new Set(nextChildren.map((entry) => entry.id));
       const currentChildren = previousChildren.slice();
       for (let index = currentChildren.length - 1; index >= 0; index -= 1) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
         if (nextIds.has(currentChildren[index]?.id ?? "")) continue;
         patches.push({
           op: "deleteChild",
           at: { blockId: PATCH_ROOT_ID },
-          index,
+          index: rootIndexOffset + index,
         });
         currentChildren.splice(index, 1);
         removeCount += 1;
       }
       for (let index = 0; index < nextChildren.length; index += 1) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
         const entry = nextChildren[index];
         if (!entry) continue;
         const current = currentChildren[index];
@@ -7577,7 +9768,7 @@ export class MarkdownEngine {
           patches.push({
             op: "insertChild",
             at: { blockId: PATCH_ROOT_ID },
-            index,
+            index: rootIndexOffset + index,
             node: snapshotFor(entry, true),
           });
           currentChildren.splice(index, 0, entry);
@@ -7590,7 +9781,7 @@ export class MarkdownEngine {
           patches.push({
             op: "replaceChild",
             at: { blockId: PATCH_ROOT_ID },
-            index,
+            index: rootIndexOffset + index,
             node: snapshotFor(entry, false),
           });
         }
@@ -7599,6 +9790,9 @@ export class MarkdownEngine {
       let prevTail = previousChildren.length - 1;
       let nextTail = nextChildren.length - 1;
       while (prevTail >= prefix && nextTail >= prefix) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(2, "engine");
+        }
         if (previousChildren[prevTail]?.id !== nextChildren[nextTail]?.id ||
           Boolean(previousChildren[prevTail]?.owner) !== Boolean(nextChildren[nextTail]?.owner) ||
           Boolean(previousChildren[prevTail]?.tableOwner) !== Boolean(nextChildren[nextTail]?.tableOwner) ||
@@ -7610,13 +9804,16 @@ export class MarkdownEngine {
       addCount = nextTail >= prefix ? nextTail - prefix + 1 : 0;
       if (removeCount === addCount) {
         for (let offset = 0; offset < addCount; offset += 1) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
           const targetIndex = prefix + offset;
           const entry = nextChildren[targetIndex];
           if (!entry) continue;
           patches.push({
             op: "replaceChild",
             at: { blockId: PATCH_ROOT_ID },
-            index: targetIndex,
+            index: rootIndexOffset + targetIndex,
             node: snapshotFor(entry, false),
           });
         }
@@ -7625,17 +9822,20 @@ export class MarkdownEngine {
           patches.push({
             op: "deleteChild",
             at: { blockId: PATCH_ROOT_ID },
-            index: prefix + index,
+            index: rootIndexOffset + prefix + index,
           });
         }
         for (let offset = 0; offset < addCount; offset += 1) {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
           const insertIndex = prefix + offset;
           const entry = nextChildren[insertIndex];
           if (!entry) continue;
           patches.push({
             op: "insertChild",
             at: { blockId: PATCH_ROOT_ID },
-            index: insertIndex,
+            index: rootIndexOffset + insertIndex,
             node: snapshotFor(entry, true),
           });
         }
@@ -7644,17 +9844,25 @@ export class MarkdownEngine {
     let replacedRootTableIds: Set<string> | undefined;
     // Before RootTableSourceOwner admission, no typed patch carries delimiter-frontier growth.
     for (let index = 0; index < nextChildren.length; index += 1) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
       const entry = nextChildren[index];
       if (!entry || entry.owner || entry.tableOwner || entry.paragraphOwner || !entry.block) continue;
       const previous = previousChildren[index]?.id === entry.id
         ? previousChildren[index]
-        : previousChildren.find((candidate) => candidate.id === entry.id);
+        : previousChildren.find((candidate) => {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+          }
+          return candidate.id === entry.id;
+        });
       if (!previous || previous.owner || previous.tableOwner || previous.paragraphOwner || !previous.block) continue;
       if (!managedTableSourceFrontierChanged(previous.block, entry.block)) continue;
       const alreadyReplaced = patches.some((patch) =>
         patch.op === "replaceChild" &&
         patch.at.blockId === PATCH_ROOT_ID &&
-        patch.index === index &&
+        patch.index === rootIndexOffset + index &&
         patch.node.id === entry.id &&
         patch.node.type === "table"
       );
@@ -7665,30 +9873,36 @@ export class MarkdownEngine {
       patches.push({
         op: "replaceChild",
         at: { blockId: PATCH_ROOT_ID },
-        index,
+        index: rootIndexOffset + index,
         node: snapshotFor(entry, false),
       });
       (replacedRootTableIds ??= new Set()).add(entry.id);
     }
     metrics?.markDiffStart();
     const { patches: contentPatches } = await this.diffBlockContent(
-      previousBlocks,
+      previousBlocksForDiff,
       nextBlocks,
       changedRanges,
       metrics,
       replacedRootTableIds,
+      previousBlockPrefixForDiff,
     );
     metrics?.markDiffEnd();
-    for (const block of nextBlocks) {
-      if (!block.isFinalized || (block.type !== "list" && block.type !== "blockquote")) continue;
-      const tail = this.nativeContainerTails.get(block.id);
-      if (tail) {
-        this.nativeContainerTails.delete(block.id);
-        tail.clear();
+    if (previousBlockPrefixForDiff === undefined) {
+      for (const block of nextBlocks) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+        }
+        if (!block.isFinalized || (block.type !== "list" && block.type !== "blockquote")) continue;
+        const tail = this.nativeContainerTails.get(block.id);
+        if (tail) {
+          this.nativeContainerTails.delete(block.id);
+          tail.clear();
+        }
+        this.nativeFenceHeaderFrontiers.delete(block.id);
+        this.nativeContainerActivePathSnapshots.delete(block.id);
+        this.nativeContainerActivePathFrames.delete(block.id);
       }
-      this.nativeFenceHeaderFrontiers.delete(block.id);
-      this.nativeContainerActivePathSnapshots.delete(block.id);
-      this.nativeContainerActivePathFrames.delete(block.id);
     }
 
     const nativeStructuralPatches = this.pendingNativeNestedPatches;
@@ -7765,7 +9979,9 @@ export class MarkdownEngine {
       }
     }
     this.lastDiffSummary = {
-      prevCount: previousBlocks.length,
+      prevCount: previousBlockPrefixForDiff === undefined
+        ? previousBlocksForDiff.length
+        : previousBlockPrefixForDiff + previousBlocksForDiff.length,
       nextCount: nextBlocks.length,
       prefix,
       removeCount,
@@ -7806,19 +10022,33 @@ export class MarkdownEngine {
     changedRanges: ContentChangeRange[],
     metrics?: WorkerMetricsCollector | null,
     rootReplacedTableIds?: ReadonlySet<string>,
+    nextBlockStart?: number,
   ): Promise<{ patches: Patch[]; changedBlockCount: number }> {
     const patches: Patch[] = [];
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(previousBlocks.length, "engine");
+    }
     const prevMap = new Map(previousBlocks.map((block) => [block.id, block]));
     const lightweightForDiff = (block: Block): Block =>
       this.nativeContainerActivePathSnapshots.has(block.id) && (block.type === "list" || block.type === "blockquote")
         ? { ...block, payload: { ...block.payload, meta: {} } }
         : block;
-    const changedBlockIds = collectChangedBlockIds(
-      previousBlocks.map(lightweightForDiff),
-      nextBlocks.map(lightweightForDiff),
-      changedRanges,
-    );
-    for (const nextBlock of nextBlocks) {
+    let changedBlockIds = new Set<string>();
+    if (changedRanges.length > 0) {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(previousBlocks.length + nextBlocks.length, "engine");
+      }
+      changedBlockIds = collectChangedBlockIds(
+        previousBlocks.map(lightweightForDiff),
+        nextBlocks.map(lightweightForDiff),
+        changedRanges,
+      );
+    }
+    for (let index = nextBlockStart ?? 0; index < nextBlocks.length; index += 1) {
+      const nextBlock = nextBlocks[index]!;
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(1, "engine");
+      }
       if (rootReplacedTableIds?.has(nextBlock.id)) continue;
       const prevBlock = prevMap.get(nextBlock.id);
       if (!prevBlock) continue;
@@ -7829,6 +10059,9 @@ export class MarkdownEngine {
         const rangeChanged = Boolean(previousRange && nextRange
           && (previousRange.from !== nextRange.from || previousRange.to !== nextRange.to));
         const props: Record<string, unknown> = {};
+        if (changedBlockIds.has(nextBlock.id) && prevBlock.isFinalized && !nextBlock.isFinalized) {
+          props.isFinalized = false;
+        }
         if (rangeChanged && nextRange) props.range = { ...nextRange };
         const previousMeta = prevBlock.payload.meta;
         const nextMeta = nextBlock.payload.meta;
@@ -7886,17 +10119,17 @@ export class MarkdownEngine {
       }
 
       const prevSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
-        ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+        ? this.createBlockSnapshotWithNativeCodeOwners(
             prevBlock,
             () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
           )
-        : createBlockSnapshot(prevBlock);
+        : this.createBlockSnapshotWithNativeCodeOwners(prevBlock);
       const nextSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
-        ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+        ? this.createBlockSnapshotWithNativeCodeOwners(
             nextBlock,
             () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
           )
-        : createBlockSnapshot(nextBlock);
+        : this.createBlockSnapshotWithNativeCodeOwners(nextBlock);
 
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters) {
         diffNodeSnapshot(nextBlock.id, prevSnapshot, nextSnapshot, patches, metrics, this.campaignCounters);
@@ -7940,6 +10173,7 @@ export class MarkdownEngine {
 
     const message: WorkerOut = {
       type: "PATCH",
+      generation: this.documentGeneration,
       tx,
       patches: annotatedPatches,
       metrics: patchMetrics,
@@ -7959,33 +10193,6 @@ export class MarkdownEngine {
     }
   }
 
-  private findNestedNativeOwnerSnapshot(
-    ownerId: string,
-    blocks: readonly Block[] = this.blocks,
-  ): { readonly blockId: string; readonly snapshot: NodeSnapshot } | undefined {
-    const find = (snapshots: readonly NodeSnapshot[]): NodeSnapshot | undefined => {
-      for (const snapshot of snapshots) {
-        if (snapshot.id === ownerId) return snapshot;
-        const nested = snapshot.children ? find(snapshot.children) : undefined;
-        if (nested) return nested;
-      }
-      return undefined;
-    };
-    for (const block of blocks) {
-      const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      const snapshot = prepared ? find(prepared.children) : undefined;
-      if (snapshot) return { blockId: block.id, snapshot };
-    }
-    return undefined;
-  }
-
-  private findNestedParagraphSnapshot(
-    ownerId: string,
-    blocks: readonly Block[] = this.blocks,
-  ): { readonly blockId: string; readonly snapshot: NodeSnapshot } | undefined {
-    const target = this.findNestedNativeOwnerSnapshot(ownerId, blocks);
-    return target?.snapshot.paragraph ? target : undefined;
-  }
 
   /**
    * The last tree may cover only the root native tail, so a container is reparsed from its own source lines.
@@ -8014,40 +10221,220 @@ export class MarkdownEngine {
     return undefined;
   }
 
-  private async finalizeNestedParagraphs(metricsCollector: WorkerMetricsCollector): Promise<void> {
-    const previousBlocks = this.blocks.map((block) => cloneBlock(block));
-    const source = this.sourceDocument.snapshot();
-    const hasNativeOwnerSnapshot = (snapshots: readonly NodeSnapshot[]): boolean => {
-      for (const snapshot of snapshots) {
-        if (this.nestedParagraphOwners.has(snapshot.id)
-          || this.nestedCodeOwners.has(snapshot.id)
-          || this.nestedTableOwners.has(snapshot.id)
-          || (snapshot.children && hasNativeOwnerSnapshot(snapshot.children))) {
-          return true;
-        }
-      }
-      return false;
-    };
-    const containersToFinalize = new Set<string>();
-    for (const block of this.blocks) {
-      const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      if (this.nativeContainerTails.has(block.id)
-        || (prepared && hasNativeOwnerSnapshot(prepared.children))) {
-        containersToFinalize.add(block.id);
-      }
+  private finalizeClosedNestedParagraphOwner(
+    owner: RootParagraphSourceOwner,
+    blockId: string,
+    source: SourceSnapshot,
+  ): void {
+    if (this.nestedParagraphOwners.get(owner.id) !== owner
+      || this.nestedParagraphOwnerContainers.get(owner.id) !== blockId) return;
+    const previous = owner.getMetadata();
+    if (previous.state !== "closed") return;
+    const finalized = owner.finalize({
+      ownerStart: previous.sourceRange.from,
+      ownerEnd: previous.sourceRange.to,
+      processedTo: previous.processedTo,
+      mode: "bounded-physical-tail",
+      closure: "finalized",
+      requiresOwnerReplacement: false,
+    }, source, owner.getSourceTextReader());
+    this.syncNestedParagraphOwnerLedger(owner);
+    if (finalized.requiresOwnerReplacement) {
+      throw new Error(`Native paragraph owner ${owner.id} could not finalize its closed source lease`);
     }
-    for (const [ownerId, owner] of this.nestedParagraphOwners) {
-      if (owner.getMetadata().state === "finalized") continue;
-      const target = this.findNestedParagraphSnapshot(ownerId);
-      if (!target) throw new Error(`Native paragraph owner ${ownerId} is missing from the current container tree`);
-      containersToFinalize.add(target.blockId);
-    }
+    this.syncNestedParagraphFootnoteTargetOwner(owner);
+    this.publishParagraphLinkReferences(owner);
+    const appendChange = rootParagraphAppendChange(source, previous, finalized);
+    const appendPatch = rootParagraphAppendPatch(owner, appendChange);
+    this.pendingNativeNestedOwnerPatches.push({
+      ...appendPatch,
+      at: { blockId, nodeId: owner.id },
+    });
+  }
 
-    for (const block of this.blocks) {
-      if (!containersToFinalize.has(block.id)) continue;
+  private async finalizeNestedCodeOwner(
+    owner: NativeNestedCodeSourceOwner,
+    mapping?: NativeNestedCodeSourceMapping,
+  ): Promise<void> {
+    if (this.nestedCodeOwners.get(owner.id) !== owner) return;
+    const change = owner.state === "closed"
+      ? owner.finalizeClosed()
+      : owner.state === "open" && mapping ? owner.finalize(mapping) : undefined;
+    if (!change) return;
+    this.syncNestedCodeOwnerLedger(owner);
+    if (change.revision !== change.expectedRevision) {
+      this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(change));
+    }
+    let presentation = this.refreshNativeNestedCodePresentation(owner);
+    if (presentation) {
+      this.pendingNativeNestedOwnerPatches.push({
+        op: "setProps",
+        at: { blockId: owner.containerId, nodeId: owner.id },
+        props: { block: presentation },
+        meta: { kind: "enrichment" },
+      });
+    }
+    if (this.shouldDeferNativeNestedCodeHighlight(owner)) return;
+    const decorations = owner.isDiff && this.highlightOutputMode !== "html"
+      ? await this.rootCodeHighlighter.tokenizeRange(
+          owner,
+          0,
+          owner.getLines().length,
+          this.rootCodeHighlightConfiguration(true),
+          () => !this.disposed,
+          "range",
+        )
+      : await this.rootCodeHighlighter.decorateAvailable(
+          owner,
+          this.rootCodeHighlightConfiguration(true),
+          () => !this.disposed,
+        );
+    if (decorations.length === 0) return;
+    const patch = owner.decoratePatch(this.rootCodeConfigurationRevision, decorations);
+    if (patch) this.pendingNativeNestedOwnerPatches.push(patch);
+    presentation = this.refreshNativeNestedCodePresentation(owner);
+    if (presentation) {
+      this.pendingNativeNestedOwnerPatches.push({
+        op: "setProps",
+        at: { blockId: owner.containerId, nodeId: owner.id },
+        props: { block: presentation },
+        meta: { kind: "enrichment" },
+      });
+    }
+  }
+
+  private async finalizeNestedParagraphs(metricsCollector: WorkerMetricsCollector): Promise<void> {
+    const source = this.sourceDocument.snapshot();
+    const containersToFinalize = new Set(this.nativeContainerTails.keys());
+    const closedParagraphOwners: Array<{ readonly owner: RootParagraphSourceOwner; readonly blockId: string }> = [];
+    const registeredOpenCodeOwners: NativeNestedCodeSourceOwner[] = [];
+    const closedCodeOwners: NativeNestedCodeSourceOwner[] = [];
+    for (const containerId of this.activeNestedParagraphByContainer.keys()) {
+      containersToFinalize.add(containerId);
+    }
+    for (const containerId of this.activeNestedCodeByContainer.keys()) {
+      const container = this.nativeContainerBlockAtSourceStart(containerId);
+      if (!container || !this.hasRegisteredContainerOwnership(container)) containersToFinalize.add(containerId);
+    }
+    for (const containerId of this.activeNestedTableByContainer.keys()) {
+      containersToFinalize.add(containerId);
+    }
+    for (const ownerId of this.unfinishedNestedParagraphOwnerIds) {
+      const owner = this.nestedParagraphOwners.get(ownerId);
+      if (!owner) throw new Error(`Native paragraph owner ${ownerId} is missing from its current owner registry`);
+      const metadata = owner.getMetadata();
+      if (metadata.state === "finalized") {
+        this.syncNestedParagraphOwnerLedger(owner);
+        continue;
+      }
+      const blockId = this.nestedParagraphOwnerContainers.get(ownerId);
+      if (!blockId || !this.nativeContainerBlockAtSourceStart(blockId)) {
+        throw new Error(`Native paragraph owner ${owner.id} is missing from the current container tree`);
+      }
+      if (metadata.state === "open") containersToFinalize.add(blockId);
+      else closedParagraphOwners.push({ owner, blockId });
+    }
+    for (const ownerId of this.unfinishedNestedCodeOwnerIds) {
+      const owner = this.nestedCodeOwners.get(ownerId);
+      if (!owner) throw new Error(`Native code owner ${ownerId} is missing from its current owner registry`);
+      if (owner.state === "finalized") {
+        this.syncNestedCodeOwnerLedger(owner);
+        continue;
+      }
+      const container = this.nativeContainerBlockAtSourceStart(owner.containerId);
+      if (!container) throw new Error(`Native code owner ${owner.id} is missing from the current container tree`);
+      if (owner.state === "open") {
+        if (this.hasRegisteredContainerOwnership(container)) registeredOpenCodeOwners.push(owner);
+        else containersToFinalize.add(owner.containerId);
+      } else {
+        closedCodeOwners.push(owner);
+      }
+    }
+    for (const ownerId of this.unfinishedNestedTableOwnerIds) {
+      const owner = this.nestedTableOwners.get(ownerId);
+      if (!owner) throw new Error(`Native table owner ${ownerId} is missing from its current owner registry`);
+      const metadata = owner.getMetadata();
+      if (metadata.state === "finalized") {
+        this.syncNestedTableOwnerLedger(owner);
+        continue;
+      }
+      const blockId = this.nestedTableOwnerContainers.get(ownerId);
+      if (!blockId || !this.nativeContainerBlockAtSourceStart(blockId)) {
+        throw new Error(`Native table owner ${owner.id} is missing from the current container tree`);
+      }
+      if (metadata.state === "open") containersToFinalize.add(blockId);
+    }
+    const hasCustomDocumentPlugins = (this.extensions?.documentPlugins?.length ?? 0) > 0
+      || this.documentPluginRegistry.getAll().some((plugin) => plugin !== FootnotesPlugin
+        && plugin !== TablesPlugin
+        && plugin !== CalloutsPlugin
+        && plugin !== HTMLBlockPlugin
+        && plugin !== MDXDetectionPlugin);
+
+    const containersToFinalizeInSourceOrder: Array<{ readonly id: string; readonly sourceStart: number }> = [];
+    let retainedGenericSourceBefore = source.length;
+    for (const containerId of containersToFinalize) {
+      const sourceStart = this.nativeContainerSourceStarts.get(containerId);
+      if (sourceStart === undefined) {
+        throw new Error(`Native container ${containerId} is missing from the current container tree`);
+      }
+      containersToFinalizeInSourceOrder.push({ id: containerId, sourceStart });
+      retainedGenericSourceBefore = Math.min(retainedGenericSourceBefore, sourceStart);
+    }
+    for (const { blockId } of closedParagraphOwners) {
+      const containerSourceStart = this.nativeContainerSourceStarts.get(blockId);
+      if (containerSourceStart !== undefined) {
+        retainedGenericSourceBefore = Math.min(retainedGenericSourceBefore, containerSourceStart);
+      }
+    }
+    containersToFinalizeInSourceOrder.sort((left, right) => left.sourceStart - right.sourceStart);
+    let retainedRootSourceBefore = source.length;
+    this.forEachUnfinishedRootBlock((block) => {
+      const blockSourceFrom = block.payload.range?.from ?? 0;
+      retainedRootSourceBefore = Math.min(retainedRootSourceBefore, blockSourceFrom);
+      retainedGenericSourceBefore = Math.min(retainedGenericSourceBefore, blockSourceFrom);
+    });
+    let previousBlockPrefixCount: number | undefined;
+    if (!hasCustomDocumentPlugins
+      && this.nestedParagraphFootnoteTargetOwnerIds.size === 0
+      && this.hasNoFootnoteArtifactsForSource(source, false, retainedGenericSourceBefore)) {
+      const prefixCount = rootSourceBoundary(
+        this.blocks,
+        retainedGenericSourceBefore,
+        rootBlockSourceFrom,
+        typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+          ? this.campaignCounters
+          : undefined,
+      );
+      const prefixTail = prefixCount > 0 ? this.blocks[prefixCount - 1] : undefined;
+      if (prefixCount > 0 && prefixTail?.isFinalized) previousBlockPrefixCount = prefixCount;
+    }
+    const firstPreviousBlock = previousBlockPrefixCount ?? 0;
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      this.campaignCounters?.recordDocumentRecordsVisited(this.blocks.length - firstPreviousBlock, "engine");
+    }
+    let previousBlocks: Block[] = [];
+    for (let index = firstPreviousBlock; index < this.blocks.length; index += 1) {
+      const block = this.blocks[index]!;
+      previousBlocks.push(
+        hasCustomDocumentPlugins || !block.isFinalized || containersToFinalize.has(block.id)
+          ? cloneBlock(block)
+          : block,
+      );
+    }
+    for (const { id: containerId, sourceStart } of containersToFinalizeInSourceOrder) {
+      const block = this.rootBlockAtSourceStart(sourceStart);
+      if (!block
+        || block.id !== containerId
+        || (block.type !== "list" && block.type !== "blockquote")) {
+        throw new Error(`Native container ${containerId} is missing from the current container tree`);
+      }
       const tail = this.nativeContainerTails.get(block.id);
       if (tail) {
         const tailChange = tail.finalize(source, block.payload.range?.to ?? source.length);
+        if (tailChange === NATIVE_CONTAINER_TAIL_VANISHED) {
+          throw new Error(`Native container ${block.id} (${tail.state.ownerType}) vanished from its bounded window`);
+        }
         if (!tailChange) throw new Error(`Native container ${block.id} could not finalize its active tail`);
         await this.prepareNativeNestedChildren(block, { forceFinalize: true }, [], tailChange.rootNode, tailChange);
       } else {
@@ -8056,27 +10443,77 @@ export class MarkdownEngine {
         await this.prepareNativeNestedChildren(block, { forceFinalize: true, sourceOffset: native.sourceOffset }, [], native.node);
       }
     }
+    if (registeredOpenCodeOwners.length > 0) {
+      const mapping: NativeNestedCodeSourceMapping = {
+        input: new SourceRangeInput(source, 0),
+        source,
+        mapOffset: (offset) => offset,
+        mapRange: (from, to) => ({ from, to }),
+      };
+      for (const owner of registeredOpenCodeOwners) {
+        await this.finalizeNestedCodeOwner(owner, mapping);
+      }
+    }
+
+    // Closed leaves only need lifecycle patches; completed containers stay out of the parse path.
+    for (const { owner, blockId } of closedParagraphOwners) {
+      if (!containersToFinalize.has(blockId)) {
+
+        this.finalizeClosedNestedParagraphOwner(owner, blockId, source);
+      }
+    }
+    for (const owner of closedCodeOwners) {
+      if (!containersToFinalize.has(owner.containerId)) await this.finalizeNestedCodeOwner(owner);
+    }
 
     const finalizePatches: Patch[] = [];
-    for (const block of this.blocks) {
-      if (block.isFinalized) continue;
+    this.forEachUnfinishedRootBlock((block) => {
       block.isFinalized = true;
       finalizePatches.push({ op: "finalize", at: { blockId: block.id } });
+    });
+    const nestedFootnoteTargets = this.nestedParagraphFootnoteTargetOwnerIds.size > 0
+      ? { rebuild: true }
+      : undefined;
+    // Retain finalized-path snapshots until diffBlockContent consumes them; they are not unfinished owners.
+    if (previousBlockPrefixCount !== undefined
+      && (this.nativeContainerTails.size > 0
+        || this.nativeFenceHeaderFrontiers.size > 0
+        || this.unfinishedNestedCodeOwnerIds.size > 0
+        || this.unfinishedNestedTableOwnerIds.size > 0
+        || this.unfinishedNestedParagraphOwnerIds.size > 0
+        || this.activeNestedCodeByContainer.size > 0
+        || this.activeNestedParagraphByContainer.size > 0
+        || this.activeNestedTableByContainer.size > 0
+        || this.openRootCodeOwners.size > 0
+        || this.openRootTableOwners.size > 0
+        || this.openRootParagraphOwners.size > 0
+        || nestedFootnoteTargets
+        || !this.hasNoFootnoteArtifactsForSource(source, false, retainedGenericSourceBefore))) {
+      const previousBlockSuffix = previousBlocks;
+      previousBlocks = [];
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        this.campaignCounters?.recordDocumentRecordsVisited(this.blocks.length, "engine");
+      }
+      for (let index = 0; index < this.blocks.length; index += 1) {
+        previousBlocks.push(index < previousBlockPrefixCount
+          ? this.blocks[index]!
+          : previousBlockSuffix[index - previousBlockPrefixCount]!);
+      }
+      previousBlockPrefixCount = undefined;
     }
     this.pendingRootParagraphPatches = [];
     this.pendingRootTablePatches = [];
     this.blocks = this.runDocumentPlugins(
       this.blocks,
       source,
-      this.nestedParagraphOwners.size > 0 ? { rebuild: true } : undefined,
+      nestedFootnoteTargets,
+      !hasCustomDocumentPlugins ? retainedGenericSourceBefore : undefined,
     );
     finalizePatches.push(...this.takePendingRootParagraphPatches(), ...this.takePendingRootTablePatches());
-    for (const block of this.blocks) {
-      if (!block.isFinalized) {
-        block.isFinalized = true;
-        finalizePatches.push({ op: "finalize", at: { blockId: block.id } });
-      }
-    }
+    this.forEachUnfinishedRootBlock((block) => {
+      block.isFinalized = true;
+      finalizePatches.push({ op: "finalize", at: { blockId: block.id } });
+    });
 
     metricsCollector.setBlocksProduced(this.blocks.length);
     let progressPublication: ProgressPublicationContext | undefined;
@@ -8096,6 +10533,16 @@ export class MarkdownEngine {
       progressPublication,
       this.parseEpochCounter,
       finalizePatches,
+      undefined,
+      undefined,
+      undefined,
+      !hasCustomDocumentPlugins
+        ? (previousBlockPrefixCount !== undefined
+          ? retainedGenericSourceBefore
+          : retainedRootSourceBefore)
+        : undefined,
+      undefined,
+      previousBlockPrefixCount,
     );
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
       this.recordParsedProgressPublication(progressPublication);
@@ -8110,35 +10557,55 @@ export class MarkdownEngine {
     let progressPublication: ProgressPublicationContext | undefined;
     const sourceLength = this.sourceDocument.length;
 
-    if (this.rootCodeOwners.length > 0 || this.rootTableOwners.length > 0 || this.rootParagraphOwners.length > 0) {
+    if (this.pendingRootCodeOwners.size > 0 || this.pendingRootTableOwners.size > 0 || this.pendingRootParagraphOwners.size > 0) {
       const source = this.sourceDocument.snapshot();
       const semanticPatches: Patch[] = [];
       const ownersToDecorate: RootCodeSourceOwner[] = [];
-      for (const owner of this.rootCodeOwners) {
+      const hasCustomDocumentPlugins = (this.extensions?.documentPlugins?.length ?? 0) > 0
+        || this.documentPluginRegistry.getAll().some((plugin) => plugin !== FootnotesPlugin
+          && plugin !== TablesPlugin
+          && plugin !== CalloutsPlugin
+          && plugin !== HTMLBlockPlugin
+          && plugin !== MDXDetectionPlugin);
+      const previousRootOwnerWindow = hasCustomDocumentPlugins
+        ? undefined
+        : this.rootOwnerSnapshotWindow(this.rootOwnerSnapshotFrom(sourceLength));
+      const previousRootParagraphOwners = previousRootOwnerWindow?.paragraphOwners ?? this.rootParagraphOwners.slice();
+      let previousRootParagraphTargets: FootnoteParagraphTargetDelta[];
+      for (const owner of this.pendingRootCodeOwners) {
         const previous = owner.getMetadata();
         const change = owner.finalize();
         const next = owner.getMetadata();
-        if (next.revision !== previous.revision) {
+        const wasEmitted = this.emittedRootCodeIds.has(owner.id);
+        if (!wasEmitted) {
+          semanticPatches.push(this.rootCodeInsertPatch(owner));
+          ownersToDecorate.push(owner);
+          this.markRootCodeOwnerEmitted(owner);
+        } else if (next.revision !== previous.revision) {
           semanticPatches.push(rootCodeAppendPatch(owner, rootCodeAppendChange(owner, source, previous, change)));
           ownersToDecorate.push(owner);
+          this.refreshPendingRootCodeOwner(owner);
+        } else {
+          this.refreshPendingRootCodeOwner(owner);
         }
       }
       let remainingRootFrom: number | undefined;
       let replacementRootFrom: number | undefined;
-      const previousRootParagraphOwners = this.rootParagraphOwners.slice();
-      const finalizedParagraphTargets: FootnoteParagraphTargetDelta[] = [];
-      for (const owner of this.rootTableOwners) {
+
+      for (const owner of this.pendingRootTableOwners) {
         const previous = owner.getMetadata();
         let appendChange: RootTablePatchChange | undefined;
         if (previous.state !== "closed") {
           const change = owner.finalize();
-          if (owner.getMetadata().revision !== previous.revision) {
+          const next = owner.getMetadata();
+          if (next.revision !== previous.revision) {
             appendChange = rootTableAppendChange(source, previous, change);
           }
         }
+        this.refreshPendingRootTableOwner(owner);
         if (!this.emittedRootTableIds.has(owner.id)) {
           semanticPatches.push(this.rootTableInsertPatch(owner));
-          this.emittedRootTableIds.add(owner.id);
+          this.markRootTableOwnerEmitted(owner);
         } else if (appendChange) {
           semanticPatches.push(rootTableAppendPatch(owner, appendChange));
         }
@@ -8148,9 +10615,17 @@ export class MarkdownEngine {
             : Math.min(remainingRootFrom, appendChange.rootResumeFrom);
         }
       }
-      for (const owner of previousRootParagraphOwners) {
+      for (const owner of this.pendingRootParagraphOwners) {
         const previous = owner.getMetadata();
-        if (previous.state === "finalized") continue;
+        if (previous.state === "finalized") {
+          // A settled owner can still be pending if its store insertion was not emitted yet.
+          if (!this.emittedRootParagraphIds.has(owner.id)) {
+            this.publishParagraphLinkReferences(owner);
+            semanticPatches.push(this.rootParagraphInsertPatch(owner));
+            this.markRootParagraphOwnerEmitted(owner);
+          }
+          continue;
+        }
         const change = finalizeRootParagraphOwner(owner, source);
         if (rootParagraphChangeNeedsReplacement(change) || this.rootParagraphChangeContainsInlineHtml(change, source)) {
           const replacementFrom = this.rootParagraphReplacementFrom(source, previous.sourceRange.from);
@@ -8162,14 +10637,14 @@ export class MarkdownEngine {
         }
         this.publishParagraphLinkReferences(owner);
         const appendChange = rootParagraphAppendChange(source, previous, change);
-        if (change.spans.length > 0) {
-          finalizedParagraphTargets.push(this.rootParagraphFootnoteTargetDelta(owner, change.spans));
-        }
         if (!this.emittedRootParagraphIds.has(owner.id)) {
           semanticPatches.push(this.rootParagraphInsertPatch(owner));
-          this.emittedRootParagraphIds.add(owner.id);
+          this.markRootParagraphOwnerEmitted(owner);
         } else if (change.paragraph.revision !== previous.revision) {
           semanticPatches.push(rootParagraphAppendPatch(owner, appendChange));
+          this.refreshPendingRootParagraphOwner(owner);
+        } else {
+          this.refreshPendingRootParagraphOwner(owner);
         }
         const rootResumeFrom = appendChange.rootResumeFrom;
         if (rootResumeFrom !== undefined
@@ -8181,26 +10656,66 @@ export class MarkdownEngine {
             : Math.min(remainingRootFrom, rootResumeFrom);
         }
       }
+      previousRootParagraphTargets = previousRootParagraphOwners.flatMap((owner) => {
+        const from = owner.getMetadata().sourceRange.from;
+        return this.rootParagraphOwnersByStart.get(from) === owner
+          ? [this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize())]
+          : [];
+      });
+
 
       const managedTailOffset = this.rootManagedTailOffset() ?? sourceLength;
       let tailOffset = Math.min(
         replacementRootFrom ?? sourceLength,
         remainingRootFrom ?? sourceLength,
-        this.rootNativeFragmentOffset ?? sourceLength,
+        // A fragment can retain already-owned roots; EOF must not re-admit that completed prefix.
+        Math.max(this.rootNativeFragmentOffset ?? 0, managedTailOffset),
       );
-      for (const block of this.blocks) {
+      // processedTo includes lookahead; an unfinished semantic root can begin before it.
+      this.forEachUnfinishedRootBlock((block) => {
         const from = block.payload.range?.from;
-        if (!block.isFinalized && typeof from === "number" && from >= managedTailOffset) {
+        if (typeof from === "number" && Number.isSafeInteger(from) && from >= 0) {
           tailOffset = Math.min(tailOffset, from);
+        }
+      });
+      if (!hasCustomDocumentPlugins) {
+        const boundaryIndex = rootSourceBoundary(
+          this.blocks,
+          tailOffset,
+          rootBlockSourceFrom,
+          typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+            ? this.campaignCounters
+            : undefined,
+        );
+        const previousRootBlock = boundaryIndex > 0 ? this.blocks[boundaryIndex - 1] : undefined;
+        const previousRange = previousRootBlock?.payload.range;
+        if (previousRootBlock?.isFinalized
+          && typeof previousRange?.from === "number"
+          && Number.isSafeInteger(previousRange.from)
+          && previousRange.from >= 0
+          && typeof previousRange.to === "number"
+          && Number.isSafeInteger(previousRange.to)
+          && previousRange.to > previousRange.from
+          && previousRange.to <= sourceLength
+          && previousRange.from < tailOffset
+          && tailOffset < previousRange.to) {
+          const pendingBoundaryInsidePreviousRoot =
+            (replacementRootFrom !== undefined
+              && replacementRootFrom >= previousRange.from
+              && replacementRootFrom < previousRange.to)
+            || (remainingRootFrom !== undefined
+              && remainingRootFrom >= previousRange.from
+              && remainingRootFrom < previousRange.to);
+          tailOffset = pendingBoundaryInsidePreviousRoot ? previousRange.from : previousRange.to;
         }
       }
       this.treeFragments = [];
       this.rootNativeFragmentOffset = tailOffset;
-      for (const block of this.blocks) {
+      this.forEachUnfinishedRootBlock((block) => {
         const from = block.payload.range?.from;
-        if (block.isFinalized || (typeof from === "number" && from >= tailOffset)) continue;
+        if (typeof from === "number" && from >= tailOffset) return;
         semanticPatches.push({ op: "finalize", at: { blockId: block.id } });
-      }
+      });
       await this.parseRootNativeTail(
         tailOffset,
         sourceLength,
@@ -8209,7 +10724,8 @@ export class MarkdownEngine {
         true,
         semanticPatches,
         previousRootParagraphOwners,
-        { deltas: finalizedParagraphTargets, rebuild: false },
+        { deltas: previousRootParagraphTargets },
+        previousRootOwnerWindow,
       );
       for (const owner of ownersToDecorate) {
         const decorationPatch = await this.decorateRootCode(owner, true);
@@ -8222,61 +10738,28 @@ export class MarkdownEngine {
     } else if (this.nestedParagraphOwners.size > 0) {
       await this.finalizeNestedParagraphs(metricsCollector);
     } else {
-      const prevBlocks = this.blocks.map((block) => cloneBlock(block));
-      const finalizePatches: Patch[] = [];
-      for (const block of this.blocks) {
-        if (!block.isFinalized) {
-          block.isFinalized = true;
-          finalizePatches.push({
-            op: "finalize",
-            at: { blockId: block.id },
-          });
-        }
-      }
-
       const source = this.sourceDocument.snapshot();
-      const content = source.materialize();
-      const { blocks: reparsedBlocks, lastTree: reparsedTree } = await this.parseAll(content, { forceFinalize: true, admitRootTableOwners: true });
-      for (const block of reparsedBlocks) {
-        block.isFinalized = true;
-      }
-
-      this.blocks = reparsedBlocks;
-      this.lastTree = reparsedTree;
-      this.treeFragments = TreeFragment.addTree(reparsedTree);
-      metricsCollector.setBlocksProduced(this.blocks.length);
-      for (const owner of this.rootTableOwners) {
-        if (!this.emittedRootTableIds.has(owner.id)) {
-          finalizePatches.push(this.rootTableInsertPatch(owner));
-          this.emittedRootTableIds.add(owner.id);
+      let tailOffset = sourceLength;
+      this.forEachUnfinishedRootBlock((block) => {
+        if (tailOffset === 0) return;
+        const from = block.payload.range?.from;
+        if (typeof from !== "number") return;
+        if (!Number.isInteger(from) || from < 0 || from > sourceLength) {
+          tailOffset = 0;
+          return;
         }
-      }
-      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
-        progressPublication = this.createProgressPublication(sourceLength);
-      }
+        tailOffset = Math.min(tailOffset, sourceLineStart(source, from));
+      });
 
-      const fullRange = [
-        {
-          fromA: 0,
-          toA: sourceLength,
-          fromB: 0,
-          toB: sourceLength,
-        },
-      ];
-      this.parseEpochCounter += 1;
-      const finalParseEpoch = this.parseEpochCounter;
-      await this.emitBlockDiffPatches(
-        prevBlocks,
-        this.blocks,
-        fullRange,
+
+      // parseRootNativeTail invalidates fragments when this source boundary differs from their stored window.
+      await this.parseRootNativeTail(
+        tailOffset,
+        sourceLength,
+        sourceLength,
         metricsCollector,
-        progressPublication,
-        finalParseEpoch,
-        finalizePatches,
+        true,
       );
-      if (finalizePatches.length > 0 && this.rootTableOwners.length === 0) {
-        await this.dispatchFinalCanonicalSnapshot(this.blocks, prevBlocks, progressPublication);
-      }
     }
 
     if (this.deferredPatchQueue.length > 0) {
@@ -8298,10 +10781,32 @@ export class MarkdownEngine {
       this.recordParsedProgressPublication(progressPublication);
     }
 
+    const incompleteContainerPatches: Patch[] = [];
+    for (const block of this.blocks) {
+      const key = getActiveHtmlTreeKey(block.payload.meta);
+      const tree = key ? block.payload.meta?.[key] : undefined;
+      if (!key || !Array.isArray(tree)) continue;
+      const finalizedTree = finalizeOpenRegisteredContainerTree(tree as HtmlTreeNode[]);
+      if (finalizedTree === tree) continue;
+      block.payload = {
+        ...block.payload,
+        meta: { ...block.payload.meta, [key]: finalizedTree },
+      };
+      incompleteContainerPatches.push({
+        op: "setProps",
+        at: { blockId: block.id },
+        props: { block },
+        meta: { kind: "enrichment" },
+      });
+    }
+    if (incompleteContainerPatches.length > 0) {
+      this.dispatchPatchBatch(incompleteContainerPatches, metricsCollector);
+    }
     reportWorkerStructuralInvariantViolations("finalizeAllBlocks", this.blocks, this.lastWorkerInvariantSignature);
     this.post({
       type: "FINALIZED",
       generation: this.documentGeneration,
+      admittedSourceUnits: this.admittedSourceUnits,
     });
 
     if (this.activeMetricsCollector === metricsCollector) {
@@ -8309,64 +10814,6 @@ export class MarkdownEngine {
     }
   }
 
-  private async dispatchFinalCanonicalSnapshot(
-    finalBlocks: Block[],
-    previousBlocks: readonly Block[],
-    progressPublication?: ProgressPublicationContext,
-  ): Promise<void> {
-    const patches: Patch[] = [];
-    const previousBlocksById = new Map(previousBlocks.map((block) => [block.id, block]));
-    const publishedParseEpoch = this.parseEpochCounter;
-    const hasPublishedNestedCodeOwner = (
-      snapshots: readonly NodeSnapshot[],
-      previousSnapshots: readonly NodeSnapshot[],
-    ): boolean => {
-      for (const snapshot of snapshots) {
-        const code = snapshot.code;
-        const owner = code ? this.nestedCodeOwners.get(snapshot.id) : undefined;
-        if (owner
-          && code?.codeOwnerId === owner.id
-          && code.generation === owner.generation
-          && code.revision === owner.getMetadata().revision) {
-          const previousCode = preparedSnapshotAtId(previousSnapshots, snapshot.id)?.code;
-          if (
-            (previousCode?.codeOwnerId === code.codeOwnerId
-              && previousCode.generation === code.generation
-              && previousCode.revision === code.revision)
-            || this.emittedBlockEpochs.get(owner.containerId) === publishedParseEpoch
-          ) return true;
-        }
-        if (snapshot.children && hasPublishedNestedCodeOwner(snapshot.children, previousSnapshots)) return true;
-      }
-      return false;
-    };
-
-    // A canonical replacement must not reinsert a live code lease already published by the diff;
-    // Store rejects that same-generation snapshot, while the owner diff preserves its lifetime.
-    const hasRedundantNativeCodeReplacement = (block: Block, previousBlock: Block | undefined): boolean => {
-      const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      if (!prepared) return false;
-      const previousPrepared = previousBlock?.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      return hasPublishedNestedCodeOwner(prepared.children, previousPrepared?.children ?? []);
-    };
-
-    for (let index = 0; index < finalBlocks.length; index++) {
-      const block = finalBlocks[index];
-      if (!block) continue;
-      if (hasRedundantNativeCodeReplacement(block, previousBlocksById.get(block.id))) continue;
-      patches.push({
-        op: "replaceChild",
-        at: { blockId: PATCH_ROOT_ID },
-        index,
-        node: createBlockSnapshot(block),
-      });
-    }
-    
-    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
-      this.tagSemanticPatchesForProgress(patches, progressPublication);
-    }
-    this.dispatchPatchBatch(patches);
-  }
 
   private flushDeferredPatches(options?: { ignoreCredits?: boolean }): void {
     if (this.workerCredits <= 0 || this.deferredPatchQueue.length === 0) {
@@ -8412,8 +10859,13 @@ export class MarkdownEngine {
       while (!this.disposed && generation === this.documentGeneration && this.lazyTokenizationQueue.size > 0) {
         const next = selectNextLazyRequest(this.lazyTokenizationQueue);
         if (!next) break;
-        this.lazyTokenizationQueue.delete(next.blockId);
+        const requests = this.lazyTokenizationQueue.get(next.blockId);
+        requests?.delete(next.priority);
+        if (requests?.size === 0) this.lazyTokenizationQueue.delete(next.blockId);
         await this.handleLazyTokenizationRequest(next);
+        if (!this.disposed && generation === this.documentGeneration && this.lazyTokenizationQueue.size > 0) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        }
       }
     } finally {
       if (generation === this.documentGeneration) this.lazyTokenizationProcessing = false;
@@ -8547,7 +10999,10 @@ export class MarkdownEngine {
   }
 
   private async handleLazyTokenizationRequest(request: LazyTokenizationRequest): Promise<void> {
-    if (!this.lazyTokenizationEnabled || !this.highlighter) return;
+    const codeEngine = this.extensions?.code;
+    const highlighter = this.highlighter;
+    if (!this.lazyTokenizationEnabled || (!highlighter && !codeEngine)) return;
+    if (!codeEngine && !highlighter) return;
     const generation = this.documentGeneration;
     const target = this.findPreparedCode(request.blockId);
     if (!target) return;
@@ -8589,12 +11044,13 @@ export class MarkdownEngine {
     const highlightLanguage = diffInfo.isDiff ? diffInfo.diffLang : (normalizeLang(lang) || "text");
     const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : highlightLanguage;
     const hasHighlightableContent = codeBody.trim().length > 0;
-    if (!shouldLazyTokenizeBlock(this.lazyTokenizationEnabled, codeLines.length, this.lazyTokenizationThresholdLines, Boolean(this.highlighter), hasHighlightableContent)) {
+    if (!shouldLazyTokenizeBlock(this.lazyTokenizationEnabled, codeLines.length, this.lazyTokenizationThresholdLines, Boolean(this.highlighter || this.extensions?.code), hasHighlightableContent)) {
       return;
     }
 
-    const wantsHtml = this.highlightOutputMode === "html" || this.highlightOutputMode === "both";
-    const wantsTokens = (this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both") && this.emitHighlightTokens;
+    const wantsHtml = !codeEngine && (this.highlightOutputMode === "html" || this.highlightOutputMode === "both");
+    const wantsTokens = this.emitHighlightTokens
+      && (Boolean(codeEngine) || this.highlightOutputMode === "tokens" || this.highlightOutputMode === "both");
     const diffEnabled = diffInfo.isDiff && wantsTokens;
     if (!wantsHtml && !wantsTokens) return;
 
@@ -8603,13 +11059,15 @@ export class MarkdownEngine {
 
     let resolvedLanguage = highlightLanguage;
     let resolvedTokenLanguage = tokenLanguage;
-    if (wantsHtml) {
-      resolvedLanguage = await resolveHighlightLanguage(this.highlighter, highlightLanguage);
-      if (!currentTarget()) return;
-    }
-    if (wantsTokens) {
-      resolvedTokenLanguage = await resolveHighlightLanguage(this.highlighter, tokenLanguage);
-      if (!currentTarget()) return;
+    if (!codeEngine) {
+      if (wantsHtml) {
+        resolvedLanguage = await resolveHighlightLanguage(highlighter, highlightLanguage);
+        if (!currentTarget()) return;
+      }
+      if (wantsTokens) {
+        resolvedTokenLanguage = await resolveHighlightLanguage(highlighter, tokenLanguage);
+        if (!currentTarget()) return;
+      }
     }
 
     const signature = makeLazySignature(codeBody, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
@@ -8618,10 +11076,11 @@ export class MarkdownEngine {
       state.processedLines = 0;
     }
 
-    const targetEnd = Math.min(endLine, codeLines.length);
-    if (targetEnd <= state.processedLines) {
+    const requestedEndLine = endLine;
+    if (requestedEndLine <= state.processedLines) {
       return;
     }
+    const targetEnd = Math.min(requestedEndLine, state.processedLines + this.lazyTokenizationSliceLines);
 
     const metricsCollector = new WorkerMetricsCollector(this.workerGrammarEngine);
     this.activeMetricsCollector = metricsCollector;
@@ -8636,45 +11095,65 @@ export class MarkdownEngine {
     let diffSegment: DiffLineInfo[] | undefined;
 
     if (segmentLines.length > 0) {
-      if (wantsHtml || (wantsTokens && !diffEnabled)) {
+      if (codeEngine && wantsTokens && !diffEnabled) {
+        if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+          let inputLength = Math.max(0, segmentLines.length - 1);
+          for (const line of segmentLines) inputLength += line.length;
+          this.campaignCounters?.recordTokenization(segmentLines.length, inputLength, "engine");
+        }
+        const result = tokenizeCodeLines(codeEngine, resolvedTokenLanguage, segmentLines, nextGrammarState);
+        tokenizedSegment = result.lines as unknown as Array<TokenLineV1 | null>;
+        nextGrammarState = result.state;
+      } else if (!codeEngine && (wantsHtml || (wantsTokens && !diffEnabled))) {
         try {
           const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
           const segmentText = segmentLines.join("\n");
           if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
             this.campaignCounters?.recordTokenization(segmentLines.length, segmentText.length, "engine");
           }
-          const tokens = this.highlighter.codeToTokensWithThemes(segmentText, {
+          const tokens = highlighter!.codeToTokensWithThemes(segmentText, {
             lang: sharedLanguage as never,
             themes: this.codeThemes,
             grammarState: nextGrammarState as never,
           } as never) as ShikiThemedToken[][];
           if (wantsHtml) highlightedSegment = renderShikiLines(tokens);
           if (wantsTokens && !diffEnabled) tokenizedSegment = renderTokenLines(tokens);
-          nextGrammarState = this.highlighter.getLastGrammarState(tokens as never);
+          nextGrammarState = highlighter!.getLastGrammarState(tokens as never);
         } catch (error) {
           console.warn("Lazy tokenization failed for", requestedLanguage, error);
         }
       }
 
       if (wantsTokens && diffEnabled) {
-        const cursor = { oldLine: state.diffCursor?.oldLine ?? null, newLine: state.diffCursor?.newLine ?? null };
+        const cursor: DiffCursorState = {
+          oldLine: state.diffCursor?.oldLine ?? null,
+          newLine: state.diffCursor?.newLine ?? null,
+          ...(state.diffCursor?.oldRemaining !== undefined ? { oldRemaining: state.diffCursor.oldRemaining } : {}),
+          ...(state.diffCursor?.newRemaining !== undefined ? { newRemaining: state.diffCursor.newRemaining } : {}),
+        };
         const diffLines = segmentLines.map((line) => parseUnifiedDiffLine(line, cursor));
-        const grammarObj = { context: nextGrammarState };
-        const { tokenLines, grammarState: nextState } = await buildDiffTokenLines(
-          diffLines,
-          resolvedTokenLanguage,
-          grammarObj,
-          this.highlighter,
-          this.codeThemes,
-        );
-        if (!currentTarget()) {
-          if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
-          return;
+        if (codeEngine) {
+          const completed = buildDiffTokenLinesWithCodeEngine(diffLines, resolvedTokenLanguage, nextGrammarState, codeEngine);
+          nextGrammarState = completed.grammarState;
+          tokenizedSegment = completed.tokenLines as unknown as Array<TokenLineV1 | null>;
+        } else {
+          const grammarObj = { context: nextGrammarState };
+          const completed = await buildDiffTokenLines(
+            diffLines,
+            resolvedTokenLanguage,
+            grammarObj,
+            highlighter!,
+            this.codeThemes,
+          );
+          if (!currentTarget()) {
+            if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
+            return;
+          }
+          nextGrammarState = completed.grammarState.context;
+          tokenizedSegment = completed.tokenLines;
         }
-        nextGrammarState = nextState.context;
         nextDiffCursor = cursor;
         diffSegment = diffLines;
-        tokenizedSegment = tokenLines;
       }
     }
 
@@ -8704,7 +11183,21 @@ export class MarkdownEngine {
     if (nextDiffCursor) state.diffCursor = nextDiffCursor;
     state.processedLines = targetEnd;
     const tokenizationDuration = now() - tokenizationStart;
-    metricsCollector.recordLazyTokenization(targetEnd - startLine, tokenizationDuration, this.lazyTokenizationQueue.size);
+    this.lazyTokenizationSliceLines = Math.max(
+      1,
+      Math.min(
+        MAX_LAZY_TOKENIZATION_SLICE_LINES,
+        Math.floor((segmentLines.length * LAZY_TOKENIZATION_SLICE_TARGET_MS) / Math.max(tokenizationDuration, 0.1)),
+      ),
+    );
+    metricsCollector.recordLazyTokenization(segmentLines.length, tokenizationDuration, this.lazyTokenizationQueue.size);
+    if (state.processedLines < requestedEndLine) {
+      enqueueLazyTokenization(this.lazyTokenizationQueue, this.lazyTokenizationEnabled, {
+        ...request,
+        startLine: state.processedLines,
+        endLine: requestedEndLine,
+      });
+    }
 
     const updated = cloneBlock(commitTarget.block);
     delete updated.payload.highlightedHtml;

@@ -93,3 +93,113 @@ async function main() {
 }
 
 await main();
+async function testOneScheduledFlushPerFrame() {
+  const store = createRendererStore([createParagraphBlock("paragraph-frame", "initial")]);
+  const frameCallbacks = new Map<number, FrameRequestCallback>();
+  let nextFrameId = 0;
+  let flushCount = 0;
+  let now = 0;
+  const scheduler = new PatchCommitScheduler({
+    store,
+    onFlush: () => {
+      flushCount += 1;
+    },
+    options: {
+      batch: "rAF",
+      frameBudgetMs: 4,
+      maxBatchesPerFlush: 1,
+      urgentQueueThreshold: 4,
+      adaptiveBudgeting: false,
+      raf: (callback) => {
+        const id = ++nextFrameId;
+        frameCallbacks.set(id, callback);
+        return id;
+      },
+      cancelRaf: (handle) => {
+        frameCallbacks.delete(handle);
+      },
+      now: () => {
+        now += 5;
+        return now;
+      },
+    },
+  });
+
+  for (let index = 0; index < 8; index += 1) {
+    scheduler.enqueue({
+      patches: [{
+        op: "setProps",
+        at: { blockId: "paragraph-frame" },
+        props: { block: createParagraphBlock("paragraph-frame", `frame ${index}`) },
+      }],
+    });
+  }
+
+  assert.strictEqual(flushCount, 0, "scheduled presentation work must not flush synchronously from enqueue");
+  assert.strictEqual(frameCallbacks.size, 1, "all pending work must share one scheduled frame callback");
+  const firstFrame = frameCallbacks.entries().next().value;
+  assert.ok(firstFrame, "a presentation frame should be scheduled");
+  frameCallbacks.delete(firstFrame[0]);
+  firstFrame[1](0);
+  assert.strictEqual(flushCount, 1, "one frame callback may publish at most one scheduler flush");
+  assert.strictEqual(frameCallbacks.size, 1, "remaining work must wait for the next frame");
+  scheduler.clear();
+}
+
+await testOneScheduledFlushPerFrame();
+async function testFourMillisecondSemanticSlices() {
+  const store = createRendererStore([createParagraphBlock("paragraph-slices", "initial")]);
+  const frames = new Map<number, FrameRequestCallback>();
+  const flushes: Array<{ batches: number; remainingSemantic: number }> = [];
+  let frameId = 0;
+  let now = 0;
+  const scheduler = new PatchCommitScheduler({
+    store,
+    onFlush: (result) => {
+      flushes.push({
+        batches: result.batches.length,
+        remainingSemantic: result.remainingSemanticQueueSize,
+      });
+    },
+    options: {
+      batch: "rAF",
+      frameBudgetMs: 4,
+      adaptiveBudgeting: false,
+      raf: (callback) => {
+        const id = ++frameId;
+        frames.set(id, callback);
+        return id;
+      },
+      cancelRaf: (handle) => {
+        frames.delete(handle);
+      },
+      now: () => {
+        now += 5;
+        return now;
+      },
+    },
+  });
+
+  for (let index = 0; index < 8; index += 1) {
+    scheduler.enqueue({
+      meta: { kind: "semantic" },
+      patches: [{
+        op: "setProps",
+        at: { blockId: "paragraph-slices" },
+        props: { block: createParagraphBlock("paragraph-slices", `slice ${index}`) },
+      }],
+    });
+  }
+
+  const firstFrame = frames.entries().next().value;
+  assert.ok(firstFrame, "semantic work should be scheduled");
+  frames.delete(firstFrame[0]);
+  firstFrame[1](0);
+  assert.deepStrictEqual(flushes[0], {
+    batches: 1,
+    remainingSemantic: 7,
+  }, "semantic batches stay atomic and yield after the 4 ms slice budget");
+  scheduler.clear();
+}
+
+await testFourMillisecondSemanticSlices();

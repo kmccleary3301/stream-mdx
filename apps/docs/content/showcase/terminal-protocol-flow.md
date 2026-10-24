@@ -59,17 +59,29 @@ That example does four things only:
 
 ```ts
 import { createWorkerThread } from "stream-mdx/worker/node";
-import { STREAM_MDX_SCHEMA_VERSION } from "stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "stream-mdx/core";
 import { createSnapshotStore } from "@stream-mdx/tui";
 
 const worker = createWorkerThread({ stdout: true, stderr: true });
 const store = createSnapshotStore();
+let generation: number | null = null;
 
-worker.on("message", (msg) => {
-  if (msg.type === "PATCH") {
-    store.applyPatches(msg.patches);
-    renderToTerminal(store.getBlocks());
+worker.on("message", (msg: WorkerOut) => {
+  if (msg.type === "INITIALIZED") {
+    const inputSource = msg.snapshot.inputSource;
+    if (
+      msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+      !Number.isSafeInteger(msg.generation) ||
+      inputSource?.generation !== msg.generation ||
+      typeof inputSource?.raw !== "string"
+    ) throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
+    store.setSnapshot(msg.snapshot);
+    generation = msg.generation;
+    return;
   }
+  if (msg.type !== "PATCH" || msg.generation !== generation) return;
+  store.applyPatches(msg.patches);
+  renderToTerminal(store.getBlocks());
 });
 
 worker.postMessage({
@@ -102,6 +114,10 @@ for (const event of decoder.push(chunk)) {
   store.applyEvent(event);
 }
 ```
+
+All schema-2 events carry the producer's native document `generation`. Start with `init` and a validated `INITIALIZED` snapshot whose canonical input generation matches the envelope; never derive that baseline from a patch. The store rejects stale or foreign-stream events and clears old transaction/status metadata when a newer baseline takes ownership. An announcement cannot force an older snapshot over a newer native baseline.
+
+`done` follows the matching native `FINALIZED` and semantic delivery barrier, not DOM, grammar or paint readiness.
 
 ## Capability boundaries
 

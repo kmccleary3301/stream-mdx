@@ -136,6 +136,13 @@ Consumers validate the generation and point before mutation. Input retention
 does not rebuild semantic root children or count as semantic completion,
 ordinal progress, or owner progress.
 
+
+Every live `WorkerOut` PATCH envelope carries the root document generation that
+was current when the envelope was created. Consumers reject a generation
+mismatch before queue admission and again at commit; reset and detach invalidate
+queued batches. Delivery must never assign a generation from the receiver's
+current state. This root generation is independent of the `tx`/epoch ordering
+tuple and of native owner generations.
 Code, table, and paragraph source windows share that one consumer document.
 Native owners validate `sourceAppend` against their own root range and carry
 only the exact newly owned authored suffix. An owner suffix may include an LF
@@ -159,6 +166,11 @@ span boundaries, or processing frontier. `closed` is paragraph-owner state, not
 the worker's document-level `FINALIZED` message. A same-generation finalized
 paragraph cannot accept source growth or reopen. If raw engine input grows a
 finalized EOF paragraph, the engine replaces its owner under a fresh generation.
+A root paragraph ended by a following root sibling, and a root fenced code block
+ended by its closing fence, settle directly to `finalized`: later input cannot
+change their source, so worker `FINALIZE` leaves them untouched and costs only
+the open tail. A nested paragraph stays `closed` until its container finalizes,
+because container finalization can still move its end.
 
 `updateParagraphSpans` is a semantic, source-neutral update. It carries only
 dependency-affected prepared spans and requires matching owner generation,

@@ -21,6 +21,7 @@ import {
 } from "./utils";
 import type { RegressionScenario } from "./utils";
 import {
+  canonicalizeAttributeOrder,
   extractTopLevelElementHtml,
   normalizeInlineStyleSerialization,
 } from "./html-style-normalization";
@@ -311,9 +312,9 @@ function compareNormalizedFinalSnapshots(expected: HtmlSnapshot, received: HtmlS
 
   return { ok: true };
 }
-// Persisted hashes describe raw HTML; derive comparison hashes only after style normalization.
+// Persisted hashes describe raw HTML; derive comparison hashes only after attribute-order and style normalization.
 async function normalizeSnapshotForComparison(page: Page, snapshot: HtmlSnapshot): Promise<HtmlSnapshot> {
-  const html = await normalizeInlineStyleSerialization(page, snapshot.final.html);
+  const html = await normalizeInlineStyleSerialization(page, canonicalizeAttributeOrder(snapshot.final.html));
   const childHtml = extractTopLevelElementHtml(html);
   const children = snapshot.final.children?.map((child, index) => {
     const normalizedChild = childHtml[index];
@@ -1057,6 +1058,9 @@ async function run(): Promise<void> {
         const page = await context.newPage();
         const capturedLogs: Array<{ type: string; message: string; timestamp: string }> = [];
         attachPageObservers(page, capturedLogs);
+        const tracing = page.context().tracing;
+        const failuresBefore = failures;
+        let traceStarted = false;
         const scenarioDeadline = Date.now() + SCENARIO_TIMEOUT_MS;
         const remainingTimeout = () => {
           const rem = scenarioDeadline - Date.now();
@@ -1112,6 +1116,8 @@ async function run(): Promise<void> {
         let lastKnownHtml = "";
 
         try {
+          await awaitScenario(() => tracing.start({ screenshots: true, snapshots: true, sources: true }));
+          traceStarted = true;
           await awaitScenario(() =>
             page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "load", timeout: remainingTimeout() }),
           );
@@ -1699,6 +1705,22 @@ async function run(): Promise<void> {
         console.error(`artifacts: ${artifactDir}`);
         console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
       } finally {
+        if (traceStarted) {
+          try {
+            if (failures > failuresBefore) {
+              const artifactDir = path.join(ARTIFACT_ROOT, `${Date.now()}-${process.pid}`, fixture.id, scenario.id);
+              await ensureDir(artifactDir);
+              const tracePath = path.join(artifactDir, `playwright-${executedByFixture.get(fixture.id)}.zip`);
+              await tracing.stop({ path: tracePath });
+              console.error(`native browser trace: ${tracePath}`);
+            } else {
+              await tracing.stop();
+            }
+          } catch (error) {
+            console.error(`Failed to finish native regression trace for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
+            process.exitCode = 1;
+          }
+        }
         await page.close().catch((error) => {
           console.error(`Failed to close regression page for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
           process.exitCode = 1;

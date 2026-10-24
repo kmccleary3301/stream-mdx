@@ -120,11 +120,7 @@ function createRootParagraphOwnerFromSnapshot(
     sourceOffset,
     options.attestation,
   );
-  const state = options.finalized
-    ? "finalized"
-    : tailParser.state.phase === "closed"
-      ? "closed"
-      : "open";
+  const state = options.finalized || tailParser.state.phase === "closed" ? "finalized" : "open";
   const to = sourceOffset + node.to;
   const id = generateBlockId(`${from}:paragraph`, "paragraph");
   const owner = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && options.counters !== undefined
@@ -174,6 +170,7 @@ export function createRootParagraphOwners(
   generation: number,
   options: RootParagraphPipelineOptions,
   excludedSourceStarts?: ReadonlySet<number>,
+  existingSourceStarts?: Pick<ReadonlySet<number>, "has">,
 ): readonly RootParagraphSourceOwner[] {
   if (options.attestation && options.attestation.parser !== options.parser) {
     throw new TypeError("Root paragraph window attestation belongs to a different MarkdownParser");
@@ -181,7 +178,8 @@ export function createRootParagraphOwners(
   const sourceSnapshot = source.snapshot();
   const owners: RootParagraphSourceOwner[] = [];
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
-    if (excludedSourceStarts?.has((options.sourceOffset ?? 0) + node.from)) continue;
+    const sourceStart = (options.sourceOffset ?? 0) + node.from;
+    if (excludedSourceStarts?.has(sourceStart) || existingSourceStarts?.has(sourceStart)) continue;
     const owner = createRootParagraphOwnerFromSnapshot(node, source, sourceSnapshot, generation, options);
     if (owner) owners.push(owner);
   }
@@ -216,7 +214,13 @@ export function advanceRootParagraphOwner(
   }
   if (!tail) throw new Error("Native paragraph tail state is unavailable for this owner");
   const nativeChange = tail.append(source, appendedText);
-  return owner.accept(previous.processedTo, source.length, nativeChange);
+  // A root sibling ends a root paragraph for good, so closure settles it and FINALIZE skips it.
+  // Nested closure stays provisional: container finalization can still move the paragraph end.
+  return owner.accept(
+    previous.processedTo,
+    source.length,
+    nativeChange.closure === "following-root" ? { ...nativeChange, closure: "finalized" } : nativeChange,
+  );
 }
 
 export function isFinalizedRootParagraphAppendCandidate(owner: RootParagraphSourceOwner): boolean {

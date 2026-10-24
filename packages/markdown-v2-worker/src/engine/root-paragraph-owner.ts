@@ -221,7 +221,7 @@ export class RootParagraphSourceOwner {
   private linkReferences: readonly BlockResolvedLinkReference[] | undefined;
   private cachedSnapshot: { readonly revision: number; readonly snapshot: ParagraphBlockSnapshot } | undefined;
 
-  constructor(options: RootParagraphSourceOwnerOptions, copyFrom?: RootParagraphSourceOwner) {
+  constructor(options: RootParagraphSourceOwnerOptions) {
     const { id, generation, source, inlineParser, opening, inlineSettlement, prepareProvisionalInline, prepareSpanChildren, sourceTextReader } = options;
     if (!Number.isSafeInteger(generation) || generation < 0) {
       throw new RangeError("Root paragraph owner generation must be a non-negative safe integer");
@@ -246,27 +246,6 @@ export class RootParagraphSourceOwner {
     this.state = opening.state;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       this.counters = options.counters;
-    }
-    if (copyFrom) {
-      if (copyFrom.id !== id
-        || copyFrom.source !== source
-        || copyFrom.ownerStart !== opening.from
-        || copyFrom.rawEnd !== opening.to
-        || copyFrom.state !== opening.state
-        || copyFrom.inlineParser !== inlineParser
-        || copyFrom.inlineSettlement !== inlineSettlement) {
-        throw new RangeError("Paragraph generation transfer must preserve its canonical owner and source range");
-      }
-      this.revision = copyFrom.revision;
-      this.processedTo = copyFrom.processedTo;
-      this.rawEnd = copyFrom.rawEnd;
-      this.state = copyFrom.state;
-      this.spanIndex = copyFrom.spanIndex;
-      for (const [dependency, indices] of copyFrom.spansByDependency) {
-        this.spansByDependency.set(dependency, new Set(indices));
-      }
-      this.linkReferences = copyFrom.linkReferences;
-      return;
     }
     const reader = source.snapshot();
     const initialSourceText = this.readParagraphSourceText(reader, opening.from, opening.to);
@@ -302,23 +281,6 @@ export class RootParagraphSourceOwner {
     for (const span of this.spanIndex.materialize()) this.installDependencies(span);
   }
 
-  rehomeForGeneration(generation: number): RootParagraphSourceOwner {
-    if (!Number.isSafeInteger(generation) || generation <= this.generation) {
-      throw new RangeError("Rehomed paragraph owner generation must advance its native lease");
-    }
-    return new RootParagraphSourceOwner({
-      id: this.id,
-      generation,
-      source: this.source,
-      inlineParser: this.inlineParser,
-      opening: { from: this.ownerStart, to: this.rawEnd, state: this.state },
-      inlineSettlement: this.inlineSettlement,
-      sourceTextReader: this.sourceTextReader,
-      ...(this.counters ? { counters: this.counters } : {}),
-      ...(this.prepareProvisionalInline ? { prepareProvisionalInline: this.prepareProvisionalInline } : {}),
-      ...(this.prepareSpanChildren ? { prepareSpanChildren: this.prepareSpanChildren } : {}),
-    }, this);
-  }
 
   getMetadata(): ParagraphBlockSourceMetadata {
     return Object.freeze({
@@ -336,6 +298,12 @@ export class RootParagraphSourceOwner {
 
   getSpans(): ParagraphSpanIndex {
     return this.spanIndex;
+  }
+  hasFootnoteReferences(): boolean {
+    for (const dependency of this.spansByDependency.keys()) {
+      if (dependency.startsWith("footnote:")) return true;
+    }
+    return false;
   }
   getSourceTextReader(): ParagraphSourceTextReader {
     return this.sourceTextReader;
@@ -622,6 +590,28 @@ export class RootParagraphSourceOwner {
         requiresOwnerReplacement: true,
         ...(nativeChange.replacementNode ? { replacementNode: nativeChange.replacementNode } : {}),
         ...(nativeChange.replacementSourceOffset === undefined ? {} : { replacementSourceOffset: nativeChange.replacementSourceOffset }),
+      };
+    }
+
+    if (this.state === "closed") {
+      if (nativeChange.ownerEnd !== this.rawEnd) {
+        return {
+          ownerStart: this.ownerStart,
+          expectedRevision,
+          mode: nativeChange.mode,
+          requiresOwnerReplacement: true,
+        };
+      }
+      this.state = "finalized";
+      this.revision = nextRevision(this.revision, "Root paragraph owner");
+      this.cachedSnapshot = undefined;
+      return {
+        paragraph: this.getMetadata(),
+        expectedRevision,
+        fromSpan: this.spanIndex.length,
+        spans: EMPTY_SPAN_RECORDS,
+        mode: nativeChange.mode,
+        requiresOwnerReplacement: false,
       };
     }
 

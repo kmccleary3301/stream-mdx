@@ -30,17 +30,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.100000023841858,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.4000000357627869,
+        "lastDurationMs": 1.4000000357627869,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -60,7 +61,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inline",
       "structure": {
         "topLevelTags": [
@@ -89,17 +90,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.100000023841858,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.4000000357627869,
+        "lastDurationMs": 1.4000000357627869,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -119,7 +121,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inline",
       "structure": {
         "topLevelTags": [
@@ -148,17 +150,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.100000023841858,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.4000000357627869,
+        "lastDurationMs": 1.4000000357627869,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -178,7 +181,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inline",
       "structure": {
         "topLevelTags": [
@@ -207,17 +210,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.100000023841858,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.4000000357627869,
+        "lastDurationMs": 1.4000000357627869,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -237,7 +241,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inline",
       "structure": {
         "topLevelTags": [
@@ -266,17 +270,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.100000023841858,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.4000000357627869,
+        "lastDurationMs": 1.4000000357627869,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -296,7 +301,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inline",
       "structure": {
         "topLevelTags": [
@@ -325,17 +330,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.100000023841858,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.4000000357627869,
+        "lastDurationMs": 1.4000000357627869,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -355,7 +361,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inline",
       "structure": {
         "topLevelTags": [
@@ -384,17 +390,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.100000023841858,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.4000000357627869,
+        "lastDurationMs": 1.4000000357627869,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -414,7 +421,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inline",
       "structure": {
         "topLevelTags": [
@@ -443,17 +450,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.100000023841858,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.4000000357627869,
+        "lastDurationMs": 1.4000000357627869,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -473,7 +481,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inline",
       "structure": {
         "topLevelTags": [
@@ -502,17 +510,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.100000023841858,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.4000000357627869,
+        "lastDurationMs": 1.4000000357627869,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -532,7 +541,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inline",
       "structure": {
         "topLevelTags": [
@@ -564,23 +573,24 @@
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\" id=\"mdx-tag-allowlist-inline\" data-heading-id=\"mdx-tag-allowlist-inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph markdown-paragraph\">Prefix text with &lt;InlineChip tone=\"warm\"&gt; and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote with &lt;InlineChip tone=\"sharp\"&gt; and trailing content.</p></blockquote><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
     "runtimeState": {
-      "rendererVersion": 6,
+      "rendererVersion": 5,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
       "lastTx": 3,
-      "lastPatchToDomMs": 11.400000005960464,
-      "lastDurationMs": 0.20000001788139343,
+      "lastPatchToDomMs": 0.3999999761581421,
+      "lastDurationMs": 0.2999999523162842,
       "meta": {
         "fixtureId": "mdx-tag-allowlist-inline",
-        "scenarioId": "S4_chunky_network",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S4_chunky_network"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -602,7 +612,7 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "372c26b58fb5506280d8a0c876e00033e04e1b9b172c7b69ad3e7224c5e9c7bf",
+        "hash": "0199cbfe9a19316d81a5558683a64b9aa1ba9519d36048669ca817abcc67b3e5",
         "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"> and trailing prose that must remain visible.List item "
       }
     ],

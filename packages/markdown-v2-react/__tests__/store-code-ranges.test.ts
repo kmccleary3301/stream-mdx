@@ -245,6 +245,8 @@ assert.strictEqual(store.getBlocks()[0]?.payload.raw, nextRaw);
 
 
 const revisionBeforeStaleOwner = store.getCodeBlock(OWNER_ID)?.source.revision;
+const violationsBeforeStaleOwner = store.getInvariantViolations().length;
+const staleRejectionsBeforeStaleOwner = store.getDebugCounters().staleEpochRejected;
 store.applyPatches([
   {
     ...decoratePatch,
@@ -254,6 +256,23 @@ store.applyPatches([
 ]);
 assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.revision, revisionBeforeStaleOwner);
 assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.generation, 7, "stale decoration cannot replace the current owner");
+assert.strictEqual(
+  store.getInvariantViolations().length,
+  violationsBeforeStaleOwner,
+  "a decoration computed for an older owner generation is expected staleness, not an invariant violation",
+);
+assert.strictEqual(store.getDebugCounters().staleEpochRejected, staleRejectionsBeforeStaleOwner + 1);
+store.applyPatches([
+  {
+    ...decoratePatch,
+    generation: 8,
+    decorations: [decoratePatch.decorations[0]],
+  },
+]);
+assert.ok(
+  store.getInvariantViolations().some((violation) => violation.startsWith(`decorateCode guard rejected:${OWNER_ID}:`)),
+  "a decoration for a generation the store has not seen is still an invariant violation",
+);
 store.resetSnapshot(rootSnapshot(6));
 assert.strictEqual(store.getCodeBlock(OWNER_ID)?.source.generation, 6, "an explicit snapshot reset starts a fresh document baseline");
 assert.strictEqual(store.getBlocks()[0]?.payload.raw, INITIAL_RAW, "a fresh baseline restores its own authored source");
@@ -615,6 +634,18 @@ try {
   unsubscribe();
   const codeRangeStore = createRendererStore();
   codeRangeStore.resetSnapshot(rootSnapshot(7));
+  const retainedCodeHandle = codeRangeStore.getCodeNodeHandle(OWNER_ID);
+  assert.ok(retainedCodeHandle);
+  const handleRange = { from: 0, to: 2 };
+  const retainedRangeSnapshot = retainedCodeHandle.readLines(handleRange);
+  let retainedRangeNotifications = 0;
+  const unsubscribeRetainedRange = retainedCodeHandle.subscribeLines(handleRange, () => {
+    retainedRangeNotifications += 1;
+  });
+  assert.strictEqual(retainedCodeHandle.readLines(handleRange), retainedRangeSnapshot,
+    "a retained subscribed range keeps its snapshot identity until intersecting lines change");
+
+
   let prefixRangeNotifications = 0;
   let tailRangeNotifications = 0;
   const unsubscribePrefixRange = codeRangeStore.subscribeCodeLines(OWNER_ID, 0, 64, () => {
@@ -626,6 +657,7 @@ try {
   const initialCodeNotification = scheduledFrames.shift();
   assert.ok(initialCodeNotification, "code snapshot reset schedules range notifications");
   initialCodeNotification(0);
+  retainedRangeNotifications = 0;
   prefixRangeNotifications = 0;
   tailRangeNotifications = 0;
   codeRangeStore.applyPatches([{
@@ -639,6 +671,10 @@ try {
   const appendCodeNotification = scheduledFrames.shift();
   assert.ok(appendCodeNotification, "code append schedules its changed range");
   appendCodeNotification(0);
+  assert.strictEqual(retainedRangeNotifications, 1, "a retained handle subscription observes its changed range");
+  const updatedHandleRange = retainedCodeHandle.readLines(handleRange);
+  assert.notStrictEqual(updatedHandleRange, retainedRangeSnapshot, "an intersecting append invalidates the retained range snapshot");
+  assert.strictEqual(updatedHandleRange[1]?.text, "  beta", "a retained subscribed handle reads the updated line records");
   assert.strictEqual(prefixRangeNotifications, 1, "append notifies only the bucket containing changed code lines");
   assert.strictEqual(tailRangeNotifications, 0, "append does not inspect or notify unrelated code ranges");
   const lateDecorationWithStaleTail: Extract<Patch, { op: "decorateCode" }> = {
@@ -660,6 +696,27 @@ try {
   finalizeCodeNotification(0);
   assert.strictEqual(prefixRangeNotifications, 3);
   assert.strictEqual(tailRangeNotifications, 1, "owner finality invalidates active ranges");
+  const finalRetainedRange = retainedCodeHandle.readLines(handleRange);
+  while (scheduledFrames.length > 0) scheduledFrames.shift()!(0);
+  const notificationsBeforeReset = retainedRangeNotifications;
+  codeRangeStore.resetSnapshot(rootSnapshot(8));
+  assert.notStrictEqual(codeRangeStore.getCodeNodeHandle(OWNER_ID), retainedCodeHandle,
+    "replacing the owner generation creates a distinct code-node handle");
+  assert.throws(() => retainedCodeHandle.readSource(), "a replaced owner's source reads are rejected");
+  assert.throws(() => retainedCodeHandle.readMetadata(), "a replaced owner's metadata reads are rejected");
+  assert.throws(() => retainedCodeHandle.readLines(handleRange), "a replaced owner's range reads are rejected");
+  assert.strictEqual(finalRetainedRange[1]?.text, "  beta", "a retained immutable snapshot stays valid after owner replacement");
+  while (scheduledFrames.length > 0) scheduledFrames.shift()!(0);
+  assert.strictEqual(retainedRangeNotifications, notificationsBeforeReset,
+    "a replaced owner releases its stale range subscription");
+  const deletedOwnerStore = createRendererStore();
+  deletedOwnerStore.resetSnapshot(rootSnapshot(9));
+  const deletedOwnerHandle = deletedOwnerStore.getCodeNodeHandle(OWNER_ID);
+  assert.ok(deletedOwnerHandle);
+  deletedOwnerStore.applyPatches([{ op: "deleteChild", at: { blockId: "__root__" }, index: 0 }]);
+  assert.throws(() => deletedOwnerHandle.readMetadata(), "a removed owner releases its retained handle");
+  assert.throws(() => deletedOwnerHandle.readLines(handleRange), "a removed owner rejects retained range reads");
+  unsubscribeRetainedRange();
   unsubscribePrefixRange();
   unsubscribeTailRange();
 } finally {

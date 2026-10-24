@@ -23,7 +23,7 @@ It also does **not** treat the rich capability workload on the benchmark page as
 
 | Category | Streamdown | StreamMDX |
 | --- | --- | --- |
-| Execution model | Main-thread React rendering | Instance-scoped engine; worker, main-thread, or automatic execution |
+| Execution model | Main-thread React rendering | Instance-scoped engine; `worker`, `main`, or `auto` (default) execution |
 | Rendering surface | React component, close to `react-markdown` ergonomics | Dedicated `StreamingMarkdown` renderer plus lower-level packages |
 | Incremental model | Incomplete-markdown resilience + memoized rerendering | Explicit semantic/enrichment patch batches committed to a stable render tree |
 | Long-document posture | Main-thread work scales with content updates | Worker offload, queueing, and patch scheduling intended to reduce main-thread pressure |
@@ -48,7 +48,7 @@ StreamMDX features below are default off unless stated, so default rendering is 
 | Code/table/Mermaid copy and download controls | `controls`, `controlsComponent`, `labels` | No `icons` or `prefix` customization props; replace the bar through `controlsComponent`. |
 | Animated streaming text | `animated` (fade/blur/slide, stagger, reduced-motion CSS) | Static/SSR output is never animated. |
 | Element filtering | `allowedElements`, `disallowedElements`, `allowElement`, `unwrapDisallowed`, `disableAutolinkProtocols` | Applied at render time across markdown and raw HTML. |
-| Custom code renderers | `codeRenderers` with case-insensitive keys and `aliases` | |
+| Custom code presentations | `components.code.wrapper`, routed by `metadata.language` | |
 | URL policy | Default denylist plus `urlTransform` | |
 | Shiki themes | Configurable light/dark themes | |
 | remark/rehype plugins | Optional adapter on finalized blocks | Streaming (non-finalized) blocks do not run remark/rehype. |

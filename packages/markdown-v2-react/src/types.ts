@@ -2,6 +2,9 @@ import type React from "react";
 
 import type {
   Block,
+  BlockResolvedLinkReference,
+  CodeNodeHandle,
+  TableNodeHandle,
   CodeHighlightOutputMode,
   CodeHighlightingMode,
   ContentPolicy,
@@ -10,20 +13,24 @@ import type {
   InlineHtmlDescriptor,
   InlineNode,
   LazyTokenizationPriority,
-  SyntaxRuleSpec,
-  TokenLineV1,
+  SyntaxExtensionDescriptor,
 } from "@stream-mdx/core";
+import type { FinalizeResult } from "@stream-mdx/protocol";
 import type { ContentComponentsMap } from "./components/content-components";
 import type { TrustedMdxEngine } from "./trusted-mdx-contract";
+import type { CodeEngine } from "@stream-mdx/worker/engine";
 import type { ComponentRegistry } from "./components";
 
-export type { HtmlOptions, SyntaxRuleSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
+export type { HtmlOptions, SyntaxRuleSpec, SyntaxExtensionDescriptor, ContainerExtensionSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
+export type { CodeEngine } from "@stream-mdx/worker/engine";
 export { defaultUrlTransform } from "@stream-mdx/core";
 import type {
   TableVirtualizationConfig,
   TableVirtualizationOptions,
 } from "./renderer/virtualized-table";
 export type { TableVirtualizationConfig, TableVirtualizationOptions };
+import type { VirtualizedCodeConfig } from "./renderer/virtualized-code";
+export type { VirtualizedCodeConfig };
 
 export type TableDownloadFormat = "csv" | "tsv" | "markdown";
 export type TableCopyFormat = "tsv" | "markdown";
@@ -85,38 +92,6 @@ export interface ControlsComponentProps {
   children?: React.ReactNode;
 }
 
-export interface CodeFenceRendererProps {
-  code: string;
-  language: string;
-  meta?: Record<string, unknown>;
-  info?: string;
-  isFinalized?: boolean;
-  blockId?: string;
-  renderCode: React.ReactNode;
-  /** Host link handler (honors `linkSafety`). Renderers that surface links, such as artifacts, route clicks through it. */
-  openLink?: (url: string) => void;
-  /** Controls configuration exposed to fence renderers (e.g. copy, download flags) */
-  controls?: {
-    copy?: boolean;
-    download?: boolean;
-    fullscreen?: boolean;
-  };
-  /** Helper to copy the fence raw source code to clipboard */
-  copy?: () => Promise<boolean>;
-  /** Helper to download the fence source code snippet */
-  download?: () => void;
-}
-
-export interface CodeFenceRendererConfig {
-  component: React.ComponentType<CodeFenceRendererProps>;
-  defer?: boolean;
-  /** Extra fence languages (case-insensitive) that resolve to this renderer. */
-  aliases?: string[];
-}
-
-export type CodeFenceRenderer =
-  | React.ComponentType<CodeFenceRendererProps>
-  | CodeFenceRendererConfig;
 
 export interface ElementFilterDescriptor {
   tagName: string;
@@ -148,19 +123,12 @@ export interface ElementFilterOptions {
   disableAutolinkProtocols?: string[];
 }
 
-export interface MathRendererProps {
-  tex: string;
-  display?: boolean;
-  className?: string;
+
+
+/** Math rendering policy. Expressions are isolated unless a document scope is explicitly selected. */
+export interface MathOptions {
+  macroScope?: "document";
 }
-
-export type MathRenderer =
-  | React.ComponentType<MathRendererProps>
-  | {
-      inline?: React.ComponentType<{ tex: string; className?: string }>;
-      display?: React.ComponentType<{ tex: string; className?: string }>;
-    };
-
 export type GenericComponent = React.ComponentType<any>;
 
 export interface TableElements {
@@ -184,28 +152,6 @@ export type InlineHtmlRenderer = (
 
 export type InlineHtmlRendererMap = Record<string, InlineHtmlRenderer>;
 
-export interface BlockComponents {
-  paragraph: React.FC<{ inlines: InlineNode[]; raw?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
-  heading: React.FC<{ level: 1 | 2 | 3 | 4 | 5 | 6; inlines: InlineNode[]; text?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
-  code: React.FC<{
-    html: string;
-    meta?: Record<string, unknown>;
-    lines?: ReadonlyArray<{ id: string; index: number; text: string; html?: string | null; tokens?: TokenLineV1 | null }>;
-    lang?: string;
-    preAttrs?: Record<string, string>;
-    codeAttrs?: Record<string, string>;
-    /** Prepared renderer-owned children, placed once inside the default semantic code element. */
-    children?: React.ReactNode;
-  }>;
-  blockquote: React.FC<{ inlines: InlineNode[]; renderedContent?: React.ReactNode }>;
-  list: React.FC<{ ordered: boolean; items: InlineNode[][] }>;
-  html: React.FC<{ __trustedHtml: TrustedHTML | string; elements?: Record<string, GenericComponent>; isSanitized?: boolean; literalTagContent?: string[]; children?: React.ReactNode }>;
-  mdx: React.FC<{ raw?: string; meta?: Record<string, unknown> }>;
-  hr: React.FC<React.HTMLAttributes<HTMLHRElement>>;
-  table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;
-  [k: string]: GenericComponent;
-}
-
 export type InlineComponents = Record<string, GenericComponent> & {
   text: React.FC<{ text: string }>;
   strong: React.FC<{ children: React.ReactNode }>;
@@ -217,12 +163,166 @@ export type InlineComponents = Record<string, GenericComponent> & {
   br: React.FC<Record<string, never>>;
 };
 
-export interface FinalizedBlockRenderProps {
-  block: Block;
-  element: React.ReactElement;
+export type NativeNodeKey =
+  | "paragraph"
+  | "heading"
+  | "code"
+  | "blockquote"
+  | "list"
+  | "list-item"
+  | "list-item-ordered"
+  | "list-item-unordered"
+  | "table"
+  | "table-row"
+  | "table-cell"
+  | "html"
+  | "mdx"
+  | "hr"
+  | "footnotes"
+  | "footnote-def"
+  | "callout";
+
+export type NodePresentationKey =
+  | NativeNodeKey
+  | `inline:${string}`
+  | `html:${string}`
+  | `component:${string}`
+  | `extension:${string}`;
+
+export interface NodeChildRange {
+  readonly from: number;
+  readonly to: number;
 }
 
-export type BlockRendererOverride = (props: FinalizedBlockRenderProps) => React.ReactNode;
+export interface NodeHandleMetadata {
+  readonly id: string;
+  readonly type: string;
+  readonly generation: number;
+  readonly revision: number;
+  readonly childCount: number;
+  readonly isFinalized: boolean;
+}
+
+/** Opaque read-only identity and subscriptions for one node in one document generation. */
+export interface NodeHandle {
+  readonly id: string;
+  readonly type: string;
+  readonly generation: number;
+  readonly readMetadata: () => NodeHandleMetadata;
+  readonly readChildren: (range: NodeChildRange) => readonly NodeHandle[];
+  readonly subscribeMetadata: (listener: () => void) => () => void;
+  readonly subscribeChildren: (range: NodeChildRange, listener: () => void) => () => void;
+}
+
+export interface NodeViewMetadata {
+  readonly id: string;
+  readonly type: string;
+  readonly isFinalized: boolean;
+  readonly language?: string;
+  readonly lineCount?: number;
+  readonly rowCount?: number;
+  readonly columnCount?: number;
+  readonly align?: ReadonlyArray<"left" | "center" | "right" | null>;
+  readonly linkReferences?: ReadonlyArray<BlockResolvedLinkReference>;
+}
+
+export interface NodeViewActions {
+  readonly readSource: () => string;
+  readonly copy: () => Promise<boolean>;
+  readonly download: () => void;
+}
+
+/** An L1 wrapper receives the already-prepared native view as its children. */
+export interface NodeViewProps {
+  readonly children: React.ReactNode;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
+export interface InlineNodeViewProps {
+  readonly node: InlineNode;
+  /** Prepared native children; math nodes expose their engine-rendered view here. */
+  readonly children?: React.ReactNode;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
+export interface HtmlNodeViewProps {
+  readonly tagName: string;
+  /** Sanitized, URL-transformed native attributes. */
+  readonly properties: Readonly<Record<string, unknown>>;
+  readonly children?: React.ReactNode;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
+export type HeadlessNodeViewProps<K extends NodePresentationKey = NodePresentationKey> =
+  K extends "code"
+    ? { readonly handle: CodeNodeHandle }
+    : K extends "table"
+      ? { readonly handle: TableNodeHandle }
+      : K extends `inline:${string}` | `extension:${string}`
+        ? InlineNodeViewProps
+        : K extends `html:${string}`
+          ? HtmlNodeViewProps
+          : { readonly handle: NodeHandle };
+
+export interface PresentationProps {
+  readonly className?: string;
+  readonly style?: React.CSSProperties;
+  readonly title?: string;
+  readonly [name: `data-${string}`]: string | number | boolean | undefined;
+  readonly [name: `aria-${string}`]: string | number | boolean | undefined;
+}
+
+export interface NativeActionSlot {
+  readonly actions?: React.ReactNode;
+}
+
+type NodePresentationSlots<K extends NodePresentationKey> =
+  K extends "code" | "table" ? NativeActionSlot : never;
+
+export type NodePresentation<K extends NodePresentationKey = NodePresentationKey> =
+  Readonly<{
+    props?: PresentationProps;
+    slots?: NodePresentationSlots<K>;
+  }> &
+  (
+    [K] extends ["table-row" | "table-cell" | `component:${string}`]
+      ? { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
+      :
+          | { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
+          | { readonly view: React.ComponentType<HeadlessNodeViewProps<K>>; readonly wrapper?: never }
+  );
+
+export type NodePresentations = Partial<{
+  [K in NodePresentationKey]: NodePresentation<K>;
+}>;
+
+
+
+
+export type MathEngineOutput = React.ReactNode;
+
+/** Synchronous renderer for TeX content on the main thread. */
+export interface MathEngine {
+  readonly id: string;
+  render(tex: string, options: { displayMode: boolean }): MathEngineOutput;
+}
+
+/** Input supplied by the native code owner to an opt-in Mermaid presentation engine. */
+export interface MermaidEngineProps {
+  readonly source: string;
+  readonly children: React.ReactNode;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
+/** Main-thread diagram presentation for Mermaid code fences. */
+export interface MermaidEngine {
+  readonly id: string;
+  readonly view: React.ComponentType<MermaidEngineProps>;
+}
 
 export interface RendererConfig extends ElementFilterOptions {
   themes?: { light: string; dark: string };
@@ -236,7 +336,11 @@ export interface RendererConfig extends ElementFilterOptions {
   };
   contentPolicy?: ContentPolicy;
   contentComponents?: ContentComponentsMap;
+  components?: NodePresentations;
   engines?: {
+    code?: CodeEngine;
+    math?: MathEngine;
+    mermaid?: MermaidEngine;
     mdx?: TrustedMdxEngine;
   };
   plugins?: {
@@ -254,13 +358,11 @@ export interface RendererConfig extends ElementFilterOptions {
     emitHighlightTokens?: boolean;
     emitDiffBlocks?: boolean;
   };
-  codeRenderers?: Record<string, CodeFenceRenderer>;
-  mathRenderer?: MathRenderer;
-  blockRenderer?: BlockRendererOverride;
-  syntax?: SyntaxRuleSpec[];
+  syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   urlTransform?: (url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined;
   tableVirtualization?: TableVirtualizationOptions;
+  codeVirtualization?: Partial<VirtualizedCodeConfig>;
   performance?: {
     frameBudgetMs?: number;
     flushTimeoutMs?: number;
@@ -295,13 +397,9 @@ export interface Renderer {
   attachWorker(worker: Worker, options?: { skipInit?: boolean }): void;
   /** Resolve after the attached worker supplies its matching initial root, before queued source dispatch. */
   whenInitialized(): Promise<void>;
-  append(text: string): void;
+  finalize(): Promise<FinalizeResult>;
   renderStatic(text: string): Promise<Block[]>;
   onUpdate(cb: (blocks: ReadonlyArray<Block>) => void): () => void;
-  setBlockComponents(map: Partial<BlockComponents>): void;
-  setInlineComponents(map: Partial<InlineComponents>): void;
-  setCodeRenderers(map: Record<string, CodeFenceRenderer>): void;
-  setMathRenderer(renderer: MathRenderer): void;
   setTableVirtualization(options: TableVirtualizationOptions): void;
   getComponentRegistry(): ComponentRegistry;
   getStore(): RendererStore;

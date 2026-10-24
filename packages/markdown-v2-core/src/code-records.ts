@@ -1,5 +1,6 @@
 import type { DiffLineKind, TokenStyle } from "./types";
 
+
 export type CodeTokenSpan = {
   readonly t: string;
   readonly v?: {
@@ -9,18 +10,41 @@ export type CodeTokenSpan = {
   readonly s?: Readonly<TokenStyle>;
 };
 
+export type CodeDiffTokenLine = {
+  readonly old: CodeTokenLine | null;
+  readonly new: CodeTokenLine | null;
+};
+
 export type CodeTokenLine = {
   readonly spans: readonly CodeTokenSpan[];
 };
 
-export interface CodeLineDecoration {
+interface CodeLineDecorationBase {
   readonly index: number;
   readonly lineId: string;
   readonly sourceRevision: number;
   readonly configurationRevision: number;
-  readonly exactness: "exact" | "isolated";
-  readonly tokens: CodeTokenLine;
 }
+
+export type HighlightUnavailableReason =
+  | "missing_context"
+  | "stale_generation"
+  | "evicted_checkpoint_no_source"
+  | "source_mismatch";
+
+export type CodeLineDecoration = CodeLineDecorationBase & (
+  | {
+      readonly exactness: "exact" | "isolated";
+      readonly tokens: CodeTokenLine;
+      readonly diffTokens?: CodeDiffTokenLine;
+    }
+  | {
+      readonly exactness: "unavailable";
+      readonly tokens: null;
+      readonly reason: HighlightUnavailableReason;
+    }
+);
+
 
 export type CodeLineDecorationUpdate =
   | CodeLineDecoration
@@ -760,7 +784,7 @@ class PersistentCodeLineIndex implements CodeLineIndex {
       if (current === undefined || current.id !== decoration.lineId || current.sourceRevision !== decoration.sourceRevision) {
         continue;
       }
-      const clearDecoration = decoration.tokens === null;
+      const clearDecoration = decoration.tokens === null && !("exactness" in decoration);
       if (clearDecoration) {
         if (
           current.decoration === undefined ||

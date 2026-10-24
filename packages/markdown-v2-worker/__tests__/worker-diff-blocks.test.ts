@@ -34,9 +34,10 @@ async function runDiffBlocksTest(): Promise<void> {
     "index 123..456 100644",
     "--- a/foo.ts",
     "+++ b/foo.ts",
-    "@@ -1,1 +1,1 @@",
+    "@@ -1,1 +1,2 @@",
     "-const a = 1;",
     "+const a = 2;",
+    "++x",
     "```",
     "",
   ].join("\n");
@@ -63,7 +64,7 @@ async function runDiffBlocksTest(): Promise<void> {
   const [first] = diffBlocks;
   assert.strictEqual(first?.filePath, "foo.ts");
   assert.strictEqual(first?.language, "typescript");
-  assert.strictEqual(first?.additions, 1);
+  assert.strictEqual(first?.additions, 2);
   assert.strictEqual(first?.deletions, 1);
 
   const addLine = first?.lines.find((line) => line.kind === "add");
@@ -77,6 +78,13 @@ async function runDiffBlocksTest(): Promise<void> {
   const delTokens = delLine?.tokens ? delLine.tokens.map((token) => token.content).join("") : "";
   assert.strictEqual(addTokens, "const a = 2;");
   assert.strictEqual(delTokens, "const a = 1;");
+  const literalPlusLine = first?.lines.find((line) => line.kind === "add" && line.raw === "++x");
+  assert.ok(literalPlusLine, "expected an addition whose authored content begins with a plus");
+  assert.strictEqual(
+    literalPlusLine.tokens?.map((token) => token.content).join(""),
+    "+x",
+    "the diff presentation must strip only the diff marker, not a literal leading plus",
+  );
 }
 
 await runDiffBlocksTest();

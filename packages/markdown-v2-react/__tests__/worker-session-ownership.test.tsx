@@ -63,7 +63,7 @@ async function ownershipLifecycle(kind: "url" | "factory" | "default" | "inline"
   const source: StreamingMarkdownProps["worker"] = kind === "url" ? new URL("https://example.test/worker.js")
     : kind === "factory" ? () => { const worker = new FakeWorker(); created.push(worker); return worker; }
     : kind === "borrowed" ? borrowed : undefined;
-  const engine: MarkdownEngineMode = kind === "inline" ? "main-thread" : "worker";
+  const engine: MarkdownEngineMode = kind === "inline" ? "main" : "worker";
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
@@ -157,8 +157,8 @@ async function managedBoundaryErrors(): Promise<void> {
     { source: undefined, engine: "worker" },
     { source: new URL("https://example.test/worker.js"), engine: "auto" },
     { source: "/worker.js", engine: "worker" },
-    { source: new FakeWorker(), engine: "main-thread" },
-    { source: () => new FakeWorker(), engine: "main-thread" },
+    { source: new FakeWorker(), engine: "main" },
+    { source: () => new FakeWorker(), engine: "main" },
   ];
   for (const { source, engine } of forbiddenCases) {
     let factoryCalls = 0;

@@ -5,12 +5,12 @@ import type { RendererStateSnapshot, StreamingSchedulerOptions, StreamingMarkdow
 import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
 import { useCallback, useEffect, useMemo, useRef, useState, type ElementType } from "react";
 
-import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
-import { components as mdxComponents } from "@/mdx-components";
-import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
+import { SourceCapacityError, StreamingMarkdown, type AppendResult, type FinalizeResult, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { components as trustedMdxElements } from "@/mdx-components";
+import { createDemoComponents } from "@/lib/streaming-demo-registry";
 
 const regressionMdxEngine = createTrustedMdxEngine({
-  components: mdxComponents as Readonly<Record<string, ElementType>>,
+  components: trustedMdxElements as Readonly<Record<string, ElementType>>,
 });
 const regressionMdxEngines = { mdx: regressionMdxEngine };
 
@@ -34,6 +34,9 @@ const DEFAULT_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   codeHighlighting: "incremental",
   liveCodeHighlighting: false,
 };
+
+// Snapshots and progress invariants compare full rendered code text; the bounded code viewport has its own browser smoke.
+const FULL_CODE_CONTENT = { enabled: false } as const;
 
 const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
   batch: "microtask",
@@ -344,6 +347,7 @@ export function HtmlRegressionHarness(): JSX.Element {
       if (!data || typeof data !== "object") return;
       if (data.type === "INITIALIZED") {
         lifecycle.initialized = true;
+        lifecycle.finalized = false;
         pushEvent("INITIALIZED", `rootChildren=${Array.isArray(data.snapshot?.children) ? data.snapshot.children.length : 0}`);
       } else if (data.type === "FINALIZED") {
         lifecycle.finalized = true;
@@ -392,19 +396,7 @@ export function HtmlRegressionHarness(): JSX.Element {
 
     return worker;
   }, []);
-  const tableElements = useMemo(() => createDemoTableElements(), []);
-  const htmlElements = useMemo(() => createDemoHtmlElements(), []);
-
-  const registry = useMemo(() => {
-    const next = new ComponentRegistry();
-    configureDemoRegistry({
-      registry: next,
-      tableElements,
-      htmlElements,
-      showCodeMeta: config.showCodeMeta,
-    });
-    return next;
-  }, [tableElements, htmlElements, config.showCodeMeta]);
+  const demoComponents = useMemo(() => createDemoComponents(config.showCodeMeta), [config.showCodeMeta]);
 
   useEffect(() => {
     instanceKeyRef.current = instanceKey;
@@ -482,6 +474,27 @@ export function HtmlRegressionHarness(): JSX.Element {
         await Promise.race([handle.waitForIdle(), timeoutPromise]);
       } finally {
         if (timer !== undefined) window.clearTimeout(timer);
+      }
+    };
+    const waitForCapacityWithTimeout = async (
+      handle: StreamingMarkdownHandle,
+      units: number,
+      timeoutMs = FLUSH_TIMEOUT_MS,
+    ): Promise<void> => {
+      const controller = new AbortController();
+      let timer: number | undefined;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timer = window.setTimeout(() => {
+          const error = new Error(`[waitForCapacity] Source admission capacity did not open within ${timeoutMs}ms.`);
+          controller.abort(error);
+          reject(error);
+        }, timeoutMs);
+      });
+      try {
+        await Promise.race([handle.waitForCapacity({ units, signal: controller.signal }), timeoutPromise]);
+      } finally {
+        if (timer !== undefined) window.clearTimeout(timer);
+        if (!controller.signal.aborted) controller.abort(new Error("Source admission capacity wait completed."));
       }
     };
     const waitForWorkerContentLength = (
@@ -668,10 +681,32 @@ export function HtmlRegressionHarness(): JSX.Element {
 
         const prevPatchCount = workerLifecycleRef.current.patchEventCount;
         const prevVersion = handle.getState().rendererVersion;
-        const expectedContentLength = expectedContentLengthRef.current + chunk.length;
-        expectedContentLengthRef.current = expectedContentLength;
-
-        handle.append(chunk);
+        let expectedContentLength = expectedContentLengthRef.current;
+        for (let offset = 0; offset < chunk.length;) {
+          const part = chunk.slice(offset, offset + 65_536);
+          let admission: AppendResult;
+          while (true) {
+            try {
+              admission = handle.append(part);
+              break;
+            } catch (error) {
+              if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+              await waitForCapacityWithTimeout(handle, part.length);
+            }
+          }
+          const acceptedContentLength = expectedContentLength + part.length;
+          if (admission.acceptedSourceUnits !== acceptedContentLength) {
+            throw new Error(
+              `[appendAndFlush] Host admitted ${admission.acceptedSourceUnits} source units; expected ${acceptedContentLength}.`,
+            );
+          }
+          offset += part.length;
+          expectedContentLength = acceptedContentLength;
+          expectedContentLengthRef.current = expectedContentLength;
+          if (admission.shouldPause && offset < chunk.length) {
+            await waitForCapacityWithTimeout(handle, Math.min(65_536, chunk.length - offset));
+          }
+        }
         await waitForWorkerContentLength(worker, handle, rendererKey, expectedContentLength, FLUSH_TIMEOUT_MS);
 
         const hadNewPatches = workerLifecycleRef.current.patchEventCount > prevPatchCount;
@@ -709,6 +744,24 @@ export function HtmlRegressionHarness(): JSX.Element {
               `).`,
           );
         }
+        const rendererKey = activeInstanceKeyRef.current;
+        const worker = workerRef.current;
+        const lifecycle = workerLifecycleRef.current;
+        if (!worker || rendererKey === null || rendererKey !== instanceKeyRef.current) {
+          throw new Error("[finalizeAndFlush] Worker/renderer absent or replaced before finalization.");
+        }
+        const assertCurrentRenderer = () => {
+          if (
+            workerRef.current !== worker ||
+            handleRef.current !== handle ||
+            activeInstanceKeyRef.current !== rendererKey ||
+            instanceKeyRef.current !== rendererKey ||
+            workerLifecycleRef.current !== lifecycle
+          ) {
+            throw new Error("[finalizeAndFlush] Renderer replaced before finalization completed.");
+          }
+        };
+        assertCurrentRenderer();
         if (workerLifecycleRef.current.errors.length > 0) {
           throw new Error(
             `[finalizeAndFlush] Worker error prior to finalize: ${workerLifecycleRef.current.errors.join("; ")}`,
@@ -720,13 +773,36 @@ export function HtmlRegressionHarness(): JSX.Element {
           );
         }
         const prevVersion = handle.getState().rendererVersion;
-        handle.finalize();
-        handle.flushPending();
-
-        // Require real FINALIZED from the worker for final drain
         const finalizeStart = Date.now();
         const finalizeTimeoutMs = 15000;
-        while (!workerLifecycleRef.current.finalized) {
+        const finalizeTimeout = Promise.withResolvers<never>();
+        const finalizeTimer = window.setTimeout(() => {
+          finalizeTimeout.reject(new Error(
+            `[finalizeAndFlush] Host finalize barrier did not resolve within ${finalizeTimeoutMs}ms (` +
+              `fixture=${meta.fixtureId ?? "unknown"}, scenario=${meta.scenarioId ?? "unknown"}, seed=${meta.seed ?? "baseline"}` +
+              `).`,
+          ));
+        }, finalizeTimeoutMs);
+        let finalizationResult: FinalizeResult;
+        try {
+          finalizationResult = await Promise.race([handle.finalize(), finalizeTimeout.promise]);
+          assertCurrentRenderer();
+        } finally {
+          window.clearTimeout(finalizeTimer);
+        }
+        if (
+          finalizationResult.acceptedSourceUnits !== expectedContentLengthRef.current ||
+          finalizationResult.committedSourceUnits !== finalizationResult.acceptedSourceUnits
+        ) {
+          throw new Error(
+            `[finalizeAndFlush] Host barrier covered ${finalizationResult.committedSourceUnits}/${finalizationResult.acceptedSourceUnits} source units; expected ${expectedContentLengthRef.current}.`,
+          );
+        }
+        handle.flushPending();
+
+        // Require the independently observed worker FINALIZED before final drain.
+        while (!lifecycle.finalized) {
+          assertCurrentRenderer();
           if (workerLifecycleRef.current.errors.length > 0) {
             throw new Error(
               `[finalizeAndFlush] Worker error while waiting for FINALIZED: ${workerLifecycleRef.current.errors.join("; ")}`,
@@ -749,6 +825,7 @@ export function HtmlRegressionHarness(): JSX.Element {
         await waitForStableVersion(handle, { stableFrames: 3, timeoutMs: 3000 });
         await waitForLazyCodeCompletion(handle, { timeoutMs: 5000 });
         await waitForStableVersion(handle, { stableFrames: 3, timeoutMs: 3000 });
+        assertCurrentRenderer();
 
         // Assert store readiness
         const state = handle.getState();
@@ -760,6 +837,7 @@ export function HtmlRegressionHarness(): JSX.Element {
 
         await nextFrame();
         await nextFrame();
+        assertCurrentRenderer();
       },
       restart() {
         // A new keyed renderer makes readiness wait for the replacement worker's INITIALIZED event.
@@ -959,6 +1037,8 @@ export function HtmlRegressionHarness(): JSX.Element {
     <div className="prose">
       <div id="regression-root" ref={rootRef} data-fixture="" data-scenario="">
         <StreamingMarkdown
+          engine="worker"
+          codeVirtualization={FULL_CODE_CONTENT}
           key={instanceKey}
           ref={handleInstanceRef}
           worker={createHarnessWorker}
@@ -967,10 +1047,7 @@ export function HtmlRegressionHarness(): JSX.Element {
           scheduling={config.scheduling}
           contentPolicy={config.contentPolicy}
           engines={config.contentPolicy === "trusted-mdx" ? regressionMdxEngines : undefined}
-          components={registry.getBlockComponentMap()}
-          inlineComponents={registry.getInlineComponentMap()}
-          tableElements={tableElements}
-          htmlElements={htmlElements}
+          components={demoComponents}
           onError={handleStreamingError}
         />
       </div>

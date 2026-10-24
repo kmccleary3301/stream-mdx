@@ -374,6 +374,93 @@ async function main() {
   ]);
   assert.strictEqual(sameTxStore.getNode("paragraph-block")?.block?.payload.raw, "omega", "the same transaction's replace applies");
   assert.strictEqual(sameTxStore.getDebugCounters().staleEpochRejected, 0);
+
+  const replayStore = createRendererStore([createParagraphBlock("initial paragraph")]);
+  const replayInitial = replayStore.getNode("paragraph-block");
+  assert.ok(replayInitial, "expected the paragraph before semantic envelope replay");
+  const matchingEpoch = replayInitial.blockEpoch;
+  const olderEnvelopeMeta = {
+    kind: "semantic",
+    streamSeq: 401,
+    parseEpoch: matchingEpoch,
+    tx: 401,
+    blockEpoch: matchingEpoch,
+  } as const;
+  const olderEnvelope: Patch[] = [
+    {
+      op: "finalize",
+      at: { blockId: "paragraph-block" },
+      meta: olderEnvelopeMeta,
+    },
+    {
+      op: "replaceChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index: 0,
+      node: createBlockSnapshot({ ...createParagraphBlock("older paragraph value"), isFinalized: true }),
+      meta: olderEnvelopeMeta,
+    },
+  ];
+  replayStore.applyPatches(olderEnvelope);
+  assert.strictEqual(
+    replayStore.getBlocks()[0]?.payload.raw,
+    "older paragraph value",
+    "both same-tuple patches in one semantic envelope should apply",
+  );
+
+  replayStore.applyPatches([
+    {
+      op: "replaceChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index: 0,
+      node: createBlockSnapshot({ ...createParagraphBlock("newest paragraph value"), isFinalized: true }),
+      meta: {
+        kind: "semantic",
+        streamSeq: 402,
+        parseEpoch: matchingEpoch,
+        tx: 402,
+        blockEpoch: matchingEpoch,
+      },
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(
+    replayStore.getBlocks()[0]?.payload.raw,
+    "newest paragraph value",
+    "the newer semantic envelope should become the observed content",
+  );
+
+  replayStore.applyPatches(olderEnvelope);
+  assert.strictEqual(
+    replayStore.getBlocks()[0]?.payload.raw,
+    "newest paragraph value",
+    "replaying an older semantic envelope must not revert the newest paragraph value",
+  );
+  const cycleStore = createRendererStore([createParagraphBlock("cycle-safe paragraph")]);
+  const cycleParent = cycleStore.getNode("paragraph-block");
+  assert.ok(cycleParent, "expected parent before attempting a cyclic child insertion");
+  cycleStore.applyPatches([
+    {
+      op: "insertChild",
+      at: { blockId: "paragraph-block", nodeId: "paragraph-block" },
+      index: 0,
+      node: {
+        id: "paragraph-block",
+        type: "paragraph-text",
+        props: { text: "must not replace its own parent" },
+        children: [],
+      },
+      meta: { kind: "semantic", blockEpoch: cycleParent.blockEpoch, parseEpoch: cycleParent.blockEpoch + 1, tx: 501 },
+    } satisfies Patch,
+  ]);
+  const afterCycleRejection = cycleStore.getNode("paragraph-block");
+  assert.equal(afterCycleRejection?.type, "paragraph", "a self-parenting child patch must not replace its parent");
+  assert.deepEqual(afterCycleRejection?.children, [], "a self-parenting child patch must not add a child");
+  assert.ok(
+    cycleStore.getInvariantViolations().some((message) =>
+      message.includes("parent cycle rejected:insertChild:paragraph-block"),
+    ),
+    "a self-parenting child patch must be rejected and reported",
+  );
+
 }
 
 await main();

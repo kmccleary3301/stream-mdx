@@ -15,6 +15,7 @@ const inputs = [
   "- item\n\n  ```ts\n  const a = 1;\n  const b = 2;\n  ```\n\nafter\n",
   "> - one\n> - two\n>\n> para\n",
   "    const value = \"a\";\n    return value",
+  "```ts\nconst value = 1;",
   "| key | value |\n| :--- | ---: |\n| row0 | a |\n",
 ] as const;
 
@@ -28,7 +29,7 @@ function render(blocks: Block[], store: RendererStore): string {
   return renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks, store }));
 }
 
-async function runCase(markdown: string, chunks: string[], label: string): Promise<void> {
+async function runCase(markdown: string, chunks: string[], label: string, finalize = true): Promise<void> {
   const store = createRendererStore();
   let document = createInitialSnapshot();
   const engine = new MarkdownEngine({
@@ -69,15 +70,23 @@ async function runCase(markdown: string, chunks: string[], label: string): Promi
       },
     });
     for (const chunk of chunks) await engine.handle({ type: "APPEND", text: chunk });
-    await engine.handle({ type: "FINALIZE" });
+    if (finalize) await engine.handle({ type: "FINALIZE" });
 
     const liveBlocks = store.getBlocks();
     const coldStore = createRendererStore(JSON.parse(JSON.stringify(liveBlocks)) as Block[]);
+    const coldMarkup = render(coldStore.getBlocks(), coldStore);
+    const liveMarkup = render(liveBlocks, store);
     assert.equal(
-      render(coldStore.getBlocks(), coldStore),
-      render(liveBlocks, store),
+      coldMarkup,
+      liveMarkup,
       `${label}: JSON-reset export must render the same static markup as the live store`,
     );
+    if (markdown === "```ts\nconst value = 1;") {
+      assert.doesNotMatch(coldMarkup, /data-provisional="true"/, "finalized EOF code lines render settled after a cold export");
+      assert.doesNotMatch(liveMarkup, /data-provisional="true"/, "finalized EOF code lines render settled in the live store");
+    } else if (!finalize) {
+      assert.match(coldMarkup, /data-provisional="true"/, "still-streaming open-fence code lines remain provisional after a cold export");
+    }
   } finally {
     engine.dispose();
   }
@@ -87,5 +96,6 @@ for (const [index, markdown] of inputs.entries()) {
   await runCase(markdown, splitEvery(markdown, 3), `input ${index + 1}, 3-character chunks`);
   await runCase(markdown, [markdown], `input ${index + 1}, whole input`);
 }
+await runCase("```ts\nconst streaming = 1;", ["```ts\nconst streaming = 1;"], "still-streaming open fence", false);
 
 console.log("cold-export parity test passed");

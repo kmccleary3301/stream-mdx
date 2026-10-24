@@ -7,9 +7,10 @@ import { JSDOM } from "jsdom";
 import { createRoot } from "react-dom/client";
 import rehypeSlug from "rehype-slug";
 import { visit } from "unist-util-visit";
-import type { Block, WorkerOut } from "@stream-mdx/core";
+import type { Block, CodeNodeHandle, WorkerOut } from "@stream-mdx/core";
 import type { Node } from "unist";
-import { MarkdownBlocksRenderer, createRendererStore } from "@stream-mdx/react";
+import { MarkdownBlocksRenderer, createRendererStore, type NodePresentations, type NodeViewProps } from "@stream-mdx/react";
+import type { UnifiedBlockErrorContext } from "../src";
 import { MarkdownEngine, createInlineEngineWorker } from "../../markdown-v2-worker/src/engine";
 import { createUnifiedRenderer } from "../src";
 
@@ -108,7 +109,7 @@ async function runTests() {
     assert.strictEqual(heading?.payload.raw, "## Quick Start Guide");
     assert.strictEqual(heading?.payload.meta?.headingLevel, 2);
     const html = ReactDOMServer.renderToStaticMarkup(
-      React.createElement(MarkdownBlocksRenderer, { blocks, blockRenderer: unifiedRenderer }),
+      React.createElement(MarkdownBlocksRenderer, { blocks, components: unifiedRenderer }),
     );
     assert.match(html, /id="quick-start-guide"/, "Finalized heading should have slugified id");
     assert.match(html, />Quick Start Guide<\/h2>/, "Heading text should match");
@@ -133,11 +134,48 @@ async function runTests() {
     console.log("✓ Test 1 passed: Finalized heading received id attribute from rehype-slug synchronously");
   }
 
+  // Node presentations use the same finalized block dispatch as streaming.
+  {
+    const blocks = await compileBlocks("## Shared presentation");
+    const heading = blocks.find((block) => block.type === "heading");
+    assert.ok(heading, "the finalized heading is available for presentation");
+    const components = {
+      heading: {
+        wrapper: ({ children, metadata }: NodeViewProps) => (
+          <section data-unified-heading data-finalized={metadata.isFinalized}>{children}</section>
+        ),
+      },
+    } satisfies NodePresentations;
+    const unifiedRenderer = createUnifiedRenderer({ components });
+    const html = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(MarkdownBlocksRenderer, { blocks: [heading], components: unifiedRenderer }),
+    );
+    assert.match(html, /<section data-unified-heading="true" data-finalized="true"><h2>Shared presentation<\/h2><\/section>/);
+  }
+
+  // A headless code presentation replaces the unified renderer's prepared native output.
+  {
+    const blocks = await compileBlocks("```text\nfirst line\nsecond line\n```");
+    const code = blocks.find((block) => block.type === "code");
+    assert.ok(code, "the finalized code block is available for presentation");
+    const CodeView: React.FC<{ readonly handle: CodeNodeHandle }> = ({ handle }) => (
+      <output data-unified-code-view>{handle.readSource()}</output>
+    );
+    const components = {
+      code: { view: CodeView },
+    } satisfies NodePresentations;
+    const renderer = createUnifiedRenderer({ components });
+    const html = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(MarkdownBlocksRenderer, { blocks: [code], components: renderer }),
+    );
+    assert.match(html, /<output data-unified-code-view="true">```text\nfirst line\nsecond line\n```<\/output>/);
+  }
+
   // Test 3: late reference definitions reach the cold export and unified renderer
   {
     console.log("Test 3: late reference definitions reach the cold export...");
     const unifiedRenderer = createUnifiedRenderer({
-      components: {
+      hastComponents: {
         a: (props) => React.createElement("a", { ...props, className: "custom-ref-link" }),
       },
     });
@@ -161,7 +199,7 @@ async function runTests() {
       node.kind === "link" && node.href === "https://stream-mdx.dev" && node.title === "Official Docs",
     ), "Cold export also carries the resolved reference in inline owner data");
     const html = ReactDOMServer.renderToStaticMarkup(
-      React.createElement(MarkdownBlocksRenderer, { blocks, blockRenderer: unifiedRenderer }),
+      React.createElement(MarkdownBlocksRenderer, { blocks, components: unifiedRenderer }),
     );
     assert.match(
       html,
@@ -197,7 +235,7 @@ async function runTests() {
     const staticHtml = ReactDOMServer.renderToStaticMarkup(
       React.createElement(MarkdownBlocksRenderer, {
         blocks: staticBlocks,
-        blockRenderer: createUnifiedRenderer(options),
+        components: createUnifiedRenderer(options),
       }),
     );
     const staticContainer = document.createElement("div");
@@ -230,7 +268,7 @@ async function runTests() {
       root.render(React.createElement(MarkdownBlocksRenderer, {
         blocks: [],
         store,
-        blockRenderer: createUnifiedRenderer(options),
+        components: createUnifiedRenderer(options),
       }));
       worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", prewarmLangs: [] });
       await waitUntil(() => initialized || failure !== undefined, "INITIALIZED");
@@ -289,7 +327,7 @@ async function runTests() {
     const blocks = await compileBlocks("Cached **paragraph**");
     const renderer = createUnifiedRenderer({ remarkPlugins: [remarkUppercase] });
     const [first, second] = [0, 1].map(() => ReactDOMServer.renderToStaticMarkup(
-      React.createElement(MarkdownBlocksRenderer, { blocks, blockRenderer: renderer }),
+      React.createElement(MarkdownBlocksRenderer, { blocks, components: renderer }),
     ));
     assert.match(first, /CACHED <strong>PARAGRAPH<\/strong>/);
     assert.strictEqual(second, first, "Repeated consumer render must retain transformed output");
@@ -323,15 +361,17 @@ async function runTests() {
       id: "p-promise-test",
       type: "paragraph",
       isFinalized: true,
-      payload: { raw: "Standard promise paragraph" },
+      payload: {
+        raw: "Standard promise paragraph",
+        inline: [{ kind: "text", text: "Standard promise paragraph" }],
+      },
     };
 
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
 
-    const defaultElement = React.createElement("p", null, "Standard promise paragraph");
-    root.render(unifiedRenderer({ block, element: defaultElement }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [block], components: unifiedRenderer }));
 
     // While pending, default element is shown
     await delay(5);
@@ -375,15 +415,14 @@ async function runTests() {
       id: "p-callback-test",
       type: "paragraph",
       isFinalized: true,
-      payload: { raw: "Callback transformer text" },
+      payload: { raw: "Callback transformer text", inline: [{ kind: "text", text: "Callback transformer text" }] },
     };
 
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
 
-    const defaultElement = React.createElement("p", null, "Callback transformer text");
-    root.render(unifiedRenderer({ block, element: defaultElement }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [block], components: unifiedRenderer }));
 
     // Pending state shows default element
     await delay(5);
@@ -428,28 +467,27 @@ async function runTests() {
       id: "p-single-invoc",
       type: "paragraph",
       isFinalized: true,
-      payload: { raw: "Exact count test" },
+      payload: { raw: "Exact count test", inline: [{ kind: "text", text: "Exact count test" }] },
     };
 
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
 
-    const defaultElement = React.createElement("p", null, "Exact count test");
 
     // Initial render initiates job
-    root.render(unifiedRenderer({ block, element: defaultElement }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [block], components: unifiedRenderer }));
 
     // Re-render the same block at 10ms while in-flight
     await delay(10);
-    root.render(unifiedRenderer({ block, element: defaultElement }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [block], components: unifiedRenderer }));
 
     // Wait until completed
     await delay(35);
     assert.strictEqual(container.textContent, "Exact count test [ONE SHOT]");
 
     // Re-render again after completion (hits cache)
-    root.render(unifiedRenderer({ block, element: defaultElement }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [block], components: unifiedRenderer }));
     await delay(10);
     assert.strictEqual(container.textContent, "Exact count test [ONE SHOT]");
 
@@ -469,8 +507,7 @@ async function runTests() {
     console.log(`Test 10: ${callbackError ? "callback error" : "Promise rejection"} fallback...`);
     let failureInvocations = 0;
     let capturedError: Error | null = null;
-    let capturedBlock: Block | null = null;
-
+    let capturedContext: UnifiedBlockErrorContext | null = null;
     function failingAsyncPlugin() {
       return () => {
         failureInvocations += 1;
@@ -491,9 +528,9 @@ async function runTests() {
 
     const unifiedRenderer = createUnifiedRenderer({
       remarkPlugins: [callbackError ? failingCallbackPlugin : failingAsyncPlugin],
-      onError: (err, b) => {
+      onError: (err, context) => {
         capturedError = err;
-        capturedBlock = b;
+        capturedContext = context;
       },
     });
 
@@ -501,23 +538,24 @@ async function runTests() {
       id: "p-fail-test",
       type: "paragraph",
       isFinalized: true,
-      payload: { raw: "Error trigger content" },
+      payload: { raw: "Error trigger content", inline: [{ kind: "text", text: "Error trigger content" }] },
     };
 
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
 
-    const defaultElement = React.createElement("p", null, "Safe fallback default");
-    root.render(unifiedRenderer({ block, element: defaultElement }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [block], components: unifiedRenderer }));
 
     // Wait for failure
     await delay(45);
     assert.ok(capturedError, "onError must be called on plugin failure");
     assert.strictEqual(capturedError?.message, "async failed", "Exact error message must be passed to onError");
-    assert.strictEqual(capturedBlock?.id, "p-fail-test", "Exact block must be passed to onError");
+    assert.strictEqual(capturedContext?.id, "p-fail-test", "Exact block ID must be passed to onError");
+    assert.strictEqual(capturedContext?.type, "paragraph", "Block type must be passed to onError");
+    assert.strictEqual(capturedContext?.finalized, true, "Finalized state must be passed to onError");
     assert.strictEqual(failureInvocations, 1, "Failing plugin must be invoked exactly once (no retry)");
-    assert.strictEqual(container.textContent, "Safe fallback default", "Safe default element is retained");
+    assert.strictEqual(container.textContent, "Error trigger content", "Safe default element is retained");
 
     root.unmount();
     container.remove();
@@ -527,15 +565,30 @@ async function runTests() {
   // Test 11: Key change while pending immediately shows new default, NOT stale previous async result
   {
     console.log("Test 11: Key change while pending immediately shows new default...");
+    function createGate() {
+      let resolve!: () => void;
+      const promise = new Promise<void>((resolvePromise) => {
+        resolve = resolvePromise;
+      });
+      return { promise, resolve };
+    }
+
+    const keyK1 = { started: createGate(), release: createGate(), transformed: createGate() };
+    const keyK2 = { started: createGate(), release: createGate(), transformed: createGate() };
+
     function slowKeyPlugin() {
       return (tree: unknown) => {
-        return new Promise<void>((resolve) => {
-          setTimeout(() => {
-            visit(tree as Node, "text", (node: { value: string }) => {
-              node.value = node.value + " [TRANSFORMED]";
-            });
-            resolve();
-          }, 50);
+        let raw = "";
+        visit(tree as Node, "text", (node: { value: string }) => {
+          raw += node.value;
+        });
+        const gate = raw.includes("Alpha") ? keyK1 : keyK2;
+        gate.started.resolve();
+        return gate.release.promise.then(() => {
+          visit(tree as Node, "text", (node: { value: string }) => {
+            node.value = node.value + " [TRANSFORMED]";
+          });
+          gate.transformed.resolve();
         });
       };
     }
@@ -552,38 +605,55 @@ async function runTests() {
       id: "p-key-switch",
       type: "paragraph",
       isFinalized: true,
-      payload: { raw: "Content Alpha" },
+      payload: { raw: "Content Alpha", inline: [{ kind: "text", text: "Content Alpha" }] },
     };
-    const defaultK1 = React.createElement("p", null, "Default Alpha");
 
-    // Render K1 (triggers 50ms slow async job)
-    root.render(unifiedRenderer({ block: blockK1, element: defaultK1 }));
-    await delay(5);
-    assert.strictEqual(container.textContent, "Default Alpha");
+    const waitForText = (expected: string): Promise<void> => {
+      if (container.textContent === expected) return Promise.resolve();
+      return new Promise<void>((resolve, reject) => {
+        const observer = new dom.window.MutationObserver(() => {
+          if (container.textContent !== expected) return;
+          clearTimeout(timeout);
+          observer.disconnect();
+          resolve();
+        });
+        const timeout = setTimeout(() => {
+          observer.disconnect();
+          reject(new Error(`Timed out waiting for ${JSON.stringify(expected)}`));
+        }, 10000);
+        observer.observe(container, { childList: true, characterData: true, subtree: true });
+      });
+    };
 
-    // At 15ms, while K1 is still pending, key changes to K2
-    await delay(10);
+    // The plugin gate keeps K1 pending until after the key switch.
+    const defaultAlphaVisible = waitForText("Content Alpha");
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [blockK1], components: unifiedRenderer }));
+    await Promise.all([keyK1.started.promise, defaultAlphaVisible]);
+    assert.strictEqual(container.textContent, "Content Alpha");
+
     const blockK2: Block = {
       id: "p-key-switch",
       type: "paragraph",
       isFinalized: true,
-      payload: { raw: "Content Beta" },
+      payload: { raw: "Content Beta", inline: [{ kind: "text", text: "Content Beta" }] },
     };
-    const defaultK2 = React.createElement("p", null, "Default Beta");
 
-    // Rerender with K2
-    root.render(unifiedRenderer({ block: blockK2, element: defaultK2 }));
-    await delay(5);
+    const defaultBetaVisible = waitForText("Content Beta");
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [blockK2], components: unifiedRenderer }));
+    await Promise.all([keyK2.started.promise, defaultBetaVisible]);
 
     // Container MUST immediately show Default Beta, not stale previous pending or async result
     assert.strictEqual(
       container.textContent,
-      "Default Beta",
+      "Content Beta",
       "Key change while pending must immediately display new default element",
     );
 
-    // After K2 completes (at 15ms + 50ms = 65ms total), it displays K2 transformed output
-    await delay(60);
+    keyK1.release.resolve();
+    await keyK1.transformed.promise;
+    const transformedBetaVisible = waitForText("Content Beta [TRANSFORMED]");
+    keyK2.release.resolve();
+    await Promise.all([keyK2.transformed.promise, transformedBetaVisible]);
     assert.strictEqual(
       container.textContent,
       "Content Beta [TRANSFORMED]",
@@ -634,7 +704,7 @@ async function runTests() {
     };
 
     // Step 1: Render with v1 (triggers slow 60ms job)
-    root.render(unifiedRenderer({ block: blockV1, element: React.createElement("p", null, "default") }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [blockV1], components: unifiedRenderer }));
 
     // Step 2: At 15ms, update block to v2 with newer metadata (triggers fast 10ms job)
     await delay(15);
@@ -649,7 +719,7 @@ async function runTests() {
         },
       },
     };
-    root.render(unifiedRenderer({ block: blockV2, element: React.createElement("p", null, "default") }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [blockV2], components: unifiedRenderer }));
 
     // Step 3: At 35ms (15ms + 20ms), v2 has finished
     await delay(20);
@@ -680,7 +750,7 @@ async function runTests() {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
-    root.render(renderer({ block, element: React.createElement("p", null, "default") }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [block], components: renderer }));
     await delay(35);
 
     assert.ok(!container.innerHTML.includes('href="javascript:'), "javascript: link href must be stripped");
@@ -717,7 +787,7 @@ async function runTests() {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
-    root.render(renderer({ block, element: React.createElement("p", null, "default") }));
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks: [block], components: renderer }));
     await delay(35);
 
     assert.ok(container.innerHTML.includes('href="https://rewritten.com/path"'), "custom urlTransform rewrote allowed url");

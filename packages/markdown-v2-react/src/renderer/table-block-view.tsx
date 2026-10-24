@@ -2,7 +2,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import { type InlineNode, type TableCellRecord, type TableHeaderRecord, type TableRowRecord } from "@stream-mdx/core";
 import React from "react";
-import type { TableElements } from "../types";
+import type { NodeViewActions, TableElements } from "../types";
 import {
   TableControlsBar,
   copyToClipboard,
@@ -11,7 +11,6 @@ import {
   renderInlineNodes,
   resolveTableControls,
   tableToCsv,
-  tableToMarkdown,
   tableToTsv,
 } from "../components";
 import type { ComponentRegistry } from "../components";
@@ -19,10 +18,42 @@ import type { TableControlsData } from "../components/controls";
 import { useRendererNode } from "./hooks";
 import { subscribeRendererNode } from "./node-subscriptions";
 import type { RendererStore } from "./store";
+import { captureNodeSourceGuard, getStoreResetVersion, type PrivateRendererStore } from "./store-reset-version";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
-import { StreamingActivityContext } from "./streaming-activity-context";
-import { useVirtualizedTable, type IndexedTableRows } from "./virtualized-table";
+import { useVirtualizedTable, type IndexedTableRows, type TableVirtualizationRowRange } from "./virtualized-table";
+import { mergeNodePresentationProps, renderTablePartPresentation, type NativeTablePartPresentationKey } from "./node-presentations";
 
+function renderManagedTablePart<K extends NativeTablePartPresentationKey>(
+  key: K,
+  id: string,
+  nativeView: React.ReactNode,
+  store: RendererStore,
+  registry: ComponentRegistry,
+  tableId: string,
+  generation: number | undefined,
+  isFinalized: boolean,
+): React.ReactNode {
+  const presentation = registry.getNodePresentation(key);
+  if (!presentation) return nativeView;
+  const sourceGuard = captureNodeSourceGuard(store, id, { tableId, generation });
+  const readSource = () => {
+    sourceGuard();
+    const current = store.getTableBlock(tableId);
+    if (!current) throw new Error("Cannot read source from a stale or removed node");
+    return current.sourceSnapshot.materialize();
+  };
+  const actions: NodeViewActions = Object.freeze({
+    readSource,
+    copy: async () => copyToClipboard(readSource()),
+    download: () => downloadFile(readSource(), `${key}.txt`),
+  });
+  return renderTablePartPresentation(presentation, nativeView, {
+    id,
+    type: key,
+    isFinalized,
+    actions,
+  });
+}
 type ReactTableViewCounterSink = {
   recordStoreRecordsTouched?(count: number, stage: "view"): void;
   recordRecordSlotsAllocated?(count: number, stage: "view"): void;
@@ -60,11 +91,77 @@ function recordTableViewCallbacks(store: RendererStore, rows: number, cells: num
 const EMPTY_MANAGED_TABLE_ROWS: ReadonlyArray<TableRowRecord> = Object.freeze([]);
 const EMPTY_TABLE_TEXT_ROWS: string[][] = [];
 
-export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+type TableFullContentOwner = {
+  store: RendererStore;
+  blockId: string;
+  sourceGeneration: number | undefined;
+  blockEpoch: number | undefined;
+  resetVersion: number;
+};
+
+export function useTableFullContentMode(
+  store: RendererStore,
+  blockId: string,
+  sourceGeneration: number | undefined,
+  blockEpoch: number | undefined,
+  resetVersion: number,
+): readonly [boolean, () => void] {
+  const [fullContentOwner, setFullContentOwner] = React.useState<TableFullContentOwner | null>(null);
+  const isCurrentOwner = fullContentOwner?.store === store &&
+    fullContentOwner.blockId === blockId &&
+    fullContentOwner.sourceGeneration === sourceGeneration &&
+    fullContentOwner.blockEpoch === blockEpoch &&
+    fullContentOwner.resetVersion === resetVersion;
+  const toggleFullContent = React.useCallback(() => {
+    setFullContentOwner((current) =>
+      current?.store === store &&
+      current.blockId === blockId &&
+      current.sourceGeneration === sourceGeneration &&
+      current.blockEpoch === blockEpoch &&
+      current.resetVersion === resetVersion
+        ? null
+        : { store, blockId, sourceGeneration, blockEpoch, resetVersion },
+    );
+  }, [store, blockId, sourceGeneration, blockEpoch, resetVersion]);
+  return [isCurrentOwner, toggleFullContent];
+}
+
+export const TableFullContentToggle: React.FC<{
+  controlId: string;
+  pressed: boolean;
+  onClick: () => void;
+}> = ({ controlId, pressed, onClick }) => (
+  <div className="stream-mdx-table-content-toggle flex items-center justify-end gap-1 px-2 py-1 text-xs select-none">
+    <button
+      type="button"
+      className="stream-mdx-control stream-mdx-control-table-full-content inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs hover:bg-muted focus:outline-none"
+      aria-controls={controlId}
+      aria-pressed={pressed}
+      onClick={onClick}
+    >
+      Show full content
+    </button>
+  </div>
+);
+
+export const ManagedTableBlockView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  renderPresentation?: (nativeView: React.ReactNode) => React.ReactNode;
+}> = React.memo(({ store, blockId, registry, renderPresentation }) => {
   const node = useRendererNode(store, blockId);
   const tableState = store.getTableBlock(blockId);
-  const streamingActive = React.useContext(StreamingActivityContext);
   const generation = tableState?.source.generation;
+  const resetVersion = getStoreResetVersion(store);
+  const [fullContentMode, toggleFullContentMode] = useTableFullContentMode(
+    store,
+    blockId,
+    generation,
+    undefined,
+    resetVersion,
+  );
+  const viewportId = React.useId();
   const tableElements = registry.getTableElements();
   const subscribeVirtualization = React.useCallback(
     (listener: () => void) => registry.subscribeTableVirtualization(listener),
@@ -79,20 +176,30 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
     setMounted(true);
   }, []);
 
-  const rowIdentity = React.useMemo(() => ({}), [blockId, tableState?.source.generation]);
+  const rootSourceIdentity = (store as PrivateRendererStore).getRootSourceIdentity();
+  const rowIdentity = React.useMemo(() => ({}), [
+    blockId,
+    tableState?.source.generation,
+    resetVersion,
+    rootSourceIdentity,
+    store,
+  ]);
+
   const rowCount = tableState?.rows.length ?? 0;
   const rowSource = React.useMemo<IndexedTableRows>(
     () => ({ length: rowCount, identity: rowIdentity }),
     [rowCount, rowIdentity],
   );
-  const canVirtualize = mounted && typeof window !== "undefined" && !virtualizationDisabled &&
-    Boolean(node?.block?.isFinalized) && !streamingActive;
+  const canVirtualize = mounted && typeof window !== "undefined" && !virtualizationDisabled;
   const virtualization = useVirtualizedTable(rowSource, virtualizationConfig, canVirtualize);
-  const { isEligible, isVirtualized, containerRef, handleScroll, window: virtualWindow, config, naturalLayout, headerBackgroundColor } = virtualization;
+  const { isEligible, isVirtualized, containerRef, handleScroll, window: virtualWindow, config, naturalLayout, headerBackgroundColor, isPrinting } = virtualization;
   const header = tableState?.header;
   const columnCount = Math.max(1, header?.cells.length ?? 0);
-  const startIndex = isVirtualized ? virtualWindow.startIndex : 0;
-  const endIndex = isVirtualized ? virtualWindow.endIndex : rowCount;
+  const renderAllRows = isEligible && (fullContentMode || isPrinting);
+  const startIndex = isVirtualized && !renderAllRows ? virtualWindow.startIndex : 0;
+  const endIndex = renderAllRows
+    ? rowCount
+    : isVirtualized ? virtualWindow.endIndex : isEligible ? Math.min(rowCount, TABLE_ROW_RANGE_SIZE) : rowCount;
   const committed = tableState?.source.state !== "open";
   const headerText = React.useMemo(
     () => header?.cells.map((cell) => inlineToPlainText(cell.inline as InlineNode[])) ?? [],
@@ -105,52 +212,86 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
     "data-block-id": blockId,
     "data-table-virtualized": isVirtualized ? "true" : "false",
     "data-table-total-rows": String(rowCount),
-    "data-table-mounted-rows": String(isVirtualized ? virtualWindow.mountedRows : rowCount),
-    "data-table-start-index": String(isVirtualized ? virtualWindow.startIndex : 0),
-    "data-table-end-index": String(isVirtualized ? virtualWindow.endIndex : rowCount),
+    "data-table-mounted-rows": String(renderAllRows ? rowCount : isVirtualized ? virtualWindow.mountedRows : endIndex - startIndex),
+    "data-table-start-index": String(startIndex),
+    "data-table-end-index": String(endIndex),
   };
+  const tablePresentationProps = mergeNodePresentationProps(
+    {
+      className: "markdown-table w-full caption-bottom text-base",
+      style: isVirtualized && naturalLayout?.columnWidths.length
+        ? { tableLayout: "fixed", width: naturalLayout.tableWidth }
+        : undefined,
+      ...(!isEligible ? tableAttrs : {}),
+    },
+    registry.getNodePresentation("table")?.props,
+  ) as React.TableHTMLAttributes<HTMLTableElement>;
 
-  let rowRanges: React.ReactNode;
-  if (!isVirtualized && !registry.hasElementFilters()) {
-    rowRanges = (
-      <ManagedTableRowRangeTail
-        key={`${blockId}::rows:${tableState?.source.generation ?? -1}:tail`}
-        store={store}
-        blockId={blockId}
-        generation={tableState?.source.generation ?? -1}
-        chunkStart={0}
-        align={header?.align}
-        registry={registry}
-        tableElements={tableElements}
-      />
-    );
-  } else {
-    const ranges: React.ReactNode[] = [];
-    for (
-      let chunkStart = Math.floor(startIndex / TABLE_ROW_RANGE_SIZE) * TABLE_ROW_RANGE_SIZE;
-      chunkStart < endIndex;
-      chunkStart += TABLE_ROW_RANGE_SIZE
-    ) {
-      ranges.push(
+  const hasElementFilters = registry.hasElementFilters();
+  const fullContentRanges = React.useMemo<ReadonlyArray<TableVirtualizationRowRange>>(
+    () => [{ startIndex: 0, endIndex: rowCount, spacerBeforeHeight: 0 }],
+    [rowCount],
+  );
+  const nonVirtualizedRanges = React.useMemo<ReadonlyArray<TableVirtualizationRowRange>>(
+    () => [{ startIndex, endIndex, spacerBeforeHeight: 0 }],
+    [startIndex, endIndex],
+  );
+  const sourceRanges = renderAllRows
+    ? fullContentRanges
+    : isVirtualized ? virtualWindow.rowRanges : nonVirtualizedRanges;
+  const rowRanges = React.useMemo<React.ReactNode>(() => {
+    if (!isEligible && !hasElementFilters) {
+      return (
+        <ManagedTableRowRangeTail
+          key={`${blockId}::rows:${generation ?? -1}:tail`}
+          store={store}
+          blockId={blockId}
+          generation={generation ?? -1}
+          chunkStart={0}
+          align={header?.align}
+          registry={registry}
+          tableElements={tableElements}
+        />
+      );
+    }
+    const chunks: Array<{ chunkStart: number; ranges: TableVirtualizationRowRange[] }> = [];
+    for (const range of sourceRanges) {
+      for (let rangeStart = range.startIndex; rangeStart < range.endIndex;) {
+        const chunkStart = Math.floor(rangeStart / TABLE_ROW_RANGE_SIZE) * TABLE_ROW_RANGE_SIZE;
+        const rangeEnd = Math.min(range.endIndex, chunkStart + TABLE_ROW_RANGE_SIZE);
+        let chunk = chunks[chunks.length - 1];
+        if (!chunk || chunk.chunkStart !== chunkStart) {
+          chunk = { chunkStart, ranges: [] };
+          chunks.push(chunk);
+        }
+        chunk.ranges.push({
+          startIndex: rangeStart,
+          endIndex: rangeEnd,
+          spacerBeforeHeight: rangeStart === range.startIndex ? range.spacerBeforeHeight : 0,
+        });
+        rangeStart = rangeEnd;
+      }
+    }
+    return chunks.map(({ chunkStart, ranges }) => {
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        recordTableRangeDescriptor(store);
+      }
+      return (
         <ManagedTableRowRangeView
           key={`${blockId}::rows:${chunkStart}`}
           store={store}
           blockId={blockId}
-          generation={tableState?.source.generation ?? -1}
+          generation={generation ?? -1}
           chunkStart={chunkStart}
-          visibleStart={Math.max(startIndex, chunkStart)}
-          visibleEnd={Math.min(endIndex, chunkStart + TABLE_ROW_RANGE_SIZE)}
+          ranges={ranges}
+          columnCount={columnCount}
           align={header?.align}
           registry={registry}
           tableElements={tableElements}
-        />,
+        />
       );
-      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-        recordTableRangeDescriptor(store);
-      }
-    }
-    rowRanges = ranges;
-  }
+    });
+  }, [isEligible, hasElementFilters, sourceRanges, blockId, generation, store, columnCount, header?.align, registry, tableElements]);
 
   // A committed table without rows has no body (GFM); an open one keeps it mounted for the rows still to stream.
   const hasBody = !committed || rowCount > 0;
@@ -159,6 +300,8 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
       {header ? (
         <ManagedTableHeaderView
           store={store}
+          blockId={blockId}
+          generation={generation}
           header={header}
           sticky={isVirtualized}
           headerBackgroundColor={headerBackgroundColor}
@@ -167,21 +310,8 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
         />
       ) : null}
       {hasBody ? <tableElements.Tbody>
-        {isVirtualized && virtualWindow.topSpacerHeight > 0 ? (
-          <tableElements.Tr
-            key={`${blockId}::spacer-top`}
-            aria-hidden="true"
-            className="markdown-table-spacer markdown-table-spacer-top"
-            style={{ height: `${virtualWindow.topSpacerHeight}px`, padding: 0, border: 0 }}
-          >
-            <tableElements.Td
-              colSpan={columnCount}
-              style={{ height: `${virtualWindow.topSpacerHeight}px`, padding: 0, border: 0, margin: 0, lineHeight: 0 }}
-            />
-          </tableElements.Tr>
-        ) : null}
-        {rowRanges}
-        {isVirtualized && virtualWindow.bottomSpacerHeight > 0 ? (
+        <React.Fragment key={`${blockId}::rows`}>{rowRanges}</React.Fragment>
+        {isVirtualized && !renderAllRows && virtualWindow.bottomSpacerHeight > 0 ? (
           <tableElements.Tr
             key={`${blockId}::spacer-bottom`}
             aria-hidden="true"
@@ -199,13 +329,7 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
   );
 
   const tableElement = (
-    <tableElements.Table
-      className="markdown-table w-full caption-bottom text-base"
-      style={isVirtualized && naturalLayout?.columnWidths.length
-        ? { tableLayout: "fixed", width: naturalLayout.tableWidth }
-        : undefined}
-      {...(!isEligible ? tableAttrs : {})}
-    >
+    <tableElements.Table {...tablePresentationProps}>
       {isVirtualized && naturalLayout?.columnWidths.length ? (
         <colgroup>
           {naturalLayout.columnWidths.map((width, index) => <col key={index} style={{ width }} />)}
@@ -214,30 +338,37 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
       {renderSections()}
     </tableElements.Table>
   );
+  let hostAllowed = !registry.hasElementFilters();
   const filteredTable = registry.hasElementFilters()
     ? registry.filterElement(
         { tagName: "table", properties: { className: "markdown-table" }, blockType: "table" },
         { source: "markdown" },
-        () => tableElement,
+        () => {
+          hostAllowed = true;
+          return tableElement;
+        },
         renderSections,
       )
     : tableElement;
+  if (filteredTable === null || filteredTable === undefined) return null;
 
   const renderedContent = isEligible ? (
     <div
       ref={containerRef}
       className="markdown-table-container relative w-full"
       style={{
-        overflowY: "auto",
-        overflowX: "auto",
-        maxHeight: typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight,
+        overflowY: isPrinting ? "visible" : "auto",
+        overflowX: isPrinting ? "visible" : "auto",
+        maxHeight: isPrinting ? "none" : typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight,
         overflowAnchor: "none",
       }}
       onScroll={handleScroll}
+      data-table-printing={isPrinting ? "true" : undefined}
       tabIndex={0}
       role="region"
       aria-label="Scrollable table"
       {...tableAttrs}
+      id={viewportId}
     >
       {filteredTable}
     </div>
@@ -270,64 +401,100 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
       align: current.header.align.slice(),
     };
   }, [blockId, generation, store]);
-  if (!node || filteredTable === null || filteredTable === undefined) return null;
-  if (!resolvedTableControls.enabled || !tableState) return renderedContent;
+  const getTableMarkdownSource = React.useCallback((): string => {
+    const current = store.getTableBlock(blockId);
+    if (!current || current.source.generation !== generation) {
+      throw new Error("Table content belongs to a replaced or disposed owner");
+    }
+    return current.sourceSnapshot.materialize();
+  }, [blockId, generation, store]);
 
-  const tableControlsElement = ControlsComponent ? (
-    <ControlsComponent
-      type="table"
-      blockId={blockId}
-      headers={headerText}
-      align={align}
-      getTableData={getTableData}
-      isFinalized={committed}
-      onCopy={(format) => {
-        if (!committed) return;
-        const data = getTableData();
-        const text = format === "markdown" ? tableToMarkdown(data.headers, data.rows, data.align) : tableToTsv(data.headers, data.rows);
-        return copyToClipboard(text);
-      }}
-      onDownload={(format) => {
-        if (!committed) return;
-        const data = getTableData();
-        if (format === "tsv") {
-          downloadFile(tableToTsv(data.headers, data.rows), "table.tsv", "text/tab-separated-values;charset=utf-8");
-        } else if (format === "markdown") {
-          downloadFile(tableToMarkdown(data.headers, data.rows, data.align), "table.md", "text/markdown;charset=utf-8");
-        } else {
-          downloadFile(tableToCsv(data.headers, data.rows), "table.csv", "text/csv;charset=utf-8");
-        }
-      }}
-      labels={resolvedTableControls.labels}
-    />
-  ) : (
-    <TableControlsBar
-      headers={headerText}
-      rows={EMPTY_TABLE_TEXT_ROWS}
-      align={align}
-      getTableData={getTableData}
-      isFinalized={committed}
-      config={resolvedTableControls}
-    />
-  );
-  return (
-    <div className="stream-mdx-table-wrapper relative">
-      {tableControlsElement}
-      {renderedContent}
-    </div>
-  );
+  const presentIfHostAllowed = (nativeView: React.ReactNode): React.ReactNode => {
+    if (!hostAllowed || !renderPresentation) return nativeView;
+    const presentation = registry.getNodePresentation("table");
+    const presented = renderPresentation(nativeView);
+    return presentation && "wrapper" in presentation && presentation.wrapper
+      ? <div data-table-block-root={blockId} style={{ display: "contents" }}>{presented}</div>
+      : presented;
+  };
+  const actionsSlot = registry.getNodePresentation("table")?.slots?.actions;
+  if (actionsSlot !== undefined) {
+    return presentIfHostAllowed(<div className="stream-mdx-table-wrapper relative">{actionsSlot}{renderedContent}</div>);
+  }
+
+  const tableControlsElement = resolvedTableControls.enabled && tableState ? (
+    ControlsComponent ? (
+      <ControlsComponent
+        type="table"
+        blockId={blockId}
+        headers={headerText}
+        align={align}
+        getTableData={getTableData}
+        isFinalized={committed}
+        onCopy={(format) => {
+          if (!committed) return;
+          let text: string;
+          if (format === "markdown") {
+            text = getTableMarkdownSource();
+          } else {
+            const data = getTableData();
+            text = tableToTsv(data.headers, data.rows);
+          }
+          return copyToClipboard(text);
+        }}
+        onDownload={(format) => {
+          if (!committed) return;
+          if (format === "tsv") {
+            const data = getTableData();
+            downloadFile(tableToTsv(data.headers, data.rows), "table.tsv", "text/tab-separated-values;charset=utf-8");
+          } else if (format === "markdown") {
+            downloadFile(getTableMarkdownSource(), "table.md", "text/markdown;charset=utf-8");
+          } else {
+            const data = getTableData();
+            downloadFile(tableToCsv(data.headers, data.rows), "table.csv", "text/csv;charset=utf-8");
+          }
+        }}
+        labels={resolvedTableControls.labels}
+      />
+    ) : (
+      <TableControlsBar
+        headers={headerText}
+        rows={EMPTY_TABLE_TEXT_ROWS}
+        align={align}
+        getTableData={getTableData}
+        getMarkdownSource={getTableMarkdownSource}
+        isFinalized={committed}
+        config={resolvedTableControls}
+      />
+    )
+  ) : null;
+  const fullContentToggle = isVirtualized ? (
+    <TableFullContentToggle controlId={viewportId} pressed={fullContentMode} onClick={toggleFullContentMode} />
+  ) : null;
+  if (tableControlsElement) {
+    return presentIfHostAllowed(
+      <div className="stream-mdx-table-wrapper relative">
+        {tableControlsElement}
+        {fullContentToggle}
+        {renderedContent}
+      </div>,
+    );
+  }
+  return presentIfHostAllowed(<>{fullContentToggle}{renderedContent}</>);
 });
 
 ManagedTableBlockView.displayName = "ManagedTableBlockView";
 
 const ManagedTableHeaderView: React.FC<{
   store: RendererStore;
+  blockId: string;
+  generation: number | undefined;
   header: TableHeaderRecord;
   sticky: boolean;
   headerBackgroundColor: string;
   registry: ComponentRegistry;
   tableElements: TableElements;
-}> = React.memo(({ store, header, sticky, headerBackgroundColor, registry, tableElements }) => {
+}> = React.memo(({ store, blockId, generation, header, sticky, headerBackgroundColor, registry, tableElements }) => {
   let renderedCells = 0;
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     recordViewRecords(store, header.cells.length + 1);
@@ -339,6 +506,9 @@ const ManagedTableHeaderView: React.FC<{
     return (
       <ManagedTableCellView
         key={cell.id}
+        store={store}
+        blockId={blockId}
+        generation={generation}
         cell={cell}
         isHeader
         isFinalized
@@ -348,6 +518,17 @@ const ManagedTableHeaderView: React.FC<{
       />
     );
   });
+  const headerNodeId = store.getChildren(blockId).find((childId) => store.getNode(childId)?.type === "table-header");
+  const headerRow = renderManagedTablePart(
+    "table-row",
+    headerNodeId ?? `${blockId}::header-row`,
+    <tableElements.Tr>{headerCells}</tableElements.Tr>,
+    store,
+    registry,
+    blockId,
+    generation,
+    true,
+  );
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     recordTableViewCallbacks(store, 0, renderedCells);
   }
@@ -361,9 +542,7 @@ const ManagedTableHeaderView: React.FC<{
         backgroundColor: `var(--stream-mdx-table-header-background, ${headerBackgroundColor})`,
       } : undefined}
     >
-      <tableElements.Tr>
-        {headerCells}
-      </tableElements.Tr>
+      {headerRow}
     </tableElements.Thead>
   );
 });
@@ -374,12 +553,22 @@ const ManagedTableRowRangeView: React.FC<{
   blockId: string;
   generation: number;
   chunkStart: number;
-  visibleStart: number;
-  visibleEnd: number;
+  ranges: ReadonlyArray<TableVirtualizationRowRange>;
+  columnCount: number;
   align?: ReadonlyArray<"left" | "center" | "right" | null>;
   registry: ComponentRegistry;
   tableElements: TableElements;
-}> = React.memo(({ store, blockId, generation, chunkStart, visibleStart, visibleEnd, align, registry, tableElements }) => {
+}> = React.memo(({
+  store,
+  blockId,
+  generation,
+  chunkStart,
+  ranges,
+  columnCount,
+  align,
+  registry,
+  tableElements,
+}) => {
   const subscribe = React.useCallback(
     (listener: () => void) => store.subscribeTableRows(blockId, chunkStart, chunkStart + TABLE_ROW_RANGE_SIZE, listener),
     [blockId, chunkStart, store],
@@ -395,16 +584,34 @@ const ManagedTableRowRangeView: React.FC<{
     let inspectedRecords = 0;
     let renderedBodyRows = 0;
     let renderedBodyCells = 0;
+    let rangeIndex = 0;
     for (const row of rows) {
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
         inspectedRecords += 1;
       }
-      if (row.index < visibleStart || row.index >= visibleEnd) continue;
+      while (rangeIndex < ranges.length && row.index >= ranges[rangeIndex].endIndex) rangeIndex++;
+      const range = ranges[rangeIndex];
+      if (!range || row.index < range.startIndex) continue;
+      if (row.index === range.startIndex && range.spacerBeforeHeight > 0) {
+        elements.push(
+          <tableElements.Tr
+            key={`${blockId}::spacer-before-${range.startIndex}`}
+            aria-hidden="true"
+            className={`markdown-table-spacer markdown-table-spacer-${rangeIndex === 0 ? "top" : "focus"}`}
+            style={{ height: `${range.spacerBeforeHeight}px`, padding: 0, border: 0 }}
+          >
+            <tableElements.Td
+              colSpan={columnCount}
+              style={{ height: `${range.spacerBeforeHeight}px`, padding: 0, border: 0, margin: 0, lineHeight: 0 }}
+            />
+          </tableElements.Tr>,
+        );
+      }
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
         inspectedRecords += row.cells.length;
         renderedBodyRows += 1;
       }
-      elements.push(
+      const nativeRow = (
         <tableElements.Tr key={row.id} data-row-id={row.id} data-row-index={row.index}>
           {row.cells.map((cell) => {
             if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -413,6 +620,9 @@ const ManagedTableRowRangeView: React.FC<{
             return (
               <ManagedTableCellView
                 key={cell.id}
+                store={store}
+                blockId={blockId}
+                generation={generation}
                 cell={cell}
                 isHeader={false}
                 isFinalized={!row.isProvisional}
@@ -422,15 +632,25 @@ const ManagedTableRowRangeView: React.FC<{
               />
             );
           })}
-        </tableElements.Tr>,
+        </tableElements.Tr>
       );
+      elements.push(renderManagedTablePart(
+        "table-row",
+        row.id,
+        nativeRow,
+        store,
+        registry,
+        blockId,
+        generation,
+        !row.isProvisional,
+      ) as React.ReactElement);
     }
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       recordViewRecords(store, inspectedRecords);
       recordTableViewCallbacks(store, renderedBodyRows, renderedBodyCells);
     }
     return elements;
-  }, [align, registry, rows, store, tableElements, visibleEnd, visibleStart]);
+  }, [align, blockId, columnCount, ranges, registry, rows, store, tableElements]);
   return <>{renderedRows}</>;
 });
 ManagedTableRowRangeView.displayName = "ManagedTableRowRangeView";
@@ -518,9 +738,9 @@ const ManagedTableRowRangeChain: React.FC<{
         blockId={blockId}
         generation={generation}
         chunkStart={chunkStart}
-        visibleStart={chunkStart}
-        visibleEnd={chunkStart + TABLE_ROW_RANGE_SIZE}
         align={align}
+        ranges={[{ startIndex: chunkStart, endIndex: chunkStart + TABLE_ROW_RANGE_SIZE, spacerBeforeHeight: 0 }]}
+        columnCount={1}
         registry={registry}
         tableElements={tableElements}
       />
@@ -541,13 +761,16 @@ const ManagedTableRowRangeChain: React.FC<{
 ManagedTableRowRangeChain.displayName = "ManagedTableRowRangeChain";
 
 const ManagedTableCellView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  generation: number | undefined;
   cell: TableCellRecord;
   isHeader: boolean;
   isFinalized: boolean;
   align?: string | null;
   registry: ComponentRegistry;
   tableElements: TableElements;
-}> = React.memo(({ cell, isHeader, isFinalized, align, registry, tableElements }) => {
+}> = React.memo(({ store, blockId, generation, cell, isHeader, isFinalized, align, registry, tableElements }) => {
   const inlineComponents = registry.getInlineComponents();
   const Tag = isHeader ? tableElements.Th : tableElements.Td;
   const tag = isHeader ? "th" : "td";
@@ -555,16 +778,28 @@ const ManagedTableCellView: React.FC<{
   const animCtx = registry.getRenderInlineContext(isFinalized, cell.id);
   const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, tag, animCtx);
   const alignProps = align ? { align } : undefined;
-  const renderElement = () => <Tag {...alignProps}>{content}</Tag>;
-  if (!registry.hasElementFilters()) return renderElement();
-  const filtered = registry.filterElement(
-    { tagName: tag, properties: alignProps ?? {} },
-    { source: "markdown", parentTagName: "tr" },
-    renderElement,
-    () => content,
+  const nativeView = <Tag {...alignProps}>{content}</Tag>;
+  let filteredView: React.ReactNode = nativeView;
+  if (registry.hasElementFilters()) {
+    filteredView = registry.filterElement(
+      { tagName: tag, properties: alignProps ?? {} },
+      { source: "markdown", parentTagName: "tr" },
+      () => nativeView,
+      () => content,
+    );
+  }
+  if (filteredView === null || filteredView === undefined) return null;
+  const preparedView = React.isValidElement(filteredView) ? filteredView : <>{filteredView}</>;
+  return renderManagedTablePart(
+    "table-cell",
+    cell.id,
+    preparedView,
+    store,
+    registry,
+    blockId,
+    generation,
+    isFinalized,
   );
-  if (filtered === null || filtered === undefined) return null;
-  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 
 ManagedTableCellView.displayName = "ManagedTableCellView";

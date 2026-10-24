@@ -6,6 +6,7 @@ import {
   parseCodeFenceInfo,
   type Block,
   type CodeBlockSnapshot,
+  type CodeDiffStatus,
   type CodeBlockSourceMetadata,
   type CodeLineDecoration,
   type CodeLineIndex,
@@ -14,7 +15,13 @@ import {
   type Patch,
   type SourceSnapshot,
 } from "@stream-mdx/core";
-import { detectDiffLanguage, parseUnifiedDiffLine, toDiffLineKind } from "./highlight";
+import {
+  abandonsOwedRows,
+  codeDiffStatus,
+  detectDiffLanguage,
+  parseUnifiedDiffLine,
+  toDiffLineKind,
+} from "./highlight";
 import type { DiffCursorState } from "./types";
 import {
   registerPreparedCodeLineSource,
@@ -277,6 +284,9 @@ function displayLineText(
   requiredIndent: number,
 ): string {
   const lineStart = lineStartAt(source, from);
+  if (!NON_WHITESPACE.test(raw)) {
+    return nativeCodeLine(source, lineStart, from + raw.length, baseIndent, requiredIndent, "").text;
+  }
   if (sourceCharacterAt(source, lineStart) === ">") {
     return nativeCodeLine(source, lineStart, from + raw.length, baseIndent, requiredIndent, "").text;
   }
@@ -391,6 +401,32 @@ function trailingNativeCodeLine(
   }
   return {
     lineStart,
+    line: { ...line, isProvisional: closure === "open" && ending === "" },
+    ...(pendingCRAt === undefined ? {} : { pendingCRAt }),
+  };
+}
+function reconstructNativeCodeLine(
+  source: SourceSnapshot,
+  previous: CodeLineRecord,
+  end: number,
+  baseIndent: number,
+  requiredIndent: number,
+  closure: NativeNestedCodeState,
+): { readonly line: NativeCodeLineDraft; readonly pendingCRAt?: number } {
+  const lineStart = lineStartAt(source, previous.sourceRange.from);
+  let contentEnd = lineStart;
+  while (contentEnd < end) {
+    const character = sourceCharacterAt(source, contentEnd);
+    if (character === "\r" || character === "\n") break;
+    contentEnd += 1;
+  }
+  let ending = contentEnd < end ? lineEndingAt(source, contentEnd) ?? "" : "";
+  const pendingCRAt = ending === "\r" && closure === "open" && contentEnd + 1 === source.length
+    ? contentEnd
+    : undefined;
+  if (pendingCRAt !== undefined) ending = "";
+  const line = nativeCodeLine(source, lineStart, contentEnd, baseIndent, requiredIndent, ending);
+  return {
     line: { ...line, isProvisional: closure === "open" && ending === "" },
     ...(pendingCRAt === undefined ? {} : { pendingCRAt }),
   };
@@ -606,6 +642,7 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
   private revision = 0;
   private codeLines: CodeLineIndex;
   private diffCursor: DiffCursorState | undefined;
+  private diffRowsAbandoned = false;
   /** Unified-diff fences tokenize diff-aware, as root code does. */
   readonly isDiff: boolean;
   private pendingCRAt: number | undefined;
@@ -668,13 +705,26 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     );
     let cursor = initialDiffCursor;
     let committedDiffCursor = initialDiffCursor;
+    let workingDiffRowsAbandoned = false;
+    let committedDiffRowsAbandoned = false;
     const initialRecords = initialDrafts.map((draft, index) => {
       const before = cursor ? { ...cursor } : undefined;
+      const abandonedBefore = workingDiffRowsAbandoned;
+      if (cursor && !workingDiffRowsAbandoned && abandonsOwedRows(draft.text, cursor)) {
+        workingDiffRowsAbandoned = true;
+      }
       const diff = cursor ? diffLineFields(draft.text, cursor) : undefined;
-      committedDiffCursor = draft.isProvisional ? before : cursor ? { ...cursor } : undefined;
+      if (draft.isProvisional) {
+        committedDiffCursor = before;
+        committedDiffRowsAbandoned = abandonedBefore;
+      } else {
+        committedDiffCursor = cursor ? { ...cursor } : undefined;
+        committedDiffRowsAbandoned = workingDiffRowsAbandoned;
+      }
       return recordFromDraft(this.id, index, draft, 0, diff);
     });
     this.diffCursor = committedDiffCursor;
+    this.diffRowsAbandoned = committedDiffRowsAbandoned;
     this.codeLines = createCodeLineIndex({ lines: initialRecords });
     registerPreparedCodeLineSource(this, { info, ...(parsedInfo.lang ? { language: parsedInfo.lang } : {}) });
   }
@@ -719,6 +769,7 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
   }
 
   getMetadata(): CodeBlockSourceMetadata {
+    const diffStatus = this.getDiffStatus();
     return Object.freeze({
       codeOwnerId: this.id,
       generation: this.generation,
@@ -728,7 +779,20 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
       completeLineCount: this.codeLines.completeLineCount,
       lineCount: this.codeLines.length,
       sourceRange: Object.freeze({ from: this.sourceRange.from, to: this.sourceRange.to }),
+      ...(diffStatus !== undefined ? { diffStatus } : {}),
     });
+  }
+
+  private getDiffStatus(): CodeDiffStatus | undefined {
+    const cursor = this.diffCursor;
+    if (cursor === undefined) return undefined;
+    const tail = this.codeLines.get(this.codeLines.length - 1);
+    return codeDiffStatus(
+      cursor,
+      this.diffRowsAbandoned,
+      tail?.isProvisional ? tail.text : undefined,
+      this.sourceState !== "open",
+    );
   }
 
   getSourceSnapshot(): SourceSnapshot {
@@ -809,12 +873,13 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     const lastCompleted = oldComplete > 0 ? this.codeLines.get(oldComplete - 1) : undefined;
     const completedSourceTo = lastCompleted?.sourceRange.to;
     // The bounded parser tail may include a completed CodeText row again; it is already owned.
-    const desiredTail = completedSourceTo === undefined
+    let desiredTail = completedSourceTo === undefined
       ? parsed.lines.slice()
       : parsed.lines.filter((line) => line.to > completedSourceTo);
     const repeatsOldProvisional = oldProvisional !== undefined
       && desiredTail.some((line) => line.from === oldProvisional.sourceRange.from);
 
+    let reconstructedPendingCRAt: number | undefined;
     if (oldProvisional && !this.emptyPlaceholder && !repeatsOldProvisional) {
       let ending = oldProvisional.ending;
       let isProvisional = oldProvisional.isProvisional;
@@ -840,7 +905,30 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
           isProvisional = false;
         }
       }
-      desiredTail.unshift(draftFromRecord(oldProvisional, ending, isProvisional));
+      let previousTail = draftFromRecord(oldProvisional, ending, isProvisional);
+      const source = update.mapping.source;
+      const priorLineStart = lineStartAt(source, oldProvisional.sourceRange.from);
+      const nextCharacter = sourceCharacterAt(source, oldProvisional.sourceRange.to);
+      if (
+        update.sourceRange.to > oldProvisional.sourceRange.to
+        && nextCharacter !== "\r"
+        && nextCharacter !== "\n"
+      ) {
+        const reconstructed = reconstructNativeCodeLine(
+          source,
+          oldProvisional,
+          update.sourceRange.to,
+          this.baseIndent,
+          this.requiredIndent,
+          update.closure,
+        );
+        if (reconstructed.line.to > oldProvisional.sourceRange.to) {
+          previousTail = reconstructed.line;
+          reconstructedPendingCRAt = reconstructed.pendingCRAt;
+          desiredTail = desiredTail.filter((line) => lineStartAt(source, line.from) !== priorLineStart);
+        }
+      }
+      desiredTail.unshift(previousTail);
     }
 
     let sourceTailPendingCRAt: number | undefined;
@@ -874,15 +962,25 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     const nextTail = desiredTail;
     const diffRows = this.diffCursor ? new Array<DiffLineFields>(nextTail.length) : undefined;
     let committedDiffCursor = this.diffCursor;
+    let committedDiffRowsAbandoned = this.diffRowsAbandoned;
     if (diffRows && this.diffCursor) {
       const working = { ...this.diffCursor };
+      let workingDiffRowsAbandoned = this.diffRowsAbandoned;
       for (let offset = 0; offset < nextTail.length; offset += 1) {
         const draft = nextTail[offset];
-        if (draft.isProvisional) committedDiffCursor = { ...working };
+        if (draft.isProvisional) {
+          committedDiffCursor = { ...working };
+          committedDiffRowsAbandoned = workingDiffRowsAbandoned;
+        }
+        if (!workingDiffRowsAbandoned && abandonsOwedRows(draft.text, working)) {
+          workingDiffRowsAbandoned = true;
+        }
         diffRows[offset] = diffLineFields(draft.text, working);
+        if (!draft.isProvisional) committedDiffRowsAbandoned = workingDiffRowsAbandoned;
       }
       if (nextTail.length === 0 || !nextTail[nextTail.length - 1]?.isProvisional) {
         committedDiffCursor = { ...working };
+        committedDiffRowsAbandoned = workingDiffRowsAbandoned;
       }
     }
     const reusable = new Array<CodeLineRecord | undefined>(nextTail.length);
@@ -920,7 +1018,7 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
     this.sourceRange = Object.freeze({ from: update.sourceRange.from, to: update.sourceRange.to });
     this.processedTo = update.sourceRange.to;
     this.pendingCRAt = nextState === "open"
-      ? parsed.pendingCRAt ?? sourceTailPendingCRAt ?? (priorPendingCRResolved ? undefined : this.pendingCRAt)
+      ? parsed.pendingCRAt ?? sourceTailPendingCRAt ?? reconstructedPendingCRAt ?? (priorPendingCRResolved ? undefined : this.pendingCRAt)
       : undefined;
     if (this.emptyPlaceholder && (parsed.lines.length > 0 || completedEmptyPlaceholder)) this.emptyPlaceholder = false;
     if (nextState !== "open") this.emptyPlaceholder = false;
@@ -939,6 +1037,37 @@ export class NativeNestedCodeSourceOwner implements PreparedCodeLineOwner {
       fromLine: oldComplete,
       lines,
       sourceAppend,
+    });
+  }
+
+  finalizeClosed(): NativeNestedCodeSourceChange {
+    if (this.sourceState === "finalized") {
+      return Object.freeze({
+        code: this.getMetadata(),
+        expectedRevision: this.revision,
+        revision: this.revision,
+        fromLine: this.codeLines.completeLineCount,
+        lines: EMPTY_CODE_LINES,
+        sourceAppend: "",
+      });
+    }
+    if (this.sourceState !== "closed" || this.codeLines.completeLineCount !== this.codeLines.length) {
+      throw new Error("Only a settled closed native code owner can finalize without its parser mapping");
+    }
+    const expectedRevision = this.revision;
+    this.sourceState = "finalized";
+    this.revision = nextRevision(this.revision);
+    this.pendingCRAt = undefined;
+    if (this.presentation?.revision === expectedRevision) {
+      this.presentation = { ...this.presentation, revision: this.revision };
+    }
+    return Object.freeze({
+      code: this.getMetadata(),
+      expectedRevision,
+      revision: this.revision,
+      fromLine: this.codeLines.completeLineCount,
+      lines: EMPTY_CODE_LINES,
+      sourceAppend: "",
     });
   }
 

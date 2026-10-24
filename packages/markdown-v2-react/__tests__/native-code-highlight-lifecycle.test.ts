@@ -5,10 +5,11 @@ import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot, type Root } from "react-dom/client";
 
-import type { CodeFenceRendererProps } from "../src/components";
 import { MarkdownRenderer } from "../src/renderer";
 import { MarkdownBlocksRenderer } from "../src/renderer/blocks-renderer";
 import { CodeHighlightRequestContext, type CodeHighlightRequest } from "../src/renderer/code-highlight-context";
+import { CodeLineRangeView } from "../src/renderer/code-line-range";
+import { getStoreResetVersion } from "../src/renderer/store-reset-version";
 
 async function waitFor(predicate: () => boolean, message: string, timeoutMs = 15_000) {
   const deadline = Date.now() + timeoutMs;
@@ -112,13 +113,14 @@ async function testInlineWorkerNativeCodeHighlighting(): Promise<void> {
   assert.ok(container, "missing worker-backed test root container");
   let root: Root | null = null;
   try {
-    renderer.setCodeRenderers({
-      ts: (props: CodeFenceRendererProps) => React.createElement(
-        "div",
-        { "data-native-code-renderer": "true", "data-language": props.language },
-        React.createElement("pre", { "data-authored-source": "true" }, props.code),
-        React.createElement("div", { "data-native-code-view": "true" }, props.renderCode),
-      ),
+    renderer.getComponentRegistry().setNodePresentations({
+      code: {
+        wrapper: ({ children, metadata }) => React.createElement(
+          "div",
+          { "data-native-code-renderer": "true", "data-language": metadata.language },
+          React.createElement("div", { "data-native-code-view": "true" }, children),
+        ),
+      },
     });
     root = createRoot(container);
     root.render(
@@ -139,7 +141,7 @@ async function testInlineWorkerNativeCodeHighlighting(): Promise<void> {
     assert.equal(workerError(), null);
     await renderer.whenInitialized();
     renderer.append(markdown);
-    renderer.finalize();
+    await renderer.finalize();
     await waitFor(() => {
       const blockId = currentCodeOwnerId();
       const codeBlock = blockId ? store.getCodeBlock(blockId) : undefined;
@@ -169,7 +171,7 @@ async function testInlineWorkerNativeCodeHighlighting(): Promise<void> {
     await waitFor(() => replacementEvents.initialized || workerError() !== null, "replacement inline worker publishes its attached initialization");
     assert.equal(workerError(), null);
     await renderer.whenInitialized();
-    renderer.finalize();
+    await renderer.finalize();
     await waitFor(() => {
       const replacementOwnerId = currentCodeOwnerId();
       const codeBlock = replacementOwnerId ? store.getCodeBlock(replacementOwnerId) : undefined;
@@ -228,7 +230,6 @@ async function testInlineWorkerNativeCodeHighlighting(): Promise<void> {
     assert.equal(workerError(), null);
 
     assert.equal(container.querySelector("[data-native-code-renderer]")?.getAttribute("data-language"), "ts");
-    assert.equal(container.querySelector("[data-authored-source]")?.textContent, replacementCode);
     const highlightedRows = Array.from(container.querySelectorAll("[data-native-code-view] [data-line]"));
     assert.equal(highlightedRows.length, expectedLineCount, "replacement should render every highlighted source line");
     assert.equal(
@@ -277,5 +278,200 @@ class ResizeObserverStub {
   disconnect() {}
 }
 
+async function testVisibleRangesPrecedePrefetch(): Promise<void> {
+  const renderer = new MarkdownRenderer();
+  const worker = createInlineEngineWorker();
+  const observation = observeWorker(worker);
+  const decorationOrder: string[] = [];
+  worker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+    if (event.data.type !== "PATCH") return;
+    for (const patch of event.data.patches) {
+      if (patch.op === "decorateCode") decorationOrder.push(patch.codeOwnerId);
+    }
+  });
+
+  const codeBlock = (name: string) =>
+    `\`\`\`ts\n${Array.from({ length: 64 }, (_, index) => `const ${name}${index} = ${index};`).join("\n")}\n\`\`\``;
+  try {
+    renderer.attachWorker(worker, { skipInit: true });
+    worker.postMessage(createLazyInitMessage(""));
+    await waitFor(() => observation.initialized || observation.error !== null, "worker initializes for range priority test");
+    assert.equal(observation.error, null);
+    await renderer.whenInitialized();
+    renderer.append(`${codeBlock("offscreen")}\n\n${codeBlock("visible")}`);
+    await renderer.finalize();
+    const codeBlocks = renderer.getStore().getBlocks().filter((block) => block.type === "code");
+    assert.equal(codeBlocks.length, 2, "two code owners are available for range requests");
+    const [offscreen, visible] = codeBlocks;
+    assert.ok(offscreen && visible);
+    const codeState = renderer.getStore().getCodeBlock(offscreen.id);
+    assert.ok(codeState, "first code owner exposes its line range");
+    const dom = new JSDOM('<!doctype html><html><body><div id="range-root"></div></body></html>', { pretendToBeVisual: true });
+    const { window } = dom;
+    const globalKeys = ["window", "document", "HTMLElement", "Node", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver"] as const;
+    const previousGlobals = Object.fromEntries(
+      globalKeys.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
+    ) as Record<(typeof globalKeys)[number], PropertyDescriptor | undefined>;
+    Object.assign(globalThis, {
+      window,
+      document: window.document,
+      HTMLElement: window.HTMLElement,
+      Node: window.Node,
+      requestAnimationFrame: window.requestAnimationFrame.bind(window),
+      cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
+      ResizeObserver: ResizeObserverStub,
+    });
+    const rangeRootElement = window.document.getElementById("range-root");
+    assert.ok(rangeRootElement);
+    const rangeRoot = createRoot(rangeRootElement);
+    const overscanRequests: CodeHighlightRequest[] = [];
+    try {
+      rangeRoot.render(
+        React.createElement(
+          CodeHighlightRequestContext.Provider,
+          { value: (request) => overscanRequests.push(request) },
+          React.createElement(CodeLineRangeView, {
+            store: renderer.getStore(),
+            blockId: offscreen.id,
+            generation: codeState.source.generation,
+            resetVersion: getStoreResetVersion(renderer.getStore()),
+            configurationRevision: codeState.configurationRevision,
+            chunkStart: 0,
+            rangeStart: 0,
+            rangeEnd: 30,
+            visibleStart: 10,
+            visibleEnd: 20,
+            renderSegments: [{
+              startIndex: 0,
+              endIndex: 30,
+              visibleStart: 10,
+              visibleEnd: 20,
+              spacerBeforeHeight: 0,
+            }],
+          }),
+        ),
+      );
+      await waitFor(() => overscanRequests.length > 0, "visible and overscan lines enqueue demanded decoration");
+      assert.deepEqual(overscanRequests, [{
+        blockId: offscreen.id,
+        startLine: 0,
+        endLine: 30,
+        priority: "visible",
+        reason: "scroll",
+      }], "rendered overscan should join the visible demand before background work");
+    } finally {
+      rangeRoot.unmount();
+      for (const key of globalKeys) {
+        const descriptor = previousGlobals[key];
+        if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+        else Reflect.deleteProperty(globalThis, key);
+      }
+      window.close();
+    }
+
+    renderer.requestCodeHighlightRange({
+      blockId: offscreen.id,
+      startLine: 0,
+      endLine: 64,
+      priority: "prefetch",
+    });
+    renderer.requestCodeHighlightRange({
+      blockId: visible.id,
+      startLine: 0,
+      endLine: 64,
+      priority: "visible",
+    });
+    await waitFor(() => decorationOrder.length === 2 || observation.error !== null, "both range requests return decorations");
+    assert.equal(observation.error, null);
+    assert.deepEqual(
+      decorationOrder,
+      [visible.id, offscreen.id],
+      "visible tokenization should be served before already-requested offscreen work",
+    );
+  } finally {
+    renderer.detachWorker();
+    worker.terminate();
+  }
+}
+
+async function testVirtualizedLazyBlockCompletesInBackground(): Promise<void> {
+  const lineCount = 260;
+  const markdown = `\`\`\`ts\n${Array.from({ length: lineCount }, (_, index) => `const row${index} = ${index};`).join("\n")}\n\`\`\``;
+  const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { pretendToBeVisual: true });
+  const { window } = dom;
+  const globalKeys = ["window", "document", "HTMLElement", "Node", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver"] as const;
+  const previousGlobals = Object.fromEntries(
+    globalKeys.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
+  ) as Record<(typeof globalKeys)[number], PropertyDescriptor | undefined>;
+  Object.assign(globalThis, {
+    window,
+    document: window.document,
+    HTMLElement: window.HTMLElement,
+    Node: window.Node,
+    requestAnimationFrame: window.requestAnimationFrame.bind(window),
+    cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
+    ResizeObserver: ResizeObserverStub,
+  });
+  const renderer = new MarkdownRenderer();
+  const store = renderer.getStore();
+  const worker = createInlineEngineWorker();
+  const observation = observeWorker(worker);
+  const requests: CodeHighlightRequest[] = [];
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const root = createRoot(container);
+  try {
+    root.render(
+      React.createElement(
+        CodeHighlightRequestContext.Provider,
+        {
+          value: (request: CodeHighlightRequest) => {
+            requests.push(request);
+            renderer.requestCodeHighlightRange(request);
+          },
+        },
+        React.createElement(MarkdownBlocksRenderer, { blocks: [], componentRegistry: renderer.getComponentRegistry(), store }),
+      ),
+    );
+    renderer.attachWorker(worker, { skipInit: true });
+    worker.postMessage(createLazyInitMessage(""));
+    await waitFor(() => observation.initialized || observation.error !== null, "worker initializes for virtualized lazy test");
+    assert.equal(observation.error, null);
+    await renderer.whenInitialized();
+    renderer.append(markdown);
+    await renderer.finalize();
+    const lazyProgress = () => {
+      const code = store.getBlocks().find((block) => block.type === "code");
+      return code?.payload.meta?.lazyTokenizedUntil;
+    };
+    await waitFor(
+      () => lazyProgress() === lineCount || observation.error !== null,
+      "a virtualized lazy block must finish background tokenization after finalize",
+    );
+    assert.equal(observation.error, null);
+    assert.ok(
+      container.querySelector('[data-code-virtualized="true"]'),
+      "the fixture must exercise the virtualized code view",
+    );
+    assert.ok(
+      requests.some((request) => request.priority === "prefetch" && request.startLine === 0 && request.endLine === lineCount),
+      "the full block is requested as background work, behind visible demand",
+    );
+  } finally {
+    root.unmount();
+    renderer.detachWorker();
+    worker.terminate();
+    window.close();
+    for (const key of globalKeys) {
+      const descriptor = previousGlobals[key];
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    }
+  }
+}
+
+
+await testVisibleRangesPrecedePrefetch();
 await testInlineWorkerNativeCodeHighlighting();
+await testVirtualizedLazyBlockCompletesInBackground();
 console.log("native-code-highlight-lifecycle test passed");

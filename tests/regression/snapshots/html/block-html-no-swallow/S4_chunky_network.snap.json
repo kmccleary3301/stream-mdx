@@ -30,17 +30,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.2000000178813934,
-        "lastDurationMs": 1,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.600000023841858,
+        "lastDurationMs": 1.5,
         "meta": {
           "fixtureId": "block-html-no-swallow",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -49,8 +50,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -59,12 +58,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\" id=\"block-html-no-swallow\" data-heading-id=\"block-html-no-swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
       "textSample": "Block HTML No SwallowIntro paragraph before the open block tag.\nThis block-style HTML never closes in the streamed input.This paragraph must remain visible as plain markdown text after the unfinished ",
       "structure": {
         "topLevelTags": [
@@ -81,7 +78,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -94,17 +90,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.2000000178813934,
-        "lastDurationMs": 1,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.600000023841858,
+        "lastDurationMs": 1.5,
         "meta": {
           "fixtureId": "block-html-no-swallow",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -113,8 +110,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -123,12 +118,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\" id=\"block-html-no-swallow\" data-heading-id=\"block-html-no-swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
       "textSample": "Block HTML No SwallowIntro paragraph before the open block tag.\nThis block-style HTML never closes in the streamed input.This paragraph must remain visible as plain markdown text after the unfinished ",
       "structure": {
         "topLevelTags": [
@@ -145,7 +138,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -158,17 +150,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.2000000178813934,
-        "lastDurationMs": 1,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.600000023841858,
+        "lastDurationMs": 1.5,
         "meta": {
           "fixtureId": "block-html-no-swallow",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -177,8 +170,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -187,12 +178,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\" id=\"block-html-no-swallow\" data-heading-id=\"block-html-no-swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
       "textSample": "Block HTML No SwallowIntro paragraph before the open block tag.\nThis block-style HTML never closes in the streamed input.This paragraph must remain visible as plain markdown text after the unfinished ",
       "structure": {
         "topLevelTags": [
@@ -209,7 +198,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -222,17 +210,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.2000000178813934,
-        "lastDurationMs": 1,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.600000023841858,
+        "lastDurationMs": 1.5,
         "meta": {
           "fixtureId": "block-html-no-swallow",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -241,8 +230,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -251,12 +238,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\" id=\"block-html-no-swallow\" data-heading-id=\"block-html-no-swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
       "textSample": "Block HTML No SwallowIntro paragraph before the open block tag.\nThis block-style HTML never closes in the streamed input.This paragraph must remain visible as plain markdown text after the unfinished ",
       "structure": {
         "topLevelTags": [
@@ -273,7 +258,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -286,17 +270,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.2000000178813934,
-        "lastDurationMs": 1,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.600000023841858,
+        "lastDurationMs": 1.5,
         "meta": {
           "fixtureId": "block-html-no-swallow",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -305,8 +290,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -315,12 +298,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\" id=\"block-html-no-swallow\" data-heading-id=\"block-html-no-swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
       "textSample": "Block HTML No SwallowIntro paragraph before the open block tag.\nThis block-style HTML never closes in the streamed input.This paragraph must remain visible as plain markdown text after the unfinished ",
       "structure": {
         "topLevelTags": [
@@ -337,7 +318,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -350,17 +330,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.2000000178813934,
-        "lastDurationMs": 1,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.600000023841858,
+        "lastDurationMs": 1.5,
         "meta": {
           "fixtureId": "block-html-no-swallow",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -369,8 +350,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -379,12 +358,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\" id=\"block-html-no-swallow\" data-heading-id=\"block-html-no-swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
       "textSample": "Block HTML No SwallowIntro paragraph before the open block tag.\nThis block-style HTML never closes in the streamed input.This paragraph must remain visible as plain markdown text after the unfinished ",
       "structure": {
         "topLevelTags": [
@@ -401,7 +378,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -414,17 +390,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.2000000178813934,
-        "lastDurationMs": 1,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.600000023841858,
+        "lastDurationMs": 1.5,
         "meta": {
           "fixtureId": "block-html-no-swallow",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -433,8 +410,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -443,12 +418,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\" id=\"block-html-no-swallow\" data-heading-id=\"block-html-no-swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
       "textSample": "Block HTML No SwallowIntro paragraph before the open block tag.\nThis block-style HTML never closes in the streamed input.This paragraph must remain visible as plain markdown text after the unfinished ",
       "structure": {
         "topLevelTags": [
@@ -465,7 +438,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -478,17 +450,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.2000000178813934,
-        "lastDurationMs": 1,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.600000023841858,
+        "lastDurationMs": 1.5,
         "meta": {
           "fixtureId": "block-html-no-swallow",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -497,8 +470,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -507,12 +478,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\" id=\"block-html-no-swallow\" data-heading-id=\"block-html-no-swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
       "textSample": "Block HTML No SwallowIntro paragraph before the open block tag.\nThis block-style HTML never closes in the streamed input.This paragraph must remain visible as plain markdown text after the unfinished ",
       "structure": {
         "topLevelTags": [
@@ -529,7 +498,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -542,28 +510,27 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Block HTML No Swallow\" id=\"block-html-no-swallow\" data-heading-id=\"block-html-no-swallow\">Block HTML No Swallow</h1><p class=\"markdown-paragraph markdown-paragraph\">Intro paragraph before the open block tag.</p><div class=\"callout\">\nThis block-style HTML never closes in the streamed input.</div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph must remain visible as plain markdown text after the unfinished block tag.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must also remain visible.</li></ul></div>",
     "runtimeState": {
-      "rendererVersion": 6,
+      "rendererVersion": 5,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
       "lastTx": 3,
-      "lastPatchToDomMs": 13,
-      "lastDurationMs": 0.09999999403953552,
+      "lastPatchToDomMs": 0.699999988079071,
+      "lastDurationMs": 0.699999988079071,
       "meta": {
         "fixtureId": "block-html-no-swallow",
-        "scenarioId": "S4_chunky_network",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S4_chunky_network"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -585,13 +552,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "b2cdf149a2b2af273543f7a2ab90579515d8a93d4040b4d441a2cf49fc72e16d",
+        "hash": "e25ce0d7d6ea7fa253af8e948e695a01c06aa6528d87616f2f44909fb04a804e",
         "textSample": "Block HTML No SwallowIntro paragraph before the open block tag.\nThis block-style HTML never closes in the streamed input"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

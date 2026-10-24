@@ -39,18 +39,18 @@ Full MDX evaluation requires `contentPolicy="trusted-mdx"` and an explicit `engi
 
 ## Rendering overrides
 
-- `components`: override block renders (heading/code/table/etc).
-- `inlineComponents`: override inline renders (strong/em/link/code/etc).
-- `tableElements`: override table tags (Shadcn table wrappers).
-- `htmlElements`: override HTML tag renders (when HTML is enabled).
-- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `diff`, or custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.
-  Fences labeled `artifact` or `html-artifact` remain code unless you provide a renderer.
+- `components`: override native block, inline, and HTML presentation nodes. Use `code` and `table` wrappers, `inline:<kind>` or `extension:<name>` views, and `html:<tag>` presentations.
+- `contentComponents`: register fixed host components for restricted MDX source.
+- `allowedElements`: whitelist permitted HTML tag names (mutually exclusive with `disallowedElements`).
+- `disallowedElements`: blacklist HTML tag names (mutually exclusive with `allowedElements`).
+- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.
+- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.
 - `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).
 - `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).
 - `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.
 - `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.
 - `disableAutolinkProtocols`: protocols (e.g. `["mailto"]`) whose autolinks render as plain text while explicit markdown links remain active.
-- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).
+- `engines.math`: synchronous, server-render-safe TeX output adapter; KaTeX remains the default.
 
 Mermaid is an **opt-in add-on** that renders fenced ` ```mermaid ` code blocks as diagrams (with a Diagram/Code toggle).
 
@@ -59,12 +59,25 @@ npm install @stream-mdx/mermaid
 ```
 
 ```tsx
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 
-<StreamingMarkdown
-  text={text}
-  codeRenderers={{ mermaid: MermaidBlock }}
-/>;
+function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "mermaid") return children;
+  const code = block?.payload.meta?.code;
+  return (
+    <MermaidBlock
+      code={typeof code === "string" ? code : ""}
+      renderCode={children}
+      language={metadata.language ?? "mermaid"}
+      blockId={metadata.id}
+      controls={{ copy: true }}
+      copy={actions.copy}
+    />
+  );
+}
+
+<StreamingMarkdown text={text} components={{ code: { wrapper: MermaidPresentation } }} />;
 ```
 
 ## Scheduling and metrics

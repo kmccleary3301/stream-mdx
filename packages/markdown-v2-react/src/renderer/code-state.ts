@@ -13,8 +13,12 @@ import {
   type CodeLineDecorationUpdate,
   type CodeLineIndex,
   type CodeLineRecord,
+  type DiffBlock,
+  type DiffLine,
   type CodeTokenLine,
   type CodeTokenSpan,
+  type ThemedLine,
+  type ThemedToken,
   type NodeSnapshot,
   type Patch,
   type SourceSnapshot,
@@ -75,6 +79,13 @@ function createIndex(lines: readonly CodeLineRecord[], counters?: StoreCodeCount
   }
   return createCodeLineIndex({ lines });
 }
+function settleFinalizedCodeTail(lines: CodeLineIndex): CodeLineIndex {
+  const provisionalIndex = lines.completeLineCount;
+  const provisionalLine = lines.get(provisionalIndex);
+  return provisionalLine?.isProvisional
+    ? lines.replaceTail(provisionalIndex, [{ ...provisionalLine, isProvisional: false }])
+    : lines;
+}
 
 function metadataSnapshot(source: CodeBlockSourceMetadata): CodeBlockSourceMetadata {
   return Object.freeze({
@@ -86,6 +97,7 @@ function metadataSnapshot(source: CodeBlockSourceMetadata): CodeBlockSourceMetad
     completeLineCount: source.completeLineCount,
     lineCount: source.lineCount,
     sourceRange: Object.freeze({ from: source.sourceRange.from, to: source.sourceRange.to }),
+    ...(source.diffStatus !== undefined ? { diffStatus: source.diffStatus } : {}),
   });
 }
 
@@ -502,6 +514,8 @@ export function createStoredCodeBlockState(
       throw new RangeError("Code snapshot line ranges must be inside its source range");
     }
   }
+  const settledIndex = cold.state === "finalized" ? settleFinalizedCodeTail(index) : index;
+  const source = settledIndex === index ? cold : { ...cold, completeLineCount: settledIndex.completeLineCount };
   const sourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
     ? sourceStateForRaw(
         cold.raw,
@@ -512,7 +526,7 @@ export function createStoredCodeBlockState(
       )
     : sourceStateForRaw(cold.raw, cold.sourceRange.from, cold.sourceRange.to, canonicalSource);
   return {
-    view: createView(cold, cold.configurationRevision, cold.info, cold.language, index),
+    view: createView(source, cold.configurationRevision, cold.info, cold.language, settledIndex),
     ...sourceState,
     managed: true,
     ranges: new Map(),
@@ -864,18 +878,19 @@ export function refreshLegacyCodeSource(
     rebound ??= [...current.view.lines.readRange(0, current.view.lines.length)];
     rebound[index] = { ...record, sourceRange: { from, to }, ending: rawLine.ending };
   }
-  const lines = rebound === undefined
+  const reboundLines = rebound === undefined
     ? current.view.lines
     : typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
       ? createIndex(rebound, counters)
       : createIndex(rebound);
+  const lines = block.isFinalized ? settleFinalizedCodeTail(reboundLines) : reboundLines;
   const metadata = block.payload.meta;
   const source: CodeBlockSourceMetadata = {
     ...current.view.source,
     state: block.isFinalized ? "finalized" : body.hasClosingFence ? "closed" : "open",
     processedTo: sourceTo,
-    completeLineCount: current.view.lines.completeLineCount,
-    lineCount: current.view.lines.length,
+    completeLineCount: lines.completeLineCount,
+    lineCount: lines.length,
     sourceRange: { from: sourceFrom, to: sourceTo },
   };
   const validatedSourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
@@ -900,11 +915,15 @@ export function refreshLegacyCodeSource(
   };
 }
 export function finalizeStoredCodeState(current: StoredCodeBlockState): StoredCodeBlockState {
-  if (current.view.source.state === "finalized") return current;
-  const source: CodeBlockSourceMetadata = { ...current.view.source, state: "finalized" };
+  const currentLines = current.view.lines;
+  const lines = settleFinalizedCodeTail(currentLines);
+  if (current.view.source.state === "finalized" && lines === currentLines) return current;
+  const source: CodeBlockSourceMetadata = current.view.source.state === "finalized"
+    ? current.view.source
+    : { ...current.view.source, state: "finalized" };
   return {
     ...current,
-    view: createView(source, current.view.configurationRevision, current.view.info, current.view.language, current.view.lines),
+    view: createView(source, current.view.configurationRevision, current.view.info, current.view.language, lines),
   };
 }
 
@@ -916,9 +935,19 @@ export function decorateStoredCodeState(
   readonly state?: StoredCodeBlockState;
   readonly changed: boolean;
   readonly changedIndices?: ReadonlySet<number>;
+  readonly stale?: true;
   readonly reason?: string;
 } {
   const old = current.view.source;
+  if (
+    current.managed &&
+    patch.codeOwnerId === old.codeOwnerId &&
+    (patch.generation < old.generation ||
+      (patch.generation === old.generation && patch.configurationRevision < current.view.configurationRevision))
+  ) {
+    // Enrichment is applied after later semantic patches, so results for a superseded owner state are expected.
+    return { changed: false, stale: true };
+  }
   if (
     !current.managed ||
     patch.codeOwnerId !== old.codeOwnerId ||
@@ -941,8 +970,9 @@ export function decorateStoredCodeState(
     const line = current.view.lines.get(decoration.index);
     if (!line || line.id !== decoration.lineId || line.sourceRevision !== decoration.sourceRevision) continue;
     valid.push(decoration);
+    const clearDecoration = decoration.tokens === null && !("exactness" in decoration);
     if (
-      decoration.tokens === null
+      clearDecoration
         ? line.decoration !== undefined && line.decoration.configurationRevision === decoration.configurationRevision
         : line.decoration !== decoration
     ) changedIndices.add(decoration.index);
@@ -977,6 +1007,97 @@ export function decorateStoredCodeState(
     return { changed: false, reason: error instanceof Error ? error.message : "decoration validation failed" };
   }
 }
+
+function diffTokensEqual(
+  existing: ThemedLine | null | undefined,
+  next: ThemedLine | null,
+): boolean {
+  if (next === null) return existing == null;
+  if (!existing || existing.length !== next.length) return false;
+  for (let index = 0; index < next.length; index += 1) {
+    const left = existing[index];
+    const right = next[index];
+    if (
+      !left ||
+      !right ||
+      left.content !== right.content ||
+      left.color !== right.color ||
+      left.fontStyle !== right.fontStyle
+    ) return false;
+  }
+  return true;
+}
+
+function diffTokensFromCodeLine(
+  tokens: CodeTokenLine | null | undefined,
+): ThemedLine | null {
+  if (!tokens) return null;
+  return tokens.spans.map((span): ThemedToken => {
+    const style = span.s ?? span.v?.dark;
+    const token: ThemedToken = { content: span.t };
+    if (style?.fg !== undefined) token.color = style.fg;
+    if (style?.fs !== undefined) token.fontStyle = style.fs;
+    return token;
+  });
+}
+
+/** Applies native code-line decorations to the bounded token fields in existing diff presentation metadata. */
+export function updateStoredDiffBlockDecorations(
+  block: Block | undefined,
+  state: StoredCodeBlockState,
+  changedIndices: ReadonlySet<number> | undefined,
+): Block | undefined {
+  if (!block || block.type !== "code" || !changedIndices || changedIndices.size === 0) return block;
+  const value = block.payload.meta?.diffBlocks;
+  if (!Array.isArray(value)) return block;
+  const diffBlocks = value as DiffBlock[];
+  const indices = [...changedIndices];
+  for (let index = 1; index < indices.length; index += 1) {
+    if ((indices[index - 1] ?? -1) > (indices[index] ?? -1)) {
+      indices.sort((left, right) => left - right);
+      break;
+    }
+  }
+  let nextDiffBlocks: DiffBlock[] | undefined;
+  let indexCursor = 0;
+  let sourceLineOffset = 0;
+  for (let blockIndex = 0; blockIndex < diffBlocks.length; blockIndex += 1) {
+    const diffBlock = diffBlocks[blockIndex];
+    if (!diffBlock || !Array.isArray(diffBlock.lines)) continue;
+    const blockEnd = sourceLineOffset + diffBlock.lines.length;
+    while (indexCursor < indices.length && (indices[indexCursor] ?? Number.POSITIVE_INFINITY) < sourceLineOffset) {
+      indexCursor += 1;
+    }
+    let nextLines: DiffLine[] | undefined;
+    while (indexCursor < indices.length) {
+      const index = indices[indexCursor];
+      if (index === undefined || index >= blockEnd) break;
+      indexCursor += 1;
+      const diffLineIndex = index - sourceLineOffset;
+      const diffLine = diffBlock.lines[diffLineIndex];
+      const codeLine = state.view.lines.get(index);
+      if (!diffLine || !codeLine || codeLine.text !== diffLine.raw) continue;
+      const tokens = diffTokensFromCodeLine(codeLine.decoration?.tokens);
+      if (diffTokensEqual(diffLine.tokens, tokens)) continue;
+      if (!nextLines) nextLines = diffBlock.lines.slice();
+      nextLines[diffLineIndex] = { ...diffLine, tokens };
+    }
+    if (nextLines) {
+      nextDiffBlocks ??= diffBlocks.slice();
+      nextDiffBlocks[blockIndex] = { ...diffBlock, lines: nextLines };
+    }
+    sourceLineOffset = blockEnd;
+  }
+  if (!nextDiffBlocks) return block;
+  return {
+    ...block,
+    payload: {
+      ...block.payload,
+      meta: { ...(block.payload.meta ?? {}), diffBlocks: nextDiffBlocks },
+    },
+  };
+}
+
 
 export function readStoredCodeLines(state: StoredCodeBlockState, from: number, to: number): readonly CodeLineRecord[] {
   const key = `${from}:${to}`;
@@ -1042,9 +1163,10 @@ export function materializeStoredCodeBlock(
   if (state.view.info.length > 0) metadata.info = state.view.info;
   if (state.view.language !== undefined) metadata.lang = state.view.language;
   const rows = state.view.lines.readRange(0, state.view.lines.length);
-  const tokenLines = rows.map((line) => line.decoration
-    ? { spans: line.decoration.tokens.spans as TokenLineV1["spans"] }
-    : null);
+  const tokenLines = rows.map((line) => {
+    if (!line.decoration || line.decoration.exactness === "unavailable") return null;
+    return { spans: line.decoration.tokens.spans as TokenLineV1["spans"] };
+  });
   if (tokenLines.some((line) => line !== null)) metadata.tokenLines = tokenLines;
   else delete metadata.tokenLines;
   const diffKind = rows.map((line) => line.diffKind ?? null);

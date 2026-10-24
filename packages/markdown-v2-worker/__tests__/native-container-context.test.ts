@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import type { SyntaxNode, Tree } from "@lezer/common";
 import { GFM, parser as baseMarkdownParser } from "@lezer/markdown";
 import { AppendSourceDocument, createBlockCompatibilityExtension, type SourceSnapshot } from "@stream-mdx/core";
-import { NativeContainerTailParser, type NativeContainerTailChange } from "../src/engine/native-container-tail";
+import { NATIVE_CONTAINER_TAIL_VANISHED, NativeContainerTailParser, type NativeContainerTailChange } from "../src/engine/native-container-tail";
 import { NativeMarkdownInput } from "../src/engine/native-markdown-input";
 import { HtmlContinuationExtension } from "../src/parser/html-extension";
 
@@ -87,6 +87,7 @@ function append(fixture: NativeContainerFixture, text: string, reads?: ReadRange
   fixture.document.append(text);
   const source = watchedSnapshot(fixture.document.snapshot(), reads);
   const change = fixture.owner.append(source, text, source.length);
+  if (change === NATIVE_CONTAINER_TAIL_VANISHED) throw new Error("native container test input lost its bounded root");
   assert.ok(change, "an open native container must publish an append change");
   return { change, source };
 }

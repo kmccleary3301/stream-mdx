@@ -1,5 +1,5 @@
 import type { Block, Patch, PerformanceMetrics } from "@stream-mdx/core";
-import type { StreamingMarkdownHandle } from "@stream-mdx/react";
+import type { FinalizeResult, StreamingMarkdownHandle } from "@stream-mdx/react";
 import type { CoalescingMetrics } from "@stream-mdx/react/renderer/patch-coalescing";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
 
@@ -9,6 +9,18 @@ type AutomationState = {
   idx: number;
   total: number;
   isRunning: boolean;
+  isPending: boolean;
+  fullTextLength: number;
+  finished: boolean;
+  isFinalizing: boolean;
+  isHostComplete: boolean;
+  nativeAdmissionGeneration: number | null;
+  nativeFinalizedGeneration: number | null;
+  streamError: string | null;
+  streamLimit: number | null;
+  workerSentIdx: number;
+  workerCredits: number;
+  timerActive: boolean;
   mode: "classic" | "worker";
   schedulingPreset?: "latency" | "throughput";
   rate: number;
@@ -119,7 +131,7 @@ export type StreamingDemoAutomationApiV2 = {
   restart?: () => void;
   pause?: () => void;
   resume?: () => void;
-  finalize?: () => void;
+  finalize?: () => Promise<FinalizeResult>;
   getState?: () => AutomationState;
   getRendererNode?: (id: string) => Block | undefined;
   getRendererChildren?: (id: string) => ReadonlyArray<string>;
@@ -202,6 +214,7 @@ export type StreamingDemoAutomationApiV2 = {
       coalescingSampleCount: number;
     } | null;
     flushBatches?: FlushBatchSample[];
+    coalescingDurations?: number[];
   };
   getCoalescingTotals?: () => {
     input: number;

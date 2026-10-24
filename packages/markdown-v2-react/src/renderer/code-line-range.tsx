@@ -25,13 +25,17 @@ type DirtyCodeLineRange = {
   readonly sourceRevision: number;
 };
 
+type DemandedCodeLineRange = {
+  readonly startLine: number;
+  endLine: number;
+};
+
 type PreviousHighlightDemand = {
   readonly blockId: string;
   readonly generation: number;
   readonly resetVersion: number;
   readonly configurationRevision: number;
-  readonly visibleStart: number;
-  readonly visibleEnd: number;
+  readonly demandedRanges: readonly DemandedCodeLineRange[];
   readonly ranges: readonly DirtyCodeLineRange[];
 };
 
@@ -46,7 +50,20 @@ type CodeLineRangeViewProps = {
   rangeEnd: number;
   visibleStart: number;
   visibleEnd: number;
+  renderSegments?: readonly CodeLineRenderSegment[];
+  selectedLineIndices?: readonly number[];
 };
+
+/** Render disjoint row slices within one fixed-range store subscription. */
+type CodeLineRenderSegment = {
+  startIndex: number;
+  endIndex: number;
+  visibleStart: number;
+  visibleEnd: number;
+  spacerBeforeHeight: number;
+};
+
+
 
 /** One fixed-range store subscription; completed 64-row snapshots remain stable across tail appends. */
 export const CodeLineRangeView = React.memo(function CodeLineRangeView({
@@ -60,6 +77,8 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
   rangeEnd,
   visibleStart,
   visibleEnd,
+  renderSegments,
+  selectedLineIndices,
 }: CodeLineRangeViewProps): React.ReactElement {
   const readRange = React.useCallback(() => {
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -102,21 +121,70 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       };
       counterStore.campaignCounters?.recordStoreRecordsTouched?.(lines.length, "view");
     }
-    for (const line of lines) {
-      if (line.index < rangeStart || line.index >= rangeEnd) continue;
-      mappedRows.push(React.createElement(NativeCodeLineGroup, { key: line.id, line }));
+    const segments = renderSegments ?? [{
+      startIndex: rangeStart,
+      endIndex: rangeEnd,
+      visibleStart,
+      visibleEnd,
+      spacerBeforeHeight: 0,
+    }];
+    for (const segment of segments) {
+      if (segment.spacerBeforeHeight > 0) {
+        mappedRows.push(React.createElement("span", {
+          key: `viewport-gap:${segment.startIndex}`,
+          "aria-hidden": true,
+          style: { display: "block", height: segment.spacerBeforeHeight },
+        }));
+      }
+      for (const line of lines) {
+        if (line.index < segment.startIndex || line.index >= segment.endIndex) continue;
+        mappedRows.push(React.createElement(NativeCodeLineGroup, {
+          key: line.id,
+          line,
+          generation,
+          selectedForNativeSelection: selectedLineIndices?.includes(line.index) ?? false,
+        }));
+      }
     }
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       (store as CodeLineRangeCounterStore).campaignCounters?.recordRecordSlotsAllocated?.(mappedRows.length, "view");
     }
     return mappedRows;
-  }, [blockId, chunkStart, configurationRevision, generation, lines, rangeEnd, rangeStart, resetVersion, store]);
+  }, [
+    blockId,
+    chunkStart,
+    configurationRevision,
+    generation,
+    lines,
+    rangeEnd,
+    rangeStart,
+    renderSegments,
+    selectedLineIndices,
+    resetVersion,
+    store,
+    visibleEnd,
+    visibleStart,
+  ]);
 
   React.useEffect(() => {
     const previous = previousDemandRef.current;
-    const demandStart = Math.max(visibleStart, rangeStart, chunkStart);
-    const demandEnd = Math.min(visibleEnd, rangeEnd, chunkStart + CODE_LINE_RANGE_SIZE);
-    if (!highlightRequester || demandEnd <= demandStart) {
+    const segments = renderSegments ?? [{
+      startIndex: rangeStart,
+      endIndex: rangeEnd,
+      visibleStart,
+      visibleEnd,
+      spacerBeforeHeight: 0,
+    }];
+    const demandedRanges: DemandedCodeLineRange[] = [];
+    for (const segment of segments) {
+      const startLine = Math.max(segment.startIndex, chunkStart);
+      const endLine = Math.min(segment.endIndex, chunkStart + CODE_LINE_RANGE_SIZE);
+      if (endLine <= startLine) continue;
+      const last = demandedRanges[demandedRanges.length - 1];
+      if (last && startLine <= last.endLine) last.endLine = Math.max(last.endLine, endLine);
+      else demandedRanges.push({ startLine, endLine });
+    }
+    if (!highlightRequester || demandedRanges.length === 0) {
       previousDemandRef.current = null;
       return;
     }
@@ -151,7 +219,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       counterStore.campaignCounters?.recordStoreRecordsTouched?.(lines.length, "view");
     }
     for (const line of lines) {
-      if (line.index < demandStart || line.index >= demandEnd) continue;
+      if (!demandedRanges.some((range) => line.index >= range.startLine && line.index < range.endLine)) continue;
       const decoration = line.decoration;
       const isCurrentDecoration =
         decoration?.sourceRevision === line.sourceRevision &&
@@ -190,8 +258,13 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       previous.generation === generation &&
       previous.resetVersion === resetVersion &&
       previous.configurationRevision === configurationRevision &&
-      previous.visibleStart === demandStart &&
-      previous.visibleEnd === demandEnd &&
+      previous.demandedRanges.length === demandedRanges.length &&
+      previous.demandedRanges.every((range, index) => {
+        const next = demandedRanges[index];
+        return next !== undefined &&
+          range.startLine === next.startLine &&
+          range.endLine === next.endLine;
+      }) &&
       previous.ranges.length === ranges.length &&
       previous.ranges.every((range, index) => {
         const next = ranges[index];
@@ -207,8 +280,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       generation,
       resetVersion,
       configurationRevision,
-      visibleStart: demandStart,
-      visibleEnd: demandEnd,
+      demandedRanges,
       ranges,
     };
     for (const range of ranges) {
@@ -233,6 +305,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
     store,
     visibleEnd,
     visibleStart,
+    renderSegments,
   ]);
 
   return <>{rows}</>;

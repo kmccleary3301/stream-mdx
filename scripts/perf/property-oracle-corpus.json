@@ -189,5 +189,231 @@
       160,
       161
     ]
+  },
+  {
+    "name": "shrunk-017",
+    "source": "~~~ts\nconst value = \"a\";\n~~~\n\n1. parent a\n   - nested\n\n     loose continuation\n2. sibling\n\nInline a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\n[late]: /target\n[^note]: a",
+    "mode": "per-line",
+    "splitPoints": [
+      6,
+      25,
+      29,
+      30,
+      42,
+      54,
+      55,
+      79,
+      90,
+      91,
+      185,
+      201
+    ]
+  },
+  {
+    "name": "shrunk-018",
+    "source": "Reference [a][late]\n\n[late]: /a\n\nInline a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\n[late]: /target\n[^note]: a\n\n> quote a\n> continuation",
+    "mode": "per-line",
+    "splitPoints": [
+      20,
+      21,
+      32,
+      33,
+      127,
+      143,
+      154,
+      155,
+      165
+    ]
+  },
+  {
+    "name": "shrunk-019",
+    "source": "Footnote[^note]\n\n[^note]: a\n\nUnclosed <kbd>a",
+    "mode": "arbitrary",
+    "splitPoints": [
+      39,
+      42
+    ]
+  },
+  {
+    "name": "shrunk-020",
+    "source": "1. parent a\n   - nested\n\n     loose continuation\n2. sibling\n\n> quote a\n> continuation\n\nParagraph a",
+    "mode": "per-line",
+    "splitPoints": [
+      12,
+      24,
+      25,
+      49,
+      60,
+      61,
+      71,
+      86,
+      87
+    ]
+  },
+  {
+    "name": "shrunk-021",
+    "source": "Paragraph a\n\n1. parent a\n   - nested\n\n     loose continuation\n2. sibling\n\nUnclosed <kbd>a🚀",
+    "mode": "arbitrary",
+    "splitPoints": [
+      26,
+      84,
+      87,
+      90
+    ]
+  },
+  {
+    "name": "shrunk-022",
+    "source": "Reference [a][late]\n\n[late]: /a\n\n> quote a\n> continuation\n\nUnclosed <kbd>a",
+    "mode": "arbitrary",
+    "splitPoints": [
+      33,
+      43,
+      69,
+      72
+    ]
+  },
+  {
+    "name": "shrunk-023",
+    "source": "Paragraph a\n\n1. parent a\r\n   - nested\r\n\r\n     loose continuation\r\n2. sibling",
+    "mode": "per-line",
+    "splitPoints": [
+      12,
+      13,
+      26,
+      39,
+      41,
+      66
+    ]
+  },
+  {
+    "name": "shrunk-024",
+    "source": "Paragraph a\n\n1. parent a\r\n   - nested\r\n\r\n     loose continuation\r\n2. sibling\n\nUnclosed <kbd>a",
+    "mode": "per-line",
+    "splitPoints": [
+      12,
+      13,
+      26,
+      39,
+      41,
+      66,
+      77,
+      78
+    ]
+  },
+  {
+    "name": "shrunk-025",
+    "source": "Inline a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\n[late]: /target\n[^note]: a\n\nInline a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\r\n[late]: /target\r\n[^note]: a",
+    "mode": "per-line",
+    "splitPoints": [
+      94,
+      110,
+      121,
+      122,
+      217,
+      234
+    ]
+  },
+  {
+    "name": "shrunk-026",
+    "source": "~~~ts\nconst value = \"a\";\n~~~\n\nInline a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\n[late]: /target\n[^note]: a\n\nInline a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\r\n[late]: /target\r\n[^note]: a",
+    "mode": "per-line",
+    "splitPoints": [
+      6,
+      25,
+      29,
+      30,
+      124,
+      140,
+      151,
+      152,
+      247,
+      264
+    ]
+  },
+  {
+    "name": "shrunk-027",
+    "source": "    const value = \"a\";\r\n    return value\n\n    const value = \"a\";\n    return value\n\n| key | value |\n| :--- | ---: |\n| row0 | a |",
+    "mode": "per-line",
+    "splitPoints": [
+      24,
+      41,
+      42,
+      65,
+      82,
+      83,
+      99,
+      115
+    ]
+  },
+  {
+    "name": "shrunk-028",
+    "source": "Paragraph a\n\n1. parent a\r\n   - nested\r\n\r\n     loose continuation\r\n2. sibling\n\n> quote a\n> continuation\n\nUnclosed <kbd>a",
+    "mode": "per-line",
+    "splitPoints": [
+      12,
+      13,
+      26,
+      39,
+      41,
+      66,
+      77,
+      78,
+      88,
+      103,
+      104
+    ]
+  },
+  {
+    "name": "shrunk-029",
+    "source": "Inline a *em* **strong** `code` [link](/path) [ref][late] [^note] <kbd>key</kbd> <sub>2</sub>\n[late]: /target\n[^note]: a\n\n~~~ts\nconst value = \"a\";\n~~~\n\n1. parent a\n   - nested\n\n     loose continuation\n2. sibling\n\n~~~js\nconst tail = \"a\";",
+    "mode": "per-line",
+    "splitPoints": [
+      94,
+      110,
+      121,
+      122,
+      128,
+      147,
+      151,
+      152,
+      164,
+      176,
+      177,
+      201,
+      212,
+      213,
+      219
+    ]
+  },
+  {
+    "name": "shrunk-030",
+    "source": "~~~ts\r\nconst value = \"xx\";\r\n~~~\r\n\r\n1. parent 𠮷axa\n   - nested\n\n     loose continuation\n2. sibling\r\n\r\n1. parent b🚀🚀x\n   - nested\n\n     loose continuation\n2. sibling\r\n\r\n~~~js\nconst tail = \"ab\";",
+    "mode": "arbitrary",
+    "splitPoints": [
+      1,
+      2,
+      6,
+      27,
+      29,
+      30,
+      32,
+      34,
+      46,
+      99,
+      101,
+      103,
+      114,
+      116,
+      167,
+      169,
+      171,
+      172
+    ]
+  },
+  {
+    "name": "reopened-root-eof-after-closed-code",
+    "source": "~~~ts\r\nconst value = \"xx\";\r\n~~~\r\n\r\n1. parent \ud842\udfb7axa\n   - nested\n\n     loose continuation\n2. sibling\r\n\r\n1. parent b\ud83d",
+    "mode": "arbitrary",
+    "splitPoints": [1, 2, 6, 27, 29, 30, 32, 34, 46, 99, 101, 103]
   }
 ]

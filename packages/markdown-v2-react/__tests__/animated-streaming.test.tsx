@@ -75,7 +75,7 @@ async function testOffByDefault(): Promise<void> {
   assert.ok(renderer);
   assert.equal(renderer.tagName, "DIV");
   assert.equal(renderer.parentElement, container);
-  assert.equal(renderer.getAttribute("class"), "markdown-renderer");
+  assert.equal(renderer.getAttribute("class"), "markdown-renderer markdown-v2-output not-prose");
   assert.equal(renderer.style.getPropertyValue("contain"), "content");
   assert.equal(renderer.children.length, 1);
   const paragraph = renderer.firstElementChild;

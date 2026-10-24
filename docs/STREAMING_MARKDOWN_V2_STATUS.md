@@ -15,7 +15,7 @@ If you’re looking for the consumer API first, start with:
 
 StreamMDX is a streaming-first Markdown/MDX renderer for React built around:
 
-- **Instance-scoped parsing** with worker, main-thread, and automatic execution modes
+- **Instance-scoped parsing** with `worker`, `main`, and `auto` (default) execution modes
 - **Incremental patching** (updates are applied to an existing render)
 - **Backpressure guardrails** (prevents UI lockups on large documents/high update rates)
 - **Modular feature flags** (tables/html/mdx/math/footnotes/callouts)
@@ -117,7 +117,7 @@ This builds the hosted worker bundle and copies it into:
 ## 7) Engine-v2 delivery evidence
 
 - Node 20 integrated suites: 21 core, 52 worker, 48 React, one unified, and one Mermaid test file passed.
-- Review-phase additions, all default off so default output is unchanged: opt-in code/table/Mermaid `controls` (rendered beside `<pre>`, never inside it), `animated` streaming text, render-time element filters (`allowedElements`/`disallowedElements`/`allowElement`/`unwrapDisallowed`/`disableAutolinkProtocols`), `codeRenderers` `aliases`, configurable Shiki themes, and a render-time `urlTransform`. Render-time props re-render mounted blocks without restarting the stream.
+- Review-phase additions preserve default output unless enabled: opt-in code/table/Mermaid `controls` (rendered beside `<pre>`, never inside it), `animated` streaming text, render-time element filters (`allowedElements`/`disallowedElements`/`allowElement`/`unwrapDisallowed`/`disableAutolinkProtocols`), configurable Shiki themes, and a render-time `urlTransform`. Shiki's built-in language aliases map short labels such as `js` to grammar names. Render-time props re-render mounted blocks without restarting the stream.
 - CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare `<pre><code>` with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance.
 - Final production HTML regressions: 109/109 scenarios passed in a non-update run against the production docs build.
 - Fresh packed ESM/CJS consumers and production Next/Vite builds passed on Node 20. Real main-thread browser consumers rendered remark/rehype output and Mermaid SVGs.

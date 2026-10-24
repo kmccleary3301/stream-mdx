@@ -142,8 +142,8 @@ async function runMountedListPrimaryParagraphRegression(): Promise<void> {
   const roots: Root[] = [];
   try {
     const liveRegistry = new ComponentRegistry();
-    liveRegistry.setInlineComponents({
-      strong: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children),
+    liveRegistry.setNodePresentations({
+      "inline:strong": { wrapper: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children) },
     });
     const live = await mountNativeList(dom, roots, "- **live**", liveRegistry);
     const listId = rootListId(live.store);
@@ -227,8 +227,10 @@ async function runMountedListPrimaryParagraphRegression(): Promise<void> {
     // A registered blockquote wraps a quote nested in a list item; the nested node has no content of its own,
     // so the wrapper must receive the quote's rendered children.
     const customQuoteRegistry = new ComponentRegistry();
-    customQuoteRegistry.setBlockComponents({
-      blockquote: ({ renderedContent }) => createElement("blockquote", { className: "custom-quote" }, renderedContent),
+    customQuoteRegistry.setNodePresentations({
+      blockquote: {
+        wrapper: ({ children }) => createElement("blockquote", { className: "custom-quote" }, children),
+      },
     });
     const quoted = await mountNativeList(dom, roots, "- item\n  > first", customQuoteRegistry);
     await handleAndApply(dom, quoted.engine, quoted.store, quoted.emitted, { type: "APPEND", text: " quoted line" });

@@ -53,9 +53,22 @@ export function Demo({ text }: { text: string }) {
 }
 ```
 
-`engine` defaults to `"auto"`. It tries a browser Worker and dynamically imports the in-process engine only when Worker creation is unavailable or fails. `"worker"` requires a Worker; `"main-thread"` skips the Worker and runs parsing on the browser thread. Engine setup runs after mounting, not during SSR. Use compiled snapshots and the server entry for server markup.
+`engine` defaults to `"auto"` and bootstraps up to 4,096 accepted UTF-16 source units with the existing inline engine while worker setup and grammar prewarm are pending. Further source is deferred beyond that limit. `"worker"` requires a Worker; `"main"` runs parsing on the browser thread without a bootstrap cap. Engine setup runs after mounting, not during SSR. Use compiled snapshots and the server entry for server markup.
 
-`mathRenderer` replaces math views; `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.
+### Rendering customization
+
+`components` replaces the removed renderer maps:
+
+- `inlineComponents` → `components["inline:<kind>"]` or `components["extension:<name>"]`
+- `htmlElements` → `components["html:<tag>"]`
+- `tableElements` → `components.table` wrappers or headless table views with `useTableBlock` / `useTableRows`
+- `codeRenderers` → `components.code` wrappers or headless code views; wrappers receive `metadata.language`, and `slots.actions` replaces native code actions. Mermaid diagrams use `engines.mermaid` from `createMermaidEngine()`
+- `mathRenderer` → presentation becomes a math wrapper/view in `components["inline:math"]`; TeX rendering uses `engines.math` (KaTeX remains the default)
+- `mdxComponents` → restricted `contentComponents` registrations, or trusted `contentPolicy="trusted-mdx"` with `engines.mdx`
+
+`features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.
+
+`colorScheme` accepts `"light"`, `"dark"`, or `"system"` and sets the native root's `data-color-scheme`. System mode follows `prefers-color-scheme` with CSS only; when unset, a `.dark` ancestor keeps the existing class-based behavior. Native roots carry `data-stream-mdx` and `not-prose`, so enclosing typography-plugin selectors do not restyle native output and the optional Tailwind theme scopes native styles to that root.
 
 ## Typical Uses
 
@@ -114,6 +127,40 @@ Table virtualization is disabled by default. Only finalized tables meeting `minR
 
 Virtualized tables retain native table elements, a sticky header, measured variable row heights, and `aria-hidden` spacer rows. The last row remains reachable by scrolling.
 When detached from the bottom, row measurements preserve the visible row and its pixel offset, including content partly covered by the sticky header. Scrolling chooses a new anchor; bottom attachment still follows measured tail growth.
+
+### Code viewport and printing
+
+Large native code blocks use a bounded reader viewport. The **Show full content** control mounts all authored lines while retaining the existing code wrapper and mounted native rows; toggling back restores the bounded window and reader anchor.
+
+`StreamingMarkdown` accepts `codeVirtualization?: Partial<VirtualizedCodeConfig>` to configure native code viewport presentation:
+
+```tsx
+<StreamingMarkdown text={content} codeVirtualization={{ followTail: true }} />
+```
+
+`followTail` defaults to `false`, preserving the reader position when code is appended. Set it to `true` to opt in to following appended rows while attached at the physical bottom (within 2px). An upward scroll of more than 1px detaches; returning within 2px reattaches. Changing this presentation config does not reset authored source or replace the native viewport; turning `followTail` off preserves the existing reader anchor and scroll position on a subsequent append.
+
+When a browser dispatches `beforeprint`, an eligible virtualized native code block temporarily mounts its full source and removes viewport clipping and height limits. `afterprint` restores the prior reader mode, scroll anchor, and native text selection without changing the manual full-content control.
+
+Print preparation mounts the whole block in the DOM, so print-time memory and layout work scale with the source length. Custom code renderers and server-rendered output control their own print behavior.
+
+Native whole-code copy/download uses cold authored source, preserving CR/LF and trailing blank lines rather than normalized display text. The test DOM exercises copy with an active selection and a Clipboard API stub; no physical browser or OS clipboard proof is claimed. Download shares the source action, but direct Blob browser proof remains pending. Native copied-status feedback cleanup prevents delayed updates after unmount.
+Each eligible virtualized table also exposes a "Show full content" toggle. It mounts every row only on request; toggling it again restores the bounded viewport without replacing the native table or changing the reader's scroll position.
+
+
+### Table controls
+
+Table controls are off by default. Enable Markdown copy or download for tables with `controls`:
+
+```tsx
+<StreamingMarkdown
+  text={content}
+  features={{ tables: true }}
+  controls={{ table: { copy: ["markdown"], download: ["markdown"] } }}
+/>
+```
+
+For native tables, Markdown copy and download use the table's authored source slice. They preserve spacing, escaped pipes, inline Markdown, and original line endings, and exclude the final row's line ending and any following document content. TSV and CSV remain cell-value transforms, not source-preserving Markdown.
 
 ## When To Use This Package Directly
 

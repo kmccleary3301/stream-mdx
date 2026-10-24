@@ -8,6 +8,12 @@ import type { ContentComponentsMap } from "./components/content-components";
 import { normalizeContentComponents } from "./components/content-components";
 import type { TrustedMdxEngine } from "./trusted-mdx-contract";
 import type { Block, CodeHighlightingMode, ContentPolicy, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
+import { SourceCapacityError, StreamSessionError, type AppendResult, type FinalizeResult, type WaitForCapacityOptions } from "@stream-mdx/protocol";
+import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./source-admission-limits";
+export { SourceCapacityError, StreamSessionError } from "@stream-mdx/protocol";
+import { EngineCompatibilityError } from "./worker-session";
+export { EngineCompatibilityError };
+export type { AppendResult, FinalizeResult, WaitForCapacityOptions } from "@stream-mdx/protocol";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
 import { useRendererHasProvisionalBlocks } from "./renderer/hooks";
@@ -17,7 +23,30 @@ import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
-import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
+import { DocumentMathMacroScope, DocumentMathMacroScopeContext } from "./components/katex-math";
+import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type InlineComponents, type MathEngine, type MathOptions, type MermaidEngine, type NodePresentations, type RendererConfig, type SyntaxExtensionDescriptor, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import type { CodeEngine } from "./types";
+type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
+type PendingCapacityWaiter = {
+  resolve(): void;
+  reject(error: Error): void;
+  options: WaitForCapacityOptions;
+  signal?: AbortSignal;
+  abort?: () => void;
+};
+type PendingStreamingCommands = {
+  owner: string;
+  commands: PendingStreamingCommand[];
+  nextIndex: number;
+  sealed: boolean;
+  acceptedSourceUnits: number;
+  pendingSourceUnits: number;
+  capacityWaiters: Set<PendingCapacityWaiter>;
+  finalizationPromise: Promise<FinalizeResult> | null;
+  resolveFinalization?: (result: FinalizeResult) => void;
+  rejectFinalization?: (error: Error) => void;
+  drainAbortController: AbortController | null;
+};
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
 function createConfigSignature(input: StreamingMarkdownConfigSignature): string {
@@ -30,9 +59,11 @@ interface StreamingMarkdownConfigSignature {
   scheduling: StreamingSchedulerOptions | undefined;
   contentPolicy?: ContentPolicy;
   contentComponentKeys: string[];
-  syntax?: SyntaxRuleSpec[];
+  syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   themes?: { light: string; dark: string };
+  mathOptions?: MathOptions;
+  codeEngineId?: string;
 }
 
 export interface StreamingSchedulerOptions {
@@ -106,8 +137,9 @@ export interface StreamingMarkdownHandle {
   pause(): void;
   resume(): void;
   restart(): void;
-  finalize(): void;
-  append(text: string): void;
+  finalize(): Promise<FinalizeResult>;
+  append(text: string): AppendResult;
+  waitForCapacity(options: WaitForCapacityOptions): Promise<void>;
   setCredits(value: number): void;
   flushPending(): PatchFlushResult | null;
   waitForIdle(): Promise<void>;
@@ -124,7 +156,7 @@ export type LinkSafetyConfig = {
   renderModal?: (props: LinkSafetyModalProps) => React.ReactNode;
 };
 
-export type MarkdownEngineMode = "worker" | "main-thread" | "auto";
+export type MarkdownEngineMode = "auto" | "main" | "worker";
 
 export interface StreamingMarkdownProps extends ElementFilterOptions {
   text?: string;
@@ -135,14 +167,15 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   prewarmLangs?: string[];
   features?: StreamingFeatureFlags;
   themes?: { light: string; dark: string };
-  components?: Partial<BlockComponents>;
-  tableElements?: Partial<TableElements>;
-  htmlElements?: Partial<HtmlElements>;
-  inlineComponents?: Partial<InlineComponents>;
+  colorScheme?: "light" | "dark" | "system";
+  components?: NodePresentations;
   scheduling?: StreamingSchedulerOptions;
   contentPolicy?: ContentPolicy;
   contentComponents?: ContentComponentsMap;
   engines?: {
+    code?: CodeEngine;
+    math?: MathEngine;
+    mermaid?: MermaidEngine;
     mdx?: TrustedMdxEngine;
   };
   onMetrics?: (metrics: RendererMetrics) => void;
@@ -151,36 +184,37 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   style?: React.CSSProperties;
   caret?: StreamingCaret;
   linkSafety?: LinkSafetyConfig;
-  codeRenderers?: Record<string, CodeFenceRenderer>;
-  mathRenderer?: MathRenderer;
+  mathOptions?: MathOptions;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
-  blockRenderer?: BlockRendererOverride;
-  syntax?: SyntaxRuleSpec[];
+  syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   tableVirtualization?: TableVirtualizationOptions;
+  codeVirtualization?: Partial<VirtualizedCodeConfig>;
   urlTransform?: UrlTransform;
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
+  statusMessage?: string;
 }
+
 
 
 
 const DEFAULT_HISTORY_LIMIT =
   typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production" ? 80 : 200;
 const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
-  batch: "microtask",
-  frameBudgetMs: 10,
+  batch: "rAF",
+  frameBudgetMs: 4,
   maxBatchesPerFlush: 12,
-  lowPriorityFrameBudgetMs: 6,
+  lowPriorityFrameBudgetMs: 2,
   maxLowPriorityBatchesPerFlush: 2,
   urgentQueueThreshold: 4,
 };
 const DEFAULT_SCHEDULING_SMOOTH: StreamingSchedulerOptions = {
   batch: "rAF",
-  frameBudgetMs: 6,
+  frameBudgetMs: 4,
   maxBatchesPerFlush: 4,
-  lowPriorityFrameBudgetMs: 3,
+  lowPriorityFrameBudgetMs: 2,
   maxLowPriorityBatchesPerFlush: 1,
   urgentQueueThreshold: 2,
 };
@@ -223,13 +257,11 @@ function StreamingMarkdownComponent(
     prewarmLangs = [],
     features = {},
     themes,
+    colorScheme,
     components,
-    tableElements,
-    htmlElements,
     contentPolicy = "restricted",
     contentComponents,
     engines,
-    inlineComponents,
     scheduling,
     managedWorker = false,
     onMetrics,
@@ -238,25 +270,31 @@ function StreamingMarkdownComponent(
     style,
     caret,
     linkSafety,
-    codeRenderers,
     allowedElements,
     disallowedElements,
     allowElement,
     unwrapDisallowed,
     disableAutolinkProtocols,
-    mathRenderer,
+    mathOptions,
     deferHeavyBlocks,
-    blockRenderer,
     syntax,
     html,
     tableVirtualization,
+    codeVirtualization,
     urlTransform,
     controls,
     controlsComponent,
     animated,
+    statusMessage,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
+  if ((engine as string) === "main-thread") {
+    throw new Error('engine="main-thread" has been removed; use engine="main" instead.');
+  }
+  if (engines?.code && engine !== "main") {
+    throw new EngineCompatibilityError('The main-realm CodeEngine requires engine="main".');
+  }
   if (text !== undefined && stream !== undefined) {
     throw new Error("StreamingMarkdown expects either `text` or `stream`, not both.");
   }
@@ -285,20 +323,28 @@ function StreamingMarkdownComponent(
         syntax,
         html,
         themes: effectiveThemes,
+        mathOptions,
+        codeEngineId: engines?.code?.id,
       }),
-    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes],
+    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes, mathOptions, engines?.code?.id],
   );
-  // Stable indirection lets renderers use the current linkSafety handler.
-  const linkHandlerRef = useRef<(url: string) => Promise<void>>();
   const rendererRef = useRef<{
     renderer: MarkdownRenderer;
     signature: string;
     trustedEngine: TrustedMdxEngine | undefined;
+    mathEngine: MathEngine | undefined;
+    mermaidEngine: MermaidEngine | undefined;
+    codeEngine: CodeEngine | undefined;
   }>();
   const [session, setSession] = useState(0);
   const sessionRef = useRef(session);
   if (session > sessionRef.current) sessionRef.current = session;
   const rendererKey = `${configSignature}:${session}`;
+  const mathMacroScope = useMemo(
+    () => mathOptions?.macroScope === "document" ? new DocumentMathMacroScope() : null,
+    [rendererKey, text, stream, mathOptions?.macroScope],
+  );
+  useEffect(() => () => mathMacroScope?.dispose(), [mathMacroScope]);
   const onErrorRef = useRef(onError);
   useEffect(() => {
     onErrorRef.current = onError;
@@ -306,20 +352,29 @@ function StreamingMarkdownComponent(
 
   const historyLimit = effectiveScheduling.historyLimit ?? DEFAULT_HISTORY_LIMIT;
   const trustedEngine = contentPolicy === "trusted-mdx" ? engines?.mdx : undefined;
+  const mathEngine = engines?.math;
+  const mermaidEngine = engines?.mermaid;
+  const codeEngine = engines?.code;
 
-  if (!rendererRef.current || rendererRef.current.signature !== rendererKey || rendererRef.current.trustedEngine !== trustedEngine) {
+  if (
+    !rendererRef.current ||
+    rendererRef.current.signature !== rendererKey ||
+    rendererRef.current.trustedEngine !== trustedEngine ||
+    rendererRef.current.mathEngine !== mathEngine ||
+    rendererRef.current.mermaidEngine !== mermaidEngine
+    || rendererRef.current.codeEngine !== codeEngine
+  ) {
     const rendererConfig: RendererConfig = {
       themes: effectiveThemes,
-      codeRenderers,
+      components,
       allowedElements,
       disallowedElements,
       allowElement,
       unwrapDisallowed,
       disableAutolinkProtocols,
-      mathRenderer,
       tableVirtualization,
+      codeVirtualization,
       urlTransform,
-      blockRenderer,
       controls,
       controlsComponent,
       contentPolicy,
@@ -343,17 +398,19 @@ function StreamingMarkdownComponent(
       html,
     };
     const nextRenderer = new MarkdownRenderer(rendererConfig);
-    nextRenderer.getComponentRegistry().setLinkHandler((url) => {
-      void linkHandlerRef.current?.(url);
-    });
     rendererRef.current = {
       renderer: nextRenderer,
       signature: rendererKey,
       trustedEngine,
+      mathEngine,
+      mermaidEngine,
+      codeEngine,
     };
   }
 
   const renderer = rendererRef.current.renderer;
+  const sessionDisposedRef = useRef(false);
+  const sessionHandleTokenRef = useRef<object | null>(null);
   const trustedRevisionFeed = getTrustedRevisionFeed(renderer);
   const highlightRequester = useCallback(
     (request: CodeHighlightRequest) => {
@@ -366,12 +423,7 @@ function StreamingMarkdownComponent(
   const adaptiveSwitchedRef = useRef(false);
   const adaptiveFirstFlushRef = useRef(false);
   const imperativeActivityRef = useRef(false);
-  const pendingCommandsRef = useRef<{
-    owner: string;
-    commands: Array<{ type: "append"; text: string } | { type: "finalize" }>;
-    nextIndex: number;
-    trustedFinalized: boolean;
-  } | null>(null);
+  const pendingCommandsRef = useRef<PendingStreamingCommands | null>(null);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
 
@@ -423,7 +475,6 @@ function StreamingMarkdownComponent(
       setLinkModalState({ url: safe, isOpen: true, isChecking: false });
     };
   }, [linkSafety, linkSafetyEnabled, openLink, urlTransform]);
-  linkHandlerRef.current = handleLinkClick;
 
   const handleLinkClose = useMemo(() => {
     return () => setLinkModalState((prev) => ({ ...prev, isOpen: false }));
@@ -462,9 +513,9 @@ function StreamingMarkdownComponent(
     };
   }, [linkModalState.url]);
 
-  const resolvedInlineComponents = useMemo(() => {
+  const resolvedLinkRenderer = useMemo(() => {
     if (!linkSafetyEnabled) {
-      return inlineComponents;
+      return undefined;
     }
     const LinkComponent: InlineComponents["link"] = ({ href, title, children }) => {
       const url = typeof href === "string" ? href : "";
@@ -487,8 +538,8 @@ function StreamingMarkdownComponent(
         children,
       );
     };
-    return { ...(inlineComponents ?? {}), link: LinkComponent };
-  }, [handleLinkClick, inlineComponents, linkSafetyEnabled]);
+    return LinkComponent;
+  }, [handleLinkClick, linkSafetyEnabled]);
 
   useEffect(() => {
     adaptiveSwitchedRef.current = false;
@@ -525,32 +576,18 @@ function StreamingMarkdownComponent(
   }, [renderer]);
 
   useEffect(() => {
-    if (components) {
-      renderer.setBlockComponents(components);
-    }
+    const reg = renderer.getComponentRegistry();
+    reg.setNodePresentations(components);
     if (normalizedContentComponents) {
       renderer.setContentComponents(normalizedContentComponents);
     }
-    if (inlineComponents) {
-      renderer.setInlineComponents(resolvedInlineComponents ?? inlineComponents);
-    } else if (resolvedInlineComponents) {
-      renderer.setInlineComponents(resolvedInlineComponents);
-    }
-    if (tableElements) {
-      renderer.getComponentRegistry().setTableElements(tableElements);
-    }
-    if (htmlElements) {
-      renderer.getComponentRegistry().setHtmlElements(htmlElements);
-    }
-    if (codeRenderers) {
-      renderer.setCodeRenderers(codeRenderers);
-    }
-    const reg = renderer.getComponentRegistry();
-    if (mathRenderer) {
-      renderer.setMathRenderer(mathRenderer);
-    }
+    reg.setLinkSafetyRenderer(resolvedLinkRenderer);
     reg.setTableVirtualization(tableVirtualization);
-  }, [renderer, components, normalizedContentComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, tableVirtualization]);
+  }, [renderer, components, normalizedContentComponents, resolvedLinkRenderer, tableVirtualization]);
+
+  useEffect(() => {
+    renderer.getComponentRegistry().setCodeVirtualization(codeVirtualization);
+  }, [renderer, codeVirtualization]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
@@ -579,60 +616,287 @@ function StreamingMarkdownComponent(
 
 
   const { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationEpoch, initializationError, readyRendererRef } = useWorkerSession({
-    renderer, workerSource, engine, session, managedWorker, onErrorRef, debug: DEBUG_WORKER,
+    renderer, workerSource, engine, session, managedWorker, codeEngine, onErrorRef, debug: DEBUG_WORKER,
   });
+  const rejectPendingCapacityWaiters = useCallback((pending: PendingStreamingCommands, error: Error) => {
+    for (const waiter of pending.capacityWaiters) {
+      if (waiter.signal && waiter.abort) waiter.signal.removeEventListener("abort", waiter.abort);
+      waiter.reject(error);
+    }
+    pending.capacityWaiters.clear();
+  }, []);
+  const invalidatePendingCommands = useCallback((pending: PendingStreamingCommands, error: Error) => {
+    pending.drainAbortController?.abort(error);
+    pending.drainAbortController = null;
+    rejectPendingCapacityWaiters(pending, error);
+    pending.rejectFinalization?.(error);
+    pending.resolveFinalization = undefined;
+    pending.rejectFinalization = undefined;
+  }, [rejectPendingCapacityWaiters]);
+  useEffect(() => {
+    sessionDisposedRef.current = false;
+    return () => {
+      sessionDisposedRef.current = true;
+      const pending = pendingCommandsRef.current;
+      if (!pending) return;
+      pendingCommandsRef.current = null;
+      invalidatePendingCommands(pending, new StreamSessionError("disposed", "The source session was unmounted"));
+    };
+  }, [invalidatePendingCommands]);
+  const resetPendingSourceSession = useCallback(() => {
+    const pending = pendingCommandsRef.current;
+    if (!pending) return;
+    pendingCommandsRef.current = null;
+    invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source commands belong to an ended generation"));
+  }, [invalidatePendingCommands]);
   const { streamStatus, setStreamStatus, activeIteratorRef } = useStreamInputSession({
     renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationEpoch, initializationError, session, managedWorker,
-    readyRendererRef, imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
+    readyRendererRef, onSourceSessionReset: resetPendingSourceSession,
+    imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
   });
+  const flushPendingCommandsRef = useRef<(() => void) | null>(null);
   const flushPendingCommands = useCallback(() => {
     const pending = pendingCommandsRef.current;
-    if (!pending || pending.owner !== rendererKey || !workerReadyRef.current) return;
-    while (pending.nextIndex < pending.commands.length) {
-      const command = pending.commands[pending.nextIndex];
-      if (command.type === "append") {
-        renderer.append(command.text);
-        imperativeActivityRef.current = true;
-      } else {
-        renderer.finalize();
-        imperativeActivityRef.current = false;
+    if (!pending || pending.owner !== rendererKey || !workerReadyRef.current || pending.drainAbortController) return;
+    try {
+      while (pending.nextIndex < pending.commands.length) {
+        const command = pending.commands[pending.nextIndex];
+        if (command.type === "append") {
+          const result = renderer.append(command.text);
+          pending.pendingSourceUnits -= command.text.length;
+          pending.acceptedSourceUnits = result.acceptedSourceUnits;
+          imperativeActivityRef.current = true;
+        } else {
+          void renderer.finalize().then(
+            (result) => {
+              pending.resolveFinalization?.(result);
+              pending.resolveFinalization = undefined;
+              pending.rejectFinalization = undefined;
+            },
+            (error: unknown) => {
+              pending.rejectFinalization?.(error instanceof Error ? error : new Error(String(error)));
+              pending.resolveFinalization = undefined;
+              pending.rejectFinalization = undefined;
+            },
+          );
+          imperativeActivityRef.current = false;
+        }
+        pending.nextIndex += 1;
       }
-      pending.nextIndex += 1;
+      if (pending.sealed) {
+        rejectPendingCapacityWaiters(pending, new StreamSessionError("sealed", "The source session is sealed"));
+      } else {
+        if (pendingCommandsRef.current === pending) pendingCommandsRef.current = null;
+        for (const waiter of pending.capacityWaiters) {
+          if (waiter.signal && waiter.abort) waiter.signal.removeEventListener("abort", waiter.abort);
+          void renderer.waitForCapacity(waiter.options).then(waiter.resolve, waiter.reject);
+        }
+        pending.capacityWaiters.clear();
+      }
+    } catch (error) {
+      if (error instanceof SourceCapacityError && error.retryable) {
+        const command = pending.commands[pending.nextIndex];
+        if (command?.type === "append") {
+          const controller = new AbortController();
+          pending.drainAbortController = controller;
+          void renderer.waitForCapacity({ units: command.text.length, signal: controller.signal }).then(() => {
+            if (pending.drainAbortController === controller) pending.drainAbortController = null;
+            if (pendingCommandsRef.current === pending) flushPendingCommandsRef.current?.();
+          }).catch((waitError: unknown) => {
+            if (pending.drainAbortController === controller) pending.drainAbortController = null;
+            if (pendingCommandsRef.current !== pending) return;
+            pendingCommandsRef.current = null;
+            const failure = waitError instanceof Error ? waitError : new Error(String(waitError));
+            invalidatePendingCommands(pending, failure);
+            onErrorRef.current?.(failure);
+          });
+          return;
+        }
+      }
+      const failure = error instanceof Error ? error : new Error(String(error));
+      const sealed = pending.sealed;
+      if (pendingCommandsRef.current === pending) pendingCommandsRef.current = null;
+      invalidatePendingCommands(pending, failure);
+      if (!sealed) throw error;
     }
-    pendingCommandsRef.current = null;
-  }, [renderer, rendererKey, workerReadyRef]);
-  const queuePendingCommand = useCallback((command: { type: "append"; text: string } | { type: "finalize" }) => {
+  }, [renderer, rendererKey, workerReadyRef, rejectPendingCapacityWaiters, invalidatePendingCommands, onErrorRef]);
+  flushPendingCommandsRef.current = flushPendingCommands;
+  const queuePendingAppend = useCallback((text: string): AppendResult => {
     const owner = `${configSignature}:${sessionRef.current}`;
     let pending = pendingCommandsRef.current;
-    if (!pending || pending.owner !== owner) {
-      pending = { owner, commands: [], nextIndex: 0, trustedFinalized: false };
+    if (pending && pending.owner !== owner) {
+      invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source append belongs to an ended generation"));
+      pending = null;
+    }
+    if (!pending) {
+      pending = {
+        owner,
+        commands: [],
+        nextIndex: 0,
+        sealed: false,
+        acceptedSourceUnits: 0,
+        pendingSourceUnits: 0,
+        capacityWaiters: new Set(),
+        finalizationPromise: null,
+        drainAbortController: null,
+      };
       pendingCommandsRef.current = pending;
     }
-    if (command.type === "append" && trustedRevisionFeed && pending.trustedFinalized) {
-      throw new Error("Cannot append after FINALIZE; start a new generation first.");
+    if (pending.sealed) throw new StreamSessionError("sealed", "Cannot append after FINALIZE; start a new generation first");
+    const pendingSourceUnits = pending.pendingSourceUnits;
+    if (text.length > SOURCE_ADMISSION_HARD_LIMIT - pendingSourceUnits) {
+      throw new SourceCapacityError(text.length, pendingSourceUnits, SOURCE_ADMISSION_HARD_LIMIT);
     }
-    pending.commands.push(command);
-    if (command.type === "finalize" && trustedRevisionFeed) pending.trustedFinalized = true;
-  }, [configSignature, trustedRevisionFeed]);
-  useEffect(() => {
-    if (pendingCommandsRef.current && pendingCommandsRef.current.owner !== rendererKey) {
+    pending.commands.push({ type: "append", text });
+    pending.acceptedSourceUnits += text.length;
+    pending.pendingSourceUnits += text.length;
+    return {
+      acceptedSourceUnits: pending.acceptedSourceUnits,
+      pendingSourceUnits: pending.pendingSourceUnits,
+      shouldPause: pending.pendingSourceUnits >= SOURCE_ADMISSION_SOFT_LIMIT,
+    };
+  }, [configSignature, sessionRef, invalidatePendingCommands]);
+  const queuePendingFinalize = useCallback((): Promise<FinalizeResult> => {
+    const owner = `${configSignature}:${sessionRef.current}`;
+    let pending = pendingCommandsRef.current;
+    if (pending && pending.owner !== owner) {
+      invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Finalization belongs to an ended generation"));
+      pending = null;
+    }
+    if (!pending) {
+      pending = {
+        owner,
+        commands: [],
+        nextIndex: 0,
+        sealed: false,
+        acceptedSourceUnits: 0,
+        pendingSourceUnits: 0,
+        capacityWaiters: new Set(),
+        finalizationPromise: null,
+        drainAbortController: null,
+      };
+      pendingCommandsRef.current = pending;
+    }
+    if (pending.finalizationPromise) return pending.finalizationPromise;
+    pending.sealed = true;
+    rejectPendingCapacityWaiters(pending, new StreamSessionError("sealed", "The source session is sealed"));
+    const finalizationState = pending;
+    const promise = new Promise<FinalizeResult>((resolve, reject) => {
+      finalizationState.resolveFinalization = resolve;
+      finalizationState.rejectFinalization = reject;
+    });
+    finalizationState.finalizationPromise = promise;
+    finalizationState.commands.push({ type: "finalize" });
+    return promise;
+  }, [configSignature, sessionRef, invalidatePendingCommands, rejectPendingCapacityWaiters]);
+  const waitForCapacity = useCallback((options: WaitForCapacityOptions): Promise<void> => {
+    const currentRendererKey = `${configSignature}:${sessionRef.current}`;
+    if (initializationError) {
+      return Promise.reject(new StreamSessionError("disposed", initializationError.message));
+    }
+    const pending = pendingCommandsRef.current;
+    if (pending && pending.owner !== currentRendererKey) {
       pendingCommandsRef.current = null;
+      invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source capacity wait belongs to an ended generation"));
     }
-    flushPendingCommands();
-  }, [rendererKey, workerReady, flushPendingCommands]);
+    const currentPending = pendingCommandsRef.current;
+    if (!currentPending || currentPending.owner !== currentRendererKey) {
+      try {
+        if (workerReadyRef.current) flushPendingCommands();
+        return renderer.waitForCapacity(options);
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    }
+    if (currentPending.sealed) return Promise.reject(new StreamSessionError("sealed", "The source session is sealed"));
+    const { units, signal } = options;
+    if (!Number.isSafeInteger(units) || units < 0) return Promise.reject(new RangeError("Capacity units must be a nonnegative safe integer"));
+    if (units > SOURCE_ADMISSION_HARD_LIMIT) {
+      return Promise.reject(new SourceCapacityError(units, currentPending.pendingSourceUnits, SOURCE_ADMISSION_HARD_LIMIT));
+    }
+    if (signal?.aborted) {
+      return Promise.reject(signal.reason instanceof Error ? signal.reason : new Error("Capacity wait aborted"));
+    }
+    if (
+      currentPending.pendingSourceUnits < SOURCE_ADMISSION_SOFT_LIMIT &&
+      currentPending.pendingSourceUnits + units <= SOURCE_ADMISSION_HARD_LIMIT
+    ) {
+      return Promise.resolve();
+    }
+    if (workerReadyRef.current) {
+      try {
+        flushPendingCommands();
+        return renderer.waitForCapacity(options);
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    }
+    return new Promise<void>((resolve, reject) => {
+      const waiter: PendingCapacityWaiter = { resolve, reject, options, signal };
+      if (signal) {
+        const abort = () => {
+          currentPending.capacityWaiters.delete(waiter);
+          signal.removeEventListener("abort", abort);
+          const reason = signal.reason;
+          const error = reason instanceof Error ? reason : new Error("Capacity wait aborted");
+          if (error.name === "Error") error.name = "AbortError";
+          reject(error);
+        };
+        waiter.abort = abort;
+        signal.addEventListener("abort", abort, { once: true });
+      }
+      currentPending.capacityWaiters.add(waiter);
+    });
+  }, [renderer, configSignature, sessionRef, workerReadyRef, flushPendingCommands, initializationError, invalidatePendingCommands]);
+  useEffect(() => {
+    const pending = pendingCommandsRef.current;
+    if (pending && pending.owner !== rendererKey) {
+      pendingCommandsRef.current = null;
+      invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source append belongs to an ended generation"));
+    }
+    if (initializationError) {
+      const failed = pendingCommandsRef.current;
+      pendingCommandsRef.current = null;
+      if (failed) invalidatePendingCommands(failed, new StreamSessionError("disposed", initializationError.message));
+      return;
+    }
+    try {
+      flushPendingCommands();
+    } catch (error) {
+      onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+    }
+  }, [rendererKey, workerReady, initializationError, flushPendingCommands, onErrorRef, invalidatePendingCommands]);
   useImperativeHandle(
     ref,
-    () => ({
+    () => {
+      const handleToken = {};
+      sessionHandleTokenRef.current = handleToken;
+      const assertSessionActive = (): void => {
+        if (sessionDisposedRef.current) {
+          throw new StreamSessionError("disposed", "The source session was unmounted");
+        }
+        if (sessionHandleTokenRef.current !== handleToken) {
+          throw new StreamSessionError("stale-generation", "The source session belongs to an ended generation");
+        }
+      };
+      return {
       pause() {
+        assertSessionActive();
         renderer.pause();
       },
       resume() {
+        assertSessionActive();
         renderer.resume();
       },
       restart() {
+        assertSessionActive();
         workerReadyRef.current = false;
         inputReadyRef.current = false;
-        pendingCommandsRef.current = null;
+        const pending = pendingCommandsRef.current;
+        if (pending) {
+          pendingCommandsRef.current = null;
+          invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source append belongs to an ended generation"));
+        }
         imperativeActivityRef.current = false;
         activeIteratorRef.current = null;
         renderer.restart({ reinitializeWorker: false });
@@ -640,40 +904,61 @@ function StreamingMarkdownComponent(
         sessionRef.current += 1;
         setSession(sessionRef.current);
       },
-      finalize() {
-        if (!workerReadyRef.current) {
-          queuePendingCommand({ type: "finalize" });
-        } else {
-          flushPendingCommands();
-          renderer.finalize();
+      finalize(): Promise<FinalizeResult> {
+        try {
+          assertSessionActive();
+        } catch (error) {
+          return Promise.reject(error);
         }
+        const promise = queuePendingFinalize();
+        if (workerReadyRef.current) flushPendingCommands();
         imperativeActivityRef.current = false;
         setStreamStatus(activeIteratorRef.current === null ? "done" : "streaming");
+        return promise;
       },
       append(text: string) {
-        if (!text) return;
-        if (!workerReadyRef.current) {
-          queuePendingCommand({ type: "append", text });
-        } else {
-          flushPendingCommands();
-          renderer.append(text);
+        assertSessionActive();
+        const pending = pendingCommandsRef.current;
+        const result = workerReadyRef.current && pending === null
+          ? renderer.append(text)
+          : queuePendingAppend(text);
+        if (workerReadyRef.current && pending !== null) flushPendingCommands();
+        if (text.length > 0) {
+          imperativeActivityRef.current = true;
+          setStreamStatus("streaming");
         }
-        imperativeActivityRef.current = true;
-        setStreamStatus("streaming");
+        return result;
+      },
+      waitForCapacity(options: WaitForCapacityOptions) {
+        try {
+          assertSessionActive();
+        } catch (error) {
+          return Promise.reject(error);
+        }
+        return waitForCapacity(options);
       },
       setCredits(value: number) {
+        assertSessionActive();
         renderer.setCredits(value);
       },
       flushPending() {
+        assertSessionActive();
         return renderer.flushPendingPatches();
       },
       waitForIdle() {
+        try {
+          assertSessionActive();
+        } catch (error) {
+          return Promise.reject(error);
+        }
         return renderer.waitForPatchQueueIdle();
       },
       onFlush(listener: (result: PatchFlushResult) => void) {
+        assertSessionActive();
         return renderer.addFlushListener(listener);
       },
       getState() {
+        assertSessionActive();
         const currentBlocks = store.getBlocks();
         return {
           blocks: currentBlocks,
@@ -687,13 +972,15 @@ function StreamingMarkdownComponent(
         };
       },
       getPatchHistory(limit) {
+        assertSessionActive();
         if (limit === undefined || limit >= patchHistoryRef.current.length) {
           return [...patchHistoryRef.current];
         }
         return patchHistoryRef.current.slice(patchHistoryRef.current.length - limit);
       },
-    }),
-    [renderer, store, flushPendingCommands, queuePendingCommand, workerReadyRef, inputReadyRef, activeIteratorRef, imperativeActivityRef, setStreamStatus, sessionRef, setSession],
+      };
+    },
+    [renderer, rendererKey, store, flushPendingCommands, queuePendingAppend, queuePendingFinalize, waitForCapacity, invalidatePendingCommands, workerReadyRef, inputReadyRef, activeIteratorRef, imperativeActivityRef, setStreamStatus, sessionRef, setSession],
   );
 
   const caretValue = useMemo(() => {
@@ -743,12 +1030,12 @@ function StreamingMarkdownComponent(
     <MarkdownBlocksRenderer
       blocks={EMPTY_BLOCKS}
       componentRegistry={renderer.getComponentRegistry()}
-      codeRenderers={codeRenderers}
-      blockRenderer={blockRenderer}
+      components={components}
       urlTransform={urlTransform}
       controls={controls}
       controlsComponent={controlsComponent}
       animated={animated}
+      statusMessage={statusMessage}
       contentComponents={normalizedContentComponents}
       allowedElements={allowedElements}
       disallowedElements={disallowedElements}
@@ -756,12 +1043,14 @@ function StreamingMarkdownComponent(
       unwrapDisallowed={unwrapDisallowed}
       disableAutolinkProtocols={disableAutolinkProtocols}
       className={resolvedClassName}
+      colorScheme={colorScheme}
       style={resolvedStyle}
       store={frameStore}
     />
   );
 
   return (
+    <DocumentMathMacroScopeContext.Provider value={mathMacroScope}>
     <DeferredRenderContext.Provider value={deferredConfig}>
       <CodeHighlightRequestContext.Provider value={highlightRequester}>
       <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
@@ -777,6 +1066,7 @@ function StreamingMarkdownComponent(
       </CodeHighlightRequestContext.Provider>
       {linkModal}
     </DeferredRenderContext.Provider>
+    </DocumentMathMacroScopeContext.Provider>
   );
 }
 

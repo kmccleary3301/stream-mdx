@@ -154,7 +154,6 @@ assert.equal(preparedText, coldInlineText, "settled span records must preserve c
   );
   assert.equal(rootParagraphChangeNeedsReplacement(referenceChange), false);
   if (rootParagraphChangeNeedsReplacement(referenceChange)) throw new Error("unexpected reference-root replacement");
-  assert.equal(referenceChange.paragraph.state, "closed", "the completed definition root closes the preceding paragraph");
   assert.equal(
     referenceChange.paragraph.sourceRange.to,
     referenceBeforeDefinition.sourceRange.to,

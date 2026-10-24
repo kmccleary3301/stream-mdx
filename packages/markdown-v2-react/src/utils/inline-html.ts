@@ -29,7 +29,20 @@ export function renderHtmlInlineNode(
     renderChildren?: () => React.ReactNode,
   ) => React.ReactNode,
   parentTagName?: string,
-): React.ReactElement | null {
+  renderPresentation?: (
+    tagName: string,
+    properties: Readonly<Record<string, unknown>>,
+    nativeView: React.ReactNode,
+    children: React.ReactNode,
+    key: React.Key,
+  ) => React.ReactNode,
+  renderNativeElement?: (
+    tagName: string,
+    properties: Readonly<Record<string, unknown>>,
+    children: React.ReactNode,
+    key: React.Key,
+  ) => React.ReactNode,
+): React.ReactNode {
   if (node.isClose || node.tagName === "script" || node.tagName === "style") return null;
   if (!node.tagName || node.sanitized === "") {
     return React.createElement(React.Fragment, { key }, children);
@@ -38,36 +51,52 @@ export function renderHtmlInlineNode(
   const props = mapAttributesToProps(node.attributes ?? {}, urlTransform);
   props.key = key;
 
-  if (!filterElement) {
-    if (tag === "textarea") {
-      props.defaultValue = textValue ?? "";
-      return React.createElement(elements?.[tag] ?? tag, props);
-    }
-    return React.createElement(elements?.[tag] ?? tag, props, node.isSelfClosing ? undefined : children);
-  }
-
   const renderElement = () => {
-    if (tag === "textarea") {
+    let nativeView: React.ReactNode;
+    if (renderNativeElement) {
+      nativeView = renderNativeElement(
+        tag,
+        props,
+        node.isSelfClosing ? undefined : children,
+        key ?? tag,
+      );
+    } else if (tag === "textarea") {
       props.defaultValue = textValue ?? "";
-      return React.createElement(elements?.[tag] ?? tag, props);
+      nativeView = React.createElement(elements?.[tag] ?? tag, props);
+    } else {
+      nativeView = React.createElement(elements?.[tag] ?? tag, props, node.isSelfClosing ? undefined : children);
     }
-    return React.createElement(elements?.[tag] ?? tag, props, node.isSelfClosing ? undefined : children);
+    return renderPresentation
+      ? renderPresentation(tag, props, nativeView, children, key ?? tag)
+      : nativeView;
   };
 
+  if (!filterElement) {
+    return renderElement();
+  }
   return filterElement(
     { tagName: tag, properties: props },
     { source: "html", parentTagName },
     renderElement,
     () => children,
-  ) as React.ReactElement | null;
+  );
 }
+
+export type RenderComponentPresentation = (
+  name: string,
+  nativeView: React.ReactElement,
+  children: React.ReactNode,
+  key: React.Key,
+  status: "open" | "closed" | "incomplete",
+  rawSource?: string,
+) => React.ReactNode;
 
 export function renderHtmlOwnershipTree(
   nodes: HtmlTreeNode[],
   elements: HtmlElements,
   renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"], parentTagName?: string) => React.ReactNode,
   renderInline?: (nodes: InlineNode[], parentTagName?: string) => React.ReactNode,
-  renderInlineElement?: (node: InlineNode, children: React.ReactNode, parentTagName?: string) => React.ReactNode,
+  renderInlineElement?: (node: InlineNode, children: React.ReactNode, parentTagName: string | undefined, key: React.Key) => React.ReactNode,
   renderParagraph?: (children: React.ReactNode) => React.ReactNode,
   urlTransform?: UrlTransform,
   filterElement?: (
@@ -78,14 +107,24 @@ export function renderHtmlOwnershipTree(
   ) => React.ReactNode,
   parentTagName?: string,
   contentComponents?: ContentComponentsMap,
+  renderPresentation?: (
+    tagName: string,
+    properties: Readonly<Record<string, unknown>>,
+    nativeView: React.ReactNode,
+    children: React.ReactNode,
+    key: React.Key,
+  ) => React.ReactNode,
+  parentPath = "html",
+  renderComponentPresentation?: RenderComponentPresentation,
 ): React.ReactNode {
   return nodes.map((node, index) => {
+    const nodeKey = `${parentPath}:${index}`;
     if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline, parentTagName) : (node.rawSource ?? node.text);
     if (node.kind === "block") return renderBlock(node.block, parentTagName);
     if (node.kind === "component") {
       const reg = contentComponents?.[node.name];
       if (!reg) {
-        return React.createElement(React.Fragment, { key: index }, node.rawSource ?? `<${node.name} />`);
+        return React.createElement(React.Fragment, { key: nodeKey }, node.rawSource ?? `<${node.name} />`);
       }
 
       const result = reg.render({
@@ -103,22 +142,36 @@ export function renderHtmlOwnershipTree(
           filterElement,
           node.name,
           contentComponents,
+          renderPresentation,
+          nodeKey,
+          renderComponentPresentation,
         ),
         status: node.status,
         diagnostic: node.diagnostic,
       });
       if (result.kind === "invalid") {
-        return React.createElement(React.Fragment, { key: index }, node.rawSource ?? `<${node.name} />`);
+        return React.createElement(React.Fragment, { key: nodeKey }, node.rawSource ?? `<${node.name} />`);
       }
       if (result.kind === "suppressed") {
         return null;
       }
-      return result.element;
+      return renderComponentPresentation
+        ? renderComponentPresentation(
+            node.name,
+            result.element,
+            React.isValidElement<{ readonly children?: React.ReactNode }>(result.element)
+              ? result.element.props.children
+              : undefined,
+            nodeKey,
+            node.status,
+            node.rawSource,
+          )
+        : result.element;
     }
     const tag = node.tagName.toLowerCase();
     const props = mapAttributesToProps(node.attributes, urlTransform);
-    props.key = index;
-    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform, filterElement, tag, contentComponents);
+    props.key = nodeKey;
+    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform, filterElement, tag, contentComponents, renderPresentation, nodeKey, renderComponentPresentation);
     if (node.paragraphRoot && renderParagraph) {
       const paragraph = filterElement
         ? filterElement(
@@ -128,34 +181,30 @@ export function renderHtmlOwnershipTree(
           () => children,
         )
         : renderParagraph(children);
-      return React.createElement(React.Fragment, { key: index }, paragraph);
+      return React.createElement(React.Fragment, { key: nodeKey }, paragraph);
     }
     if (node.inlineNode && renderInlineElement) {
-      return React.createElement(React.Fragment, { key: index }, renderInlineElement(node.inlineNode, children, parentTagName));
-    }
-    if (!filterElement) {
-      if (tag === "textarea") {
-        props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
-        return React.createElement(elements[tag] ?? tag, props);
-      }
-      const content = tag === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
-        ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
-        : children;
-      return React.createElement(elements[tag] ?? tag, props,
-        node.children.length ? content : undefined);
+      return React.createElement(React.Fragment, { key: nodeKey }, renderInlineElement(node.inlineNode, children, parentTagName, nodeKey));
     }
     const renderElement = () => {
+      let nativeView: React.ReactNode;
       if (tag === "textarea") {
         props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
-        return React.createElement(elements[tag] ?? tag, props);
+        nativeView = React.createElement(elements[tag] ?? tag, props);
+      } else {
+        const content = tag === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
+          ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
+          : children;
+        nativeView = React.createElement(elements[tag] ?? tag, props, node.children.length ? content : undefined);
       }
-      const content = tag === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
-        ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
-        : children;
-      return React.createElement(elements[tag] ?? tag, props,
-        node.children.length ? content : undefined);
+      return renderPresentation
+        ? renderPresentation(tag, props, nativeView, children, nodeKey)
+        : nativeView;
     };
 
+    if (!filterElement) {
+      return renderElement();
+    }
     return filterElement(
       { tagName: tag, properties: props },
       { source: "html", parentTagName },

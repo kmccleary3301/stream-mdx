@@ -20,6 +20,7 @@ export class DebugV2Wrapper {
   private renderStartTime = 0;
   private capturedBlocks: Block[] = [];
   private store = createRendererStore();
+  private generation: number | null = null;
 
   constructor() {
     this.workerClient = new MarkdownWorkerClient();
@@ -32,14 +33,17 @@ export class DebugV2Wrapper {
       // Capture blocks and call debug hooks
       if (message.type === "INITIALIZED") {
         this.store.resetSnapshot(message.snapshot);
+        this.generation = message.generation;
         this.capturedBlocks = [...this.store.getBlocks()];
       } else if (message.type === "PATCH") {
+        if (message.generation !== this.generation) return;
         if (message.patches.length > 0) {
           this.store.applyPatches(message.patches, { captureMetrics: false });
         }
         this.capturedBlocks = [...this.store.getBlocks()];
       } else if (message.type === "RESET") {
         this.store.reset([]);
+        this.generation = null;
         this.capturedBlocks = [];
       } else {
         return;
