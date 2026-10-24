@@ -163,7 +163,7 @@ The published engine entry is built for the worker realm: its MDX parser resolve
 Then select the emitted asset and map its inline node:
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown, type InlineNodeViewProps } from "@stream-mdx/react";
 
 export function NativePluginExample() {
   return (
@@ -172,13 +172,15 @@ export function NativePluginExample() {
       worker="/workers/custom-markdown-worker.js"
       text="# Build status\n\n:ok:"
       components={{
-        "extension:statusBadge": ({ node }: InlineNodeViewProps) => (
-          <span role="status">{node.attrs?.status}</span>
-        ),
+        "extension:statusBadge": {
+          view: ({ node }: InlineNodeViewProps) => (
+            <span role="status">{node.attrs?.status}</span>
+          ),
+        },
       }}
+    />
   );
 }
-```
 
 `serveMarkdownWorker(options?: ServeMarkdownWorkerOptions): MarkdownEngine` installs the scope's `onmessage` and sends engine messages through `postMessage`. Its options are `{ extensions?: EngineExtensions; scope?: unknown }`; omit `scope` in an ordinary browser worker. Each call creates an isolated engine.
 
