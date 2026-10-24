@@ -281,11 +281,13 @@ function applyRestrictedComponentTagBalance(
   contentComponents: ReadonlyMap<string, RestrictedComponentDescriptor>,
   literalTagContent?: readonly string[],
 ): void {
+  const firstNonWhitespace = raw.search(/\S/);
   for (const tag of scanRegisteredRestrictedTags(raw, contentComponents, parser, { literalTagContent })) {
     if (tag.kind === "close") {
       const at = stack.lastIndexOf(tag.name);
       if (at >= 0) stack.length = at;
-    } else if (tag.kind === "open") {
+    } else if (tag.kind === "open" && (stack.length > 0 || tag.from === firstNonWhitespace)) {
+      // Inline component tags are paragraph content, not an owner for following root blocks.
       stack.push(tag.name);
     }
   }
