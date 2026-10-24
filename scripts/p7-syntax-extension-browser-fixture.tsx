@@ -6,8 +6,8 @@ import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/rea
 import {
   STREAMING_SYNTAX_DEMO,
   STREAMING_SYNTAX_DEMO_CONTENT_COMPONENTS,
-  STREAMING_SYNTAX_DEMO_INLINE_COMPONENTS,
   STREAMING_SYNTAX_DEMO_MARKDOWN,
+  STREAMING_SYNTAX_DEMO_PRESENTATIONS,
 } from "../apps/docs/lib/streaming-syntax-demo";
 
 const handle = React.createRef<StreamingMarkdownHandle>();
@@ -76,7 +76,7 @@ createRoot(rootElement).render(
     syntax={STREAMING_SYNTAX_DEMO}
     contentPolicy="restricted"
     contentComponents={STREAMING_SYNTAX_DEMO_CONTENT_COMPONENTS}
-    inlineComponents={STREAMING_SYNTAX_DEMO_INLINE_COMPONENTS}
+    components={STREAMING_SYNTAX_DEMO_PRESENTATIONS}
     features={{ mdx: true, html: false, tables: false, math: false, formatAnticipation: { inline: true, regex: true } }}
     caret={false}
   />,
