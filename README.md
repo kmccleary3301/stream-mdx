@@ -21,7 +21,7 @@ StreamMDX is a streaming-first Markdown/MDX renderer for React with a worker-fir
 - [Why This Exists](#why-this-exists)
 - [At a Glance](#at-a-glance)
 - [Install Profiles](#install-profiles)
-- [Migrating from 0.5.0 to 1.0.0](#migrating-from-050-to-100)
+- [Migrating from 0.5.x](#migrating-from-05x)
 - [Quickstart](#quickstart)
 - [Usage Patterns](#usage-patterns)
 - [Package Matrix](#package-matrix)
@@ -97,24 +97,11 @@ CR is a Markdown line ending immediately; a following LF completes the same phys
 
 Provisional HTML and allowlisted MDX lookahead changes only prepared content, not canonical input, physical UTF-16 ranges or cold raw exports. Repair stays within the owning paragraph. Rejected or over-budget markup, and openings left unclosed at `FINALIZE`, render literally. Speculative repair does not authorize MDX execution.
 
-## Migrating from 0.5.0 to 1.0.0
+## Migrating from 0.5.x
 
-Upgrade installed `stream-mdx` and `@stream-mdx/*` packages together to `1.0.0`, then recopy the matching hosted worker asset. Internal runtime dependencies are pinned to that version. The optional unified adapter requires core and React from the `^1.0.0` line.
+Upgrade all StreamMDX packages together to the same release and rebuild or recopy the matching hosted worker. This is a breaking release for React integrations, protocol consumers, plugins, and optional theme users.
 
-This is a breaking release for custom integrations:
-
-- The obsolete plugin `/registry`, `/base`, and `/math` exports, corresponding `stream-mdx/plugins/*` wrappers, and worker `/streaming/custom-matcher` export are removed. Replace global plugin registries and old math/match-handler factories with native Lezer extensions, serializable `SyntaxRuleSpec` rules, and instance document plugins. Native functions must be bundled into the worker, not sent through `INIT`. See the [plugin ABI](docs/PLUGIN_ABI.md).
-- `MarkdownEngine` has instance-owned parser, queue, plugins, state, and caches. Its constructor accepts `{ post, extensions? }`; configuration and document resets use `handle({ type: "INIT", ... })`. `dispose()` is terminal. Use `serveMarkdownWorker` for a custom worker entry or `createInlineEngineWorker` for an in-process adapter. Worker URLs and actual Worker factories are renderer-owned and terminated on detach; existing Worker instances are borrowed. A caller-created inline adapter requires caller-owned termination. Follow the [public engine and ownership contracts](docs/PUBLIC_API.md#isolated-engine-and-native-extensions).
-  `managedWorker={true}` requires a supplied Worker instance or a caller-accessible worker factory, with initialization and document commands owned by the caller. Worker URLs, omitted/default workers, and `engine="main"` are rejected in managed mode, even when a worker source is supplied. Use `engine="worker"` or `"auto"`; managed auto does not silently fall back to an inline engine. Supplied instances remain caller-owned; factory-created workers remain component-owned and terminate on detach.
-- `ComponentRegistry` only marks components that differ from built-in defaults as custom. Paragraph and quote overrides must render their supplied `children` to retain engine-prepared inline, HTML, and nested-block content. Do not reparse raw prose to reconstruct those children. See the [rendering contract](docs/STREAMING_CORRECTNESS_CONTRACT.md).
-- Custom code fence renderers must return `renderCode` directly. It is a React node, not a function. `language` and emitted language attributes preserve the authored info word, so a `js` fence reports `js`, not `javascript`. Canonical grammar fallback and renderer aliases still work. Unlabeled and indented code no longer emits language attributes. See the [code fence renderer contract](docs/PUBLIC_API.md#code-fence-renderer-contract).
-- `restart()` cancels an async iterator; it does not replay it. Supply a fresh iterator for another stream. Replacing renderer-owned text resets its engine document; caller-initialized managed workers retain their document ownership.
-- Provisional lookahead is bounded before completeness scanning. Every provisional input over 512 characters falls back to raw text, even when its delimiters are closed. Oversized finalized/nonprovisional complete content remains preserved; within-budget finalized projection retains its existing behavior. The declared caps are 512 scan characters, two newlines, six synthetic operations, nesting depth eight, one validation failure, and a cooperative five-millisecond provider guard. These are internal limits, not new React props or latency guarantees. See [configuration](docs/CONFIGURATION.md#formatanticipation).
-- Core root exports no longer expose Lezer converter, math extension factory, link-label normalization, entity decoder, or default/regex plugin adapter internals. Use the retained `InlineParser`, streaming preparation APIs, `prepareNestedBlockSnapshot`, native extension configuration, and public worker/compiler entries. Owning parser settings remain authoritative, including disabled math in nested snapshot fallbacks. See [core parser and snapshot contracts](docs/PUBLIC_API.md#core-parser-and-snapshot-contracts).
-- URL transforms and HTML/style sanitization apply in client, SSR, and unified rendering. Rejected URLs are omitted, and custom components must use the sanitized attributes and children they receive. `allowedElements` and `disallowedElements` cannot be supplied together. See the [security model](docs/SECURITY_MODEL.md).
-- The old automatic MDX compile modes and `mdxComponents` prop are removed. Markdown remains native/restricted by default; full MDX requires a host-created `createTrustedMdxEngine` from `@stream-mdx/react/trusted-mdx`, an explicit import allowlist, `contentPolicy="trusted-mdx"`, and CSP permission for `unsafe-eval`. The trusted engine runs code in the host realm and is not a sandbox. See [MDX migration guidance](apps/docs/content/guides/mdx-and-html.md).
-
-Controls, streaming animation, table virtualization, and custom renderer extensions remain opt-in. Read the generated package changelogs for the feature and correctness changes consumed into this release. For release operations, use the [Changesets/CI checklist](docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md#6-packaging-and-publish-gates). The version-specific 0.5.0 release commands remain historical; they are not aliases for 1.0.
+The complete before-and-after checklist is in the [0.5.x migration guide](docs/MIGRATION.md). For current API contracts, see [Public API](docs/PUBLIC_API.md) and [Security Model](docs/SECURITY_MODEL.md).
 
 ## Quickstart
 
@@ -277,7 +264,6 @@ export default async function Page() {
         math: true,
         footnotes: true,
       },
-      mdx: { compileMode: "server" },
       prewarmLangs: ["typescript"],
     },
   });
