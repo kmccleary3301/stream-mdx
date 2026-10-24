@@ -1,6 +1,7 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import {
+  createTableNodeHandle,
   createCodeNodeHandle,
   AppendSourceDocument,
   appendManagedParagraphSpans,
@@ -38,6 +39,9 @@ import {
   type PreparedNestedSnapshot,
   type SetPropsBatchEntry,
   type SourceSnapshot,
+  type TableBlockMetadata,
+  type TableNodeHandle,
+  type TableRowRange,
   type TableRowRecord,
   type TokenLineV1,
   type MixedContentSegment,
@@ -69,10 +73,11 @@ import {
   type StoredCodeBlockState,
 } from "./code-state";
 import { normalizeAllListDepths, normalizeListDepthsForIds } from "./list-utils";
-import { registerNodeSubscriptions } from "./node-subscriptions";
+import { registerNodeSubscriptions, subscribeRendererNode } from "./node-subscriptions";
 import { type CoalescingMetrics, DEFAULT_COALESCE_CONFIG, coalescePatchesWithMetrics } from "./patch-coalescing";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
 import type { PrivateRendererStore } from "./store-reset-version";
+import type { NodeChildRange, NodeHandle, NodeHandleMetadata } from "../types";
 export interface ParagraphSegmentPlanEvent {
   readonly id: string;
   readonly type: string;
@@ -124,6 +129,18 @@ export interface NodeRecord {
   blockEpoch: number;
   block?: Block;
 }
+function assertNodeChildRange(range: NodeChildRange): void {
+  if (
+    range === null ||
+    typeof range !== "object" ||
+    !Number.isSafeInteger(range.from) ||
+    !Number.isSafeInteger(range.to) ||
+    range.from < 0 ||
+    range.to < range.from
+  ) {
+    throw new RangeError("Node child range must be ordered non-negative safe integers");
+  }
+}
 const serializedBlockOwnership = Symbol("serializedBlockOwnership");
 type NodeRecordWithSerializedBlock = NodeRecord & { [serializedBlockOwnership]?: boolean };
 function hasSerializedBlock(record: NodeRecord): boolean {
@@ -149,6 +166,7 @@ export interface RendererStore {
   hasProvisionalBlocks(): boolean;
   getCodeBlock(id: string): CodeBlockViewState | undefined;
   getCodeNodeHandle(id: string): CodeNodeHandle | undefined;
+  getTableNodeHandle(id: string): TableNodeHandle | undefined;
   getCodeLines(id: string, from: number, to: number): ReadonlyArray<CodeLineRecord>;
   subscribeCodeLines(id: string, from: number, to: number, listener: () => void): () => void;
   getTableBlock(id: string): ManagedTableViewState | undefined;
@@ -166,6 +184,7 @@ export interface RendererStore {
   getNodeWithVersion(id: string): { version: number; node?: NodeRecord };
   getChildren(id: string): ReadonlyArray<string>;
   getChildrenWithVersion(id: string): { version: number; children: ReadonlyArray<string> };
+  getNodeHandle(id: string): NodeHandle | undefined;
   getInvariantViolations(): string[];
   getDebugCounters(): Readonly<Record<string, number>>;
   subscribe(listener: () => void): () => void;
@@ -1436,6 +1455,13 @@ interface ActiveCodeLineRange {
   consumers: number;
   lines: readonly CodeLineRecord[] | undefined;
 }
+interface ActiveTableRowRange {
+  readonly from: number;
+  readonly to: number;
+  consumers: number;
+  rows: readonly TableRowRecord[] | undefined;
+}
+const TABLE_ROW_RANGE_SNAPSHOT_LIMIT = 64;
 function createFreshNodeMap(): NodeMap {
   const map: NodeMap = new Map();
   retiredCodeGenerationsByMap.set(map, new Map<string, number>());
@@ -3683,6 +3709,22 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     readonly handle: CodeNodeHandle;
     readonly activeRanges: Map<string, ActiveCodeLineRange>;
   }>();
+  const tableNodeHandlesByRecord = new WeakMap<NodeRecord, {
+    readonly nodes: NodeMap;
+    readonly resetVersion: number;
+    readonly document: object;
+    readonly tableOwnerId: string;
+    readonly generation: number;
+    readonly handle: TableNodeHandle;
+    readonly activeRanges: Map<string, ActiveTableRowRange>;
+  }>();
+  const nodeHandlesByRecord = new WeakMap<NodeRecord, {
+    readonly nodes: NodeMap;
+    readonly resetVersion: number;
+    readonly document: object;
+    readonly type: string;
+    readonly handle: NodeHandle;
+  }>();
   let blocksCache: Block[] = [];
   let blocksDirty = true;
   const publicBlocks = new WeakMap<Block, Block>();
@@ -5635,6 +5677,119 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     hasProvisionalBlocks() {
       return provisionalBlockCount > 0;
     },
+    getNodeHandle(id: string) {
+      const record = nodes.get(id);
+      if (!record) return undefined;
+      const ownerNodes = nodes;
+      const ownerResetVersion = resetVersion;
+      const document = inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+      const type = record.type;
+      const cached = nodeHandlesByRecord.get(record);
+      if (
+        cached &&
+        cached.nodes === ownerNodes &&
+        cached.resetVersion === ownerResetVersion &&
+        cached.document === document &&
+        cached.type === type
+      ) {
+        return cached.handle;
+      }
+
+      const isCurrentRecord = (): NodeRecord | undefined => {
+        if (nodes !== ownerNodes || resetVersion !== ownerResetVersion) return undefined;
+        const current = nodes.get(id);
+        if (current !== record || current.type !== type) return undefined;
+        const currentDocument = inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+        return currentDocument === document ? current : undefined;
+      };
+      let metadataSnapshot: NodeHandleMetadata | undefined;
+      const childRangeSnapshots = new Map<string, readonly NodeHandle[]>();
+      const readChildren = (range: NodeChildRange): readonly NodeHandle[] => {
+        assertNodeChildRange(range);
+        const current = isCurrentRecord();
+        if (!current) throw new Error("Node handle no longer refers to the current document");
+        const key = `${range.from}:${range.to}`;
+        const from = Math.min(range.from, current.children.length);
+        const to = Math.min(range.to, current.children.length);
+        const next: NodeHandle[] = [];
+        for (let index = from; index < to; index++) {
+          const child = store.getNodeHandle(current.children[index]!);
+          if (child) next.push(child);
+        }
+        const previous = childRangeSnapshots.get(key);
+        if (previous && previous.length === next.length && next.every((child, index) => child === previous[index])) {
+          childRangeSnapshots.delete(key);
+          childRangeSnapshots.set(key, previous);
+          return previous;
+        }
+        const snapshot = Object.freeze(next);
+        childRangeSnapshots.set(key, snapshot);
+        if (childRangeSnapshots.size > 64) {
+          const oldest = childRangeSnapshots.keys().next().value;
+          if (oldest !== undefined) childRangeSnapshots.delete(oldest);
+        }
+        return snapshot;
+      };
+      const handle: NodeHandle = Object.freeze({
+        id,
+        type,
+        generation: ownerResetVersion,
+        readMetadata: () => {
+          const current = isCurrentRecord();
+          if (!current) throw new Error("Node handle no longer refers to the current document");
+          const revision = current.version;
+          const childCount = current.children.length;
+          const isFinalized = current.block?.isFinalized ?? true;
+          if (
+            metadataSnapshot &&
+            metadataSnapshot.revision === revision &&
+            metadataSnapshot.childCount === childCount &&
+            metadataSnapshot.isFinalized === isFinalized
+          ) {
+            return metadataSnapshot;
+          }
+          metadataSnapshot = Object.freeze({
+            id,
+            type,
+            generation: ownerResetVersion,
+            revision,
+            childCount,
+            isFinalized,
+          });
+          return metadataSnapshot;
+        },
+        readChildren,
+        subscribeMetadata: (listener: () => void) => {
+          if (!isCurrentRecord()) return () => {};
+          return subscribeRendererNode(store, id, () => {
+            if (isCurrentRecord()) listener();
+          });
+        },
+        subscribeChildren: (range: NodeChildRange, listener: () => void) => {
+          assertNodeChildRange(range);
+          let previous = readChildren(range);
+          return subscribeRendererNode(store, id, () => {
+            if (!isCurrentRecord()) {
+              listener();
+              return;
+            }
+            const next = readChildren(range);
+            if (next !== previous) {
+              previous = next;
+              listener();
+            }
+          });
+        },
+      });
+      nodeHandlesByRecord.set(record, {
+        nodes: ownerNodes,
+        resetVersion: ownerResetVersion,
+        document,
+        type,
+        handle,
+      });
+      return handle;
+    },
     getCodeBlock(id: string) {
       const record = nodes.get(id);
       return record?.type === "code" ? codeStateByRecord.get(record)?.view : undefined;
@@ -5806,6 +5961,189 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         resetVersion: ownerResetVersion,
         document,
         codeOwnerId,
+        generation,
+        handle,
+        activeRanges,
+      });
+      return handle;
+    },
+    getTableNodeHandle(id: string) {
+      const record = nodes.get(id);
+      const state = record?.type === "table" ? tableStateByRecord.get(record) : undefined;
+      if (!record || !state) return undefined;
+      const { tableOwnerId, generation } = state.source;
+      const ownerNodes = nodes;
+      const ownerResetVersion = resetVersion;
+      const document = inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+      const cached = tableNodeHandlesByRecord.get(record);
+      if (
+        cached &&
+        cached.nodes === ownerNodes &&
+        cached.resetVersion === ownerResetVersion &&
+        cached.document === document &&
+        cached.tableOwnerId === tableOwnerId &&
+        cached.generation === generation
+      ) {
+        return cached.handle;
+      }
+
+      const isCurrentState = (): ManagedTableViewState | undefined => {
+        if (nodes !== ownerNodes || resetVersion !== ownerResetVersion || nodes.get(id) !== record) return undefined;
+        const current = tableStateByRecord.get(record);
+        if (!current || current.source.tableOwnerId !== tableOwnerId || current.source.generation !== generation) {
+          return undefined;
+        }
+        return (inputSourceByNodeMap.get(ownerNodes)?.document ?? record) === document ? current : undefined;
+      };
+      const activeRanges = new Map<string, ActiveTableRowRange>();
+      const assertRange = (range: TableRowRange) => {
+        if (
+          !range ||
+          !Number.isSafeInteger(range.from) ||
+          range.from < 0 ||
+          !Number.isSafeInteger(range.to) ||
+          range.to < range.from
+        ) throw new RangeError("Table row range must be a non-negative half-open range");
+      };
+      const readRowSnapshot = (
+        current: ManagedTableViewState,
+        range: TableRowRange,
+        activeRange?: ActiveTableRowRange,
+      ): ReadonlyArray<TableRowRecord> => {
+        const from = Math.min(range.from, current.rows.length);
+        const to = Math.min(range.to, current.rows.length);
+        if (activeRange?.rows && activeRange.rows.length === to - from) {
+          let unchanged = true;
+          for (let index = from; index < to; index += 1) {
+            if (current.rows.get(index) !== activeRange.rows[index - from]) {
+              unchanged = false;
+              break;
+            }
+          }
+          if (unchanged) return activeRange.rows;
+        }
+        const rows = from < to ? current.rows.readRange(from, to) : EMPTY_TABLE_ROWS;
+        if (activeRange) activeRange.rows = rows;
+        return rows;
+      };
+      let metadataSource = state.source;
+      let metadataHeader = state.header;
+      let metadataSnapshot: TableBlockMetadata = Object.freeze({
+        ...metadataSource,
+        header: metadataHeader,
+      });
+      const handle = createTableNodeHandle({
+        readMetadata: () => {
+          const current = isCurrentState();
+          if (!current) throw new Error("Table node handle no longer refers to the current table document");
+          const currentSource = current.source;
+          const metadataChanged =
+            currentSource.tableOwnerId !== metadataSource.tableOwnerId ||
+            currentSource.generation !== metadataSource.generation ||
+            currentSource.revision !== metadataSource.revision ||
+            currentSource.state !== metadataSource.state ||
+            currentSource.processedTo !== metadataSource.processedTo ||
+            currentSource.completeRowCount !== metadataSource.completeRowCount ||
+            currentSource.rowCount !== metadataSource.rowCount ||
+            currentSource.sourceRange.from !== metadataSource.sourceRange.from ||
+            currentSource.sourceRange.to !== metadataSource.sourceRange.to ||
+            current.header !== metadataHeader;
+          if (metadataChanged) {
+            metadataSource = currentSource;
+            metadataHeader = current.header;
+            metadataSnapshot = Object.freeze({
+              ...metadataSource,
+              header: metadataHeader,
+            });
+          }
+          return metadataSnapshot;
+        },
+        readRows: (range: TableRowRange) => {
+          assertRange(range);
+          const current = isCurrentState();
+          if (!current) throw new Error("Table node handle no longer refers to the current table document");
+          const key = `${range.from}:${range.to}`;
+          let activeRange = activeRanges.get(key);
+          if (!activeRange) {
+            if (activeRanges.size >= TABLE_ROW_RANGE_SNAPSHOT_LIMIT) {
+              for (const [cachedKey, cachedRange] of activeRanges) {
+                if (cachedRange.consumers === 0) {
+                  activeRanges.delete(cachedKey);
+                  break;
+                }
+              }
+            }
+            activeRange = { from: range.from, to: range.to, consumers: 0, rows: undefined };
+            activeRanges.set(key, activeRange);
+          }
+          return readRowSnapshot(current, range, activeRange);
+        },
+        subscribeMetadata: (listener: () => void) => {
+          if (!isCurrentState()) return () => {};
+          let nodeSet = nodeListeners.get(id);
+          if (!nodeSet) {
+            nodeSet = new Set();
+            nodeListeners.set(id, nodeSet);
+          }
+          const notifyIfCurrent = () => {
+            if (isCurrentState()) listener();
+          };
+          nodeSet.add(notifyIfCurrent);
+          let subscribed = true;
+          return () => {
+            if (!subscribed) return;
+            subscribed = false;
+            nodeSet!.delete(notifyIfCurrent);
+            if (nodeSet!.size === 0 && nodeListeners.get(id) === nodeSet) nodeListeners.delete(id);
+          };
+        },
+        subscribeRows: (range: TableRowRange, listener: () => void) => {
+          assertRange(range);
+          const current = isCurrentState();
+          if (!current || range.from === range.to) return () => {};
+          const notifyIfCurrent = () => {
+            if (isCurrentState()) listener();
+          };
+          const pageStart = Math.floor(range.from / TABLE_ROW_RANGE_SIZE) * TABLE_ROW_RANGE_SIZE;
+          if (!Number.isSafeInteger(pageStart + TABLE_ROW_RANGE_SIZE)) {
+            throw new RangeError("Table row range cannot be represented by aligned store pages");
+          }
+          const unsubscribePages: Array<() => void> = [];
+          for (let from = pageStart; from < range.to; from += TABLE_ROW_RANGE_SIZE) {
+            if (!Number.isSafeInteger(from + TABLE_ROW_RANGE_SIZE)) {
+              for (const unsubscribe of unsubscribePages) unsubscribe();
+              throw new RangeError("Table row range cannot be represented by aligned store pages");
+            }
+            unsubscribePages.push(
+              store.subscribeTableRows(id, from, from + TABLE_ROW_RANGE_SIZE, notifyIfCurrent),
+            );
+          }
+          const key = `${range.from}:${range.to}`;
+          let activeRange = activeRanges.get(key);
+          if (!activeRange) {
+            activeRange = { from: range.from, to: range.to, consumers: 0, rows: undefined };
+            activeRanges.set(key, activeRange);
+          }
+          activeRange.consumers += 1;
+          readRowSnapshot(current, range, activeRange);
+          const retainedRange = activeRange;
+          let subscribed = true;
+          return () => {
+            if (!subscribed) return;
+            subscribed = false;
+            for (const unsubscribe of unsubscribePages) unsubscribe();
+            retainedRange.consumers -= 1;
+            if (retainedRange.consumers === 0 && activeRanges.get(key) === retainedRange) {
+              activeRanges.delete(key);
+            }
+          };
+        },
+      });
+      tableNodeHandlesByRecord.set(record, {
+        nodes: ownerNodes,
+        resetVersion: ownerResetVersion,
+        document,
+        tableOwnerId,
         generation,
         handle,
         activeRanges,

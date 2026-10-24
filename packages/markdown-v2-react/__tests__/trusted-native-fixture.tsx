@@ -99,13 +99,6 @@ export function workerFactory(onTokenizeRange?: (blockId: string) => void | Prom
 
 export const features = { mdx: true, tables: true, html: false, math: false };
 export const RetainedFrameRenderFailureContext = React.createContext(false);
-export const nativeTableElements = {
-  Table: ({ children, ...props }: React.ComponentProps<"table">) => (
-    <div data-native-table-wrapper="true">
-      <table {...props}>{children}</table>
-    </div>
-  ),
-};
 
 export type TrustedOwner = { readonly ownerId: string; readonly source: string };
 

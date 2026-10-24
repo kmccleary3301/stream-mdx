@@ -45,7 +45,7 @@ StreamMDX applies sanitization for untrusted HTML by default. Keep that enabled 
 Operational policy:
 
 - Enable `features.html` only when required.
-- Prefer render-layer overrides (`htmlElements`) over sanitizer allowlist expansion.
+- Prefer render-layer presentations (`components["html:<tag>"]`) over sanitizer allowlist expansion.
 - Review any allowlist changes as security-sensitive changes.
 
 Code-row HTML emitted by the syntax highlighter (per-line `span.line` markup with Shiki theme variables) uses one shared allowlist on every runtime: `pre`/`code`/`span`/`div`/`br` with `class`, `data-*`, and `style` attributes. The browser path runs that allowlist through DOMPurify; the Node/SSR path (snapshot prerender, `MarkdownBlocksRenderer`) runs it through the DOM-free rehype pipeline, so no `window`/jsdom shim is required. Surviving style declarations must use an allowed presentational property (theme foreground/background colors, font emphasis, `--shiki-*` variables) and an ASCII value from a conservative charset, so CSS backslash escapes, comment-splitting tricks, and function values such as `url(...)`/`expression(...)` are dropped on both paths while theme foreground colors and CSS variables are preserved. Tags whose content is never unwrapped (`svg`, `template`, `iframe`, `math`, `thead`, `title`, …) follow DOMPurify's forbidden-contents set on both paths, so an `<svg><text>…</text></svg>` subtree disappears identically in the browser and during prerender, while other disallowed tags (for example `em` or a stray `textarea`) are unwrapped and keep their text on both paths.
@@ -70,27 +70,40 @@ Fences labeled `artifact` or `html-artifact` render as code by default. StreamMD
 2. Set `features.html: false` unless the feed needs sanitized raw HTML.
 3. Use `linkSafety: { enabled: true }` for Markdown links. It does not mediate every navigation initiated by custom output.
 
-### Replacing and customizing codeRenderers
+### Custom code presentations
 
-StreamMDX engine-v2 allows granular code fence renderer customization via the `codeRenderers` prop. You can map specific fence languages to specialized renderers while letting standard code blocks use the default highlighter:
+Use `components.code.wrapper` to route selected fence languages while preserving the native code renderer for other blocks. The wrapper receives the block, metadata, actions, and prepared native children:
 
 ```tsx
-import { StreamingMarkdown, type CodeFenceRenderer } from "@stream-mdx/react";
+import type { NodeViewProps } from "@stream-mdx/react";
+import { StreamingMarkdown } from "@stream-mdx/react";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 
-const CustomMetricRenderer: CodeFenceRenderer = ({ code, language, isFinalized, renderCode }) => {
-  try {
-    const data = JSON.parse(code);
+function CodePresentation({ block, children, metadata, actions }: NodeViewProps) {
+  const language = metadata.language?.toLowerCase();
+  const code = block?.payload.meta?.code;
+  if (language === "mermaid") {
     return (
-      <div className="metric-panel">
-        <span className="badge">{isFinalized ? "Finalized" : "Streaming..."}</span>
-        <pre>{JSON.stringify(data, null, 2)}</pre>
-      </div>
+      <MermaidBlock
+        code={typeof code === "string" ? code : ""}
+        renderCode={children}
+        language={metadata.language ?? "mermaid"}
+        blockId={metadata.id}
+        controls={{ copy: true }}
+        copy={actions.copy}
+      />
     );
-  } catch {
-    return <>{renderCode}</>;
   }
-};
+  if (language === "metric") {
+    try {
+      const data = JSON.parse(typeof code === "string" ? code : "");
+      return <pre>{JSON.stringify(data, null, 2)}</pre>;
+    } catch {
+      return children;
+    }
+  }
+  return children;
+}
 
 export function AgentChatStream({ text }: { text: string }) {
   return (
@@ -99,13 +112,13 @@ export function AgentChatStream({ text }: { text: string }) {
       engine="worker" // or "main"
       features={{ mdx: false, html: false, tables: true, math: true }}
       linkSafety={{ enabled: true }}
-      codeRenderers={{
-        mermaid: MermaidBlock,
-        metric: CustomMetricRenderer,
-      }}
+      components={{ code: { wrapper: CodePresentation } }}
     />
   );
 }
+```
+
+Use only reviewed, trusted code presentations for untrusted fences. A presentation that activates source content needs a host-owned security boundary.
 ```
 
 See the runnable chat-thread demonstration at [`/showcase/assistant-stream`](/showcase/assistant-stream).

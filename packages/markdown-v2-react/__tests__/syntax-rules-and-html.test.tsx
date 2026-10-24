@@ -4,10 +4,11 @@ import assert from "node:assert";
 import React from "react";
 import { JSDOM } from "jsdom";
 import { createRoot } from "react-dom/client";
-import type { SyntaxRuleSpec } from "@stream-mdx/core";
+import type { InlineNode, SyntaxRuleSpec } from "@stream-mdx/core";
 import { MarkdownEngine } from "@stream-mdx/worker/engine";
 import { StreamingMarkdown } from "../src/streaming-markdown";
 
+import type { HtmlNodeViewProps, InlineNodeViewProps } from "../src/types";
 async function setupDom(): Promise<Window & typeof globalThis> {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     pretendToBeVisual: true,
@@ -22,6 +23,9 @@ async function setupDom(): Promise<Window & typeof globalThis> {
   (globalThis as unknown as Record<string, unknown>).cancelAnimationFrame = window.cancelAnimationFrame.bind(window);
   return window as unknown as Window & typeof globalThis;
 }
+const getTicketId = (node: InlineNode): string => node.kind === "plugin" ? String(node.attrs?.id ?? "") : "";
+const mappedKbdView = ({ properties, children }: HtmlNodeViewProps) =>
+  React.createElement("kbd", { ...properties, className: "mapped-kbd", "data-mapped": "true" } as React.HTMLAttributes<HTMLElement>, children);
 
 /**
  * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
@@ -136,11 +140,10 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
     attrs: { id: 1 },
   };
 
-  const TicketComponent = ({ id }: { id?: string }) => (
-    <span className="custom-ticket" data-ticket-id={id}>
-      Ticket: {id}
-    </span>
-  );
+  const TicketComponent = ({ node }: InlineNodeViewProps) => {
+    const id = getTicketId(node);
+    return <span className="custom-ticket" data-ticket-id={id}>Ticket: {id}</span>;
+  };
 
   // 1. Static render
   const root = createRoot(container!);
@@ -149,7 +152,7 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
       engine="main"
       text="See issue #ABC-123 for details."
       syntax={{ contractVersion: 1, inline: [ticketRule] }}
-      inlineComponents={{ ticket: TicketComponent }}
+      components={{ "extension:ticket": { view: TicketComponent } }}
     />,
   );
 
@@ -180,7 +183,7 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
       engine="main"
       stream={generateOneCharChunks()}
       syntax={{ contractVersion: 1, inline: [ticketRule] }}
-      inlineComponents={{ ticket: TicketComponent }}
+      components={{ "extension:ticket": { view: TicketComponent } }}
     />,
   );
 
@@ -211,11 +214,10 @@ async function testSyntaxRuleNestedInBold(): Promise<void> {
     attrs: { id: 1 },
   };
 
-  const TicketComponent = ({ id }: { id?: string }) => (
-    <span className="nested-ticket" data-id={id}>
-      [{id}]
-    </span>
-  );
+  const TicketComponent = ({ node }: InlineNodeViewProps) => {
+    const id = getTicketId(node);
+    return <span className="nested-ticket" data-id={id}>[{id}]</span>;
+  };
 
   const root = createRoot(container!);
   root.render(
@@ -223,7 +225,7 @@ async function testSyntaxRuleNestedInBold(): Promise<void> {
       engine="main"
       text="This is **bold #ABC-1** text."
       syntax={{ contractVersion: 1, inline: [ticketRule] }}
-      inlineComponents={{ ticket: TicketComponent }}
+      components={{ "extension:ticket": { view: TicketComponent } }}
     />,
   );
 
@@ -242,13 +244,8 @@ async function testAllowedTagsAndHtmlElements(): Promise<void> {
   const container = window.document.getElementById("root");
   assert.ok(container, "missing render root");
 
-  const KbdComponent = (props: React.HTMLAttributes<HTMLElement>) => (
-    <kbd className="mapped-kbd" data-mapped="true" {...props}>
-      {props.children}
-    </kbd>
-  );
-
   const root = createRoot(container!);
+
   root.render(
     <StreamingMarkdown
       engine="main"
@@ -258,9 +255,7 @@ async function testAllowedTagsAndHtmlElements(): Promise<void> {
           kbd: ["data-x"],
         },
       }}
-      htmlElements={{
-        kbd: KbdComponent,
-      }}
+      components={{ "html:kbd": { view: mappedKbdView } }}
     />,
   );
 
@@ -273,7 +268,7 @@ async function testAllowedTagsAndHtmlElements(): Promise<void> {
   assert.strictEqual(kbd.getAttribute("data-x"), "1", "data-x attribute must be preserved");
   assert.strictEqual(kbd.getAttribute("bad"), null, "unlisted 'bad' attribute must be stripped");
   assert.strictEqual(kbd.getAttribute("data-unlisted"), null, "unlisted 'data-unlisted' attribute must be stripped");
-  assert.strictEqual(kbd.getAttribute("data-mapped"), "true", "must map to htmlElements.kbd");
+  assert.strictEqual(kbd.getAttribute("data-mapped"), "true", "the html:kbd presentation is applied");
   root.unmount();
 }
 async function testNestedSyntaxRuleWithCaptureAndCursorOffset(): Promise<void> {
@@ -297,15 +292,12 @@ async function testNestedSyntaxRuleWithCaptureAndCursorOffset(): Promise<void> {
     ] as readonly SyntaxRuleSpec[],
   };
 
-  const ContainerComp = ({ children }: { children?: React.ReactNode }) => (
-    <span className="custom-container">{children}</span>
-  );
+  const ContainerComp = ({ children }: { children?: React.ReactNode }) => <span className="custom-container">{children}</span>;
 
-  const TicketComp = ({ attrs }: { attrs?: Record<string, string | number> }) => (
-    <span className="custom-ticket" data-ticket-id={String(attrs?.id ?? "")}>
-      {String(attrs?.id ?? "")}
-    </span>
-  );
+  const TicketComp = ({ node }: InlineNodeViewProps) => {
+    const id = getTicketId(node);
+    return <span className="custom-ticket" data-ticket-id={id}>{id}</span>;
+  };
 
   const root = createRoot(container!);
   root.render(
@@ -313,9 +305,9 @@ async function testNestedSyntaxRuleWithCaptureAndCursorOffset(): Promise<void> {
       engine="main"
       text="Check [[contained issue #XYZ-99]] here."
       syntax={syntax}
-      inlineComponents={{
-        containerBox: ContainerComp,
-        ticket: TicketComp,
+      components={{
+        "extension:containerBox": { wrapper: ContainerComp },
+        "extension:ticket": { view: TicketComp },
       }}
     />,
   );
@@ -351,11 +343,10 @@ async function testHeadingRendersPluginNodes(): Promise<void> {
     ] as readonly SyntaxRuleSpec[],
   };
 
-  const TicketComp = ({ attrs }: { attrs?: Record<string, string | number> }) => (
-    <span className="custom-ticket" data-ticket-id={String(attrs?.id ?? "")}>
-      {String(attrs?.id ?? "")}
-    </span>
-  );
+  const TicketComp = ({ node }: InlineNodeViewProps) => {
+    const id = getTicketId(node);
+    return <span className="custom-ticket" data-ticket-id={id}>{id}</span>;
+  };
 
   const root = createRoot(container!);
   root.render(
@@ -363,9 +354,7 @@ async function testHeadingRendersPluginNodes(): Promise<void> {
       engine="main"
       text="# Issue #ABC-123 Tracker"
       syntax={syntax}
-      inlineComponents={{
-        ticket: TicketComp,
-      }}
+      components={{ "extension:ticket": { view: TicketComp } }}
     />,
   );
 
@@ -395,12 +384,14 @@ async function testHtmlChildrenPreservedInMapping(): Promise<void> {
           strong: [],
         },
       }}
-      htmlElements={{
-        span: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-          <span className={`custom-span ${className ?? ""}`.trim()} {...props}>
-            {children}
-          </span>
-        ),
+      components={{
+        "html:span": {
+          view: ({ properties, children }) => React.createElement(
+            "span",
+            { ...properties, className: `custom-span ${String(properties.className ?? "")}`.trim() } as React.HTMLAttributes<HTMLElement>,
+            children,
+          ),
+        },
       }}
     />,
   );
@@ -466,12 +457,14 @@ async function testBlockHtmlAllowedTagsAndAttributes(): Promise<void> {
           kbd: ["hotkey"],
         },
       }}
-      htmlElements={{
-        kbd: (props: React.HTMLAttributes<HTMLElement>) => (
-          <kbd className="mapped-block-kbd" {...props}>
-            {props.children}
-          </kbd>
-        ),
+      components={{
+        "html:kbd": {
+          view: ({ properties, children }) => React.createElement(
+            "kbd",
+            { ...properties, className: "mapped-block-kbd" } as React.HTMLAttributes<HTMLElement>,
+            children,
+          ),
+        },
       }}
     />,
   );
@@ -486,6 +479,79 @@ async function testBlockHtmlAllowedTagsAndAttributes(): Promise<void> {
   assert.strictEqual(kbd.getAttribute("bad"), null, "unlisted attribute must be stripped");
   root.unmount();
 }
+
+async function testInlinePresentationWrapsPreparedLink(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "missing render root");
+
+  const root = createRoot(container!);
+  root.render(
+    <StreamingMarkdown
+      engine="main"
+      text="Read [the guide](https://example.com/guide)."
+      components={{
+        "inline:link": {
+          wrapper: ({ children, metadata }) => (
+            <span className="presented-link" data-node-type={metadata.type}>{children}</span>
+          ),
+        },
+      }}
+    />,
+  );
+
+  await waitForMutation(container!, () => Boolean(container!.querySelector(".presented-link a")));
+  const wrappedAnchor = container!.querySelector(".presented-link a");
+  assert.ok(wrappedAnchor, "the link presentation must wrap the prepared native anchor");
+  assert.strictEqual(wrappedAnchor.getAttribute("href"), "https://example.com/guide");
+  assert.strictEqual(container!.querySelectorAll(".presented-link a").length, 1, "prepared link content must render exactly once");
+  assert.strictEqual(container!.querySelector(".presented-link")?.getAttribute("data-node-type"), "inline:link");
+  root.unmount();
+}
+
+async function testHtmlPresentationPreservesSanitizedAttributes(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "missing render root");
+
+  const root = createRoot(container!);
+  root.render(
+    <StreamingMarkdown
+      engine="main"
+      text='<div data-safe="yes" onclick="alert(1)">Allowed <strong>text</strong></div>'
+      html={{
+        allowedTags: {
+          div: ["data-safe"],
+          strong: [],
+        },
+      }}
+      components={{
+        "html:div": {
+          wrapper: ({ children, metadata }) => (
+            <section
+              className="presented-html"
+              data-node-type={metadata.type}
+              data-finalized={String(metadata.isFinalized)}
+            >
+              {children}
+            </section>
+          ),
+        },
+      }}
+    />,
+  );
+
+  await waitForMutation(container!, () => Boolean(container!.querySelector(".presented-html div strong")));
+  const wrapper = container!.querySelector(".presented-html");
+  const nativeDiv = wrapper?.querySelector("div");
+  assert.ok(nativeDiv, "the admitted HTML element must remain the wrapper child");
+  assert.strictEqual(nativeDiv.getAttribute("data-safe"), "yes", "allowed sanitized attributes must remain");
+  assert.strictEqual(nativeDiv.getAttribute("onclick"), null, "forbidden event attributes must remain stripped");
+  assert.strictEqual(nativeDiv.querySelector("strong")?.textContent, "text", "prepared nested HTML must render once");
+  assert.strictEqual(wrapper?.getAttribute("data-node-type"), "html:div");
+  assert.strictEqual(wrapper?.getAttribute("data-finalized"), "true");
+}
+
 
 async function testAnticipationOverlapAndStreamingStatus(): Promise<void> {
   const patches: Array<{ blockId: string; meta?: Record<string, unknown> }> = [];
@@ -582,12 +648,13 @@ async function testDynamicPropUpdatesReInits(): Promise<void> {
       engine="main"
       text="Ticket #DEF-456 active"
       syntax={syntax}
-      inlineComponents={{
-        ticket: ({ attrs }: { attrs?: Record<string, string | number> }) => (
-          <span className="dynamic-ticket" data-id={String(attrs?.id ?? "")}>
-            {String(attrs?.id ?? "")}
-          </span>
-        ),
+      components={{
+        "extension:ticket": {
+          view: ({ node }) => {
+            const id = getTicketId(node);
+            return <span className="dynamic-ticket" data-id={id}>{id}</span>;
+          },
+        },
       }}
     />,
   );
@@ -652,9 +719,13 @@ console.log("10: testLiteralTagContent");
 await testLiteralTagContent();
 console.log("11: testBlockHtmlAllowedTagsAndAttributes");
 await testBlockHtmlAllowedTagsAndAttributes();
-console.log("12: testAnticipationOverlapAndStreamingStatus");
+console.log("11: testInlinePresentationWrapsPreparedLink");
+await testInlinePresentationWrapsPreparedLink();
+console.log("12: testHtmlPresentationPreservesSanitizedAttributes");
+await testHtmlPresentationPreservesSanitizedAttributes();
+console.log("13: testAnticipationOverlapAndStreamingStatus");
 await testAnticipationOverlapAndStreamingStatus();
-console.log("13: testDynamicPropUpdatesReInits");
+console.log("14: testDynamicPropUpdatesReInits");
 await testDynamicPropUpdatesReInits();
 console.log("All syntax rules and HTML allowlist acceptance tests passed successfully.");
 

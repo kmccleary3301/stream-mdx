@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { Worker as NodeWorker } from "node:worker_threads";
-import { compileSyntaxRuleToExtension, type SyntaxRuleSpec } from "@stream-mdx/core";
+import { compileSyntaxRuleToExtension, type InlineNode, type SyntaxRuleSpec } from "@stream-mdx/core";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
 import { JSDOM } from "jsdom";
 import React from "react";
@@ -8,6 +8,7 @@ import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ComponentRegistry } from "../src/components";
 import { StreamingMarkdown, type StreamingMarkdownHandle, type StreamingMarkdownProps } from "../src/streaming-markdown";
+import type { NodePresentations } from "../src/types";
 
 function setupDom() {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { pretendToBeVisual: true });
@@ -45,8 +46,7 @@ async function renderHtml(props: StreamingMarkdownProps, check: (container: HTML
     await waitUntil(() => Boolean(handle.current?.getState().workerReady && container.querySelector("span")));
     await handle.current?.waitForIdle();
     check(container);
-    const registry = new ComponentRegistry(props.components, props.inlineComponents);
-    if (props.htmlElements) registry.setHtmlElements(props.htmlElements);
+    const registry = new ComponentRegistry({ components: props.components, contentComponents: props.contentComponents });
     registry.setLiteralTagContent(props.html?.literalTagContent);
     Object.defineProperty(globalThis, "window", { configurable: true, writable: true, value: undefined });
     try {
@@ -96,17 +96,17 @@ const ticket: SyntaxRuleSpec = {
   pattern: { source: "#([A-Z]+-\\d+)" },
   attrs: { id: 1 },
 };
-const inlineComponents = {
-  strong: ({ children }: { children: React.ReactNode }) => <b className="mapped-bold">{children}</b>,
-  ticket: ({ id }: { id?: string }) => <mark className="mapped-ticket">{id}</mark>,
-};
+const consumerComponents = {
+  "inline:strong": { view: ({ children }: { children?: React.ReactNode }) => <b className="mapped-bold">{children}</b> },
+  "extension:ticket": { view: ({ node }: { node: InlineNode }) => node.kind === "plugin" ? <mark className="mapped-ticket">{String(node.attrs?.id ?? "")}</mark> : null },
+} satisfies NodePresentations;
 
 async function testOwnedHtmlParser() {
   await renderHtml({
     text: "<div><span>**#ABC-1** $x$</span></div>",
     syntax: { contractVersion: 1, inline: [ticket] },
     html: { literalTagContent: [] },
-    inlineComponents,
+    components: consumerComponents,
     features: { math: false },
   }, (container) => {
     assert.equal(container.querySelector(".mapped-bold .mapped-ticket")?.textContent, "ABC-1");
@@ -121,8 +121,8 @@ async function testOwnedHtmlParser() {
       text: "<div><span>**#ABC-2**</span></div>",
       engine: "worker",
       worker: () => nativeWorker,
+      components: consumerComponents,
       html: { literalTagContent: [] },
-      inlineComponents,
     }, (container) => {
       assert.equal(container.querySelector(".mapped-bold .mapped-ticket")?.textContent, "ABC-2", "native engine extensions survive HTML mapping");
     });
@@ -170,7 +170,11 @@ async function testPartialCloser(open: string, close: string, pattern: string) {
         contractVersion: 1,
         inline: [{ name: "delimited", pattern: { source: pattern }, attrs: { value: 1 }, anticipation: { open, close } }],
       }}
-      inlineComponents={{ delimited: ({ value }: { value?: string }) => <mark className="delimited">{value}</mark> }}
+      components={{
+        "extension:delimited": {
+          view: ({ node }) => node.kind === "plugin" ? <mark className="delimited">{String(node.attrs?.value ?? "")}</mark> : null,
+        },
+      }}
     />);
     await waitUntil(() => Boolean(container.querySelector(".delimited")));
     await handle.current?.waitForIdle();

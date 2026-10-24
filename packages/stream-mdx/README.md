@@ -69,10 +69,16 @@ export function Demo({ text }: { text: string }) {
 ### 3. Optional addon registration
 
 ```tsx
-import { MermaidBlock } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "stream-mdx";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 
-<StreamingMarkdown text={content} worker="/workers/markdown-worker.js" codeRenderers={{ mermaid: MermaidBlock }} />;
+const mermaidEngine = createMermaidEngine();
+
+<StreamingMarkdown
+  text={content}
+  worker="/workers/markdown-worker.js"
+  engines={{ mermaid: mermaidEngine }}
+/>;
 ```
 
 > [!NOTE]

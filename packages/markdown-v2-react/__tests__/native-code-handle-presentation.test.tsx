@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import { Worker as NodeWorker } from "node:worker_threads";
 import type { CodeBlockMetadata, CodeLineRange, CodeLineRecord, CodeNodeHandle } from "@stream-mdx/core";
-import { StreamingMarkdown, useCodeBlock, useCodeLines, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import {
+  NativeNodeView,
+  StreamingMarkdown,
+  useCodeBlock,
+  useCodeDiff,
+  useCodeLines,
+  type StreamingMarkdownHandle,
+} from "@stream-mdx/react";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
@@ -22,6 +29,7 @@ type CodeSliceProps = {
 };
 
 const NARROW_RANGE: CodeLineRange = { from: 0, to: 1 };
+const NATIVE_DIFF_RANGE: CodeLineRange = { from: 1, to: 4 };
 const EXPANDED_RANGE: CodeLineRange = { from: 0, to: 3 };
 const CaptureCodeViewContext = React.createContext<CaptureCodeView>(() => {});
 
@@ -119,6 +127,11 @@ async function waitFor(predicate: () => boolean, message: string, timeoutMs = 10
 type NativeCodeStatusCapture = {
   readonly metadata: CodeBlockMetadata;
   readonly handle: CodeNodeHandle;
+  readonly diff: {
+    readonly diffStatus: CodeBlockMetadata["diffStatus"];
+    readonly lines: readonly CodeLineRecord[];
+  };
+  readonly renderCount: number;
 };
 type CaptureNativeCodeStatus = (entry: NativeCodeStatusCapture) => void;
 type NativeCodeStatusProps = { readonly handle: CodeNodeHandle };
@@ -126,12 +139,17 @@ type NativeCodeStatusProps = { readonly handle: CodeNodeHandle };
 const NativeCodeStatusContext = React.createContext<CaptureNativeCodeStatus>(() => {});
 
 function NativeCodeStatusView({ handle }: NativeCodeStatusProps): React.ReactElement {
-  const metadata = useCodeBlock(handle);
+  const diff = useCodeDiff(handle, NATIVE_DIFF_RANGE);
+  const renderCount = React.useRef(0);
+  renderCount.current += 1;
   const capture = React.useContext(NativeCodeStatusContext);
-  capture({ metadata, handle });
-  return <div data-native-code-owner={metadata.codeOwnerId} data-diff-status={metadata.diffStatus} />;
+  capture({ metadata: handle.readMetadata(), handle, diff, renderCount: renderCount.current });
+  return (
+    <div data-native-code-owner={handle.readMetadata().codeOwnerId} data-diff-status={diff.diffStatus}>
+      <NativeNodeView handle={handle} />
+    </div>
+  );
 }
-
 
 async function runNativeCodeHandlePresentationTest(): Promise<void> {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
@@ -401,25 +419,58 @@ async function runNativeCodeDiffStatusTest(): Promise<void> {
     assert.ok(streamHandle, "the public streaming handle is available for native diff status");
 
     await act(async () => {
-      streamHandle.append("```diff\n@@ -1,3 +1,3 @@\n a\n b\n");
+      streamHandle.append("```diff ts\n@@ -10,4 +20,4 @@\n context\n-old\n+new\n");
     });
-    await waitFor(() => entries.size >= 1, "the first native diff code handle");
+    await waitFor(() => entries.size >= 1 && latestEntry()?.diff.lines.length === 3, "the first native diff code handle rows");
+    await waitFor(
+      () => container.querySelector("[data-native-code-owner] pre code")?.textContent?.includes("context") === true,
+      "the specialized code handle selects the native code fallback without presentation recursion",
+    );
     let entry = latestEntry();
     assert.ok(entry);
     assert.equal(entry.metadata.diffStatus, "incomplete", "the React code metadata reports rows still owed");
     assert.equal(entry.handle.readMetadata().diffStatus, "incomplete", "the retained native handle reports rows still owed");
-
-    await act(async () => {
-      streamHandle.append(" c\n");
-    });
+    assert.deepEqual(
+      entry.diff.lines.map(({ text, diffKind, oldNo, newNo }) => [text, diffKind, oldNo ?? null, newNo ?? null]),
+      [
+        [" context", "context", 10, 20],
+        ["-old", "del", 11, null],
+        ["+new", "add", null, 21],
+      ],
+      "the ranged diff hook exposes source rows with their kinds and one-based side numbers",
+    );
     await waitFor(
-      () => latestEntry()?.metadata.completeLineCount === 4,
-      "the third declared diff row to reach the React code metadata",
+      () => latestEntry()?.diff.lines.every((line) => line.decoration?.exactness !== undefined) === true,
+      "the ranged diff hook to expose token exactness",
     );
     entry = latestEntry();
     assert.ok(entry);
-    assert.equal(entry.metadata.diffStatus, "complete", "the React code metadata reports satisfied row counts");
+    const initialDiffLines = entry.diff.lines;
+    const renderCountBeforeOutsideAppend = entry.renderCount;
+
+    await act(async () => {
+      streamHandle.append(" tail one\n");
+    });
+    await waitFor(
+      () => entry.handle.readMetadata().completeLineCount === 5,
+      "an out-of-range diff row to commit",
+    );
+    assert.equal(entry.handle.readMetadata().diffStatus, "incomplete");
+    assert.strictEqual(latestEntry()?.renderCount, renderCountBeforeOutsideAppend, "the bounded diff view does not rerender for an out-of-range append");
+    assert.strictEqual(latestEntry()?.diff.lines, initialDiffLines, "the unchanged diff range retains its record collection");
+
+    await act(async () => {
+      streamHandle.append(" tail two\n");
+    });
+    await waitFor(
+      () => latestEntry()?.metadata.diffStatus === "complete",
+      "the final declared diff row to complete the hunk",
+    );
+    entry = latestEntry();
+    assert.ok(entry);
+    assert.equal(entry.metadata.diffStatus, "complete", "the hook status follows hunk completion");
     assert.equal(entry.handle.readMetadata().diffStatus, "complete", "the retained native handle reports satisfied row counts");
+    assert.deepEqual(entry.diff.lines.map(({ id }) => id), initialDiffLines.map(({ id }) => id), "status changes retain the selected diff rows");
 
     await act(async () => {
       streamHandle.append("```\n```diff\n@@ -1,3 +1,3 @@\n a\n@@ -10,1 +10,1 @@\n");

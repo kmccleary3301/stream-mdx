@@ -3,7 +3,9 @@ import type { Block, DiffBlock } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { ComponentRegistry, type CodeFenceRendererProps } from "../src/components";
+import { MarkdownRenderer } from "../src/renderer";
+import { ComponentRegistry } from "../src/components";
+import type { InlineNodeViewProps } from "../src/types";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createRendererStore } from "../src/renderer/store";
@@ -37,70 +39,6 @@ async function setupDom() {
   return window;
 }
 
-// Test 1: codeRenderers precedence and normalization
-async function testCodeRenderersNormalizationAndPrecedence(): Promise<void> {
-  const window = await setupDom();
-  let capturedProps: CodeFenceRendererProps | null = null;
-
-  const CustomPython = (props: CodeFenceRendererProps) => {
-    capturedProps = props;
-    return React.createElement("div", { id: "custom-python", "data-finalized": String(props.isFinalized) }, props.code);
-  };
-
-  const registry = new ComponentRegistry();
-  // Register with mixed case
-  registry.setCodeRenderers({
-    PyThOn: CustomPython,
-  });
-
-  // Block with uppercase language
-  const block: Block = {
-    id: "block-py",
-    type: "code",
-    isFinalized: true,
-    payload: {
-      raw: "```PYTHON\nprint('hello')\n```",
-      meta: { lang: "PYTHON" },
-    },
-  };
-
-  const store = createRendererStore([block]);
-  const container = window.document.getElementById("root");
-  assert.ok(container, "root container missing");
-  const root = createRoot(container);
-  root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-  await sleep(30);
-
-  const customEl = container.querySelector("#custom-python");
-  assert.ok(customEl, "custom renderer should be matched case-insensitively");
-  assert.strictEqual(capturedProps?.isFinalized, true, "isFinalized flag must be passed to code renderer");
-  assert.strictEqual(capturedProps?.code.trim(), "print('hello')", "code must be stripped of fence markers");
-  assert.strictEqual(capturedProps?.language, "PYTHON", "original language string preserved");
-
-  root.unmount();
-
-  // Unknown language falls back to code view
-  const window2 = await setupDom();
-  const unknownBlock: Block = {
-    id: "block-unknown",
-    type: "code",
-    isFinalized: false,
-    payload: {
-      raw: "```rust\nfn main() {}\n```",
-      meta: { lang: "rust" },
-    },
-  };
-  const store2 = createRendererStore([unknownBlock]);
-  const container2 = window2.document.getElementById("root");
-  assert.ok(container2);
-  const root2 = createRoot(container2);
-  root2.render(React.createElement(BlockNodeRenderer, { store: store2, blockId: unknownBlock.id, registry }));
-  await sleep(30);
-
-  assert.strictEqual(container2.querySelector("#custom-python"), null);
-  assert.ok(container2.querySelector("pre"), "unknown language must fall back to standard code view");
-  root2.unmount();
-}
 
 // Test 2: Structured diff renderer rows, line numbers, and token colors
 async function testDiffRendererRowsAndTokens(): Promise<void> {
@@ -211,8 +149,8 @@ async function testDiffRendererRowsAndTokens(): Promise<void> {
 }
 
 
-// Test 4: KaTeX math rendering and custom mathRenderer override
-async function testKaTeXMathAndOverride(): Promise<void> {
+// Test 3: KaTeX math rendering and node presentations
+async function testKaTeXMathPresentations(): Promise<void> {
   const window = await setupDom();
   const container = window.document.getElementById("root");
   assert.ok(container);
@@ -241,26 +179,151 @@ async function testKaTeXMathAndOverride(): Promise<void> {
     assert.strictEqual(container.querySelector(".math-inline")?.getAttribute("data-tex"), "E = mc^2");
     assert.strictEqual(container.querySelector(".math-display")?.getAttribute("data-tex"), "\\int x dx");
     assert.ok(container.querySelector(".math-inline .katex .katex-mathml"), "inline math must contain KaTeX MathML");
-    assert.ok(container.querySelector(".math-display .katex .katex-mathml"), "display math must contain KaTeX MathML");
-
-    const registry = new ComponentRegistry();
-    registry.setMathRenderer({
-      inline: ({ tex }) => React.createElement("span", { id: "mathjax-inline" }, `[MathJax: ${tex}]`),
-      display: ({ tex }) => React.createElement("div", { id: "mathjax-display" }, `[MathJax Display: ${tex}]`),
+    const presentationRegistry = new ComponentRegistry();
+    presentationRegistry.setNodePresentations({
+      "inline:math": {
+        wrapper: ({ children, metadata }) => React.createElement(
+          "span",
+          { className: "presented-math", "data-node-type": metadata.type, "data-finalized": String(metadata.isFinalized) },
+          children,
+        ),
+      },
     });
-    renderMath(registry);
+    renderMath(presentationRegistry);
     await waitFor(
       container,
-      () => Boolean(container.querySelector("#mathjax-inline") && container.querySelector("#mathjax-display")),
-      "compiled math must use both registry overrides through the store-backed renderer",
+      () => Boolean(container.querySelector(".presented-math .math-inline .katex") && container.querySelector(".presented-math .math-display .katex")),
+      "math presentation wrappers must preserve KaTeX rendering for inline and display expressions",
     );
-    assert.strictEqual(container.querySelector("#mathjax-inline")?.textContent, "[MathJax: E = mc^2]");
-    assert.strictEqual(container.querySelector("#mathjax-display")?.textContent, "[MathJax Display: \\int x dx]");
-    assert.strictEqual(container.querySelector(".katex"), null, "custom math renderers must replace the defaults");
+    assert.strictEqual(container.querySelectorAll(".presented-math").length, 2);
+    assert.strictEqual(container.querySelector(".presented-math")?.getAttribute("data-node-type"), "inline:math");
+    assert.strictEqual(container.querySelector(".presented-math")?.getAttribute("data-finalized"), "true");
+
+    const HeadlessMathView = ({ node, children, metadata }: InlineNodeViewProps) =>
+      React.createElement("span", {
+        className: "headless-math",
+        "data-node-kind": node.kind,
+        "data-finalized": String(metadata.isFinalized),
+      }, children);
+    const headlessRegistry = new ComponentRegistry();
+    headlessRegistry.setNodePresentations({
+      "inline:math": {
+        view: HeadlessMathView,
+      },
+    });
+    renderMath(headlessRegistry);
+    await waitFor(
+      container,
+      () => Boolean(container.querySelector(".headless-math .math-inline .katex") && container.querySelector(".headless-math .math-display .katex")),
+      "headless math views must receive the prepared engine output",
+    );
+    assert.strictEqual(container.querySelectorAll(".headless-math").length, 2);
+    assert.ok(container.querySelector('.headless-math[data-node-kind="math-inline"]'));
+    assert.ok(container.querySelector('.headless-math[data-node-kind="math-display"]'));
+    assert.strictEqual(container.querySelector('.headless-math[data-node-kind="math-inline"]')?.getAttribute("data-finalized"), "true");
+
+    assert.ok(container.querySelector(".math-display .katex .katex-mathml"), "display math must contain KaTeX MathML");
+
   } finally {
     root.unmount();
   }
 }
+
+async function testMathEngineReplacement(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const result = await compileMarkdownSnapshotDirect({
+    text: "Energy $E = mc^2$.\n\n$$\\int x dx$$",
+  });
+  const store = createRendererStore(result.blocks);
+  const root = createRoot(container);
+  const calls: Array<{ tex: string; displayMode: boolean }> = [];
+  const customMathEngine = {
+    id: "mathjax-test",
+    render: (tex: string, options: { displayMode: boolean }) => {
+      calls.push({ tex, displayMode: options.displayMode });
+      return React.createElement(
+        "span",
+        { className: options.displayMode ? "mathjax-display" : "mathjax-inline" },
+        `[MathJax: ${tex}]`,
+      );
+    },
+  };
+  const mathWrapper = ({ children }: { children?: React.ReactNode }) =>
+    React.createElement("span", { className: "math-engine-presentation" }, children);
+  const mathComponents = { "inline:math": { wrapper: mathWrapper } };
+  const renderer = new MarkdownRenderer({
+    engines: { math: customMathEngine },
+    components: mathComponents,
+  });
+  const renderWithRenderer = (currentRenderer: MarkdownRenderer) => {
+    root.render(
+      React.createElement(
+        React.Fragment,
+        null,
+        result.blocks.map((block) =>
+          React.createElement(BlockNodeRenderer, {
+            key: block.id,
+            store,
+            blockId: block.id,
+            registry: currentRenderer.getComponentRegistry(),
+          }),
+        ),
+      ),
+    );
+  };
+
+  try {
+    renderWithRenderer(renderer);
+    await waitFor(
+      container,
+      () => Boolean(container.querySelector(".mathjax-inline") && container.querySelector(".mathjax-display")),
+      "custom math engine must render inline and display expressions",
+    );
+    assert.ok(container.querySelector(".math-engine-presentation .mathjax-inline"));
+    assert.ok(container.querySelector(".math-engine-presentation .mathjax-display"));
+    assert.strictEqual(container.querySelector(".katex"), null, "custom math engine must replace KaTeX");
+    assert.strictEqual(container.querySelector(".mathjax-inline")?.textContent, "[MathJax: E = mc^2]");
+    assert.strictEqual(container.querySelector(".mathjax-display")?.textContent, "[MathJax: \\int x dx]");
+    assert.ok(calls.some((call) => call.tex === "E = mc^2" && !call.displayMode));
+    assert.ok(calls.some((call) => call.tex === "\\int x dx" && call.displayMode));
+
+    const callsBeforeReplacement = calls.length;
+    const replacementRenderer = new MarkdownRenderer({
+      engines: {
+        math: {
+          id: "mathjax-replacement",
+          render: (tex, { displayMode }) =>
+            React.createElement(
+              "span",
+              { className: displayMode ? "mathjax-replacement-display" : "mathjax-replacement-inline" },
+              `[MathJax replacement: ${tex}]`,
+            ),
+        },
+      },
+      components: mathComponents,
+    });
+    renderWithRenderer(replacementRenderer);
+    await waitFor(
+      container,
+      () => Boolean(
+        container.querySelector(".mathjax-replacement-inline") &&
+          container.querySelector(".mathjax-replacement-display"),
+      ),
+      "changing the math engine must replace cached output for the same source",
+    );
+    assert.strictEqual(container.querySelector(".mathjax-inline"), null);
+    assert.strictEqual(container.querySelector(".katex"), null);
+    assert.strictEqual(calls.length, callsBeforeReplacement, "replacing the engine must not rerender with the old engine");
+    assert.strictEqual(container.querySelector(".mathjax-replacement-inline")?.textContent, "[MathJax replacement: E = mc^2]");
+    assert.strictEqual(container.querySelector(".mathjax-replacement-display")?.textContent, "[MathJax replacement: \\int x dx]");
+
+  } finally {
+    root.unmount();
+  }
+}
+
 
 async function testArtifactFencesRemainInertByDefault(): Promise<void> {
   const window = await setupDom();
@@ -305,8 +368,8 @@ async function testArtifactFencesRemainInertByDefault(): Promise<void> {
   }
 }
 
-await testCodeRenderersNormalizationAndPrecedence();
 await testDiffRendererRowsAndTokens();
-await testKaTeXMathAndOverride();
+await testKaTeXMathPresentations();
 await testArtifactFencesRemainInertByDefault();
+await testMathEngineReplacement();
 console.log("Code renderers, diff, custom fence, and math tests passed successfully.");

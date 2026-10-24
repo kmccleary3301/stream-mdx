@@ -88,4 +88,21 @@ export const targets = {
       "__tests__/table-virtualization.test.tsx",
     ],
   },
+  "react-node-presentations": {
+    package: "packages/markdown-v2-react",
+    redirects: {
+      "@stream-mdx/react": "src/index.ts",
+      "@stream-mdx/react/server": "../../dist/server.mjs",
+      "@stream-mdx/react/_internal/trusted-mdx-native-children": "../../dist/trusted-mdx/native-children-slot.mjs",
+    },
+    mutate: ["src/renderer/node-views.tsx:63-135"],
+    tests: [
+      "__tests__/node-presentations.test.tsx",
+      "__tests__/custom-table-component-streaming.test.tsx",
+      "__tests__/native-table-handle-presentation.test.tsx",
+      "__tests__/native-code-highlight-lifecycle.test.ts",
+      "__tests__/node-handle-hooks.test.tsx",
+      "__tests__/lifecycle-defect-fixes.test.tsx",
+    ],
+  },
 };

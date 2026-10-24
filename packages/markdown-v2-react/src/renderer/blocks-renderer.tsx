@@ -3,8 +3,8 @@ import React, { useMemo, useRef } from "react";
 
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
-import type { AnimatedProp, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, ElementFilterOptions } from "../types";
 import type { ContentComponentsMap } from "../components/content-components";
+import type { AnimatedProp, ControlsComponentProps, ControlsConfig, ElementFilterOptions, MermaidEngine, NodePresentations } from "../types";
 import { RenderConfigVersionContext, useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
 import { createRendererStore, type RendererStore } from "./store";
@@ -15,28 +15,29 @@ import { createRendererStore, type RendererStore } from "./store";
 export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
   blocks: ReadonlyArray<Block>;
   componentRegistry?: ComponentRegistry;
-  codeRenderers?: Record<string, CodeFenceRenderer>;
   className?: string;
   style?: React.CSSProperties;
   colorScheme?: "light" | "dark" | "system";
   store?: RendererStore;
-  blockRenderer?: BlockRendererOverride;
+  components?: NodePresentations;
   urlTransform?: UrlTransform;
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
   statusMessage?: string;
   contentComponents?: ContentComponentsMap;
+  engines?: { mermaid?: MermaidEngine };
 }
 
 interface AppliedRenderConfig {
-  blockRenderer?: BlockRendererOverride;
+  components?: NodePresentations;
   urlTransform?: UrlTransform;
   filters?: ElementFilterOptions;
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
   contentComponents?: ContentComponentsMap;
+  mermaidEngine?: MermaidEngine;
   version: number;
 }
 
@@ -44,8 +45,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
   ({
     blocks,
     componentRegistry,
-    codeRenderers,
-    blockRenderer,
+    components,
     urlTransform,
     allowedElements,
     disallowedElements,
@@ -58,6 +58,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     statusMessage,
     contentComponents,
     className = "markdown-renderer",
+    engines,
     style,
     store,
     colorScheme,
@@ -67,12 +68,9 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     const applied = useRef<AppliedRenderConfig>({ version: 0 });
     const { registry: resolvedRegistry, version: renderConfigVersion } = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
-      if (codeRenderers) {
-        reg.setCodeRenderers(codeRenderers);
-      }
       const previous = applied.current;
-      if (blockRenderer !== undefined || previous.blockRenderer !== undefined) {
-        reg.setBlockRenderer(blockRenderer);
+      if (components !== undefined || previous.components !== undefined) {
+        reg.setNodePresentations(components);
       }
       if (urlTransform !== undefined || previous.urlTransform !== undefined) {
         reg.setUrlTransform(urlTransform);
@@ -100,21 +98,28 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       if (contentComponents !== undefined || previous.contentComponents !== undefined) {
         reg.setContentComponents(contentComponents);
       }
+      const mermaidEngine = engines?.mermaid;
+      if (engines !== undefined || previous.mermaidEngine !== undefined) {
+        reg.setMermaidEngine(mermaidEngine);
+      }
       // Inline literals re-run this memo every render; only an effective change re-renders mounted blocks.
       const changed =
         urlTransform !== previous.urlTransform ||
         controlsComponent !== previous.controlsComponent ||
+        components !== previous.components ||
         !sameElementFilters(filters, previous.filters) ||
         !samePlainConfig(controls, previous.controls) ||
         !samePlainConfig(animated, previous.animated) ||
-        contentComponents !== previous.contentComponents;
+        contentComponents !== previous.contentComponents ||
+        mermaidEngine !== previous.mermaidEngine;
       const version = changed ? previous.version + 1 : previous.version;
-      applied.current = { blockRenderer, urlTransform, filters, controls, controlsComponent, animated, contentComponents, version };
+      applied.current = {
+        components, urlTransform, filters, controls, controlsComponent, animated, contentComponents, mermaidEngine, version,
+      };
       return { registry: reg, version };
     }, [
       componentRegistry,
-      codeRenderers,
-      blockRenderer,
+      components,
       urlTransform,
       allowedElements,
       disallowedElements,
@@ -125,6 +130,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       controlsComponent,
       animated,
       contentComponents,
+      engines?.mermaid,
     ]);
     const effectiveStore = useMemo(() => {
       if (store) return store;
@@ -154,7 +160,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
         React.createElement(
           RenderConfigVersionContext.Provider,
           { value: renderConfigVersion },
-          React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry, blockRenderer }),
+          React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry }),
         ),
       ),
     );
@@ -184,15 +190,15 @@ function samePlainConfig(a: unknown, b: unknown): boolean {
   return a === b || JSON.stringify(a) === JSON.stringify(b);
 }
 
-const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry; blockRenderer?: BlockRendererOverride }>(
-  ({ store, componentRegistry, blockRenderer }) => {
+const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry }>(
+  ({ store, componentRegistry }) => {
     const blockIds = useRendererChildren(store, PATCH_ROOT_ID);
     return React.createElement(
       React.Fragment,
       null,
       blockIds.map((blockId) =>
         React.createElement(BlockNodeRenderer, {
-          key: `${blockId}:${blockRenderer ? "custom" : "default"}`,
+          key: blockId,
           store,
           blockId,
           registry: componentRegistry,

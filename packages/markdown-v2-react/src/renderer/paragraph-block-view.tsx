@@ -506,7 +506,8 @@ export const ManagedParagraphBlockView: React.FC<{
   blockId: string;
   registry: ComponentRegistry;
   renderNested: (nodeId: string) => React.ReactNode;
-}> = React.memo(({ store, blockId, registry, renderNested }) => {
+  renderPresentation?: (nativeView: React.ReactNode) => React.ReactNode;
+}> = React.memo(({ store, blockId, registry, renderNested, renderPresentation }) => {
   const node = useRendererNode(store, blockId);
   const state = store.getParagraphBlock(blockId);
   const isFinalized = Boolean(state && state.source.state !== "open");
@@ -517,29 +518,22 @@ export const ManagedParagraphBlockView: React.FC<{
 
   const content = renderManagedParagraphContent(store, blockId, state, registry, renderNested, "p");
 
-  const ParagraphComponent = registry.getBlockComponent("paragraph");
-  let element: React.ReactElement;
-  if (registry.hasCustomBlockComponent("paragraph")) {
-    const sourceBlock = store.getParagraphColdBlock(blockId);
-    if (!sourceBlock) throw new RangeError("Managed paragraph source block is unavailable");
-    const inlines = sourceBlock.payload.inline;
-    if (!inlines) throw new RangeError("Managed paragraph source inlines are unavailable");
-    element = React.createElement(ParagraphComponent, {
-      inlines,
-      raw: sourceBlock.payload.raw,
-      meta: sourceBlock.payload.meta,
-      children: content,
-    });
-  } else {
-    element = React.createElement("p", { className: "markdown-paragraph" }, content);
+  const element = <p className="markdown-paragraph">{content}</p>;
+  if (!registry.hasElementFilters()) {
+    const nativeView = <>{element}</>;
+    return renderPresentation ? renderPresentation(nativeView) : nativeView;
   }
-  if (!registry.hasElementFilters()) return <>{element}</>;
+  let hostAllowed = false;
   const filtered = registry.filterElement(
     { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
     { source: "markdown" },
-    () => element,
+    () => {
+      hostAllowed = true;
+      return element;
+    },
     () => content,
   );
   if (filtered === null || filtered === undefined) return null;
-  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
+  const nativeView = React.isValidElement(filtered) ? filtered : <>{filtered}</>;
+  return hostAllowed && renderPresentation ? renderPresentation(nativeView) : nativeView;
 });

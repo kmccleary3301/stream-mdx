@@ -1,6 +1,7 @@
 export {
   MermaidBlock,
   createMermaidBlock,
+  createMermaidEngine,
 } from "./mermaid-block";
 export type {
   CreateMermaidBlockOptions,

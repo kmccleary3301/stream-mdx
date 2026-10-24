@@ -11,10 +11,9 @@ Enables `react-markdown` and `Streamdown` users to bring their existing `remarkP
 - **Async SSR behavior**: Server rendering with async plugins returns the default StreamMDX element. It does not wait for plugin completion.
 - **Deduplication and stale results**: Concurrent jobs for the same cache key share one transformation. Older jobs may finish after content or metadata changes, but their results cannot replace the newer block.
 - **Bounded cache**: Finalized transformations use a bounded LRU cache, with 500 entries by default. Keys include `block.id`, block type, reconstructed markdown source, and resolved link references.
-- **Heading semantics**: The engine stores finalized heading inline markdown in `payload.raw` without heading markers. The adapter restores the heading level from `payload.meta.headingLevel` before parsing. Multiline level-1 and level-2 headings use Setext syntax to preserve their inline content and soft breaks in one heading node. Remark heading transforms and rehype plugins such as `rehype-slug` receive the complete heading.
 - **Link reference resolution**: Definitions from `block.payload.meta.linkReferences` are prepended before parsing, so routed blocks retain resolved reference links and titles.
 - **Container replacement**: Routed lists and blockquotes run their canonical raw markdown through unified and replace native child rendering, including prepared child snapshots. Set `blockTypes` to exclude those containers when you need native code, math, or custom syntax renderers inside them. Unrouted containers retain their native element.
-- **Error handling**: Plugin errors reach `onError` and retain the default rendered element. Promise rejections and callback-style transformer errors use the same fallback.
+- **Error handling**: Unified processing errors reach `onError` with the block's ID, type, and finalized state, while retaining the default rendered element. Promise rejections and callback-style transformer errors use the same fallback.
 - **Zero bundle weight in `@stream-mdx/react`**: Heavy unified and AST parser dependencies remain isolated within `@stream-mdx/unified`.
 
 ## Installation
@@ -33,20 +32,25 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 
 const unifiedRenderer = createUnifiedRenderer({
   rehypePlugins: [rehypeSlug, rehypeAutolinkHeadings],
-  // Optional custom components mapping
   components: {
+    heading: {
+      wrapper: ({ children, metadata }) => (
+        <section data-finalized={metadata.isFinalized}>{children}</section>
+      ),
+    },
+  },
+  hastComponents: {
     a: (props) => <a {...props} className="text-blue-500 hover:underline" />,
   },
-  onError: (error, block) => {
-    console.error(`Unified plugin error in block ${block.id}:`, error);
+  onError: (error, context) => {
+    console.error(`Unified plugin error in block ${context.id}:`, error);
   },
-});
 
 export function Doc({ text }: { text: string }) {
   return (
     <StreamingMarkdown
       text={text}
-      blockRenderer={unifiedRenderer}
+      components={unifiedRenderer}
     />
   );
 }
@@ -60,11 +64,12 @@ export function Doc({ text }: { text: string }) {
 |---|---|---|---|
 | `remarkPlugins` | `PluggableList` | `[]` | List of remark plugins or plugin tuples `[plugin, options]` |
 | `rehypePlugins` | `PluggableList` | `[]` | List of rehype plugins or plugin tuples `[plugin, options]` |
-| `components` | `Record<string, Component>` | `{}` | Custom React component mapping passed to `hast-util-to-jsx-runtime` |
-| `blockTypes` | `string[]` | `['paragraph', 'heading', 'blockquote', 'list', 'table', 'code', 'thematicBreak']` | Block types to route to unified pipeline |
+| `components` | `NodePresentations` | `{}` | Node wrapper/view registry shared with the streaming and static React renderer |
+| `hastComponents` | `Record<string, Component>` | `{}` | Custom React component mapping passed to `hast-util-to-jsx-runtime` |
+| `blockTypes` | `string[]` | `['paragraph', 'heading', 'blockquote', 'list', 'table', 'code', 'hr']` | Block types to route to unified pipeline |
 | `cacheSize` | `number` | `500` | Maximum number of rendered blocks to retain in LRU cache |
 | `math` | `boolean` | `false` | Enable `remark-math` support |
 | `gfm` | `boolean` | `true` | Enable `remark-gfm` support |
-| `onError` | `(error: Error, block: Block) => void` | `undefined` | Callback invoked when a unified plugin throws during block processing |
+| `onError` | `(error: Error, context: { id: string; type: string; finalized: boolean }) => void` | `undefined` | Callback invoked when unified processing fails for a block |
 
 > **Note on Block Types**: Standard CommonMark/GFM blocks are routed by default. Specialized block types like `html` and `mdx` are opt-in via `blockTypes` (e.g. `blockTypes: ['paragraph', 'html']`). When routing `html` blocks, ensure your unified pipeline includes appropriate plugins (e.g. `rehype-raw`) if you wish to parse embedded raw HTML.

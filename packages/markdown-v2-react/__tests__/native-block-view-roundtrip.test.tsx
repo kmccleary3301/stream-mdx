@@ -6,32 +6,19 @@ import { JSDOM } from "jsdom";
 import { createElement, createRef, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 
-import { ComponentRegistry } from "../src/components";
 import { StreamingMarkdown, type StreamingMarkdownHandle } from "../src/streaming-markdown";
+import type { NodeViewProps } from "../src/index";
 
 const fixture = readFileSync(
   fileURLToPath(new URL("../../../tests/regression/fixtures/list-code-nested.md", import.meta.url)),
   "utf8",
 );
 
-type CustomCodeProps = {
-  html?: string;
-  lines?: ReadonlyArray<{ text?: string }>;
-  raw?: string;
-};
+type CustomCodeProps = NodeViewProps;
 
-/** Docs-style custom code component: highlighted HTML when available, escaped line text otherwise. */
-const CustomCode = (props: CustomCodeProps): ReactElement => {
-  const lines = Array.isArray(props.lines) ? props.lines.map((line) => line.text ?? "").join("\n") : "";
-  if (props.html && props.html.length > 0) {
-    return createElement("pre", {
-      "data-custom-code": "true",
-      dangerouslySetInnerHTML: { __html: props.html },
-    });
-  }
-  const text = lines.length > 0 ? lines : (props.raw ?? "");
-  return createElement("pre", { "data-custom-code": "true" }, text.length > 0 ? createElement("code", null, text) : null);
-};
+/** Docs-style native code wrapper; highlighted children remain owned by the renderer. */
+const CustomCode = ({ children, metadata }: CustomCodeProps): ReactElement =>
+  createElement("div", { "data-custom-code": "true", "data-language": metadata.language }, children);
 
 const DOM_GLOBALS = ["window", "document", "HTMLElement", "Node", "requestAnimationFrame", "cancelAnimationFrame"] as const;
 
@@ -87,23 +74,8 @@ async function waitFor(predicate: () => boolean, message: string, timeoutMs = 15
 }
 
 async function runRoundTripTest(): Promise<void> {
-  // 1. Registry semantics: re-passing the built-in map must not mark block types custom.
-  const registry = new ComponentRegistry();
-  registry.setBlockComponents({ code: CustomCode as never });
-  assert.strictEqual(registry.hasCustomBlockComponent("code"), true, "replaced code component must be custom");
-  assert.strictEqual(registry.hasCustomBlockComponent("list"), false, "built-in list component is not custom");
-
-  const roundTrip = new ComponentRegistry();
-  roundTrip.setBlockComponents(registry.getBlockComponentMap() as never);
-  assert.strictEqual(
-    roundTrip.hasCustomBlockComponent("list"),
-    false,
-    "re-passing the built-in component map must keep native list rendering",
-  );
-  assert.strictEqual(roundTrip.hasCustomBlockComponent("code"), true, "replaced code component stays custom after round-trip");
-
-  // 2. Consumer path: StreamingMarkdown receives the round-tripped map (docs harness shape) and must
-  //    still render nested list children, with the custom code component applied to nested fences.
+  // 2. Consumer path: StreamingMarkdown uses the unified registry and keeps nested native list
+  //    children while wrapping each prepared code view.
   const globalsBefore = captureDomGlobals();
   await withDom(async (window) => {
     const container = window.document.getElementById("root");
@@ -117,9 +89,9 @@ async function runRoundTripTest(): Promise<void> {
           engine: "main",
           text: fixture,
           className: "markdown-v2-output",
-          components: registry.getBlockComponentMap(),
+          components: { code: { wrapper: CustomCode } },
           prewarmLangs: [],
-        } as never),
+        }),
       );
 
       await waitFor(() => container.querySelectorAll("li").length >= 3, "three list items");
@@ -127,8 +99,8 @@ async function runRoundTripTest(): Promise<void> {
       await handleRef.current?.waitForIdle();
 
       await waitFor(
-        () => container.querySelectorAll("pre[data-custom-code]").length >= 3,
-        "three nested code blocks rendered through the custom code component",
+        () => container.querySelectorAll("[data-custom-code]").length >= 3,
+        "three nested code blocks rendered through the custom native wrapper",
       );
 
       const childrenRegions = container.querySelectorAll(".markdown-list-item-children");
@@ -138,20 +110,20 @@ async function runRoundTripTest(): Promise<void> {
       );
       const nestedLists = container.querySelectorAll(".markdown-list .markdown-list");
       assert.ok(nestedLists.length >= 1, `expected a nested list inside the outer list, found ${nestedLists.length}`);
-      const nestedCode = container.querySelectorAll("pre[data-custom-code]");
+      const nestedCode = container.querySelectorAll("[data-custom-code]");
       assert.strictEqual(nestedCode.length, 3, `expected three nested code blocks, found ${nestedCode.length}`);
       const text = container.textContent ?? "";
       assert.ok(text.includes("const value = 1;"), "nested TypeScript fence content must be retained");
       assert.ok(text.includes('echo "nested"'), "nested shell fence content must be retained");
       assert.ok(text.includes("export const answer = 42;"), "nested JavaScript fence content must be retained");
-      // A custom code component written against `html` receives the highlighted markup of nested fences.
+      // The native wrapper receives the renderer-produced Shiki markup of nested fences.
       await waitFor(
-        () => Array.from(container.querySelectorAll("pre[data-custom-code]")).every(
-          (pre) => pre.querySelector('span.line span[style*="--shiki-"]') !== null,
+        () => Array.from(container.querySelectorAll("[data-custom-code]")).every(
+          (wrapper) => wrapper.querySelector('span.line span[style*="--shiki-"]') !== null,
         ),
-        "highlighted html for every nested code block rendered through the custom code component",
+        "highlighted html for every nested fence rendered through the custom native wrapper",
       );
-      assert.ok(text.includes("const value = 1;"), "highlighted html keeps the authored code text");
+      assert.ok(text.includes("const value = 1;"), "highlighted markup keeps the authored code text");
     } finally {
       root.unmount();
     }

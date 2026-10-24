@@ -17,21 +17,29 @@ npm install @stream-mdx/mermaid
 ```
 
 ```tsx
-import { StreamingMarkdown } from "stream-mdx";
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
+
+function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "mermaid") return children;
+  const code = block?.payload.meta?.code;
+  return (
+    <MermaidBlock
+      code={typeof code === "string" ? code : ""}
+      renderCode={children}
+      language={metadata.language ?? "mermaid"}
+      blockId={metadata.id}
+      controls={{ copy: true }}
+      copy={actions.copy}
+    />
+  );
+}
 
 <StreamingMarkdown
   text={content}
   worker="/workers/markdown-worker.js"
-  codeRenderers={{
-    mermaid: MermaidBlock,
-  }}
-  features={{
-    mdx: true,
-    html: true,
-    tables: true,
-    math: true,
-  }}
+  components={{ code: { wrapper: MermaidPresentation } }}
+  features={{ mdx: true, html: true, tables: true, math: true }}
 />;
 ```
 
@@ -55,9 +63,36 @@ graph TD
 - Set `defaultView="diagram"` only where diagrams are primary content.
 
 ```tsx
-codeRenderers={{
-  mermaid: (props) => <MermaidBlock {...props} defaultView="diagram" />,
-}}
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
+import { createMermaidBlock } from "@stream-mdx/mermaid";
+
+const ConfiguredMermaidBlock = createMermaidBlock({
+  config: { theme: "neutral" },
+  defaultView: "diagram",
+  errorComponent: ({ error, retry }) => (
+    <div className="mermaid-error">
+      <span>{error}</span>
+      <button type="button" onClick={retry}>Retry</button>
+    </div>
+  ),
+});
+
+function ConfiguredMermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "mermaid") return children;
+  const code = block?.payload.meta?.code;
+  return (
+    <ConfiguredMermaidBlock
+      code={typeof code === "string" ? code : ""}
+      renderCode={children}
+      language={metadata.language ?? "mermaid"}
+      blockId={metadata.id}
+      controls={{ copy: true }}
+      copy={actions.copy}
+    />
+  );
+}
+
+<StreamingMarkdown components={{ code: { wrapper: ConfiguredMermaidPresentation } }} />;
 ```
 
 For custom themes, debouncing, or error retry UI, use `createMermaidBlock`:
@@ -85,7 +120,7 @@ const ConfiguredMermaidBlock = createMermaidBlock({
 
 ## Failure mode checklist
 
-- Diagram not rendering: verify addon installed and `codeRenderers.mermaid` registered.
+- Diagram not rendering: verify addon installed and `components.code.wrapper` routes Mermaid fences to the Mermaid presentation.
 - Layout overflow: wrap diagram container with horizontal overflow control.
 - Hydration drift: avoid non-serializable props in surrounding MDX components.
 

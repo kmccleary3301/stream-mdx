@@ -4,7 +4,8 @@ import assert from "node:assert";
 import { applyPatchBatch, createInitialSnapshot, PATCH_ROOT_ID, type Block, type CodeHighlightOutputMode, type HtmlTreeNode, type NodeSnapshot, type ParagraphBlockSnapshot, type ParagraphSpanRecord, type PreparedNestedSnapshot, type WorkerOut } from "@stream-mdx/core";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ComponentRegistry, MarkdownBlocksRenderer, type CodeFenceRendererProps } from "@stream-mdx/react/server";
+import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import type { NodeViewProps } from "@stream-mdx/react";
 import { createRendererStore, type RendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 import { JSDOM } from "jsdom";
@@ -369,10 +370,13 @@ async function runNestedLazyConsumers(): Promise<void> {
     const initialOwnedLines = ownedCodeLines(lazy.store, codeId);
     assert.deepStrictEqual(initialOwnedLines.map((line) => line.text), lines, "nested source keeps only authored code indentation");
     assert.ok(initialOwnedLines.every((line) => line.decoration === undefined), "lazy code starts without highlight decorations");
-    const registry = new ComponentRegistry({}, {}, {
-      javascript: (props: CodeFenceRendererProps) => React.createElement("section", { "data-owned-code": props.blockId }, props.renderCode),
-    });
-    const render = (store: RendererStore = lazy.store) => renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store, componentRegistry: registry }));
+    const codePresentation = {
+      code: {
+        wrapper: ({ children, metadata }: NodeViewProps) =>
+          React.createElement("section", { "data-owned-code": metadata.id }, children),
+      },
+    };
+    const render = (store: RendererStore = lazy.store) => renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store, components: codePresentation }));
     const request = async (startLine: number, endLine: number) => {
       const messages = await lazy.harness.send({ type: "TOKENIZE_RANGE", blockId: codeId, startLine, endLine, priority: "visible" });
       lazy.consume(messages);
@@ -534,10 +538,13 @@ async function runPublicTokenThemeConsumers(): Promise<void> {
       assert.strictEqual(ownedSpan.v?.light?.fs ?? ownedSpan.s?.fs ?? 0, token.variants.light?.fontStyle ?? 0);
     });
   }
-  const registry = new ComponentRegistry({}, {}, {
-    markdown: (props: CodeFenceRendererProps) => React.createElement("section", { "data-public-code": props.blockId }, props.renderCode),
-  });
-  const rendered = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: lazy.store.getBlocks(), store: lazy.store, componentRegistry: registry }));
+  const publicCodePresentation = {
+    code: {
+      wrapper: ({ children, metadata }: NodeViewProps) =>
+        React.createElement("section", { "data-public-code": metadata.id }, children),
+    },
+  };
+  const rendered = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: lazy.store.getBlocks(), store: lazy.store, components: publicCodePresentation }));
   const dom = new JSDOM(rendered);
   const publicCode = dom.window.document.querySelector<HTMLElement>("[data-public-code]");
   assert.ok(publicCode, "custom code renderer must contain the real native renderCode view");
@@ -594,7 +601,6 @@ async function runPublicTokenThemeConsumers(): Promise<void> {
   const diffHtml = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, {
     blocks: diff.store.getBlocks(),
     store: diff.store,
-    componentRegistry: new ComponentRegistry(),
   }));
   const diffDom = new JSDOM(diffHtml);
   const diffRows = diffDom.window.document.querySelectorAll<HTMLElement>('[data-diff-kind="add"]');

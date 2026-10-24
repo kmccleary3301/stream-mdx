@@ -109,10 +109,14 @@ for (const rejectedHref of [null, undefined]) {
     const receivedHrefs: Array<string | undefined> = [];
     const registry = new ComponentRegistry();
     if (customLink) {
-      registry.setInlineComponents({
-        link: ({ href, title, children }) => {
-          receivedHrefs.push(href);
-          return React.createElement("a", { href, title, "data-custom-link": "true" }, children);
+      registry.setNodePresentations({
+        "inline:link": {
+          wrapper: ({ children }) => {
+            const nativeLink = React.Children.only(children);
+            if (!React.isValidElement<{ href?: string }>(nativeLink)) return nativeLink;
+            receivedHrefs.push(nativeLink.props.href);
+            return React.cloneElement(nativeLink, { "data-custom-link": "true" });
+          },
         },
       });
     }

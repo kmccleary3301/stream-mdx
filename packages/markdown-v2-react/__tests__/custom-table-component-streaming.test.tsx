@@ -1,40 +1,33 @@
 import assert from "node:assert/strict";
-import type { InlineNode } from "@stream-mdx/core";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "../src/index";
+import { StreamingMarkdown, type NodeViewProps, type StreamingMarkdownHandle } from "../src/index";
 import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-native-fixture";
 
 const HEADER_AND_FIRST_ROW = "# Funds\n\n| Fund | Margin |\n| --- | ---: |\n| Bridgewater | 25% |\n| Ren";
 const REST = "aissance | 31% |\n| Citadel | 18% |\n";
+const TABLE_SOURCE = HEADER_AND_FIRST_ROW.slice(HEADER_AND_FIRST_ROW.indexOf("| Fund")) + REST.slice(0, -1);
+let presentedTableActions: NodeViewProps["actions"] | undefined;
 
-function cellText(cell: InlineNode[]): string {
-  return cell.map((node) => ("text" in node && typeof node.text === "string" ? node.text : "")).join("");
-}
-
-function CustomTable({ header, rows, align }: { header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<string | null> }) {
+function CustomTable({ children, metadata, actions }: NodeViewProps) {
+  presentedTableActions = actions;
   return (
-    <table data-custom-table="true" data-align={(align ?? []).join(",")}>
-      <thead>
-        <tr>{(header ?? []).map((cell, index) => <th key={index}>{cellText(cell)}</th>)}</tr>
-      </thead>
-      <tbody>
-        {rows.map((row, rowIndex) => (
-          <tr key={rowIndex}>{row.map((cell, index) => <td key={index}>{cellText(cell)}</td>)}</tr>
-        ))}
-      </tbody>
-    </table>
+    <section data-custom-table="true" data-align={(metadata.align ?? []).join(",")}>
+      {children}
+    </section>
   );
 }
 
 function readTable(container: HTMLElement) {
-  const table = container.querySelector("table[data-custom-table]");
+  const wrapper = container.querySelector<HTMLElement>("section[data-custom-table]");
+  const table = wrapper?.querySelector("table");
   return {
     header: Array.from(table?.querySelectorAll("th") ?? [], (cell) => cell.textContent),
     rows: Array.from(table?.querySelectorAll("tbody tr") ?? [], (row) => Array.from(row.querySelectorAll("td"), (cell) => cell.textContent)),
-    align: table?.getAttribute("data-align"),
+    align: wrapper?.getAttribute("data-align"),
   };
 }
+
 
 async function customTableComponentReceivesStreamedTable(): Promise<void> {
   const restore = installTrustedNativeTestDom();
@@ -42,6 +35,12 @@ async function customTableComponentReceivesStreamedTable(): Promise<void> {
   document.body.append(container);
   const root = createRoot(container);
   const handle = React.createRef<StreamingMarkdownHandle>();
+  const clipboardWrites: string[] = [];
+  const previousClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (text: string) => { clipboardWrites.push(text); } },
+  });
   try {
     await act(async () => {
       root.render(
@@ -51,7 +50,7 @@ async function customTableComponentReceivesStreamedTable(): Promise<void> {
           contentPolicy="markdown"
           features={{ tables: true }}
           caret={false}
-          components={{ table: CustomTable as never }}
+          components={{ table: { wrapper: CustomTable } }}
         />,
       );
     });
@@ -79,7 +78,14 @@ async function customTableComponentReceivesStreamedTable(): Promise<void> {
       ],
       align: ",right",
     });
+    assert.ok(presentedTableActions, "the table wrapper receives source-bound actions");
+    let copySucceeded = false;
+    await act(async () => { copySucceeded = await presentedTableActions!.copy(); });
+    assert.equal(copySucceeded, true);
+    assert.deepEqual(clipboardWrites, [TABLE_SOURCE], "table copy reads its owned Markdown range with internal newlines intact");
   } finally {
+    if (previousClipboard) Object.defineProperty(navigator, "clipboard", previousClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
     await act(async () => root.unmount());
     restore();
   }

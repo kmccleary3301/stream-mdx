@@ -434,7 +434,10 @@ try {
     const beforeSyntaxErrorOutput = hosted.output.length;
     root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={`# Invalid syntax\n\n#ABC-123\n\n${replacement}`}
       features={features} syntax={syntax} onError={(error) => syntaxErrors.push(error)}
-      inlineComponents={{ ticket: ({ id }: { id?: string }) => <span data-ticket={id}>{id}</span> }} tableVirtualization={true} caret={false} />);
+      components={{ "extension:ticket": { view: ({ node }) => {
+        const id = node.kind === "plugin" ? String(node.attrs?.id ?? "") : "";
+        return <span data-ticket={id}>{id}</span>;
+      } } }} tableVirtualization={true} caret={false} />);
     await waitFor(() => syntaxErrors.length > 0, "invalid syntax INIT is surfaced to React");
     assert.match(syntaxErrors[0]!.message, /Invalid regular expression/);
     assert.ok(hosted.output.slice(beforeSyntaxErrorOutput).some((message) => message.type === "ERROR" && message.phase === "INIT"));

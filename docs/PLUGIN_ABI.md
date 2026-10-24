@@ -45,7 +45,7 @@ On `FINALIZE`, an unclosed container remains rendered with status `incomplete` a
 
 During `INIT`, invalid regex syntax or an invalid syntax descriptor (including a container that references an unregistered component) fails initialization with a protocol `ERROR` in phase `INIT`; the engine does not publish `INITIALIZED` or accept subsequent `APPEND` input. This applies to syntax supplied through `INIT` and instance extensions; validate bundled native syntax before shipping.
 
-The emitted `InlineNode` has `kind: "plugin"`, `name`, `attrs: Record<string, string>`, optional `children: InlineNode[]`, and `raw: string`. React passes the named component `{ name, attrs, children, raw }`, with parsed children already rendered as React nodes. A generic `inlineComponents.plugin` can handle unmapped names. Without either mapping, the renderer returns raw matched text.
+The emitted `InlineNode` has `kind: "plugin"`, `name`, `attrs: Record<string, string>`, optional `children: InlineNode[]`, and `raw: string`. React renders custom plugin nodes with `components["extension:<name>"]` views. Each receives the inline `node`, prepared React `children`, metadata, and actions. Unmapped nodes use `components["extension:plugin"]` when present; otherwise the renderer returns raw matched text.
 
 ```tsx
 import type { ReactNode } from "react";
@@ -54,6 +54,7 @@ import {
   StreamingMarkdown,
   type ContentComponentHostProps,
   type ContentComponentProps,
+  type InlineNodeViewProps,
 } from "@stream-mdx/react";
 import type { SyntaxExtensionDescriptor } from "@stream-mdx/core";
 
@@ -92,11 +93,15 @@ export function SyntaxExample() {
       syntax={syntax}
       contentComponents={contentComponents}
       features={{ mdx: true }}
-      inlineComponents={{
-        ticket: ({ attrs }: { attrs: Record<string, string> }) => (
-          <span data-ticket={attrs.id}>{attrs.id}</span>
-        ),
-        highlight: ({ children }: { children?: ReactNode }) => <mark>{children}</mark>,
+      components={{
+        "extension:ticket": {
+          view: ({ node }: InlineNodeViewProps) => (
+            <span data-ticket={node.kind === "plugin" ? String(node.attrs?.id ?? "") : ""}>
+              {node.kind === "plugin" ? String(node.attrs?.id ?? "") : ""}
+            </span>
+          ),
+        },
+        "extension:highlight": { view: ({ children }: InlineNodeViewProps) => <mark>{children}</mark> },
       }}
     />
   );
@@ -108,7 +113,6 @@ Anticipation appends only the missing suffix of `close` to a provisional parse. 
 ## 2) HTML control
 
 ```tsx
-import type { ReactNode } from "react";
 import { StreamingMarkdown } from "@stream-mdx/react";
 
 export function HtmlExample() {
@@ -120,10 +124,8 @@ export function HtmlExample() {
         allowedTags: { callout: ["type"], kbd: ["data-x"] },
         literalTagContent: ["kbd"],
       }}
-      htmlElements={{
-        callout: ({ type, children }: { type?: string; children?: ReactNode }) => (
-          <aside data-type={type}>{children}</aside>
-        ),
+      components={{
+        "html:callout": ({ type, children }) => <aside data-type={type}>{children}</aside>,
       }}
     />
   );
@@ -134,7 +136,7 @@ export function HtmlExample() {
 
 Raw HTML block contents are literal by default. An explicitly supplied `literalTagContent`, including `[]`, opts into engine-owned inline markdown parsing for eligible text children. `code`, `pre`, and `textarea`, plus configured tags, remain literal. Inline HTML uses the engine's inline parsing context. Both paths respect `features.math: false` and registered inline extensions.
 
-`htmlElements` maps sanitized HTML tags to React components. Components receive sanitized attributes and typed, recursively rendered children, not raw strings to parse again. Enable `features.html` as well. Mapping a component does not allow a forbidden tag or attribute.
+`components["html:<tag>"]` maps sanitized HTML tags to React presentations. Components receive sanitized attributes and typed, recursively rendered children, not raw strings to parse again. Enable `features.html` as well. Mapping a component does not allow a forbidden tag or attribute.
 
 ## 3) Custom bundled worker entry
 
@@ -201,7 +203,7 @@ The published engine entry is built for the worker realm: its MDX parser resolve
 Then select the emitted asset and map its inline node:
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown, type InlineNodeViewProps } from "@stream-mdx/react";
 
 export function NativePluginExample() {
   return (
@@ -209,15 +211,16 @@ export function NativePluginExample() {
       engine="worker"
       worker="/workers/custom-markdown-worker.js"
       text="# Build status\n\n:ok:"
-      inlineComponents={{
-        statusBadge: ({ attrs }: { attrs: Record<string, string> }) => (
-          <span role="status">{attrs.status}</span>
-        ),
+      components={{
+        "extension:statusBadge": {
+          view: ({ node }: InlineNodeViewProps) => (
+            <span role="status">{node.attrs?.status}</span>
+          ),
+        },
       }}
     />
   );
 }
-```
 
 `serveMarkdownWorker(options?: ServeMarkdownWorkerOptions): MarkdownEngine` installs the scope's `onmessage` and sends engine messages through `postMessage`. Its options are `{ extensions?: EngineExtensions; scope?: unknown }`; omit `scope` in an ordinary browser worker. Each call creates an isolated engine.
 

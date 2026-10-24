@@ -17,6 +17,8 @@ export type { ManagedTableViewState, ManagedTablePatchResult } from "./table-blo
 export type { CodeDiffTokenLine, CodeLineDecoration, CodeLineDecorationUpdate, CodeLineIndex, CodeLineRecord, CodeTokenLine, CodeTokenSpan, HighlightUnavailableReason } from "./code-records";
 export type { CodeBlockMetadata, CodeDiffStatus, CodeLineRange, CodeNodeHandle } from "./node-handles";
 export { createCodeNodeHandle } from "./node-handles";
+export type { TableBlockMetadata, TableNodeHandle, TableRowRange } from "./node-handles";
+export { createTableNodeHandle } from "./node-handles";
 export { freezeParagraphSpanRecord } from "./paragraph-records";
 export { createParagraphSpanIndex } from "./paragraph-span-index";
 export {

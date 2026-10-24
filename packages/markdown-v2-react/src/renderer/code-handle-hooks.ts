@@ -170,3 +170,22 @@ export function useCodeLines(
 
   return lines;
 }
+
+/** Observe diff status and prepared rows within an explicit half-open range. */
+export function useCodeDiff(
+  handle: CodeNodeHandle,
+  range: CodeLineRange,
+): {
+  readonly diffStatus: CodeBlockMetadata["diffStatus"];
+  readonly lines: readonly CodeLineRecord[];
+} {
+  const lines = useCodeLines(handle, range);
+  const subscribe = useCallback(
+    (listener: () => void) => handle.subscribeMetadata(listener),
+    [handle],
+  );
+  const getSnapshot = useCallback(() => handle.readMetadata().diffStatus, [handle]);
+  const diffStatus = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
+  return useMemo(() => ({ diffStatus, lines }), [diffStatus, lines]);
+}

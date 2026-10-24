@@ -1,6 +1,19 @@
 import { cn } from "@/lib/utils";
 
 import * as React from "react";
+import type { NodeViewProps } from "@stream-mdx/react";
+type TablePresentationWrapperProps = Pick<NodeViewProps, "children"> & {
+  className?: string;
+};
+
+export function TablePresentationWrapper({ children, className }: TablePresentationWrapperProps) {
+  return (
+    <div className={cn("relative w-full overflow-auto", className)} style={{ overflow: "auto" }}>
+      {children}
+    </div>
+  );
+}
+
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(({ className, ...props }, ref) => (
   <div className="relative w-full overflow-auto">
@@ -8,6 +21,7 @@ const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableE
   </div>
 ));
 Table.displayName = "Table";
+TablePresentationWrapper.displayName = "TablePresentationWrapper";
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(({ className, ...props }, ref) => (
   <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />

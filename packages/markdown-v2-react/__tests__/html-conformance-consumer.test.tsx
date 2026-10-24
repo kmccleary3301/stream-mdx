@@ -90,10 +90,16 @@ const syntax = {
 const html: HtmlOptions = { allowedTags: { del: [], span: ["data-safe"], kbd: [] }, literalTagContent: ["kbd"] };
 const text = '<del>\n\n**#ABC-123** and <span data-safe="yes" onclick="alert(1)">*nested*</span> <kbd>**literal**</kbd>\n\n</del>\n';
 const store = await streamed(text, { html, syntax });
-const registry = new ComponentRegistry({}, {
-  ticket: ({ attrs }: { attrs: Record<string, string> }) => <mark data-ticket={attrs.id}>{attrs.id}</mark>,
+const registry = new ComponentRegistry({
+  components: {
+    "extension:ticket": {
+      view: ({ node }) => node.kind === "plugin" ? <mark data-ticket={String(node.attrs?.id ?? "")}>{String(node.attrs?.id ?? "")}</mark> : null,
+    },
+    "html:del": {
+      view: ({ properties, children }) => React.createElement("del", { ...properties, "data-mapped": "yes" } as React.HTMLAttributes<HTMLElement>, children),
+    },
+  },
 });
-registry.setHtmlElements({ del: (props: React.HTMLAttributes<HTMLElement>) => <del {...props} data-mapped="yes" /> });
 const document = new JSDOM(render([], registry, store)).window.document;
 assert.equal(document.querySelector('del[data-mapped="yes"] p strong mark')?.textContent, "ABC-123");
 assert.equal(document.querySelector('del p span[data-safe="yes"] em')?.textContent, "nested");
@@ -129,11 +135,13 @@ assert.equal(forgedDocument.querySelector("span")?.textContent, "forged");
 assert.equal(forgedDocument.querySelectorAll("strong").length, 1);
 
 const paragraphStore = await streamed("A <span>B</span>");
-const paragraphRegistry = new ComponentRegistry({
-  paragraph: ({ children }) => <p data-paragraph="configured">{children}</p>,
+const paragraphRegistry = new ComponentRegistry();
+paragraphRegistry.setNodePresentations({
+  paragraph: { wrapper: ({ children }) => <div data-paragraph="configured">{children}</div> },
 });
 const paragraphDocument = new JSDOM(render([], paragraphRegistry, paragraphStore)).window.document;
-assert.equal(paragraphDocument.querySelector('p[data-paragraph="configured"]')?.textContent, "A B");
+assert.equal(paragraphDocument.querySelector('div[data-paragraph="configured"]')?.textContent?.trim(), "A B");
+assert.equal(paragraphDocument.querySelector('div[data-paragraph="configured"] p')?.textContent?.trim(), "A B");
 assert.equal(paragraphDocument.querySelectorAll("p").length, 1, "normalized paragraph must use its configured component exactly once");
 
 const captureStore = await streamed('start [[<a href="/outer">[inner](/inner) trailing]] end', {
@@ -142,8 +150,12 @@ const captureStore = await streamed('start [[<a href="/outer">[inner](/inner) tr
     inline: [{ name: "capture", pattern: { source: "\\[\\[([\\s\\S]*?)\\]\\]" }, content: 1 }],
   },
 });
-const captureRegistry = new ComponentRegistry({}, {
-  capture: ({ children }: { children?: React.ReactNode }) => <mark data-capture="configured">{children}</mark>,
+const captureRegistry = new ComponentRegistry({
+  components: {
+    "extension:capture": {
+      view: ({ children }) => <mark data-capture="configured">{children}</mark>,
+    },
+  },
 });
 const captureDocument = new JSDOM(render([], captureRegistry, captureStore)).window.document;
 assert.ok(captureDocument.querySelector('mark[data-capture="configured"]'));
@@ -244,11 +256,12 @@ const codeInit = { ...init, contentPolicy: "trusted-mdx" as const, docPlugins: {
 const codeCompiled = await compileMarkdownSnapshotDirect({ text: codeSource, init: codeInit });
 const codeSerialized = JSON.parse(JSON.stringify(codeCompiled.blocks)) as Block[];
 const codeStore = await streamed(codeSource, codeInit);
-const customCodeRegistry = new ComponentRegistry({
-  paragraph: ({ children }) => <p data-paragraph="configured">{children}</p>,
-});
-customCodeRegistry.setInlineComponents({
-  code: ({ text }) => <code className="inline-code" data-code="configured">{text}</code>,
+const customCodeRegistry = new ComponentRegistry();
+customCodeRegistry.setNodePresentations({
+  paragraph: { wrapper: ({ children }) => <div data-paragraph="configured">{children}</div> },
+  "inline:code": {
+    view: ({ node }) => node.kind === "code" ? <code className="inline-code" data-code="configured">{node.text}</code> : null,
+  },
 });
 for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
   for (const element of [
@@ -270,7 +283,7 @@ for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
       assert.equal(codes[6].closest("td")?.textContent, "{:js}{:js}");
       if (registry === customCodeRegistry) {
         assert.equal(root.querySelectorAll('code[data-code="configured"]').length, codes.length);
-        assert.ok(codes[0].closest('p[data-paragraph="configured"]'));
+        assert.ok(codes[0].closest('div[data-paragraph="configured"]'));
       }
     };
     assertCodeOwnership(new JSDOM(renderToStaticMarkup(element)).window.document);

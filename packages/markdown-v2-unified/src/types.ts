@@ -1,15 +1,21 @@
-import type React from "react";
 import type { PluggableList } from "unified";
-import type { Block, UrlTransform } from "@stream-mdx/core";
-import type { FinalizedBlockRenderProps } from "@stream-mdx/react";
+import type { UrlTransform } from "@stream-mdx/core";
+import type { NodePresentations } from "@stream-mdx/react";
+
+export interface UnifiedBlockErrorContext {
+  readonly id: string;
+  readonly type: string;
+  readonly finalized: boolean;
+}
 
 export interface UnifiedRendererOptions {
   remarkPlugins?: PluggableList;
   rehypePlugins?: PluggableList;
-  components?: Record<string, React.ComponentType<Record<string, unknown>>>;
+  components?: NodePresentations;
+  hastComponents?: Record<string, React.ComponentType<Record<string, unknown>>>;
   /**
    * Block types to route through the unified pipeline.
-   * Defaults to: ["paragraph", "heading", "blockquote", "list", "table", "code", "thematicBreak"]
+   * Defaults to: ["paragraph", "heading", "blockquote", "list", "table", "code", "hr"]
    */
   blockTypes?: string[];
   /**
@@ -28,14 +34,13 @@ export interface UnifiedRendererOptions {
    * Explicit callback invoked when a unified plugin encounters an error.
    * When provided, errors are forwarded here instead of only being logged.
    */
-  onError?: (error: Error, block: Block) => void;
+  onError?: (error: Error, context: UnifiedBlockErrorContext) => void;
   urlTransform?: UrlTransform;
 }
 
-export interface UnifiedRenderer {
-  (props: FinalizedBlockRenderProps): React.ReactNode;
+export type UnifiedRenderer = NodePresentations & {
   clearCache(): void;
   options: UnifiedRendererOptions;
-}
+};
 
 export type { PluggableList } from "unified";

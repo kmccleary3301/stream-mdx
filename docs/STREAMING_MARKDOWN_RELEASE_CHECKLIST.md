@@ -110,7 +110,7 @@ Runs a fully automated pack+install smoke test across Node sandbox, Next.js star
 - Executes `MermaidBlock` through React SSR in code view. Executes `createUnifiedRenderer` with `remark-gfm` and `rehype-slug`, asserting transformed HTML. Direct and inline engines parse and finalize a heading and paragraph through both public engine entries.
 - Installs protocol and TUI in the Node sandbox only. Both ESM and CJS consumers assert the exported protocol ID/schema version, replay real engine patches through chunked NDJSON decoding and the TUI snapshot store, compare finalized blocks with the engine renderer store, and verify snapshot replacement. Protocol and TUI are not added to the browser apps.
 - Executes `@stream-mdx/worker/node`'s `compileMarkdownSnapshot` with its default physical worker, asserting authored heading/paragraph text and finalized snapshot/artifact blocks. This exercises the installed hosted bundle and thread asset with automatic compiler-owned cleanup.
-- Builds Next.js and Vite apps using Mermaid `codeRenderers`, the unified `blockRenderer` with those plugins, and `engine="main"`. These are production bundling checks, not browser runtime proof. Mermaid SVG generation and hydrated main-thread rendering need a separate real-browser smoke.
+- Builds Next.js and Vite apps with the Mermaid `components.code.wrapper` presentation, the unified adapter's `components` map, and `engine="main"`. These are production bundling checks, not browser runtime proof. Mermaid SVG generation and hydrated main-thread rendering need a separate real-browser smoke.
 
 ```bash
 npm run ci:pack-smoke

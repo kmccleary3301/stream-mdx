@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
-import { components as mdxComponents } from "@/mdx-components";
-import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
+import { components as trustedMdxElements } from "@/mdx-components";
+import { createDemoComponents } from "@/lib/streaming-demo-registry";
 import { cn } from "@/lib/utils";
-import { ComponentRegistry, SourceCapacityError, StreamingMarkdown, type AppendResult, type StreamingMarkdownHandle, type StreamingMarkdownProps } from "@stream-mdx/react";
+import { SourceCapacityError, StreamingMarkdown, type AppendResult, type StreamingMarkdownHandle, type StreamingMarkdownProps } from "@stream-mdx/react";
 import { useCallback, useMemo, useRef, useState, type ElementType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -80,7 +80,7 @@ const RICH_FEATURE_STRESS: NonNullable<StreamingMarkdownProps["features"]> = {
 };
 
 const comparisonMdxEngine = createTrustedMdxEngine({
-  components: mdxComponents as Readonly<Record<string, ElementType>>,
+  components: trustedMdxElements as Readonly<Record<string, ElementType>>,
 });
 const comparisonMdxEngines = { mdx: comparisonMdxEngine };
 const streamdownPlugins = {
@@ -322,18 +322,7 @@ export function StaticRenderComparison() {
   const resultsRef = useRef<MeasureStore>(createMeasureStore());
   const streamHandleRef = useRef<StreamingMarkdownHandle | null>(null);
 
-  const tableElements = useMemo(() => createDemoTableElements(), []);
-  const htmlElements = useMemo(() => createDemoHtmlElements(), []);
-  const registry = useMemo(() => {
-    const next = new ComponentRegistry();
-    configureDemoRegistry({
-      registry: next,
-      tableElements,
-      htmlElements,
-      showCodeMeta: false,
-    });
-    return next;
-  }, [tableElements, htmlElements]);
+  const components = useMemo(() => createDemoComponents(), []);
 
   const setStreamHandle = useCallback((handle: StreamingMarkdownHandle | null) => {
     streamHandleRef.current = handle;
@@ -750,10 +739,7 @@ export function StaticRenderComparison() {
                 caret={false}
                 contentPolicy={streamMdxFeatures.mdx ? "trusted-mdx" : "restricted"}
                 engines={streamMdxFeatures.mdx ? comparisonMdxEngines : undefined}
-                components={registry.getBlockComponentMap()}
-                inlineComponents={registry.getInlineComponentMap()}
-                tableElements={tableElements}
-                htmlElements={htmlElements}
+                components={components}
               />
             </div>
           </div>

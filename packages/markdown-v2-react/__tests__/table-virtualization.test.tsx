@@ -3,7 +3,7 @@ import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 import assert from "node:assert/strict";
 import { Worker as NodeWorker } from "node:worker_threads";
 import type { Block, InlineNode, WorkerOut } from "@stream-mdx/core";
-import { StreamingMarkdown, type StreamingMarkdownHandle, type TableElements, type TableVirtualizationOptions } from "@stream-mdx/react";
+import { StreamingMarkdown, type StreamingMarkdownHandle, type TableVirtualizationOptions } from "@stream-mdx/react";
 import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore } from "@stream-mdx/react/server";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
@@ -96,12 +96,20 @@ const block: Block = {
     },
   },
 };
-const registry = new ComponentRegistry({}, {}, {}, { tableVirtualization: true });
+const registry = new ComponentRegistry({
+  tableVirtualization: true,
+  components: {
+    "table-row": { props: { "data-static-row-presentation": "true" } },
+    "table-cell": { props: { "data-static-cell-presentation": "true" } },
+  },
+});
 const ssr = renderToStaticMarkup(<MarkdownBlocksRenderer blocks={[block]} componentRegistry={registry} />);
 assert.equal((ssr.match(/data-row-id=/g) ?? []).length, 120, "public SSR renderer emits every body row");
 assert.ok(ssr.includes("Row-119"));
 assert.ok(!ssr.includes("markdown-table-spacer"));
 assert.ok(!ssr.includes('data-table-virtualized="true"'));
+assert.match(ssr, /<tr[^>]*data-static-row-presentation="true"/);
+assert.match(ssr, /<(?:th|td)[^>]*data-static-cell-presentation="true"/);
 // GFM 205: a table without body rows has no <tbody>, through the store path and the SSR blocks path.
 const headerOnly = await compileMarkdownSnapshotDirect({
   text: "| abc | def |\n| --- | --- |\n",
@@ -238,28 +246,32 @@ async function waitFor(predicate: () => boolean, message: string) {
 
 const container = dom.window.document.getElementById("root");
 assert.ok(container);
+container.style.setProperty("overflow", "auto");
 const root = createRoot(container);
 const markdown = ["| ID | Description |", "| --- | --- |", ...Array.from({ length: 120 }, (_, index) => `| Row-${index} | Description-${index} |`)].join("\n");
 const handle = React.createRef<StreamingMarkdownHandle>();
-const customElements: TableElements = {
-  // DOM fixture for apps/docs/components/ui/table.tsx's existing shadcn overflow-auto adapter.
-  Table: (props) => <div className="relative w-full overflow-auto" style={{ overflow: "auto", overflowX: "scroll", color: "rgb(10, 20, 30)" }}
-    data-custom-wrapper="true"><table {...props} data-custom="table" /></div>,
-  Thead: (props) => <thead {...props} data-custom="thead" />,
-  Tbody: (props) => <tbody {...props} data-custom="tbody" />,
-  Tr: (props) => <tr {...props} data-custom="tr" />,
-  Th: (props) => <th {...props} data-custom="th" />,
-  Td: (props) => <td {...props} data-custom="td" />,
+const customTablePresentation = {
+  table: {
+    wrapper: ({ children }: { children?: React.ReactNode }) => (
+      <div className="relative w-full overflow-auto" style={{ overflow: "auto", overflowX: "scroll", color: "rgb(10, 20, 30)" }}
+        data-custom-wrapper="true">{children}</div>
+    ),
+  },
+  "table-row": { props: { "data-stream-row-presentation": "true" } },
+  "table-cell": { props: { "data-stream-cell-presentation": "true" } },
 };
-const replacementElements: TableElements = {
-  ...customElements,
-  Table: (props) => <div className="relative w-full overflow-auto" style={{ overflow: "auto" }}
-    data-custom-wrapper="true" data-adapter="replacement"><table {...props} data-custom="table" /></div>,
+const replacementTablePresentation = {
+  table: {
+    wrapper: ({ children }: { children?: React.ReactNode }) => (
+      <div className="relative w-full overflow-auto" style={{ overflow: "auto" }}
+        data-custom-wrapper="true" data-adapter="replacement">{children}</div>
+    ),
+  },
 };
 const features = { tables: true };
-const render = (tableVirtualization?: TableVirtualizationOptions, tableElements = customElements) => root.render(
+const render = (tableVirtualization?: TableVirtualizationOptions, components = customTablePresentation) => root.render(
   <StreamingMarkdown ref={handle} engine="main" text={markdown} features={features} caret={false}
-    tableElements={tableElements} tableVirtualization={tableVirtualization} />,
+    components={components} tableVirtualization={tableVirtualization} />,
 );
 const rows = () => Array.from(container.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]"));
 const scrollContainer = () => container.querySelector<HTMLDivElement>('[data-table-virtualized="true"]');
@@ -270,6 +282,10 @@ try {
   await handle.current?.waitForIdle();
   assert.equal(scrollContainer(), null, "virtualization is opt-in");
   const firstId = rows()[0].dataset.rowId;
+  assert.equal(rows()[0]?.dataset.streamRowPresentation, "true",
+    "streamed rows consult the table-row presentation");
+  assert.equal(rows()[0]?.querySelector("td")?.getAttribute("data-stream-cell-presentation"), "true",
+    "streamed cells consult the table-cell presentation");
 
   render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: "240px" });
   await waitFor(() => Boolean(scrollContainer()), "config changes enable virtualization without new text");
@@ -280,9 +296,12 @@ try {
   assert.ok(rows().length >= 10,
     "string maxHeight keeps an initial finite row window before ResizeObserver reports geometry");
   assert.equal(rows()[0].dataset.rowId, firstId, "row IDs survive full-to-windowed rendering");
-  for (const tag of ["table", "thead", "tbody", "tr", "th", "td"]) {
-    assert.ok(container.querySelector(`${tag}[data-custom="${tag}"]`), `custom ${tag} renders`);
-  }
+  assert.equal(rows()[0]?.dataset.streamRowPresentation, "true",
+    "virtualized rows consult the table-row presentation");
+  assert.equal(rows()[0]?.querySelector("td")?.getAttribute("data-stream-cell-presentation"), "true",
+    "virtualized cells consult the table-cell presentation");
+  assert.equal(container.querySelectorAll("table").length, 1, "the native table remains present inside its presentation");
+  assert.equal(container.querySelectorAll("thead").length, 1);
   assert.ok(container.querySelector('[data-custom-wrapper="true"] table'));
   assert.equal(container.querySelector("thead")?.style.position, "sticky");
   assert.equal(container.querySelector("thead")?.style.backgroundColor, "var(--stream-mdx-table-header-background, Canvas)");
@@ -290,6 +309,7 @@ try {
   assert.ok(customWrapper);
   assert.equal(customWrapper.style.getPropertyValue("overflow"), "visible");
   assert.equal(customWrapper.style.getPropertyPriority("overflow"), "important");
+  assert.equal(container.style.overflow, "auto", "consumer ancestors outside the table block stay untouched");
   assert.deepEqual(Array.from(container.querySelectorAll<HTMLTableColElement>("col"), (col) => col.style.width), ["80px", "720px"]);
   assert.ok((naturalPassRowCounts[naturalPassRowCounts.length - 1] ?? Infinity) <= 64,
     "initial natural column measurement uses only a bounded first row chunk");
@@ -349,7 +369,7 @@ try {
   const pendingObservers = Array.from(TestResizeObserver.instances);
   render();
   await waitFor(() => rows().length === 120 && !scrollContainer(), "removing the config restores full rendering");
-  assert.equal(customWrapper.isConnected, false, "captured wrapper is detached and tested only for cleanup");
+  assert.equal(customWrapper.isConnected, true, "the native table presentation wrapper remains mounted when virtualization is disabled");
   const liveDisabledWrapper = container.querySelector<HTMLElement>('[data-custom-wrapper="true"]');
   assert.ok(liveDisabledWrapper?.isConnected, "disabled consumer has a current connected adapter");
   assert.equal(liveDisabledWrapper.style.overflow, "auto");
@@ -372,9 +392,9 @@ try {
   assert.ok(oldAdapter?.isConnected);
   const oldNativeTable = container.querySelector("table");
   const swappedObserverCallbacks = Array.from(TestResizeObserver.instances);
-  render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 }, replacementElements);
-  await waitFor(() => container.querySelector<HTMLElement>('[data-adapter="replacement"]')?.style.overflow === "visible",
-    "replacement overflow wrapper is normalized without disabling virtualization");
+  render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 }, replacementTablePresentation);
+  await waitFor(() => Boolean(container.querySelector<HTMLElement>('[data-adapter="replacement"]')),
+    "replacement table presentation mounts without changing virtualization");
   await waitFor(() => rows().length === 7 && Array.from(TestResizeObserver.instances).every((observer) =>
     Array.from(observer.targets).every((target) => target.isConnected && container.contains(target))),
     "table/header/row observers target only current connected DOM");
@@ -383,11 +403,12 @@ try {
   assert.equal(oldAdapter.style.overflow, "auto", "detached old adapter receives its original overflow");
   const liveReplacement = container.querySelector<HTMLElement>('[data-adapter="replacement"]');
   assert.ok(liveReplacement?.isConnected);
+  assert.equal(liveReplacement.style.overflow, "visible");
   assert.equal(liveReplacement.style.getPropertyPriority("overflow"), "important");
   for (const observer of swappedObserverCallbacks) observer.deliverPending();
   assert.equal(rows().length, 7, "queued old observer callbacks cannot change the new measurement generation");
   liveReplacement.style.setProperty("overflow", "hidden", "important");
-  render(undefined, replacementElements);
+  render(undefined, replacementTablePresentation);
   await waitFor(() => rows().length === 120 && !scrollContainer(), "replacement adapter disables normally");
   assert.equal(liveReplacement.style.overflow, "hidden", "cleanup preserves authored overflow changes");
   assert.equal(liveReplacement.style.getPropertyPriority("overflow"), "important");

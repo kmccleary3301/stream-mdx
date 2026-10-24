@@ -4,7 +4,7 @@ import { SourceCapacityError, StreamSessionError, type AppendResult, type Finali
 // Main V2 Markdown Renderer
 // Client-side renderer with component registry and worker integration
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
-import type { BlockComponents, CodeFenceRenderer, CodeHighlightRangeRequest, ControlsComponentProps, ControlsConfig, InlineComponents, MathRenderer, Renderer, RendererConfig, TableVirtualizationOptions } from "./types";
+import type { CodeHighlightRangeRequest, ControlsComponentProps, ControlsConfig, Renderer, RendererConfig, TableVirtualizationOptions } from "./types";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
@@ -260,26 +260,21 @@ export class MarkdownRenderer implements Renderer {
     this.config = config;
     this.trustedRevisionFeed = config.contentPolicy === "trusted-mdx" ? attachTrustedRevisionFeed(this) : null;
     this.store = createRendererStore([], { themes: config.themes });
-    this.componentRegistry = new ComponentRegistry(
-      {},
-      {},
-      this.config.codeRenderers ?? {},
-      {
-        mathRenderer: this.config.mathRenderer,
-        tableVirtualization: this.config.tableVirtualization,
-        codeVirtualization: this.config.codeVirtualization,
-        urlTransform: this.config.urlTransform,
-        blockRenderer: this.config.blockRenderer,
-        controls: this.config.controls,
-        controlsComponent: this.config.controlsComponent,
-        allowedElements: this.config.allowedElements,
-        disallowedElements: this.config.disallowedElements,
-        allowElement: this.config.allowElement,
-        unwrapDisallowed: this.config.unwrapDisallowed,
-        disableAutolinkProtocols: this.config.disableAutolinkProtocols,
-        contentComponents: this.config.contentComponents,
-      },
-    );
+    this.componentRegistry = new ComponentRegistry({
+      tableVirtualization: this.config.tableVirtualization,
+      codeVirtualization: this.config.codeVirtualization,
+      urlTransform: this.config.urlTransform,
+      controls: this.config.controls,
+      controlsComponent: this.config.controlsComponent,
+      allowedElements: this.config.allowedElements,
+      disallowedElements: this.config.disallowedElements,
+      allowElement: this.config.allowElement,
+      unwrapDisallowed: this.config.unwrapDisallowed,
+      disableAutolinkProtocols: this.config.disableAutolinkProtocols,
+      contentComponents: this.config.contentComponents,
+      components: this.config.components,
+      engines: { math: this.config.engines?.math, mermaid: this.config.engines?.mermaid },
+    });
     if (this.config.html?.literalTagContent) {
       this.componentRegistry.setLiteralTagContent(this.config.html.literalTagContent);
     }
@@ -930,29 +925,13 @@ export class MarkdownRenderer implements Renderer {
     };
   }
 
-  /**
-   * Set block components
-   */
-  setBlockComponents(map: Partial<BlockComponents>): void {
-    this.componentRegistry.setBlockComponents(map);
-  }
 
   /**
    * Set inline components
    */
-  setInlineComponents(map: Partial<InlineComponents>): void {
-    this.componentRegistry.setInlineComponents(map);
-  }
 
   setContentComponents(map: ContentComponentsMap): void {
     this.componentRegistry.setContentComponents(map);
-  }
-  setCodeRenderers(map: Record<string, CodeFenceRenderer>): void {
-    this.componentRegistry.setCodeRenderers(map);
-  }
-
-  setMathRenderer(mathRenderer: MathRenderer): void {
-    this.componentRegistry.setMathRenderer(mathRenderer);
   }
 
   setTableVirtualization(options: TableVirtualizationOptions): void {
@@ -1584,8 +1563,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
   blocks: ReadonlyArray<Block>;
   append: (text: string) => void;
   renderStatic: (text: string) => Promise<Block[]>;
-  setBlockComponents: (components: Partial<BlockComponents>) => void;
-  setInlineComponents: (components: Partial<InlineComponents>) => void;
   store: ReturnType<MarkdownRenderer["getStore"]>;
 } {
   const [renderer] = useState(() => new MarkdownRenderer(config));
@@ -1631,19 +1608,7 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
     [renderer],
   );
 
-  const setBlockComponents = useCallback(
-    (components: Partial<BlockComponents>) => {
-      renderer.setBlockComponents(components);
-    },
-    [renderer],
-  );
 
-  const setInlineComponents = useCallback(
-    (components: Partial<InlineComponents>) => {
-      renderer.setInlineComponents(components);
-    },
-    [renderer],
-  );
 
 
   return {
@@ -1651,8 +1616,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
     blocks,
     append,
     renderStatic,
-    setBlockComponents,
-    setInlineComponents,
     store: renderer.getStore(),
   };
 }

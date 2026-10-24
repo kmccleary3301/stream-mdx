@@ -55,7 +55,18 @@ export function Demo({ text }: { text: string }) {
 
 `engine` defaults to `"auto"` and bootstraps up to 4,096 accepted UTF-16 source units with the existing inline engine while worker setup and grammar prewarm are pending. Further source is deferred beyond that limit. `"worker"` requires a Worker; `"main"` runs parsing on the browser thread without a bootstrap cap. Engine setup runs after mounting, not during SSR. Use compiled snapshots and the server entry for server markup.
 
-`mathRenderer` replaces math views; `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.
+### Rendering customization
+
+`components` replaces the removed renderer maps:
+
+- `inlineComponents` → `components["inline:<kind>"]` or `components["extension:<name>"]`
+- `htmlElements` → `components["html:<tag>"]`
+- `tableElements` → `components.table` wrappers or headless table views with `useTableBlock` / `useTableRows`
+- `codeRenderers` → `components.code` wrappers or headless code views; wrappers receive `metadata.language`, and `slots.actions` replaces native code actions
+- `mathRenderer` → presentation becomes a math wrapper/view in `components["inline:math"]`; TeX rendering uses `engines.math` (KaTeX remains the default)
+- `mdxComponents` → restricted `contentComponents` registrations, or trusted `contentPolicy="trusted-mdx"` with `engines.mdx`
+
+`features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.
 
 `colorScheme` accepts `"light"`, `"dark"`, or `"system"` and sets the native root's `data-color-scheme`. System mode follows `prefers-color-scheme` with CSS only; when unset, a `.dark` ancestor keeps the existing class-based behavior. Native roots carry `data-stream-mdx` and `not-prose`, so enclosing typography-plugin selectors do not restyle native output and the optional Tailwind theme scopes native styles to that root.
 

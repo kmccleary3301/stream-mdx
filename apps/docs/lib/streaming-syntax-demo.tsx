@@ -5,6 +5,7 @@ import {
   defineContentComponent,
   type ContentComponentHostProps,
   type ContentComponentProps,
+  type NodePresentations,
 } from "@stream-mdx/react";
 
 interface DemoNoteProps {
@@ -67,13 +68,17 @@ export const STREAMING_SYNTAX_DEMO_WORKER_COMPONENTS = Object.entries(STREAMING_
   ([name, registration]) => ({ name, renderWhen: registration.renderWhen }),
 ) satisfies RestrictedComponentDescriptor[];
 
-export const STREAMING_SYNTAX_DEMO_INLINE_COMPONENTS = {
-  highlight: ({ text }: { readonly text?: string }) => <mark data-syntax-highlight="true">{text}</mark>,
+export const STREAMING_SYNTAX_DEMO_PRESENTATIONS: NodePresentations = {
+  "extension:highlight": {
+    view: ({ node }) => (
+      <mark data-syntax-highlight="true">{node.kind === "plugin" ? String(node.attrs?.text ?? "") : null}</mark>
+    ),
+  },
 };
 
 export function createStreamingSyntaxDemoRegistry(): ComponentRegistry {
-  const registry = new ComponentRegistry();
-  registry.setInlineComponents(STREAMING_SYNTAX_DEMO_INLINE_COMPONENTS);
-  registry.setContentComponents(STREAMING_SYNTAX_DEMO_CONTENT_COMPONENTS);
-  return registry;
+  return new ComponentRegistry({
+    components: STREAMING_SYNTAX_DEMO_PRESENTATIONS,
+    contentComponents: STREAMING_SYNTAX_DEMO_CONTENT_COMPONENTS,
+  });
 }

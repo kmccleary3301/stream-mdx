@@ -11,17 +11,17 @@ import {
 import type { ComponentRegistry } from "../components";
 import type { ResolvedCodeControls } from "../components/controls";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
-import type { CodeFenceRendererProps } from "../types";
 import { DeferredRenderContext } from "./deferred-render-context";
 import { useRendererNode } from "./hooks";
 import { subscribeRendererNode } from "./node-subscriptions";
 import { CodeLineRangeView } from "./code-line-range";
 import { CODE_LINE_RANGE_SIZE } from "./code-state";
-import { nativeCodeBlockHtml } from "./native-code-line";
 import type { RendererStore } from "./store";
 import { getStoreResetVersion } from "./store-reset-version";
 import { useDeferredRender } from "./use-deferred-render";
 import { useVirtualizedCode } from "./virtualized-code";
+import { mergeNodePresentationProps } from "./node-presentations";
+import type { NodeViewActions, NodeViewMetadata } from "../types";
 
 type CodeBlockViewCounters = {
   recordRecordSlotsAllocated?(count: number, stage: "view"): void;
@@ -219,7 +219,12 @@ function copyAuthoredSelection(event: ClipboardEvent, viewport: HTMLElement, rea
 
 
 // Private code-rendering owner; block dispatch and finalized wrappers remain in node-views.
-export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+export const CodeBlockView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  renderPresentation?: (nativeView: React.ReactNode) => React.ReactNode;
+}> = React.memo(({ store, blockId, registry, renderPresentation }) => {
   const node = useRendererNode(store, blockId);
   const codeBlock = store.getCodeBlock(blockId);
   const codeGeneration = codeBlock?.source.generation ?? null;
@@ -347,11 +352,6 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
 
   if (!node || !codeBlock) return null;
 
-  const infoText =
-    codeBlock.info ||
-    (typeof blockMeta?.info === "string" ? blockMeta.info : undefined) ||
-    lang ||
-    "";
   const preAttrs = (node.props?.preAttrs as Record<string, string> | undefined) ?? undefined;
   const codeAttrs = (node.props?.codeAttrs as Record<string, string> | undefined) ?? undefined;
   const storeThemes = store.getThemes?.();
@@ -359,8 +359,6 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   const composedPreAttrs = preAttrs ?? defaultWrapperAttrs.preAttrs;
   const composedCodeAttrs = codeAttrs ?? defaultWrapperAttrs.codeAttrs;
   const CodeComponent = registry.getBlockComponent("code");
-  const normalizedLang = (lang ?? "").trim().toLowerCase();
-  const codeRenderer = registry.getCodeRenderer(normalizedLang);
   const resolvedCodeControls = resolveCodeControls(registry.getControls());
   const ControlsComponent = registry.getControlsComponent();
   const codeFrameClass = "not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm";
@@ -376,12 +374,12 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     ),
     "data-code-window-size": String(virtualization.config.windowSize),
   };
+  const codeFrameProps = mergeNodePresentationProps(
+    { className: codeFrameClass, ...codeMetricsAttrs },
+    registry.getNodePresentation("code")?.props,
+  ) as React.HTMLAttributes<HTMLDivElement>;
 
-  const useIncrementalRanges =
-    !shouldVirtualize &&
-    !registry.hasCustomBlockComponent("code") &&
-    !codeRenderer &&
-    !registry.hasElementFilters();
+  const useIncrementalRanges = !shouldVirtualize && !registry.hasElementFilters();
   const showFullContent = fullContentMode || virtualization.isPrinting;
   const renderWindow = showFullContent
     ? { ...window, startIndex: 0, endIndex: lineCount }
@@ -475,17 +473,14 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     }
     codeLineRanges = ranges;
   }
-  // Registered code components predate prepared children and may render `html`; give them the highlighted markup.
-  const customCodeLines = registry.hasCustomBlockComponent("code") ? store.getCodeLines(blockId, 0, lineCount) : undefined;
-  const nativeCodeProps: React.ComponentProps<typeof CodeComponent> = {
-    html: customCodeLines ? nativeCodeBlockHtml(customCodeLines, composedPreAttrs, composedCodeAttrs) : "",
-    lines: customCodeLines,
-    children: codeLineRanges,
-    lang,
-    preAttrs: composedPreAttrs,
-    codeAttrs: composedCodeAttrs,
-  };
-  const rendered = <CodeComponent {...nativeCodeProps} />;
+  const rendered = (
+    <CodeComponent
+      children={codeLineRanges}
+      lang={lang}
+      preAttrs={composedPreAttrs}
+      codeAttrs={composedCodeAttrs}
+    />
+  );
 
   const codeView = shouldVirtualize ? (
     (() => {
@@ -493,7 +488,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
       const spacerTopHeight = showFullContent ? 0 : virtualization.spacerTopHeight;
       const spacerBottomHeight = showFullContent ? 0 : virtualization.spacerBottomHeight;
       return (
-        <div className={codeFrameClass} {...codeMetricsAttrs}>
+        <div {...codeFrameProps} ref={deferredRef}>
           <div
             ref={containerRef}
             id={viewportId}
@@ -514,7 +509,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
       );
     })()
   ) : (
-    <div className={codeFrameClass} {...codeMetricsAttrs}>
+    <div {...codeFrameProps} ref={deferredRef}>
       {rendered}
     </div>
   );
@@ -533,6 +528,8 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   ) : null;
 
   const renderControls = (): React.ReactNode => {
+    const actionsSlot = registry.getNodePresentation("code")?.slots?.actions;
+    if (actionsSlot !== undefined) return actionsSlot;
     if (!resolvedCodeControls.enabled) return null;
     if (ControlsComponent) {
       const code = readCurrentCodeSource() ?? "";
@@ -559,57 +556,10 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   };
 
   const elementToFilter = (() => {
-    if (codeRenderer) {
-      const CustomComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
-      const shouldOptInDefer = Boolean(
-        (typeof codeRenderer === "object" && codeRenderer !== null && codeRenderer.defer) ||
-          (CustomComponent && typeof CustomComponent === "function" && "defer" in CustomComponent && Boolean(CustomComponent.defer)),
-      );
-      const renderCustomCode = (): React.ReactElement => {
-        const rendererProps: CodeFenceRendererProps = {
-          code: typeof blockMeta?.code === "string" ? blockMeta.code : readCurrentCodeSource() ?? "",
-          language: lang ?? "",
-          meta: blockMeta,
-          info: infoText,
-          isFinalized: blockIsFinalized,
-          blockId,
-          renderCode: codeView,
-          openLink: registry.getLinkHandler(),
-          controls: {
-            copy: resolvedCodeControls.copy,
-            download: resolvedCodeControls.download,
-          },
-          copy: copyCurrentCode,
-          download: downloadCurrentCode,
-        };
-        return React.createElement(CustomComponent, rendererProps);
-      };
-
-      if (shouldOptInDefer && deferredConfig) {
-        return (
-          <div ref={deferredRef}>
-            {shouldRenderDeferred ? renderCustomCode() : codeView}
-          </div>
-        );
-      }
-      return renderCustomCode();
-    }
-
     if (Array.isArray(blockMeta?.diffBlocks) && blockMeta.diffBlocks.length > 0) {
       const diffView = React.createElement(DefaultDiffRenderer, {
-        code: "",
-        language: lang ?? "",
         meta: blockMeta,
-        info: infoText,
-        isFinalized: blockIsFinalized,
-        blockId,
         renderCode: codeView,
-        controls: {
-          copy: resolvedCodeControls.copy,
-          download: resolvedCodeControls.download,
-        },
-        copy: copyCurrentCode,
-        download: downloadCurrentCode,
       });
       const controls = renderControls();
       return controls ? wrapWithCodeControls(controls, diffView) : diffView;
@@ -624,19 +574,58 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   };
 
 
+  const mermaidEngine = registry.getMermaidEngine();
+  const mermaidMetadata: NodeViewMetadata = Object.freeze({
+    id: blockId,
+    type: "code",
+    isFinalized: blockIsFinalized,
+    ...(lang === undefined ? {} : { language: lang }),
+    lineCount,
+  });
+  const mermaidActions: NodeViewActions = Object.freeze({
+    readSource: () => {
+      const source = readCurrentCodeSource();
+      if (source === null) {
+        throw new Error("Code node handle no longer refers to the current code document");
+      }
+      return source;
+    },
+    copy: copyCurrentCode,
+    download: downloadCurrentCode,
+  });
+  const presentNativeView = (nativeView: React.ReactNode): React.ReactNode => {
+    const source = lang?.toLowerCase() === "mermaid" ? readCurrentCodeSource() : null;
+    const withMermaid = mermaidEngine && source !== null
+      ? React.createElement(mermaidEngine.view, {
+          source,
+          children: nativeView,
+          metadata: mermaidMetadata,
+          actions: mermaidActions,
+        })
+      : nativeView;
+    return renderPresentation && (!registry.getNodePresentation("code") || shouldRenderDeferred)
+      ? renderPresentation(withMermaid)
+      : withMermaid;
+  };
   if (!registry.hasElementFilters()) {
-    return withFullContentToggle(
+    const nativeView = withFullContentToggle(
       React.isValidElement(elementToFilter) ? elementToFilter : <>{elementToFilter}</>,
     );
+    return presentNativeView(nativeView);
   }
+  let hostAllowed = false;
   const filtered = registry.filterElement(
     { tagName: "div", properties: { className: codeFrameClass }, blockType: "code" },
     { source: "markdown" },
-    () => elementToFilter,
+    () => {
+      hostAllowed = true;
+      return elementToFilter;
+    },
     () => readCurrentCodeSource() ?? "",
   );
   if (filtered === null || filtered === undefined) return null;
-  return withFullContentToggle(React.isValidElement(filtered) ? filtered : <>{filtered}</>);
+  const nativeView = withFullContentToggle(React.isValidElement(filtered) ? filtered : <>{filtered}</>);
+  return hostAllowed ? presentNativeView(nativeView) : nativeView;
 });
 
 CodeBlockView.displayName = "CodeBlockView";
