@@ -61,7 +61,7 @@ const components: NodePresentations = {
 <StreamingMarkdown text={markdown} components={components} />;
 ```
 
-`wrapper` and `view` are mutually exclusive. `props` is limited to `className`, `style`, `title`, and `data-*` / `aria-*` attributes. Use `components["inline:<kind>"]` for inline nodes, `components["html:<tag>"]` for admitted and sanitized HTML, and `components["extension:<name>"]` for syntax-extension inline nodes. Table overrides use `components.table` and the table-part presentation keys.
+`wrapper` and `view` are mutually exclusive. `props` is limited to `className`, `style`, `title`, and `data-*` / `aria-*` attributes. Use `components["inline:<kind>"]` for inline nodes, `components["html:<tag>"]` for admitted and sanitized HTML, and `components["extension:<name>"]` for syntax-extension inline nodes. Table overrides use `components.table` and the `table-row` / `table-cell` keys. The two part keys accept only `wrapper` and `props`. For headless table rendering, give `components.table` a `view` and read rows with `useTableBlock` and `useTableRows`.
 
 | Removed option | Replacement |
 | --- | --- |
@@ -206,6 +206,8 @@ After:
 ```tsx
 <StreamingMarkdown engine="main" text={markdown} />
 ```
+
+With `engine="auto"`, node IDs and source order stay the same when the inline bootstrap hands off to the worker, but node, code and table handles are issued again once. Views get the new handles automatically. If you keep a handle or a saved `actions.readSource` across that handoff, it rejects as stale, so read it again from the current view.
 
 ## MDX is an explicit trusted lane
 
