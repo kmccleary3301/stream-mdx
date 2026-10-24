@@ -823,8 +823,10 @@ export async function buildDiffTokenLines(
         oldGrammarState = undefined;
         newGrammarState = undefined;
         const filePath = extractDiffFilePath(info.raw);
-        const detectedLanguage = filePath ? guessLanguageFromPath(filePath) : null;
-        currentLanguage = await resolveHighlightLanguage(highlighter, detectedLanguage ?? language);
+        if (filePath) {
+          const detectedLanguage = guessLanguageFromPath(filePath);
+          currentLanguage = await resolveHighlightLanguage(highlighter, detectedLanguage ?? language);
+        }
       }
       tokenLines[i] = null;
       diffTokenLines[i] = { old: null, new: null };
