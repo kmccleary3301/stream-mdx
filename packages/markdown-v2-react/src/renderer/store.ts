@@ -5759,7 +5759,12 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           return metadataSnapshot;
         },
         readChildren,
-        subscribeMetadata: (listener: () => void) => subscribeRendererNode(store, id, listener),
+        subscribeMetadata: (listener: () => void) => {
+          if (!isCurrentRecord()) return () => {};
+          return subscribeRendererNode(store, id, () => {
+            if (isCurrentRecord()) listener();
+          });
+        },
         subscribeChildren: (range: NodeChildRange, listener: () => void) => {
           assertNodeChildRange(range);
           let previous = readChildren(range);
