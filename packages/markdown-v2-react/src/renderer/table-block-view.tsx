@@ -317,6 +317,7 @@ export const ManagedTableBlockView: React.FC<{
         renderSections,
       )
     : tableElement;
+  if (filteredTable === null || filteredTable === undefined) return null;
 
   const renderedContent = isEligible ? (
     <div
