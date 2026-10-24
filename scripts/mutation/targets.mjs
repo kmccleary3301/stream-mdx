@@ -12,6 +12,7 @@ export const targets = {
     redirects: coreSource,
     tests: [
       "__tests__/table-block-state.test.ts",
+      "__tests__/table-row-index.test.ts",
       "__tests__/table-records.test.ts",
       "__tests__/table-owner-replacement.test.ts",
       "packages/markdown-v2-worker/__tests__/native-table-owned-frontier.test.ts",

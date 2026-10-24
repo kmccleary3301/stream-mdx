@@ -54,8 +54,10 @@ async function restrictedComponentUsesItsPresentationWrapper(): Promise<void> {
     assert.equal(presentation?.querySelector("aside")?.getAttribute("data-callout-title"), "Prepared");
     assert.equal(presentation?.querySelector("aside")?.getAttribute("data-component-presentation"), "decorated");
     assert.equal(presentation?.textContent, "Prepared child");
+    // @ts-expect-error Restricted component presentations accept only wrapper and props.
+    const componentView: NodePresentations = { "component:Callout": { view: () => null } };
     assert.throws(
-      () => new ComponentRegistry({ components: { "component:Callout": { view: () => null } } }),
+      () => new ComponentRegistry({ components: componentView }),
       /component:Callout.*headless views are not supported/,
     );
   } finally {

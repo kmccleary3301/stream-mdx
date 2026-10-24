@@ -468,7 +468,15 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
         "reason" in error &&
         error.reason === "disposed",
     );
-    await handle.waitForIdle();
+    await assert.rejects(
+      handle.waitForIdle(),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.name === "StreamSessionError" &&
+        "reason" in error &&
+        error.reason === "disposed",
+      "disposed handle rejects waitForIdle (session generation contract)",
+    );
     assert.equal(store.getVersion(), versionBeforeDisposal, "disposed native engine cannot mutate its store");
     assert.deepStrictEqual(store.getCodeLines(rootCode.id, 0, authored.codeLines.length), rowsBeforeDisposal);
     assert.equal(flushCount, flushesBeforeDisposal, "disposed handle emits no later flush");

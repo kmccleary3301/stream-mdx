@@ -173,6 +173,12 @@ type SourceCapacityWaiter = {
   resolve(): void;
   reject(error: Error): void;
 };
+type SourceAdmissionWaiter = {
+  session: number;
+  targetSourceUnits: number;
+  resolve(): void;
+  reject(error: Error): void;
+};
 
 /**
  * Main renderer class
@@ -249,6 +255,7 @@ export class MarkdownRenderer implements Renderer {
   private admissionSession = 0;
   private admissionFailure: Error | null = null;
   private capacityWaiters = new Set<SourceCapacityWaiter>();
+  private sourceAdmissionWaiters = new Set<SourceAdmissionWaiter>();
   private semanticAwaitingFlush = false;
   private finalizationPromise: Promise<FinalizeResult> | null = null;
   private pendingFinalization: OwnedFinalization | null = null;
@@ -573,6 +580,7 @@ export class MarkdownRenderer implements Renderer {
     this.settleBootstrapProjectionWaiters(error);
     this.resetFinalizationSession(error);
     this.rejectCapacityWaiters(error);
+    this.rejectSourceAdmissionWaiters(error);
     this.admissionSession += 1;
     this.acceptedSourceUnits = 0;
     this.bootstrapOwnerSourceUnits = 0;
@@ -681,6 +689,7 @@ export class MarkdownRenderer implements Renderer {
     const error = message instanceof Error ? message : new StreamSessionError(reason, message);
     this.admissionFailure = error;
     this.rejectCapacityWaiters(error);
+    this.rejectSourceAdmissionWaiters(error);
     this.rejectPendingFinalization(error);
   }
 
@@ -703,6 +712,49 @@ export class MarkdownRenderer implements Renderer {
         waiter.resolve();
       }
     }
+  }
+
+  private admittedSourceUnits(): number {
+    return this.workerAdmittedSourceUnits - this.workerAdmissionBaselineSourceUnits;
+  }
+
+  private rejectSourceAdmissionWaiters(error: Error): void {
+    for (const waiter of this.sourceAdmissionWaiters) {
+      this.sourceAdmissionWaiters.delete(waiter);
+      waiter.reject(error);
+    }
+  }
+
+  private settleSourceAdmissionWaiters(): void {
+    const admittedSourceUnits = this.admittedSourceUnits();
+    for (const waiter of this.sourceAdmissionWaiters) {
+      const error = waiter.session !== this.admissionSession
+        ? new StreamSessionError("stale-generation", "Source admission belongs to an ended generation")
+        : null;
+      if (error) {
+        this.sourceAdmissionWaiters.delete(waiter);
+        waiter.reject(error);
+      } else if (waiter.targetSourceUnits <= admittedSourceUnits) {
+        this.sourceAdmissionWaiters.delete(waiter);
+        waiter.resolve();
+      } else if (this.admissionFailure) {
+        this.sourceAdmissionWaiters.delete(waiter);
+        waiter.reject(this.admissionFailure);
+      }
+    }
+  }
+
+  private waitForSourceAdmission(targetSourceUnits: number): Promise<void> {
+    if (targetSourceUnits <= this.admittedSourceUnits()) return Promise.resolve();
+    if (this.admissionFailure) return Promise.reject(this.admissionFailure);
+    return new Promise<void>((resolve, reject) => {
+      this.sourceAdmissionWaiters.add({
+        session: this.admissionSession,
+        targetSourceUnits,
+        resolve,
+        reject,
+      });
+    });
   }
 
   waitForCapacity(options: WaitForCapacityOptions): Promise<void> {
@@ -960,8 +1012,21 @@ export class MarkdownRenderer implements Renderer {
     return this.patchScheduler.flushAll();
   }
 
-  waitForPatchQueueIdle(): Promise<void> {
-    return this.patchScheduler.awaitIdle();
+  async waitForPatchQueueIdle(): Promise<void> {
+    while (true) {
+      const admissionSession = this.admissionSession;
+      const acceptedSourceUnits = this.acceptedSourceUnits;
+      await this.waitForSourceAdmission(acceptedSourceUnits);
+      await this.patchScheduler.awaitIdle();
+      if (
+        admissionSession === this.admissionSession &&
+        acceptedSourceUnits === this.acceptedSourceUnits &&
+        acceptedSourceUnits <= this.admittedSourceUnits() &&
+        this.patchScheduler.isIdle()
+      ) {
+        return;
+      }
+    }
   }
 
   /**
@@ -1112,6 +1177,7 @@ export class MarkdownRenderer implements Renderer {
         this.workerAdmittedSourceUnits = admittedSourceUnits;
         this.settleBootstrapProjectionWaiters();
         this.settleCapacityWaiters();
+        this.settleSourceAdmissionWaiters();
         break;
       }
 

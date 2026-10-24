@@ -328,6 +328,19 @@ const finalizedHistoryText = materializeManagedParagraphSnapshot(state4).spans[0
 const finalizedUpdatedText = materializeManagedParagraphSnapshot(state5).spans[0]?.nodes[0];
 assert.equal(finalizedHistoryText?.kind === "text" ? finalizedHistoryText.text : undefined, "resolved while closed");
 assert.equal(finalizedUpdatedText?.kind === "text" ? finalizedUpdatedText.text : undefined, "resolved after finalization");
+
+const staleOwnerRevision = updateManagedParagraphSpans(state4, "paragraph-1", {
+  op: "updateParagraphSpans",
+  at: { blockId: "paragraph-1" },
+  paragraphOwnerId: "paragraph-1",
+  generation: 3,
+  expectedRevision: 3,
+  revision: 5,
+  updates: [{ index: 0, expectedSourceRevision: 0, span: finalizedMeaning }],
+  paragraph: { ...finalized, revision: 5 },
+});
+assert.ok("reason" in staleOwnerRevision, "semantic updates cannot skip the current paragraph revision");
+assert.equal(materializeManagedParagraphSnapshot(state4).spans[0]?.id, finalizedMeaning.id);
 assert.equal(state0.source.revision, 0);
 assert.equal(state1.source.revision, 1);
 assert.equal(state2.source.state, "closed");
