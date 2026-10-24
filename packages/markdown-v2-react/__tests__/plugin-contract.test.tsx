@@ -45,7 +45,8 @@ async function renderHtml(props: StreamingMarkdownProps, check: (container: HTML
     await waitUntil(() => Boolean(handle.current?.getState().workerReady && container.querySelector("span")));
     await handle.current?.waitForIdle();
     check(container);
-    const registry = new ComponentRegistry(props.components, props.inlineComponents);
+    const registry = new ComponentRegistry(props.inlineComponents);
+    registry.setNodePresentations(props.components);
     if (props.htmlElements) registry.setHtmlElements(props.htmlElements);
     registry.setLiteralTagContent(props.html?.literalTagContent);
     Object.defineProperty(globalThis, "window", { configurable: true, writable: true, value: undefined });

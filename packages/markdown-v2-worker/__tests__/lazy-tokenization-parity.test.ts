@@ -369,7 +369,7 @@ async function runNestedLazyConsumers(): Promise<void> {
     const initialOwnedLines = ownedCodeLines(lazy.store, codeId);
     assert.deepStrictEqual(initialOwnedLines.map((line) => line.text), lines, "nested source keeps only authored code indentation");
     assert.ok(initialOwnedLines.every((line) => line.decoration === undefined), "lazy code starts without highlight decorations");
-    const registry = new ComponentRegistry({}, {}, {
+    const registry = new ComponentRegistry({}, {
       javascript: (props: CodeFenceRendererProps) => React.createElement("section", { "data-owned-code": props.blockId }, props.renderCode),
     });
     const render = (store: RendererStore = lazy.store) => renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store, componentRegistry: registry }));
@@ -534,7 +534,7 @@ async function runPublicTokenThemeConsumers(): Promise<void> {
       assert.strictEqual(ownedSpan.v?.light?.fs ?? ownedSpan.s?.fs ?? 0, token.variants.light?.fontStyle ?? 0);
     });
   }
-  const registry = new ComponentRegistry({}, {}, {
+  const registry = new ComponentRegistry({}, {
     markdown: (props: CodeFenceRendererProps) => React.createElement("section", { "data-public-code": props.blockId }, props.renderCode),
   });
   const rendered = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: lazy.store.getBlocks(), store: lazy.store, componentRegistry: registry }));

@@ -32,8 +32,8 @@ import { TrustedMdxInlineOwner } from "../trusted-mdx/native-inline";
 import type {
   AllowElementFn,
   AnimatedProp,
-  BlockComponents,
-  BlockRendererOverride,
+  GenericComponent,
+
   CodeFenceRenderer,
   CodeFenceRendererConfig,
   CodeFenceRendererProps,
@@ -507,7 +507,30 @@ export const defaultInlineComponents: InlineComponents = {
 /**
  * Default block components
  */
-export const defaultBlockComponents: BlockComponents = {
+type DefaultBlockComponents = {
+  paragraph: React.FC<{ inlines: InlineNode[]; raw?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
+  heading: React.FC<{ level: 1 | 2 | 3 | 4 | 5 | 6; inlines: InlineNode[]; text?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
+  code: React.FC<{
+    html?: string;
+    meta?: Record<string, unknown>;
+    lines?: ReadonlyArray<{ id: string; index: number; text: string; html?: string | null }>;
+    lang?: string;
+    preAttrs?: Record<string, string>;
+    codeAttrs?: Record<string, string>;
+    children?: React.ReactNode;
+  }>;
+  blockquote: React.FC<{ inlines: InlineNode[]; renderedContent?: React.ReactNode }>;
+  list: React.FC<{ ordered: boolean; items: InlineNode[][] }>;
+  html: React.FC<{ __trustedHtml: TrustedHTML | string; elements?: Record<string, GenericComponent>; isSanitized?: boolean; literalTagContent?: string[]; children?: React.ReactNode }>;
+  mdx: React.FC<{ raw?: string; meta?: Record<string, unknown> }>;
+  hr: React.FC<React.HTMLAttributes<HTMLHRElement>>;
+  table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;
+  footnotes: React.FC<{ items: FootnoteItem[] }>;
+  "footnote-def": React.FC;
+  callout: React.FC<{ kind?: string; inlines?: InlineNode[] }>;
+};
+
+const defaultBlockComponents: DefaultBlockComponents = {
   paragraph: ({ inlines, raw, meta, children }) => {
     if (children !== undefined) {
       return React.createElement(
@@ -824,7 +847,6 @@ export const defaultBlockComponents: BlockComponents = {
  * Component registry that allows customization
  */
 export class ComponentRegistry {
-  private blockComponents: BlockComponents;
   private nodePresentations: NodePresentations = {};
   private inlineComponents: InlineComponents;
   private htmlElements: HtmlElements;
@@ -834,8 +856,6 @@ export class ComponentRegistry {
   private codeRenderers: Record<string, CodeFenceRenderer> = {};
   private contentComponents?: ContentComponentsMap;
   private linkHandler: ((url: string) => void) | undefined;
-  private blockRenderer?: BlockRendererOverride;
-  private blockComponentMapCache: BlockComponents | null = null;
   private tableVirtualization: TableVirtualizationConfig = DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
   private tableVirtualizationListeners = new Set<() => void>();
   private codeVirtualization: VirtualizedCodeConfig = DEFAULT_VIRTUALIZED_CODE_CONFIG;
@@ -855,12 +875,10 @@ export class ComponentRegistry {
   private hasFilterConfig = false;
 
   constructor(
-    blockComponents: Partial<BlockComponents> = {},
     inlineComponents: Partial<InlineComponents> = {},
     codeRenderers: Record<string, CodeFenceRenderer> = {},
     options?: {
       mathRenderer?: MathRenderer;
-      blockRenderer?: BlockRendererOverride;
       tableVirtualization?: TableVirtualizationOptions;
       codeVirtualization?: Partial<VirtualizedCodeConfig>;
       urlTransform?: UrlTransform;
@@ -871,7 +889,6 @@ export class ComponentRegistry {
       components?: NodePresentations;
     } & ElementFilterOptions,
   ) {
-    this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
     if (options?.urlTransform) {
@@ -894,9 +911,6 @@ export class ComponentRegistry {
     }
     if (options?.mathRenderer) {
       this.setMathRenderer(options.mathRenderer);
-    }
-    if (options?.blockRenderer) {
-      this.setBlockRenderer(options.blockRenderer);
     }
     if (options?.tableVirtualization !== undefined) {
       this.setTableVirtualization(options.tableVirtualization);
@@ -1077,26 +1091,8 @@ export class ComponentRegistry {
     return this.linkHandler;
   }
 
-  setBlockRenderer(renderer?: BlockRendererOverride): void {
-    this.blockRenderer = renderer;
-  }
-
-  hasBlockRenderer(): boolean {
-    return this.blockRenderer !== undefined;
-  }
-
-  /** Finalized blocks go through the `blockRenderer` override (e.g. block transform adapters); streaming blocks never do. */
-  renderFinalizedBlock(block: Block, defaultElement: React.ReactElement): React.ReactNode {
-    if (block.isFinalized && this.animationTimeline) {
-      this.animationTimeline.releasePrefix(block.id);
-    }
-    if (this.blockRenderer && block.isFinalized) {
-      return this.blockRenderer({
-        block,
-        element: defaultElement,
-      });
-    }
-    return defaultElement;
+  releaseFinalizedBlockAnimations(blockId: string): void {
+    this.animationTimeline?.releasePrefix(blockId);
   }
 
   setMathRenderer(mathRenderer: MathRenderer): void {
@@ -1133,14 +1129,6 @@ export class ComponentRegistry {
 
   getCodeRendererMap(): Record<string, CodeFenceRenderer> {
     return { ...this.codeRenderers };
-  }
-
-  /**
-   * Update block components
-   */
-  setBlockComponents(components: Partial<BlockComponents>): void {
-    this.blockComponents = { ...this.blockComponents, ...components } as BlockComponents;
-    this.blockComponentMapCache = null;
   }
 
   setNodePresentations(presentations?: NodePresentations): void {
@@ -1248,18 +1236,6 @@ export class ComponentRegistry {
     });
   }
 
-  /**
-   * A block type is "custom" only when the registered component differs from the
-   * built-in default. Re-passing the built-in map (for example `components={registry.getBlockComponentMap()}`)
-   * must keep native block views (nested lists, mixed segments, tables) enabled.
-   */
-  hasCustomBlockComponent(type: string): boolean {
-    const current = (this.blockComponents as Record<string, unknown>)[type];
-    if (current === undefined) {
-      return false;
-    }
-    return current !== (defaultBlockComponents as Record<string, unknown>)[type];
-  }
 
   /**
    * Update inline components
@@ -1318,10 +1294,6 @@ export class ComponentRegistry {
     if (this.controlsComponent) {
       return this.controlsComponent;
     }
-    const blockControls = this.blockComponents.controls;
-    if (blockControls && typeof blockControls === "function") {
-      return blockControls as unknown as React.ComponentType<ControlsComponentProps>;
-    }
     return undefined;
   }
 
@@ -1329,8 +1301,8 @@ export class ComponentRegistry {
   /**
    * Get block component
    */
-  getBlockComponent(type: string): React.ComponentType<Record<string, unknown>> {
-    return this.blockComponents[type] || this.blockComponents.paragraph;
+  getBlockComponent(type: string): GenericComponent {
+    return defaultBlockComponents[type as keyof DefaultBlockComponents] ?? defaultBlockComponents.paragraph;
   }
   getCodeNodeView(): React.ComponentType<CodeNodeViewProps> | undefined {
     const presentation = this.getNodePresentation("code");
@@ -1401,12 +1373,6 @@ export class ComponentRegistry {
     };
   }
 
-  getBlockComponentMap(): BlockComponents {
-    if (!this.blockComponentMapCache) {
-      this.blockComponentMapCache = { ...this.blockComponents } as BlockComponents;
-    }
-    return this.blockComponentMapCache;
-  }
 
   getInlineComponentMap(): InlineComponents {
     if (!this.inlineComponentMapCache) {

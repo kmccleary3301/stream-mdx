@@ -3,7 +3,7 @@ import React, { useMemo, useRef } from "react";
 
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
-import type { AnimatedProp, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, ElementFilterOptions, NodePresentations } from "../types";
+import type { AnimatedProp, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, ElementFilterOptions, NodePresentations } from "../types";
 import type { ContentComponentsMap } from "../components/content-components";
 import { RenderConfigVersionContext, useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
@@ -19,7 +19,6 @@ export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
   className?: string;
   style?: React.CSSProperties;
   store?: RendererStore;
-  blockRenderer?: BlockRendererOverride;
   components?: NodePresentations;
   urlTransform?: UrlTransform;
   controls?: ControlsConfig;
@@ -30,7 +29,6 @@ export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
 }
 
 interface AppliedRenderConfig {
-  blockRenderer?: BlockRendererOverride;
   components?: NodePresentations;
   urlTransform?: UrlTransform;
   filters?: ElementFilterOptions;
@@ -46,7 +44,6 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     blocks,
     componentRegistry,
     codeRenderers,
-    blockRenderer,
     components,
     urlTransform,
     allowedElements,
@@ -71,9 +68,6 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       const previous = applied.current;
       if (codeRenderers) {
         reg.setCodeRenderers(codeRenderers);
-      }
-      if (blockRenderer !== undefined || previous.blockRenderer !== undefined) {
-        reg.setBlockRenderer(blockRenderer);
       }
       if (components !== undefined || previous.components !== undefined) {
         reg.setNodePresentations(components);
@@ -114,12 +108,11 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
         !samePlainConfig(animated, previous.animated) ||
         contentComponents !== previous.contentComponents;
       const version = changed ? previous.version + 1 : previous.version;
-      applied.current = { blockRenderer, components, urlTransform, filters, controls, controlsComponent, animated, contentComponents, version };
+      applied.current = { components, urlTransform, filters, controls, controlsComponent, animated, contentComponents, version };
       return { registry: reg, version };
     }, [
       componentRegistry,
       codeRenderers,
-      blockRenderer,
       components,
       urlTransform,
       allowedElements,
@@ -156,7 +149,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
         React.createElement(
           RenderConfigVersionContext.Provider,
           { value: renderConfigVersion },
-          React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry, blockRenderer }),
+          React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry }),
         ),
       ),
     );
@@ -186,15 +179,14 @@ function samePlainConfig(a: unknown, b: unknown): boolean {
   return a === b || JSON.stringify(a) === JSON.stringify(b);
 }
 
-const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry; blockRenderer?: BlockRendererOverride }>(
-  ({ store, componentRegistry, blockRenderer }) => {
+const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry }>(
+  ({ store, componentRegistry }) => {
     const blockIds = useRendererChildren(store, PATCH_ROOT_ID);
     return React.createElement(
       React.Fragment,
       null,
       blockIds.map((blockId) =>
         React.createElement(BlockNodeRenderer, {
-          key: `${blockId}:${blockRenderer ? "custom" : "default"}`,
           store,
           blockId,
           registry: componentRegistry,

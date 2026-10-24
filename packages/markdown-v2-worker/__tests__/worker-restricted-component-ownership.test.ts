@@ -479,7 +479,7 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     };
     const Strong = ({ children }: { children?: React.ReactNode }) =>
       React.createElement("strong", { "data-inline-owner": "configured" }, children);
-    const componentRegistry = new ComponentRegistry({}, { strong: Strong });
+    const componentRegistry = new ComponentRegistry({ strong: Strong });
     const content = [
       '<Card title="root">',
       "",
@@ -578,7 +578,7 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
     assert.ok(initialized);
     const Input = () => React.createElement("input", { "data-policy-owner": true });
     const contentComponents = { Input: defineContentComponent({ component: Input }) };
-    const componentRegistry = new ComponentRegistry({}, {}, {}, {
+    const componentRegistry = new ComponentRegistry({}, {}, {
       disableAutolinkProtocols: ["mailto"],
       allowElement: (element, context) => !(element.tagName === "a" && (
         (context.parentTagName === "li" && element.properties.href === "https://example.invalid/") ||

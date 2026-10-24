@@ -21,7 +21,7 @@ import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
-import { defaultUrlTransform, type AnimatedProp, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type NodePresentations, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type NodePresentations, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
   resolve(): void;
@@ -180,7 +180,6 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
-  blockRenderer?: BlockRendererOverride;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
   tableVirtualization?: TableVirtualizationOptions;
@@ -275,7 +274,6 @@ function StreamingMarkdownComponent(
     disableAutolinkProtocols,
     mathRenderer,
     deferHeavyBlocks,
-    blockRenderer,
     syntax,
     html,
     tableVirtualization,
@@ -352,7 +350,6 @@ function StreamingMarkdownComponent(
       tableVirtualization,
       codeVirtualization,
       urlTransform,
-      blockRenderer,
       controls,
       controlsComponent,
       contentPolicy,
@@ -983,8 +980,8 @@ function StreamingMarkdownComponent(
     <MarkdownBlocksRenderer
       blocks={EMPTY_BLOCKS}
       componentRegistry={renderer.getComponentRegistry()}
+      components={components}
       codeRenderers={codeRenderers}
-      blockRenderer={blockRenderer}
       urlTransform={urlTransform}
       controls={controls}
       controlsComponent={controlsComponent}

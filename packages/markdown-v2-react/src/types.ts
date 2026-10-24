@@ -13,7 +13,6 @@ import type {
   InlineNode,
   LazyTokenizationPriority,
   SyntaxRuleSpec,
-  TokenLineV1,
 } from "@stream-mdx/core";
 import type { FinalizeResult } from "@stream-mdx/protocol";
 import type { ContentComponentsMap } from "./components/content-components";
@@ -189,27 +188,6 @@ export type InlineHtmlRenderer = (
 
 export type InlineHtmlRendererMap = Record<string, InlineHtmlRenderer>;
 
-export interface BlockComponents {
-  paragraph: React.FC<{ inlines: InlineNode[]; raw?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
-  heading: React.FC<{ level: 1 | 2 | 3 | 4 | 5 | 6; inlines: InlineNode[]; text?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
-  code: React.FC<{
-    html: string;
-    meta?: Record<string, unknown>;
-    lines?: ReadonlyArray<{ id: string; index: number; text: string; html?: string | null; tokens?: TokenLineV1 | null }>;
-    lang?: string;
-    preAttrs?: Record<string, string>;
-    codeAttrs?: Record<string, string>;
-    /** Prepared renderer-owned children, placed once inside the default semantic code element. */
-    children?: React.ReactNode;
-  }>;
-  blockquote: React.FC<{ inlines: InlineNode[]; renderedContent?: React.ReactNode }>;
-  list: React.FC<{ ordered: boolean; items: InlineNode[][] }>;
-  html: React.FC<{ __trustedHtml: TrustedHTML | string; elements?: Record<string, GenericComponent>; isSanitized?: boolean; literalTagContent?: string[]; children?: React.ReactNode }>;
-  mdx: React.FC<{ raw?: string; meta?: Record<string, unknown> }>;
-  hr: React.FC<React.HTMLAttributes<HTMLHRElement>>;
-  table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;
-  [k: string]: GenericComponent;
-}
 export type InlineComponents = Record<string, GenericComponent> & {
   text: React.FC<{ text: string }>;
   strong: React.FC<{ children: React.ReactNode }>;
@@ -293,6 +271,7 @@ export interface NodeViewProps {
   readonly children: React.ReactNode;
   readonly metadata: NodeViewMetadata;
   readonly actions: NodeViewActions;
+  readonly block?: Block;
 }
 
 export interface InlineNodeViewProps {
@@ -355,12 +334,6 @@ export type NodePresentations = Partial<{
 /** Retained only until existing code consumers are migrated to HeadlessNodeViewProps<\"code\">. */
 export type CodeNodeViewProps = HeadlessNodeViewProps<"code">;
 
-export interface FinalizedBlockRenderProps {
-  block: Block;
-  element: React.ReactElement;
-}
-
-export type BlockRendererOverride = (props: FinalizedBlockRenderProps) => React.ReactNode;
 
 export interface RendererConfig extends ElementFilterOptions {
   themes?: { light: string; dark: string };
@@ -395,7 +368,6 @@ export interface RendererConfig extends ElementFilterOptions {
   };
   codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
-  blockRenderer?: BlockRendererOverride;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
   urlTransform?: (url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined;
@@ -438,7 +410,6 @@ export interface Renderer {
   finalize(): Promise<FinalizeResult>;
   renderStatic(text: string): Promise<Block[]>;
   onUpdate(cb: (blocks: ReadonlyArray<Block>) => void): () => void;
-  setBlockComponents(map: Partial<BlockComponents>): void;
   setInlineComponents(map: Partial<InlineComponents>): void;
   setCodeRenderers(map: Record<string, CodeFenceRenderer>): void;
   setMathRenderer(renderer: MathRenderer): void;

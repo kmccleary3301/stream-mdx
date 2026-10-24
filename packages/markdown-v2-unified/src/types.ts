@@ -1,7 +1,6 @@
-import type React from "react";
 import type { PluggableList } from "unified";
 import type { Block, UrlTransform } from "@stream-mdx/core";
-import type { FinalizedBlockRenderProps, NodePresentations } from "@stream-mdx/react";
+import type { NodePresentations } from "@stream-mdx/react";
 
 export interface UnifiedRendererOptions {
   remarkPlugins?: PluggableList;
@@ -10,7 +9,7 @@ export interface UnifiedRendererOptions {
   hastComponents?: Record<string, React.ComponentType<Record<string, unknown>>>;
   /**
    * Block types to route through the unified pipeline.
-   * Defaults to: ["paragraph", "heading", "blockquote", "list", "table", "code", "thematicBreak"]
+   * Defaults to: ["paragraph", "heading", "blockquote", "list", "table", "code", "hr"]
    */
   blockTypes?: string[];
   /**
@@ -33,10 +32,9 @@ export interface UnifiedRendererOptions {
   urlTransform?: UrlTransform;
 }
 
-export interface UnifiedRenderer {
-  (props: FinalizedBlockRenderProps): React.ReactNode;
+export type UnifiedRenderer = NodePresentations & {
   clearCache(): void;
   options: UnifiedRendererOptions;
-}
+};
 
 export type { PluggableList } from "unified";

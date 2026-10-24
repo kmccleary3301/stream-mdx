@@ -163,8 +163,7 @@ async function testFactoryWorkerTerminatedOnUnmount(): Promise<void> {
 
   assert.strictEqual(borrowedWorker.terminated, false, "borrowed worker instance must not be terminated on unmount");
 }
-
-async function testRemovingBlockRendererRevertsToDefault(): Promise<void> {
+async function testRemovingNodePresentationRevertsToDefault(): Promise<void> {
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
@@ -174,37 +173,39 @@ async function testRemovingBlockRendererRevertsToDefault(): Promise<void> {
   const workerFactory = () => worker as unknown as Worker;
 
   try {
-    // 1. Render with blockRenderer override
     await act(async () => {
       root.render(
         <StreamingMarkdown
           engine="worker"
           worker={workerFactory}
           text="Test paragraph"
-          blockRenderer={({ element }) => <div className="custom-block-override">{element}</div>}
+          components={{
+            paragraph: {
+              wrapper: ({ children }) => <div className="custom-block-override">{children}</div>,
+            },
+          }}
         />,
       );
     });
 
     await waitFor(
       () => Boolean(container.querySelector(".custom-block-override")),
-      "custom blockRenderer override must be rendered when prop is provided",
+      "custom node presentation must be rendered when components are provided",
     );
 
-    // 2. Re-render without blockRenderer (removed / undefined)
     await act(async () => {
       root.render(
         <StreamingMarkdown
           engine="worker"
           worker={workerFactory}
           text="Test paragraph"
-          blockRenderer={undefined}
+          components={undefined}
         />,
       );
     });
     await waitFor(
       () => container.querySelector(".custom-block-override") === null,
-      "removing blockRenderer prop must revert to default rendering without stale override",
+      "removing components must revert to default rendering without a stale wrapper",
     );
   } finally {
     await act(async () => {
@@ -213,6 +214,7 @@ async function testRemovingBlockRendererRevertsToDefault(): Promise<void> {
     container.remove();
   }
 }
+
 
 async function testWorkerErrorEventRoutesToOnErrorAndExitsStreaming(): Promise<void> {
   const container = document.createElement("div");
@@ -988,7 +990,7 @@ async function testNoCommitsAfterDetach(): Promise<void> {
 async function main(): Promise<void> {
   try {
     await testFactoryWorkerTerminatedOnUnmount();
-    await testRemovingBlockRendererRevertsToDefault();
+    await testRemovingNodePresentationRevertsToDefault();
     await testWorkerErrorEventRoutesToOnErrorAndExitsStreaming();
     await testNoCommitsAfterDetach();
     await testSameTurnRestartFinalizeUsesFreshTrustedWorker();

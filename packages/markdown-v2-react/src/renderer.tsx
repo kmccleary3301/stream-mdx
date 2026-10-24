@@ -4,7 +4,7 @@ import { SourceCapacityError, StreamSessionError, type AppendResult, type Finali
 // Main V2 Markdown Renderer
 // Client-side renderer with component registry and worker integration
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
-import type { BlockComponents, CodeFenceRenderer, CodeHighlightRangeRequest, ControlsComponentProps, ControlsConfig, InlineComponents, MathRenderer, Renderer, RendererConfig, TableVirtualizationOptions } from "./types";
+import type { CodeFenceRenderer, CodeHighlightRangeRequest, ControlsComponentProps, ControlsConfig, InlineComponents, MathRenderer, Renderer, RendererConfig, TableVirtualizationOptions } from "./types";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
@@ -219,14 +219,12 @@ export class MarkdownRenderer implements Renderer {
     this.store = createRendererStore([], { themes: config.themes });
     this.componentRegistry = new ComponentRegistry(
       {},
-      {},
       this.config.codeRenderers ?? {},
       {
         mathRenderer: this.config.mathRenderer,
         tableVirtualization: this.config.tableVirtualization,
         codeVirtualization: this.config.codeVirtualization,
         urlTransform: this.config.urlTransform,
-        blockRenderer: this.config.blockRenderer,
         controls: this.config.controls,
         controlsComponent: this.config.controlsComponent,
         allowedElements: this.config.allowedElements,
@@ -721,12 +719,6 @@ export class MarkdownRenderer implements Renderer {
     };
   }
 
-  /**
-   * Set block components
-   */
-  setBlockComponents(map: Partial<BlockComponents>): void {
-    this.componentRegistry.setBlockComponents(map);
-  }
 
   /**
    * Set inline components
@@ -1308,7 +1300,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
   blocks: ReadonlyArray<Block>;
   append: (text: string) => void;
   renderStatic: (text: string) => Promise<Block[]>;
-  setBlockComponents: (components: Partial<BlockComponents>) => void;
   setInlineComponents: (components: Partial<InlineComponents>) => void;
   store: ReturnType<MarkdownRenderer["getStore"]>;
 } {
@@ -1355,12 +1346,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
     [renderer],
   );
 
-  const setBlockComponents = useCallback(
-    (components: Partial<BlockComponents>) => {
-      renderer.setBlockComponents(components);
-    },
-    [renderer],
-  );
 
   const setInlineComponents = useCallback(
     (components: Partial<InlineComponents>) => {
@@ -1375,7 +1360,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
     blocks,
     append,
     renderStatic,
-    setBlockComponents,
     setInlineComponents,
     store: renderer.getStore(),
   };

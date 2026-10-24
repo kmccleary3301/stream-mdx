@@ -17,8 +17,9 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ComponentRegistry } from "../src/components";
-import { BlockNodeRenderer } from "../src/renderer/node-views";
+import { BlockNodeRenderer, renderNodePresentation } from "../src/renderer/node-views";
 import { createRendererStore } from "../src/renderer/store";
+
 
 const SOURCE_GENERATION = 41;
 const INITIAL_RAW = "- Done\n- Parent\n  - old";
@@ -456,18 +457,14 @@ async function runNativeContainerRangeTest(): Promise<void> {
     assert.equal(currentBlock.payload.raw, UPDATED_RAW);
     assert.deepEqual(currentBlock.payload.range, { from: 0, to: currentEnd });
     const customListRegistry = new ComponentRegistry();
-    customListRegistry.setBlockComponents({
-      list: ({ items }) => createElement(
-        "ul",
-        null,
-        items.map((item, index) => createElement(
-          "li",
-          { key: index },
-          item.map((inline) => inline.kind === "text" ? inline.text : "").join(""),
-        )),
-      ),
+    customListRegistry.setNodePresentations({
+      list: {
+        wrapper: ({ children }) => createElement("section", { className: "custom-list" }, children),
+      },
     });
-    const customListMarkup = renderToStaticMarkup(customListRegistry.renderBlock(currentBlock));
+    const customListMarkup = renderToStaticMarkup(
+      renderNodePresentation(currentBlock, customListRegistry.renderBlock(currentBlock), store, customListRegistry),
+    );
     assert.equal(
       new JSDOM(customListMarkup).window.document.querySelector("li")?.textContent,
       "latest list item",
@@ -768,8 +765,10 @@ async function runNativeContainerRangeTest(): Promise<void> {
       }],
     });
     const registeredQuoteRegistry = new ComponentRegistry();
-    registeredQuoteRegistry.setBlockComponents({
-      blockquote: ({ renderedContent }) => createElement("blockquote", { className: "registered-quote" }, renderedContent),
+    registeredQuoteRegistry.setNodePresentations({
+      blockquote: {
+        wrapper: ({ children }) => createElement("blockquote", { className: "registered-quote" }, children),
+      },
     });
     await act(async () => {
       root?.render(createElement(BlockNodeRenderer, { store: metaQuoteStore, blockId: "meta-quote", registry: registeredQuoteRegistry }));

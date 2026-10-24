@@ -52,7 +52,7 @@ export function Doc({ text }: { text: string }) {
   return (
     <StreamingMarkdown
       text={text}
-      blockRenderer={unifiedRenderer}
+      components={unifiedRenderer}
     />
   );
 }
@@ -68,7 +68,7 @@ export function Doc({ text }: { text: string }) {
 | `rehypePlugins` | `PluggableList` | `[]` | List of rehype plugins or plugin tuples `[plugin, options]` |
 | `components` | `NodePresentations` | `{}` | Node wrapper/view registry shared with the streaming and static React renderer |
 | `hastComponents` | `Record<string, Component>` | `{}` | Custom React component mapping passed to `hast-util-to-jsx-runtime` |
-| `blockTypes` | `string[]` | `['paragraph', 'heading', 'blockquote', 'list', 'table', 'code', 'thematicBreak']` | Block types to route to unified pipeline |
+| `blockTypes` | `string[]` | `['paragraph', 'heading', 'blockquote', 'list', 'table', 'code', 'hr']` | Block types to route to unified pipeline |
 | `cacheSize` | `number` | `500` | Maximum number of rendered blocks to retain in LRU cache |
 | `math` | `boolean` | `false` | Enable `remark-math` support |
 | `gfm` | `boolean` | `true` | Enable `remark-gfm` support |

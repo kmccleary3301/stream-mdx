@@ -1,14 +1,16 @@
 import assert from "node:assert";
-import React from "react";
+
 import { renderToStaticMarkup } from "react-dom/server";
 
+import { createElement } from "react";
+
 import type { MixedContentSegment } from "@stream-mdx/core";
-import { defaultBlockComponents } from "../src/components";
+import { ComponentRegistry } from "../src/components";
 
 function renderParagraphFromSegments(segments: MixedContentSegment[]): string {
-  const Paragraph = defaultBlockComponents.paragraph;
+  const Paragraph = new ComponentRegistry().getBlockComponent("paragraph");
   const raw = segments.map((segment) => segment.value).join("");
-  const element = React.createElement(Paragraph, {
+  const element = createElement(Paragraph, {
     inlines: [],
     raw,
     meta: { mixedSegments: segments },

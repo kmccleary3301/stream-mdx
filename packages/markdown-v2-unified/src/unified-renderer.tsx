@@ -7,7 +7,7 @@ import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { defaultUrlTransform, isForbiddenAttribute, type Block, type BlockResolvedLinkReference, type UrlTransform } from "@stream-mdx/core";
-import { ComponentRegistry, createRendererStore, renderNodePresentation, type FinalizedBlockRenderProps } from "@stream-mdx/react";
+import { ComponentRegistry, createRendererStore, renderNodePresentation, type NodePresentations, type NodeViewProps } from "@stream-mdx/react";
 import type { UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
 function sanitizeHastUrls(node: unknown, transform: UrlTransform): void {
@@ -117,7 +117,7 @@ const DEFAULT_ROUTED_BLOCK_TYPES: Record<string, true> = {
   list: true,
   table: true,
   code: true,
-  thematicBreak: true,
+  hr: true,
 };
 
 export class BoundedLruCache<K, V> {
@@ -355,21 +355,21 @@ export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): Uni
   const inflightJobs = new Map<string, UnifiedJob>();
   const processor = buildProcessor(options);
   const registry = Object.keys(options.components ?? {}).length > 0
-    ? new ComponentRegistry({}, {}, {}, { components: options.components })
+    ? new ComponentRegistry({}, {}, { components: options.components })
     : null;
   const routedTypeMap: Record<string, true> = options.blockTypes
     ? Object.fromEntries(options.blockTypes.map((type) => [type, true]))
     : DEFAULT_ROUTED_BLOCK_TYPES;
-
-  const renderer: UnifiedRenderer = (props: FinalizedBlockRenderProps) => {
-    const { block, element } = props;
-    if (!block.isFinalized || !routedTypeMap[block.type]) {
-      return element;
+  const presentationTypes = options.blockTypes ?? Object.keys(DEFAULT_ROUTED_BLOCK_TYPES);
+  const renderUnifiedBlock: React.FC<NodeViewProps> = ({ block, children }) => {
+    if (!block || !block.isFinalized || !routedTypeMap[block.type]) {
+      return <>{children}</>;
     }
-
+    const element = React.isValidElement(children)
+      ? children
+      : <>{children}</>;
     return (
       <UnifiedBlockItem
-        registry={registry}
         key={block.id}
         block={block}
         element={element}
@@ -377,15 +377,23 @@ export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): Uni
         options={options}
         cache={cache}
         inflightJobs={inflightJobs}
+        registry={registry}
       />
     );
   };
-
-  renderer.clearCache = () => {
-    cache.clear();
-    inflightJobs.clear();
-  };
-  renderer.options = options;
-
+  const renderer = {
+    ...Object.fromEntries(
+      presentationTypes.map((type) => [type, { wrapper: renderUnifiedBlock }]),
+    ) as NodePresentations,
+    clearCache() {
+      cache.clear();
+      inflightJobs.clear();
+    },
+    options,
+  } satisfies UnifiedRenderer;
+  Object.defineProperties(renderer, {
+    clearCache: { enumerable: false },
+    options: { enumerable: false },
+  });
   return renderer;
 }

@@ -512,22 +512,7 @@ export const ManagedParagraphBlockView: React.FC<{
 
   const content = renderManagedParagraphContent(store, blockId, state, registry, renderNested, "p");
 
-  const ParagraphComponent = registry.getBlockComponent("paragraph");
-  let element: React.ReactElement;
-  if (registry.hasCustomBlockComponent("paragraph")) {
-    const sourceBlock = store.getParagraphColdBlock(blockId);
-    if (!sourceBlock) throw new RangeError("Managed paragraph source block is unavailable");
-    const inlines = sourceBlock.payload.inline;
-    if (!inlines) throw new RangeError("Managed paragraph source inlines are unavailable");
-    element = React.createElement(ParagraphComponent, {
-      inlines,
-      raw: sourceBlock.payload.raw,
-      meta: sourceBlock.payload.meta,
-      children: content,
-    });
-  } else {
-    element = React.createElement("p", { className: "markdown-paragraph" }, content);
-  }
+  const element = <p className="markdown-paragraph">{content}</p>;
   if (!registry.hasElementFilters()) return <>{element}</>;
   const filtered = registry.filterElement(
     { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },

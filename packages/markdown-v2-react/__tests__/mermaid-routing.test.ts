@@ -29,7 +29,7 @@ async function runMermaidRoutingTest(): Promise<void> {
   const window = await setupDom();
 
   const Mermaid = ({ code }: { code: string }) => React.createElement("div", { id: "mermaid" }, code);
-  const registry = new ComponentRegistry({}, {}, { mermaid: Mermaid });
+  const registry = new ComponentRegistry({}, { mermaid: Mermaid });
   // Mermaid code fence should route to registry.mermaid and receive stripped code (no fences).
   const mermaidBlock: Block = {
     id: "code-mermaid",

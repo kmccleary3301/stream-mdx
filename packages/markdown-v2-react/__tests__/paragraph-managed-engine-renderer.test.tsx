@@ -408,30 +408,28 @@ async function runManagedParagraphOverrideRegression(): Promise<void> {
     if ("text" in node && typeof node.text === "string") return node.text;
     return "";
   }).join("");
-  const componentRegistry = new ComponentRegistry(
-    {
-      paragraph: ({ raw, inlines, children }) => createElement(
-        "p",
-        {
-          "data-custom-paragraph": "",
-          "data-source": raw,
-          "data-inline-source": inlineText(inlines),
-        },
-        children,
-      ),
-    },
-    {
-      strong: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children),
-    },
-    {},
-    {
-      blockRenderer: ({ block, element }) => {
-        if (block.type !== "paragraph") return element;
-        finalizedBlockRaw = block.payload.raw;
-        return createElement("section", { "data-finalized-managed-block": block.id }, element);
+  const componentRegistry = new ComponentRegistry({
+    strong: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children),
+  });
+  componentRegistry.setNodePresentations({
+    paragraph: {
+      wrapper: ({ block, children }) => {
+        const inlines = block?.payload.inline ?? [];
+        const raw = typeof block?.payload.raw === "string" ? block.payload.raw : undefined;
+        finalizedBlockRaw = raw;
+        return createElement(
+          "section",
+          {
+            "data-custom-paragraph": "",
+            "data-finalized-managed-block": block?.id,
+            "data-source": raw,
+            "data-inline-source": inlineText(inlines),
+          },
+          children,
+        );
       },
     },
-  );
+  });
   try {
     await handleAndApply(engine, store, emitted, paragraphInit("Before **bold**"));
     await act(async () => {
@@ -440,16 +438,16 @@ async function runManagedParagraphOverrideRegression(): Promise<void> {
     await handleAndApply(engine, store, emitted, { type: "APPEND", text: " after" });
     await handleAndApply(engine, store, emitted, { type: "FINALIZE" });
 
-    const paragraph = container.querySelector("p[data-custom-paragraph]");
+    const paragraph = container.querySelector("section[data-custom-paragraph]");
     assert.ok(paragraph, "the custom paragraph consumer must mount");
     assert.equal(paragraph.getAttribute("data-source"), authored, "custom paragraph raw must update with managed source");
     assert.equal(paragraph.getAttribute("data-inline-source"), "Before bold after", "custom paragraph inlines must reflect prepared meaning");
     assert.equal(paragraph.textContent, "Before bold after", "custom wrapper must preserve native prepared children");
     assert.equal(paragraph.querySelectorAll('strong[data-managed-inline="strong"]').length, 1, "native prepared children must appear exactly once");
-    assert.equal(finalizedBlockRaw, authored, "finalized blockRenderer must receive the source-backed managed paragraph");
+    assert.equal(finalizedBlockRaw, authored, "finalized paragraph presentation must receive the source-backed managed paragraph");
     assert.ok(
-      container.querySelector("section[data-finalized-managed-block] p[data-custom-paragraph]"),
-      "finalized blockRenderer output must appear around managed paragraphs",
+      container.querySelector("section[data-finalized-managed-block][data-custom-paragraph]"),
+      "finalized paragraph presentation output must wrap managed paragraphs",
     );
   } finally {
     try {

@@ -22,7 +22,6 @@ export { defaultUrlTransform } from "@stream-mdx/core";
 export { STREAM_MDX_ANIMATION_CSS, DEFAULT_ANIMATED_OPTIONS } from "./animation";
 export type {
   AllowElementFn,
-  BlockComponents,
   CodeFenceRenderer,
   CodeFenceRendererConfig,
   CodeFenceRendererProps,

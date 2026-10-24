@@ -1,6 +1,6 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import { normalizeBlockquoteText, PATCH_ROOT_ID, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
+import { normalizeBlockquoteText, PATCH_ROOT_ID, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { CodeNodeHandle, TableNodeHandle } from "@stream-mdx/core";
 import type { CodeNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
@@ -39,7 +39,6 @@ import {
   type TrustedMdxDocumentSnapshot,
   type TrustedMdxNativeChildOwner,
 } from "../trusted-mdx-contract";
-import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 import { getStoreResetVersion } from "./store-reset-version";
 import { NativeCodeViewContext } from "./code-highlight-context";
 import { mergeNodePresentationProps } from "./node-presentations";
@@ -68,6 +67,7 @@ export function renderNodePresentation(
   nodeId?: string,
   bypassPresentation = false,
 ): React.ReactNode {
+  if (block?.isFinalized) registry.releaseFinalizedBlockAnimations(block.id);
   const type = (block?.type ?? "code") as NodePresentationKey;
   const id = block?.id ?? nodeId;
   if (id === undefined) return nativeView;
@@ -130,54 +130,10 @@ export function renderNodePresentation(
     copy: () => copyToClipboard(readSource()),
     download: () => downloadFile(readSource(), `${type}.txt`),
   });
-  return React.createElement(presentation.wrapper, { children, metadata, actions });
+  return React.createElement(presentation.wrapper, { children, metadata, actions, block });
 }
 
 
-const CustomCodeBlockView: React.FC<{
-  store: RendererStore;
-  block: Block;
-  registry: ComponentRegistry;
-  resetVersion: number;
-  blockEpoch: number;
-}> = React.memo(({ store, block, registry, resetVersion, blockEpoch }) => {
-  const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
-  const lazyEnabled = Boolean(meta.lazyTokenization);
-  const lazyTokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? meta.lazyTokenizedUntil : 0;
-  const sourceLineCount = lazyEnabled ? getLazyCodeSourceLineCount(block, meta) : 0;
-  const highlightedLineCount = Array.isArray(meta.highlightedLines) ? meta.highlightedLines.length : 0;
-  const tokenLineCount = Array.isArray(meta.tokenLines) ? meta.tokenLines.length : 0;
-  const totalLazyLineCount = Math.max(sourceLineCount, highlightedLineCount, tokenLineCount);
-
-  useLazyCodeHighlightRequest({
-    store,
-    blockId: block.id,
-    blockIsFinalized: block.isFinalized,
-    lazyEnabled,
-    lazyTokenizedUntil,
-    totalLazyLineCount,
-    shouldVirtualize: false,
-    resetVersion,
-    blockEpoch,
-  });
-
-  return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
-});
-
-function getLazyCodeSourceLineCount(block: Block, meta: Record<string, unknown>): number {
-  const metaCode = typeof meta.code === "string" ? meta.code : null;
-  let sourceText: string;
-  if (metaCode !== null) {
-    sourceText = metaCode.replace(/\r\n?/g, "\n");
-  } else {
-    const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
-    if (raw.length === 0) return 0;
-    const normalized = raw.replace(/\r\n?/g, "\n");
-    const fenced = stripCodeFence(normalized);
-    sourceText = fenced.hadFence ? fenced.code : normalized;
-  }
-  return sourceText.length > 0 ? sourceText.split("\n").length : 0;
-}
 
 function recordViewRecords(store: RendererStore, count: number): void {
   const counterStore = store as RendererStore & {
@@ -395,13 +351,13 @@ export const BlockNodeRenderer: React.FC<{
         renderNested={renderParagraphChild}
       />
     );
-    // Block renderer overrides read the owner-materialized block (authored raw, inline, link references).
-    // Only materialize when an override will consume it; ordinary appends stay materialization-free.
     const ownerState = store.getParagraphBlock(blockId);
-    const rendererBlock = registry.hasBlockRenderer() && ownerState?.source.state !== "open"
+    const presentation = registry.getNodePresentation("paragraph");
+    const needsSource = presentation !== undefined && "wrapper" in presentation && presentation.wrapper !== undefined;
+    const rendererBlock = needsSource && ownerState?.source.state !== "open"
       ? store.getParagraphColdBlock(blockId) ?? block
       : block;
-    return <>{registry.renderFinalizedBlock(rendererBlock, renderNodePresentation(rendererBlock, element, store, registry, undefined, bypassPresentationFor === blockId) as React.ReactElement)}</>;
+    return <>{renderNodePresentation(rendererBlock, element, store, registry, undefined, bypassPresentationFor === blockId)}</>;
   }
 
   const block = node.block;
@@ -420,27 +376,10 @@ export const BlockNodeRenderer: React.FC<{
     return <MixedSegmentView store={store} nodeId={blockId} inlineComponents={registry.getInlineComponents()} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName={parentTagName} />;
   }
 
-  // The native quote view still invokes the registered wrapper, but supplies its prepared children. A nested
-  // quote's block is synthesized from its node and carries no content, so its children are its only content.
-  const preparedQuote = block.type === "blockquote" &&
-    (Boolean(block.payload.meta?.preparedNested) || node.parentId !== PATCH_ROOT_ID);
   const hasPreparedMdxInline = block.type === "paragraph" && hasTrustedMdxInline(block.payload.inline ?? []);
   const mixedParagraph = block.type === "paragraph" && Array.isArray(block.payload.meta?.mixedSegments) && !hasPreparedMdxInline;
-  if ((registry.hasCustomBlockComponent(block.type) || mixedParagraph) && !preparedQuote) {
-    if (block.type === "code") {
-      return (
-        <CustomCodeBlockView
-          store={store}
-          block={block}
-          registry={registry}
-          resetVersion={getStoreResetVersion(store)}
-          blockEpoch={node.blockEpoch}
-        />
-      );
-    }
-    // Native table rows live in the table owner; custom renderers consume the materialized header/rows/align meta.
-    const customBlock = block.type === "table" ? (store.getTableColdBlock(block.id) ?? block) : block;
-    return <>{registry.renderFinalizedBlock(customBlock, renderNodePresentation(customBlock, registry.renderBlock(customBlock), store, registry, undefined, bypassPresentationFor === blockId) as React.ReactElement)}</>;
+  if (mixedParagraph) {
+    return <>{renderNodePresentation(block, registry.renderBlock(block), store, registry, undefined, bypassPresentationFor === blockId)}</>;
   }
 
   let element: React.ReactElement | null;
@@ -474,7 +413,7 @@ export const BlockNodeRenderer: React.FC<{
   }
 
   if (element === null) return null;
-  return <>{registry.renderFinalizedBlock(block, renderNodePresentation(block, element, store, registry, undefined, bypassPresentationFor === blockId) as React.ReactElement)}</>;
+  return <>{renderNodePresentation(block, element, store, registry, undefined, bypassPresentationFor === blockId)}</>;
 };
 export const NativeNodeView: React.FC<{ readonly handle: NodeHandle }> = ({ handle }) => {
   const context = React.useContext(NodeViewRenderContext);
@@ -878,9 +817,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   });
 
   if (block.payload.meta?.preparedNested && childIds.length === 0) {
-    const emptyQuote = registry.hasCustomBlockComponent("blockquote")
-      ? React.createElement(registry.getBlockComponent("blockquote"), { inlines: block.payload.inline ?? [], renderedContent: null })
-      : <blockquote className="markdown-blockquote" />;
+    const emptyQuote = <blockquote className="markdown-blockquote" />;
     if (!registry.hasElementFilters()) {
       return emptyQuote;
     }
@@ -901,9 +838,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
           : fallbackElements;
     const shouldShowStreaming = !block.isFinalized && (!streamingContent || (Array.isArray(streamingContent) && streamingContent.length === 0));
     const className = shouldShowStreaming ? "markdown-blockquote streaming-partial" : "markdown-blockquote";
-    const streamingQuote = registry.hasCustomBlockComponent("blockquote")
-      ? React.createElement(registry.getBlockComponent("blockquote"), { inlines: block.payload.inline ?? [], renderedContent: streamingContent }, streamingContent)
-      : <blockquote className={className}>{streamingContent}</blockquote>;
+    const streamingQuote = <blockquote className={className}>{streamingContent}</blockquote>;
     if (!registry.hasElementFilters()) {
       return streamingQuote;
     }
@@ -936,17 +871,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
     return null;
   })();
 
-  const BlockquoteComponent = registry.getBlockComponent("blockquote");
-  const baseElement = React.createElement(
-    BlockquoteComponent,
-    {
-      inlines: block.payload.inline ?? [],
-      renderedContent,
-    },
-    renderedContent,
-  );
-
-  const base = React.isValidElement(baseElement) ? baseElement : <blockquote className="markdown-blockquote">{renderedContent}</blockquote>;
+  const base = <blockquote className="markdown-blockquote">{renderedContent}</blockquote>;
   if (!registry.hasElementFilters()) {
     return base;
   }

@@ -96,7 +96,7 @@ const block: Block = {
     },
   },
 };
-const registry = new ComponentRegistry({}, {}, {}, { tableVirtualization: true });
+const registry = new ComponentRegistry({}, {}, { tableVirtualization: true });
 const ssr = renderToStaticMarkup(<MarkdownBlocksRenderer blocks={[block]} componentRegistry={registry} />);
 assert.equal((ssr.match(/data-row-id=/g) ?? []).length, 120, "public SSR renderer emits every body row");
 assert.ok(ssr.includes("Row-119"));

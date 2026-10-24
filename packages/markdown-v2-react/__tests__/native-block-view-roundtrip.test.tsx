@@ -6,7 +6,6 @@ import { JSDOM } from "jsdom";
 import { createElement, createRef, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 
-import { ComponentRegistry } from "../src/components";
 import { StreamingMarkdown, type StreamingMarkdownHandle } from "../src/streaming-markdown";
 import type { NodeViewProps } from "../src/index";
 
@@ -75,21 +74,6 @@ async function waitFor(predicate: () => boolean, message: string, timeoutMs = 15
 }
 
 async function runRoundTripTest(): Promise<void> {
-  // 1. Registry semantics: re-passing the built-in map must not mark block types custom.
-  const registry = new ComponentRegistry();
-  registry.setBlockComponents({ code: CustomCode as never });
-  assert.strictEqual(registry.hasCustomBlockComponent("code"), true, "replaced code component must be custom");
-  assert.strictEqual(registry.hasCustomBlockComponent("list"), false, "built-in list component is not custom");
-
-  const roundTrip = new ComponentRegistry();
-  roundTrip.setBlockComponents(registry.getBlockComponentMap() as never);
-  assert.strictEqual(
-    roundTrip.hasCustomBlockComponent("list"),
-    false,
-    "re-passing the built-in component map must keep native list rendering",
-  );
-  assert.strictEqual(roundTrip.hasCustomBlockComponent("code"), true, "replaced code component stays custom after round-trip");
-
   // 2. Consumer path: StreamingMarkdown uses the unified registry and keeps nested native list
   //    children while wrapping each prepared code view.
   const globalsBefore = captureDomGlobals();

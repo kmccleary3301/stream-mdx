@@ -64,7 +64,7 @@ async function testDisallowedElementsRemovesImages(): Promise<void> {
   const window = await setupDom();
   const rootEl = window.document.getElementById("root")!;
   const store = createRendererStore(blocks);
-  const registry = new ComponentRegistry({}, {}, {}, { disallowedElements: ["img"] });
+  const registry = new ComponentRegistry({}, {}, { disallowedElements: ["img"] });
 
   const root = createRoot(rootEl);
   await act(async () => {
@@ -130,7 +130,7 @@ async function testAllowedElementsWithUnwrapDisallowed(): Promise<void> {
   const window = await setupDom();
   const rootEl = window.document.getElementById("root")!;
   const store = createRendererStore(blocks);
-  const registry = new ComponentRegistry({}, {}, {}, { allowedElements: ["p"], unwrapDisallowed: true });
+  const registry = new ComponentRegistry({}, {}, { allowedElements: ["p"], unwrapDisallowed: true });
 
   const root = createRoot(rootEl);
   await act(async () => {
@@ -240,7 +240,7 @@ async function testCodeRenderersAliases(): Promise<void> {
   };
 
   const jsRenderer = { component: CustomJsRenderer, aliases: ["JS", "mjs"] };
-  const registry = new ComponentRegistry({}, {}, { javascript: jsRenderer });
+  const registry = new ComponentRegistry({}, { javascript: jsRenderer });
 
   for (const lang of ["JS", "js", "MJS", "JavaScript"]) {
     assert.strictEqual(registry.getCodeRenderer(lang.toLowerCase()), jsRenderer, `Expected '${lang}' to resolve to the javascript renderer`);
@@ -319,7 +319,7 @@ async function testDisableAutolinkProtocolsMailto(): Promise<void> {
 // 6. allowedElements and disallowedElements are mutually exclusive, but swapping between them across renders works
 async function testMutuallyExclusiveElements(): Promise<void> {
   assert.throws(
-    () => new ComponentRegistry({}, {}, {}, { allowedElements: ["p"], disallowedElements: ["img"] }),
+    () => new ComponentRegistry({}, {}, { allowedElements: ["p"], disallowedElements: ["img"] }),
     /Cannot specify both allowedElements and disallowedElements/,
   );
 
@@ -364,19 +364,12 @@ async function testHtmlOwnedParagraphFilters(): Promise<void> {
     { disallowedElements: ["p"], unwrapDisallowed: false },
     { disallowedElements: ["p"], unwrapDisallowed: true },
   ]) {
-    let paragraphRenders = 0;
-    const registry = new ComponentRegistry({
-      paragraph: ({ children }) => {
-        paragraphRenders++;
-        return React.createElement("p", { "data-custom-paragraph": "true" }, children);
-      },
-    }, {}, {}, filters);
+    const registry = new ComponentRegistry({}, {}, filters);
     const element = React.createElement(MarkdownBlocksRenderer, { blocks, componentRegistry: registry });
     const ssrDocument = new JSDOM(renderToStaticMarkup(element)).window.document;
     assert.strictEqual(ssrDocument.querySelector("p"), null, "HTML-owned paragraph must obey tag filtering in SSR");
     // normalizeHtmlParagraph serializes `</p>\n`; that separator text node is a sibling of the paragraph root, not subtree content.
     assert.strictEqual(ssrDocument.body.textContent?.trim(), filters.unwrapDisallowed ? "Before inside after" : "", "paragraph filtering must unwrap or drop the entire subtree");
-    assert.strictEqual(paragraphRenders, 0, "a rejected custom paragraph component must not render");
     const rootEl = window.document.getElementById("root")!;
     const root = createRoot(rootEl);
     await act(async () => { root.render(element); });
@@ -385,7 +378,7 @@ async function testHtmlOwnedParagraphFilters(): Promise<void> {
     await act(async () => { root.unmount(); });
   }
   const seenParagraphs: Array<{ source: string; blockType?: string }> = [];
-  const callbackRegistry = new ComponentRegistry({}, {}, {}, {
+  const callbackRegistry = new ComponentRegistry({}, {}, {
     unwrapDisallowed: true,
     allowElement: (element, context) => {
       if (element.tagName !== "p") return true;

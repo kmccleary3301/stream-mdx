@@ -146,7 +146,7 @@ export default function StreamingDemo() {
           text={text}
           engine="main-thread"
           codeRenderers={codeRenderers}
-          blockRenderer={unifiedRenderer}
+          components={unifiedRenderer}
           features={{ math: true, mdx: true, tables: true, html: true }}
           prewarmLangs={["tsx", "python"]}
           onMetrics={(metric) => {
@@ -276,7 +276,7 @@ import { createUnifiedRenderer } from "@stream-mdx/unified";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 
-const blockRenderer = createUnifiedRenderer({
+const unifiedRenderer = createUnifiedRenderer({
   gfm: false,
   remarkPlugins: [remarkGfm],
   rehypePlugins: [rehypeSlug],
@@ -289,7 +289,7 @@ function App() {
       <StreamingMarkdown
         engine="main-thread"
         codeRenderers={{ mermaid: MermaidBlock }}
-        blockRenderer={blockRenderer}
+        components={unifiedRenderer}
         text={${JSON.stringify(smokeMarkdown)}}
       />
     </div>
