@@ -582,7 +582,7 @@ When worker has `emitDiffBlocks` enabled (`features={{ emitDiffBlocks: true }}`)
 ```
 You can override diff rendering globally with `codeRenderers={{ diff: MyDiffComponent }}`.
 
-### Math Rendering (KaTeX & MathJax)
+### Math Rendering (KaTeX default and custom engines)
 
 KaTeX is built-in as the first-party default for inline (`$...$`) and display (`$$...$$`) math.
 
@@ -590,6 +590,7 @@ To integrate **MathJax** instead:
 ```tsx
 import React, { useEffect, useRef } from "react";
 import { StreamingMarkdown } from "stream-mdx";
+import type { MathEngine } from "stream-mdx";
 
 function MathJaxFormula({ tex, display = false }: { tex: string; display?: boolean }) {
   const containerRef = useRef<HTMLSpanElement>(null);
@@ -614,19 +615,22 @@ function MathJaxFormula({ tex, display = false }: { tex: string; display?: boole
   );
 }
 
+const mathJaxEngine: MathEngine = {
+  id: "mathjax",
+  render: (tex, { displayMode }) => <MathJaxFormula tex={tex} display={displayMode} />,
+};
+
 export function MathJaxArticle({ content }: { content: string }) {
   return (
     <StreamingMarkdown
       text={content}
       features={{ math: true }}
-      mathRenderer={{
-        inline: ({ tex }) => <MathJaxFormula tex={tex} display={false} />,
-        display: ({ tex }) => <MathJaxFormula tex={tex} display={true} />,
-      }}
+      engines={{ math: mathJaxEngine }}
     />
   );
 }
 ```
+`components["inline:math"]` remains a separate presentation layer for wrapping or replacing the view; its children are already the engine output.
 
 ### Override Inline Components
 

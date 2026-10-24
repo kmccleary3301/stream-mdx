@@ -291,6 +291,15 @@ export type NodePresentations = Partial<{
 export type CodeNodeViewProps = HeadlessNodeViewProps<"code">;
 
 
+
+export type MathEngineOutput = React.ReactNode;
+
+/** Synchronous renderer for TeX content on the main thread. */
+export interface MathEngine {
+  readonly id: string;
+  render(tex: string, options: { displayMode: boolean }): MathEngineOutput;
+}
+
 export interface RendererConfig extends ElementFilterOptions {
   themes?: { light: string; dark: string };
   highlight?: {
@@ -305,6 +314,7 @@ export interface RendererConfig extends ElementFilterOptions {
   contentComponents?: ContentComponentsMap;
   components?: NodePresentations;
   engines?: {
+    math?: MathEngine;
     mdx?: TrustedMdxEngine;
   };
   plugins?: {

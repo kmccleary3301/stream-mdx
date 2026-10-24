@@ -63,7 +63,7 @@ export function Demo({ text }: { text: string }) {
 - `htmlElements` → `components["html:<tag>"]`
 - `tableElements` → `components.table` wrappers or headless table views with `useTableBlock` / `useTableRows`
 - `codeRenderers` → `components.code` wrappers or headless code views; wrappers receive `metadata.language`, and `slots.actions` replaces native code actions
-- `mathRenderer` → `components["inline:math"]` for inline and display math
+- `mathRenderer` → presentation becomes a math wrapper/view in `components["inline:math"]`; TeX rendering uses `engines.math` (KaTeX remains the default)
 - `mdxComponents` → restricted `contentComponents` registrations, or trusted `contentPolicy="trusted-mdx"` with `engines.mdx`
 
 `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.

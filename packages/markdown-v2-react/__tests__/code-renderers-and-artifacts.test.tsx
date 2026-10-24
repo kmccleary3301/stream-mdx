@@ -3,6 +3,7 @@ import type { Block, DiffBlock } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { MarkdownRenderer } from "../src/renderer";
 import { ComponentRegistry } from "../src/components";
 import type { InlineNodeViewProps } from "../src/types";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
@@ -228,6 +229,102 @@ async function testKaTeXMathPresentations(): Promise<void> {
   }
 }
 
+async function testMathEngineReplacement(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const result = await compileMarkdownSnapshotDirect({
+    text: "Energy $E = mc^2$.\n\n$$\\int x dx$$",
+  });
+  const store = createRendererStore(result.blocks);
+  const root = createRoot(container);
+  const calls: Array<{ tex: string; displayMode: boolean }> = [];
+  const customMathEngine = {
+    id: "mathjax-test",
+    render: (tex: string, options: { displayMode: boolean }) => {
+      calls.push({ tex, displayMode: options.displayMode });
+      return React.createElement(
+        "span",
+        { className: options.displayMode ? "mathjax-display" : "mathjax-inline" },
+        `[MathJax: ${tex}]`,
+      );
+    },
+  };
+  const mathWrapper = ({ children }: { children?: React.ReactNode }) =>
+    React.createElement("span", { className: "math-engine-presentation" }, children);
+  const mathComponents = { "inline:math": { wrapper: mathWrapper } };
+  const renderer = new MarkdownRenderer({
+    engines: { math: customMathEngine },
+    components: mathComponents,
+  });
+  const renderWithRenderer = (currentRenderer: MarkdownRenderer) => {
+    root.render(
+      React.createElement(
+        React.Fragment,
+        null,
+        result.blocks.map((block) =>
+          React.createElement(BlockNodeRenderer, {
+            key: block.id,
+            store,
+            blockId: block.id,
+            registry: currentRenderer.getComponentRegistry(),
+          }),
+        ),
+      ),
+    );
+  };
+
+  try {
+    renderWithRenderer(renderer);
+    await waitFor(
+      container,
+      () => Boolean(container.querySelector(".mathjax-inline") && container.querySelector(".mathjax-display")),
+      "custom math engine must render inline and display expressions",
+    );
+    assert.ok(container.querySelector(".math-engine-presentation .mathjax-inline"));
+    assert.ok(container.querySelector(".math-engine-presentation .mathjax-display"));
+    assert.strictEqual(container.querySelector(".katex"), null, "custom math engine must replace KaTeX");
+    assert.strictEqual(container.querySelector(".mathjax-inline")?.textContent, "[MathJax: E = mc^2]");
+    assert.strictEqual(container.querySelector(".mathjax-display")?.textContent, "[MathJax: \\int x dx]");
+    assert.ok(calls.some((call) => call.tex === "E = mc^2" && !call.displayMode));
+    assert.ok(calls.some((call) => call.tex === "\\int x dx" && call.displayMode));
+
+    const callsBeforeReplacement = calls.length;
+    const replacementRenderer = new MarkdownRenderer({
+      engines: {
+        math: {
+          id: "mathjax-replacement",
+          render: (tex, { displayMode }) =>
+            React.createElement(
+              "span",
+              { className: displayMode ? "mathjax-replacement-display" : "mathjax-replacement-inline" },
+              `[MathJax replacement: ${tex}]`,
+            ),
+        },
+      },
+      components: mathComponents,
+    });
+    renderWithRenderer(replacementRenderer);
+    await waitFor(
+      container,
+      () => Boolean(
+        container.querySelector(".mathjax-replacement-inline") &&
+          container.querySelector(".mathjax-replacement-display"),
+      ),
+      "changing the math engine must replace cached output for the same source",
+    );
+    assert.strictEqual(container.querySelector(".mathjax-inline"), null);
+    assert.strictEqual(container.querySelector(".katex"), null);
+    assert.strictEqual(calls.length, callsBeforeReplacement, "replacing the engine must not rerender with the old engine");
+    assert.strictEqual(container.querySelector(".mathjax-replacement-inline")?.textContent, "[MathJax replacement: E = mc^2]");
+    assert.strictEqual(container.querySelector(".mathjax-replacement-display")?.textContent, "[MathJax replacement: \\int x dx]");
+
+  } finally {
+    root.unmount();
+  }
+}
+
+
 async function testArtifactFencesRemainInertByDefault(): Promise<void> {
   const window = await setupDom();
   const container = window.document.getElementById("root");
@@ -274,4 +371,5 @@ async function testArtifactFencesRemainInertByDefault(): Promise<void> {
 await testDiffRendererRowsAndTokens();
 await testKaTeXMathPresentations();
 await testArtifactFencesRemainInertByDefault();
+await testMathEngineReplacement();
 console.log("Code renderers, diff, custom fence, and math tests passed successfully.");

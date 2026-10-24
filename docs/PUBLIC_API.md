@@ -98,6 +98,7 @@ export function Example() {
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for restricted source components. Separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator required with `contentPolicy="trusted-mdx"`. |
+| `engines.math` | `MathEngine` | Synchronous, server-render-safe TeX adapter. KaTeX remains the default when omitted. |
 | `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
 | `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
@@ -117,7 +118,6 @@ export function Example() {
 | `allowElement` | `(element, context) => boolean` | Custom element filter callback. Receives `{ tagName, properties, blockType? }` and `{ source: "markdown" | "html", parentTagName? }`. |
 | `unwrapDisallowed` | `boolean` | When true, disallowed tags render their child content in place instead of dropping their entire subtree. Default `false`. |
 | `disableAutolinkProtocols` | `string[]` | Protocols (e.g. `["mailto"]`, case-insensitive, trailing colon optional) whose autolinks render as plain text. Explicit markdown links `[label](url)` remain links. |
-| `mathRenderer` | `MathRenderer` | Replace inline/display KaTeX rendering without changing math parsing. |
 | `blockRenderer` | `BlockRendererOverride` | Finalized-block override receiving `{ block, element }`. Streaming blocks retain native rendering. |
 | `scheduling` | `StreamingSchedulerOptions` | Patch scheduler/backpressure knobs. |
 | `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |
@@ -460,7 +460,7 @@ function TableView({ handle }: { handle: TableNodeHandle }) {
 Fences labeled `artifact` or `html-artifact` render as ordinary code unless the host supplies a `codeRenderers` entry. StreamMDX does not ship a default artifact iframe or sandbox. A custom renderer is application code; if it turns source into active content, the host owns its isolation and security policy.
 
 
-Math uses KaTeX by default. `mathRenderer` accepts either a component with `{ tex: string; display?: boolean; className?: string }` or `{ inline?, display? }` components with `{ tex: string; className?: string }`. Unspecified entries retain their existing renderer. `features.math: false` disables math recognition, including inside opt-in HTML markdown. A render override does not re-enable parsing.
+Math uses KaTeX by default. To replace TeX rendering, provide `engines.math`, whose synchronous `render(tex, { displayMode })` method returns React output and has a stable `id`. Math presentations at `components["inline:math"]` only wrap or view that engine output; they do not perform a second TeX render. `features.math: false` disables math recognition, including inside opt-in HTML markdown.
 
 ### Inline rules and HTML
 
@@ -627,18 +627,21 @@ Try `/showcase/table-virtualization` in the docs app. It contains up to 500 rows
 | `estimatedRowHeight` | `number` | `40` | Estimated height in pixels for unmeasured rows. |
 | `overscan` | `number` | `8` | Number of buffer rows rendered above and below the viewport (bounded 1-50). |
 | `maxHeight` | `number \| string` | `"600px"` | Maximum height of the scroll container. |
-## 3.7) Math Rendering (`mathRenderer`)
-StreamMDX includes first-party KaTeX math rendering by default for inline (`$...$`) and display (`$$...$$`) math.
+## 3.7) Math Rendering (`engines.math`)
+StreamMDX includes first-party KaTeX rendering by default for inline (`$...$`) and display (`$$...$$`) math. Set `engines.math` to replace only the renderer while preserving parsing:
 
-To override or use MathJax:
 ```tsx
-<StreamingMarkdown
-  mathRenderer={{
-    inline: ({ tex }) => <span className="mathjax-inline">\({tex}\)</span>,
-    display: ({ tex }) => <div className="mathjax-display">\[{tex}\]</div>,
-  }}
-/>
+import type { MathEngine } from "stream-mdx";
+
+const mathEngine: MathEngine = {
+  id: "mathjax",
+  render: (tex, { displayMode }) => <MathJaxFormula tex={tex} display={displayMode} />,
+};
+
+<StreamingMarkdown engines={{ math: mathEngine }} />;
 ```
+
+`MathEngine.render` runs synchronously on the main thread and must be safe during server rendering. A presentation configured at `components["inline:math"]` receives the engine output as its children; it owns only the view or wrapper and does not render TeX a second time. Omitting `engines.math` keeps KaTeX.
 ## 3.5) Element Filtering and Autolink Protocols
 
 StreamMDX mirrors Streamdown / react-markdown element filtering semantics:
