@@ -399,6 +399,15 @@ export function useVirtualizedCode(
   }, [refreshSelection, selectionTrackingEnabled]);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container || config.followTail !== true) return;
+    const scrollTop = container.scrollTop;
+    const distanceToBottom = container.scrollHeight - container.clientHeight - scrollTop;
+    followTailRef.current = distanceToBottom <= CODE_FOLLOW_TAIL_EPS_BOTTOM_PX;
+    previousScrollTopRef.current = scrollTop;
+  }, [config.followTail]);
+
+  useEffect(() => {
     if (!printEligible) return;
     const container = containerRef.current;
     if (!container) return;

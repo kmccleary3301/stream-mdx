@@ -927,6 +927,80 @@ async function runStreamingCodeViewportTest(): Promise<void> {
       );
 
 
+      const shortFollowTailLines = ["const shortLine1 = 1;", "const shortLine2 = 2;", "const shortLine3 = 3;", "const shortLine4 = 4;"];
+      const shortFollowTailSource = `\`\`\`ts\n${shortFollowTailLines.join("\n")}\n`;
+      let releaseShortFollowTailStream = () => {};
+      let signalShortFollowTailInitialChunk = () => {};
+      const shortFollowTailInitialChunk = new Promise<void>((resolve) => {
+        signalShortFollowTailInitialChunk = resolve;
+      });
+      const shortFollowTailStream = (async function* () {
+        yield shortFollowTailSource;
+        signalShortFollowTailInitialChunk();
+        await new Promise<void>((resolve) => {
+          releaseShortFollowTailStream = resolve;
+        });
+      })();
+      const shortFollowTailContainer = window.document.createElement("div");
+      window.document.body.append(shortFollowTailContainer);
+      const shortFollowTailRoot = createRoot(shortFollowTailContainer);
+      const shortFollowTailHandle = React.createRef<StreamingMarkdownHandle>();
+      try {
+        await act(async () => {
+          shortFollowTailRoot.render(React.createElement(StreamingMarkdown, {
+            ref: shortFollowTailHandle,
+            engine: "main-thread",
+            stream: shortFollowTailStream,
+            features: { tables: false, html: false, mdx: false, math: false },
+            codeVirtualization: { followTail: true, virtualizeThreshold: 2, windowSize: 4, bufferSize: 1 },
+            caret: false,
+          }));
+        });
+        await shortFollowTailInitialChunk;
+        await waitForCodeLineCount(shortFollowTailContainer, 4);
+        const shortFollowTailViewport = shortFollowTailContainer.querySelector<HTMLElement>(
+          ".markdown-code-block-container",
+        );
+        assert.ok(shortFollowTailViewport, "short streaming code mounts its public viewport");
+        Object.defineProperty(shortFollowTailViewport, "clientHeight", { configurable: true, value: 100 });
+        Object.defineProperty(shortFollowTailViewport, "scrollHeight", {
+          configurable: true,
+          get: () => Number(
+            shortFollowTailContainer.querySelector<HTMLElement>('[data-code-block="true"]')
+              ?.getAttribute("data-code-total-lines") ?? "0",
+          ) * 20,
+        });
+        let shortFollowTailScrollTop = shortFollowTailViewport.scrollTop;
+        Object.defineProperty(shortFollowTailViewport, "scrollTop", {
+          configurable: true,
+          get: () => shortFollowTailScrollTop,
+          set: (nextScrollTop: number) => {
+            const maxScrollTop = Math.max(
+              0,
+              shortFollowTailViewport.scrollHeight - shortFollowTailViewport.clientHeight,
+            );
+            shortFollowTailScrollTop = Math.min(Math.max(0, nextScrollTop), maxScrollTop);
+          },
+        });
+        assert.equal(shortFollowTailViewport.scrollHeight, 80, "initial code is shorter than its viewport");
+        assert.equal(shortFollowTailViewport.scrollTop, 0, "the initial short content is physically at the bottom");
+        const currentShortFollowTailHandle = shortFollowTailHandle.current;
+        assert.ok(currentShortFollowTailHandle);
+        await act(async () => {
+          currentShortFollowTailHandle.append("const shortLine5 = 5;\nconst shortLine6 = 6;\n");
+        });
+        await waitForCodeLineCount(shortFollowTailContainer, 6);
+        assert.equal(
+          shortFollowTailViewport.scrollTop,
+          20,
+          "followTail attaches at mount and follows growth from short content without a scroll event",
+        );
+      } finally {
+        releaseShortFollowTailStream();
+        await act(async () => shortFollowTailRoot.unmount());
+        shortFollowTailContainer.remove();
+      }
+
       const followTailLines = Array.from({ length: 600 }, (_, index) => {
         const lineNumber = String(index + 1).padStart(3, "0");
         return `const followTailLine${lineNumber} = "follow source ${lineNumber}";`;
