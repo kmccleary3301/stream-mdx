@@ -3,6 +3,7 @@ import { type ManagedParagraphViewState, type ParagraphSpanRecord } from "@strea
 import React from "react";
 import { renderInlineNodes } from "../components";
 import type { ComponentRegistry } from "../components";
+import { MathExpressionCompletenessContext } from "../components/katex-math";
 import { RenderConfigVersionContext, useRendererNode } from "./hooks";
 import { BlockRangeProjectionTree, type BlockRangeProjection, type BlockRangeProjectionRange } from "./block-range-projection";
 import { PARAGRAPH_SPAN_RANGE_SIZE } from "./paragraph-span-range";
@@ -150,6 +151,7 @@ function renderPlainParagraphRange(
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewRecords(store, 1);
     rendered.push(
       <React.Fragment key={span.id}>
+        <MathExpressionCompletenessContext.Provider value={!span.isProvisional}>
         {renderInlineNodes(
           span.nodes,
           registry.getInlineComponents(),
@@ -158,6 +160,7 @@ function renderPlainParagraphRange(
           parentTagName,
           registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`),
         )}
+        </MathExpressionCompletenessContext.Provider>
       </React.Fragment>,
     );
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewSlots(store, 1);
@@ -217,6 +220,7 @@ const ParagraphSpanRangeView: React.FC<{
     }
     rendered.push(
       <React.Fragment key={span.id}>
+        <MathExpressionCompletenessContext.Provider value={!span.isProvisional}>
         {renderInlineNodes(
           span.nodes,
           inlineComponents,
@@ -225,6 +229,7 @@ const ParagraphSpanRangeView: React.FC<{
           parentTagName,
           registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`),
         )}
+        </MathExpressionCompletenessContext.Provider>
       </React.Fragment>,
     );
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewSlots(store, 1);

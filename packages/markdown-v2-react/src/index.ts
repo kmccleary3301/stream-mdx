@@ -57,6 +57,7 @@ export type {
   InlineHtmlRendererMap,
   MathRenderer,
   MathRendererProps,
+  MathOptions,
   Renderer,
   RendererConfig,
   SyntaxRuleSpec,

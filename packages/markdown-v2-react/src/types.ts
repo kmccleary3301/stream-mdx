@@ -165,6 +165,11 @@ export type MathRenderer =
       display?: React.ComponentType<{ tex: string; className?: string }>;
     };
 
+
+/** Math rendering policy. Expressions are isolated unless a document scope is explicitly selected. */
+export interface MathOptions {
+  macroScope?: "document";
+}
 export type GenericComponent = React.ComponentType<any>;
 
 export interface TableElements {

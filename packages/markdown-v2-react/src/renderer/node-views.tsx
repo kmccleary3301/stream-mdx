@@ -32,6 +32,7 @@ import { CodeBlockView } from "./code-block-view";
 import { ManagedParagraphBlockView, ManagedParagraphContentView } from "./paragraph-block-view";
 import { ManagedTableBlockView, TableFullContentToggle, useTableFullContentMode } from "./table-block-view";
 import { TrustedMdxProjectionContext } from "../trusted-mdx-boundary";
+import { MathExpressionCompletenessContext } from "../components/katex-math";
 import { renderTrustedMdxInlineChild, TrustedMdxInlineBlockView } from "./trusted-mdx-inline-child";
 import {
   assertTrustedMdxNativeChildContinuations,
@@ -282,7 +283,12 @@ export const BlockNodeRenderer: React.FC<{
     [registry, store],
   );
   const trustedSnapshot = React.useContext(TrustedMdxProjectionContext);
+  const inheritedMathCompleteness = React.useContext(MathExpressionCompletenessContext);
   if (!node) return null;
+  const inlineStatus =
+    (node.block?.payload.meta as { inlineStatus?: string } | undefined)?.inlineStatus ??
+    (node.props?.inlineStatus as string | undefined);
+  const mathIsComplete = inlineStatus === undefined ? inheritedMathCompleteness : inlineStatus === "complete";
   // Trusted projections apply before any native owner view, including managed paragraphs.
   const projection = trustedSnapshot?.projections[blockId];
   if (projection?.kind === "module") return null;
@@ -321,7 +327,11 @@ export const BlockNodeRenderer: React.FC<{
     const rendererBlock = registry.hasBlockRenderer() && ownerState?.source.state !== "open"
       ? store.getParagraphColdBlock(blockId) ?? block
       : block;
-    return <>{registry.renderFinalizedBlock(rendererBlock, element)}</>;
+    return (
+      <MathExpressionCompletenessContext.Provider value={mathIsComplete}>
+        {registry.renderFinalizedBlock(rendererBlock, element)}
+      </MathExpressionCompletenessContext.Provider>
+    );
   }
 
   const block = node.block;
@@ -330,7 +340,11 @@ export const BlockNodeRenderer: React.FC<{
   }
   if (!block) {
     const parentTagName = node.type.startsWith("list-item-") ? "li" : node.type.startsWith("blockquote-") ? "blockquote" : "p";
-    return <MixedSegmentView store={store} nodeId={blockId} inlineComponents={registry.getInlineComponents()} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName={parentTagName} />;
+    return (
+      <MathExpressionCompletenessContext.Provider value={mathIsComplete}>
+        <MixedSegmentView store={store} nodeId={blockId} inlineComponents={registry.getInlineComponents()} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName={parentTagName} />
+      </MathExpressionCompletenessContext.Provider>
+    );
   }
 
   // The native quote view still invokes the registered wrapper, but supplies its prepared children. A nested
@@ -353,7 +367,11 @@ export const BlockNodeRenderer: React.FC<{
     }
     // Native table rows live in the table owner; custom renderers consume the materialized header/rows/align meta.
     const customBlock = block.type === "table" ? (store.getTableColdBlock(block.id) ?? block) : block;
-    return <>{registry.renderFinalizedBlock(customBlock, registry.renderBlock(customBlock))}</>;
+    return (
+      <MathExpressionCompletenessContext.Provider value={mathIsComplete}>
+        {registry.renderFinalizedBlock(customBlock, registry.renderBlock(customBlock))}
+      </MathExpressionCompletenessContext.Provider>
+    );
   }
 
   let element: React.ReactElement | null;
@@ -387,7 +405,11 @@ export const BlockNodeRenderer: React.FC<{
   }
 
   if (element === null) return null;
-  return <>{registry.renderFinalizedBlock(block, element)}</>;
+  return (
+    <MathExpressionCompletenessContext.Provider value={mathIsComplete}>
+      {registry.renderFinalizedBlock(block, element)}
+    </MathExpressionCompletenessContext.Provider>
+  );
 };
 
 const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
