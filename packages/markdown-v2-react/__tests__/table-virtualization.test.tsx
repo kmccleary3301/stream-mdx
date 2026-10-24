@@ -96,12 +96,20 @@ const block: Block = {
     },
   },
 };
-const registry = new ComponentRegistry({ tableVirtualization: true });
+const registry = new ComponentRegistry({
+  tableVirtualization: true,
+  components: {
+    "table-row": { props: { "data-static-row-presentation": "true" } },
+    "table-cell": { props: { "data-static-cell-presentation": "true" } },
+  },
+});
 const ssr = renderToStaticMarkup(<MarkdownBlocksRenderer blocks={[block]} componentRegistry={registry} />);
 assert.equal((ssr.match(/data-row-id=/g) ?? []).length, 120, "public SSR renderer emits every body row");
 assert.ok(ssr.includes("Row-119"));
 assert.ok(!ssr.includes("markdown-table-spacer"));
 assert.ok(!ssr.includes('data-table-virtualized="true"'));
+assert.match(ssr, /<tr[^>]*data-static-row-presentation="true"/);
+assert.match(ssr, /<(?:th|td)[^>]*data-static-cell-presentation="true"/);
 // GFM 205: a table without body rows has no <tbody>, through the store path and the SSR blocks path.
 const headerOnly = await compileMarkdownSnapshotDirect({
   text: "| abc | def |\n| --- | --- |\n",
@@ -249,6 +257,8 @@ const customTablePresentation = {
         data-custom-wrapper="true">{children}</div>
     ),
   },
+  "table-row": { props: { "data-stream-row-presentation": "true" } },
+  "table-cell": { props: { "data-stream-cell-presentation": "true" } },
 };
 const replacementTablePresentation = {
   table: {
@@ -272,6 +282,10 @@ try {
   await handle.current?.waitForIdle();
   assert.equal(scrollContainer(), null, "virtualization is opt-in");
   const firstId = rows()[0].dataset.rowId;
+  assert.equal(rows()[0]?.dataset.streamRowPresentation, "true",
+    "streamed rows consult the table-row presentation");
+  assert.equal(rows()[0]?.querySelector("td")?.getAttribute("data-stream-cell-presentation"), "true",
+    "streamed cells consult the table-cell presentation");
 
   render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: "240px" });
   await waitFor(() => Boolean(scrollContainer()), "config changes enable virtualization without new text");
@@ -282,6 +296,10 @@ try {
   assert.ok(rows().length >= 10,
     "string maxHeight keeps an initial finite row window before ResizeObserver reports geometry");
   assert.equal(rows()[0].dataset.rowId, firstId, "row IDs survive full-to-windowed rendering");
+  assert.equal(rows()[0]?.dataset.streamRowPresentation, "true",
+    "virtualized rows consult the table-row presentation");
+  assert.equal(rows()[0]?.querySelector("td")?.getAttribute("data-stream-cell-presentation"), "true",
+    "virtualized cells consult the table-cell presentation");
   assert.equal(container.querySelectorAll("table").length, 1, "the native table remains present inside its presentation");
   assert.equal(container.querySelectorAll("thead").length, 1);
   assert.ok(container.querySelector('[data-custom-wrapper="true"] table'));

@@ -2,7 +2,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import { type InlineNode, type TableCellRecord, type TableHeaderRecord, type TableRowRecord } from "@stream-mdx/core";
 import React from "react";
-import type { TableElements } from "../types";
+import type { NodeViewActions, TableElements } from "../types";
 import {
   TableControlsBar,
   copyToClipboard,
@@ -21,8 +21,45 @@ import type { RendererStore } from "./store";
 import { getStoreResetVersion, type PrivateRendererStore } from "./store-reset-version";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
 import { useVirtualizedTable, type IndexedTableRows, type TableVirtualizationRowRange } from "./virtualized-table";
-import { mergeNodePresentationProps } from "./node-presentations";
+import { mergeNodePresentationProps, renderTablePartPresentation, type NativeTablePartPresentationKey } from "./node-presentations";
 
+function renderManagedTablePart<K extends NativeTablePartPresentationKey>(
+  key: K,
+  id: string,
+  nativeView: React.ReactNode,
+  store: RendererStore,
+  registry: ComponentRegistry,
+  tableId: string,
+  generation: number | undefined,
+  resetVersion: number,
+  isFinalized: boolean,
+): React.ReactNode {
+  const presentation = registry.getNodePresentation(key);
+  if (!presentation) return nativeView;
+  const readSource = () => {
+    const current = store.getTableBlock(tableId);
+    if (
+      getStoreResetVersion(store) !== resetVersion ||
+      !current ||
+      current.source.generation !== generation
+    ) {
+      throw new Error("Table content belongs to a replaced or disposed owner");
+    }
+    return current.sourceSnapshot.materialize();
+  };
+  const actions: NodeViewActions = Object.freeze({
+    readSource,
+    copy: async () => copyToClipboard(readSource()),
+    download: () => downloadFile(readSource(), `${key}.txt`),
+  });
+  return renderTablePartPresentation(presentation, nativeView, {
+    id,
+    type: key,
+    isFinalized,
+    actions,
+    handle: store.getNodeHandle(id),
+  });
+}
 type ReactTableViewCounterSink = {
   recordStoreRecordsTouched?(count: number, stage: "view"): void;
   recordRecordSlotsAllocated?(count: number, stage: "view"): void;
@@ -269,6 +306,8 @@ export const ManagedTableBlockView: React.FC<{
       {header ? (
         <ManagedTableHeaderView
           store={store}
+          blockId={blockId}
+          generation={generation}
           header={header}
           sticky={isVirtualized}
           headerBackgroundColor={headerBackgroundColor}
@@ -317,6 +356,7 @@ export const ManagedTableBlockView: React.FC<{
         renderSections,
       )
     : tableElement;
+  if (filteredTable === null || filteredTable === undefined) return null;
 
   const renderedContent = isEligible ? (
     <div
@@ -374,6 +414,7 @@ export const ManagedTableBlockView: React.FC<{
     }
     return current.sourceSnapshot.materialize();
   }, [blockId, generation, store]);
+
   const presentIfHostAllowed = (nativeView: React.ReactNode): React.ReactNode => {
     if (!hostAllowed || !renderPresentation) return nativeView;
     const presentation = registry.getNodePresentation("table");
@@ -452,12 +493,14 @@ ManagedTableBlockView.displayName = "ManagedTableBlockView";
 
 const ManagedTableHeaderView: React.FC<{
   store: RendererStore;
+  blockId: string;
+  generation: number | undefined;
   header: TableHeaderRecord;
   sticky: boolean;
   headerBackgroundColor: string;
   registry: ComponentRegistry;
   tableElements: TableElements;
-}> = React.memo(({ store, header, sticky, headerBackgroundColor, registry, tableElements }) => {
+}> = React.memo(({ store, blockId, generation, header, sticky, headerBackgroundColor, registry, tableElements }) => {
   let renderedCells = 0;
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     recordViewRecords(store, header.cells.length + 1);
@@ -469,6 +512,9 @@ const ManagedTableHeaderView: React.FC<{
     return (
       <ManagedTableCellView
         key={cell.id}
+        store={store}
+        blockId={blockId}
+        generation={generation}
         cell={cell}
         isHeader
         isFinalized
@@ -478,6 +524,18 @@ const ManagedTableHeaderView: React.FC<{
       />
     );
   });
+  const headerNodeId = store.getChildren(blockId).find((childId) => store.getNode(childId)?.type === "table-header");
+  const headerRow = renderManagedTablePart(
+    "table-row",
+    headerNodeId ?? `${blockId}::header-row`,
+    <tableElements.Tr>{headerCells}</tableElements.Tr>,
+    store,
+    registry,
+    blockId,
+    generation,
+    getStoreResetVersion(store),
+    true,
+  );
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     recordTableViewCallbacks(store, 0, renderedCells);
   }
@@ -491,9 +549,7 @@ const ManagedTableHeaderView: React.FC<{
         backgroundColor: `var(--stream-mdx-table-header-background, ${headerBackgroundColor})`,
       } : undefined}
     >
-      <tableElements.Tr>
-        {headerCells}
-      </tableElements.Tr>
+      {headerRow}
     </tableElements.Thead>
   );
 });
@@ -562,7 +618,7 @@ const ManagedTableRowRangeView: React.FC<{
         inspectedRecords += row.cells.length;
         renderedBodyRows += 1;
       }
-      elements.push(
+      const nativeRow = (
         <tableElements.Tr key={row.id} data-row-id={row.id} data-row-index={row.index}>
           {row.cells.map((cell) => {
             if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -571,6 +627,9 @@ const ManagedTableRowRangeView: React.FC<{
             return (
               <ManagedTableCellView
                 key={cell.id}
+                store={store}
+                blockId={blockId}
+                generation={generation}
                 cell={cell}
                 isHeader={false}
                 isFinalized={!row.isProvisional}
@@ -580,8 +639,19 @@ const ManagedTableRowRangeView: React.FC<{
               />
             );
           })}
-        </tableElements.Tr>,
+        </tableElements.Tr>
       );
+      elements.push(renderManagedTablePart(
+        "table-row",
+        row.id,
+        nativeRow,
+        store,
+        registry,
+        blockId,
+        generation,
+        getStoreResetVersion(store),
+        !row.isProvisional,
+      ) as React.ReactElement);
     }
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       recordViewRecords(store, inspectedRecords);
@@ -699,13 +769,16 @@ const ManagedTableRowRangeChain: React.FC<{
 ManagedTableRowRangeChain.displayName = "ManagedTableRowRangeChain";
 
 const ManagedTableCellView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  generation: number | undefined;
   cell: TableCellRecord;
   isHeader: boolean;
   isFinalized: boolean;
   align?: string | null;
   registry: ComponentRegistry;
   tableElements: TableElements;
-}> = React.memo(({ cell, isHeader, isFinalized, align, registry, tableElements }) => {
+}> = React.memo(({ store, blockId, generation, cell, isHeader, isFinalized, align, registry, tableElements }) => {
   const inlineComponents = registry.getInlineComponents();
   const Tag = isHeader ? tableElements.Th : tableElements.Td;
   const tag = isHeader ? "th" : "td";
@@ -713,16 +786,29 @@ const ManagedTableCellView: React.FC<{
   const animCtx = registry.getRenderInlineContext(isFinalized, cell.id);
   const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, tag, animCtx);
   const alignProps = align ? { align } : undefined;
-  const renderElement = () => <Tag {...alignProps}>{content}</Tag>;
-  if (!registry.hasElementFilters()) return renderElement();
-  const filtered = registry.filterElement(
-    { tagName: tag, properties: alignProps ?? {} },
-    { source: "markdown", parentTagName: "tr" },
-    renderElement,
-    () => content,
+  const nativeView = <Tag {...alignProps}>{content}</Tag>;
+  let filteredView: React.ReactNode = nativeView;
+  if (registry.hasElementFilters()) {
+    filteredView = registry.filterElement(
+      { tagName: tag, properties: alignProps ?? {} },
+      { source: "markdown", parentTagName: "tr" },
+      () => nativeView,
+      () => content,
+    );
+  }
+  if (filteredView === null || filteredView === undefined) return null;
+  const preparedView = React.isValidElement(filteredView) ? filteredView : <>{filteredView}</>;
+  return renderManagedTablePart(
+    "table-cell",
+    cell.id,
+    preparedView,
+    store,
+    registry,
+    blockId,
+    generation,
+    getStoreResetVersion(store),
+    isFinalized,
   );
-  if (filtered === null || filtered === undefined) return null;
-  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 
 ManagedTableCellView.displayName = "ManagedTableCellView";
