@@ -9,6 +9,7 @@ import { StreamingMarkdown } from "../src/streaming-markdown";
 import type { StreamingMarkdownHandle, StreamingMarkdownProps } from "../src/streaming-markdown";
 import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
+import { MarkdownRenderer } from "../src/renderer";
 
 const validEngineMode: StreamingMarkdownProps["engine"] = "main";
 // @ts-expect-error The removed engine mode must remain a public type error.
@@ -49,6 +50,26 @@ async function waitForCondition(predicate: () => boolean, message: string): Prom
   while (!predicate()) {
     assert.ok(Date.now() < deadline, message);
     await delay(10);
+  }
+}
+async function withTimeout<T>(
+  promise: Promise<T>,
+  message: string,
+  diagnostics?: readonly string[][],
+): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => {
+          const details = diagnostics ? ` (${diagnostics.map((messages) => messages.join(",")).join(" / ")})` : "";
+          reject(new Error(`${message}${details}`));
+        }, 3000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -409,6 +430,53 @@ async function runAutoWorkerTakeover(): Promise<void> {
 }
 
 await runAutoWorkerTakeover();
+async function runAutoStaticRenderParity(): Promise<void> {
+  const text = `${"x".repeat(4096)}\n\n# Beyond bootstrap\n\nStatic tail.`;
+  const autoRenderer = new MarkdownRenderer({ performance: { batch: "microtask" } });
+  const workerRenderer = new MarkdownRenderer({ performance: { batch: "microtask" } });
+  const autoWorker = createInlineEngineWorker();
+  const worker = createInlineEngineWorker();
+  const autoMessages: string[] = [];
+  const workerMessages: string[] = [];
+  autoWorker.addEventListener("message", (event) => autoMessages.push((event as MessageEvent<WorkerOut>).data.type));
+  worker.addEventListener("message", (event) => workerMessages.push((event as MessageEvent<WorkerOut>).data.type));
+  autoRenderer.attachWorker(autoWorker, { bootstrap: true });
+  workerRenderer.attachWorker(worker);
+  try {
+    await withTimeout(
+      Promise.all([autoRenderer.whenInitialized(), workerRenderer.whenInitialized()]),
+      "auto/worker renderer initialization timed out",
+    );
+    const [autoBlocks, workerBlocks] = await withTimeout(
+      Promise.all([autoRenderer.renderStatic(text), workerRenderer.renderStatic(text)]),
+      "auto/worker renderStatic timed out",
+    );
+    assert.ok(
+      autoBlocks.some((block) => block.payload.raw.includes("# Beyond bootstrap")),
+      "auto renderStatic must resolve with content beyond the bootstrap limit",
+    );
+    assert.deepEqual(
+      autoBlocks.map((block) => [block.type, block.payload.raw]),
+      workerBlocks.map((block) => [block.type, block.payload.raw]),
+    );
+    const [autoFinalization, workerFinalization] = await withTimeout(
+      Promise.all([autoRenderer.finalize(), workerRenderer.finalize()]),
+      "auto/worker finalization timed out",
+      [autoMessages, workerMessages],
+    );
+    assert.equal(autoFinalization.acceptedSourceUnits, 0);
+    assert.equal(autoFinalization.committedSourceUnits, 0);
+    assert.equal(workerFinalization.acceptedSourceUnits, 0);
+    assert.equal(workerFinalization.committedSourceUnits, 0);
+  } finally {
+    autoRenderer.detachWorker();
+    workerRenderer.detachWorker();
+    autoWorker.terminate();
+    worker.terminate();
+  }
+}
+
+await runAutoStaticRenderParity();
 async function runAutoWorkerTakeoverCapacityWaiter(): Promise<void> {
   const window = await setupDom();
   const container = window.document.getElementById("root");
@@ -529,7 +597,7 @@ async function runAutoBootstrapResetFailureIsolation(): Promise<void> {
       () => container.textContent?.includes(trailingMarker) ?? false,
       "replacement trailing content did not commit after a stale takeover failure",
     );
-    assert.equal(takeoverWorkers.length, 2, "the replacement request receives its own takeover lease");
+    assert.equal(takeoverWorkers.length, 1, "the complete auto static replacement does not start a second takeover worker");
     assert.deepEqual(errors, [], "a stale bootstrap projection failure must not report an error for replacement text");
   } finally {
     root.unmount();

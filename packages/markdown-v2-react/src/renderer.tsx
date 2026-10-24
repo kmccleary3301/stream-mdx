@@ -389,9 +389,10 @@ export class MarkdownRenderer implements Renderer {
   private initializeWorker(
     initialContent = "",
     completion: Omit<OwnedInitialization, "owner" | "generation"> = {},
-    options?: { preserveSourceAdmission?: boolean },
+    options?: { preserveSourceAdmission?: boolean; bootstrap?: boolean },
   ): void {
     if (!this.worker) throw new Error("Worker not attached");
+    const bootstrap = options?.bootstrap ?? this.bootstrapMode;
     if (options?.preserveSourceAdmission) {
       const sourceAdmissionOffset = completion.sourceAdmissionOffset ?? this.acceptedSourceUnits;
       this.workerAdmissionSourceOffset = sourceAdmissionOffset;
@@ -441,8 +442,8 @@ export class MarkdownRenderer implements Renderer {
         type: "INIT",
         schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent,
-        prewarmLangs: this.bootstrapMode ? [] : this.config.highlight?.langs || [],
-        ...(this.bootstrapMode ? { bootstrap: true } : {}),
+        prewarmLangs: bootstrap ? [] : this.config.highlight?.langs || [],
+        ...(bootstrap ? { bootstrap: true } : {}),
         docPlugins,
         contentPolicy: this.config.contentPolicy ?? "restricted",
         ...(contentComponents ? { contentComponents } : {}),
@@ -901,14 +902,11 @@ export class MarkdownRenderer implements Renderer {
       this.store.reset([]);
       this.blocks = [];
       if (this.updateCallbacks.length > 0) this.notifyUpdateCallbacks();
-      const initialContent = this.bootstrapMode ? text.slice(0, MAX_AUTO_BOOTSTRAP_UNITS) : text;
-      this.initializeWorker(initialContent, { resolve, reject });
+      this.initializeWorker(text, { resolve, reject }, { bootstrap: false });
       if (this.bootstrapMode) {
-        this.bootstrapOwnerSourceUnits = initialContent.length;
-        this.bootstrapDeferredSource = text.slice(initialContent.length);
-        this.bootstrapSourcePrefix = initialContent;
-        this.requestBootstrapTakeover();
-        this.acceptedSourceUnits = this.bootstrapDeferredSource.length;
+        this.bootstrapOwnerSourceUnits = text.length;
+        this.bootstrapDeferredSource = "";
+        this.bootstrapSourcePrefix = text;
       }
     });
   }
