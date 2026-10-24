@@ -166,47 +166,74 @@ export function useWorkerSession({
       onErrorRef.current?.(reported);
     };
     let takeoverLease: WorkerLease | null = null;
+    let takeoverRequest: object | null = null;
     let removeBootstrapTakeover: (() => void) | null = null;
-    const failTakeover = (lease: WorkerLease | null, cause: unknown) => {
+    const failTakeover = (lease: WorkerLease | null, request: object, cause: unknown) => {
+      if (lease && takeoverLease !== lease) return;
       const error = cause instanceof Error ? cause : new Error(String(cause));
       if (lease) {
-        if (takeoverLease !== lease) return;
+        if (takeoverRequest !== request) return;
         takeoverLease = null;
+        takeoverRequest = null;
         lease.dispose();
       }
-      renderer.failBootstrapTakeover(error);
+      if (!renderer.failBootstrapTakeover(error, request)) return;
       reportError(error);
     };
-    const startBootstrapTakeover = () => {
-      if (cancelled || readyRendererRef.current !== renderer || takeoverLease) return;
+    const startBootstrapTakeover = (request: object) => {
+      if (cancelled || readyRendererRef.current !== renderer) return;
+      if (takeoverLease) {
+        if (takeoverRequest === request) return;
+        takeoverLease.dispose();
+        takeoverLease = null;
+        takeoverRequest = null;
+      }
       const lease = instantiateWorker(workerSource, factories);
       if (!lease) {
-        failTakeover(null, new Error("Unable to create a worker for automatic bootstrap takeover"));
+        failTakeover(null, request, new Error("Unable to create a worker for automatic bootstrap takeover"));
         return;
       }
       takeoverLease = lease;
+      takeoverRequest = request;
       const bootstrapLease = activeInstanceRef.current?.lease;
       void renderer.waitForBootstrapProjection().then(() => {
-        if (cancelled || readyRendererRef.current !== renderer || takeoverLease !== lease) {
-          if (takeoverLease === lease) takeoverLease = null;
+        if (
+          cancelled ||
+          readyRendererRef.current !== renderer ||
+          takeoverLease !== lease ||
+          takeoverRequest !== request
+        ) {
+          if (takeoverLease === lease && takeoverRequest === request) {
+            takeoverLease = null;
+            takeoverRequest = null;
+          }
           lease.dispose();
           return;
         }
         renderer.attachWorker(lease.worker, {
           takeoverSource: renderer.getBootstrapSourceForTakeover(),
           onTakeoverCommitted: () => {
-            if (cancelled || readyRendererRef.current !== renderer) {
-              takeoverLease = null;
+            if (
+              cancelled ||
+              readyRendererRef.current !== renderer ||
+              takeoverLease !== lease ||
+              takeoverRequest !== request
+            ) {
+              if (takeoverLease === lease && takeoverRequest === request) {
+                takeoverLease = null;
+                takeoverRequest = null;
+              }
               lease.dispose();
               return;
             }
             activeInstanceRef.current = { lease, source: workerSource, engine, session, managedWorker };
             takeoverLease = null;
+            takeoverRequest = null;
             if (bootstrapLease !== lease) bootstrapLease?.dispose();
           },
-          onInitializationError: (error) => failTakeover(lease, error),
+          onInitializationError: (error) => failTakeover(lease, request, error),
         });
-      }).catch((error: unknown) => failTakeover(lease, error));
+      }).catch((error: unknown) => failTakeover(lease, request, error));
     };
     const attach = (lease: WorkerLease) => {
       renderer.detachWorker();
@@ -267,6 +294,7 @@ export function useWorkerSession({
       if (takeoverLease) {
         takeoverLease.dispose();
         takeoverLease = null;
+        takeoverRequest = null;
       }
       if (readyRendererRef.current === renderer) readyRendererRef.current = null;
       renderer.detachWorker();

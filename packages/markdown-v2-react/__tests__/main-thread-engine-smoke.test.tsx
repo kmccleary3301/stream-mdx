@@ -468,6 +468,72 @@ await runAutoWorkerTakeoverCapacityWaiter();
 
 
 
+async function runAutoBootstrapResetFailureIsolation(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const root = createRoot(container);
+  const handle = createRef<StreamingMarkdownHandle>();
+  const previousWorker = Object.getOwnPropertyDescriptor(globalThis, "Worker");
+  Object.defineProperty(globalThis, "Worker", {
+    configurable: true,
+    writable: true,
+    value: class {},
+  });
+  const takeoverWorkers: RecordingWorker[] = [];
+  const errors: Error[] = [];
+  const trailingMarker = "Replacement trailing marker.";
+  const replacement = `# Replacement title\n\n${"replacement body ".repeat(500)}\n\n${trailingMarker}`;
+  const workerFactory = () => {
+    const recorder = createRecordingWorker(0);
+    takeoverWorkers.push(recorder);
+    return recorder.worker;
+  };
+  try {
+    root.render(
+      <StreamingMarkdown
+        ref={handle}
+        engine="auto"
+        worker={workerFactory}
+        onError={(error) => errors.push(error)}
+      />,
+    );
+    await waitForCondition(
+      () => handle.current?.getState().workerReady === true,
+      "auto bootstrap worker did not become ready",
+    );
+    handle.current!.append("first bootstrap ".repeat(500));
+    assert.equal(takeoverWorkers.length, 1, "the first overflow starts a takeover lease");
+    assert.deepEqual(takeoverWorkers[0]!.commands, [], "the takeover waits for the first bootstrap projection");
+
+    flushSync(() => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          engine="auto"
+          worker={workerFactory}
+          text={replacement}
+          onError={(error) => errors.push(error)}
+        />,
+      );
+    });
+    await waitForCondition(
+      () => container.textContent?.includes(trailingMarker) ?? false,
+      "replacement trailing content did not commit after a stale takeover failure",
+    );
+    assert.equal(takeoverWorkers.length, 2, "the replacement request receives its own takeover lease");
+    assert.deepEqual(errors, [], "a stale bootstrap projection failure must not report an error for replacement text");
+  } finally {
+    root.unmount();
+    container.remove();
+    if (previousWorker) Object.defineProperty(globalThis, "Worker", previousWorker);
+    else Reflect.deleteProperty(globalThis, "Worker");
+    window.close();
+  }
+}
+
+await runAutoBootstrapResetFailureIsolation();
+
 
 async function runCallbackUpdateDuringStream(): Promise<void> {
   const window = await setupDom();

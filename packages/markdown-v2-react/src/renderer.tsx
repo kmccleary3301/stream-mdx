@@ -233,7 +233,8 @@ export class MarkdownRenderer implements Renderer {
   private bootstrapSourcePrefix = "";
   private bootstrapInitializedSourceUnits = 0;
   private bootstrapTakeoverRequested = false;
-  private bootstrapTakeoverHandler: (() => void) | null = null;
+  private bootstrapTakeoverRequest: object | null = null;
+  private bootstrapTakeoverHandler: ((request: object) => void) | null = null;
   private bootstrapProjectionWaiters = new Set<{
     targetSourceUnits: number;
     resolve(): void;
@@ -583,6 +584,7 @@ export class MarkdownRenderer implements Renderer {
     this.bootstrapInitializedSourceUnits = 0;
     this.bootstrapDeferredSource = "";
     this.bootstrapTakeoverRequested = false;
+    this.bootstrapTakeoverRequest = null;
     this.workerAdmissionSourceOffset = 0;
     this.workerAdmissionBaselineSourceUnits = nextBaselineSourceUnits;
     this.workerAdmittedSourceUnits = nextBaselineSourceUnits;
@@ -608,7 +610,9 @@ export class MarkdownRenderer implements Renderer {
   private requestBootstrapTakeover(): void {
     if (!this.bootstrapMode || this.bootstrapDeferredSource.length === 0 || this.bootstrapTakeoverRequested) return;
     this.bootstrapTakeoverRequested = true;
-    this.bootstrapTakeoverHandler?.();
+    const request = {};
+    this.bootstrapTakeoverRequest = request;
+    this.bootstrapTakeoverHandler?.(request);
   }
 
   private rejectPendingBootstrapFinalization(error: Error): void {
@@ -621,6 +625,7 @@ export class MarkdownRenderer implements Renderer {
 
   private finishBootstrapTakeover(): void {
     this.bootstrapTakeoverRequested = false;
+    this.bootstrapTakeoverRequest = null;
     this.bootstrapSourcePrefix = "";
     this.bootstrapInitializedSourceUnits = 0;
     this.bootstrapDeferredSource = "";
@@ -632,17 +637,19 @@ export class MarkdownRenderer implements Renderer {
     void this.finalize().then(pending.resolve, pending.reject);
   }
 
-  failBootstrapTakeover(error: Error): void {
-    if (!this.bootstrapTakeoverRequested) return;
+  failBootstrapTakeover(error: Error, request: object): boolean {
+    if (!this.bootstrapTakeoverRequested || this.bootstrapTakeoverRequest !== request) return false;
     this.bootstrapTakeoverRequested = false;
+    this.bootstrapTakeoverRequest = null;
     this.failSourceAdmission(error.message);
     this.rejectPendingBootstrapFinalization(error);
     this.settleBootstrapProjectionWaiters(error);
+    return true;
   }
 
-  setBootstrapTakeoverHandler(handler: (() => void) | null): () => void {
+  setBootstrapTakeoverHandler(handler: ((request: object) => void) | null): () => void {
     this.bootstrapTakeoverHandler = handler;
-    if (handler && this.bootstrapTakeoverRequested) handler();
+    if (handler && this.bootstrapTakeoverRequest) handler(this.bootstrapTakeoverRequest);
     return () => {
       if (this.bootstrapTakeoverHandler === handler) this.bootstrapTakeoverHandler = null;
     };
