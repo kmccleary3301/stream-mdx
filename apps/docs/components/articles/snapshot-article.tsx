@@ -2,8 +2,9 @@
 
 import type { Block } from "@stream-mdx/core";
 import { MarkdownBlocksRenderer } from "@stream-mdx/react";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 
-import { MermaidCodePresentation } from "@/components/markdown/docs-code-block";
+const mermaidEngine = createMermaidEngine();
 
 export function SnapshotArticle({ blocks }: { blocks: Block[] }) {
   return (
@@ -13,7 +14,7 @@ export function SnapshotArticle({ blocks }: { blocks: Block[] }) {
     >
       <MarkdownBlocksRenderer
         blocks={blocks}
-        components={{ code: { wrapper: MermaidCodePresentation } }}
+        engines={{ mermaid: mermaidEngine }}
         className="markdown-v2-output"
       />
     </div>

@@ -402,27 +402,19 @@ async function runManagedParagraphOverrideRegression(): Promise<void> {
   const root = createRoot(container);
   const authored = "Before **bold** after";
   let finalizedBlockRaw: string | undefined;
-  const inlineText = (nodes: readonly InlineNode[]): string => nodes.map((node) => {
-    if (node.kind === "text") return node.text;
-    if ("children" in node && Array.isArray(node.children)) return inlineText(node.children);
-    if ("text" in node && typeof node.text === "string") return node.text;
-    return "";
-  }).join("");
   const componentRegistry = new ComponentRegistry();
   componentRegistry.setNodePresentations({
     "inline:strong": { wrapper: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children) },
     paragraph: {
-      wrapper: ({ block, children }) => {
-        const inlines = block?.payload.inline ?? [];
-        const raw = typeof block?.payload.raw === "string" ? block.payload.raw : undefined;
+      wrapper: ({ actions, children, metadata }) => {
+        const raw = actions.readSource();
         finalizedBlockRaw = raw;
         return createElement(
           "section",
           {
             "data-custom-paragraph": "",
-            "data-finalized-managed-block": block?.id,
+            "data-finalized-managed-block": metadata.id,
             "data-source": raw,
-            "data-inline-source": inlineText(inlines),
           },
           children,
         );
@@ -440,7 +432,6 @@ async function runManagedParagraphOverrideRegression(): Promise<void> {
     const paragraph = container.querySelector("section[data-custom-paragraph]");
     assert.ok(paragraph, "the custom paragraph consumer must mount");
     assert.equal(paragraph.getAttribute("data-source"), authored, "custom paragraph raw must update with managed source");
-    assert.equal(paragraph.getAttribute("data-inline-source"), "Before bold after", "custom paragraph inlines must reflect prepared meaning");
     assert.equal(paragraph.textContent, "Before bold after", "custom wrapper must preserve native prepared children");
     assert.equal(paragraph.querySelectorAll('strong[data-managed-inline="strong"]').length, 1, "native prepared children must appear exactly once");
     assert.equal(finalizedBlockRaw, authored, "finalized paragraph presentation must receive the source-backed managed paragraph");

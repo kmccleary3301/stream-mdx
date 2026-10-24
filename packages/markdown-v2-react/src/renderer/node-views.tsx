@@ -110,6 +110,9 @@ export function renderNodePresentation(
   const blockLanguage = block?.payload.meta?.lang;
   const language = codeMetadata?.language ??
     (typeof blockLanguage === "string" ? blockLanguage : undefined);
+  const linkReferences = paragraphState === undefined
+    ? block?.payload.meta?.linkReferences
+    : paragraphState.source.linkReferences;
   const metadata: NodeViewMetadata = Object.freeze({
     id,
     type,
@@ -121,26 +124,43 @@ export function renderNodePresentation(
       columnCount: tableState.header.cells.length,
       align: tableState.header.align,
     }),
+    ...(linkReferences === undefined ? {} : { linkReferences }),
   });
-  const readSource = (): string | null => {
-    if (codeHandle) return codeHandle.readSource();
-    if (tableState) return store.getTableBlock(id)?.sourceSnapshot.materialize() ?? block?.payload.raw ?? "";
-    if (paragraphState) {
-      if (store.getParagraphBlock(id) !== paragraphState) return null;
-      const raw = store.getParagraphColdBlock(id)?.payload.raw;
-      return typeof raw === "string" ? raw : null;
+  const sourceBlockEpoch = store.getNode(id)?.blockEpoch;
+  const readSource = (): string => {
+    const currentNode = store.getNode(id);
+    if (
+      !currentNode ||
+      sourceBlockEpoch === undefined ||
+      currentNode.type !== type ||
+      currentNode.blockEpoch !== sourceBlockEpoch
+    ) {
+      throw new Error("Cannot read source from a stale or removed node");
     }
-    const raw = block?.payload.raw;
-    return typeof raw === "string" ? raw : "";
+    if (codeHandle) return codeHandle.readSource();
+    const currentTableState = store.getTableBlock(id);
+    if (currentTableState) return currentTableState.sourceSnapshot.materialize();
+    const paragraphSource = store.getParagraphColdBlock(id)?.payload.raw;
+    if (typeof paragraphSource === "string") return paragraphSource;
+    const raw = currentNode.block?.payload.raw;
+    if (typeof raw === "string") return raw;
+    throw new Error("Node has no authored source");
   };
   const actions: NodeViewActions = Object.freeze({
+    readSource,
     copy: () => {
-      const source = readSource();
-      return source === null ? Promise.resolve(false) : copyToClipboard(source);
+      try {
+        return copyToClipboard(readSource());
+      } catch {
+        return Promise.resolve(false);
+      }
     },
     download: () => {
-      const source = readSource();
-      if (source !== null) downloadFile(source, `${type}.txt`);
+      try {
+        downloadFile(readSource(), `${type}.txt`);
+      } catch {
+        // Stale or synthetic nodes have no source to download.
+      }
     },
   });
   return React.createElement(presentation.wrapper, { children, metadata, actions });

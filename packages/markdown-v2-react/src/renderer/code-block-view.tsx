@@ -21,6 +21,7 @@ import { getStoreResetVersion } from "./store-reset-version";
 import { useDeferredRender } from "./use-deferred-render";
 import { useVirtualizedCode } from "./virtualized-code";
 import { mergeNodePresentationProps } from "./node-presentations";
+import type { NodeViewActions, NodeViewMetadata } from "../types";
 
 type CodeBlockViewCounters = {
   recordRecordSlotsAllocated?(count: number, stage: "view"): void;
@@ -554,10 +555,39 @@ export const CodeBlockView: React.FC<{
   };
 
 
-  const presentNativeView = (nativeView: React.ReactNode) =>
-    renderPresentation && (!registry.getNodePresentation("code") || shouldRenderDeferred)
-      ? renderPresentation(nativeView)
+  const mermaidEngine = registry.getMermaidEngine();
+  const mermaidMetadata: NodeViewMetadata = Object.freeze({
+    id: blockId,
+    type: "code",
+    isFinalized: blockIsFinalized,
+    ...(lang === undefined ? {} : { language: lang }),
+    lineCount,
+  });
+  const mermaidActions: NodeViewActions = Object.freeze({
+    readSource: () => {
+      const source = readCurrentCodeSource();
+      if (source === null) {
+        throw new Error("Code node handle no longer refers to the current code document");
+      }
+      return source;
+    },
+    copy: copyCurrentCode,
+    download: downloadCurrentCode,
+  });
+  const presentNativeView = (nativeView: React.ReactNode): React.ReactNode => {
+    const source = lang?.toLowerCase() === "mermaid" ? readCurrentCodeSource() : null;
+    const withMermaid = mermaidEngine && source !== null
+      ? React.createElement(mermaidEngine.view, {
+          source,
+          children: nativeView,
+          metadata: mermaidMetadata,
+          actions: mermaidActions,
+        })
       : nativeView;
+    return renderPresentation && (!registry.getNodePresentation("code") || shouldRenderDeferred)
+      ? renderPresentation(withMermaid)
+      : withMermaid;
+  };
   if (!registry.hasElementFilters()) {
     const nativeView = withFullContentToggle(
       React.isValidElement(elementToFilter) ? elementToFilter : <>{elementToFilter}</>,

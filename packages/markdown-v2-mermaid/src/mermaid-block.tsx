@@ -1,5 +1,6 @@
 import type { CSSProperties, ComponentType, FC, ReactNode } from "react";
 import React from "react";
+import type { MermaidEngine } from "@stream-mdx/react";
 
 type MermaidBindingResult = void | (() => void);
 type MermaidBinding = (element: Element) => MermaidBindingResult;
@@ -420,6 +421,21 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
   MermaidBlockInstance.displayName = "MermaidBlock";
   MermaidBlockInstance.defer = true;
   return MermaidBlockInstance;
+}
+/** Adapts the existing Mermaid block owner to the native code-owner engine contract. */
+export function createMermaidEngine(options: CreateMermaidBlockOptions = {}): MermaidEngine {
+  const Block = createMermaidBlock(options);
+  const view: MermaidEngine["view"] = ({ source, children, metadata, actions }) =>
+    React.createElement(Block, {
+      code: source,
+      renderCode: children,
+      language: metadata.language ?? "mermaid",
+      blockId: metadata.id,
+      isFinalized: metadata.isFinalized,
+      controls: { copy: true },
+      copy: actions.copy,
+    });
+  return Object.freeze({ id: "stream-mdx-mermaid", view });
 }
 
 export const MermaidBlock: MermaidBlockComponent = createMermaidBlock();

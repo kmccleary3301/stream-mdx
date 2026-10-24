@@ -1,6 +1,12 @@
 import type { PluggableList } from "unified";
-import type { Block, UrlTransform } from "@stream-mdx/core";
+import type { UrlTransform } from "@stream-mdx/core";
 import type { NodePresentations } from "@stream-mdx/react";
+
+export interface UnifiedBlockErrorContext {
+  readonly id: string;
+  readonly type: string;
+  readonly finalized: boolean;
+}
 
 export interface UnifiedRendererOptions {
   remarkPlugins?: PluggableList;
@@ -28,7 +34,7 @@ export interface UnifiedRendererOptions {
    * Explicit callback invoked when a unified plugin encounters an error.
    * When provided, errors are forwarded here instead of only being logged.
    */
-  onError?: (error: Error, block: Block) => void;
+  onError?: (error: Error, context: UnifiedBlockErrorContext) => void;
   urlTransform?: UrlTransform;
 }
 

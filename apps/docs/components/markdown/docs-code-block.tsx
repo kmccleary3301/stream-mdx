@@ -1,18 +1,19 @@
 "use client";
 
-import type { NodeViewProps } from "@stream-mdx/react";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import type { Block } from "@stream-mdx/core";
+import type { ReactNode } from "react";
+import type { NodeViewMetadata } from "@stream-mdx/react";
 
 import { CopyButton } from "@/components/copy-button";
 import { cn } from "@/lib/utils";
-type DocsCodeBlockProps = Pick<NodeViewProps, "children" | "metadata" | "block">;
+type DocsCodeBlockProps = { children: ReactNode; metadata: NodeViewMetadata; block: Block };
 
 function normalizeLanguage(language: unknown): string {
   if (typeof language === "string" && language.trim().length > 0) return language.trim();
   return "text";
 }
 
-function resolveCodeText(block: NodeViewProps["block"]): string | null {
+function resolveCodeText(block: Block): string | null {
   const code = block?.payload.meta?.code;
   if (typeof code === "string" && code.trim().length > 0) return code;
   const raw = block?.payload.raw;
@@ -42,17 +43,3 @@ export function DocsCodeBlock({ children, metadata, block }: DocsCodeBlockProps)
   );
 }
 
-export function MermaidCodePresentation({ children, metadata, actions, block }: NodeViewProps) {
-  if (metadata.language?.toLowerCase() !== "mermaid") return children;
-  const code = block?.payload.meta?.code;
-  return (
-    <MermaidBlock
-      code={typeof code === "string" ? code : ""}
-      renderCode={children}
-      language={metadata.language ?? "mermaid"}
-      blockId={metadata.id}
-      controls={{ copy: true }}
-      copy={actions.copy}
-    />
-  );
-}

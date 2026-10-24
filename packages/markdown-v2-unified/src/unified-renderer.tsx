@@ -8,7 +8,7 @@ import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { defaultUrlTransform, isForbiddenAttribute, type Block, type BlockResolvedLinkReference, type UrlTransform } from "@stream-mdx/core";
 import { ComponentRegistry, createRendererStore, renderNodePresentation, type NodePresentations, type NodeViewProps } from "@stream-mdx/react";
-import type { UnifiedRenderer, UnifiedRendererOptions } from "./types";
+import type { UnifiedBlockErrorContext, UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
 function sanitizeHastUrls(node: unknown, transform: UrlTransform): void {
   if (!node || typeof node !== "object") return;
@@ -176,7 +176,7 @@ export function formatLinkDefinitions(refs: readonly BlockResolvedLinkReference[
 export function getOrCreateJob(
   cacheKey: string,
   input: string,
-  block: Block,
+  context: UnifiedBlockErrorContext,
   processor: UnifiedProcessor,
   options: UnifiedRendererOptions,
   cache: BoundedLruCache<string, React.ReactNode>,
@@ -205,7 +205,7 @@ export function getOrCreateJob(
     inflightJobs.delete(cacheKey);
     resolve(outcome);
     if (options.onError) {
-      options.onError(error, block);
+      options.onError(error, context);
     } else {
       console.error("Unified markdown parse failed:", error);
     }
@@ -225,7 +225,7 @@ export function getOrCreateJob(
       inflightJobs.delete(cacheKey);
       resolve(outcome);
       if (options.onError) {
-        options.onError(error, block);
+        options.onError(error, context);
       } else {
         console.error("Unified block transformation failed:", error);
       }
@@ -251,7 +251,7 @@ export function getOrCreateJob(
       inflightJobs.delete(cacheKey);
       resolve(outcome);
       if (options.onError) {
-        options.onError(error, block);
+        options.onError(error, context);
       } else {
         console.error("Unified JSX runtime conversion failed:", error);
       }
@@ -262,7 +262,11 @@ export function getOrCreateJob(
 }
 
 interface UnifiedBlockItemProps {
-  block: Block;
+  id: string;
+  type: string;
+  finalized: boolean;
+  source: string;
+  linkReferences?: readonly BlockResolvedLinkReference[];
   element: React.ReactElement;
   processor: UnifiedProcessor;
   options: UnifiedRendererOptions;
@@ -272,7 +276,11 @@ interface UnifiedBlockItemProps {
 }
 
 export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
-  block,
+  id,
+  type,
+  finalized,
+  source,
+  linkReferences,
   element,
   processor,
   options,
@@ -280,14 +288,24 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
   inflightJobs,
   registry,
 }) => {
+  const block = useMemo<Block>(() => ({
+    id,
+    type,
+    isFinalized: finalized,
+    payload: {
+      raw: source,
+      ...(linkReferences === undefined
+        ? {}
+        : { meta: { linkReferences: linkReferences as BlockResolvedLinkReference[] } }),
+    },
+  }), [finalized, id, linkReferences, source, type]);
   const presentationStore = useMemo(
     () => registry === null ? null : createRendererStore([block]),
     [block, registry],
   );
-  const source = typeof block.payload.raw === "string" ? block.payload.raw : "";
-  const metaRefs = block.payload.meta?.linkReferences;
+  const metaRefs = linkReferences;
   const serializedRefs = metaRefs && metaRefs.length > 0 ? JSON.stringify(metaRefs) : "";
-  const cacheKey = `${block.id}::${block.type}::${source}::${serializedRefs}`;
+  const cacheKey = `${id}::${type}::${source}::${serializedRefs}`;
 
   const cached = cache.get(cacheKey);
 
@@ -298,8 +316,8 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
     }
     const linkDefs = metaRefs && metaRefs.length > 0 ? formatLinkDefinitions(metaRefs) : "";
     const input = linkDefs ? `${linkDefs}\n\n${source}` : source;
-    return getOrCreateJob(cacheKey, input, block, processor, options, cache, inflightJobs);
-  }, [cacheKey, cached, block, processor, options, cache, inflightJobs, metaRefs, source]);
+    return getOrCreateJob(cacheKey, input, { id, type, finalized }, processor, options, cache, inflightJobs);
+  }, [cacheKey, cached, block, processor, options, cache, inflightJobs, metaRefs, source, finalized, id, type]);
 
   // Keyed async state: if cacheKey changes while an async job is pending,
   // asyncState.key !== cacheKey, so it immediately displays the new default element!
@@ -361,17 +379,19 @@ export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): Uni
     ? Object.fromEntries(options.blockTypes.map((type) => [type, true]))
     : DEFAULT_ROUTED_BLOCK_TYPES;
   const presentationTypes = options.blockTypes ?? Object.keys(DEFAULT_ROUTED_BLOCK_TYPES);
-  const renderUnifiedBlock: React.FC<NodeViewProps> = ({ block, children }) => {
-    if (!block || !block.isFinalized || !routedTypeMap[block.type]) {
-      return <>{children}</>;
-    }
+  const renderUnifiedBlock: React.FC<NodeViewProps> = ({ metadata, actions, children }) => {
+    if (!metadata.isFinalized || !routedTypeMap[metadata.type]) return <>{children}</>;
     const element = React.isValidElement(children)
       ? children
       : <>{children}</>;
     return (
       <UnifiedBlockItem
-        key={block.id}
-        block={block}
+        key={metadata.id}
+        id={metadata.id}
+        type={metadata.type}
+        finalized={metadata.isFinalized}
+        source={actions.readSource()}
+        linkReferences={metadata.linkReferences}
         element={element}
         processor={processor}
         options={options}

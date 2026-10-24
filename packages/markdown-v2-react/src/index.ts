@@ -48,6 +48,8 @@ export type {
   ElementFilterOptions,
   MathEngine,
   MathEngineOutput,
+  MermaidEngine,
+  MermaidEngineProps,
   Renderer,
   RendererConfig,
   SyntaxRuleSpec,
