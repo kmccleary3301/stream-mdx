@@ -69,7 +69,7 @@ If your CSP forbids `unsafe-eval`, keep full MDX disabled. Use the restricted co
 
 ## Artifact-like code fences
 
-Fences labeled `artifact` or `html-artifact` render as ordinary code unless the host supplies a `codeRenderers` entry. StreamMDX no longer provides a default artifact frame or iframe sandbox. A custom renderer is application code; if it turns input into active content, the host must define and review that boundary. HTML sanitization, worker parsing, and `linkSafety` do not sandbox custom renderers or mediate every navigation.
+Fences labeled `artifact` or `html-artifact` render as ordinary code unless `components.code.wrapper` explicitly routes them elsewhere. StreamMDX no longer provides a default artifact frame or iframe sandbox. A custom presentation that activates source content is application code; the host must define and review that boundary.
 
 ## Reporting security issues
 

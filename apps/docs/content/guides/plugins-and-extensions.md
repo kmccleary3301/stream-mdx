@@ -51,32 +51,58 @@ serveMarkdownWorker({
 
 ## Mermaid diagrams
 
-Mermaid is an optional addon that turns ```mermaid code fences into diagrams. It does not change the parser; it replaces the code block renderer for `mermaid` fences.
+Mermaid is an optional addon that turns ```mermaid code fences into diagrams. A `components.code.wrapper` presentation routes Mermaid blocks and returns the prepared native code children for other languages:
 
 ```tsx
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 
-<StreamingMarkdown
-  text={content}
-  codeRenderers={{ mermaid: MermaidBlock }}
-/>
+function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "mermaid") return children;
+  const code = block?.payload.meta?.code;
+  return (
+    <MermaidBlock
+      code={typeof code === "string" ? code : ""}
+      renderCode={children}
+      language={metadata.language ?? "mermaid"}
+      blockId={metadata.id}
+      controls={{ copy: true }}
+      copy={actions.copy}
+    />
+  );
+}
+
+<StreamingMarkdown text={content} components={{ code: { wrapper: MermaidPresentation } }} />
 ```
 
-## Code fence renderers
+## Code presentations
 
-Register a custom renderer with `codeRenderers` for any fence language. Mermaid is available as an optional addon:
+Use a code wrapper to route custom languages while leaving every other block on the native rendering path:
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 
-<StreamingMarkdown
-  text={content}
-  codeRenderers={{
-    mermaid: MermaidBlock,
-    custom: ({ renderCode }) => <section>{renderCode}</section>,
-  }}
-/>
+function CodePresentation({ block, children, metadata, actions }: NodeViewProps) {
+  const language = metadata.language?.toLowerCase();
+  const code = block?.payload.meta?.code;
+  if (language === "mermaid") {
+    return (
+      <MermaidBlock
+        code={typeof code === "string" ? code : ""}
+        renderCode={children}
+        language={metadata.language ?? "mermaid"}
+        blockId={metadata.id}
+        controls={{ copy: true }}
+        copy={actions.copy}
+      />
+    );
+  }
+  if (language === "custom") return <section>{children}</section>;
+  return children;
+}
+
+<StreamingMarkdown text={content} components={{ code: { wrapper: CodePresentation } }} />
 ```
 
 Fences labeled `artifact` or `html-artifact` remain code unless the host provides a renderer. StreamMDX has no built-in artifact frame or sandbox. A custom renderer that activates source content needs a host-owned security boundary.
@@ -98,13 +124,13 @@ import { StreamingMarkdown } from "stream-mdx";
 import { createUnifiedRenderer } from "@stream-mdx/unified";
 import rehypeSlug from "rehype-slug";
 
-const unifiedRenderer = createUnifiedRenderer({
+const unifiedComponents = createUnifiedRenderer({
   rehypePlugins: [rehypeSlug],
 });
 
 <StreamingMarkdown
   text={content}
-  blockRenderer={unifiedRenderer}
+  components={unifiedComponents}
 />
 ```
 
@@ -112,7 +138,7 @@ Both synchronous and asynchronous remark/rehype plugins are supported. Synchrono
 
 ## Custom regex patterns
 
-Regex patterns typically live in a custom worker bundle. If you only need rendering changes (no parsing), use `components` and `inlineComponents`.
+Regex patterns typically live in a custom worker bundle. For rendering-only changes, use `components` with block/inline presentation keys such as `"code"` and `"extension:citation"`.
 
 ### Example: citation syntax
 

@@ -48,7 +48,7 @@ StreamMDX features below are default off unless stated, so default rendering is 
 | Code/table/Mermaid copy and download controls | `controls`, `controlsComponent`, `labels` | No `icons` or `prefix` customization props; replace the bar through `controlsComponent`. |
 | Animated streaming text | `animated` (fade/blur/slide, stagger, reduced-motion CSS) | Static/SSR output is never animated. |
 | Element filtering | `allowedElements`, `disallowedElements`, `allowElement`, `unwrapDisallowed`, `disableAutolinkProtocols` | Applied at render time across markdown and raw HTML. |
-| Custom code renderers | `codeRenderers` with case-insensitive keys and `aliases` | |
+| Custom code presentations | `components.code.wrapper`, routed by `metadata.language` | |
 | URL policy | Default denylist plus `urlTransform` | |
 | Shiki themes | Configurable light/dark themes | |
 | remark/rehype plugins | Optional adapter on finalized blocks | Streaming (non-finalized) blocks do not run remark/rehype. |

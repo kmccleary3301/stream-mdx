@@ -118,37 +118,39 @@ The explicit import map resolves authored specifiers only to supplied host bindi
 
 ---
 
-## 5) Tables (Shadcn wrappers)
+## 5) Table presentations
 
-Tables are rendered via the table “elements” map, not by overriding raw HTML tags:
+Tables use semantic presentation keys instead of a separate element map. Wrap the native table with `components.table` and style rows or cells with `components["table-row"]` and `components["table-cell"]`.
 
 ```tsx
-import { StreamingMarkdown } from "stream-mdx";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 
-const tableElements = {
-  Table,
-  Thead: TableHeader,
-  Tbody: TableBody,
-  Tr: TableRow,
-  Th: TableHead,
-  Td: TableCell,
+const tablePresentations = {
+  table: {
+    wrapper: ({ children }: NodeViewProps) => (
+      <div className="my-4 overflow-x-auto rounded-md border">{children}</div>
+    ),
+  },
+  "table-row": {
+    props: { className: "border-b last:border-0" },
+  },
+  "table-cell": {
+    props: { className: "px-3 py-2 text-left" },
+  },
 };
 
-<StreamingMarkdown text={text} tableElements={tableElements} />;
+<StreamingMarkdown text={text} components={tablePresentations} />;
 ```
 
 ---
 
 ## 6) “Custom plugins” (custom syntax)
 
-Custom syntax (citations, mentions, bespoke tags) is a **worker-side concern**. The default hosted worker bundle only knows about built-in domains.
+Use serializable `syntax` rules for supported inline patterns. Custom tokenizers and document plugins require a custom worker bundle; the default hosted worker only includes built-in domains.
 
-The recommended approach is:
-
-1. Build a custom worker bundle that registers your tokenizers/matchers.
-2. Host it and pass it via the `worker` prop.
-3. Render any emitted nodes via `inlineComponents` / `components`.
+1. Add supported inline rules through `syntax`, or register custom tokenizers and document plugins in a custom worker.
+2. Host the custom worker bundle and pass it via the `worker` prop.
+3. Render emitted inline extension nodes through `components["extension:<name>"]`, using a wrapper or headless view.
 
 If you control the worker bundle, plugin primitives live under `@stream-mdx/plugins/document` (and native extensions via `docs/PLUGIN_ABI.md`).
 
@@ -169,6 +171,6 @@ Quick sanity check:
 
 - **MDX renders as restricted content**: `contentPolicy` defaults to `"restricted"` and does not evaluate authored expressions. Register native source components with `defineContentComponent`; full MDX requires `engines.mdx` from `createTrustedMdxEngine`, trusted input, an explicit import map, and CSP permission for `unsafe-eval`.
 - **Worker fails under strict CSP**: host the worker bundle and use `worker="/workers/markdown-worker.js"` (avoid `blob:`).
-- **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes).
+- **Tables render as plain HTML**: style native tables with `components.table`, `components["table-row"]`, and `components["table-cell"]`, or ensure your CSS covers the default table classes.
 - **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps.
 

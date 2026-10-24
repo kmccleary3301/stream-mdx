@@ -58,7 +58,7 @@ Enable only what your route needs:
 
 - `html`, `tables`, `math`, `mdx`, `formatAnticipation`
 - `@stream-mdx/mermaid` for Mermaid blocks
-- Design-system overrides via `htmlElements` and `tableElements`
+- Design-system overrides via `components.table` wrappers and `components["html:<tag>"]`
 
 ## 6) Plugins
 
