@@ -727,13 +727,13 @@ function main() {
   console.log(`[pack-smoke] tmp: ${tmpRoot}`);
 
   run("npm", ["-w", "@stream-mdx/core", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
+  run("npm", ["-w", "@stream-mdx/protocol", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/plugins", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/worker", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/react", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/mermaid", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/unified", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/theme-tailwind", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
-  run("npm", ["-w", "@stream-mdx/protocol", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/tui", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "stream-mdx", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
 
