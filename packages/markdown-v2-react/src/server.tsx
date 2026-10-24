@@ -18,6 +18,7 @@ export type {
 } from "./components/content-components";
 export { TrustedMdxServerRegionProvider } from "./trusted-mdx/server-regions";
 export { createRendererStore } from "./renderer/store";
+export { NativeNodeView } from "./renderer/node-views";
 export { defaultUrlTransform } from "@stream-mdx/core";
 export { STREAM_MDX_ANIMATION_CSS, DEFAULT_ANIMATED_OPTIONS } from "./animation";
 export type {

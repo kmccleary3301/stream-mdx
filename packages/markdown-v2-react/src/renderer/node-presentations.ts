@@ -9,6 +9,9 @@ import type {
   NodePresentations,
   PresentationProps,
 } from "../types";
+import type { ComponentRegistry } from "../components";
+import type { RendererStore } from "./store";
+import { NodeViewRenderContext } from "./node-view-context";
 
 export interface PresentationRenderContext<K extends NodePresentationKey> {
   readonly key: React.Key;
@@ -62,6 +65,8 @@ export function renderTablePartPresentation<K extends NativeTablePartPresentatio
     readonly isFinalized: boolean;
     readonly actions: NodeViewActions;
     readonly handle?: NodeHandle;
+    readonly store: RendererStore;
+    readonly registry: ComponentRegistry;
   },
 ): React.ReactNode {
   if (!presentation) return nativeView;
@@ -71,12 +76,24 @@ export function renderTablePartPresentation<K extends NativeTablePartPresentatio
     type: context.type,
     isFinalized: context.isFinalized,
   });
-  return renderPresentedNode(presentation, nativeView, {
+  const rendered = renderPresentedNode(presentation, nativeView, {
     key: context.id,
     metadata,
     actions: context.actions,
     viewProps: (context.handle ? { handle: context.handle } : {}) as HeadlessNodeViewProps<K>,
   }, true);
+  if ("view" in presentation && presentation.view && context.handle) {
+    return React.createElement(NodeViewRenderContext.Provider, {
+      value: {
+        store: context.store,
+        registry: context.registry,
+        blockId: context.id,
+        handle: context.handle,
+        nativeTablePart: nativeView,
+      },
+    }, rendered);
+  }
+  return rendered;
 }
 
 

@@ -42,6 +42,7 @@ import {
 import { getStoreResetVersion } from "./store-reset-version";
 import { NativeCodeViewContext } from "./code-highlight-context";
 import { mergeNodePresentationProps, renderTablePartPresentation, type NativeTablePartPresentationKey } from "./node-presentations";
+import { NodeViewRenderContext, type NodeViewHandle } from "./node-view-context";
 
 const HeadlessNativeCodeView: React.FC<{
   blockId: string;
@@ -55,13 +56,6 @@ const HeadlessNativeCodeView: React.FC<{
     </NativeCodeViewContext.Provider>
   );
 };
-type NodeViewHandle = NodeHandle | CodeNodeHandle | TableNodeHandle;
-const NodeViewRenderContext = React.createContext<{
-  readonly store: RendererStore;
-  readonly registry: ComponentRegistry;
-  readonly blockId: string;
-  readonly handle: NodeViewHandle;
-} | null>(null);
 type NodePresentationRenderer = (nativeView: React.ReactNode) => React.ReactNode;
 function applyNativePresentationProps(
   nativeView: React.ReactNode,
@@ -230,6 +224,8 @@ function renderLegacyTablePart<K extends NativeTablePartPresentationKey>(
     type: key,
     isFinalized,
     actions,
+    store,
+    registry,
     handle: store.getNodeHandle(id),
   });
 }
@@ -569,6 +565,7 @@ export const NativeNodeView: React.FC<{ readonly handle: NodeViewHandle }> = ({ 
       ? context.store.getCodeNodeHandle(blockId)
       : context.store.getTableNodeHandle(blockId);
   if (currentHandle !== handle) return null;
+  if (context.nativeTablePart !== undefined) return context.nativeTablePart;
   return (
     <BlockNodeRenderer
       store={context.store}
