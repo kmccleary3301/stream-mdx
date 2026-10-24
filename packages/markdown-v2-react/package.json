@@ -121,12 +121,13 @@
     "@stream-mdx/worker": "1.0.0"
   },
   "devDependencies": {
-    "jsdom": "^26.0.0"
+    "jsdom": "^26.0.0",
+    "postcss": "^8.4.31"
   },
   "peerDependencies": {
+    "katex": "^0.16.0",
     "react": ">=18.2.0",
-    "react-dom": ">=18.2.0",
-    "katex": "^0.16.0"
+    "react-dom": ">=18.2.0"
   },
   "peerDependenciesMeta": {
     "katex": {

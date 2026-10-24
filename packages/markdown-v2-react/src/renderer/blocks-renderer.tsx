@@ -18,6 +18,7 @@ export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
   codeRenderers?: Record<string, CodeFenceRenderer>;
   className?: string;
   style?: React.CSSProperties;
+  colorScheme?: "light" | "dark" | "system";
   store?: RendererStore;
   blockRenderer?: BlockRendererOverride;
   urlTransform?: UrlTransform;
@@ -59,6 +60,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     className = "markdown-renderer",
     style,
     store,
+    colorScheme,
   }) => {
     // Props override the registry; a prop removed after being set reverts the registry,
     // while overrides configured directly on a caller-provided registry stay untouched.
@@ -131,7 +133,11 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     return React.createElement(
       "div",
       {
-        className,
+        "data-stream-mdx": "",
+        "data-color-scheme": colorScheme,
+        className: className
+          ? `${className} markdown-v2-output not-prose`
+          : "markdown-v2-output not-prose",
         style: { contain: "content", ...(style ?? {}) }, // CSS containment for performance
       },
       React.createElement(

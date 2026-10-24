@@ -164,6 +164,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   prewarmLangs?: string[];
   features?: StreamingFeatureFlags;
   themes?: { light: string; dark: string };
+  colorScheme?: "light" | "dark" | "system";
   components?: Partial<BlockComponents> | Readonly<{ code: CodeNodePresentation }>;
   tableElements?: Partial<TableElements>;
   htmlElements?: Partial<HtmlElements>;
@@ -262,6 +263,7 @@ function StreamingMarkdownComponent(
     prewarmLangs = [],
     features = {},
     themes,
+    colorScheme,
     components,
     tableElements,
     htmlElements,
@@ -1023,6 +1025,7 @@ function StreamingMarkdownComponent(
       unwrapDisallowed={unwrapDisallowed}
       disableAutolinkProtocols={disableAutolinkProtocols}
       className={resolvedClassName}
+      colorScheme={colorScheme}
       style={resolvedStyle}
       store={frameStore}
     />
