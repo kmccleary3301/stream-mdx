@@ -454,6 +454,29 @@ function TableView({ handle }: { handle: TableNodeHandle }) {
 
 `useTableRows` takes a zero-based half-open `{ from, to }` range. `useTableBlock` exposes current table metadata and its stable header; row consumers are notified only when records in their requested range change.
 
+### Explicit preview slots
+
+`PreviewSlot` is an ordinary node view, not a renderer option or an execution feature. A registered view can keep the prepared native node as an inert fallback:
+
+```tsx
+import type { CodeNodeHandle } from "@stream-mdx/core";
+import { NativeNodeView, PreviewSlot, StreamingMarkdown } from "@stream-mdx/react";
+
+function CodePreview({ handle }: { handle: CodeNodeHandle }) {
+  return (
+    <PreviewSlot handle={handle}>
+      <NativeNodeView handle={handle} />
+    </PreviewSlot>
+  );
+}
+
+<StreamingMarkdown components={{ code: { view: CodePreview } }} />;
+```
+
+Without a runtime, the slot wraps `children` in `data-stream-mdx-preview-slot` with `data-preview-runtime="none"`; it does not execute or interpret the source. A host can pass an explicit `PreviewRuntime` to render its `view`, which receives the `NodeRevisionFeed`, current `NodeRevisionSnapshot`, and native `fallback`.
+
+`useNodeRevisionFeed(handle)` returns `{ feed, snapshot }`. Snapshots are frozen and keep their identity until `revision` or `isFinalized` changes. `feed.readSource()` is an explicit cold read, not part of subscription or rendering. Code handles use their generation-bound source reader; other node handles use the presentation's store-backed source. Reads from an obsolete generation throw the existing stale-handle error. This API provides neither a compiler nor a sandbox: hosts remain responsible for authorizing and isolating any runtime they install.
+
 ### Artifact-like code fences
 
 Fences labeled `artifact` or `html-artifact` render as ordinary code unless a `components.code.wrapper` explicitly routes them elsewhere. StreamMDX does not ship a default artifact iframe or sandbox. A custom presentation is application code; if it turns source into active content, the host owns its isolation and security policy.

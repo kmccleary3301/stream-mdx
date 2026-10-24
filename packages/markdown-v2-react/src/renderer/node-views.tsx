@@ -1,6 +1,6 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import { normalizeBlockquoteText, PATCH_ROOT_ID, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
+import { normalizeBlockquoteText, PATCH_ROOT_ID, type Block, type HtmlTreeNode, type InlineNode, type ManagedTableViewState, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { CodeNodeHandle, TableNodeHandle } from "@stream-mdx/core";
 import type { HeadlessNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, PresentationProps, TableElements } from "../types";
@@ -62,6 +62,68 @@ const NodeViewRenderContext = React.createContext<{
   readonly blockId: string;
   readonly handle: NodeViewHandle;
 } | null>(null);
+function readPresentationSource(
+  store: RendererStore,
+  id: string,
+  type: NodePresentationKey,
+  sourceBlockEpoch: number | undefined,
+  codeHandle: CodeNodeHandle | undefined,
+  tableState: ManagedTableViewState | undefined,
+  tableResetVersion: number | undefined,
+): string {
+  const currentNode = store.getNode(id);
+  if (
+    !currentNode ||
+    sourceBlockEpoch === undefined ||
+    currentNode.type !== type ||
+    currentNode.blockEpoch !== sourceBlockEpoch
+  ) {
+    throw new Error("Cannot read source from a stale or removed node");
+  }
+  if (codeHandle) return codeHandle.readSource();
+  if (tableState) {
+    const current = store.getTableBlock(id);
+    if (
+      tableResetVersion === undefined ||
+      getStoreResetVersion(store) !== tableResetVersion ||
+      !current ||
+      current.source.generation !== tableState.source.generation
+    ) {
+      throw new Error("Table content belongs to a replaced or disposed owner");
+    }
+    return current.sourceSnapshot.materialize();
+  }
+  const paragraphSource = store.getParagraphColdBlock(id)?.payload.raw;
+  if (typeof paragraphSource === "string") return paragraphSource;
+  const raw = currentNode.block?.payload.raw;
+  if (typeof raw === "string") return raw;
+  throw new Error("Node has no authored source");
+}
+
+export function useNodePresentationSourceReader(handle: NodeHandle | CodeNodeHandle): () => string {
+  const context = React.useContext(NodeViewRenderContext);
+  const store = context?.store;
+  const blockId = context?.blockId;
+  const contextHandle = context?.handle;
+  const sourceBlockEpoch = store && blockId !== undefined ? store.getNode(blockId)?.blockEpoch : undefined;
+  return React.useCallback(() => {
+    if ("readSource" in handle) return handle.readSource();
+    if (!store || blockId === undefined || contextHandle !== handle) {
+      throw new Error("Node source reads require the matching node presentation view");
+    }
+    handle.readMetadata();
+    return readPresentationSource(
+      store,
+      blockId,
+      handle.type as NodePresentationKey,
+      sourceBlockEpoch,
+      undefined,
+      undefined,
+      undefined,
+    );
+  }, [handle, store, blockId, contextHandle, sourceBlockEpoch]);
+}
+
 type NodePresentationRenderer = (nativeView: React.ReactNode) => React.ReactNode;
 function applyNativePresentationProps(
   nativeView: React.ReactNode,
@@ -166,35 +228,15 @@ export function renderNodePresentation(
     ...(linkReferences === undefined ? {} : { linkReferences }),
   });
   const sourceBlockEpoch = store.getNode(id)?.blockEpoch;
-  const readSource = (): string => {
-    const currentNode = store.getNode(id);
-    if (
-      !currentNode ||
-      sourceBlockEpoch === undefined ||
-      currentNode.type !== type ||
-      currentNode.blockEpoch !== sourceBlockEpoch
-    ) {
-      throw new Error("Cannot read source from a stale or removed node");
-    }
-    if (codeHandle) return codeHandle.readSource();
-    if (tableState) {
-      const current = store.getTableBlock(id);
-      if (
-        tableResetVersion === undefined ||
-        getStoreResetVersion(store) !== tableResetVersion ||
-        !current ||
-        current.source.generation !== tableState.source.generation
-      ) {
-        throw new Error("Table content belongs to a replaced or disposed owner");
-      }
-      return current.sourceSnapshot.materialize();
-    }
-    const paragraphSource = store.getParagraphColdBlock(id)?.payload.raw;
-    if (typeof paragraphSource === "string") return paragraphSource;
-    const raw = currentNode.block?.payload.raw;
-    if (typeof raw === "string") return raw;
-    throw new Error("Node has no authored source");
-  };
+  const readSource = (): string => readPresentationSource(
+    store,
+    id,
+    type,
+    sourceBlockEpoch,
+    codeHandle,
+    tableState,
+    tableResetVersion,
+  );
   const actions: NodeViewActions = Object.freeze({
     readSource,
     copy: async () => copyToClipboard(readSource()),
