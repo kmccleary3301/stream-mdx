@@ -4,6 +4,7 @@ import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { ComponentRegistry, type CodeFenceRendererProps } from "../src/components";
+import type { InlineNodeViewProps } from "../src/types";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createRendererStore } from "../src/renderer/store";
@@ -241,6 +242,43 @@ async function testKaTeXMathAndOverride(): Promise<void> {
     assert.strictEqual(container.querySelector(".math-inline")?.getAttribute("data-tex"), "E = mc^2");
     assert.strictEqual(container.querySelector(".math-display")?.getAttribute("data-tex"), "\\int x dx");
     assert.ok(container.querySelector(".math-inline .katex .katex-mathml"), "inline math must contain KaTeX MathML");
+    const presentationRegistry = new ComponentRegistry();
+    presentationRegistry.setNodePresentations({
+      "inline:math": {
+        wrapper: ({ children, metadata }) => React.createElement(
+          "span",
+          { className: "presented-math", "data-node-type": metadata.type },
+          children,
+        ),
+      },
+    });
+    renderMath(presentationRegistry);
+    await waitFor(
+      container,
+      () => Boolean(container.querySelector(".presented-math .math-inline .katex") && container.querySelector(".presented-math .math-display .katex")),
+      "math presentation wrappers must preserve KaTeX rendering for inline and display expressions",
+    );
+    assert.strictEqual(container.querySelectorAll(".presented-math").length, 2);
+    assert.strictEqual(container.querySelector(".presented-math")?.getAttribute("data-node-type"), "inline:math");
+
+    const HeadlessMathView = ({ node, children }: InlineNodeViewProps) =>
+      React.createElement("span", { className: "headless-math", "data-node-kind": node.kind }, children);
+    const headlessRegistry = new ComponentRegistry();
+    headlessRegistry.setNodePresentations({
+      "inline:math": {
+        view: HeadlessMathView,
+      },
+    });
+    renderMath(headlessRegistry);
+    await waitFor(
+      container,
+      () => Boolean(container.querySelector(".headless-math .math-inline .katex") && container.querySelector(".headless-math .math-display .katex")),
+      "headless math views must receive the prepared engine output",
+    );
+    assert.strictEqual(container.querySelectorAll(".headless-math").length, 2);
+    assert.ok(container.querySelector('.headless-math[data-node-kind="math-inline"]'));
+    assert.ok(container.querySelector('.headless-math[data-node-kind="math-display"]'));
+
     assert.ok(container.querySelector(".math-display .katex .katex-mathml"), "display math must contain KaTeX MathML");
 
     const registry = new ComponentRegistry();

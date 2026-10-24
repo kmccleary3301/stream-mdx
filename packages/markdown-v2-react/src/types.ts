@@ -297,6 +297,7 @@ export interface NodeViewProps {
 
 export interface InlineNodeViewProps {
   readonly node: InlineNode;
+  /** Prepared native children; math nodes expose their engine-rendered view here. */
   readonly children?: React.ReactNode;
   readonly metadata: NodeViewMetadata;
   readonly actions: NodeViewActions;

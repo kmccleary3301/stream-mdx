@@ -1165,7 +1165,13 @@ export class ComponentRegistry {
     key: React.Key,
     context?: RenderInlineAnimationContext,
   ): React.ReactNode {
-    const keyName = (node.kind === "plugin" ? `extension:${node.name}` : `inline:${node.kind}`) as `inline:${string}` | `extension:${string}`;
+    const keyName = (
+      node.kind === "plugin"
+        ? `extension:${node.name}`
+        : node.kind === "math-inline" || node.kind === "math-display"
+          ? "inline:math"
+          : `inline:${node.kind}`
+    ) as `inline:${string}` | `extension:${string}`;
     const presentation = this.getNodePresentation(keyName);
     if (!presentation) return nativeView;
     let presentedNode = node;
@@ -1193,9 +1199,11 @@ export class ComponentRegistry {
       copy: () => copyToClipboard(source()),
       download: () => downloadFile(source(), `${node.kind}.txt`),
     });
-    const children = React.isValidElement<{ children?: React.ReactNode }>(nativeView)
-      ? nativeView.props.children
-      : undefined;
+    const children = node.kind === "math-inline" || node.kind === "math-display"
+      ? nativeView
+      : React.isValidElement<{ children?: React.ReactNode }>(nativeView)
+        ? nativeView.props.children
+        : undefined;
     return renderPresentedNode<`inline:${string}` | `extension:${string}`>(presentation, nativeView, {
       key,
       metadata,
