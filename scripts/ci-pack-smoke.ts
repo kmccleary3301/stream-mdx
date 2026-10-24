@@ -412,17 +412,18 @@ module.exports = async function verify(load, format) {
   const { default: remarkGfm } = await import("remark-gfm");
   const { default: rehypeSlug } = await import("rehype-slug");
   const { createUnifiedRenderer } = await load("@stream-mdx/unified");
+  const { MarkdownBlocksRenderer } = await load("@stream-mdx/react/server");
   const renderer = createUnifiedRenderer({
     gfm: false, remarkPlugins: [remarkGfm], rehypePlugins: [rehypeSlug],
   });
-  const renderBlock = (id, type, raw) => renderToStaticMarkup(renderer({
-    block: { id, type, isFinalized: true, payload: { raw } },
-    element: React.createElement("p", null, "default fallback"),
+  const renderBlock = (id, type, raw) => renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, {
+    blocks: [{ id, type, isFinalized: true, payload: { raw } }],
+    components: renderer,
   }));
-  assert.equal(renderBlock("heading", "heading", "# Pack Smoke"),
-    '<h1 id="pack-smoke">Pack Smoke</h1>');
-  assert.equal(renderBlock("paragraph", "paragraph", "~~Plugin text~~"),
-    "<p><del>Plugin text</del></p>");
+  const headingHtml = renderBlock("heading", "heading", "# Pack Smoke");
+  assert.ok(headingHtml.includes('<h1 id="pack-smoke">Pack Smoke</h1>'), headingHtml);
+  const paragraphHtml = renderBlock("paragraph", "paragraph", "~~Plugin text~~");
+  assert.ok(paragraphHtml.includes("<p><del>Plugin text</del></p>"), paragraphHtml);
   renderer.clearCache();
   console.log("[pack-smoke:" + format + "] Unified remark-gfm and rehype-slug transformed rendered HTML");
 
