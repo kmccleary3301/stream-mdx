@@ -117,6 +117,14 @@ const firstAppend = appendManagedTableRows(
 );
 assert.ok("state" in firstAppend, "table source can admit a completed row and provisional tail");
 
+const staleRevision = appendManagedTableRows(
+  firstAppend.state,
+  TABLE_ID,
+  appendPatch(0, metadata(2, 29, 24, 2, 2), 2, [], ""),
+);
+assert.ok("reason" in staleRevision, "a stale revision cannot retract a table's provisional row");
+assert.equal(materializeManagedTableSnapshot(firstAppend.state).raw, REEXTENDED_SOURCE);
+
 const retraction = appendManagedTableRows(
   firstAppend.state,
   TABLE_ID,

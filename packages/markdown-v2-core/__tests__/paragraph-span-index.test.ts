@@ -101,6 +101,25 @@ assert.equal(inlineNodesToPlainText(semantic.get(100)?.nodes ?? []), "reference 
 assert.deepEqual(semantic.get(100)?.sourceRange, current.sourceRange);
 assert.equal(semantic.get(100)?.sourceRevision, current.sourceRevision);
 assert.equal(inlineNodesToPlainText(next.get(100)?.nodes ?? []), "100", "semantic updates must preserve historical meaning");
+
+const invalidSourceUpdates = [
+  { label: "stable IDs", span: { ...current, id: `${current.id}:replacement` } },
+  { label: "source revisions", span: { ...current, sourceRevision: current.sourceRevision + 1 } },
+  { label: "provisional state", span: { ...current, isProvisional: true } },
+];
+for (const { label, span: replacement } of invalidSourceUpdates) {
+  assert.throws(
+    () => next.updateSpans([{ index: 100, expectedSourceRevision: current.sourceRevision, span: replacement }]),
+    /source identity/,
+    `semantic updates preserve paragraph span ${label}`,
+  );
+}
+
+assert.throws(
+  () => createParagraphSpanIndex({ spans: [span(0, true), span(1, false)] }),
+  /Only the final paragraph span may be provisional/,
+  "only the final paragraph span may be provisional",
+);
 assert.throws(() => next.replaceTail(2047, []), /completeSpanCount/);
 assert.throws(() => next.updateSpans([{
   index: 100,
