@@ -1695,8 +1695,8 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   const canVirtualize = mounted && typeof window !== "undefined" && !virtualizationDisabled && isFinalized && !streamingActive;
 
   const virtualization = useVirtualizedTable(rowIds, virtualizationConfig, canVirtualize);
-  const { isEligible, isVirtualized, containerRef, handleScroll, window: virtualWindow, config, naturalLayout, headerBackgroundColor } = virtualization;
-  const renderAllRows = isVirtualized && fullContentMode;
+  const { isEligible, isVirtualized, containerRef, handleScroll, window: virtualWindow, config, naturalLayout, headerBackgroundColor, isPrinting } = virtualization;
+  const renderAllRows = isEligible && (fullContentMode || isPrinting);
   const fullContentRowRanges = React.useMemo(
     () => [{ startIndex: 0, endIndex: rowCount, spacerBeforeHeight: 0 }],
     [rowCount],
@@ -1799,12 +1799,13 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
       ref={containerRef}
       className="markdown-table-container relative w-full"
       style={{
-        overflowY: "auto",
-        overflowX: "auto",
-        maxHeight: typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight,
+        overflowY: isPrinting ? "visible" : "auto",
+        overflowX: isPrinting ? "visible" : "auto",
+        maxHeight: isPrinting ? "none" : typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight,
         overflowAnchor: "none",
       }}
       onScroll={handleScroll}
+      data-table-printing={isPrinting ? "true" : undefined}
       tabIndex={0}
       role="region"
       aria-label="Scrollable table"

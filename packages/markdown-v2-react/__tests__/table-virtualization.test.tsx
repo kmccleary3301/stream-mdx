@@ -421,6 +421,21 @@ try {
     </StreamingActivityContext.Provider>,
   );
   await waitFor(() => Boolean(scrollContainer()), "inactive finalized legacy tables remain eligible for windowing");
+  const inactiveLegacyViewport = scrollContainer();
+  assert.ok(inactiveLegacyViewport, "the cold fallback table exposes its public viewport");
+  assert.ok(rows().length < 120, "the fallback viewport starts with a bounded row window");
+  act(() => {
+    dom.window.dispatchEvent(new dom.window.Event("beforeprint"));
+    assert.equal(rows().length, 120, "beforeprint restores every row in the cold fallback table");
+    assert.equal(dom.window.getComputedStyle(inactiveLegacyViewport).overflowY, "visible",
+      "beforeprint removes vertical clipping from the cold fallback table");
+    assert.equal(dom.window.getComputedStyle(inactiveLegacyViewport).maxHeight, "none",
+      "beforeprint removes the fallback table's max-height");
+  });
+  act(() => dom.window.dispatchEvent(new dom.window.Event("afterprint")));
+  await waitFor(() => rows().length < 120, "afterprint restores bounded fallback table rows");
+  assert.equal(scrollContainer(), inactiveLegacyViewport, "print restoration keeps the fallback viewport owner");
+
   assert.ok(rows().length < 120);
   inactiveLegacyRoot.unmount();
   const streamingRoot = createRoot(container);
