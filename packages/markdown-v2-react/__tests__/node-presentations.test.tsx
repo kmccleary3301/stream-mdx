@@ -15,11 +15,24 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
   document.body.append(container);
   const root = createRoot(container);
   const handle = React.createRef<StreamingMarkdownHandle>();
+  let presentedActions: NodeViewProps["actions"] | undefined;
+  const clipboardWrites: string[] = [];
+  const downloads: string[] = [];
+  const previousClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (text: string) => { clipboardWrites.push(text); } },
+  });
+  const anchorPrototype = window.HTMLAnchorElement.prototype;
+  const originalAnchorClick = anchorPrototype.click;
+  anchorPrototype.click = function () { downloads.push(this.download); };
   const components = {
     heading: {
-      wrapper: ({ children, metadata }: NodeViewProps) => (
-        <section data-heading-presentation data-finalized={metadata.isFinalized}>{children}</section>
-      ),
+      wrapper: ({ children, metadata, actions }: NodeViewProps) => {
+        presentedActions = actions;
+        return <section data-heading-presentation data-finalized={metadata.isFinalized}>{children}</section>;
+      },
+      props: { className: "host-heading", "data-owner": "host" },
     },
   } satisfies NodePresentations;
 
@@ -42,17 +55,32 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
       await handle.current?.finalize();
     });
     await waitFor(() => container.querySelector("section[data-heading-presentation]"), "finalized heading wrapper");
+    const streamingPresentation = container.querySelector("section[data-heading-presentation]");
+    const nativeHeading = streamingPresentation?.querySelector("h2");
+    assert.ok(nativeHeading, "the presented heading retains its native element");
+    assert.ok(nativeHeading.className.includes("host-heading"), "host class decoration stays on the native heading");
+    assert.equal(nativeHeading.getAttribute("data-owner"), "host", "host data decoration stays on the native heading");
+    assert.ok(presentedActions, "the wrapper receives source-bound presentation actions");
+    let copySucceeded = false;
+    await act(async () => { copySucceeded = await presentedActions!.copy(); });
+    assert.equal(copySucceeded, true);
+    assert.deepEqual(clipboardWrites, ["## Shared heading"], "copy reads the exact authored heading source");
+    await act(async () => { presentedActions!.download(); });
+    assert.deepEqual(downloads, ["heading.txt"], "download uses the presented node's semantic filename");
+
 
     const serverMarkup = renderToStaticMarkup(
       <ServerMarkdownBlocksRenderer blocks={handle.current?.getState().blocks ?? []} components={components} />,
     );
-    const streamingPresentation = container.querySelector("section[data-heading-presentation]");
     const serverContainer = document.createElement("div");
     serverContainer.innerHTML = serverMarkup;
     const serverPresentation = serverContainer.querySelector("section[data-heading-presentation]");
     assert.strictEqual(streamingPresentation?.outerHTML, serverPresentation?.outerHTML);
     assert.strictEqual(streamingPresentation?.getAttribute("data-finalized"), "true");
   } finally {
+    anchorPrototype.click = originalAnchorClick;
+    if (previousClipboard) Object.defineProperty(navigator, "clipboard", previousClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
     await act(async () => root.unmount());
     restore();
   }
