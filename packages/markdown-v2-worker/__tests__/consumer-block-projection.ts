@@ -1,3 +1,4 @@
+import type { ComponentRegistry } from "@stream-mdx/react";
 import type { Block } from "@stream-mdx/core";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -13,7 +14,7 @@ export type ConsumerBlockProjection = {
   markup: string;
 };
 
-export function projectConsumerBlocks(blocks: ReadonlyArray<Block>): ConsumerBlockProjection[] {
+export function projectConsumerBlocks(blocks: ReadonlyArray<Block>, componentRegistry?: ComponentRegistry): ConsumerBlockProjection[] {
   return blocks.map((block) => {
     const coldExport = [block];
     const store = createRendererStore(coldExport);
@@ -23,7 +24,11 @@ export function projectConsumerBlocks(blocks: ReadonlyArray<Block>): ConsumerBlo
       isFinalized: block.isFinalized,
       raw: block.payload.raw ?? null,
       range: block.payload.range ? { from: block.payload.range.from, to: block.payload.range.to } : null,
-      markup: renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: coldExport, store })),
+      markup: renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, {
+        blocks: coldExport,
+        store,
+        ...(componentRegistry ? { componentRegistry } : {}),
+      })),
     };
   });
 }
