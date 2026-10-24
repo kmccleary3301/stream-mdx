@@ -73,14 +73,14 @@ async function testPendingIteratorRestart(): Promise<void> {
     return next(...args).finally(() => { pendingNext--; });
   };
   try {
-    root.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={iterator} features={features} caret={false} />);
+    root.render(<StreamingMarkdown ref={handle} engine="main" stream={iterator} features={features} caret={false} />);
     await waitFor(() => container.textContent?.includes("Before restart") === true && pendingNext === 1,
       "real iterator enters its gated next call");
     handle.current?.restart();
     await waitFor(() => handle.current?.getState().workerReady === true && handle.current.getState().blocks.length === 0,
       "restart clears the document while next remains pending");
     const anotherIterable = { [Symbol.asyncIterator]: () => iterator };
-    root.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={anotherIterable}
+    root.render(<StreamingMarkdown ref={handle} engine="main" stream={anotherIterable}
       features={{ ...features, callouts: true }} className="changed-configuration" caret={false} />);
     await waitFor(() => Boolean(container.querySelector(".changed-configuration")) && handle.current?.getState().workerReady === true,
       "changed renderer readiness and iterable wrapper commit");
@@ -91,7 +91,7 @@ async function testPendingIteratorRestart(): Promise<void> {
     assert.equal(nextCalls, 2, "an already-consumed iterator must not be restarted through another iterable wrapper");
     assert.equal(container.textContent?.includes("Cancelled source chunk"), false, "cancelled chunks do not repopulate the cleared document");
     const freshIterator = (async function* () { yield "# Fresh source\n\n"; })();
-    root.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={freshIterator} features={features} caret={false} />);
+    root.render(<StreamingMarkdown ref={handle} engine="main" stream={freshIterator} features={features} caret={false} />);
     await waitFor(() => container.textContent?.includes("Fresh source") === true, "a fresh iterator starts a new document");
     let factoryCalls = 0;
     const reiterableSource = {
@@ -100,7 +100,7 @@ async function testPendingIteratorRestart(): Promise<void> {
         return (async function* () { yield `# Reiterable source ${iteration}\n\n`; })();
       },
     };
-    root.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={reiterableSource} features={features} caret={false} />);
+    root.render(<StreamingMarkdown ref={handle} engine="main" stream={reiterableSource} features={features} caret={false} />);
     await waitFor(() => container.textContent?.includes("Reiterable source 1") === true, "reiterable source supplies its first iterator");
     handle.current?.restart();
     await waitFor(() => container.textContent?.includes("Reiterable source 2") === true, "restart accepts a fresh actual iterator from a reiterable source");
@@ -123,7 +123,7 @@ async function testRestartAfterEOF(): Promise<void> {
   let nextCalls = 0;
   iterator.next = (...args) => { nextCalls++; return next(...args); };
   try {
-    root.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={iterator} features={features} caret="block" />);
+    root.render(<StreamingMarkdown ref={handle} engine="main" stream={iterator} features={features} caret="block" />);
     await waitFor(() => container.textContent?.includes("Completed source") === true && !container.querySelector(".stream-mdx-caret"),
       "the real iterator reaches finalized EOF");
     assert.equal(nextCalls, 2);

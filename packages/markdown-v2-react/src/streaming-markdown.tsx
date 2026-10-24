@@ -11,6 +11,7 @@ import type { Block, CodeHighlightingMode, ContentPolicy, FormatAnticipationConf
 import { SourceCapacityError, StreamSessionError, type AppendResult, type FinalizeResult, type WaitForCapacityOptions } from "@stream-mdx/protocol";
 import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./source-admission-limits";
 export { SourceCapacityError, StreamSessionError } from "@stream-mdx/protocol";
+export { EngineCompatibilityError } from "./worker-session";
 export type { AppendResult, FinalizeResult, WaitForCapacityOptions } from "@stream-mdx/protocol";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
@@ -150,7 +151,7 @@ export type LinkSafetyConfig = {
   renderModal?: (props: LinkSafetyModalProps) => React.ReactNode;
 };
 
-export type MarkdownEngineMode = "worker" | "main-thread" | "auto";
+export type MarkdownEngineMode = "auto" | "main" | "worker";
 
 export interface StreamingMarkdownProps extends ElementFilterOptions {
   text?: string;
@@ -204,18 +205,18 @@ function isHeadlessCodePresentation(
 const DEFAULT_HISTORY_LIMIT =
   typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production" ? 80 : 200;
 const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
-  batch: "microtask",
-  frameBudgetMs: 10,
+  batch: "rAF",
+  frameBudgetMs: 4,
   maxBatchesPerFlush: 12,
-  lowPriorityFrameBudgetMs: 6,
+  lowPriorityFrameBudgetMs: 2,
   maxLowPriorityBatchesPerFlush: 2,
   urgentQueueThreshold: 4,
 };
 const DEFAULT_SCHEDULING_SMOOTH: StreamingSchedulerOptions = {
   batch: "rAF",
-  frameBudgetMs: 6,
+  frameBudgetMs: 4,
   maxBatchesPerFlush: 4,
-  lowPriorityFrameBudgetMs: 3,
+  lowPriorityFrameBudgetMs: 2,
   maxLowPriorityBatchesPerFlush: 1,
   urgentQueueThreshold: 2,
 };
@@ -294,6 +295,9 @@ function StreamingMarkdownComponent(
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
+  if ((engine as string) === "main-thread") {
+    throw new Error('engine="main-thread" has been removed; use engine="main" instead.');
+  }
   if (text !== undefined && stream !== undefined) {
     throw new Error("StreamingMarkdown expects either `text` or `stream`, not both.");
   }

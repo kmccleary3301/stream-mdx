@@ -85,17 +85,22 @@ async function main() {
   assert.strictEqual(firstFlush.enrichmentQueueDepthBefore, 1, "first flush should observe queued enrichment work");
   assert.deepStrictEqual(
     firstFlush.batches.map((batch) => batch.kind),
-    ["semantic", "semantic"],
-    "semantic batches must flush first and remain unsplit by frame budget or batch caps",
+    ["semantic"],
+    "each semantic batch remains atomic within its cooperative slice",
   );
-  assert.strictEqual(firstFlush.remainingSemanticQueueSize, 0, "semantic queue should be fully drained in the first flush");
-  assert.strictEqual(firstFlush.remainingEnrichmentQueueSize, 1, "enrichment work should remain queued after semantic flush");
+  assert.strictEqual(firstFlush.remainingSemanticQueueSize, 1, "semantic work should yield when the frame budget expires");
+  assert.strictEqual(firstFlush.remainingEnrichmentQueueSize, 1, "enrichment work should wait behind pending semantic work");
+  const secondFlush = flushes[1];
+  assert.ok(secondFlush, "the next scheduled slice should resume semantic work");
+  assert.deepStrictEqual(secondFlush.batches.map((batch) => batch.kind), ["semantic"]);
+  assert.strictEqual(secondFlush.remainingSemanticQueueSize, 0, "semantic work should drain before enrichment");
+  assert.strictEqual(secondFlush.remainingEnrichmentQueueSize, 1);
 
-  const secondFlush = flushes.find((flush, index) => index > 0 && flush.batches.some((batch) => batch.kind === "enrichment"));
-  assert.ok(secondFlush, "expected a later enrichment flush");
+  const enrichmentFlush = flushes.find((flush, index) => index > 1 && flush.batches.some((batch) => batch.kind === "enrichment"));
+  assert.ok(enrichmentFlush, "expected a later enrichment flush");
   assert.ok(
-    secondFlush?.batches.every((batch) => batch.kind === "enrichment"),
-    "enrichment flush should not interleave semantic work after the semantic queue is drained",
+    enrichmentFlush?.batches.every((batch) => batch.kind === "enrichment"),
+    "enrichment work should not interleave with semantic work",
   );
 
   assert.strictEqual(store.getNode(blockId)?.block?.payload.raw, "semantic-two", "semantic FIFO order must be preserved");

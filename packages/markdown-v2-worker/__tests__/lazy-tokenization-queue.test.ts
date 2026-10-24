@@ -1,5 +1,14 @@
 import assert from "node:assert";
-import { clampLazyRange, compareLazyPriority, mergeLazyRequests } from "../src/lazy-tokenization";
+import {
+  clampLazyRange,
+  compareLazyPriority,
+  mergeLazyRequests,
+} from "../src/lazy-tokenization";
+import {
+  enqueueLazyTokenization,
+  selectNextLazyRequest,
+  type LazyTokenizationQueue,
+} from "../src/engine/lazy-tokenization";
 
 function main() {
   assert.strictEqual(compareLazyPriority("visible", "prefetch") > 0, true, "visible priority should outrank prefetch");
@@ -37,6 +46,14 @@ function main() {
   assert.strictEqual(laterPrefetch.startLine, 0);
   assert.strictEqual(laterPrefetch.endLine, 22);
   assert.strictEqual(laterPrefetch.requestedAt, 200);
+
+  const queue: LazyTokenizationQueue = new Map();
+  enqueueLazyTokenization(queue, true, { ...existing, startLine: 0, endLine: 600 });
+  enqueueLazyTokenization(queue, true, next);
+  enqueueLazyTokenization(queue, true, { ...existing, startLine: 10, endLine: 700, requestedAt: 300 });
+  assert.strictEqual(selectNextLazyRequest(queue)?.priority, "visible", "a visible range must remain ahead of background work for the same block");
+  assert.strictEqual(queue.get("block-1")?.get("prefetch")?.endLine, 700, "prefetch demand must remain queued after visible work is selected");
+
 
   console.log("lazy tokenization queue tests passed");
 }

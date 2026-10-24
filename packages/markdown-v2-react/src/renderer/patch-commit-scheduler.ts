@@ -235,7 +235,7 @@ export class PatchCommitScheduler {
     this.store = params.store;
     this.onFlush = params.onFlush;
     this.isGenerationCurrent = params.isGenerationCurrent;
-    this.frameBudgetMs = Math.max(1, params.options?.frameBudgetMs ?? 10);
+    this.frameBudgetMs = Math.max(1, params.options?.frameBudgetMs ?? 4);
     this.maxBatchesPerFlush = params.options?.maxBatchesPerFlush ?? 12;
     this.now = params.options?.now ?? getDefaultNow();
     this.raf = params.options?.raf ?? getDefaultRaf();
@@ -258,7 +258,7 @@ export class PatchCommitScheduler {
     } else if (requestedBatch === "rAF") {
       this.batchStrategy = this.raf ? "rAF" : "timeout";
     } else {
-      this.batchStrategy = "microtask";
+      this.batchStrategy = this.raf ? "rAF" : "timeout";
     }
     if (this.batchStrategy === "microtask" && typeof queueMicrotask !== "function") {
       this.batchStrategy = this.raf ? "rAF" : "timeout";
@@ -269,7 +269,12 @@ export class PatchCommitScheduler {
     if (!input || !input.patches || input.patches.length === 0) {
       return;
     }
-    if (!this.paused && !this.flushing && this.getPendingCount() >= this.urgentQueueThreshold) {
+    if (
+      this.batchStrategy !== "rAF" &&
+      !this.paused &&
+      !this.flushing &&
+      this.getPendingCount() >= this.urgentQueueThreshold
+    ) {
       this.runFlush(this.frameBudgetMs, false);
     }
     const explicitKind = input.meta?.kind;
@@ -503,32 +508,34 @@ export class PatchCommitScheduler {
       }
     };
 
-    processQueue(this.semanticQueue, undefined, Number.POSITIVE_INFINITY);
+    processQueue(this.semanticQueue, undefined, budgetMs);
 
-    const initialHighQueueSize = this.enrichmentHighQueue.length;
-    const configuredHighLimit =
-      manual || !this.maxBatchesPerFlush ? undefined : initialHighQueueSize > this.maxBatchesPerFlush ? undefined : this.maxBatchesPerFlush;
-    const highBatchLimit = this.adaptiveBudgeting ? (this.adaptiveHighBatchCap ?? configuredHighLimit) : configuredHighLimit;
+    if (this.semanticQueue.length === 0) {
+      const initialHighQueueSize = this.enrichmentHighQueue.length;
+      const configuredHighLimit =
+        manual || !this.maxBatchesPerFlush ? undefined : initialHighQueueSize > this.maxBatchesPerFlush ? undefined : this.maxBatchesPerFlush;
+      const highBatchLimit = this.adaptiveBudgeting ? (this.adaptiveHighBatchCap ?? configuredHighLimit) : configuredHighLimit;
 
-    processQueue(this.enrichmentHighQueue, highBatchLimit, budgetMs);
+      processQueue(this.enrichmentHighQueue, highBatchLimit, budgetMs);
 
-    if (manual) {
-      processQueue(this.enrichmentLowQueue, undefined, Number.POSITIVE_INFINITY);
-    } else if (this.enrichmentLowQueue.length > 0) {
-      elapsed = this.now() - startedAt;
-      const budgetForLow = Math.max(0, this.lowPriorityFrameBudgetMs - elapsed);
-      const processedHigherPriorityWork = batches.length > 0;
-      if (budgetForLow > 0 || !processedHigherPriorityWork) {
-        const initialLowQueueSize = this.enrichmentLowQueue.length;
-        const configuredLowLimit =
-          manual || !this.maxLowPriorityBatchesPerFlush
-            ? undefined
-            : initialLowQueueSize > this.maxLowPriorityBatchesPerFlush
+      if (manual) {
+        processQueue(this.enrichmentLowQueue, undefined, Number.POSITIVE_INFINITY);
+      } else if (this.enrichmentLowQueue.length > 0) {
+        elapsed = this.now() - startedAt;
+        const budgetForLow = Math.max(0, this.lowPriorityFrameBudgetMs - elapsed);
+        const processedHigherPriorityWork = batches.length > 0;
+        if (budgetForLow > 0 || !processedHigherPriorityWork) {
+          const initialLowQueueSize = this.enrichmentLowQueue.length;
+          const configuredLowLimit =
+            !this.maxLowPriorityBatchesPerFlush
               ? undefined
-              : this.maxLowPriorityBatchesPerFlush;
-        const lowBatchLimit = this.adaptiveBudgeting ? (this.adaptiveLowBatchCap ?? configuredLowLimit) : configuredLowLimit;
+              : initialLowQueueSize > this.maxLowPriorityBatchesPerFlush
+                ? undefined
+                : this.maxLowPriorityBatchesPerFlush;
+          const lowBatchLimit = this.adaptiveBudgeting ? (this.adaptiveLowBatchCap ?? configuredLowLimit) : configuredLowLimit;
 
-        processQueue(this.enrichmentLowQueue, lowBatchLimit, budgetForLow);
+          processQueue(this.enrichmentLowQueue, lowBatchLimit, budgetForLow);
+        }
       }
     }
 

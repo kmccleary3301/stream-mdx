@@ -319,7 +319,7 @@ async function runStreamingCodeViewportTest(): Promise<void> {
     await act(async () => {
       root.render(React.createElement(StreamingMarkdown, {
         ref: handle,
-        engine: "main-thread",
+        engine: "main",
         stream,
         features: { tables: false, html: false, mdx: false, math: false },
         caret: false,
@@ -449,7 +449,7 @@ async function runStreamingCodeViewportTest(): Promise<void> {
       await act(async () => {
         growthRoot.render(React.createElement(StreamingMarkdown, {
           ref: growthHandle,
-          engine: "main-thread",
+          engine: "main",
           stream: growthStream,
           features: { tables: false, html: false, mdx: false, math: false },
           controls: { code: { copy: true } },
@@ -1029,7 +1029,7 @@ async function runStreamingCodeViewportTest(): Promise<void> {
         const codeVirtualization: { followTail: boolean } = { followTail: true };
         const followTailProps = {
           ref: followTailHandle,
-          engine: "main-thread",
+          engine: "main",
           stream: followTailStream,
           features: { tables: false, html: false, mdx: false, math: false },
           codeVirtualization,
@@ -1238,7 +1238,7 @@ async function runStreamingCodeViewportTest(): Promise<void> {
         const interruptedFollowTailCodeVirtualization: { followTail: boolean } = { followTail: true };
         const interruptedFollowTailProps = {
           ref: interruptedFollowTailHandle,
-          engine: "main-thread",
+          engine: "main",
           stream: interruptedFollowTailStream,
           features: { tables: false, html: false, mdx: false, math: false },
           codeVirtualization: interruptedFollowTailCodeVirtualization,

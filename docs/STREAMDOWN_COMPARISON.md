@@ -23,7 +23,7 @@ It also does **not** treat the rich capability workload on the benchmark page as
 
 | Category | Streamdown | StreamMDX |
 | --- | --- | --- |
-| Execution model | Main-thread React rendering | Instance-scoped engine; worker, main-thread, or automatic execution |
+| Execution model | Main-thread React rendering | Instance-scoped engine; `worker`, `main`, or `auto` (default) execution |
 | Rendering surface | React component, close to `react-markdown` ergonomics | Dedicated `StreamingMarkdown` renderer plus lower-level packages |
 | Incremental model | Incomplete-markdown resilience + memoized rerendering | Explicit semantic/enrichment patch batches committed to a stable render tree |
 | Long-document posture | Main-thread work scales with content updates | Worker offload, queueing, and patch scheduling intended to reduce main-thread pressure |

@@ -53,7 +53,7 @@ export function Demo({ text }: { text: string }) {
 }
 ```
 
-`engine` defaults to `"auto"`. It tries a browser Worker and dynamically imports the in-process engine only when Worker creation is unavailable or fails. `"worker"` requires a Worker; `"main-thread"` skips the Worker and runs parsing on the browser thread. Engine setup runs after mounting, not during SSR. Use compiled snapshots and the server entry for server markup.
+`engine` defaults to `"auto"` and bootstraps up to 4,096 accepted UTF-16 source units with the existing inline engine while worker setup and grammar prewarm are pending. Further source is deferred beyond that limit. `"worker"` requires a Worker; `"main"` runs parsing on the browser thread without a bootstrap cap. Engine setup runs after mounting, not during SSR. Use compiled snapshots and the server entry for server markup.
 
 `mathRenderer` replaces math views; `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.
 

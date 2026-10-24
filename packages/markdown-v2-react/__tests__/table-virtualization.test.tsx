@@ -258,7 +258,7 @@ const replacementElements: TableElements = {
 };
 const features = { tables: true };
 const render = (tableVirtualization?: TableVirtualizationOptions, tableElements = customElements) => root.render(
-  <StreamingMarkdown ref={handle} engine="main-thread" text={markdown} features={features} caret={false}
+  <StreamingMarkdown ref={handle} engine="main" text={markdown} features={features} caret={false}
     tableElements={tableElements} tableVirtualization={tableVirtualization} />,
 );
 const rows = () => Array.from(container.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]"));
@@ -455,7 +455,7 @@ try {
     await streamFinished;
   })();
   try {
-    streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={stream} features={features}
+    streamingRoot.render(<StreamingMarkdown ref={handle} engine="main" stream={stream} features={features}
       tableVirtualization={{ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 }} caret={false} />);
     await waitFor(() => container.textContent?.includes("Row-38") ?? false,
       "the first 39 authored rows render while the table is still below its windowing threshold");
@@ -539,7 +539,7 @@ try {
   bodyMutationObserver.observe(container, { childList: true, subtree: true });
   const naturalLayoutStart = naturalPassRowCounts.length;
   try {
-    streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={largeTableStream} features={features}
+    streamingRoot.render(<StreamingMarkdown ref={handle} engine="main" stream={largeTableStream} features={features}
       tableVirtualization={{ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 }} caret={false} />);
     await waitFor(() => {
       const viewport = scrollContainer();
@@ -973,7 +973,7 @@ try {
   }
   await waitFor(() => handle.current?.getState().blocks.every((entry) => entry.isFinalized) ?? false,
     "the large stream reaches public EOF before the next lifecycle case");
-  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" className="stream-removed" features={features} tableVirtualization={true} caret={false} />);
+  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main" className="stream-removed" features={features} tableVirtualization={true} caret={false} />);
   await waitFor(() => Boolean(container.querySelector(".stream-removed")), "stream removal commits without replacing the renderer");
   handle.current?.restart();
   await waitFor(
@@ -1001,11 +1001,11 @@ try {
     yield `${markdown}\n\nNew iterator tail`;
     await newGate;
   })();
-  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={oldStream} features={features} tableVirtualization={true} caret={false} />);
+  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main" stream={oldStream} features={features} tableVirtualization={true} caret={false} />);
   await waitFor(() => Boolean(scrollContainer()) && (container.textContent?.includes("Old iterator tail") ?? false),
     "old iterator renders its table through the active native viewport");
   assert.ok(rows().some((row) => row.textContent === "Row-0Description-0"));
-  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={newStream} features={features} tableVirtualization={true} caret={false} />);
+  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main" stream={newStream} features={features} tableVirtualization={true} caret={false} />);
   await waitFor(() => Boolean(scrollContainer()) && (container.textContent?.includes("New iterator tail") ?? false),
     "replacement iterator owns the active native viewport");
   assert.ok(rows().some((row) => row.textContent === "Row-0Description-0"));
@@ -1019,7 +1019,7 @@ try {
   await waitFor(() => Boolean(scrollContainer()), "replacement iterator EOF releases its own session");
   streamingRoot.unmount();
   const imperativeRoot = createRoot(container);
-  imperativeRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" features={features} tableVirtualization={true} caret={false} />);
+  imperativeRoot.render(<StreamingMarkdown ref={handle} engine="main" features={features} tableVirtualization={true} caret={false} />);
   await waitFor(() => handle.current?.getState().workerReady ?? false, "imperative engine is ready");
   handle.current?.append(`${markdown}\n\n---\n\n`);
   await waitFor(() => Boolean(scrollContainer()), "imperative append windows a completed native table before source finalization");
@@ -1266,7 +1266,7 @@ try {
   });
   const copyRoot = createRoot(container);
   try {
-    copyRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" features={features} caret={false}
+    copyRoot.render(<StreamingMarkdown ref={handle} engine="main" features={features} caret={false}
       controls={{ table: { copy: ["markdown"] } }} />);
     await waitFor(() => handle.current?.getState().workerReady ?? false, "native Markdown-copy renderer is ready");
     handle.current?.append(`${authoredTable}\r\n\nOutside the table.`);

@@ -3,11 +3,14 @@ import { getActiveHtmlTreeKey } from "./html-ownership";
 import {
   compareLazyPriority,
   mergeLazyRequests,
+  type LazyTokenizationPriority,
   type LazyTokenizationRequest,
 } from "../lazy-tokenization";
 import type { LazyTokenizationState } from "./types";
 
 export const DEFAULT_LAZY_TOKENIZATION_THRESHOLD = 200;
+export type LazyTokenizationQueue = Map<string, Map<LazyTokenizationPriority, LazyTokenizationRequest>>;
+
 export const MIN_LAZY_TOKENIZATION_THRESHOLD = 50;
 export const MAX_LAZY_TOKENIZATION_THRESHOLD = 10000;
 
@@ -99,30 +102,37 @@ export function pruneLazyTokenizationStates(states: Map<string, LazyTokenization
 }
 
 export function enqueueLazyTokenization(
-  queue: Map<string, LazyTokenizationRequest>,
+  queue: LazyTokenizationQueue,
   enabled: boolean,
   request: LazyTokenizationRequest,
 ): void {
   if (!enabled) return;
-  const existing = queue.get(request.blockId);
+  const requests = queue.get(request.blockId);
+  const existing = requests?.get(request.priority);
   const next = existing ? mergeLazyRequests(existing, request) : request;
-  queue.set(request.blockId, next);
+  if (requests) {
+    requests.set(request.priority, next);
+  } else {
+    queue.set(request.blockId, new Map([[request.priority, next]]));
+  }
 }
 
-export function selectNextLazyRequest(queue: Map<string, LazyTokenizationRequest>): LazyTokenizationRequest | null {
+export function selectNextLazyRequest(queue: LazyTokenizationQueue): LazyTokenizationRequest | null {
   let selected: LazyTokenizationRequest | null = null;
-  for (const request of queue.values()) {
-    if (!selected) {
-      selected = request;
-      continue;
-    }
-    const priorityDiff = compareLazyPriority(request.priority, selected.priority);
-    if (priorityDiff > 0) {
-      selected = request;
-      continue;
-    }
-    if (priorityDiff === 0 && request.requestedAt < selected.requestedAt) {
-      selected = request;
+  for (const requests of queue.values()) {
+    for (const request of requests.values()) {
+      if (!selected) {
+        selected = request;
+        continue;
+      }
+      const priorityDiff = compareLazyPriority(request.priority, selected.priority);
+      if (priorityDiff > 0) {
+        selected = request;
+        continue;
+      }
+      if (priorityDiff === 0 && request.requestedAt < selected.requestedAt) {
+        selected = request;
+      }
     }
   }
   return selected;

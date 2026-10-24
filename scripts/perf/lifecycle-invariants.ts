@@ -284,7 +284,7 @@ export async function runLiveReactLayer(): Promise<DivergenceReport[]> {
       root?.render(
         createElement(StreamingMarkdown, {
           ref: handleRef,
-          engine: "main-thread",
+          engine: "main",
           prewarmLangs: ["typescript", "javascript", "markdown"],
           themes: { dark: "github-dark", light: "github-light" },
           features: {

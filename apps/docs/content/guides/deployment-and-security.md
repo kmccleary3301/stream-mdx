@@ -96,7 +96,7 @@ export function AgentChatStream({ text }: { text: string }) {
   return (
     <StreamingMarkdown
       text={text}
-      engine="worker" // or "main-thread"
+      engine="worker" // or "main"
       features={{ mdx: false, html: false, tables: true, math: true }}
       linkSafety={{ enabled: true }}
       codeRenderers={{

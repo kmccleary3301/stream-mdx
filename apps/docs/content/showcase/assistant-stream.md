@@ -1,6 +1,6 @@
 # Architecture walkthrough and inert code fences
 
-StreamMDX engine-v2 supports dual engine execution modes: a dedicated Web Worker thread (offloading parser work from the main thread) and an inline main-thread engine (for environments without Web Worker support).
+StreamMDX engine-v2 defaults to automatic execution: it bootstraps on an inline main-thread engine, then takes over atomically with a dedicated Web Worker. Set `engine="main"` to stay inline or `engine="worker"` to require a dedicated Web Worker.
 
 ### Mathematical Formulation: Bayes' Theorem
 

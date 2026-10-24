@@ -9,6 +9,8 @@ import type { CodeFenceRendererProps } from "../src/components";
 import { MarkdownRenderer } from "../src/renderer";
 import { MarkdownBlocksRenderer } from "../src/renderer/blocks-renderer";
 import { CodeHighlightRequestContext, type CodeHighlightRequest } from "../src/renderer/code-highlight-context";
+import { CodeLineRangeView } from "../src/renderer/code-line-range";
+import { getStoreResetVersion } from "../src/renderer/store-reset-version";
 
 async function waitFor(predicate: () => boolean, message: string, timeoutMs = 15_000) {
   const deadline = Date.now() + timeoutMs;
@@ -277,5 +279,122 @@ class ResizeObserverStub {
   disconnect() {}
 }
 
+async function testVisibleRangesPrecedePrefetch(): Promise<void> {
+  const renderer = new MarkdownRenderer();
+  const worker = createInlineEngineWorker();
+  const observation = observeWorker(worker);
+  const decorationOrder: string[] = [];
+  worker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+    if (event.data.type !== "PATCH") return;
+    for (const patch of event.data.patches) {
+      if (patch.op === "decorateCode") decorationOrder.push(patch.codeOwnerId);
+    }
+  });
+
+  const codeBlock = (name: string) =>
+    `\`\`\`ts\n${Array.from({ length: 64 }, (_, index) => `const ${name}${index} = ${index};`).join("\n")}\n\`\`\``;
+  try {
+    renderer.attachWorker(worker, { skipInit: true });
+    worker.postMessage(createLazyInitMessage(""));
+    await waitFor(() => observation.initialized || observation.error !== null, "worker initializes for range priority test");
+    assert.equal(observation.error, null);
+    await renderer.whenInitialized();
+    renderer.append(`${codeBlock("offscreen")}\n\n${codeBlock("visible")}`);
+    await renderer.finalize();
+    const codeBlocks = renderer.getStore().getBlocks().filter((block) => block.type === "code");
+    assert.equal(codeBlocks.length, 2, "two code owners are available for range requests");
+    const [offscreen, visible] = codeBlocks;
+    assert.ok(offscreen && visible);
+    const codeState = renderer.getStore().getCodeBlock(offscreen.id);
+    assert.ok(codeState, "first code owner exposes its line range");
+    const dom = new JSDOM('<!doctype html><html><body><div id="range-root"></div></body></html>', { pretendToBeVisual: true });
+    const { window } = dom;
+    const globalKeys = ["window", "document", "HTMLElement", "Node", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver"] as const;
+    const previousGlobals = Object.fromEntries(
+      globalKeys.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
+    ) as Record<(typeof globalKeys)[number], PropertyDescriptor | undefined>;
+    Object.assign(globalThis, {
+      window,
+      document: window.document,
+      HTMLElement: window.HTMLElement,
+      Node: window.Node,
+      requestAnimationFrame: window.requestAnimationFrame.bind(window),
+      cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
+      ResizeObserver: ResizeObserverStub,
+    });
+    const rangeRootElement = window.document.getElementById("range-root");
+    assert.ok(rangeRootElement);
+    const rangeRoot = createRoot(rangeRootElement);
+    const overscanRequests: CodeHighlightRequest[] = [];
+    try {
+      rangeRoot.render(
+        React.createElement(
+          CodeHighlightRequestContext.Provider,
+          { value: (request) => overscanRequests.push(request) },
+          React.createElement(CodeLineRangeView, {
+            store: renderer.getStore(),
+            blockId: offscreen.id,
+            generation: codeState.source.generation,
+            resetVersion: getStoreResetVersion(renderer.getStore()),
+            configurationRevision: codeState.configurationRevision,
+            chunkStart: 0,
+            rangeStart: 0,
+            rangeEnd: 30,
+            visibleStart: 10,
+            visibleEnd: 20,
+            renderSegments: [{
+              startIndex: 0,
+              endIndex: 30,
+              visibleStart: 10,
+              visibleEnd: 20,
+              spacerBeforeHeight: 0,
+            }],
+          }),
+        ),
+      );
+      await waitFor(() => overscanRequests.length > 0, "visible and overscan lines enqueue demanded decoration");
+      assert.deepEqual(overscanRequests, [{
+        blockId: offscreen.id,
+        startLine: 0,
+        endLine: 30,
+        priority: "visible",
+        reason: "scroll",
+      }], "rendered overscan should join the visible demand before background work");
+    } finally {
+      rangeRoot.unmount();
+      for (const key of globalKeys) {
+        const descriptor = previousGlobals[key];
+        if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+        else Reflect.deleteProperty(globalThis, key);
+      }
+      window.close();
+    }
+
+    renderer.requestCodeHighlightRange({
+      blockId: offscreen.id,
+      startLine: 0,
+      endLine: 64,
+      priority: "prefetch",
+    });
+    renderer.requestCodeHighlightRange({
+      blockId: visible.id,
+      startLine: 0,
+      endLine: 64,
+      priority: "visible",
+    });
+    await waitFor(() => decorationOrder.length === 2 || observation.error !== null, "both range requests return decorations");
+    assert.equal(observation.error, null);
+    assert.deepEqual(
+      decorationOrder,
+      [visible.id, offscreen.id],
+      "visible tokenization should be served before already-requested offscreen work",
+    );
+  } finally {
+    renderer.detachWorker();
+    worker.terminate();
+  }
+}
+
+await testVisibleRangesPrecedePrefetch();
 await testInlineWorkerNativeCodeHighlighting();
 console.log("native-code-highlight-lifecycle test passed");

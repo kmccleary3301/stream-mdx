@@ -90,7 +90,7 @@ export function Example() {
 | `text` | `string` | Static markdown. Mutating it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Append-only stream; provide **either** `text` or `stream`. |
 | `worker` | `WorkerLike` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |
-| `engine` | `"worker" \| "main-thread" \| "auto"` | Default `"auto"`. Selects the browser worker or dynamically imported in-process engine. See execution modes below. |
+| `engine` | `"auto" \| "main" \| "worker"` | Default `"auto"`. Selects automatic (`"auto"`; the default), inline (`"main"`), or dedicated-worker (`"worker"`) execution. See execution modes below. |
 | `managedWorker` | `boolean` | Requires a supplied Worker instance or caller-accessible factory. The caller sends `INIT` and document commands; automatic commands are disabled. URL/default workers and internally created main-thread engines are rejected. Factory workers remain component-owned; supplied instances remain caller-owned. |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
 | `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `outputMode`, and `lazyTokenization`. |
@@ -136,10 +136,11 @@ Type aliases:
 ### Execution modes and SSR
 
 - `"worker"` requires browser `Worker` support and uses `worker` or the default worker strategy. It does not fall back to the main thread.
-- `"main-thread"` dynamically imports `@stream-mdx/worker/engine` and creates an in-process Worker adapter. It ignores `worker` and runs parsing on the browser thread.
-- `"auto"` first tries to construct a browser Worker. If Worker support is absent or construction fails, it dynamically imports the in-process engine. This fallback covers creation only, not later worker script loading, runtime errors, or failed `INIT` messages.
+- `"main"` dynamically imports `@stream-mdx/worker/engine` and creates an in-process Worker adapter. It ignores `worker` and runs parsing on the browser thread.
+- `"auto"` bootstraps up to 4,096 accepted UTF-16 source units with the existing inline engine on the main thread, without waiting for worker readiness or grammar prewarm. Further source is deferred beyond that limit.
 
-Engine creation runs in a React effect, not during SSR. Selecting `"main-thread"` does not compile server markup. For SSR/SSG, compile a snapshot with the Node/direct helper and render it with `@stream-mdx/react/server`. The default React import does not eagerly import the engine implementation. Applications still need a client boundary for `<StreamingMarkdown />`.
+Engine creation runs in a React effect, not during SSR. Selecting `"main"` does not compile server markup. For SSR/SSG, compile a snapshot with the Node/direct helper and render it with `@stream-mdx/react/server`. The default React import does not eagerly import the engine implementation. Applications still need a client boundary for `<StreamingMarkdown />`.
+The retired `"main-thread"` value is a type error and throws a migration error at runtime; use `"main"`.
 
 Changing `onError` uses the latest callback without restarting the engine or clearing streamed content. Worker protocol `ERROR` messages are distinct from browser Worker `error` events.
 
@@ -213,9 +214,9 @@ Worker ownership semantics:
 - `worker={undefined}`
   - StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.
 
-`managedWorker={true}` requires `worker={existingWorker}` or a stable caller-accessible factory. Initialize that worker yourself with `INIT` and send document commands yourself or through the ref handle. Managed mode does not change lifecycle ownership: StreamMDX terminates factory-created workers on detach but never terminates a borrowed instance. Worker URL strings, URL objects, omitted/default workers, and `engine="main-thread"` internal adapters are rejected in managed mode because the caller cannot initialize them through an accessible handle. Do not rely on an automatic engine fallback for managed workers.
+`managedWorker={true}` requires `worker={existingWorker}` or a stable caller-accessible factory. Initialize that worker yourself with `INIT` and send document commands yourself or through the ref handle. Managed mode does not change lifecycle ownership: StreamMDX terminates factory-created workers on detach but never terminates a borrowed instance. Worker URL strings, URL objects, omitted/default workers, and `engine="main"` internal adapters are rejected in managed mode because the caller cannot initialize them through an accessible handle. Do not rely on an automatic engine fallback for managed workers.
 Invalid managed sources and unavailable or failed worker creation report an error through `onError`; they do not silently create an inline engine.
-Managed mode rejects `engine="main-thread"` even when a Worker instance or factory is supplied. Use `engine="worker"` or `"auto"` with the caller-accessible worker source.
+Managed mode rejects `engine="main"` even when a Worker instance or factory is supplied. Use `engine="worker"` or `"auto"` with the caller-accessible worker source.
 
 For advanced worker instantiation (CSP overrides, shared worker instances), see `createDefaultWorker()` in `stream-mdx/worker`.
 

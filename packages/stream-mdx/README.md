@@ -78,7 +78,7 @@ import { StreamingMarkdown } from "stream-mdx";
 > [!NOTE]
 > `StreamingMarkdown` is a client component. In Next.js App Router, keep the import behind a `"use client"` boundary.
 
-`engine` defaults to `"auto"` and falls back to a dynamically imported in-process engine only when browser Worker creation is unavailable or fails. `"worker"` requires a Worker; `"main-thread"` runs parsing on the browser thread and ignores `worker`. These modes do not compile during SSR. Use snapshot compilation for server markup. See the [execution modes](../../docs/PUBLIC_API.md#execution-modes-and-ssr).
+`engine` defaults to `"auto"`, which bootstraps up to 4,096 accepted UTF-16 source units with the inline engine before atomically switching to a worker. `"worker"` requires a Worker; `"main"` runs parsing on the browser thread and ignores `worker`. These modes do not compile during SSR. Use snapshot compilation for server markup. See the [execution modes](../../docs/PUBLIC_API.md#execution-modes-and-ssr).
 
 ## Package-Specific Guidance
 

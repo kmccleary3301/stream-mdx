@@ -25,7 +25,7 @@ type DirtyCodeLineRange = {
   readonly sourceRevision: number;
 };
 
-type VisibleCodeLineRange = {
+type DemandedCodeLineRange = {
   readonly startLine: number;
   endLine: number;
 };
@@ -35,7 +35,7 @@ type PreviousHighlightDemand = {
   readonly generation: number;
   readonly resetVersion: number;
   readonly configurationRevision: number;
-  readonly visibleRanges: readonly VisibleCodeLineRange[];
+  readonly demandedRanges: readonly DemandedCodeLineRange[];
   readonly ranges: readonly DirtyCodeLineRange[];
 };
 
@@ -175,16 +175,16 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       visibleEnd,
       spacerBeforeHeight: 0,
     }];
-    const visibleRanges: VisibleCodeLineRange[] = [];
+    const demandedRanges: DemandedCodeLineRange[] = [];
     for (const segment of segments) {
-      const startLine = Math.max(segment.visibleStart, segment.startIndex, chunkStart);
-      const endLine = Math.min(segment.visibleEnd, segment.endIndex, chunkStart + CODE_LINE_RANGE_SIZE);
+      const startLine = Math.max(segment.startIndex, chunkStart);
+      const endLine = Math.min(segment.endIndex, chunkStart + CODE_LINE_RANGE_SIZE);
       if (endLine <= startLine) continue;
-      const last = visibleRanges[visibleRanges.length - 1];
+      const last = demandedRanges[demandedRanges.length - 1];
       if (last && startLine <= last.endLine) last.endLine = Math.max(last.endLine, endLine);
-      else visibleRanges.push({ startLine, endLine });
+      else demandedRanges.push({ startLine, endLine });
     }
-    if (!highlightRequester || visibleRanges.length === 0) {
+    if (!highlightRequester || demandedRanges.length === 0) {
       previousDemandRef.current = null;
       return;
     }
@@ -219,7 +219,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       counterStore.campaignCounters?.recordStoreRecordsTouched?.(lines.length, "view");
     }
     for (const line of lines) {
-      if (!visibleRanges.some((range) => line.index >= range.startLine && line.index < range.endLine)) continue;
+      if (!demandedRanges.some((range) => line.index >= range.startLine && line.index < range.endLine)) continue;
       const decoration = line.decoration;
       const isCurrentDecoration =
         decoration?.sourceRevision === line.sourceRevision &&
@@ -258,9 +258,9 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       previous.generation === generation &&
       previous.resetVersion === resetVersion &&
       previous.configurationRevision === configurationRevision &&
-      previous.visibleRanges.length === visibleRanges.length &&
-      previous.visibleRanges.every((range, index) => {
-        const next = visibleRanges[index];
+      previous.demandedRanges.length === demandedRanges.length &&
+      previous.demandedRanges.every((range, index) => {
+        const next = demandedRanges[index];
         return next !== undefined &&
           range.startLine === next.startLine &&
           range.endLine === next.endLine;
@@ -280,7 +280,7 @@ export const CodeLineRangeView = React.memo(function CodeLineRangeView({
       generation,
       resetVersion,
       configurationRevision,
-      visibleRanges,
+      demandedRanges,
       ranges,
     };
     for (const range of ranges) {

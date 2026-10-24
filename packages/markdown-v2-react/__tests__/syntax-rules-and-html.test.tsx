@@ -119,7 +119,7 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
   const root = createRoot(container!);
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text="See issue #ABC-123 for details."
       syntax={[ticketRule]}
       inlineComponents={{ ticket: TicketComponent }}
@@ -150,7 +150,7 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
 
   streamedRoot.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       stream={generateOneCharChunks()}
       syntax={[ticketRule]}
       inlineComponents={{ ticket: TicketComponent }}
@@ -193,7 +193,7 @@ async function testSyntaxRuleNestedInBold(): Promise<void> {
   const root = createRoot(container!);
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text="This is **bold #ABC-1** text."
       syntax={[ticketRule]}
       inlineComponents={{ ticket: TicketComponent }}
@@ -224,7 +224,7 @@ async function testAllowedTagsAndHtmlElements(): Promise<void> {
   const root = createRoot(container!);
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text='Press <kbd data-x="1" bad="forbidden" data-unlisted="no">Ctrl+C</kbd> to copy.'
       html={{
         allowedTags: {
@@ -280,7 +280,7 @@ async function testNestedSyntaxRuleWithCaptureAndCursorOffset(): Promise<void> {
   const root = createRoot(container!);
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text="Check [[contained issue #XYZ-99]] here."
       syntax={syntax}
       inlineComponents={{
@@ -327,7 +327,7 @@ async function testHeadingRendersPluginNodes(): Promise<void> {
   const root = createRoot(container!);
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text="# Issue #ABC-123 Tracker"
       syntax={syntax}
       inlineComponents={{
@@ -354,7 +354,7 @@ async function testHtmlChildrenPreservedInMapping(): Promise<void> {
   const root = createRoot(container!);
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text='<span class="wrapper">Hello <strong>world</strong></span>'
       html={{
         allowedTags: {
@@ -390,7 +390,7 @@ async function testLiteralTagContent(): Promise<void> {
   const root = createRoot(container!);
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text="Compare <kbd>**not bold**</kbd> and <span>**bold**</span>"
       html={{
         allowedTags: {
@@ -425,7 +425,7 @@ async function testBlockHtmlAllowedTagsAndAttributes(): Promise<void> {
   const root = createRoot(container!);
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text={'<div><kbd hotkey="ctrl+c" bad="forbidden">Copy</kbd></div>'}
       html={{
         allowedTags: {
@@ -515,7 +515,7 @@ async function testDynamicPropUpdatesReInits(): Promise<void> {
   // Initially without syntax rule
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text="Ticket #DEF-456 active"
     />,
   );
@@ -536,7 +536,7 @@ async function testDynamicPropUpdatesReInits(): Promise<void> {
 
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text="Ticket #DEF-456 active"
       syntax={syntax}
       inlineComponents={{

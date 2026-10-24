@@ -75,7 +75,7 @@ const root = createRoot(container);
 root.render(
   React.createElement(StreamingMarkdown, {
     ref: rendererRef,
-    engine: "main-thread",
+    engine: "main",
     features: { tables: true, html: false, mdx: false, math: false },
     tableVirtualization: { minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 },
     codeVirtualization: { enabled: true, windowSize: 20, bufferSize: 8, virtualizeThreshold: 100 },

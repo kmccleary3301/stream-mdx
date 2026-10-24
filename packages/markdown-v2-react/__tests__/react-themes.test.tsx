@@ -76,7 +76,7 @@ async function runReactThemesTest(): Promise<void> {
     // 1. Initial render with custom themes
     root.render(
       <StreamingMarkdown
-        engine="main-thread"
+        engine="main"
         text={code}
         themes={{ light: "min-light", dark: "nord" }}
       />,
@@ -93,7 +93,7 @@ async function runReactThemesTest(): Promise<void> {
     // 2. Change themes prop to default themes -> restarts / re-inits
     root.render(
       <StreamingMarkdown
-        engine="main-thread"
+        engine="main"
         text={code}
         themes={{ light: "github-light", dark: "github-dark" }}
       />,

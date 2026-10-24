@@ -144,7 +144,7 @@ export default function StreamingDemo() {
         <StreamingMarkdown
           ref={streamingRef}
           text={text}
-          engine="main-thread"
+          engine="main"
           codeRenderers={codeRenderers}
           blockRenderer={unifiedRenderer}
           features={{ math: true, mdx: true, tables: true, html: true }}
@@ -287,7 +287,7 @@ function App() {
   return (
     <div style={{ padding: 24 }}>
       <StreamingMarkdown
-        engine="main-thread"
+        engine="main"
         codeRenderers={{ mermaid: MermaidBlock }}
         blockRenderer={blockRenderer}
         text={${JSON.stringify(smokeMarkdown)}}
