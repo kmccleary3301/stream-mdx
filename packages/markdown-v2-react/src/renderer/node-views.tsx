@@ -3,7 +3,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 import { normalizeBlockquoteText, PATCH_ROOT_ID, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { CodeNodeHandle, TableNodeHandle } from "@stream-mdx/core";
-import type { HeadlessNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
+import type { HeadlessNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, PresentationProps, TableElements } from "../types";
 import {
   TableControlsBar,
   copyToClipboard,
@@ -63,6 +63,35 @@ const NodeViewRenderContext = React.createContext<{
   readonly handle: NodeViewHandle;
 } | null>(null);
 type NodePresentationRenderer = (nativeView: React.ReactNode) => React.ReactNode;
+function applyNativePresentationProps(
+  nativeView: React.ReactNode,
+  type: NodePresentationKey,
+  props: PresentationProps,
+): React.ReactNode {
+  if (Array.isArray(nativeView)) {
+    return nativeView.map((child) => applyNativePresentationProps(child, type, props));
+  }
+  if (!React.isValidElement(nativeView)) return nativeView;
+  if (typeof nativeView.type === "string") {
+    if (type === "code" && nativeView.type !== "pre") return nativeView;
+    if (type === "table" && nativeView.type !== "table") return nativeView;
+    return React.cloneElement(
+      nativeView,
+      mergeNodePresentationProps(nativeView.props as Record<string, unknown>, props),
+    );
+  }
+  if (nativeView.type === React.Fragment) {
+    const children = React.Children.map(nativeView.props.children, (child) =>
+      applyNativePresentationProps(child, type, props),
+    );
+    return React.cloneElement(nativeView, undefined, children);
+  }
+  return React.cloneElement(
+    nativeView,
+    mergeNodePresentationProps(nativeView.props as Record<string, unknown>, props),
+  );
+}
+
 export function renderNodePresentation(
   block: Block | undefined,
   nativeView: React.ReactNode,
@@ -87,6 +116,16 @@ export function renderNodePresentation(
       </NodeViewRenderContext.Provider>
     );
   }
+  if (type === "code" && "view" in presentation && presentation.view) {
+    const handle = store.getCodeNodeHandle(id);
+    if (!handle) return null;
+    const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: CodeNodeHandle }>;
+    return (
+      <NodeViewRenderContext.Provider value={{ store, registry }}>
+        <HeadlessView handle={handle} />
+      </NodeViewRenderContext.Provider>
+    );
+  }
   if (type !== "code" && "view" in presentation && presentation.view) {
     const handle = store.getNodeHandle(id);
     if (!handle) return null;
@@ -97,13 +136,9 @@ export function renderNodePresentation(
       </NodeViewRenderContext.Provider>
     );
   }
-  let children = nativeView;
-  if (presentation.props && React.isValidElement(nativeView) && typeof nativeView.type === "string") {
-    children = React.cloneElement(
-      nativeView,
-      mergeNodePresentationProps(nativeView.props as Record<string, unknown>, presentation.props),
-    );
-  }
+  const children = presentation.props
+    ? applyNativePresentationProps(nativeView, type, presentation.props)
+    : nativeView;
   if (!("wrapper" in presentation) || !presentation.wrapper) return children;
 
   const codeHandle = type === "code" ? store.getCodeNodeHandle(id) : undefined;
@@ -977,6 +1012,8 @@ const MixedSegmentView: React.FC<{
             registry.renderInlinePresentation(inlineNode, nativeView, key, inlineContext, children),
           renderHtmlPresentation: (tagName, properties, nativeView, children, key) =>
             registry.renderHtmlPresentation(tagName, properties, nativeView, children, key, node.id, inlineContext?.isFinalized ?? isFinalized),
+          renderComponentPresentation: (name, nativeView, children, key, status, rawSource) =>
+            registry.renderComponentPresentation(name, nativeView, children, key, status, rawSource, node.id),
         })}</>;
       }
       const raw = typeof node.props?.raw === "string" ? (node.props.raw as string) : undefined;
@@ -1337,15 +1374,20 @@ const ListBlockView: React.FC<{
         </>
       );
     };
+    const nativeListProps = {
+      className: `markdown-list ${ordered ? "ordered" : "unordered"}`,
+      "data-list-depth": depth,
+      "data-marker-digits": ordered ? markerDigits : undefined,
+      "data-list-id": listDebugEnabled ? blockId : undefined,
+      style: listStyle,
+      start: ordered && start !== undefined && start !== 1 ? start : undefined,
+    };
+    const listProps = {
+      ...nativeListProps,
+      ...mergeNodePresentationProps(nativeListProps, registry.getNodePresentation("list")?.props),
+    } as React.OlHTMLAttributes<HTMLOListElement> & React.HTMLAttributes<HTMLUListElement>;
     const renderElement = () => (
-      <Tag
-        className={`markdown-list ${ordered ? "ordered" : "unordered"}`}
-        data-list-depth={depth}
-        data-marker-digits={ordered ? markerDigits : undefined}
-        data-list-id={listDebugEnabled ? blockId : undefined}
-        style={listStyle}
-        start={ordered && start !== undefined && start !== 1 ? start : undefined}
-      >
+      <Tag {...listProps}>
         {renderChildren()}
       </Tag>
     );
