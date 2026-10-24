@@ -57,6 +57,8 @@ export function Demo({ text }: { text: string }) {
 
 `mathRenderer` replaces math views; `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.
 
+`colorScheme` accepts `"light"`, `"dark"`, or `"system"` and sets the native root's `data-color-scheme`. System mode follows `prefers-color-scheme` with CSS only; when unset, a `.dark` ancestor keeps the existing class-based behavior. Native roots carry `data-stream-mdx` and `not-prose`, so enclosing typography-plugin selectors do not restyle native output and the optional Tailwind theme scopes native styles to that root.
+
 ## Typical Uses
 
 | Use case | API |

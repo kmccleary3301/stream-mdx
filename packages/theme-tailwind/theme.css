@@ -321,7 +321,7 @@
   vertical-align: top;
 }
 
-.prose {
+[data-stream-mdx] .prose {
   --tw-prose-body: var(--text-primary);
   --tw-prose-headings: var(--text-primary);
   --tw-prose-lead: var(--text-primary);
@@ -659,7 +659,7 @@
   margin-top: 0;
 }
 
-.markdown blockquote {
+[data-stream-mdx] .markdown blockquote {
   --tw-border-opacity: 1;
 
   padding-top: 0.5rem;
@@ -731,7 +731,7 @@
   margin-bottom: 0.25rem;
 }
 
-.markdown ol > li::before {
+[data-stream-mdx] .markdown ol > li::before {
   --tw-numeric-spacing: tabular-nums;
 
   position: absolute; /* Added to position the ::before pseudo-element */
@@ -804,7 +804,7 @@
   counter-increment: list-number;
 }
 
-.markdown ul > li::before {
+[data-stream-mdx] .markdown ul > li::before {
   --tw-numeric-spacing: tabular-nums;
 
   position: absolute; /* Keeps the ::before pseudo-element positioned absolutely */
@@ -991,7 +991,7 @@
   margin-top: 0;
 }
 
-.markdown blockquote {
+[data-stream-mdx] .markdown blockquote {
   --tw-border-opacity: 1;
 
   padding-top: 0.5rem;
@@ -1033,7 +1033,7 @@
   counter-increment: list-number;
 }
 
-.markdown ol > li::before {
+[data-stream-mdx] .markdown ol > li::before {
   --tw-numeric-spacing: tabular-nums;
 
   position: absolute;
@@ -1067,7 +1067,7 @@
   margin: 0;
 }
 
-.markdown ul > li::before {
+[data-stream-mdx] .markdown ul > li::before {
   --tw-numeric-spacing: tabular-nums;
 
   position: absolute;
@@ -1110,7 +1110,7 @@
   margin-left: 1rem;
 }
 
-.markdown table {
+[data-stream-mdx] .markdown table {
   --tw-border-spacing-x: 0px;
   --tw-border-spacing-y: 0px;
 
@@ -1178,53 +1178,53 @@
 /* markdown-v2-output (from globals.css) */
 
 @layer components {
-  .markdown-v2-output h1,
-  .markdown-v2-output h2,
-  .markdown-v2-output h3,
-  .markdown-v2-output h4,
-  .markdown-v2-output h5,
-  .markdown-v2-output h6 {
+  [data-stream-mdx].markdown-v2-output h1,
+  [data-stream-mdx].markdown-v2-output h2,
+  [data-stream-mdx].markdown-v2-output h3,
+  [data-stream-mdx].markdown-v2-output h4,
+  [data-stream-mdx].markdown-v2-output h5,
+  [data-stream-mdx].markdown-v2-output h6 {
     font-weight: 700;
     color: var(--tw-prose-headings, var(--foreground));
     letter-spacing: -0.01em;
   }
 
-  .markdown-v2-output h1 {
+  [data-stream-mdx].markdown-v2-output h1 {
     margin-top: 1.5em;
     margin-bottom: 0.5em;
     font-size: 2rem;
     line-height: 1.3;
   }
 
-  .markdown-v2-output h2 {
+  [data-stream-mdx].markdown-v2-output h2 {
     margin-top: 1.5em;
     margin-bottom: 0.75em;
     font-size: 1.5em;
     line-height: 1.333;
   }
 
-  .markdown-v2-output h3 {
+  [data-stream-mdx].markdown-v2-output h3 {
     margin-top: 1.5em;
     margin-bottom: 0.75em;
     font-size: 1.25em;
     line-height: 1.6;
   }
 
-  .markdown-v2-output h4 {
+  [data-stream-mdx].markdown-v2-output h4 {
     margin-top: 1.5em;
     margin-bottom: 0.5em;
     font-size: 1.125em;
     line-height: 1.55;
   }
 
-  .markdown-v2-output h5 {
+  [data-stream-mdx].markdown-v2-output h5 {
     margin-top: 1.5em;
     margin-bottom: 0.5em;
     font-size: 1.0625em;
     line-height: 1.5;
   }
 
-  .markdown-v2-output h6 {
+  [data-stream-mdx].markdown-v2-output h6 {
     margin-top: 1.5em;
     margin-bottom: 0.5em;
     font-size: 1em;
@@ -1233,22 +1233,22 @@
     letter-spacing: 0.08em;
   }
 
-  .markdown-v2-output h1 + h2,
-  .markdown-v2-output h2 + h3,
-  .markdown-v2-output h3 + h4 {
+  [data-stream-mdx].markdown-v2-output h1 + h2,
+  [data-stream-mdx].markdown-v2-output h2 + h3,
+  [data-stream-mdx].markdown-v2-output h3 + h4 {
     margin-top: 0.75em;
   }
 
-  .markdown-v2-output p + h1,
-  .markdown-v2-output p + h2,
-  .markdown-v2-output p + h3,
-  .markdown-v2-output p + h4,
-  .markdown-v2-output p + h5,
-  .markdown-v2-output p + h6 {
+  [data-stream-mdx].markdown-v2-output p + h1,
+  [data-stream-mdx].markdown-v2-output p + h2,
+  [data-stream-mdx].markdown-v2-output p + h3,
+  [data-stream-mdx].markdown-v2-output p + h4,
+  [data-stream-mdx].markdown-v2-output p + h5,
+  [data-stream-mdx].markdown-v2-output p + h6 {
     margin-top: 1.5em;
   }
 
-  .markdown-v2-output .markdown-list {
+  [data-stream-mdx] .markdown-list {
     --list-indent: 2.5rem;
 
     display: flex;
@@ -1259,32 +1259,32 @@
     list-style-type: none;
   }
 
-  .markdown-v2-output .markdown-list.unordered {
+  [data-stream-mdx] .markdown-list.unordered {
     --list-indent: 1.5rem;
   }
 
-  .markdown-v2-output .markdown-list.ordered[data-list-depth="1"] {
+  [data-stream-mdx] .markdown-list.ordered[data-list-depth="1"] {
     --list-indent: 2rem;
   }
 
-  .markdown-v2-output .markdown-list.ordered[data-list-depth="2"],
-  .markdown-v2-output .markdown-list.ordered[data-list-depth="3"] {
+  [data-stream-mdx] .markdown-list.ordered[data-list-depth="2"],
+  [data-stream-mdx] .markdown-list.ordered[data-list-depth="3"] {
     --list-indent: 1.5rem;
   }
 
-  .markdown-v2-output .markdown-list .markdown-list {
+  [data-stream-mdx].markdown-v2-output .markdown-list .markdown-list {
     margin-top: 0.25rem;
     margin-left: 1rem;
   }
 
-  .markdown-v2-output .markdown-list-item {
+  [data-stream-mdx].markdown-v2-output .markdown-list-item {
     position: relative;
     display: block;
     padding-left: 0;
     margin: 0.1rem 0;
   }
 
-  .markdown-v2-output .markdown-list-item::before {
+  [data-stream-mdx] .markdown-list-item::before {
     --tw-numeric-spacing: tabular-nums;
 
     position: absolute;
@@ -1298,15 +1298,15 @@
     opacity: 0.5;
   }
 
-  .markdown-v2-output .markdown-list-item::marker {
+  [data-stream-mdx].markdown-v2-output .markdown-list-item::marker {
     content: none;
   }
 
-  .markdown-v2-output .markdown-list.ordered > .markdown-list-item::before {
+  [data-stream-mdx].markdown-v2-output .markdown-list.ordered > .markdown-list-item::before {
     content: attr(data-counter-text) " ";
   }
 
-  .markdown-v2-output .markdown-list.unordered > .markdown-list-item::before {
+  [data-stream-mdx] .markdown-list.unordered > .markdown-list-item::before {
     --tw-numeric-spacing: tabular-nums;
 
     display: flex;
@@ -1321,27 +1321,27 @@
     opacity: 0.7;
   }
 
-  .markdown-v2-output .markdown-list-item.markdown-list-item-task::before {
+  [data-stream-mdx].markdown-v2-output .markdown-list-item.markdown-list-item-task::before {
     content: none;
   }
 
-  .markdown-v2-output .markdown-list-item > * {
+  [data-stream-mdx].markdown-v2-output .markdown-list-item > * {
     width: 100%;
     max-width: 100%;
   }
 
-  .markdown-v2-output figure[data-with-codeblock="true"] + :is(pre, figure) {
+  [data-stream-mdx].markdown-v2-output figure[data-with-codeblock="true"] + :is(pre, figure) {
     margin-top: 0 !important;
     border-top-width: 0 !important;
     border-top-left-radius: 0 !important;
     border-top-right-radius: 0 !important;
   }
 
-  .markdown-v2-output figure[data-with-codeblock="true"] {
+  [data-stream-mdx].markdown-v2-output figure[data-with-codeblock="true"] {
     margin-bottom: 0;
   }
-  .markdown-v2-output figure[data-with-codeblock="true"] + div[data-code-block="true"],
-  .markdown-v2-output figure[data-with-codeblock="true"] + div:has(> div > [data-radix-scroll-area-viewport]) {
+  [data-stream-mdx].markdown-v2-output figure[data-with-codeblock="true"] + div[data-code-block="true"],
+  [data-stream-mdx].markdown-v2-output figure[data-with-codeblock="true"] + div:has(> div > [data-radix-scroll-area-viewport]) {
     width: 100%;
     margin: 0 !important;
     border-color: var(--border) !important;
@@ -1355,44 +1355,72 @@
     border-bottom-left-radius: var(--radius-base) !important;
   }
 
-  .markdown-v2-output figure[data-with-codeblock="true"] + div[data-code-block="true"] pre:has(> code),
-  .markdown-v2-output figure[data-with-codeblock="true"] + div:has(> div > [data-radix-scroll-area-viewport]) pre:has(> code) {
+  [data-stream-mdx].markdown-v2-output figure[data-with-codeblock="true"] + div[data-code-block="true"] pre:has(> code),
+  [data-stream-mdx].markdown-v2-output figure[data-with-codeblock="true"] + div:has(> div > [data-radix-scroll-area-viewport]) pre:has(> code) {
     border-width: 0 !important;
     border-radius: 0 !important;
   }
 
 
-  .markdown-v2-output pre {
+  [data-stream-mdx].markdown-v2-output pre {
     margin-top: 0.75rem;
     margin-bottom: 0.75rem;
   }
 
-  /* Highlighted code carries token colors only as Shiki CSS variables (`defaultColor: false`).
-     Light tokens apply by default; a `.dark` ancestor (Tailwind `darkMode: "class"`) switches to dark tokens. */
-  .markdown-v2-output .shiki,
-  .markdown-v2-output .shiki span {
+  /* Highlighted code uses `defaultColor: false`; the root carries Shiki light/dark values for
+     foreground, background, font style, font weight and text decoration. An unset policy uses
+     light tokens unless a `.dark` ancestor is present; explicit dark overrides it, and system
+     follows `prefers-color-scheme` without a JavaScript media listener. */
+  [data-stream-mdx] .shiki,
+  [data-stream-mdx] .shiki span {
     color: var(--shiki-light);
     font-style: var(--shiki-light-font-style);
     font-weight: var(--shiki-light-font-weight);
     text-decoration: var(--shiki-light-text-decoration);
   }
 
-  .dark .markdown-v2-output .shiki,
-  .dark .markdown-v2-output .shiki span {
+  [data-stream-mdx] .shiki {
+    background-color: var(--shiki-light-bg);
+  }
+
+  [data-stream-mdx][data-color-scheme="dark"] .shiki,
+  [data-stream-mdx][data-color-scheme="dark"] .shiki span,
+  .dark [data-stream-mdx]:not([data-color-scheme]) .shiki,
+  .dark [data-stream-mdx]:not([data-color-scheme]) .shiki span {
     color: var(--shiki-dark);
     font-style: var(--shiki-dark-font-style);
     font-weight: var(--shiki-dark-font-weight);
     text-decoration: var(--shiki-dark-text-decoration);
   }
 
-  .markdown-v2-output .markdown-hr {
+  [data-stream-mdx][data-color-scheme="dark"] .shiki,
+  .dark [data-stream-mdx]:not([data-color-scheme]) .shiki {
+    background-color: var(--shiki-dark-bg);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    [data-stream-mdx][data-color-scheme="system"] .shiki,
+    [data-stream-mdx][data-color-scheme="system"] .shiki span {
+      color: var(--shiki-dark);
+      font-style: var(--shiki-dark-font-style);
+      font-weight: var(--shiki-dark-font-weight);
+      text-decoration: var(--shiki-dark-text-decoration);
+    }
+
+    [data-stream-mdx][data-color-scheme="system"] .shiki {
+      background-color: var(--shiki-dark-bg);
+    }
+  }
+
+
+  [data-stream-mdx].markdown-v2-output .markdown-hr {
     margin: 2rem 0;
     clear: both;
     border: 0;
     border-top: 1px solid var(--border);
   }
 
-  .markdown-v2-output .markdown-list-virtualization-sentinel {
+  [data-stream-mdx].markdown-v2-output .markdown-list-virtualization-sentinel {
     height: 1px;
     padding: 0;
     margin: 0;
@@ -1402,7 +1430,7 @@
 }
 
 @media print {
-  .markdown-table-container[data-table-printing="true"] {
+  [data-stream-mdx].markdown-v2-output .markdown-table-container[data-table-printing="true"] {
     max-height: none !important;
     overflow: visible !important;
   }
