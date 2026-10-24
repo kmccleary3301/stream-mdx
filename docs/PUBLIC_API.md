@@ -120,6 +120,8 @@ export function Example() {
 | `onError` | `(error: Error) => void` | Render-time errors. Updating the callback does not restart the engine or discard streamed content. (Worker runtime errors surface via `error` events on the Worker.) |
 | `className`, `style` | React props forwarded to the root container. |
 
+Table-row and table-cell presentations accept only `wrapper` and `props`; headless table customization goes through `components.table.view` with `useTableRows`.
+
 `CodeEngine` has this contract:
 
 ```ts

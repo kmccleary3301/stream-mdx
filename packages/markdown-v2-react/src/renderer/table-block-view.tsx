@@ -51,10 +51,7 @@ function renderManagedTablePart<K extends NativeTablePartPresentationKey>(
     id,
     type: key,
     isFinalized,
-    store,
-    registry,
     actions,
-    handle: store.getNodeHandle(id),
   });
 }
 type ReactTableViewCounterSink = {

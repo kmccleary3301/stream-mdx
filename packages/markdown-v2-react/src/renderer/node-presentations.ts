@@ -1,7 +1,6 @@
 import React from "react";
 import type {
   HeadlessNodeViewProps,
-  NodeHandle,
   NodePresentation,
   NodePresentationKey,
   NodeViewActions,
@@ -9,9 +8,6 @@ import type {
   NodePresentations,
   PresentationProps,
 } from "../types";
-import type { ComponentRegistry } from "../components";
-import type { RendererStore } from "./store";
-import { NodeViewRenderContext } from "./node-view-context";
 
 export interface PresentationRenderContext<K extends NodePresentationKey> {
   readonly key: React.Key;
@@ -40,7 +36,7 @@ export function renderPresentedNode<K extends NodePresentationKey>(
   }
   if ("view" in presentation && presentation.view) {
     return React.createElement(presentation.view, {
-      ...(context.viewProps ?? {}),
+      ...context.viewProps,
       key: context.key,
     });
   }
@@ -64,36 +60,28 @@ export function renderTablePartPresentation<K extends NativeTablePartPresentatio
     readonly type: K;
     readonly isFinalized: boolean;
     readonly actions: NodeViewActions;
-    readonly handle?: NodeHandle;
-    readonly store: RendererStore;
-    readonly registry: ComponentRegistry;
   },
 ): React.ReactNode {
   if (!presentation) return nativeView;
-  if ("view" in presentation && presentation.view && !context.handle) return null;
+  let prepared = nativeView;
+  if (presentation.props && React.isValidElement<Record<string, unknown>>(prepared)) {
+    prepared = React.cloneElement(
+      prepared,
+      mergeNodePresentationProps(prepared.props, presentation.props),
+    );
+  }
+  if (!presentation.wrapper) return prepared;
   const metadata = Object.freeze({
     id: context.id,
     type: context.type,
     isFinalized: context.isFinalized,
   });
-  const rendered = renderPresentedNode(presentation, nativeView, {
+  return React.createElement(presentation.wrapper, {
     key: context.id,
+    children: prepared,
     metadata,
     actions: context.actions,
-    viewProps: (context.handle ? { handle: context.handle } : {}) as HeadlessNodeViewProps<K>,
-  }, true);
-  if ("view" in presentation && presentation.view && context.handle) {
-    return React.createElement(NodeViewRenderContext.Provider, {
-      value: {
-        store: context.store,
-        registry: context.registry,
-        blockId: context.id,
-        handle: context.handle,
-        nativeTablePart: nativeView,
-      },
-    }, rendered);
-  }
-  return rendered;
+  });
 }
 
 
@@ -165,6 +153,14 @@ function validateNodePresentation(key: string, candidate: unknown): asserts cand
     throw new TypeError(`node presentation for ${key} must be an object`);
   }
   const presentation = candidate as Record<string, unknown>;
+  if ((key === "table-row" || key === "table-cell") && presentation.view !== undefined) {
+    throw new TypeError(
+      `node presentation for ${key}: headless table-part views are not supported; use components.table.view with useTableRows`,
+    );
+  }
+  if ((key === "table-row" || key === "table-cell") && presentation.slots !== undefined) {
+    throw new TypeError(`node presentation for ${key} only supports wrapper and props`);
+  }
   if (key.startsWith("component:") && presentation.view !== undefined) {
     throw new TypeError(`node presentation for ${key}: headless views are not supported for restricted content components`);
   }

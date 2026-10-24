@@ -11,7 +11,6 @@ export interface NodeViewRenderContextValue {
   readonly registry: ComponentRegistry;
   readonly blockId: string;
   readonly handle: NodeViewHandle;
-  readonly nativeTablePart?: React.ReactNode;
 }
 
 export const NodeViewRenderContext = React.createContext<NodeViewRenderContextValue | null>(null);

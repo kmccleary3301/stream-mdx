@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
-import type { Block, InlineNode, TableBlockMetadata, TableNodeHandle, TableRowRange, TableRowRecord } from "@stream-mdx/core";
-import { NativeNodeView, StreamingMarkdown, useTableBlock, useTableRows, type NodeHandle, type StreamingMarkdownHandle } from "@stream-mdx/react";
-import { ComponentRegistry, MarkdownBlocksRenderer, NativeNodeView as ServerNativeNodeView } from "@stream-mdx/react/server";
-import { JSDOM } from "jsdom";
-import { renderToStaticMarkup } from "react-dom/server";
+import type { TableBlockMetadata, TableNodeHandle, TableRowRange, TableRowRecord } from "@stream-mdx/core";
+import { NativeNodeView, StreamingMarkdown, useTableBlock, useTableRows, type NodeHandle, type NodePresentations, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { ComponentRegistry, NativeNodeView as ServerNativeNodeView } from "@stream-mdx/react/server";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-native-fixture";
@@ -126,38 +124,26 @@ async function headlessTableHooksTrackOnlyTheRequestedRows(): Promise<void> {
 const NativeTablePartView = ({ handle }: { readonly handle: NodeHandle }): React.ReactElement => (
   <ServerNativeNodeView handle={handle} />
 );
-const tableText = (text: string): InlineNode => ({ kind: "text", text });
-const staticTableBlock: Block = {
-  id: "native-table-part-fallback",
-  type: "table",
-  isFinalized: true,
-  payload: {
-    raw: "| Header |\n| --- |\n| Value |",
-    meta: { header: [[tableText("Header")]], rows: [[[tableText("Value")]]] },
-  },
-};
 
-function tablePartHeadlessViewsUseNativeFallback(): void {
-  const registry = new ComponentRegistry({
-    components: {
-      "table-row": { view: NativeTablePartView },
-      "table-cell": { view: NativeTablePartView },
-    },
-  });
-  const markup = renderToStaticMarkup(
-    <MarkdownBlocksRenderer blocks={[staticTableBlock]} componentRegistry={registry} />,
+function tablePartHeadlessViewsAreRejected(): void {
+  assert.equal(typeof ServerNativeNodeView, "function", "NativeNodeView remains exported from the server entry");
+
+  // @ts-expect-error Table-part headless views must use components.table.view with useTableRows.
+  const rowPresentation: NodePresentations = { "table-row": { view: NativeTablePartView } };
+  assert.throws(
+    () => new ComponentRegistry({ components: rowPresentation }),
+    { name: "TypeError", message: /components\.table\.view.*useTableRows/ },
   );
-  const document = new JSDOM(markup).window.document;
-  const table = document.querySelector("table");
-  assert.ok(table);
-  assert.equal(table.querySelectorAll(":scope > thead > tr").length, 1);
-  assert.equal(table.querySelectorAll(":scope > tbody > tr").length, 1);
-  assert.equal(table.querySelector("thead th")?.textContent, "Header");
-  assert.equal(table.querySelector("tbody td")?.textContent, "Value");
+
+  // @ts-expect-error Table-part headless views must use components.table.view with useTableRows.
+  const cellPresentation: NodePresentations = { "table-cell": { view: NativeTablePartView } };
+  assert.throws(
+    () => new ComponentRegistry({ components: cellPresentation }),
+    { name: "TypeError", message: /components\.table\.view.*useTableRows/ },
+  );
 }
 
 await headlessTableHooksTrackOnlyTheRequestedRows();
-tablePartHeadlessViewsUseNativeFallback();
+tablePartHeadlessViewsAreRejected();
 console.log("native-table-handle-presentation test passed");
 process.exit(0);
-

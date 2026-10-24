@@ -2,6 +2,6 @@
 "@stream-mdx/react": patch
 ---
 
-Render public `NativeNodeView` fallbacks for headless table-row and table-cell presentations without breaking native table nesting.
+Reject headless `table-row` and `table-cell` presentations; customize tables through `components.table.view` with `useTableRows`.
 
-`NativeNodeView` is also exported from `@stream-mdx/react/server`, so headless views rendered by the server `MarkdownBlocksRenderer` can fall back to native output.
+Keep exporting `NativeNodeView` from `@stream-mdx/react/server`.
