@@ -99,6 +99,7 @@ export function Example() {
 | `contentComponents` | `ContentComponentsMap` | Host registrations for restricted source components. Separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator required with `contentPolicy="trusted-mdx"`. |
 | `engines.math` | `MathEngine` | Synchronous, server-render-safe TeX adapter. KaTeX remains the default when omitted. |
+| `engines.mermaid` | `MermaidEngine` | Main-thread presentation engine for Mermaid code fences. |
 | `engines.code` | `CodeEngine` | Custom code-line tokenization. Main-realm only; requires `engine="main"`. |
 | `components` | `NodePresentations` | Semantic block, inline, extension, and HTML wrappers or headless views. |
 | `tableVirtualization` | `boolean \| Partial<TableVirtualizationConfig>` | Opt-in row virtualization for large tables while streaming or finalized. Default `false`; configured thresholds and overscan remain in effect during streaming. |
@@ -203,6 +204,8 @@ The React entry point exports `AppendResult`, `FinalizeResult`, `WaitForCapacity
 - Automatically owned `stream` adapters losslessly split iterator chunks larger than the imperative offer size before calling `append()`. They do not impose an arbitrary source-chunk cap or drop source.
 - `finalize()` seals every host session synchronously, returns the same promise for repeated calls in that generation, and drains source accepted before the seal. It resolves to `FinalizeResult` (`{ generation, acceptedSourceUnits, committedSourceUnits }`) only after the matching native `FINALIZED` acknowledgement covers the accepted units and semantic patches have flushed into the renderer store.
 - The `FinalizeResult` promise is a native semantic-store barrier, not a React DOM-commit or optional-enrichment barrier. It does not wait for trusted MDX projection, code highlighting/tokenization, decoration, or a React commit. Use the corresponding public store, scheduler, DOM, or enrichment observation when those are part of the caller's completion criteria.
+- `waitForIdle()` resolves once the worker has admitted all source this session has accepted so far and the patch queue has committed it. It does not wait for a `stream` iterator to finish or for finalization; call `finalize()` when finalization is required. It rejects with `StreamSessionError` on a disposed or stale handle.
+- After unmount, synchronous methods on a previously captured handle throw `StreamSessionError` with reason `disposed`; promise-returning methods reject with the same error.
 
 Host handles seal regardless of `contentPolicy`; a reset or replacement opens the next host generation. This contract does not change raw `MarkdownEngine`, `MarkdownWorkerClient`, or worker-protocol controls. They remain lower-level APIs and do not provide the host admission ledger or `FinalizeResult` barrier.
 
@@ -281,7 +284,7 @@ matches its `INITIALIZED` source baseline. Reject mismatched messages before
 queueing or committing them; do not infer a generation when delayed messages
 arrive.
 
-The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, and `syntax?: SyntaxExtensionDescriptor`. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions })`, or create an adapter with `createInlineEngineWorker({ extensions })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
+The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, `syntax?: SyntaxExtensionDescriptor`, and `code?: CodeEngine`. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions })`, or create an adapter with `createInlineEngineWorker({ extensions })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
 
 
 ---
@@ -331,25 +334,17 @@ npm install @stream-mdx/mermaid
 ```
 
 ```tsx
-import { MermaidBlock } from "@stream-mdx/mermaid";
-import { StreamingMarkdown, type NodeViewProps } from "@stream-mdx/react";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
+import { StreamingMarkdown } from "@stream-mdx/react";
 
-function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
-  if (metadata.language?.toLowerCase() !== "mermaid") return children;
-  const code = block?.payload.meta?.code;
-  return (
-    <MermaidBlock
-      code={typeof code === "string" ? code : ""}
-      renderCode={children}
-      language={metadata.language ?? "mermaid"}
-      blockId={metadata.id}
-      controls={{ copy: true }}
-      copy={actions.copy}
-    />
-  );
-}
+const mermaidEngine = createMermaidEngine({
+  config: { theme: "neutral" },
+});
 
-<StreamingMarkdown components={{ code: { wrapper: MermaidPresentation } }} />;
+<StreamingMarkdown
+  text={"```mermaid\nflowchart TD\n  A --> B\n```"}
+  engines={{ mermaid: mermaidEngine }}
+/>;
 ```
 
 Creates a customized Mermaid code fence renderer with isolated configuration, default views, debounce settings, custom error components, and custom Mermaid module instances or loaders:
