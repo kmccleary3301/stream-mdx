@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import { StreamingMarkdown, type NodePresentations, type NodeViewProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { NativeNodeView, StreamingMarkdown, type NodePresentations, type NodeViewProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
 import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { MarkdownBlocksRenderer as ServerMarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-native-fixture";
@@ -59,8 +59,8 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
       handle.current?.append("## Shared heading");
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector("section[data-heading-presentation]"), "finalized heading wrapper");
-    const nativeHeading = container.querySelector("h2[data-presentation='heading']");
+    await waitFor(() => Boolean(container.querySelector("section[data-heading-presentation]")), "finalized heading wrapper");
+    const nativeHeading = container.querySelector<HTMLHeadingElement>("h2[data-presentation='heading']");
     assert.ok(nativeHeading, "constrained heading props decorate the native h2");
     assert.equal(nativeHeading.className, "markdown-heading markdown-h2 host-heading");
     assert.equal(nativeHeading.title, "heading tooltip");
@@ -148,7 +148,7 @@ async function nativeBlockDecorationsReachTheirElements(): Promise<void> {
       ].join("\n"));
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector("h2[data-presentation='heading']"), "decorated heading");
+    await waitFor(() => Boolean(container.querySelector("h2[data-presentation='heading']")), "decorated heading");
 
     for (const [selector, type] of [
       ["h2", "heading"],
@@ -173,6 +173,102 @@ async function nativeBlockDecorationsReachTheirElements(): Promise<void> {
   }
 }
 
+async function nonTableHeadlessPresentationRendersTheNativeHeading(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const components = {
+    heading: {
+      view: ({ handle: nodeHandle }) => (
+        <aside data-headless-heading-view>
+          <NativeNodeView handle={nodeHandle} />
+        </aside>
+      ),
+    },
+  } satisfies NodePresentations;
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready for native heading view");
+    await act(async () => {
+      handle.current?.append("## Headless heading");
+      await handle.current?.finalize();
+    });
+
+    await waitFor(() => Boolean(container.querySelector("aside[data-headless-heading-view]")), "non-table headless presentation view");
+    assert.equal(container.querySelector("aside[data-headless-heading-view] h2")?.textContent, "Headless heading");
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
+async function codeWrapperReceivesMetadataAndSourceAction(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  let codeSource: string | undefined;
+  let presentation: NodeViewProps | undefined;
+  const components = {
+    code: {
+      wrapper: (props: NodeViewProps) => {
+        presentation = props;
+        if (codeSource === undefined) codeSource = props.actions.readSource();
+        return <section data-code-presentation>{props.children}</section>;
+      },
+    },
+  } satisfies NodePresentations;
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready for code wrapper");
+    await act(async () => {
+      handle.current?.append("```typescript\nconst first = 1;\nconst second = 2;\n");
+    });
+
+    await waitFor(() => Boolean(container.querySelector("section[data-code-presentation]")), "code presentation wrapper");
+    assert.ok(presentation, "the code wrapper receives presentation props");
+    assert.equal(presentation.metadata.language, "typescript");
+    assert.equal(presentation.metadata.lineCount, 2);
+    assert.equal(
+      codeSource,
+      "```typescript\nconst first = 1;\nconst second = 2;\n",
+      "the code wrapper reads its authored code through the code handle",
+    );
+
+    await act(async () => { await handle.current?.finalize(); });
+
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
 
 async function finalizedParagraphPresentationKeepsColdSourceBehindActions(): Promise<void> {
   const restore = installTrustedNativeTestDom();
@@ -221,7 +317,7 @@ async function finalizedParagraphPresentationKeepsColdSourceBehindActions(): Pro
       handle.current?.append("**Paragraph source**");
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector("section[data-paragraph-presentation]"), "finalized paragraph wrapper");
+    await waitFor(() => Boolean(container.querySelector("section[data-paragraph-presentation]")), "finalized paragraph wrapper");
     assert.ok(presentation, "the paragraph wrapper receives bounded presentation props");
     assert.equal(Object.prototype.hasOwnProperty.call(presentation, "block"), false, "wrappers never receive the full block");
     assert.equal(coldReads, 0, "rendering a finalized paragraph does not materialize its cold block");
@@ -286,7 +382,7 @@ async function mermaidEngineUsesTheNativeCodeOwner(): Promise<void> {
       handle.current?.append("```mermaid\ngraph TD; A-->B;\n```\n\n```ts\nconst x = 1;\n```");
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector(".stream-mdx-mermaid-diagram svg text"), "Mermaid diagram");
+    await waitFor(() => Boolean(container.querySelector(".stream-mdx-mermaid-diagram svg text")), "Mermaid diagram");
     assert.equal(container.querySelector(".stream-mdx-mermaid-diagram svg text")?.textContent, "diagram");
     assert.equal(securityLevel, "strict", "the Mermaid owner retains its strict default configuration");
     assert.deepEqual(renderedSources, ["graph TD; A-->B;"], "only Mermaid code reaches the optional renderer");
@@ -324,7 +420,7 @@ async function mermaidWithoutEngineStaysNativeCode(): Promise<void> {
       handle.current?.append("```mermaid\ngraph TD; A-->B;\n```");
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector("[data-code-block=\"true\"]"), "native Mermaid code");
+    await waitFor(() => Boolean(container.querySelector("[data-code-block=\"true\"]")), "native Mermaid code");
     assert.equal(container.querySelector(".stream-mdx-mermaid-diagram"), null);
     assert.ok(container.textContent?.includes("graph TD; A-->B;"));
   } finally {
@@ -381,6 +477,8 @@ runNodePresentationsTest();
 
 await finalizedHeadingPresentationMatchesServerOutput();
 await nativeBlockDecorationsReachTheirElements();
+await nonTableHeadlessPresentationRendersTheNativeHeading();
+await codeWrapperReceivesMetadataAndSourceAction();
 await finalizedParagraphPresentationKeepsColdSourceBehindActions();
 await mermaidEngineUsesTheNativeCodeOwner();
 await mermaidWithoutEngineStaysNativeCode();
