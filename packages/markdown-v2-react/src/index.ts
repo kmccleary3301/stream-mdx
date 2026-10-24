@@ -46,6 +46,8 @@ export type {
   ElementFilterContext,
   ElementFilterDescriptor,
   ElementFilterOptions,
+  MathEngine,
+  MathEngineOutput,
   Renderer,
   RendererConfig,
   SyntaxRuleSpec,

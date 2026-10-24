@@ -32,8 +32,6 @@ import { TrustedMdxInlineOwner } from "../trusted-mdx/native-inline";
 import type {
   AllowElementFn,
   AnimatedProp,
-  GenericComponent,
-
   CodeNodeViewProps,
   ControlsComponentProps,
   ControlsConfig,
@@ -41,8 +39,10 @@ import type {
   ElementFilterContext,
   ElementFilterDescriptor,
   HtmlElements,
+  GenericComponent,
   InlineComponents,
   InlineHtmlRendererMap,
+  MathEngine,
   NodeViewActions,
   NodeViewMetadata,
   NodePresentations,
@@ -406,7 +406,10 @@ export function renderInlineNodes(
       default: {
         const component = components[node.kind];
         if (component) {
-          return presentInline(React.createElement(component, { key, ...node }));
+          const engine = node.kind === "math-inline" || node.kind === "math-display"
+            ? registry?.getMathEngine()
+            : undefined;
+          return presentInline(React.createElement(component, { key, ...node, ...(engine ? { engine } : {}) }));
         }
         return presentInline(React.createElement(React.Fragment, { key }, null));
       }
@@ -483,11 +486,11 @@ export const defaultInlineComponents: InlineComponents = {
       `[${id}]`,
     ),
 
-  "math-inline": ({ tex }: { tex: string }) =>
-    React.createElement(KaTeXInlineMath, { tex }),
+  "math-inline": ({ tex, engine }: { tex: string; engine?: MathEngine }) =>
+    React.createElement(KaTeXInlineMath, { tex, engine }),
 
-  "math-display": ({ tex }: { tex: string }) =>
-    React.createElement(KaTeXBlockMath, { tex }),
+  "math-display": ({ tex, engine }: { tex: string; engine?: MathEngine }) =>
+    React.createElement(KaTeXBlockMath, { tex, engine }),
 
   // Footnote inline reference (superscript anchor)
   "footnote-ref": ({ label, number, occurrence, defined }: { label: string; number?: number; occurrence?: number; defined?: boolean }) => {
@@ -853,6 +856,7 @@ export class ComponentRegistry {
   private tableElements: TableElements;
   private literalTagContent?: string[];
   private contentComponents?: ContentComponentsMap;
+  private mathEngine?: MathEngine;
   private tableVirtualization: TableVirtualizationConfig = DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
   private tableVirtualizationListeners = new Set<() => void>();
   private codeVirtualization: VirtualizedCodeConfig = DEFAULT_VIRTUALIZED_CODE_CONFIG;
@@ -880,7 +884,9 @@ export class ComponentRegistry {
     animated?: AnimatedProp;
     contentComponents?: ContentComponentsMap;
     components?: NodePresentations;
+    engines?: { math?: MathEngine };
   } & ElementFilterOptions) {
+    this.mathEngine = options?.engines?.math;
     this.inlineComponents = { ...defaultInlineComponents };
     this.htmlElements = getDefaultHtmlElements();
     if (options?.urlTransform) {
@@ -1232,6 +1238,10 @@ export class ComponentRegistry {
    */
   getInlineComponents(): InlineComponents {
     return this.inlineComponents;
+  }
+
+  getMathEngine(): MathEngine | undefined {
+    return this.mathEngine;
   }
   setContentComponents(contentComponents?: ContentComponentsMap): void {
     this.contentComponents = contentComponents;

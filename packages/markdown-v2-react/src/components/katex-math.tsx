@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import type { MathEngine } from "../types";
 
 interface KaTeXModule {
   renderToString(
@@ -26,16 +27,30 @@ export interface KaTeXMathProps {
   className?: string;
   errorColor?: string;
   fallback?: (tex: string, error?: Error) => React.ReactNode;
+  engine?: MathEngine;
 }
+
+const MathEngineOutputView: React.FC<{
+  engine: MathEngine;
+  tex: string;
+  displayMode: boolean;
+}> = ({ engine, tex, displayMode }) => {
+  const output = useMemo(
+    () => engine.render(tex, { displayMode }),
+    [engine, engine.id, tex, displayMode],
+  );
+  return <>{output}</>;
+};
 
 type MathPreparation =
   | { tex: string; displayMode: boolean; html: string }
   | { tex: string; displayMode: boolean; error: Error };
 
-function useMathPreparation(tex: string, displayMode: boolean): MathPreparation | null {
+function useMathPreparation(tex: string, displayMode: boolean, enabled: boolean): MathPreparation | null {
   const [preparation, setPreparation] = useState<MathPreparation | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
 
     const prepare = async (): Promise<void> => {
@@ -58,14 +73,21 @@ function useMathPreparation(tex: string, displayMode: boolean): MathPreparation 
     return () => {
       active = false;
     };
-  }, [tex, displayMode]);
+  }, [tex, displayMode, enabled]);
 
   if (preparation?.tex === tex && preparation.displayMode === displayMode) return preparation;
   return null;
 }
 
-export const KaTeXInlineMath: React.FC<KaTeXMathProps> = ({ tex, className = "", fallback }) => {
-  const preparation = useMathPreparation(tex, false);
+export const KaTeXInlineMath: React.FC<KaTeXMathProps> = ({ tex, className = "", fallback, engine }) => {
+  const preparation = useMathPreparation(tex, false, !engine);
+  if (engine) {
+    return (
+      <span className={`math-inline ${className}`.trim()} data-tex={tex}>
+        <MathEngineOutputView engine={engine} tex={tex} displayMode={false} />
+      </span>
+    );
+  }
 
   if (preparation && "error" in preparation && fallback) {
     return <>{fallback(tex, preparation.error)}</>;
@@ -92,8 +114,19 @@ export const KaTeXInlineMath: React.FC<KaTeXMathProps> = ({ tex, className = "",
 
 KaTeXInlineMath.displayName = "KaTeXInlineMath";
 
-export const KaTeXBlockMath: React.FC<KaTeXMathProps> = ({ tex, className = "", fallback }) => {
-  const preparation = useMathPreparation(tex, true);
+export const KaTeXBlockMath: React.FC<KaTeXMathProps> = ({ tex, className = "", fallback, engine }) => {
+  const preparation = useMathPreparation(tex, true, !engine);
+  if (engine) {
+    return (
+      <div
+        className={`math-display markdown-math-display ${className}`.trim()}
+        data-tex={tex}
+        style={{ overflowX: "auto" }}
+      >
+        <MathEngineOutputView engine={engine} tex={tex} displayMode />
+      </div>
+    );
+  }
 
   if (preparation && "error" in preparation && fallback) {
     return <>{fallback(tex, preparation.error)}</>;
