@@ -60,6 +60,16 @@ StreamMDX provides end-to-end configurable Shiki themes for code blocks. Pass an
 
 Themes are loaded on demand into the worker highlighter singleton, and cache partitions prevent cross-contamination between engines with different themes. Unknown or invalid theme names report an initialization error through the standard error callback and fall back safely to default GitHub themes.
 
+## Native color scheme
+
+`themes` selects Shiki themes; `colorScheme` selects the native output's light or dark palette. With `@stream-mdx/theme-tailwind`, set the scheme on the renderer root when the host needs a fixed or system preference:
+
+```tsx
+<StreamingMarkdown text={content} colorScheme="system" />
+```
+
+`colorScheme` accepts `"light"`, `"dark"`, or `"system"`. When omitted, a `.dark` ancestor retains the existing class-based behavior.
+
 When using static snapshot compilation directly:
 
 ```ts
