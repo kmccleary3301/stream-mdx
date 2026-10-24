@@ -94,14 +94,8 @@ export function resolveWorkerSetup(
     if (engine === "worker" && !factories.available()) {
       throw new Error("Worker is not supported in this environment");
     }
-    if (engine === "auto") {
-      try {
-        lease = instantiateWorker(source, factories);
-        // Managed auto cannot fall back; unmanaged auto uses the bootstrap path above.
-      }
-    } else {
-      lease = instantiateWorker(source, factories);
-    }
+    // Only managed auto reaches this path; unmanaged auto uses the inline bootstrap below and managed auto cannot fall back.
+    lease = instantiateWorker(source, factories);
     if (!lease && (engine === "worker" || managedWorker)) {
       throw new Error(managedWorker
         ? "managedWorker requires an available caller-initialized worker; inline fallback is not supported"
