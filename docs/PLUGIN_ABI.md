@@ -20,6 +20,7 @@ const ticketRule: SyntaxRuleSpec = {
 | `name` | `string` | Plugin name and React component-map key. Use distinct names. |
 | `pattern` | `{ source: string; flags?: string }` | JavaScript regex source and flags. The parser removes `g`/`y` and matches sticky at the current inline cursor. Empty matches are ignored. |
 | `trigger` | `string` | Optional exact prefix check before regex execution. |
+| `maxCandidateUnits` | `number` | Optional positive integer limiting the UTF-16 code units passed to this rule's regex. Oversized candidates remain literal and emit a diagnostic; omitted means no limit. |
 | `before` | `string` | Lezer inline parser precedence. Defaults to `"Link"`. |
 | `attrs` | `Record<string, number \| string>` | Numbers select capture groups; strings are literal values. Output values are strings, with absent captures becoming `""`. |
 | `content` | `number` | Capture group to parse recursively as inline markdown children. |

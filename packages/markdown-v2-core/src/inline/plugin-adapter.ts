@@ -107,10 +107,24 @@ export function createDefaultRegexPlugins(): RegexInlinePlugin[] {
   ];
 }
 
+function isCandidateWithinLimit(rule: SyntaxRuleSpec, candidate: string): boolean {
+  const maxCandidateUnits = rule.maxCandidateUnits;
+  if (maxCandidateUnits === undefined || candidate.length <= maxCandidateUnits) return true;
+  console.warn(
+    `[stream-mdx] Syntax rule "${rule.name}" skipped an oversized candidate ` +
+      `(${candidate.length} UTF-16 code units; maxCandidateUnits=${maxCandidateUnits}); preserving literal source.`,
+  );
+  return false;
+}
+
 /**
  * Compiles a declarative SyntaxRuleSpec into a Lezer InlineExtension.
  */
 export function compileSyntaxRuleToExtension(rule: SyntaxRuleSpec): InlineExtension {
+  if (rule.maxCandidateUnits !== undefined &&
+    (!Number.isSafeInteger(rule.maxCandidateUnits) || rule.maxCandidateUnits <= 0)) {
+    throw new RangeError(`Syntax rule "${rule.name}" maxCandidateUnits must be a positive integer.`);
+  }
   const nodeName = `Custom_Rule_${rule.name.replace(/[^A-Za-z0-9_]/g, "_")}`;
   const rawFlags = rule.pattern.flags || "";
   const cleanedFlags = rawFlags.replace(/[gy]/g, "");
@@ -140,6 +154,7 @@ export function compileSyntaxRuleToExtension(rule: SyntaxRuleSpec): InlineExtens
             if (trigger && !cx.text.startsWith(trigger, localPos)) {
               return -1;
             }
+            if (!isCandidateWithinLimit(rule, cx.text)) return -1;
             stickyRe.lastIndex = localPos;
             const match = stickyRe.exec(cx.text);
             if (!match || match.index !== localPos || match[0].length === 0) {
@@ -170,6 +185,7 @@ export function compileSyntaxRuleToExtension(rule: SyntaxRuleSpec): InlineExtens
       ],
     },
     toInline(element, text, convertChildren) {
+      if (!isCandidateWithinLimit(rule, text)) return null;
       stickyRe.lastIndex = element.from;
       const match = stickyRe.exec(text);
       if (!match || match.index !== element.from) {

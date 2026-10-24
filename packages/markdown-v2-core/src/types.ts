@@ -174,6 +174,8 @@ export interface SyntaxRuleSpec {
   name: string;
   pattern: { source: string; flags?: string };
   trigger?: string /* first char(s) for fast dispatch */;
+  /** Maximum UTF-16 code units passed to this rule's RegExp; omitted means unbounded. */
+  maxCandidateUnits?: number;
   before?: string /* Lezer inline parser to precede, e.g. 'Emphasis' */;
   attrs?: Record<string, number | string> /* capture group index or literal */;
   content?: number /* capture group parsed as inline children */;
