@@ -30,17 +30,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.0999999940395355,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.699999988079071,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "math-left-right-null-right-supported",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -49,8 +50,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -59,12 +58,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
       "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webk",
       "structure": {
         "topLevelTags": [
@@ -81,7 +78,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -94,17 +90,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.0999999940395355,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.699999988079071,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "math-left-right-null-right-supported",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -113,8 +110,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -123,12 +118,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
       "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webk",
       "structure": {
         "topLevelTags": [
@@ -145,7 +138,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -158,17 +150,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.0999999940395355,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.699999988079071,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "math-left-right-null-right-supported",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -177,8 +170,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -187,12 +178,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
       "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webk",
       "structure": {
         "topLevelTags": [
@@ -209,7 +198,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -222,17 +210,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.0999999940395355,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.699999988079071,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "math-left-right-null-right-supported",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -241,8 +230,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -251,12 +238,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
       "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webk",
       "structure": {
         "topLevelTags": [
@@ -273,7 +258,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -286,17 +270,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.0999999940395355,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.699999988079071,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "math-left-right-null-right-supported",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -305,8 +290,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -315,12 +298,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
       "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webk",
       "structure": {
         "topLevelTags": [
@@ -337,7 +318,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -350,17 +330,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.0999999940395355,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.699999988079071,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "math-left-right-null-right-supported",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -369,8 +350,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -379,12 +358,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
       "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webk",
       "structure": {
         "topLevelTags": [
@@ -401,7 +378,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -414,17 +390,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.0999999940395355,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.699999988079071,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "math-left-right-null-right-supported",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -433,8 +410,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -443,12 +418,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
       "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webk",
       "structure": {
         "topLevelTags": [
@@ -465,7 +438,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -478,17 +450,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.0999999940395355,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.699999988079071,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "math-left-right-null-right-supported",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -497,8 +470,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -507,12 +478,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
       "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webk",
       "structure": {
         "topLevelTags": [
@@ -529,7 +498,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -542,17 +510,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.300000011920929,
-        "lastDurationMs": 1.0999999940395355,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.699999988079071,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "math-left-right-null-right-supported",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -561,8 +530,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -571,12 +538,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
       "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webk",
       "structure": {
         "topLevelTags": [
@@ -593,7 +558,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -606,28 +570,27 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": true
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph\">Inline candidate:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Null-Right\" id=\"math-v2a-left-right-null-right\" data-heading-id=\"math-v2a-left-right-null-right\">Math V2A Left/Right Null-Right</h1><p class=\"markdown-paragraph markdown-paragraph\">Inline candidate:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">(</mo><mi>x</mi><mo>+</mo><mi>y</mi><mo fence=\"true\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\left( x + y\n\\right)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"minner\"><span class=\"mopen delimcenter\" style=\"top:0em;\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mclose delimcenter\" style=\"top:0em;\">)</span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\">Target V2A behavior:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as <code class=\"inline-code\">left-right-local</code></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">remain tail-local</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">candidate may close with <code class=\"inline-code\">\\right.</code> only when policy allows it</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no environment or alignment inference</li></ul><p class=\"markdown-paragraph markdown-paragraph\">Trailing prose must remain visible after the supported left-right case.</p><p class=\"markdown-paragraph markdown-paragraph\">Final paragraph after the left-right supported case.</p></div>",
     "runtimeState": {
-      "rendererVersion": 6,
+      "rendererVersion": 5,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
       "lastTx": 3,
-      "lastPatchToDomMs": 7.700000017881393,
-      "lastDurationMs": 0.30000001192092896,
+      "lastPatchToDomMs": 0.5999999642372131,
+      "lastDurationMs": 0.5,
       "meta": {
         "fixtureId": "math-left-right-null-right-supported",
-        "scenarioId": "S4_chunky_network",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S4_chunky_network"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -649,13 +612,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "c992f2e1cc24c6055acadee8fc3e81afc5e85be82557daf571609651e0243fe1",
+        "hash": "840404fc03effcc9735a1629cac7159c7948c01b21aeb56f313f86cfcdb9c205",
         "textSample": "Math V2A Left/Right Null-RightInline candidate:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

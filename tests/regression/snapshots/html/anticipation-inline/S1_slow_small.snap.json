@@ -30,17 +30,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.8999999761581421,
+        "lastDurationMs": 0.8999999761581421,
         "meta": {
           "fixtureId": "anticipation-inline",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -49,8 +50,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -59,12 +58,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Antici\">Antici</h3></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Antici\" id=\"antici\" data-heading-id=\"antici\">Antici</h3></div>",
       "textSample": "Antici",
       "structure": {
         "topLevelTags": [
@@ -81,7 +78,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -94,17 +90,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 4,
+        "lastPatchToDomMs": 0.7000000476837158,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "anticipation-inline",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -113,8 +110,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -123,12 +118,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inl\">Anticipation Inl</h3></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inl\" id=\"anticipation-inl\" data-heading-id=\"anticipation-inl\">Anticipation Inl</h3></div>",
       "textSample": "Anticipation Inl",
       "structure": {
         "topLevelTags": [
@@ -145,7 +138,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -158,17 +150,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 4,
-        "lastPatchToDomMs": 15.399999998509884,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 8,
+        "lastPatchToDomMs": 3.5,
+        "lastDurationMs": 0.800000011920929,
         "meta": {
           "fixtureId": "anticipation-inline",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -177,8 +170,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -187,12 +178,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\">Anticipation Inline Smoke</h3><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo></mrow><annotation encoding=\"application/x-tex\">a^2 +</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mord\">+</span></span></span></span></span></span></div></div></div></div></div></div></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\" id=\"anticipation-inline-smoke\" data-heading-id=\"anticipation-inline-smoke\">Anticipation Inline Smoke</h3><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo></mrow><annotation encoding=\"application/x-tex\">a^2 +</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mord\">+</span></span></span></span></span></span></div></div></div></div></div></p></div>",
       "textSample": "Anticipation Inline Smoke[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:n",
       "structure": {
         "topLevelTags": [
@@ -209,7 +198,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -222,17 +210,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 4,
-        "lastPatchToDomMs": 15.399999998509884,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 8,
+        "lastPatchToDomMs": 3.5,
+        "lastDurationMs": 0.800000011920929,
         "meta": {
           "fixtureId": "anticipation-inline",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -241,8 +230,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -251,12 +238,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\">Anticipation Inline Smoke</h3><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo></mrow><annotation encoding=\"application/x-tex\">a^2 +</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mord\">+</span></span></span></span></span></span></div></div></div></div></div></div></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\" id=\"anticipation-inline-smoke\" data-heading-id=\"anticipation-inline-smoke\">Anticipation Inline Smoke</h3><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo></mrow><annotation encoding=\"application/x-tex\">a^2 +</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mord\">+</span></span></span></span></span></span></div></div></div></div></div></p></div>",
       "textSample": "Anticipation Inline Smoke[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:n",
       "structure": {
         "topLevelTags": [
@@ -273,7 +258,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -286,17 +270,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 9,
-        "lastPatchToDomMs": 15.100000001490116,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 18,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "anticipation-inline",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -305,8 +290,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -315,12 +298,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\">Anticipation Inline Smoke</h3><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\"><code class=\"inline-code\">this is a really really really real</code></p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\" id=\"anticipation-inline-smoke\" data-heading-id=\"anticipation-inline-smoke\">Anticipation Inline Smoke</h3><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\"><code class=\"inline-code\">this is a really really really real</code></p></div>",
       "textSample": "Anticipation Inline Smoke[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:n",
       "structure": {
         "topLevelTags": [
@@ -337,7 +318,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -350,17 +330,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 18,
-        "lastPatchToDomMs": 15.600000001490116,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 36,
+        "lastPatchToDomMs": 0.3999999761581421,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "anticipation-inline",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -369,8 +350,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -379,12 +358,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\">Anticipation Inline Smoke</h3><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really rea</code></p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\" id=\"anticipation-inline-smoke\" data-heading-id=\"anticipation-inline-smoke\">Anticipation Inline Smoke</h3><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really rea</code></p></div>",
       "textSample": "Anticipation Inline Smoke[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:n",
       "structure": {
         "topLevelTags": [
@@ -401,7 +378,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -414,17 +390,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 27,
-        "lastPatchToDomMs": 15.300000004470348,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 54,
+        "lastPatchToDomMs": 0.6000000238418579,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "anticipation-inline",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -433,8 +410,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -443,12 +418,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\">Anticipation Inline Smoke</h3><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really really really really really really long inline code span</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">*Inline emphasis in a list item *</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\" id=\"anticipation-inline-smoke\" data-heading-id=\"anticipation-inline-smoke\">Anticipation Inline Smoke</h3><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really really really really really really long inline code span</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">*Inline emphasis in a list item *</li></ul></div>",
       "textSample": "Anticipation Inline Smoke[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:n",
       "structure": {
         "topLevelTags": [
@@ -465,7 +438,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -478,17 +450,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 32,
-        "lastPatchToDomMs": 15.399999998509884,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 64,
+        "lastPatchToDomMs": 0.8999999761581421,
+        "lastDurationMs": 0.09999996423721313,
         "meta": {
           "fixtureId": "anticipation-inline",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -497,8 +470,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -507,12 +478,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\">Anticipation Inline Smoke</h3><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really really really really really really long inline code span</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><em>Inline emphasis in a list item should be parsed as italics.</em></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><code class=\"inline-code\">$x + y$</code> should p</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\" id=\"anticipation-inline-smoke\" data-heading-id=\"anticipation-inline-smoke\">Anticipation Inline Smoke</h3><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really really really really really really long inline code span</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><em>Inline emphasis in a list item should be parsed as italics.</em></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><code class=\"inline-code\">$x + y$</code> should p</li></ul></div>",
       "textSample": "Anticipation Inline Smoke[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:n",
       "structure": {
         "topLevelTags": [
@@ -529,7 +498,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -542,17 +510,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 35,
-        "lastPatchToDomMs": 15.200000002980232,
-        "lastDurationMs": 0,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 70,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "anticipation-inline",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -561,8 +530,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -571,12 +538,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\">Anticipation Inline Smoke</h3><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really really really really really really long inline code span</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><em>Inline emphasis in a list item should be parsed as italics.</em></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><code class=\"inline-code\">$x + y$</code> should parse inside a list item too.</li></ul></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\" id=\"anticipation-inline-smoke\" data-heading-id=\"anticipation-inline-smoke\">Anticipation Inline Smoke</h3><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really really really really really really long inline code span</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><em>Inline emphasis in a list item should be parsed as italics.</em></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><code class=\"inline-code\">$x + y$</code> should parse inside a list item too.</li></ul></div>",
       "textSample": "Anticipation Inline Smoke[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:n",
       "structure": {
         "topLevelTags": [
@@ -593,7 +558,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -606,28 +570,27 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": true
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\">Anticipation Inline Smoke</h3><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></div><p class=\"markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really really really really really really long inline code span</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><em>Inline emphasis in a list item should be parsed as italics.</em></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><code class=\"inline-code\">$x + y$</code> should parse inside a list item too.</li></ul></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Anticipation Inline Smoke\" id=\"anticipation-inline-smoke\" data-heading-id=\"anticipation-inline-smoke\">Anticipation Inline Smoke</h3><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9474em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8641em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></span></div></div></div></div></div></p><p class=\"markdown-paragraph markdown-paragraph\"><code class=\"inline-code\">this is a really really really really really really really really really really really really really really really really really really really really really long inline code span</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><em>Inline emphasis in a list item should be parsed as italics.</em></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><code class=\"inline-code\">$x + y$</code> should parse inside a list item too.</li></ul></div>",
     "runtimeState": {
-      "rendererVersion": 40,
+      "rendererVersion": 39,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 37,
-      "lastPatchToDomMs": 14.599999994039536,
-      "lastDurationMs": 0.3999999985098839,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
+      "lastTx": 71,
+      "lastPatchToDomMs": 9.100000023841858,
+      "lastDurationMs": 0.20000004768371582,
       "meta": {
         "fixtureId": "anticipation-inline",
-        "scenarioId": "S1_slow_small",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S1_slow_small"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -649,13 +612,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "084a91b45bede9ce0a90ebeae3cdd8b0bf47e095441f7bdb22b50c0c586ad114",
+        "hash": "d0e22df4a216bdd602453ef7a7b60c32749285e19e6aec513362fd8d4208e65f",
         "textSample": "Anticipation Inline Smoke[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

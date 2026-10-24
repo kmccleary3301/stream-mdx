@@ -28,17 +28,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.199999988079071,
+        "lastDurationMs": 1.199999988079071,
         "meta": {
           "fixtureId": "line-breaks",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S2_typical"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -47,8 +48,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -57,12 +56,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\" id=\"line-breaks\" data-heading-id=\"line-breaks\">Line Breaks</h1><p class=\"markdown-paragraph markdown-paragraph\">Soft</p></div>",
       "textSample": "Line BreaksSoft",
       "structure": {
         "topLevelTags": [
@@ -79,7 +76,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -92,17 +88,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.199999988079071,
+        "lastDurationMs": 1.199999988079071,
         "meta": {
           "fixtureId": "line-breaks",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S2_typical"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -111,8 +108,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -121,12 +116,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\" id=\"line-breaks\" data-heading-id=\"line-breaks\">Line Breaks</h1><p class=\"markdown-paragraph markdown-paragraph\">Soft</p></div>",
       "textSample": "Line BreaksSoft",
       "structure": {
         "topLevelTags": [
@@ -143,7 +136,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -156,17 +148,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0.09999999403953552,
-        "lastDurationMs": 0,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 4,
+        "lastPatchToDomMs": 1.399999976158142,
+        "lastDurationMs": 0.5,
         "meta": {
           "fixtureId": "line-breaks",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S2_typical"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -175,8 +168,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -185,12 +176,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsof</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\" id=\"line-breaks\" data-heading-id=\"line-breaks\">Line Breaks</h1><p class=\"markdown-paragraph markdown-paragraph\">Soft break line one\nsof</p></div>",
       "textSample": "Line BreaksSoft break line one\nsof",
       "structure": {
         "topLevelTags": [
@@ -207,7 +196,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -220,17 +208,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 3,
-        "lastPatchToDomMs": 12.600000001490116,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 6,
+        "lastPatchToDomMs": 0.6000000238418579,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "line-breaks",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S2_typical"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -239,8 +228,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -249,12 +236,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (s</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\" id=\"line-breaks\" data-heading-id=\"line-breaks\">Line Breaks</h1><p class=\"markdown-paragraph markdown-paragraph\">Soft break line one\nsoft break line two (s</p></div>",
       "textSample": "Line BreaksSoft break line one\nsoft break line two (s",
       "structure": {
         "topLevelTags": [
@@ -271,7 +256,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -284,17 +268,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 6,
-        "lastPatchToDomMs": 14.699999995529652,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 12,
+        "lastPatchToDomMs": 0.6000000238418579,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "line-breaks",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S2_typical"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -303,8 +288,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -313,12 +296,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>\nline after </p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\" id=\"line-breaks\" data-heading-id=\"line-breaks\">Line Breaks</h1><p class=\"markdown-paragraph markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph markdown-paragraph\">Hard break with two spaces<br>\nline after </p></div>",
       "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spaces\nline after ",
       "structure": {
         "topLevelTags": [
@@ -335,7 +316,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -348,17 +328,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 8,
-        "lastPatchToDomMs": 14.799999997019768,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 16,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "line-breaks",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S2_typical"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -367,8 +348,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -377,12 +356,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>\nline after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\" id=\"line-breaks\" data-heading-id=\"line-breaks\">Line Breaks</h1><p class=\"markdown-paragraph markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph markdown-paragraph\">Hard break with two spaces<br>\nline after two spaces.</p><p class=\"markdown-paragraph markdown-paragraph\">Hard break with backslash</p></div>",
       "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spaces\nline after two spaces.Hard break with backslash",
       "structure": {
         "topLevelTags": [
@@ -399,7 +376,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -412,17 +388,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 10,
-        "lastPatchToDomMs": 13.600000001490116,
-        "lastDurationMs": 0,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 20,
+        "lastPatchToDomMs": 0.9000000357627869,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "line-breaks",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S2_typical"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -431,8 +408,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -441,12 +416,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>\nline after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>\nline after backslash.</p><p class=\"markdown-paragraph\">Paragraph bre</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\" id=\"line-breaks\" data-heading-id=\"line-breaks\">Line Breaks</h1><p class=\"markdown-paragraph markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph markdown-paragraph\">Hard break with two spaces<br>\nline after two spaces.</p><p class=\"markdown-paragraph markdown-paragraph\">Hard break with backslash<br>\nline after backslash.</p><p class=\"markdown-paragraph markdown-paragraph\">Paragraph bre</p></div>",
       "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spaces\nline after two spaces.Hard break with backslash\nline after backslash.Paragraph bre",
       "structure": {
         "topLevelTags": [
@@ -463,7 +436,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -476,17 +448,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 11,
-        "lastPatchToDomMs": 15.899999998509884,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 22,
+        "lastPatchToDomMs": 0.20000004768371582,
         "lastDurationMs": 0,
         "meta": {
           "fixtureId": "line-breaks",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S2_typical"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -495,8 +468,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -505,12 +476,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>\nline after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>\nline after backslash.</p><p class=\"markdown-paragraph\">Paragraph break above.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\" id=\"line-breaks\" data-heading-id=\"line-breaks\">Line Breaks</h1><p class=\"markdown-paragraph markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph markdown-paragraph\">Hard break with two spaces<br>\nline after two spaces.</p><p class=\"markdown-paragraph markdown-paragraph\">Hard break with backslash<br>\nline after backslash.</p><p class=\"markdown-paragraph markdown-paragraph\">Paragraph break above.</p></div>",
       "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spaces\nline after two spaces.Hard break with backslash\nline after backslash.Paragraph break above.",
       "structure": {
         "topLevelTags": [
@@ -527,7 +496,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -540,28 +508,27 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>\nline after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>\nline after backslash.</p><p class=\"markdown-paragraph\">Paragraph break above.</p></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\" id=\"line-breaks\" data-heading-id=\"line-breaks\">Line Breaks</h1><p class=\"markdown-paragraph markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph markdown-paragraph\">Hard break with two spaces<br>\nline after two spaces.</p><p class=\"markdown-paragraph markdown-paragraph\">Hard break with backslash<br>\nline after backslash.</p><p class=\"markdown-paragraph markdown-paragraph\">Paragraph break above.</p></div>",
     "runtimeState": {
-      "rendererVersion": 16,
+      "rendererVersion": 15,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 13,
-      "lastPatchToDomMs": 14.099999994039536,
-      "lastDurationMs": 0.19999999552965164,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
+      "lastTx": 23,
+      "lastPatchToDomMs": 10.699999988079071,
+      "lastDurationMs": 0.10000002384185791,
       "meta": {
         "fixtureId": "line-breaks",
-        "scenarioId": "S2_typical",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S2_typical"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -583,13 +550,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "f6d88e55c918a817fa4ffce825726c9bd2b358b7f5efda23f1bbc6db92b6b466",
+        "hash": "56b2701c8913ad48d72f0094a58691778b45687c84a62ce8d0f9b07438be8f4b",
         "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spaces\nline after two spaces.Har"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

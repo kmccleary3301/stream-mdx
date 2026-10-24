@@ -28,17 +28,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.2000000476837158,
+        "lastDurationMs": 1.2000000476837158,
         "meta": {
           "fixtureId": "table-boundary",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -47,8 +48,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -57,12 +56,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><p class=\"markdown-paragraph\">| Hedg</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><p class=\"markdown-paragraph markdown-paragraph\">| Hedg</p></div>",
       "textSample": "Table Boundary| Hedg",
       "structure": {
         "topLevelTags": [
@@ -79,7 +76,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -92,17 +88,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.2000000476837158,
+        "lastDurationMs": 1.2000000476837158,
         "meta": {
           "fixtureId": "table-boundary",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -111,8 +108,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -121,12 +116,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><p class=\"markdown-paragraph\">| Hedg</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><p class=\"markdown-paragraph markdown-paragraph\">| Hedg</p></div>",
       "textSample": "Table Boundary| Hedg",
       "structure": {
         "topLevelTags": [
@@ -143,7 +136,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -156,17 +148,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.2000000476837158,
+        "lastDurationMs": 1.2000000476837158,
         "meta": {
           "fixtureId": "table-boundary",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -175,8 +168,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -185,12 +176,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><p class=\"markdown-paragraph\">| Hedg</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><p class=\"markdown-paragraph markdown-paragraph\">| Hedg</p></div>",
       "textSample": "Table Boundary| Hedg",
       "structure": {
         "topLevelTags": [
@@ -207,7 +196,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -220,48 +208,45 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 3,
-        "lastPatchToDomMs": 16.69999999552965,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 6,
+        "lastPatchToDomMs": 2.300000011920929,
+        "lastDurationMs": 0.40000003576278687,
         "meta": {
           "fixtureId": "table-boundary",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
-        "hasTable": false,
+        "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
-        "table": 0,
+        "table": 1,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><p class=\"markdown-paragraph\">| Hedge Fund | Margin | Location |\n| --- | ---: | --- </p></div>",
-      "textSample": "Table Boundary| Hedge Fund | Margin | Location |\n| --- | ---: | --- ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><div data-table-block-root=\"511c2ee7\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"511c2ee7\" data-table-virtualized=\"false\" data-table-total-rows=\"0\" data-table-mounted-rows=\"0\" data-table-start-index=\"0\" data-table-end-index=\"0\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Hedge Fund</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Margin</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Location</th></tr></thead><tbody></tbody></table></div></div></div></div>",
+      "textSample": "Table BoundaryHedge FundMarginLocation",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 0,
+          "table": 1,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -270,8 +255,79 @@
         }
       },
       "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [],
+            "emptyBodyCellCount": 0
+          }
+        ],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasTable",
+      "appendedChars": 72,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 6,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 6,
+        "lastPatchToDomMs": 2.300000011920929,
+        "lastDurationMs": 0.40000003576278687,
+        "meta": {
+          "fixtureId": "table-boundary",
+          "scenarioId": "S3_fast_reasonable"
+        },
+        "storeCounters": {
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": true,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 1,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><div data-table-block-root=\"511c2ee7\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"511c2ee7\" data-table-virtualized=\"false\" data-table-total-rows=\"0\" data-table-mounted-rows=\"0\" data-table-start-index=\"0\" data-table-end-index=\"0\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Hedge Fund</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Margin</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Location</th></tr></thead><tbody></tbody></table></div></div></div></div>",
+      "textSample": "Table BoundaryHedge FundMarginLocation",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 1,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [],
+            "emptyBodyCellCount": 0
+          }
+        ],
         "codeBlocks": []
       }
     },
@@ -284,48 +340,45 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 5,
-        "lastPatchToDomMs": 15.5,
-        "lastDurationMs": 0,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 10,
+        "lastPatchToDomMs": 0.8999999761581421,
+        "lastDurationMs": 0.30000001192092896,
         "meta": {
           "fixtureId": "table-boundary",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
-        "hasTable": false,
+        "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
-        "table": 0,
+        "table": 1,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><p class=\"markdown-paragraph\">| Hedge Fund | Margin | Location |\n| --- | ---: | --- |\n| Bridgewater | 25% | Westport, Connecticut |</p></div>",
-      "textSample": "Table Boundary| Hedge Fund | Margin | Location |\n| --- | ---: | --- |\n| Bridgewater | 25% | Westport, Connecticut |",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><div data-table-block-root=\"511c2ee7\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"511c2ee7\" data-table-virtualized=\"false\" data-table-total-rows=\"1\" data-table-mounted-rows=\"1\" data-table-start-index=\"0\" data-table-end-index=\"1\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Hedge Fund</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Margin</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Location</th></tr></thead><tbody><tr data-row-id=\"511c2ee7::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Bridgewater</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">25%</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Westport, Connecticut</td></tr></tbody></table></div></div></div></div>",
+      "textSample": "Table BoundaryHedge FundMarginLocationBridgewater25%Westport, Connecticut",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 0,
+          "table": 1,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -334,8 +387,15 @@
         }
       },
       "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3
+            ],
+            "emptyBodyCellCount": 0
+          }
+        ],
         "codeBlocks": []
       }
     },
@@ -348,48 +408,45 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 7,
-        "lastPatchToDomMs": 17.100000001490116,
-        "lastDurationMs": 0,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 14,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.09999996423721313,
         "meta": {
           "fixtureId": "table-boundary",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
-        "hasTable": false,
+        "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
-        "table": 0,
+        "table": 1,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><p class=\"markdown-paragraph\">| Hedge Fund | Margin | Location |\n| --- | ---: | --- |\n| Bridgewater | 25% | Westport, Connecticut |\n| Renaissance | Not Public | East Setauket, NY |</p></div>",
-      "textSample": "Table Boundary| Hedge Fund | Margin | Location |\n| --- | ---: | --- |\n| Bridgewater | 25% | Westport, Connecticut |\n| Renaissance | Not Public | East Setauket, NY |",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><div data-table-block-root=\"511c2ee7\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"511c2ee7\" data-table-virtualized=\"false\" data-table-total-rows=\"2\" data-table-mounted-rows=\"2\" data-table-start-index=\"0\" data-table-end-index=\"2\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Hedge Fund</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Margin</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Location</th></tr></thead><tbody><tr data-row-id=\"511c2ee7::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Bridgewater</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">25%</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Westport, Connecticut</td></tr><tr data-row-id=\"511c2ee7::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Renaissance</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Not Public</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">East Setauket, NY</td></tr></tbody></table></div></div></div></div>",
+      "textSample": "Table BoundaryHedge FundMarginLocationBridgewater25%Westport, ConnecticutRenaissanceNot PublicEast Setauket, NY",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 0,
+          "table": 1,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -398,8 +455,16 @@
         }
       },
       "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3,
+              3
+            ],
+            "emptyBodyCellCount": 0
+          }
+        ],
         "codeBlocks": []
       }
     },
@@ -412,48 +477,45 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 8,
-        "lastPatchToDomMs": 14.100000001490116,
-        "lastDurationMs": 0,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 16,
+        "lastPatchToDomMs": 0.6000000238418579,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "table-boundary",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
-        "hasTable": false,
+        "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
-        "table": 0,
+        "table": 1,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><p class=\"markdown-paragraph\">| Hedge Fund | Margin | Location |\n| --- | ---: | --- |\n| Bridgewater | 25% | Westport, Connecticut |\n| Renaissance | Not Public | East Setauket, NY |\n| Man Group | Not Publi</p></div>",
-      "textSample": "Table Boundary| Hedge Fund | Margin | Location |\n| --- | ---: | --- |\n| Bridgewater | 25% | Westport, Connecticut |\n| Renaissance | Not Public | East Setauket, NY |\n| Man Group | Not Publi",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><div data-table-block-root=\"511c2ee7\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"511c2ee7\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Hedge Fund</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Margin</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Location</th></tr></thead><tbody><tr data-row-id=\"511c2ee7::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Bridgewater</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">25%</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Westport, Connecticut</td></tr><tr data-row-id=\"511c2ee7::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Renaissance</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Not Public</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">East Setauket, NY</td></tr><tr data-row-id=\"511c2ee7::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Man Group</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Not Publi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"></td></tr></tbody></table></div></div></div></div>",
+      "textSample": "Table BoundaryHedge FundMarginLocationBridgewater25%Westport, ConnecticutRenaissanceNot PublicEast Setauket, NYMan GroupNot Publi",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 0,
+          "table": 1,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -462,8 +524,17 @@
         }
       },
       "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3,
+              3,
+              3
+            ],
+            "emptyBodyCellCount": 1
+          }
+        ],
         "codeBlocks": []
       }
     },
@@ -476,81 +547,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 9,
-        "lastPatchToDomMs": 15.299999997019768,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 18,
+        "lastPatchToDomMs": 0.40000003576278687,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "table-boundary",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><p class=\"markdown-paragraph\">| Hedge Fund | Margin | Location |\n| --- | ---: | --- |\n| Bridgewater | 25% | Westport, Connecticut |\n| Renaissance | Not Public | East Setauket, NY |\n| Man Group | Not Public | London, UK |</p></div>",
-      "textSample": "Table Boundary| Hedge Fund | Margin | Location |\n| --- | ---: | --- |\n| Bridgewater | 25% | Westport, Connecticut |\n| Renaissance | Not Public | East Setauket, NY |\n| Man Group | Not Public | London, ",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasTable",
-      "appendedChars": 209,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 14,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 11,
-        "lastPatchToDomMs": 15.100000001490116,
-        "lastDurationMs": 0.29999999701976776,
-        "meta": {
-          "fixtureId": "table-boundary",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -559,8 +567,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -569,13 +575,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Hedge Fund</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Margin</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Location</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Bridgewater</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">25%</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Westport, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Renaissance</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">East Setauket, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Man Group</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">London, UK</td></tr></tbody></table></div></div></div></div></div></div>",
-      "textSample": "Table Boundary[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Hedge F",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><div data-table-block-root=\"511c2ee7\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"511c2ee7\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Hedge Fund</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Margin</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Location</th></tr></thead><tbody><tr data-row-id=\"511c2ee7::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Bridgewater</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">25%</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Westport, Connecticut</td></tr><tr data-row-id=\"511c2ee7::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Renaissance</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Not Public</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">East Setauket, NY</td></tr><tr data-row-id=\"511c2ee7::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Man Group</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Not Public</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">London, UK</td></tr></tbody></table></div></div></div></div>",
+      "textSample": "Table BoundaryHedge FundMarginLocationBridgewater25%Westport, ConnecticutRenaissanceNot PublicEast Setauket, NYMan GroupNot PublicLondon, UK",
       "structure": {
         "topLevelTags": [
           "div"
@@ -601,7 +605,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -614,28 +617,27 @@
       "hasTable": true,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\">Table Boundary</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Hedge Fund</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Margin</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Location</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Bridgewater</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">25%</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Westport, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Renaissance</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">East Setauket, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Man Group</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">London, UK</td></tr></tbody></table></div></div></div></div></div></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Boundary\" id=\"table-boundary\" data-heading-id=\"table-boundary\">Table Boundary</h1><div data-table-block-root=\"511c2ee7\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"511c2ee7\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Hedge Fund</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Margin</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Location</th></tr></thead><tbody><tr data-row-id=\"511c2ee7::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Bridgewater</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">25%</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Westport, Connecticut</td></tr><tr data-row-id=\"511c2ee7::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Renaissance</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Not Public</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">East Setauket, NY</td></tr><tr data-row-id=\"511c2ee7::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Man Group</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Not Public</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">London, UK</td></tr></tbody></table></div></div></div></div>",
     "runtimeState": {
-      "rendererVersion": 14,
+      "rendererVersion": 13,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 11,
-      "lastPatchToDomMs": 15.100000001490116,
-      "lastDurationMs": 0.29999999701976776,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
+      "lastTx": 19,
+      "lastPatchToDomMs": 9.5,
+      "lastDurationMs": 0,
       "meta": {
         "fixtureId": "table-boundary",
-        "scenarioId": "S3_fast_reasonable",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S3_fast_reasonable"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -657,8 +659,8 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "6f1b52c45ec8ea09f4b946f68f9914122926922dd7062f19b45d9e23d64f8302",
-        "textSample": "Table Boundary[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:"
+        "hash": "23f4194609ab087ec7c6ea8be422eb255224ccda93be096e98352e76f59231a7",
+        "textSample": "Table BoundaryHedge FundMarginLocationBridgewater25%Westport, ConnecticutRenaissanceNot PublicEast Setauket, NYMan Group"
       }
     ],
     "inspection": {
@@ -673,7 +675,6 @@
           "emptyBodyCellCount": 0
         }
       ],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }
