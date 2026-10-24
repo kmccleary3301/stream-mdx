@@ -43,6 +43,7 @@ import type {
   InlineComponents,
   InlineHtmlRendererMap,
   MathEngine,
+  MermaidEngine,
   NodeViewActions,
   NodeViewMetadata,
   NodePresentations,
@@ -903,6 +904,7 @@ export class ComponentRegistry {
   private literalTagContent?: string[];
   private contentComponents?: ContentComponentsMap;
   private mathEngine?: MathEngine;
+  private mermaidEngine?: MermaidEngine;
   private tableVirtualization: TableVirtualizationConfig = DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
   private tableVirtualizationListeners = new Set<() => void>();
   private codeVirtualization: VirtualizedCodeConfig = DEFAULT_VIRTUALIZED_CODE_CONFIG;
@@ -930,9 +932,10 @@ export class ComponentRegistry {
     animated?: AnimatedProp;
     contentComponents?: ContentComponentsMap;
     components?: NodePresentations;
-    engines?: { math?: MathEngine };
+    engines?: { math?: MathEngine; mermaid?: MermaidEngine };
   } & ElementFilterOptions) {
     this.mathEngine = options?.engines?.math;
+    this.mermaidEngine = options?.engines?.mermaid;
     this.inlineComponents = { ...defaultInlineComponents };
     this.htmlElements = getDefaultHtmlElements();
     if (options?.urlTransform) {
@@ -1179,6 +1182,7 @@ export class ComponentRegistry {
     });
     const source = () => inlineToPlainText([node]);
     const actions: NodeViewActions = Object.freeze({
+      readSource: source,
       copy: () => copyToClipboard(source()),
       download: () => downloadFile(source(), `${node.kind}.txt`),
     });
@@ -1220,6 +1224,7 @@ export class ComponentRegistry {
       isFinalized,
     });
     const actions: NodeViewActions = Object.freeze({
+      readSource: source,
       copy: () => copyToClipboard(source()),
       download: () => downloadFile(source(), `${tagName.toLowerCase()}.txt`),
     });
@@ -1243,15 +1248,16 @@ export class ComponentRegistry {
     const presentation = this.getNodePresentation(keyName);
     if (!presentation || !("wrapper" in presentation) || !presentation.wrapper) return nativeView;
 
-    const source = rawSource ?? presentationText(children);
+    const source = () => rawSource ?? presentationText(children);
     const metadata: NodeViewMetadata = Object.freeze({
       id: `${ownerId ?? "component"}:${String(key)}`,
       type: keyName,
       isFinalized: status === "closed",
     });
     const actions: NodeViewActions = Object.freeze({
-      copy: () => copyToClipboard(source),
-      download: () => downloadFile(source, `${name}.txt`),
+      readSource: source,
+      copy: () => copyToClipboard(source()),
+      download: () => downloadFile(source(), `${name}.txt`),
     });
     return React.createElement(presentation.wrapper, { key, children: nativeView, metadata, actions });
   }
@@ -1313,6 +1319,13 @@ export class ComponentRegistry {
 
   getMathEngine(): MathEngine | undefined {
     return this.mathEngine;
+  }
+  setMermaidEngine(engine?: MermaidEngine): void {
+    this.mermaidEngine = engine;
+  }
+
+  getMermaidEngine(): MermaidEngine | undefined {
+    return this.mermaidEngine;
   }
   setContentComponents(contentComponents?: ContentComponentsMap): void {
     this.contentComponents = contentComponents;

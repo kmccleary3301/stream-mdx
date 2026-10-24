@@ -10,6 +10,7 @@ import { visit } from "unist-util-visit";
 import type { Block, CodeNodeHandle, WorkerOut } from "@stream-mdx/core";
 import type { Node } from "unist";
 import { MarkdownBlocksRenderer, createRendererStore, type NodePresentations, type NodeViewProps } from "@stream-mdx/react";
+import type { UnifiedBlockErrorContext } from "../src";
 import { MarkdownEngine, createInlineEngineWorker } from "../../markdown-v2-worker/src/engine";
 import { createUnifiedRenderer } from "../src";
 
@@ -506,8 +507,7 @@ async function runTests() {
     console.log(`Test 10: ${callbackError ? "callback error" : "Promise rejection"} fallback...`);
     let failureInvocations = 0;
     let capturedError: Error | null = null;
-    let capturedBlock: Block | null = null;
-
+    let capturedContext: UnifiedBlockErrorContext | null = null;
     function failingAsyncPlugin() {
       return () => {
         failureInvocations += 1;
@@ -528,9 +528,9 @@ async function runTests() {
 
     const unifiedRenderer = createUnifiedRenderer({
       remarkPlugins: [callbackError ? failingCallbackPlugin : failingAsyncPlugin],
-      onError: (err, b) => {
+      onError: (err, context) => {
         capturedError = err;
-        capturedBlock = b;
+        capturedContext = context;
       },
     });
 
@@ -551,7 +551,9 @@ async function runTests() {
     await delay(45);
     assert.ok(capturedError, "onError must be called on plugin failure");
     assert.strictEqual(capturedError?.message, "async failed", "Exact error message must be passed to onError");
-    assert.strictEqual(capturedBlock?.id, "p-fail-test", "Exact block must be passed to onError");
+    assert.strictEqual(capturedContext?.id, "p-fail-test", "Exact block ID must be passed to onError");
+    assert.strictEqual(capturedContext?.type, "paragraph", "Block type must be passed to onError");
+    assert.strictEqual(capturedContext?.finalized, true, "Finalized state must be passed to onError");
     assert.strictEqual(failureInvocations, 1, "Failing plugin must be invoked exactly once (no retry)");
     assert.strictEqual(container.textContent, "Error trigger content", "Safe default element is retained");
 

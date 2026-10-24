@@ -10,9 +10,9 @@ import { createRendererStore } from "../src/renderer/store";
 const SOURCE = "Use `$$` with <InlineComponent /> here";
 
 
-// A mixed paragraph's presentation wrapper can inspect the finalized source while
-// preserving the native inline view as its child.
-async function customParagraphReceivesMixedParagraphInlines(): Promise<void> {
+// A mixed paragraph's presentation wrapper can read its finalized authored source
+// while preserving the native inline view as its child.
+async function customParagraphReceivesMixedParagraphSource(): Promise<void> {
   const store = createRendererStore();
   const engine = new MarkdownEngine({
     post: (message: WorkerOut) => {
@@ -38,19 +38,20 @@ async function customParagraphReceivesMixedParagraphInlines(): Promise<void> {
     const registry = new ComponentRegistry();
     registry.setNodePresentations({
       paragraph: {
-        wrapper: ({ block, children }) => {
-          const inlines = block?.payload.inline ?? [];
-          return (
-            <div data-inline-kinds={inlines.map((node) => node.kind).join(",")}>
-              {children}
-            </div>
-          );
-        },
+        wrapper: ({ actions, children }) => (
+          <div data-source={actions.readSource()}>
+            {children}
+          </div>
+        ),
       },
     });
     const markup = renderToStaticMarkup(<BlockNodeRenderer store={store} blockId={paragraph.id} registry={registry} />);
-    assert.match(markup, /data-inline-kinds="[^"]*code[^"]*"/, "inline code reaches the custom paragraph");
     const dom = new JSDOM(markup);
+    assert.equal(
+      dom.window.document.querySelector("[data-source]")?.getAttribute("data-source"),
+      SOURCE,
+      "the custom paragraph receives the complete authored source",
+    );
     assert.equal(dom.window.document.body.textContent, "Use $$ with <InlineComponent /> here", "the whole paragraph text reaches the custom presentation");
     dom.window.close();
   } finally {
@@ -58,5 +59,5 @@ async function customParagraphReceivesMixedParagraphInlines(): Promise<void> {
   }
 }
 
-await customParagraphReceivesMixedParagraphInlines();
+await customParagraphReceivesMixedParagraphSource();
 console.log("mixed-paragraph-custom-inlines test passed");

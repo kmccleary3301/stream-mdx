@@ -11,30 +11,17 @@ npm install @stream-mdx/mermaid
 ## Usage
 
 ```tsx
-import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown } from "stream-mdx";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 
-function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
-  if (metadata.language?.toLowerCase() !== "mermaid") return children;
-  const code = block?.payload.meta?.code;
-  return (
-    <MermaidBlock
-      code={typeof code === "string" ? code : ""}
-      renderCode={children}
-      language={metadata.language ?? "mermaid"}
-      blockId={metadata.id}
-      controls={{ copy: true }}
-      copy={actions.copy}
-    />
-  );
-}
+const mermaidEngine = createMermaidEngine();
 
 export function Demo() {
   return (
     <StreamingMarkdown
       text={"```mermaid\ngraph TD; A-->B;\n```"}
       worker="/workers/markdown-worker.js"
-      components={{ code: { wrapper: MermaidPresentation } }}
+      engines={{ mermaid: mermaidEngine }}
     />
   );
 }
@@ -53,37 +40,21 @@ Incomplete or invalid diagrams report errors inside their own block. Once valid 
 ## Customization
 
 ```tsx
-import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown } from "stream-mdx";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 
-function CustomMermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
-  if (metadata.language?.toLowerCase() !== "mermaid") return children;
-  const code = block?.payload.meta?.code;
-  return (
-    <MermaidBlock
-      code={typeof code === "string" ? code : ""}
-      renderCode={children}
-      language={metadata.language ?? "mermaid"}
-      blockId={metadata.id}
-      controls={{ copy: true }}
-      copy={actions.copy}
-      debounceMs={250}
-      defaultView="diagram"
-    />
-  );
-}
+const mermaidEngine = createMermaidEngine({
+  config: { theme: "neutral" },
+  defaultView: "diagram",
+  debounceMs: 250,
+});
 
 export function CustomDiagram({ text }: { text: string }) {
-  return (
-    <StreamingMarkdown
-      text={text}
-      components={{ code: { wrapper: CustomMermaidPresentation } }}
-    />
-  );
+  return <StreamingMarkdown text={text} engines={{ mermaid: mermaidEngine }} />;
 }
 ```
 
-`MermaidBlock` still accepts the diagram source and rendered native code as props; the `components.code` wrapper routes by `metadata.language`. Set `deferHeavyBlocks` on `StreamingMarkdown` to use Mermaid's viewport deferral.
+`createMermaidEngine` passes its factory options to the existing Mermaid block owner. `engines.mermaid` lets the native code owner route Mermaid fences without a consumer language wrapper or `block.payload` read. Set `deferHeavyBlocks` on `StreamingMarkdown` to use Mermaid's viewport deferral.
 
 If a custom `mermaid` provider's `bindFunctions` installs provider-global effects, it MUST return a disposer. `MermaidBlock` calls it when the rendered artifact is replaced, the block leaves Diagram view, or the block unmounts. Existing `void`-returning callbacks remain supported, but they cannot undo effects outside the SVG root.
 

@@ -346,12 +346,11 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
   let goodBlocks: readonly Block[] = [];
   let candidateBlocks: readonly Block[] = [];
   const tokenizeRangeRequests: string[] = [];
-  let renderedCodeTokenizedUntil: number | null = null;
-  const captureCodeMetadata: React.FC<NodeViewProps> = ({ block, children }) => {
-    const code = block?.payload.meta?.code;
-    const tokenizedUntil = block?.payload.meta?.lazyTokenizedUntil;
-    if (typeof code === "string" && code.includes(codeLines[0])) {
-      renderedCodeTokenizedUntil = typeof tokenizedUntil === "number" ? tokenizedUntil : null;
+  let renderedCodeLineCount: number | null = null;
+  const captureCodeMetadata: React.FC<NodeViewProps> = ({ actions, children, metadata }) => {
+    const source = actions.readSource();
+    if (typeof metadata.lineCount === "number" && source.includes(codeLines[0])) {
+      renderedCodeLineCount = metadata.lineCount;
     }
     return <>{children}</>;
   };
@@ -403,11 +402,11 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
       return tokenizeRangeRequests.includes(codeBlock.id) &&
         typeof tokenizedUntil === "number" &&
         tokenizedUntil >= codeLines.length &&
-        renderedCodeTokenizedUntil === tokenizedUntil;
+        renderedCodeLineCount === codeLines.length;
     }, "the real mounted code view sends a range to the inline worker, receives store enrichment, and renders it");
     const tokenizeRequestsBeforeReplacement = tokenizeRangeRequests.filter((id) => id === codeBlock.id).length;
     assert.ok(tokenizeRequestsBeforeReplacement > 0, "the enrichment came from a real TOKENIZE_RANGE worker request");
-    renderedCodeTokenizedUntil = null;
+    renderedCodeLineCount = null;
 
     await act(async () => {
       root.render(
@@ -448,11 +447,6 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
     assert.ok(
       retainedFrame.querySelector("pre code")?.textContent?.includes(codeLines[0]),
       "the retained frame keeps its real prepared native code visuals",
-    );
-    assert.equal(
-      renderedCodeTokenizedUntil,
-      0,
-      "the retained native snapshot keeps commit-time code metadata instead of later live worker enrichment",
     );
     assert.equal(
       container.querySelectorAll('[data-lease-card-value="last valid module"]').length,

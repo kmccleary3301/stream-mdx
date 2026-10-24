@@ -21,7 +21,7 @@ import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
-import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type InlineComponents, type MathEngine, type NodePresentations, type RendererConfig, type SyntaxRuleSpec, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type InlineComponents, type MathEngine, type MermaidEngine, type NodePresentations, type RendererConfig, type SyntaxRuleSpec, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
   resolve(): void;
@@ -167,6 +167,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   contentComponents?: ContentComponentsMap;
   engines?: {
     math?: MathEngine;
+    mermaid?: MermaidEngine;
     mdx?: TrustedMdxEngine;
   };
   onMetrics?: (metrics: RendererMetrics) => void;
@@ -313,6 +314,7 @@ function StreamingMarkdownComponent(
     signature: string;
     trustedEngine: TrustedMdxEngine | undefined;
     mathEngine: MathEngine | undefined;
+    mermaidEngine: MermaidEngine | undefined;
   }>();
   const [session, setSession] = useState(0);
   const sessionRef = useRef(session);
@@ -326,12 +328,14 @@ function StreamingMarkdownComponent(
   const historyLimit = effectiveScheduling.historyLimit ?? DEFAULT_HISTORY_LIMIT;
   const trustedEngine = contentPolicy === "trusted-mdx" ? engines?.mdx : undefined;
   const mathEngine = engines?.math;
+  const mermaidEngine = engines?.mermaid;
 
   if (
     !rendererRef.current ||
     rendererRef.current.signature !== rendererKey ||
     rendererRef.current.trustedEngine !== trustedEngine ||
-    rendererRef.current.mathEngine !== mathEngine
+    rendererRef.current.mathEngine !== mathEngine ||
+    rendererRef.current.mermaidEngine !== mermaidEngine
   ) {
     const rendererConfig: RendererConfig = {
       themes: effectiveThemes,
@@ -372,6 +376,7 @@ function StreamingMarkdownComponent(
       signature: rendererKey,
       trustedEngine,
       mathEngine,
+      mermaidEngine,
     };
   }
 

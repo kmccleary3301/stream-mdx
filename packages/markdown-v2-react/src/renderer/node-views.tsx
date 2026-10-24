@@ -143,10 +143,14 @@ export function renderNodePresentation(
 
   const codeHandle = type === "code" ? store.getCodeNodeHandle(id) : undefined;
   const tableState = type === "table" ? store.getTableBlock(id) : undefined;
+  const paragraphState = type === "paragraph" ? store.getParagraphBlock(id) : undefined;
   const codeMetadata = codeHandle?.readMetadata();
   const blockLanguage = block?.payload.meta?.lang;
   const language = codeMetadata?.language ??
     (typeof blockLanguage === "string" ? blockLanguage : undefined);
+  const linkReferences = paragraphState === undefined
+    ? block?.payload.meta?.linkReferences
+    : paragraphState.source.linkReferences;
   const metadata: NodeViewMetadata = Object.freeze({
     id,
     type,
@@ -158,18 +162,46 @@ export function renderNodePresentation(
       columnCount: tableState.header.cells.length,
       align: tableState.header.align,
     }),
+    ...(linkReferences === undefined ? {} : { linkReferences }),
   });
-  const readSource = () => {
+  const sourceBlockEpoch = store.getNode(id)?.blockEpoch;
+  const readSource = (): string => {
+    const currentNode = store.getNode(id);
+    if (
+      !currentNode ||
+      sourceBlockEpoch === undefined ||
+      currentNode.type !== type ||
+      currentNode.blockEpoch !== sourceBlockEpoch
+    ) {
+      throw new Error("Cannot read source from a stale or removed node");
+    }
     if (codeHandle) return codeHandle.readSource();
-    if (tableState) return store.getTableBlock(id)?.sourceSnapshot.materialize() ?? block?.payload.raw ?? "";
-    const raw = block?.payload.raw;
-    return typeof raw === "string" ? raw : "";
+    const currentTableState = store.getTableBlock(id);
+    if (currentTableState) return currentTableState.sourceSnapshot.materialize();
+    const paragraphSource = store.getParagraphColdBlock(id)?.payload.raw;
+    if (typeof paragraphSource === "string") return paragraphSource;
+    const raw = currentNode.block?.payload.raw;
+    if (typeof raw === "string") return raw;
+    throw new Error("Node has no authored source");
   };
   const actions: NodeViewActions = Object.freeze({
-    copy: () => copyToClipboard(readSource()),
-    download: () => downloadFile(readSource(), `${type}.txt`),
+    readSource,
+    copy: () => {
+      try {
+        return copyToClipboard(readSource());
+      } catch {
+        return Promise.resolve(false);
+      }
+    },
+    download: () => {
+      try {
+        downloadFile(readSource(), `${type}.txt`);
+      } catch {
+        // Stale or synthetic nodes have no source to download.
+      }
+    },
   });
-  return React.createElement(presentation.wrapper, { children, metadata, actions, block });
+  return React.createElement(presentation.wrapper, { children, metadata, actions });
 }
 
 
@@ -403,12 +435,6 @@ export const BlockNodeRenderer: React.FC<{
   if (node.type === "paragraph" && store.getParagraphBlock(blockId)) {
     const block = node.block;
     if (!block) return null;
-    const ownerState = store.getParagraphBlock(blockId);
-    const presentation = registry.getNodePresentation("paragraph");
-    const needsSource = presentation !== undefined && "wrapper" in presentation && presentation.wrapper !== undefined;
-    const rendererBlock = needsSource && ownerState?.source.state !== "open"
-      ? store.getParagraphColdBlock(blockId) ?? block
-      : block;
     return (
       <ManagedParagraphBlockView
         store={store}
@@ -416,7 +442,7 @@ export const BlockNodeRenderer: React.FC<{
         registry={registry}
         renderNested={renderParagraphChild}
         renderPresentation={(nativeView) => renderNodePresentation(
-          rendererBlock,
+          block,
           nativeView,
           store,
           registry,

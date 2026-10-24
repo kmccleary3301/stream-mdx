@@ -4,7 +4,7 @@ import React, { useMemo, useRef } from "react";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
 import type { ContentComponentsMap } from "../components/content-components";
-import type { AnimatedProp, ControlsComponentProps, ControlsConfig, ElementFilterOptions, NodePresentations } from "../types";
+import type { AnimatedProp, ControlsComponentProps, ControlsConfig, ElementFilterOptions, MermaidEngine, NodePresentations } from "../types";
 import { RenderConfigVersionContext, useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
 import { createRendererStore, type RendererStore } from "./store";
@@ -25,6 +25,7 @@ export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
   animated?: AnimatedProp;
   statusMessage?: string;
   contentComponents?: ContentComponentsMap;
+  engines?: { mermaid?: MermaidEngine };
 }
 
 interface AppliedRenderConfig {
@@ -35,6 +36,7 @@ interface AppliedRenderConfig {
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
   contentComponents?: ContentComponentsMap;
+  mermaidEngine?: MermaidEngine;
   version: number;
 }
 
@@ -55,6 +57,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     statusMessage,
     contentComponents,
     className = "markdown-renderer",
+    engines,
     style,
     store,
   }) => {
@@ -93,6 +96,10 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       if (contentComponents !== undefined || previous.contentComponents !== undefined) {
         reg.setContentComponents(contentComponents);
       }
+      const mermaidEngine = engines?.mermaid;
+      if (engines !== undefined || previous.mermaidEngine !== undefined) {
+        reg.setMermaidEngine(mermaidEngine);
+      }
       // Inline literals re-run this memo every render; only an effective change re-renders mounted blocks.
       const changed =
         urlTransform !== previous.urlTransform ||
@@ -101,9 +108,12 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
         !sameElementFilters(filters, previous.filters) ||
         !samePlainConfig(controls, previous.controls) ||
         !samePlainConfig(animated, previous.animated) ||
-        contentComponents !== previous.contentComponents;
+        contentComponents !== previous.contentComponents ||
+        mermaidEngine !== previous.mermaidEngine;
       const version = changed ? previous.version + 1 : previous.version;
-      applied.current = { components, urlTransform, filters, controls, controlsComponent, animated, contentComponents, version };
+      applied.current = {
+        components, urlTransform, filters, controls, controlsComponent, animated, contentComponents, mermaidEngine, version,
+      };
       return { registry: reg, version };
     }, [
       componentRegistry,
@@ -118,6 +128,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       controlsComponent,
       animated,
       contentComponents,
+      engines?.mermaid,
     ]);
     const effectiveStore = useMemo(() => {
       if (store) return store;

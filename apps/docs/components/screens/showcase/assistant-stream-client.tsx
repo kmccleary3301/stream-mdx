@@ -9,7 +9,7 @@ import type {
   StreamingMarkdownProps,
 } from "@stream-mdx/react";
 import { SourceCapacityError, StreamingMarkdown } from "@stream-mdx/react";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 import "katex/dist/katex.min.css";
 
 import { BottomStickScrollArea } from "@/components/layout/bottom-stick-scroll-area";
@@ -20,62 +20,33 @@ import { AlertCircle, Cpu, Pause, Play, RotateCcw, ShieldCheck, Terminal } from 
 const USER_PROMPT =
   "Can you provide an architectural walkthrough of the StreamMDX engine-v2 pipeline? Include Bayes' Theorem with concrete mathematical notation, the engine flow diagram, a custom code fence renderer example, and an HTML visualization example in an inert fenced code block.";
 
-function readCodeSource(block: NodeViewProps["block"]): string {
-  const code = block?.payload.meta?.code;
-  return typeof code === "string" ? code : block?.payload.raw ?? "";
-}
+const assistantMermaidEngine = createMermaidEngine();
 
-function CustomMetricRenderer({ block, metadata, children }: NodeViewProps) {
-  try {
-    const data = JSON.parse(readCodeSource(block).trim());
-    if (typeof data !== "object" || data === null || Array.isArray(data)) {
-      return <>{children}</>;
-    }
-    return (
-      <div className="my-4 rounded-xl border border-border/80 bg-muted/20 p-4 shadow-sm not-prose">
-        <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-3">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-              Custom Code Fence Renderer ({metadata.language ?? "metric"})
-            </span>
-          </div>
-          <span className="rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
-            {metadata.isFinalized ? "Finalized AST" : "Streaming..."}
+function CustomMetricRenderer({ metadata, children }: NodeViewProps) {
+  return (
+    <div className="my-4 rounded-xl border border-border/80 bg-muted/20 p-4 shadow-sm not-prose">
+      <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-3">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+            Custom Code Fence Renderer ({metadata.language ?? "metric"})
           </span>
         </div>
-        <div className="text-[10px] text-muted-foreground italic mb-2">Example data, not a benchmark</div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Object.entries(data).map(([key, val]) => (
-            <div key={key} className="rounded-lg border border-border/50 bg-background/60 p-3">
-              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{key}</div>
-              <div className="mt-1 font-mono text-base font-semibold text-foreground">{String(val)}</div>
-            </div>
-          ))}
-        </div>
+        <span className="rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
+          {metadata.isFinalized ? "Finalized" : "Streaming..."}
+        </span>
       </div>
-    );
-  } catch {
-    return <>{children}</>;
-  }
+      <div className="text-[10px] text-muted-foreground italic mb-2">Metric source remains native code.</div>
+      <div>{children}</div>
+    </div>
+  );
 }
 
 function AssistantCodePresentation(props: NodeViewProps) {
-  const language = props.metadata.language?.toLowerCase();
-  if (language === "metric") return <CustomMetricRenderer {...props} />;
-  if (language !== "mermaid") return props.children;
-
-  const code = props.block?.payload.meta?.code;
-  return (
-    <MermaidBlock
-      code={typeof code === "string" ? code : ""}
-      renderCode={props.children}
-      language={props.metadata.language ?? "mermaid"}
-      blockId={props.metadata.id}
-      controls={{ copy: true }}
-      copy={props.actions.copy}
-    />
-  );
+  if (props.metadata.language?.toLowerCase() === "metric") {
+    return <CustomMetricRenderer {...props} />;
+  }
+  return props.children;
 }
 
 const STREAMING_INTERVAL_MS = 25;
@@ -434,6 +405,7 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
                 worker={engineMode === "worker" ? "/workers/markdown-worker.js" : undefined}
                 className="markdown-v2-output"
                 components={components}
+                engines={{ mermaid: assistantMermaidEngine }}
                 features={features}
                 linkSafety={linkSafety}
                 onError={(error) => {

@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { StreamingMarkdown, type NodePresentations, type NodeViewProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { MarkdownBlocksRenderer as ServerMarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-native-fixture";
 import { mergeNodePresentationProps, resolveNodePresentation, validateNodePresentations } from "../src/renderer/node-presentations";
@@ -173,6 +174,166 @@ async function nativeBlockDecorationsReachTheirElements(): Promise<void> {
 }
 
 
+async function finalizedParagraphPresentationKeepsColdSourceBehindActions(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  let presentation: NodeViewProps | undefined;
+  const clipboardWrites: string[] = [];
+  const previousClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (text: string) => { clipboardWrites.push(text); } },
+  });
+  const components = {
+    paragraph: {
+      wrapper: (props: NodeViewProps) => {
+        presentation = props;
+        return <section data-paragraph-presentation>{props.children}</section>;
+      },
+    },
+  } satisfies NodePresentations;
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready");
+    const store = handle.current!.getState().store;
+    const getColdBlock = store.getParagraphColdBlock.bind(store);
+    let coldReads = 0;
+    store.getParagraphColdBlock = (id) => {
+      coldReads += 1;
+      return getColdBlock(id);
+    };
+    await act(async () => {
+      handle.current?.append("**Paragraph source**");
+      await handle.current?.finalize();
+    });
+    await waitFor(() => container.querySelector("section[data-paragraph-presentation]"), "finalized paragraph wrapper");
+    assert.ok(presentation, "the paragraph wrapper receives bounded presentation props");
+    assert.equal(Object.prototype.hasOwnProperty.call(presentation, "block"), false, "wrappers never receive the full block");
+    assert.equal(coldReads, 0, "rendering a finalized paragraph does not materialize its cold block");
+    assert.equal(presentation.metadata.type, "paragraph");
+    assert.equal(presentation.actions.readSource instanceof Function, true, "wrappers receive the explicit source action");
+    const source = presentation.actions.readSource();
+    assert.equal(source, "**Paragraph source**");
+    assert.equal(coldReads, 1, "the source action materializes only when invoked");
+    let copied = false;
+    await act(async () => {
+      copied = await presentation!.actions.copy();
+    });
+    assert.equal(copied, true);
+    assert.equal(coldReads, 2, "copy continues to read source only when its action runs");
+    assert.deepEqual(clipboardWrites, ["**Paragraph source**"]);
+    const readStaleSource = presentation.actions.readSource;
+    store.reset([]);
+    assert.throws(readStaleSource, /stale or removed/, "a retained source action rejects a removed generation");
+  } finally {
+    if (previousClipboard) Object.defineProperty(navigator, "clipboard", previousClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
+
+async function mermaidEngineUsesTheNativeCodeOwner(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const renderedSources: string[] = [];
+  let securityLevel: unknown;
+  const fakeLoader = async () => ({
+    initialize: (config: Record<string, unknown>) => { securityLevel = config.securityLevel; },
+    render: async (_id: string, source: string) => {
+      renderedSources.push(source);
+      return "<svg role=\"img\"><text>diagram</text></svg>";
+    },
+  });
+  const engines = {
+    mermaid: createMermaidEngine({ debounceMs: 0, mermaid: fakeLoader }),
+  };
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+          engines={engines}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready");
+    await act(async () => {
+      handle.current?.append("```mermaid\ngraph TD; A-->B;\n```\n\n```ts\nconst x = 1;\n```");
+      await handle.current?.finalize();
+    });
+    await waitFor(() => container.querySelector(".stream-mdx-mermaid-diagram svg text"), "Mermaid diagram");
+    assert.equal(container.querySelector(".stream-mdx-mermaid-diagram svg text")?.textContent, "diagram");
+    assert.equal(securityLevel, "strict", "the Mermaid owner retains its strict default configuration");
+    assert.deepEqual(renderedSources, ["graph TD; A-->B;"], "only Mermaid code reaches the optional renderer");
+    const tsFrame = [...container.querySelectorAll<HTMLElement>("[data-code-block=\"true\"]")]
+      .find((frame) => frame.textContent?.includes("const x = 1;"));
+    assert.ok(tsFrame, "the ts fence remains rendered by the native code owner");
+    assert.equal(tsFrame.querySelector(".stream-mdx-mermaid-diagram"), null);
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
+async function mermaidWithoutEngineStaysNativeCode(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready without Mermaid engine");
+    await act(async () => {
+      handle.current?.append("```mermaid\ngraph TD; A-->B;\n```");
+      await handle.current?.finalize();
+    });
+    await waitFor(() => container.querySelector("[data-code-block=\"true\"]"), "native Mermaid code");
+    assert.equal(container.querySelector(".stream-mdx-mermaid-diagram"), null);
+    assert.ok(container.textContent?.includes("graph TD; A-->B;"));
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
+
 function runNodePresentationsTest(): void {
   const components = {
     paragraph: { wrapper: Chrome, props: { className: "host-paragraph", "data-owner": "host" } },
@@ -220,4 +381,7 @@ runNodePresentationsTest();
 
 await finalizedHeadingPresentationMatchesServerOutput();
 await nativeBlockDecorationsReachTheirElements();
+await finalizedParagraphPresentationKeepsColdSourceBehindActions();
+await mermaidEngineUsesTheNativeCodeOwner();
+await mermaidWithoutEngineStaysNativeCode();
 console.log("Unified node presentation registry checks passed");

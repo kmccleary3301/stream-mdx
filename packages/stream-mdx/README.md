@@ -69,28 +69,15 @@ export function Demo({ text }: { text: string }) {
 ### 3. Optional addon registration
 
 ```tsx
-import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown } from "stream-mdx";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 
-function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
-  if (metadata.language?.toLowerCase() !== "mermaid") return children;
-  const code = block?.payload.meta?.code;
-  return (
-    <MermaidBlock
-      code={typeof code === "string" ? code : ""}
-      renderCode={children}
-      language={metadata.language ?? "mermaid"}
-      blockId={metadata.id}
-      controls={{ copy: true }}
-      copy={actions.copy}
-    />
-  );
-}
+const mermaidEngine = createMermaidEngine();
 
 <StreamingMarkdown
   text={content}
   worker="/workers/markdown-worker.js"
-  components={{ code: { wrapper: MermaidPresentation } }}
+  engines={{ mermaid: mermaidEngine }}
 />;
 ```
 

@@ -27,19 +27,18 @@ async function setupDom() {
 
 async function runMermaidRoutingTest(): Promise<void> {
   const window = await setupDom();
-  const MermaidPresentation = ({ block, children, metadata }: {
-    block?: Block;
+  const MermaidPresentation = ({ actions, children, metadata }: {
+    actions: { readSource: () => string };
     children: React.ReactNode;
     metadata: { language?: string };
   }) => {
     if (metadata.language?.toLowerCase() !== "mermaid") return children;
-    const code = block?.payload.meta?.code;
-    return React.createElement("div", { id: "mermaid" }, typeof code === "string" ? code : "");
+    return React.createElement("div", { id: "mermaid" }, actions.readSource());
   };
   const registry = new ComponentRegistry({
     components: { code: { wrapper: MermaidPresentation } },
   });
-  // The consumer routes Mermaid using code presentation metadata and its structured source.
+  // The consumer reads the authored Mermaid source through the generation-bound action.
   const mermaidBlock: Block = {
     id: "code-mermaid",
     type: "code",
@@ -58,8 +57,11 @@ async function runMermaidRoutingTest(): Promise<void> {
   await sleep(30);
 
   assert.ok(container.querySelector("#mermaid"), "expected mermaid block component to render");
-  assert.ok(container.textContent?.includes("graph TD"), "expected structured Mermaid source to be passed through");
-  assert.ok(!container.textContent?.includes("```mermaid"), "expected code fences to be stripped before rendering");
+  assert.strictEqual(
+    container.textContent,
+    mermaidBlock.payload.raw,
+    "expected authored Mermaid Markdown to be passed through",
+  );
   assert.strictEqual(container.querySelector("pre"), null, "expected Mermaid presentation to replace the standard code view");
 
   root.unmount();

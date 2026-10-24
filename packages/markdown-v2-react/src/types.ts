@@ -2,6 +2,7 @@ import type React from "react";
 
 import type {
   Block,
+  BlockResolvedLinkReference,
   CodeNodeHandle,
   TableNodeHandle,
   CodeHighlightOutputMode,
@@ -215,9 +216,11 @@ export interface NodeViewMetadata {
   readonly rowCount?: number;
   readonly columnCount?: number;
   readonly align?: ReadonlyArray<"left" | "center" | "right" | null>;
+  readonly linkReferences?: ReadonlyArray<BlockResolvedLinkReference>;
 }
 
 export interface NodeViewActions {
+  readonly readSource: () => string;
   readonly copy: () => Promise<boolean>;
   readonly download: () => void;
 }
@@ -227,7 +230,6 @@ export interface NodeViewProps {
   readonly children: React.ReactNode;
   readonly metadata: NodeViewMetadata;
   readonly actions: NodeViewActions;
-  readonly block?: Block;
 }
 
 export interface InlineNodeViewProps {
@@ -298,6 +300,20 @@ export interface MathEngine {
   render(tex: string, options: { displayMode: boolean }): MathEngineOutput;
 }
 
+/** Input supplied by the native code owner to an opt-in Mermaid presentation engine. */
+export interface MermaidEngineProps {
+  readonly source: string;
+  readonly children: React.ReactNode;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
+/** Main-thread diagram presentation for Mermaid code fences. */
+export interface MermaidEngine {
+  readonly id: string;
+  readonly view: React.ComponentType<MermaidEngineProps>;
+}
+
 export interface RendererConfig extends ElementFilterOptions {
   themes?: { light: string; dark: string };
   highlight?: {
@@ -313,6 +329,7 @@ export interface RendererConfig extends ElementFilterOptions {
   components?: NodePresentations;
   engines?: {
     math?: MathEngine;
+    mermaid?: MermaidEngine;
     mdx?: TrustedMdxEngine;
   };
   plugins?: {

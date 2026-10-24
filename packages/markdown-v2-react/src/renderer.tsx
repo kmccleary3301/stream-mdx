@@ -230,7 +230,7 @@ export class MarkdownRenderer implements Renderer {
       disableAutolinkProtocols: this.config.disableAutolinkProtocols,
       contentComponents: this.config.contentComponents,
       components: this.config.components,
-      engines: { math: this.config.engines?.math },
+      engines: { math: this.config.engines?.math, mermaid: this.config.engines?.mermaid },
     });
     if (this.config.html?.literalTagContent) {
       this.componentRegistry.setLiteralTagContent(this.config.html.literalTagContent);
