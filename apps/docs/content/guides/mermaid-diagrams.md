@@ -40,6 +40,15 @@ graph TD
 ```
 ````
 
+## Rendered example
+
+```mermaid
+graph TD
+  A[User] --> B[StreamMDX]
+  B --> C[Worker]
+  C --> D[Renderer]
+```
+
 ## Default view and configuration
 
 The engine includes a code/diagram toggle. Choose its initial view and Mermaid configuration when creating the engine:
