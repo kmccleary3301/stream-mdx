@@ -5,7 +5,7 @@ import { createRef } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { StreamingMarkdown } from "../src/streaming-markdown";
+import { EngineCompatibilityError, StreamingMarkdown } from "../src/streaming-markdown";
 import type { StreamingMarkdownHandle, StreamingMarkdownProps } from "../src/streaming-markdown";
 import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
@@ -201,7 +201,7 @@ async function runAutoBootstrapUnitLimit(): Promise<void> {
     const attemptedSource = "😀".repeat(2048) + "x";
     assert.throws(
       () => handle.current!.append(attemptedSource),
-      /Unable to create a worker for automatic bootstrap takeover/,
+      (error) => error instanceof EngineCompatibilityError,
       "auto must reject an append atomically when takeover cannot create a worker",
     );
     await delay(30);

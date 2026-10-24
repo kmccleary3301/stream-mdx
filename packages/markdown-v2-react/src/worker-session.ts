@@ -6,6 +6,13 @@ import type { MarkdownEngineMode, StreamingMarkdownProps } from "./streaming-mar
 
 type WorkerSource = StreamingMarkdownProps["worker"];
 
+export class EngineCompatibilityError extends Error {
+  constructor() {
+    super('Unable to create a worker for automatic bootstrap takeover; pass engine="main" when workers are unavailable.');
+    this.name = "EngineCompatibilityError";
+  }
+}
+
 export interface WorkerLease {
   worker: Worker;
   dispose(): void;
@@ -190,7 +197,7 @@ export function useWorkerSession({
       }
       const lease = instantiateWorker(workerSource, factories);
       if (!lease) {
-        failTakeover(null, request, new Error("Unable to create a worker for automatic bootstrap takeover"));
+        failTakeover(null, request, new EngineCompatibilityError());
         return;
       }
       takeoverLease = lease;

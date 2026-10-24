@@ -247,7 +247,7 @@ export class MarkdownRenderer implements Renderer {
   private workerAdmissionBaselineSourceUnits = 0;
   private workerAdmissionGeneration: number | null = null;
   private admissionSession = 0;
-  private admissionFailure: StreamSessionError | null = null;
+  private admissionFailure: Error | null = null;
   private capacityWaiters = new Set<SourceCapacityWaiter>();
   private semanticAwaitingFlush = false;
   private finalizationPromise: Promise<FinalizeResult> | null = null;
@@ -642,7 +642,7 @@ export class MarkdownRenderer implements Renderer {
     if (!this.bootstrapTakeoverRequested || this.bootstrapTakeoverRequest !== request) return false;
     this.bootstrapTakeoverRequested = false;
     this.bootstrapTakeoverRequest = null;
-    this.failSourceAdmission(error.message);
+    this.failSourceAdmission(error);
     this.rejectPendingBootstrapFinalization(error);
     this.settleBootstrapProjectionWaiters(error);
     return true;
@@ -678,8 +678,8 @@ export class MarkdownRenderer implements Renderer {
   }
 
 
-  private failSourceAdmission(message: string, reason: "stale-generation" | "disposed" = "stale-generation"): void {
-    const error = new StreamSessionError(reason, message);
+  private failSourceAdmission(message: string | Error, reason: "stale-generation" | "disposed" = "stale-generation"): void {
+    const error = message instanceof Error ? message : new StreamSessionError(reason, message);
     this.admissionFailure = error;
     this.rejectCapacityWaiters(error);
     this.rejectPendingFinalization(error);

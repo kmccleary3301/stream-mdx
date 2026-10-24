@@ -11,6 +11,7 @@ import type { Block, CodeHighlightingMode, ContentPolicy, FormatAnticipationConf
 import { SourceCapacityError, StreamSessionError, type AppendResult, type FinalizeResult, type WaitForCapacityOptions } from "@stream-mdx/protocol";
 import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./source-admission-limits";
 export { SourceCapacityError, StreamSessionError } from "@stream-mdx/protocol";
+export { EngineCompatibilityError } from "./worker-session";
 export type { AppendResult, FinalizeResult, WaitForCapacityOptions } from "@stream-mdx/protocol";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
