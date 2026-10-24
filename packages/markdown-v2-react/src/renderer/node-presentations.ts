@@ -1,6 +1,7 @@
 import React from "react";
 import type {
   HeadlessNodeViewProps,
+  NodeHandle,
   NodePresentation,
   NodePresentationKey,
   NodeViewActions,
@@ -20,10 +21,15 @@ export function renderPresentedNode<K extends NodePresentationKey>(
   presentation: NodePresentation<K> | undefined,
   nativeView: React.ReactNode,
   context: PresentationRenderContext<K>,
+  applyPresentationPropsToCustomElements = false,
 ): React.ReactNode {
   if (!presentation) return nativeView;
   let prepared = nativeView;
-  if (presentation.props && React.isValidElement<Record<string, unknown>>(prepared) && typeof prepared.type === "string") {
+  if (
+    presentation.props &&
+    React.isValidElement<Record<string, unknown>>(prepared) &&
+    (typeof prepared.type === "string" || applyPresentationPropsToCustomElements)
+  ) {
     prepared = React.cloneElement(
       prepared,
       mergeNodePresentationProps(prepared.props, presentation.props),
@@ -44,6 +50,33 @@ export function renderPresentedNode<K extends NodePresentationKey>(
     });
   }
   return prepared;
+}
+export type NativeTablePartPresentationKey = "table-row" | "table-cell";
+
+export function renderTablePartPresentation<K extends NativeTablePartPresentationKey>(
+  presentation: NodePresentation<K> | undefined,
+  nativeView: React.ReactNode,
+  context: {
+    readonly id: string;
+    readonly type: K;
+    readonly isFinalized: boolean;
+    readonly actions: NodeViewActions;
+    readonly handle?: NodeHandle;
+  },
+): React.ReactNode {
+  if (!presentation) return nativeView;
+  if ("view" in presentation && presentation.view && !context.handle) return null;
+  const metadata = Object.freeze({
+    id: context.id,
+    type: context.type,
+    isFinalized: context.isFinalized,
+  });
+  return renderPresentedNode(presentation, nativeView, {
+    key: context.id,
+    metadata,
+    actions: context.actions,
+    viewProps: (context.handle ? { handle: context.handle } : {}) as HeadlessNodeViewProps<K>,
+  }, true);
 }
 
 

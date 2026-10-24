@@ -41,7 +41,7 @@ import {
 } from "../trusted-mdx-contract";
 import { getStoreResetVersion } from "./store-reset-version";
 import { NativeCodeViewContext } from "./code-highlight-context";
-import { mergeNodePresentationProps } from "./node-presentations";
+import { mergeNodePresentationProps, renderTablePartPresentation, type NativeTablePartPresentationKey } from "./node-presentations";
 
 const HeadlessNativeCodeView: React.FC<{
   blockId: string;
@@ -133,6 +133,37 @@ export function renderNodePresentation(
   });
   return React.createElement(presentation.wrapper, { children, metadata, actions, block });
 }
+function renderLegacyTablePart<K extends NativeTablePartPresentationKey>(
+  key: K,
+  id: string,
+  nativeView: React.ReactNode,
+  store: RendererStore,
+  registry: ComponentRegistry,
+  isFinalized: boolean,
+  source: string,
+): React.ReactNode {
+  const presentation = registry.getNodePresentation(key);
+  if (!presentation) return nativeView;
+  const resetVersion = getStoreResetVersion(store);
+  const readSource = () => {
+    if (getStoreResetVersion(store) !== resetVersion) {
+      throw new Error("Table content belongs to a replaced or disposed owner");
+    }
+    return source;
+  };
+  const actions: NodeViewActions = Object.freeze({
+    copy: async () => copyToClipboard(readSource()),
+    download: () => downloadFile(readSource(), `${key}.txt`),
+  });
+  return renderTablePartPresentation(presentation, nativeView, {
+    id,
+    type: key,
+    isFinalized,
+    actions,
+    handle: store.getNodeHandle(id),
+  });
+}
+
 
 
 
@@ -2004,6 +2035,22 @@ const TableSectionView: React.FC<{
   if (!node) return null;
   if (node.type === "table-header") {
     const childIds = useRendererChildren(store, nodeId);
+    const headerRow = renderLegacyTablePart(
+      "table-row",
+      nodeId,
+      <tableElements.Tr>
+        {childIds.map((cellId) => {
+          if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+            recordViewRecords(store, 1);
+          }
+          return <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />;
+        })}
+      </tableElements.Tr>,
+      store,
+      registry,
+      Boolean(node.block?.isFinalized),
+      childIds.map((cellId) => cellNodeText(store, cellId)).join(" | "),
+    );
     return (
       <tableElements.Thead
         className={virtualization?.isVirtualized ? "sticky top-0 z-10" : undefined}
@@ -2014,14 +2061,7 @@ const TableSectionView: React.FC<{
           backgroundColor: `var(--stream-mdx-table-header-background, ${virtualization.headerBackgroundColor})`,
         } : undefined}
       >
-        <tableElements.Tr>
-          {childIds.map((cellId) => {
-            if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
-              recordViewRecords(store, 1);
-            }
-            return <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />;
-          })}
-        </tableElements.Tr>
+        {headerRow}
       </tableElements.Thead>
     );
   }
@@ -2122,7 +2162,8 @@ const TableRowView: React.FC<{
   rowIndex?: number;
 }> = React.memo(({ store, nodeId, registry, tableElements, rowIndex }) => {
   const cellIds = useRendererChildren(store, nodeId);
-  return (
+  const rowNode = useRendererNode(store, nodeId);
+  const nativeRow = (
     <tableElements.Tr
       data-row-id={nodeId}
       {...(rowIndex !== undefined ? { "data-row-index": rowIndex } : {})}
@@ -2134,6 +2175,15 @@ const TableRowView: React.FC<{
         return <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />;
       })}
     </tableElements.Tr>
+  );
+  return renderLegacyTablePart(
+    "table-row",
+    nodeId,
+    nativeRow,
+    store,
+    registry,
+    Boolean(rowNode?.block?.isFinalized),
+    cellIds.map((cellId) => cellNodeText(store, cellId)).join(" | "),
   );
 });
 
@@ -2155,17 +2205,27 @@ const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: 
   const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, tag, animCtx);
   const alignProps = align ? { align } : undefined;
   const renderElement = () => <Tag {...alignProps}>{content}</Tag>;
-  if (!registry.hasElementFilters()) {
-    return renderElement();
+  let filtered: React.ReactNode = renderElement();
+  if (registry.hasElementFilters()) {
+    filtered = registry.filterElement(
+      { tagName: tag, properties: alignProps ?? {} },
+      { source: "markdown", parentTagName: "tr" },
+      renderElement,
+      () => content,
+    );
   }
-  const filtered = registry.filterElement(
-    { tagName: tag, properties: alignProps ?? {} },
-    { source: "markdown", parentTagName: "tr" },
-    renderElement,
-    () => content,
-  );
   if (filtered === null || filtered === undefined) return null;
-  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
+  const preparedView = React.isValidElement(filtered) ? filtered : <>{filtered}</>;
+  const rawCell = node.props?.raw;
+  return renderLegacyTablePart(
+    "table-cell",
+    nodeId,
+    preparedView,
+    store,
+    registry,
+    Boolean(node.block?.isFinalized),
+    typeof rawCell === "string" ? rawCell : inlineToPlainText(inline),
+  );
 });
 TableCellView.displayName = "TableCellView";
 
