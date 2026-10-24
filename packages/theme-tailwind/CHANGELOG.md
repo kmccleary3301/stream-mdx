@@ -4,6 +4,8 @@
 
 ### Major Changes
 
+- 31c997f: Add the native root theme policy, isolate native output styles and custom properties, and map Shiki light/dark foreground, background, font-style, font-weight, and text-decoration tokens to the selected color scheme.
+
 - Release the coordinated 1.0.0 package line. Upgrade all installed StreamMDX packages together and recopy the hosted worker from the matching version. Internal runtime dependencies remain exact versions; the optional unified adapter's StreamMDX peers require the 1.x line.
 
   Migration from 0.5.0:
