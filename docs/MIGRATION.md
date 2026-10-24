@@ -366,6 +366,6 @@ After:
 - `PreviewSlot`, `NativeNodeView`, and `PreviewRuntime` support explicit preview slots with an inert native fallback.
 - `useNodeRevisionFeed` provides a revision feed and snapshot; `NodeRevisionFeed` and `NodeRevisionSnapshot` are the corresponding types.
 - `CodeEngine` supports custom code tokenization on the main realm with `engine="main"`.
-- Headless node views use `HeadlessNodeViewProps`; `useCodeDiff`, `useTableBlock`, and `useTableRows` expose bounded code and table data.
+- Headless views can use `useNode` and `useNodeChildren` for node metadata and bounded child ranges, `useCodeBlock`, `useCodeLines`, and `useCodeDiff` for bounded code data, and `useTableBlock` and `useTableRows` for table metadata and row ranges.
 
 See [Public API](./PUBLIC_API.md), the [React integration guide](./REACT_INTEGRATION_GUIDE.md), and the [security model](./SECURITY_MODEL.md) for the current contracts.
