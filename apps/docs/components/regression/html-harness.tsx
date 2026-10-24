@@ -1034,6 +1034,7 @@ export function HtmlRegressionHarness(): JSX.Element {
     <div className="prose">
       <div id="regression-root" ref={rootRef} data-fixture="" data-scenario="">
         <StreamingMarkdown
+          engine="worker"
           key={instanceKey}
           ref={handleInstanceRef}
           worker={createHarnessWorker}
