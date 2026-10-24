@@ -698,7 +698,9 @@ function propsWithSourceRange(
 
 function nativeContainerProjectionRoot(map: NodeMap, id: string): NodeRecord | undefined {
   let record = map.get(id);
+  let parentSteps = 0;
   while (record && record.parentId && record.parentId !== PATCH_ROOT_ID) {
+    if (parentSteps++ >= map.size) return undefined;
     record = map.get(record.parentId);
   }
   return record && isNativeContainerType(record.type) ? record : undefined;
@@ -804,7 +806,7 @@ function nodeRecordWithEffectiveEpoch(
 }
 
 function nodeRecordForRead(map: NodeMap, record: NodeRecord): NodeRecord {
-  const effectiveEpoch = effectiveBlockEpoch(map, record);
+  const effectiveEpoch = effectiveBlockEpoch(map, record) ?? record.blockEpoch;
   let view: NodeRecord;
   const state = paragraphStateByRecord.get(record);
   if (state) {
@@ -2074,11 +2076,57 @@ function compareSemanticEnvelopeTuples(left: SemanticEnvelopeTuple, right: Seman
 const blockEpochWriteSerials = new WeakMap<NodeRecord, number>();
 let nextBlockEpochWriteSerial = 1;
 
-function effectiveBlockEpoch(map: NodeMap, record: NodeRecord): number {
+function hasParentCycle(map: NodeMap, record: NodeRecord): boolean {
+  let current: NodeRecord | undefined = record;
+  let visited = 0;
+  while (current) {
+    if (visited++ >= map.size) return true;
+    if (!current.parentId) return false;
+    current = map.get(current.parentId);
+  }
+  return false;
+}
+
+function snapshotWouldCreateParentCycle(map: NodeMap, parent: NodeRecord, snapshot: NodeSnapshot): boolean {
+  const ancestors = new Set<string>();
+  let ancestor: NodeRecord | undefined = parent;
+  let visited = 0;
+  while (ancestor) {
+    if (visited++ >= map.size) return true;
+    ancestors.add(ancestor.id);
+    if (!ancestor.parentId) break;
+    ancestor = map.get(ancestor.parentId);
+  }
+
+  const activeIds = new Set<string>();
+  const pending: Array<{ snapshot: NodeSnapshot; exiting: boolean }> = [{ snapshot, exiting: false }];
+  while (pending.length > 0) {
+    const entry = pending.pop();
+    if (!entry) continue;
+    const node = entry.snapshot;
+    if (entry.exiting) {
+      activeIds.delete(node.id);
+      continue;
+    }
+    if (ancestors.has(node.id) || activeIds.has(node.id)) return true;
+    activeIds.add(node.id);
+    pending.push({ snapshot: node, exiting: true });
+    const children = Array.isArray(node.children) ? node.children : [];
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      const child = children[index];
+      if (child) pending.push({ snapshot: child, exiting: false });
+    }
+  }
+  return false;
+}
+
+function effectiveBlockEpoch(map: NodeMap, record: NodeRecord): number | undefined {
   let epoch = record.blockEpoch;
   let latestSerial = blockEpochWriteSerials.get(record) ?? 0;
   let ancestor = record.parentId ? map.get(record.parentId) : undefined;
+  let parentSteps = 0;
   while (ancestor) {
+    if (parentSteps++ >= map.size) return undefined;
     const serial = blockEpochWriteSerials.get(ancestor) ?? 0;
     if (serial > latestSerial) {
       epoch = ancestor.blockEpoch;
@@ -4356,7 +4404,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       const findNearestListNode = (nodeId: string | undefined): NodeRecord | undefined => {
         if (!nodeId) return undefined;
         let current = nodes.get(nodeId);
+        let parentSteps = 0;
         while (current) {
+          if (parentSteps++ >= nodes.size) return undefined;
           if (current.type === "list") return current;
           if (!current.parentId) return undefined;
           current = nodes.get(current.parentId);
@@ -4394,6 +4444,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         const target = resolveBlockEpochTarget(patch, at);
         if (!target) return false;
         const actualBlockEpoch = effectiveBlockEpoch(nodes, target);
+        if (actualBlockEpoch === undefined) {
+          appendDiagnostic(`parent cycle rejected:${patch.op}:${target.id}`);
+          return true;
+        }
         if (actualBlockEpoch === expectedBlockEpoch) return false;
         // A root insert/replace targets the block it carries, which is where its transaction's epoch was recorded.
         const epochBlockId = at.blockId === PATCH_ROOT_ID ? target.id : at.blockId;
@@ -4467,7 +4521,12 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         let hasManagedSourceOwner = false;
         if (hasRangeUpdate || hasMetaUpdate || hasFinalityUpdate) {
           let sourceOwner: NodeRecord | undefined = target;
+          let parentSteps = 0;
           while (sourceOwner) {
+            if (parentSteps++ >= nodes.size) {
+              appendDiagnostic(`parent cycle rejected:setProps:${target.id}`);
+              return;
+            }
             if (
               paragraphStateByRecord.has(sourceOwner) ||
               tableStateByRecord.has(sourceOwner) ||
@@ -4952,6 +5011,21 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
       };
       const applyPatch = (patch: Patch) => {
+        const parent = "at" in patch ? resolveParent(nodes, patch.at) : undefined;
+        if (parent && hasParentCycle(nodes, parent)) {
+          appendDiagnostic(`parent cycle rejected:${patch.op}:${parent.id}`);
+          return;
+        }
+        if (
+          parent &&
+          (patch.op === "insertChild" || patch.op === "replaceChild") &&
+          typeof patch.node === "object" &&
+          patch.node !== null &&
+          snapshotWouldCreateParentCycle(nodes, parent, patch.node)
+        ) {
+          appendDiagnostic(`parent cycle rejected:${patch.op}:${patch.node.id}`);
+          return;
+        }
         switch (patch.op) {
           case "appendInputSource": {
             const source = inputSourceByNodeMap.get(nodes);

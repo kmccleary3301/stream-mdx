@@ -434,6 +434,33 @@ async function main() {
     "newest paragraph value",
     "replaying an older semantic envelope must not revert the newest paragraph value",
   );
+  const cycleStore = createRendererStore([createParagraphBlock("cycle-safe paragraph")]);
+  const cycleParent = cycleStore.getNode("paragraph-block");
+  assert.ok(cycleParent, "expected parent before attempting a cyclic child insertion");
+  cycleStore.applyPatches([
+    {
+      op: "insertChild",
+      at: { blockId: "paragraph-block", nodeId: "paragraph-block" },
+      index: 0,
+      node: {
+        id: "paragraph-block",
+        type: "paragraph-text",
+        props: { text: "must not replace its own parent" },
+        children: [],
+      },
+      meta: { kind: "semantic", blockEpoch: cycleParent.blockEpoch, parseEpoch: cycleParent.blockEpoch + 1, tx: 501 },
+    } satisfies Patch,
+  ]);
+  const afterCycleRejection = cycleStore.getNode("paragraph-block");
+  assert.equal(afterCycleRejection?.type, "paragraph", "a self-parenting child patch must not replace its parent");
+  assert.deepEqual(afterCycleRejection?.children, [], "a self-parenting child patch must not add a child");
+  assert.ok(
+    cycleStore.getInvariantViolations().some((message) =>
+      message.includes("parent cycle rejected:insertChild:paragraph-block"),
+    ),
+    "a self-parenting child patch must be rejected and reported",
+  );
+
 }
 
 await main();
