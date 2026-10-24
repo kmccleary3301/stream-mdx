@@ -3,12 +3,13 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { StreamingMarkdown, type NodePresentations, type NodeViewProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
 import { defineContentComponent, type ContentComponentHostProps, type ContentComponentProps } from "../src/components/content-components";
+import { ComponentRegistry } from "../src/components";
 import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-native-fixture";
 
 async function restrictedComponentUsesItsPresentationWrapper(): Promise<void> {
-  type CalloutProps = { readonly title: string };
-  const Callout: React.FC<CalloutProps & ContentComponentHostProps> = ({ title, children }) => (
-    <aside data-callout-title={title}>{children}</aside>
+  type CalloutProps = { readonly title: string; readonly "data-component-presentation"?: string };
+  const Callout: React.FC<CalloutProps & ContentComponentHostProps> = ({ title, children, ...props }) => (
+    <aside data-callout-title={title} {...props}>{children}</aside>
   );
   const contentComponents = {
     Callout: defineContentComponent<CalloutProps>({
@@ -18,6 +19,7 @@ async function restrictedComponentUsesItsPresentationWrapper(): Promise<void> {
   };
   const components = {
     "component:Callout": {
+      props: { "data-component-presentation": "decorated" },
       wrapper: ({ children }: NodeViewProps) => <section data-component-presentation>{children}</section>,
     },
   } satisfies NodePresentations;
@@ -50,7 +52,12 @@ async function restrictedComponentUsesItsPresentationWrapper(): Promise<void> {
     const presentation = container.querySelector("section[data-component-presentation]");
     assert.equal(presentation?.firstElementChild?.tagName, "ASIDE");
     assert.equal(presentation?.querySelector("aside")?.getAttribute("data-callout-title"), "Prepared");
+    assert.equal(presentation?.querySelector("aside")?.getAttribute("data-component-presentation"), "decorated");
     assert.equal(presentation?.textContent, "Prepared child");
+    assert.throws(
+      () => new ComponentRegistry({ components: { "component:Callout": { view: () => null } } }),
+      /component:Callout.*headless views are not supported/,
+    );
   } finally {
     await act(async () => root.unmount());
     restore();

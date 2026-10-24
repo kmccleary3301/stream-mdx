@@ -148,6 +148,9 @@ function validateNodePresentation(key: string, candidate: unknown): asserts cand
     throw new TypeError(`node presentation for ${key} must be an object`);
   }
   const presentation = candidate as Record<string, unknown>;
+  if (key.startsWith("component:") && presentation.view !== undefined) {
+    throw new TypeError(`node presentation for ${key}: headless views are not supported for restricted content components`);
+  }
   if (presentation.wrapper !== undefined && presentation.view !== undefined) {
     throw new TypeError(`node presentation for ${key}: wrapper and view are mutually exclusive`);
   }
