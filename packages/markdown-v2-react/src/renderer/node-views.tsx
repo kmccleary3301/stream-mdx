@@ -246,9 +246,6 @@ function renderLegacyTablePart<K extends NativeTablePartPresentationKey>(
     type: key,
     isFinalized,
     actions,
-    store,
-    registry,
-    handle: store.getNodeHandle(id),
   });
 }
 
@@ -587,7 +584,6 @@ export const NativeNodeView: React.FC<{ readonly handle: NodeViewHandle }> = ({ 
       ? context.store.getCodeNodeHandle(blockId)
       : context.store.getTableNodeHandle(blockId);
   if (currentHandle !== handle) return null;
-  if (context.nativeTablePart !== undefined) return context.nativeTablePart;
   return (
     <BlockNodeRenderer
       store={context.store}

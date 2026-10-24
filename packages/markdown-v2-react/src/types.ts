@@ -288,8 +288,11 @@ export type NodePresentation<K extends NodePresentationKey = NodePresentationKey
     slots?: NodePresentationSlots<K>;
   }> &
   (
-    | { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
-    | { readonly view: React.ComponentType<HeadlessNodeViewProps<K>>; readonly wrapper?: never }
+    K extends "table-row" | "table-cell"
+      ? { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
+      :
+          | { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
+          | { readonly view: React.ComponentType<HeadlessNodeViewProps<K>>; readonly wrapper?: never }
   );
 
 export type NodePresentations = Partial<{

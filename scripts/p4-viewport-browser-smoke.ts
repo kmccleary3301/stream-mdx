@@ -109,6 +109,13 @@ async function main(): Promise<void> {
     assert.equal(initialTableWidths.length, 2, "the 10,000-row table exposes both measured columns");
     const initialBodyRows = await table.locator("tbody tr[data-row-id]").count();
     assert.ok(initialBodyRows < 10_000, `the browser mounts a bounded table window, not ${initialBodyRows} rows`);
+    const initialFirstRow = table.locator("tbody tr[data-row-id]").first();
+    const initialFirstRowId = await initialFirstRow.getAttribute("data-row-id");
+    const initialFirstRowCellWidths = await initialFirstRow.locator("th, td").evaluateAll((cells) =>
+      cells.map((cell) => cell.getBoundingClientRect().width),
+    );
+    assert.ok(initialFirstRowId, "the table exposes its first rendered row");
+    assert.equal(initialFirstRowCellWidths.length, 2, "the first rendered row exposes both table cells");
     await page.evaluate(async () => {
       const fixture = (window as Window & {
         __P4_VIEWPORT_SMOKE__?: { start?: () => Promise<void>; appendLiveTableRow?: () => Promise<void> };
@@ -119,6 +126,24 @@ async function main(): Promise<void> {
     await page.waitForFunction(() =>
       document.querySelector<HTMLElement>('[data-table-virtualized="true"]')?.getAttribute("data-table-total-rows") === "10001",
     undefined, { timeout: TIMEOUT_MS });
+    const appendedFirstRow = table.locator("tbody tr[data-row-id]").first();
+    assert.equal(
+      await appendedFirstRow.getAttribute("data-row-id"),
+      initialFirstRowId,
+      "the first rendered row stays mounted during the live append",
+    );
+    const appendedFirstRowCellWidths = await appendedFirstRow.locator("th, td").evaluateAll((cells) =>
+      cells.map((cell) => cell.getBoundingClientRect().width),
+    );
+    assert.equal(appendedFirstRowCellWidths.length, initialFirstRowCellWidths.length);
+    for (const [cellIndex, initialWidth] of initialFirstRowCellWidths.entries()) {
+      const appendedWidth = appendedFirstRowCellWidths[cellIndex];
+      assert.ok(appendedWidth !== undefined);
+      assert.ok(
+        Math.abs(appendedWidth - initialWidth) <= 0.5,
+        `rendered width of first-row cell ${cellIndex} changed from ${initialWidth}px to ${appendedWidth}px after the live append`,
+      );
+    }
 
     await table.evaluate((element) => {
       const viewport = element as HTMLElement;
