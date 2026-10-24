@@ -1216,6 +1216,28 @@ async function runHeaderLikeDiffContentUsesHunkCountsTest(): Promise<void> {
   }
 }
 
+async function runSplitHunkHeaderKeepsProvisionalStatusTest(): Promise<void> {
+  const document = createCodeDocument({ language: "typescript", diff: true, initialContent: "" });
+
+  try {
+    document.append("@@ -1");
+    assert.notStrictEqual(
+      document.handle.readMetadata().diffStatus,
+      "malformed",
+      "an uncommitted partial hunk header must not be classified as malformed",
+    );
+
+    document.append(" +1 @@\n-a\n+a\n");
+    assert.strictEqual(
+      document.handle.readMetadata().diffStatus,
+      "complete",
+      "a completed streamed hunk header and its rows produce a complete diff",
+    );
+  } finally {
+    document.dispose();
+  }
+}
+
 async function runDeclaredHunkCountsReportDiffStatusTest(): Promise<void> {
   let disposeOpen: (() => void) | undefined;
   let disposeTruncated: (() => void) | undefined;
@@ -1454,6 +1476,7 @@ await runHeaderLikeDiffContentUsesHunkCountsTest();
 await runDeletedFileHeaderLikeBodyRangePropertyTest();
 await runFinalizedNewFileWithoutTerminalNewlineTest();
 await runDeclaredHunkCountsReportDiffStatusTest();
+await runSplitHunkHeaderKeepsProvisionalStatusTest();
 
 await runStandaloneCodeDocumentTest();
 await runFinalizedCodeDocumentIsSealedTest();

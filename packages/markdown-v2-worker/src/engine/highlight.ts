@@ -469,7 +469,16 @@ export function codeDiffStatus(
 ): CodeDiffStatus {
   const statusCursor = { ...cursor };
   let abandoned = rowsAbandoned;
-  if (provisionalTailText !== undefined && advanceDiffCursor(provisionalTailText, statusCursor)) {
+
+  const incompleteProvisionalHunkHeader = provisionalTailText !== undefined
+    && !sealed
+    && provisionalTailText.startsWith("@@")
+    && parseDiffHunkHeader(provisionalTailText) === null;
+  if (
+    provisionalTailText !== undefined
+    && !incompleteProvisionalHunkHeader
+    && advanceDiffCursor(provisionalTailText, statusCursor)
+  ) {
     abandoned = true;
   }
   const hasOwedRows = (statusCursor.oldRemaining ?? 0) > 0 || (statusCursor.newRemaining ?? 0) > 0;
