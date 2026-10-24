@@ -1,6 +1,6 @@
 # Public API — StreamMDX
 
-*Last updated: 2026-10-07*
+*Last updated: 2026-10-23*
 
 ## Packages & Entry Points
 
@@ -105,7 +105,7 @@ export function Example() {
 | `codeVirtualization` | `Partial<VirtualizedCodeConfig>` | Configures the native code viewport. Code blocks over the default 200-line threshold are windowed; the full-content control is explicit. |
 | `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
 | `html` | `HtmlOptions` | Per-tag attribute allowlists and opt-in markdown parsing inside raw HTML blocks. Requires `features.html`. |
-| `syntax` | `SyntaxRuleSpec[]` | Serializable regex rules for inline plugin nodes. Map rule names in `inlineComponents`. |
+| `syntax` | `SyntaxExtensionDescriptor` | Versioned descriptor (`contractVersion: 1`) with optional `inline` rules and registered `containers`; each container's `component` references a `contentComponents` key. |
 | `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |
 | `statusMessage` | `string` | Optional host-coordinated milestone text rendered in one atomic polite status region. Omit it by default; update at coarse milestones, never per token. |
 | `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. Rejected URLs never navigate. |
@@ -260,7 +260,7 @@ matches its `INITIALIZED` source baseline. Reject mismatched messages before
 queueing or committing them; do not infer a generation when delayed messages
 arrive.
 
-The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, and `syntax?: SyntaxRuleSpec[]`. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions })`, or create an adapter with `createInlineEngineWorker({ extensions })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
+The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, and `syntax?: SyntaxExtensionDescriptor`. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions })`, or create an adapter with `createInlineEngineWorker({ extensions })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
 
 
 ---
@@ -397,11 +397,14 @@ Fences labeled `artifact` or `html-artifact` render as ordinary code unless the 
 
 Math uses KaTeX by default. `mathRenderer` accepts either a component with `{ tex: string; display?: boolean; className?: string }` or `{ inline?, display? }` components with `{ tex: string; className?: string }`. Unspecified entries retain their existing renderer. `features.math: false` disables math recognition, including inside opt-in HTML markdown. A render override does not re-enable parsing.
 
-### Inline rules and HTML
+### Syntax extensions and HTML
 
-`syntax` accepts `SyntaxRuleSpec[]` from `@stream-mdx/core`. Each rule emits a `"plugin"` inline node with a name, string attributes, optional parsed children, and raw matched text. Public `inlineComponents` maps that name to a React component receiving `{ name, attrs, children, raw }`. Unmapped rules use `inlineComponents.plugin` when present, otherwise raw matched text. Standard map keys include `text`, `strong`, `em`, `strike`, `code`, `link`, `image`, and `br`. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for capture, lookahead, anticipation, and invalid-`INIT` behavior.
+`syntax` accepts `SyntaxExtensionDescriptor` from `@stream-mdx/core`: `contractVersion` is `1`, `inline` contains `SyntaxRuleSpec` rules, and `containers` contains `{ name, component }` registrations. Each `component` must name an entry in `contentComponents`. Inline rules emit `"plugin"` nodes with a name, string attributes, optional parsed children, and raw matched text; `inlineComponents` maps rule names to React components receiving `{ name, attrs, children, raw }`. Unmapped rules use `inlineComponents.plugin` when present, otherwise raw matched text. Standard map keys include `text`, `strong`, `em`, `strike`, `code`, `link`, `image`, and `br`. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for rule capture, lookahead, anticipation, and invalid-`INIT` behavior.
+
+A registered opener uses at least three colons followed by its name. It is recognized at a block start or after a paragraph-separating blank line; code and escaped source keep precedence. A bare closer closes only the innermost container when its colon count exactly matches the opener. Unmatched closers remain literal source. `FINALIZE` marks unclosed containers `incomplete` and supplies the diagnostic `Unclosed container :::<name>`.
 
 `HtmlOptions` is `{ allowedTags?: Record<string, string[]>; literalTagContent?: string[] }`. `allowedTags` adds permitted tags and replaces their tag-specific attribute lists while retaining global schema attributes. URL protocol checks still apply to `href`/`src`/`action`/`formaction`/`xlink:href`; `script`/`style` tags remain excluded. `on*` event handler attributes and `srcdoc` are strictly forbidden and always stripped regardless of `allowedTags`. Raw HTML `style` attributes are sanitized using DOM-free safe property allowlists. Custom allowlists are trusted application policy. `htmlElements` maps permitted tag names to React components and supplies sanitized attributes and typed children.
+
 Raw HTML block content is literal by default. Supplying `literalTagContent`, even `[]`, opts into engine-owned inline markdown parsing inside eligible HTML children. `code`, `pre`, and `textarea`, plus listed tags, stay literal. Inline syntax plugins and the engine's math flag apply to opt-in children; mapped components do not reparse strings. HTML must also be enabled via `features.html`.
 
 ## 3.3) Block Controls (Copy & Download)
