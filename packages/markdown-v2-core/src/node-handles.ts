@@ -1,6 +1,8 @@
 import type { CodeLineRecord } from "./code-records";
 import type { CodeBlockSourceMetadata } from "./types";
+import type { TableBlockSourceMetadata, TableHeaderRecord, TableRowRecord } from "./table-records";
 
+const tableNodeHandleBrand: unique symbol = Symbol("TableNodeHandle");
 const codeNodeHandleBrand: unique symbol = Symbol("CodeNodeHandle");
 
 /** Zero-based, half-open line range. Reads clamp both bounds to the current line count. */
@@ -18,6 +20,37 @@ export interface CodeBlockMetadata extends CodeBlockSourceMetadata {
   readonly info: string;
   readonly language?: string;
   readonly diffStatus?: CodeDiffStatus;
+}
+
+/** Zero-based, half-open body-row range. Reads clamp both bounds to the current row count. */
+export interface TableRowRange {
+  readonly from: number;
+  readonly to: number;
+}
+
+/** Bounded table-owner metadata; body records remain available through explicit range reads. */
+export interface TableBlockMetadata extends TableBlockSourceMetadata {
+  readonly header: TableHeaderRecord;
+}
+
+/** Opaque, owner-local read and observation access to prepared table state. */
+export interface TableNodeHandle {
+  readonly [tableNodeHandleBrand]: true;
+  /** Stable metadata, replaced when the owner source frontier or lifecycle changes. */
+  readonly readMetadata: () => TableBlockMetadata;
+  /** Reads a bounded half-open body-row range; unchanged retained snapshots preserve identity. */
+  readonly readRows: (range: TableRowRange) => readonly TableRowRecord[];
+  readonly subscribeMetadata: (listener: () => void) => () => void;
+  /** Notifies when changed records intersect the range; unsubscribe releases only this listener. */
+  readonly subscribeRows: (range: TableRowRange, listener: () => void) => () => void;
+}
+
+/** Create the branded read-only handle implemented by a table owner adapter. */
+export function createTableNodeHandle(
+  operations: Omit<TableNodeHandle, typeof tableNodeHandleBrand>,
+): TableNodeHandle {
+  const handle: TableNodeHandle = { ...operations, [tableNodeHandleBrand]: true };
+  return Object.freeze(handle);
 }
 
 /** Opaque, owner-local read and observation access to prepared code state. */

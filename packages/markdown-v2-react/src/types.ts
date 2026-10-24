@@ -3,6 +3,7 @@ import type React from "react";
 import type {
   Block,
   CodeNodeHandle,
+  TableNodeHandle,
   CodeHighlightOutputMode,
   CodeHighlightingMode,
   ContentPolicy,
@@ -297,7 +298,9 @@ export interface NodeViewProps {
 export type HeadlessNodeViewProps<K extends NodePresentationKey = NodePresentationKey> =
   K extends "code"
     ? { readonly handle: CodeNodeHandle }
-    : { readonly handle: NodeHandle };
+    : K extends "table"
+      ? { readonly handle: TableNodeHandle }
+      : { readonly handle: NodeHandle };
 
 export interface PresentationProps {
   readonly className?: string;

@@ -2,7 +2,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import { normalizeBlockquoteText, PATCH_ROOT_ID, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
-import type { CodeNodeHandle } from "@stream-mdx/core";
+import type { CodeNodeHandle, TableNodeHandle } from "@stream-mdx/core";
 import type { CodeNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
 import {
   TableControlsBar,
@@ -73,6 +73,16 @@ function renderNodePresentation(
   if (id === undefined) return nativeView;
   const presentation = registry.getNodePresentation(type);
   if (!presentation || bypassPresentation) return nativeView;
+  if (type === "table" && "view" in presentation && presentation.view) {
+    const handle = store.getTableNodeHandle(id);
+    if (!handle) return null;
+    const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: TableNodeHandle }>;
+    return (
+      <NodeViewRenderContext.Provider value={{ store, registry }}>
+        <HeadlessView handle={handle} />
+      </NodeViewRenderContext.Provider>
+    );
+  }
   if (type !== "code" && "view" in presentation && presentation.view) {
     const handle = store.getNodeHandle(id);
     if (!handle) return null;

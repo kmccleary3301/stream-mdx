@@ -423,6 +423,38 @@ function DiffView({ handle }: { handle: CodeNodeHandle }) {
 
 The `{ from, to }` range is half-open and zero-based; choose the rows the view needs rather than reading the whole code block. `diffStatus` is `complete`, `incomplete`, or `malformed` for diff fences, and each `CodeLineRecord` retains its `diffKind`, `oldNo`, `newNo`, and current token-decoration exactness.
 
+### Headless table views
+
+A headless table presentation can read stable column metadata and a bounded range of prepared body rows:
+
+```tsx
+import type { TableNodeHandle, TableRowRange } from "@stream-mdx/core";
+import { StreamingMarkdown, useTableBlock, useTableRows } from "@stream-mdx/react";
+
+const FIRST_ROWS: TableRowRange = { from: 0, to: 20 };
+
+function TableView({ handle }: { handle: TableNodeHandle }) {
+  const table = useTableBlock(handle);
+  const rows = useTableRows(handle, FIRST_ROWS);
+  return (
+    <table>
+      <thead>
+        <tr>{table.header.cells.map((cell) => <th key={cell.id}>{cell.raw}</th>)}</tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.id}>{row.cells.map((cell) => <td key={cell.id}>{cell.raw}</td>)}</tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+<StreamingMarkdown features={{ tables: true }} components={{ table: { view: TableView } }} />;
+```
+
+`useTableRows` takes a zero-based half-open `{ from, to }` range. `useTableBlock` exposes current table metadata and its stable header; row consumers are notified only when records in their requested range change.
+
 ### Artifact-like code fences
 
 Fences labeled `artifact` or `html-artifact` render as ordinary code unless the host supplies a `codeRenderers` entry. StreamMDX does not ship a default artifact iframe or sandbox. A custom renderer is application code; if it turns source into active content, the host owns its isolation and security policy.
