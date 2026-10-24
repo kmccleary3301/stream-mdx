@@ -39,6 +39,8 @@ const SCHEDULING_PRESET = "throughput" as const;
 const NAVIGATION_TIMEOUT_MS = Number(process.env.SNIPPET_NAVIGATION_TIMEOUT_MS ?? 90000);
 const INITIAL_RENDER_TIMEOUT_MS = Number(process.env.SNIPPET_INITIAL_RENDER_TIMEOUT_MS ?? 30000);
 const STREAM_COMPLETE_TIMEOUT_MS = Number(process.env.SNIPPET_STREAM_TIMEOUT_MS ?? 60000);
+// Large fixtures stream faster than STREAM_RATE so their source phase stays near this budget.
+const STREAM_TARGET_MS = Number(process.env.SNIPPET_STREAM_TARGET_MS ?? 20000);
 const FINALIZE_TIMEOUT_MS = Number(process.env.SNIPPET_FINALIZE_TIMEOUT_MS ?? 30000);
 const OUTPUT_SELECTOR_TIMEOUT_MS = Number(process.env.SNIPPET_OUTPUT_TIMEOUT_MS ?? 30000);
 const PATCH_P95_WARN_MS = 70;
@@ -1244,7 +1246,10 @@ async function renderSnippet(
 
 
   let workerRun: SnippetWorkerRun | null = null;
-  const resolvedRate = Math.min(20_000, Math.max(50, Math.round(STREAM_RATE)));
+  const sizeScaledRate = Math.ceil((snippetContent.length * 1000) / STREAM_TARGET_MS);
+  const resolvedRate = Math.min(20_000, Math.max(50, Math.round(STREAM_RATE), sizeScaledRate));
+  const expectedStreamMs = Math.ceil((snippetContent.length * 1000) / resolvedRate);
+  const streamCompleteTimeoutMs = Math.max(STREAM_COMPLETE_TIMEOUT_MS, expectedStreamMs * 2 + 30_000);
   const resolvedTickMs = Math.min(200, Math.max(1, Math.round(STREAM_TICK_MS)));
   if (options?.traceFast) {
     await page.evaluate(async () => {
@@ -1519,7 +1524,7 @@ async function renderSnippet(
               );
             },
             { ...run, total: snippetContent.length },
-            { timeout: STREAM_COMPLETE_TIMEOUT_MS },
+            { timeout: streamCompleteTimeoutMs },
           );
         } catch (error) {
           await rejectIncompleteRun(
