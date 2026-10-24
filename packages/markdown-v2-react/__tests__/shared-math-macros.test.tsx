@@ -52,7 +52,7 @@ async function renderTextDocument(
     mathOptions,
     caret: false,
   };
-  root.render(React.createElement(StreamingMarkdown, { ref: handle, engine: "main-thread", ...props }));
+  root.render(React.createElement(StreamingMarkdown, { ref: handle, engine: "main", ...props }));
   await waitFor(ready, message);
   await handle.current?.waitForIdle();
 }
@@ -90,7 +90,7 @@ try {
   root.render(
     <StreamingMarkdown
       ref={handle}
-      engine="main-thread"
+      engine="main"
       stream={stream}
       features={{ math: true }}
       mathOptions={{ macroScope: "document" }}
@@ -111,7 +111,7 @@ try {
   root.render(
     <StreamingMarkdown
       ref={handle}
-      engine="main-thread"
+      engine="main"
       stream={provisionalStream}
       features={{ math: true, formatAnticipation: { mathInline: true } }}
       mathOptions={{ macroScope: "document" }}
