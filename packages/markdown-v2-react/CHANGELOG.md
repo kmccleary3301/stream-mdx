@@ -219,6 +219,7 @@
 
 ### Patch Changes
 
+- 721313b: Reject patches that would make a node its own ancestor, and record an invariant diagnostic instead of looping.
 - a9052cb: Honor reduced-motion preferences for bottom jumps and let wheel, touch, and scroll-key input interrupt smooth returns.
 - 3f24715: Bound host-accepted and in-flight source with generation-tagged worker admission acknowledgements. Imperative append accepts a whole UTF-16 chunk or refuses it without partial admission; automatic iterators losslessly split larger chunks and wait for capacity.
 
