@@ -95,15 +95,19 @@ function fenwickAdd(tree: Map<number, number>, index: number, rowCount: number, 
 }
 
 
-// Only custom Table wrappers inside our viewport are managed, never consumer ancestors.
-function normalizeTableScrollAncestors(table: HTMLTableElement, container: HTMLDivElement): () => void {
+// Normalize adapters inside the viewport and presentation wrappers inside the table block.
+function normalizeTableScrollAncestors(
+  table: HTMLTableElement,
+  container: HTMLDivElement,
+  blockRoot: HTMLElement | null,
+): () => void {
   const restore: Array<() => void> = [];
   const properties = ["overflow", "overflow-x", "overflow-y"];
-  for (let ancestor = table.parentElement; ancestor && ancestor !== container; ancestor = ancestor.parentElement) {
+  const normalize = (ancestor: HTMLElement) => {
     const computed = ancestor.ownerDocument.defaultView?.getComputedStyle(ancestor);
     if (!computed || ![computed.overflow, computed.overflowX, computed.overflowY].some(
       (value) => /^(auto|scroll|hidden|clip|overlay)$/.test(value),
-    )) continue;
+    )) return;
     const style = ancestor.style;
     const original = Array.from(style).filter((property) => properties.includes(property)).map((property) => ({
       property, value: style.getPropertyValue(property), priority: style.getPropertyPriority(property),
@@ -121,6 +125,14 @@ function normalizeTableScrollAncestors(table: HTMLTableElement, container: HTMLD
       for (const property of properties) style.removeProperty(property);
       for (const { property, value, priority } of original) style.setProperty(property, value, priority);
     });
+  };
+  for (let ancestor = table.parentElement; ancestor && ancestor !== container; ancestor = ancestor.parentElement) {
+    normalize(ancestor);
+  }
+  if (blockRoot) {
+    for (let ancestor = container.parentElement; ancestor && ancestor !== blockRoot; ancestor = ancestor.parentElement) {
+      normalize(ancestor);
+    }
   }
   return () => {
     for (const cleanup of restore) cleanup();
@@ -608,7 +620,8 @@ export function useVirtualizedTable(
     const container = containerRef.current;
     const table = domTargets.table;
     if (!container || !table) return;
-    return normalizeTableScrollAncestors(table, container);
+    const blockRoot = container.closest<HTMLElement>("[data-table-block-root]");
+    return normalizeTableScrollAncestors(table, container, blockRoot);
   }, [isEligible, domTargets?.table, containerElement]);
 
   // Commit the header and first bounded row chunk before each initial or width-change measurement.

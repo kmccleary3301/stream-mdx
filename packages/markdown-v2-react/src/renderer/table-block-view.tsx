@@ -374,9 +374,14 @@ export const ManagedTableBlockView: React.FC<{
     }
     return current.sourceSnapshot.materialize();
   }, [blockId, generation, store]);
-  const presentIfHostAllowed = (nativeView: React.ReactNode): React.ReactNode =>
-    hostAllowed && renderPresentation ? renderPresentation(nativeView) : nativeView;
-  if (!node || filteredTable === null || filteredTable === undefined) return null;
+  const presentIfHostAllowed = (nativeView: React.ReactNode): React.ReactNode => {
+    if (!hostAllowed || !renderPresentation) return nativeView;
+    const presentation = registry.getNodePresentation("table");
+    const presented = renderPresentation(nativeView);
+    return presentation && "wrapper" in presentation && presentation.wrapper
+      ? <div data-table-block-root={blockId} style={{ display: "contents" }}>{presented}</div>
+      : presented;
+  };
   const actionsSlot = registry.getNodePresentation("table")?.slots?.actions;
   if (actionsSlot !== undefined) {
     return presentIfHostAllowed(<div className="stream-mdx-table-wrapper relative">{actionsSlot}{renderedContent}</div>);

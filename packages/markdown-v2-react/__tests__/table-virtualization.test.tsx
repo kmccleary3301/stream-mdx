@@ -238,6 +238,7 @@ async function waitFor(predicate: () => boolean, message: string) {
 
 const container = dom.window.document.getElementById("root");
 assert.ok(container);
+container.style.setProperty("overflow", "auto");
 const root = createRoot(container);
 const markdown = ["| ID | Description |", "| --- | --- |", ...Array.from({ length: 120 }, (_, index) => `| Row-${index} | Description-${index} |`)].join("\n");
 const handle = React.createRef<StreamingMarkdownHandle>();
@@ -288,7 +289,9 @@ try {
   assert.equal(container.querySelector("thead")?.style.backgroundColor, "var(--stream-mdx-table-header-background, Canvas)");
   const customWrapper = container.querySelector<HTMLElement>('[data-custom-wrapper="true"]');
   assert.ok(customWrapper);
-  assert.equal(customWrapper.style.getPropertyValue("overflow"), "auto");
+  assert.equal(customWrapper.style.getPropertyValue("overflow"), "visible");
+  assert.equal(customWrapper.style.getPropertyPriority("overflow"), "important");
+  assert.equal(container.style.overflow, "auto", "consumer ancestors outside the table block stay untouched");
   assert.deepEqual(Array.from(container.querySelectorAll<HTMLTableColElement>("col"), (col) => col.style.width), ["80px", "720px"]);
   assert.ok((naturalPassRowCounts[naturalPassRowCounts.length - 1] ?? Infinity) <= 64,
     "initial natural column measurement uses only a bounded first row chunk");
@@ -382,7 +385,8 @@ try {
   assert.equal(oldAdapter.style.overflow, "auto", "detached old adapter receives its original overflow");
   const liveReplacement = container.querySelector<HTMLElement>('[data-adapter="replacement"]');
   assert.ok(liveReplacement?.isConnected);
-  assert.equal(liveReplacement.style.overflow, "auto");
+  assert.equal(liveReplacement.style.overflow, "visible");
+  assert.equal(liveReplacement.style.getPropertyPriority("overflow"), "important");
   for (const observer of swappedObserverCallbacks) observer.deliverPending();
   assert.equal(rows().length, 7, "queued old observer callbacks cannot change the new measurement generation");
   liveReplacement.style.setProperty("overflow", "hidden", "important");
