@@ -59,8 +59,8 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
       handle.current?.append("## Shared heading");
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector("section[data-heading-presentation]"), "finalized heading wrapper");
-    const nativeHeading = container.querySelector("h2[data-presentation='heading']");
+    await waitFor(() => Boolean(container.querySelector("section[data-heading-presentation]")), "finalized heading wrapper");
+    const nativeHeading = container.querySelector<HTMLHeadingElement>("h2[data-presentation='heading']");
     assert.ok(nativeHeading, "constrained heading props decorate the native h2");
     assert.equal(nativeHeading.className, "markdown-heading markdown-h2 host-heading");
     assert.equal(nativeHeading.title, "heading tooltip");
@@ -148,7 +148,7 @@ async function nativeBlockDecorationsReachTheirElements(): Promise<void> {
       ].join("\n"));
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector("h2[data-presentation='heading']"), "decorated heading");
+    await waitFor(() => Boolean(container.querySelector("h2[data-presentation='heading']")), "decorated heading");
 
     for (const [selector, type] of [
       ["h2", "heading"],
@@ -181,7 +181,11 @@ async function nonTableHeadlessPresentationRendersTheNativeHeading(): Promise<vo
   const handle = React.createRef<StreamingMarkdownHandle>();
   const components = {
     heading: {
-      view: ({ handle: nodeHandle }) => <NativeNodeView handle={nodeHandle} />,
+      view: ({ handle: nodeHandle }) => (
+        <aside data-headless-heading-view>
+          <NativeNodeView handle={nodeHandle} />
+        </aside>
+      ),
     },
   } satisfies NodePresentations;
 
@@ -204,8 +208,8 @@ async function nonTableHeadlessPresentationRendersTheNativeHeading(): Promise<vo
       await handle.current?.finalize();
     });
 
-    await waitFor(() => container.querySelector("h2"), "native heading from headless presentation");
-    assert.equal(container.querySelector("h2")?.textContent, "Headless heading");
+    await waitFor(() => Boolean(container.querySelector("aside[data-headless-heading-view]")), "non-table headless presentation view");
+    assert.equal(container.querySelector("aside[data-headless-heading-view] h2")?.textContent, "Headless heading");
   } finally {
     await act(async () => root.unmount());
     restore();
@@ -248,7 +252,7 @@ async function codeWrapperReceivesMetadataAndSourceAction(): Promise<void> {
       handle.current?.append("```typescript\nconst first = 1;\nconst second = 2;\n");
     });
 
-    await waitFor(() => container.querySelector("section[data-code-presentation]"), "code presentation wrapper");
+    await waitFor(() => Boolean(container.querySelector("section[data-code-presentation]")), "code presentation wrapper");
     assert.ok(presentation, "the code wrapper receives presentation props");
     assert.equal(presentation.metadata.language, "typescript");
     assert.equal(presentation.metadata.lineCount, 2);
@@ -313,7 +317,7 @@ async function finalizedParagraphPresentationKeepsColdSourceBehindActions(): Pro
       handle.current?.append("**Paragraph source**");
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector("section[data-paragraph-presentation]"), "finalized paragraph wrapper");
+    await waitFor(() => Boolean(container.querySelector("section[data-paragraph-presentation]")), "finalized paragraph wrapper");
     assert.ok(presentation, "the paragraph wrapper receives bounded presentation props");
     assert.equal(Object.prototype.hasOwnProperty.call(presentation, "block"), false, "wrappers never receive the full block");
     assert.equal(coldReads, 0, "rendering a finalized paragraph does not materialize its cold block");
@@ -378,7 +382,7 @@ async function mermaidEngineUsesTheNativeCodeOwner(): Promise<void> {
       handle.current?.append("```mermaid\ngraph TD; A-->B;\n```\n\n```ts\nconst x = 1;\n```");
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector(".stream-mdx-mermaid-diagram svg text"), "Mermaid diagram");
+    await waitFor(() => Boolean(container.querySelector(".stream-mdx-mermaid-diagram svg text")), "Mermaid diagram");
     assert.equal(container.querySelector(".stream-mdx-mermaid-diagram svg text")?.textContent, "diagram");
     assert.equal(securityLevel, "strict", "the Mermaid owner retains its strict default configuration");
     assert.deepEqual(renderedSources, ["graph TD; A-->B;"], "only Mermaid code reaches the optional renderer");
@@ -416,7 +420,7 @@ async function mermaidWithoutEngineStaysNativeCode(): Promise<void> {
       handle.current?.append("```mermaid\ngraph TD; A-->B;\n```");
       await handle.current?.finalize();
     });
-    await waitFor(() => container.querySelector("[data-code-block=\"true\"]"), "native Mermaid code");
+    await waitFor(() => Boolean(container.querySelector("[data-code-block=\"true\"]")), "native Mermaid code");
     assert.equal(container.querySelector(".stream-mdx-mermaid-diagram"), null);
     assert.ok(container.textContent?.includes("graph TD; A-->B;"));
   } finally {
