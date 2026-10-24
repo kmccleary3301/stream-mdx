@@ -4,16 +4,16 @@
 import type { CodeHighlightingMode, HtmlTreeNode, PerformanceMetrics, WorkerOut } from "@stream-mdx/core";
 import type { RendererMetrics, StreamingMarkdownProps, StreamingSchedulerOptions } from "@stream-mdx/react";
 import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
-import { components as mdxComponents } from "@/mdx-components";
+import { components as trustedMdxElements } from "@/mdx-components";
 import React, { Profiler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ElementType } from "react";
 import { useSearchParams } from "next/navigation";
 import { Streamdown, type LinkSafetyConfig, type PluginConfig } from "streamdown";
 import { code, type CodeHighlighterPlugin } from "@streamdown/code";
 import { createMathPlugin } from "@streamdown/math";
 
-import { ComponentRegistry, defineContentComponent, SourceCapacityError, StreamingMarkdown, type AppendResult, type ContentComponentHostProps, type ContentComponentProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { defineContentComponent, SourceCapacityError, StreamingMarkdown, type AppendResult, type ContentComponentHostProps, type ContentComponentProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
 
-import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
+import { createDemoComponents } from "@/lib/streaming-demo-registry";
 import { collectGeneratedFootnoteLabels, collectSemanticDom, renderedCodeSource, type GeneratedFootnoteLabel, type SemanticDomRecords } from "../../../../scripts/perf/semantic-dom";
 import { createChunkTrace, semanticSha256 } from "../../../../scripts/perf/chunk-trace";
 import { collectCodeReadiness } from "../../../../scripts/perf/code-readiness";
@@ -25,7 +25,7 @@ import {
 
 
 const perfMdxEngine = createTrustedMdxEngine({
-  components: mdxComponents as Readonly<Record<string, ElementType>>,
+  components: trustedMdxElements as Readonly<Record<string, ElementType>>,
 });
 const perfMdxEngines = { mdx: perfMdxEngine };
 const streamdownMath = createMathPlugin({ singleDollarTextMath: true });
@@ -1100,19 +1100,7 @@ export function PerfHarness(): JSX.Element {
   const memoryTimerRef = useRef<number | null>(null);
   const observerRef = useRef<PerformanceObserver | null>(null);
 
-  const tableElements = useMemo(() => createDemoTableElements(), []);
-  const htmlElements = useMemo(() => createDemoHtmlElements(), []);
-
-  const registry = useMemo(() => {
-    const next = new ComponentRegistry();
-    configureDemoRegistry({
-      registry: next,
-      tableElements,
-      htmlElements,
-      showCodeMeta: false,
-    });
-    return next;
-  }, [tableElements, htmlElements]);
+  const demoComponents = useMemo(() => createDemoComponents(), []);
 
   const onMetrics = useCallback((metrics: RendererMetrics) => {
     flushesRef.current.push(metrics);
@@ -2017,10 +2005,7 @@ export function PerfHarness(): JSX.Element {
               caret={false}
               contentPolicy="trusted-mdx"
               engines={perfMdxEngines}
-              components={registry.getBlockComponentMap()}
-              inlineComponents={registry.getInlineComponentMap()}
-              tableElements={tableElements}
-              htmlElements={htmlElements}
+              components={demoComponents}
               onMetrics={onMetrics}
             />
           </Profiler>
@@ -2036,10 +2021,7 @@ export function PerfHarness(): JSX.Element {
             caret={false}
             contentPolicy="trusted-mdx"
             engines={perfMdxEngines}
-            components={registry.getBlockComponentMap()}
-            inlineComponents={registry.getInlineComponentMap()}
-            tableElements={tableElements}
-            htmlElements={htmlElements}
+            components={demoComponents}
             onMetrics={onMetrics}
           />
         )}

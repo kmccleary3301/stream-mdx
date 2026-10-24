@@ -1,35 +1,28 @@
 "use client";
 
 import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
-import type { BlockComponents, StreamingMarkdownHandle } from "@stream-mdx/react";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import type { NodePresentations, StreamingMarkdownHandle } from "@stream-mdx/react";
 import { StreamingMarkdown } from "@stream-mdx/react";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { useEffect, useMemo, useRef, type ElementType } from "react";
 
-import { components as trustedMdxComponents } from "@/mdx-components";
+import { components as trustedMdxElements } from "@/mdx-components";
 
-import { DocsCodeBlock } from "@/components/markdown/docs-code-block";
+import { MermaidCodePresentation } from "@/components/markdown/docs-code-block";
 import { useTocContext } from "@/components/on-this-page/toc-context";
 import type { TocHeading } from "@/lib/toc";
 
 
 const articleMdxEngine = createTrustedMdxEngine({
-  components: trustedMdxComponents as Readonly<Record<string, ElementType>>,
+  components: trustedMdxElements as Readonly<Record<string, ElementType>>,
 });
 const articleMdxEngines = { mdx: articleMdxEngine };
 export function StreamingArticle({ content }: { content: string }) {
   const tocContext = useTocContext();
   const handleRef = useRef<StreamingMarkdownHandle | null>(null);
-  const components = useMemo<Partial<BlockComponents>>(
+  const components = useMemo<NodePresentations>(
     () => ({
-      code: DocsCodeBlock,
-    }),
-    [],
-  );
-  const codeRenderers = useMemo(
-    () => ({
-      mermaid: MermaidBlock,
+      code: { wrapper: MermaidCodePresentation },
     }),
     [],
   );
@@ -65,7 +58,6 @@ export function StreamingArticle({ content }: { content: string }) {
         text={content}
         className="markdown-v2-output"
         components={components}
-        codeRenderers={codeRenderers}
         worker="/workers/markdown-worker.js"
         ref={handleRef}
         contentPolicy="trusted-mdx"

@@ -4,8 +4,7 @@
 
 StreamMDX exposes two major customization surfaces:
 
-- `components` for block-level rendering
-- `inlineComponents` for inline rendering
+- `components` for block, inline, and HTML-node presentation wrappers or views
 
 Override the semantic piece you need without taking over the stream scheduler. Code blocks, tables, math, links, callouts, and MDX islands can all be customized while preserving incremental rendering.
 
@@ -26,17 +25,19 @@ The `.prose` parent owns the typography context. The `.markdown-v2-output` class
 ## Block-level overrides
 
 ```tsx
-import { StreamingMarkdown } from "stream-mdx";
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 import { ScrollAreaHorizontal } from "@/components/ui/scroll-area";
 
+function CodePresentation({ children }: NodeViewProps) {
+  return (
+    <ScrollAreaHorizontal className="min-w-auto">
+      <div className="not-prose docs-code-block min-w-max p-4">{children}</div>
+    </ScrollAreaHorizontal>
+  );
+}
+
 const components = {
-  code: ({ html }) => (
-    <pre className="not-prose docs-code-block">
-      <ScrollAreaHorizontal className="min-w-auto">
-        <div className="min-w-max p-4" dangerouslySetInnerHTML={{ __html: html }} />
-      </ScrollAreaHorizontal>
-    </pre>
-  ),
+  code: { wrapper: CodePresentation },
 };
 
 export function StyledCode({ text }: { text: string }) {
@@ -44,7 +45,7 @@ export function StyledCode({ text }: { text: string }) {
 }
 ```
 
-This wraps the optimized code rendering inside a horizontal scroll container while keeping the patch pipeline intact. The wrapper class is intentionally app-owned; do not treat it as a default visual prescription for other projects.
+This wraps the optimized code rendering inside a horizontal scroll container while preserving the prepared native code view and patch pipeline. The wrapper class is app-owned; it is not a default visual prescription for other projects.
 
 ## Code highlighting themes
 
@@ -73,43 +74,46 @@ const result = await compileMarkdownSnapshotDirect({
 ```
 ## Inline overrides
 
-Inline overrides let you swap tags for specific inline nodes:
+Inline presentations use keys such as `"inline:code"` and receive the parsed node in a headless `view`:
 
 ```tsx
-const inlineComponents = {
-  code: ({ text }: { text: string }) => <code className="inline-code">{text}</code>,
-  link: ({ href, children }: { href?: string; children: React.ReactNode }) => (
-    <a className="markdown-link" href={href} target={href?.startsWith("http") ? "_blank" : undefined}>
-      {children}
-    </a>
-  ),
+import { StreamingMarkdown, type InlineNodeViewProps } from "stream-mdx";
+
+const components = {
+  "inline:code": {
+    view: ({ node }: InlineNodeViewProps) =>
+      node.kind === "code" ? <code className="inline-code">{node.text}</code> : null,
+  },
+  "inline:link": {
+    view: ({ node, children }: InlineNodeViewProps) =>
+      node.kind === "link" ? (
+        <a className="markdown-link" href={node.href} target={node.href?.startsWith("http") ? "_blank" : undefined}>
+          {children}
+        </a>
+      ) : children,
+  },
 };
 
-<StreamingMarkdown text={content} inlineComponents={inlineComponents} />;
+<StreamingMarkdown text={content} components={components} />;
 ```
 
-Use inline overrides to preserve the semantic role while delegating the final visual treatment to your prose stylesheet.
+Use inline presentations to preserve the semantic role while delegating visual treatment to your prose stylesheet.
 
 ## Tables
 
-Table rendering can use custom elements:
+Wrap the native table block to add design-system overflow and spacing without replacing its rows or viewport:
 
 ```tsx
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 
-const tableElements = {
-  Table,
-  Thead: TableHeader,
-  Tbody: TableBody,
-  Tr: TableRow,
-  Th: TableHead,
-  Td: TableCell,
-};
+function TablePresentation({ children }: NodeViewProps) {
+  return <div className="my-4 overflow-x-auto rounded-md border border-border/60">{children}</div>;
+}
 
-<StreamingMarkdown text={content} tableElements={tableElements} />;
+<StreamingMarkdown text={content} components={{ table: { wrapper: TablePresentation } }} />;
 ```
 
-This swaps table tags without changing how the renderer schedules updates.
+The renderer retains native table rows, cells, controls, and virtualization.
 ## Block controls (copy and download)
 
 Enable copy and download buttons for code blocks, tables, and Mermaid diagrams using the opt-in `controls` prop:
@@ -167,18 +171,24 @@ When `animated` is `true` or an configuration object:
 
 ## HTML overrides
 
-When `features.html` is enabled, HTML blocks can be mapped onto custom components:
+When `features.html` is enabled, HTML tags can be decorated through semantic node presentations:
 
 ```tsx
-const htmlElements = {
-  table: ({ children }: { children: React.ReactNode }) => <div className="not-prose overflow-x-auto">{children}</div>,
-  blockquote: ({ children }: { children: React.ReactNode }) => <blockquote>{children}</blockquote>,
+const components = {
+  "html:table": {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <div className="not-prose overflow-x-auto">{children}</div>
+    ),
+  },
+  "html:blockquote": {
+    props: { className: "border-l-4 border-foreground/30 bg-muted/30 px-4 py-2 italic" },
+  },
 };
 
-<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />;
+<StreamingMarkdown text={content} components={components} features={{ html: true }} />;
 ```
 
-HTML overrides are a semantic integration point. Add borders, radius, shadows, or branded chrome only when they are part of your application design system, not as renderer defaults.
+HTML presentations receive sanitized native elements and cannot allow a forbidden tag or attribute. Add borders, radius, shadows, or branded chrome only when they are part of your application design system.
 
 ## Optional Tailwind theme package
 

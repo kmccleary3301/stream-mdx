@@ -98,33 +98,28 @@ export function Example() {
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for restricted source components. Separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator required with `contentPolicy="trusted-mdx"`. |
-| `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
-| `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
-| `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
+| `components` | `NodePresentations` | Semantic block, inline, extension, and HTML wrappers or headless views. |
 | `tableVirtualization` | `boolean \| Partial<TableVirtualizationConfig>` | Opt-in row virtualization for large tables while streaming or finalized. Default `false`; configured thresholds and overscan remain in effect during streaming. |
 | `codeVirtualization` | `Partial<VirtualizedCodeConfig>` | Configures the native code viewport. Code blocks over the default 200-line threshold are windowed; the full-content control is explicit. |
-| `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
 | `html` | `HtmlOptions` | Per-tag attribute allowlists and opt-in markdown parsing inside raw HTML blocks. Requires `features.html`. |
-| `syntax` | `SyntaxRuleSpec[]` | Serializable regex rules for inline plugin nodes. Map rule names in `inlineComponents`. |
+| `syntax` | `SyntaxRuleSpec[]` | Serializable regex rules for inline plugin nodes. Render names with `components["extension:<name>"]`. |
 | `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |
 | `statusMessage` | `string` | Optional host-coordinated milestone text rendered in one atomic polite status region. Omit it by default; update at coarse milestones, never per token. |
 | `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. Rejected URLs never navigate. |
 | `urlTransform` | `UrlTransform` | Custom URL transformation callback `(url, attribute, context) => string \| null \| undefined`. Defaults to `defaultUrlTransform` from `@stream-mdx/core`. |
 | `deferHeavyBlocks` | `DeferHeavyBlocks` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |
-| `codeRenderers` | `Record<string, CodeFenceRenderer>` | Language-keyed code fence components or `{ component, defer?, aliases? }`. Keys and aliases resolve case-insensitively. |
-| `allowedElements` | `string[]` | Whitelist HTML tag names to allow (mutually exclusive with `disallowedElements`). Filtered at render time across markdown and raw HTML tags. |
+| `allowedElements` | `string[]` | Whitelist HTML tag names (mutually exclusive with `disallowedElements`). Filtered at render time across markdown and raw HTML. |
 | `disallowedElements` | `string[]` | Tag names to disallow (mutually exclusive with `allowedElements`). Removed tags drop subtrees unless `unwrapDisallowed` is enabled. |
 | `allowElement` | `(element, context) => boolean` | Custom element filter callback. Receives `{ tagName, properties, blockType? }` and `{ source: "markdown" | "html", parentTagName? }`. |
 | `unwrapDisallowed` | `boolean` | When true, disallowed tags render their child content in place instead of dropping their entire subtree. Default `false`. |
-| `disableAutolinkProtocols` | `string[]` | Protocols (e.g. `["mailto"]`, case-insensitive, trailing colon optional) whose autolinks render as plain text. Explicit markdown links `[label](url)` remain links. |
+| `disableAutolinkProtocols` | `string[]` | Protocols (e.g. `["mailto"]`, case-insensitive, trailing colon optional) whose autolinks render as plain text. Explicit markdown links remain links. |
 | `mathRenderer` | `MathRenderer` | Replace inline/display KaTeX rendering without changing math parsing. |
-| `blockRenderer` | `BlockRendererOverride` | Finalized-block override receiving `{ block, element }`. Streaming blocks retain native rendering. |
 | `scheduling` | `StreamingSchedulerOptions` | Patch scheduler/backpressure knobs. |
 | `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |
 | `onError` | `(error: Error) => void` | Render-time errors. Updating the callback does not restart the engine or discard streamed content. (Worker runtime errors surface via `error` events on the Worker.) |
 | `className`, `style` | React props forwarded to the root container. |
 Notes:
-- When `linkSafety.enabled` is on, the component replaces the `link` entry, including a supplied `inlineComponents.link`, with its confirmation-aware link renderer.
+- When `linkSafety.enabled` is on, the component replaces the `inline:link` presentation, including a supplied `components["inline:link"]`, with its confirmation-aware link renderer.
 - Owned `text` renders initialize the complete document in one parse, then finalize the tail. Replacing text does not simulate chunked streaming. Rapid replacements match initialization acknowledgements in order; only the current source generation finalizes or reports a rejected initialization. Async iterators and imperative `append()` retain incremental parsing.
 - Borrowed workers may be reused after detachment. Pending static calls reject on detach, but their initialization acknowledgement slots remain with the worker until drained; a later attachment cannot consume an older document's response as its own.
 
@@ -269,8 +264,8 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
 
 `features` toggles built-in capabilities in the worker + renderer:
 
-- `tables`: GitHub-flavored markdown tables → table block snapshots (`tableElements` controls rendering).
-- `html`: enables inline/raw HTML (sanitized by default; `htmlElements` controls rendering).
+- `tables`: GitHub-flavored markdown tables → table block snapshots (`components.table` controls presentation).
+- `html`: enables inline/raw HTML (sanitized by default; `components["html:<tag>"]` controls presentation).
 - `mdx`: recognizes component syntax. The default restricted policy renders only registered `contentComponents`; full MDX evaluation requires an explicit `TrustedMdxEngine` with `contentPolicy="trusted-mdx"`. A balanced JSX/MDX component whose native HTML block would be split by blank lines (for example `<SmokeBox>` … `</SmokeBox>`) stays one owning root and remains pending until it closes or the document finalizes.
 - `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).
 - `footnotes`: enables footnote aggregation.
@@ -297,7 +292,7 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
 | `callouts` | Yes | Yes | Preview |
 | Code themes (`themes`) | Yes | Yes | Preview |
 | Mermaid addon (`@stream-mdx/mermaid`) | Yes (renderer component) | Yes (renderer component) | Preview (renderer component) |
-| Unified adapter (`@stream-mdx/unified`) | Yes (blockRenderer) | Yes (blockRenderer) | Yes (blockRenderer) |
+| Unified adapter (`@stream-mdx/unified`) | Yes (returns `NodePresentations` for `components`) | Yes (returns `NodePresentations` for `components`) | Yes (returns `NodePresentations` for `components`) |
 
 ---
 
@@ -311,14 +306,25 @@ npm install @stream-mdx/mermaid
 
 ```tsx
 import { MermaidBlock } from "@stream-mdx/mermaid";
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown, type NodeViewProps } from "@stream-mdx/react";
 
-<StreamingMarkdown codeRenderers={{ mermaid: MermaidBlock }} />;
+function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "mermaid") return children;
+  const code = block?.payload.meta?.code;
+  return (
+    <MermaidBlock
+      code={typeof code === "string" ? code : ""}
+      renderCode={children}
+      language={metadata.language ?? "mermaid"}
+      blockId={metadata.id}
+      controls={{ copy: true }}
+      copy={actions.copy}
+    />
+  );
+}
+
+<StreamingMarkdown components={{ code: { wrapper: MermaidPresentation } }} />;
 ```
-
-When registered, fenced `mermaid` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.
-
-### `createMermaidBlock(options?)`
 
 Creates a customized Mermaid code fence renderer with isolated configuration, default views, debounce settings, custom error components, and custom Mermaid module instances or loaders:
 
@@ -340,32 +346,24 @@ const CustomMermaidBlock = createMermaidBlock({
 ```
 
 Mermaid renders are serialized through an internal module queue so concurrent blocks with different factory configs do not interleave. Default `securityLevel: 'strict'` is preserved unless explicitly overridden in `config`. If `mermaid` is omitted, the block lazily imports `mermaid` on first diagram render.
-## 3.2) Code Fence Renderers (`codeRenderers`)
+## 3.2) Code Presentations
 
-Custom code fence rendering is registered via `codeRenderers` on `<StreamingMarkdown />` or `<MarkdownBlocksRenderer />`:
+`components.code.wrapper` receives the current block, its language metadata, native code children, and actions. Return those children for languages you do not customize:
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown, type NodeViewProps } from "@stream-mdx/react";
+
+function CodePresentation({ children, metadata }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "chart") return children;
+  return <section><p>Language: {metadata.language}</p>{children}</section>;
+}
 
 export function CodeExample({ text }: { text: string }) {
-  return (
-    <StreamingMarkdown
-      text={text}
-      codeRenderers={{
-        mermaid: MermaidBlock,
-        custom: ({ language, renderCode }) => (
-          <section><p>Language: {language}</p>{renderCode}</section>
-        ),
-      }}
-    />
-  );
+  return <StreamingMarkdown text={text} components={{ code: { wrapper: CodePresentation } }} />;
 }
 ```
 
-### Code fence renderer contract
-
-Language keys are trimmed and lowercased. Entries accept a component or `{ component: Component, defer?: boolean, aliases?: string[] }`; each alias resolves to the same renderer.
+Native code views keep their highlighting, streaming updates, virtualization, and controls. A wrapper should preserve the provided `children` except when it intentionally renders a specialized presentation.
 
 Language matching is case-insensitive (e.g. `JS` resolves to the `js` renderer). A key that misses falls back to the canonical grammar name, so a renderer registered as `javascript` also receives ```` ```js ```` fences. `defer: true` opts that renderer into viewport/idle deferral when `deferHeavyBlocks` is enabled.
 
@@ -457,16 +455,16 @@ function TableView({ handle }: { handle: TableNodeHandle }) {
 
 ### Artifact-like code fences
 
-Fences labeled `artifact` or `html-artifact` render as ordinary code unless the host supplies a `codeRenderers` entry. StreamMDX does not ship a default artifact iframe or sandbox. A custom renderer is application code; if it turns source into active content, the host owns its isolation and security policy.
+Fences labeled `artifact` or `html-artifact` render as ordinary code unless a `components.code.wrapper` explicitly routes them elsewhere. StreamMDX does not ship a default artifact iframe or sandbox. A custom presentation is application code; if it turns source into active content, the host owns its isolation and security policy.
 
 
 Math uses KaTeX by default. `mathRenderer` accepts either a component with `{ tex: string; display?: boolean; className?: string }` or `{ inline?, display? }` components with `{ tex: string; className?: string }`. Unspecified entries retain their existing renderer. `features.math: false` disables math recognition, including inside opt-in HTML markdown. A render override does not re-enable parsing.
 
 ### Inline rules and HTML
 
-`syntax` accepts `SyntaxRuleSpec[]` from `@stream-mdx/core`. Each rule emits a `"plugin"` inline node with a name, string attributes, optional parsed children, and raw matched text. Public `inlineComponents` maps that name to a React component receiving `{ name, attrs, children, raw }`. Unmapped rules use `inlineComponents.plugin` when present, otherwise raw matched text. Standard map keys include `text`, `strong`, `em`, `strike`, `code`, `link`, `image`, and `br`. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for capture, lookahead, anticipation, and invalid-`INIT` behavior.
+`syntax` accepts `SyntaxRuleSpec[]` from `@stream-mdx/core`. Each rule emits a `"plugin"` inline node with a name, string attributes, optional parsed children, and raw matched text. Map plugin names with `components["extension:<name>"]` views receiving `InlineNodeViewProps` (`node`, prepared `children`, metadata, and actions). Standard inline keys include `"inline:text"`, `"inline:strong"`, `"inline:em"`, `"inline:code"`, `"inline:link"`, and `"inline:image"`. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for capture, lookahead, anticipation, and invalid-`INIT` behavior.
 
-`HtmlOptions` is `{ allowedTags?: Record<string, string[]>; literalTagContent?: string[] }`. `allowedTags` adds permitted tags and replaces their tag-specific attribute lists while retaining global schema attributes. URL protocol checks still apply to `href`/`src`/`action`/`formaction`/`xlink:href`; `script`/`style` tags remain excluded. `on*` event handler attributes and `srcdoc` are strictly forbidden and always stripped regardless of `allowedTags`. Raw HTML `style` attributes are sanitized using DOM-free safe property allowlists. Custom allowlists are trusted application policy. `htmlElements` maps permitted tag names to React components and supplies sanitized attributes and typed children.
+`HtmlOptions` is `{ allowedTags?: Record<string, string[]>; literalTagContent?: string[] }`. `allowedTags` adds permitted tags and replaces their tag-specific attribute lists while retaining global schema attributes. URL protocol checks still apply to `href`/`src`/`action`/`formaction`/`xlink:href`; `script`/`style` tags remain excluded. `on*` event handler attributes and `srcdoc` are strictly forbidden and always stripped regardless of `allowedTags`. Raw HTML `style` attributes are sanitized using DOM-free safe property allowlists. Custom allowlists are trusted application policy. `components["html:<tag>"]` decorates permitted tags; headless views receive sanitized attributes and typed children.
 Raw HTML block content is literal by default. Supplying `literalTagContent`, even `[]`, opts into engine-owned inline markdown parsing inside eligible HTML children. `code`, `pre`, and `textarea`, plus listed tags, stay literal. Inline syntax plugins and the engine's math flag apply to opt-in children; mapped components do not reparse strings. HTML must also be enabled via `features.html`.
 
 ## 3.3) Block Controls (Copy & Download)
@@ -563,10 +561,10 @@ const unifiedRenderer = createUnifiedRenderer({
 });
 
 export function Article({ markdown }: { markdown: string }) {
-  return <StreamingMarkdown text={markdown} blockRenderer={unifiedRenderer} />;
+  return <StreamingMarkdown text={markdown} components={unifiedRenderer} />;
 }
 ```
-Explicit `blockTypes` replaces the default routing list. Routed lists and blockquotes replace native container children, including prepared nested snapshots, with the unified result. Exclude those containers to retain native code, math, HTML, and syntax components inside them. A successful `blockRenderer` replacement has precedence over that block's native rendering.
+Explicit `blockTypes` replaces the default routing list. Routed lists and blockquotes replace native container children, including prepared nested snapshots, with the unified result. Exclude those containers to retain native code, math, HTML, and syntax components inside them. A successful unified presentation replaces that block's native rendering.
 
 
 ### Options
@@ -612,7 +610,7 @@ Opt in to render a viewport-sized subset of a large finalized table. Server rend
 - The initial full table uses native automatic column sizing. Measured column widths then populate an explicit `<colgroup>` while rows are windowed. Container width changes trigger another full-table natural-layout pass and invalidate cached row heights. A `ResizeObserver` measures mounted multiline rows and later content resizes.
 - Disabling virtualization or replacing its native table/header invalidates natural column widths and every cached row height. Re-enabling measures the complete current table even at unchanged viewport width. Adapter replacement rebinds observers to the current native table, header, and mounted rows; detached-node callbacks cannot update the new measurement generation.
 - Row keys and `data-row-id` values stay stable as the window changes. Spacer heights account for omitted rows. Scrolling to the bottom mounts the final row.
-- Custom `tableElements` render the table, sections, cells, and spacers. They must forward DOM props and preserve native table tags. Existing overflow-wrapped Table adapters are supported. Only scroll/clipping wrappers between the native table and the owned viewport temporarily receive `overflow: visible !important`; the outer viewport owns both scroll axes. Original overflow shorthand/longhand declarations and priorities are restored in their original order on disable/unmount. Unrelated inline styles remain untouched; inline overflow changes made by the component while managed transfer cleanup ownership to the component.
+- Custom `components.table.wrapper` presentations wrap the native table viewport. The renderer keeps its native rows, sections, cells, and spacers; wrappers between the table and owned viewport may have overflow normalized to preserve virtualization. Original overflow shorthand/longhand declarations and priorities are restored on disable/unmount. Unrelated inline styles remain untouched.
 - Changing or removing `tableVirtualization` updates the existing view without restarting the parser. `maxHeight` limits the outer scroll container and `overscan` is clamped to 1–50 rows on each side.
 - Sticky headers have an opaque background taken from the nearest opaque ancestor, or the CSS system color `Canvas`. Theme class/style changes update that fallback. Set `--stream-mdx-table-header-background` to a valid opaque CSS color to override it, not an HSL channel-only token.
 

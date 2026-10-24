@@ -16,10 +16,10 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { components as sharedMdxComponents } from "@/mdx-components";
-import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
+import { components as trustedMdxElements } from "@/mdx-components";
+import { createDemoComponents } from "@/lib/streaming-demo-registry";
 import { DEFAULT_BACKPRESSURE_CONFIG, calculateSmoothedCredit, clampCredit } from "@stream-mdx/core";
-import { defineContentComponent, SourceCapacityError, StreamingMarkdown, type AppendResult, type FinalizeResult, type ContentComponentHostProps, type ContentComponentProps, type ContentComponentRegistration, type StreamingMarkdownHandle, ComponentRegistry } from "@stream-mdx/react";
+import { defineContentComponent, SourceCapacityError, StreamingMarkdown, type AppendResult, type FinalizeResult, type ContentComponentHostProps, type ContentComponentProps, type ContentComponentRegistration, type StreamingMarkdownHandle } from "@stream-mdx/react";
 import { MarkdownWorkerClient, type MarkdownWorkerClientOptions } from "@stream-mdx/worker/worker-client";
 import type { DefaultWorkerMode } from "@stream-mdx/worker";
 
@@ -40,7 +40,7 @@ const MAX_SOURCE_OFFER_UNITS = 65_536;
 const FINALIZE_TIMEOUT_MS = 30_000;
 
 const demoContentComponents: Record<string, ContentComponentRegistration> = {};
-for (const [name, component] of Object.entries(sharedMdxComponents)) {
+for (const [name, component] of Object.entries(trustedMdxElements)) {
   const first = name.charAt(0);
   if (first.toUpperCase() !== first || first.toLowerCase() === first) continue;
   if (typeof component !== "function") continue;
@@ -366,8 +366,6 @@ export function StreamingMarkdownDemoV2({
   initialStreamLimit?: number | null;
   initialIsRunning?: boolean;
 }) {
-  const tableElements = useMemo(() => createDemoTableElements(), []);
-  const htmlElements = useMemo(() => createDemoHtmlElements(), []);
   const PREWARM_LANGS = useMemo(() => ["typescript", "tsx", "javascript", "json", "python", "bash", "html", "css", "sql", "yaml", "markdown"], []);
   const [schedulingPreset, setSchedulingPreset] = useState<SchedulingPreset>("throughput");
   const rendererScheduling = useMemo(
@@ -391,6 +389,7 @@ export function StreamingMarkdownDemoV2({
   const [metricsTab, setMetricsTab] = useState<"coalescing" | "timing">("coalescing");
   const [showInspector, setShowInspector] = useState<boolean>(false);
   const [showCodeMeta, setShowCodeMeta] = useState<boolean>(false);
+  const demoComponents = useMemo(() => createDemoComponents(showCodeMeta), [showCodeMeta]);
   const [formatAnticipationEnabled, setFormatAnticipationEnabled] = useState<boolean>(true);
   const [formatAnticipationConfig, setFormatAnticipationConfig] = useState<FormatAnticipationOptions>({
     inline: true,
@@ -567,16 +566,6 @@ export function StreamingMarkdownDemoV2({
   const workerCleanupRef = useRef<(() => void) | null>(null);
   const workerInitTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingWorkerInitRef = useRef<MarkdownWorkerClient | null>(null);
-  const componentRegistry = useMemo(() => {
-    const registry = new ComponentRegistry();
-    configureDemoRegistry({
-      registry,
-      tableElements,
-      htmlElements,
-      showCodeMeta,
-    });
-    return registry;
-  }, [tableElements, htmlElements, showCodeMeta]);
   const hasPatchPipelineRef = useRef(false);
   const docPluginConfigRef = useRef<DocPluginConfig>({
     footnotes: true,
@@ -2201,10 +2190,7 @@ export function StreamingMarkdownDemoV2({
                 contentPolicy="restricted"
                 contentComponents={demoContentComponents}
                 prewarmLangs={prewarm ? PREWARM_LANGS : []}
-                components={componentRegistry.getBlockComponentMap()}
-                inlineComponents={componentRegistry.getInlineComponentMap()}
-                tableElements={tableElements}
-                htmlElements={htmlElements}
+                components={demoComponents}
                 caret="block"
                 linkSafety={{ enabled: true }}
                 deferHeavyBlocks={{ rootMargin: "200px 0px", debounceMs: 120 }}

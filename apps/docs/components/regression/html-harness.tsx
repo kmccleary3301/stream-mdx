@@ -5,12 +5,12 @@ import type { RendererStateSnapshot, StreamingSchedulerOptions, StreamingMarkdow
 import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
 import { useCallback, useEffect, useMemo, useRef, useState, type ElementType } from "react";
 
-import { ComponentRegistry, SourceCapacityError, StreamingMarkdown, type AppendResult, type FinalizeResult, type StreamingMarkdownHandle } from "@stream-mdx/react";
-import { components as mdxComponents } from "@/mdx-components";
-import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
+import { SourceCapacityError, StreamingMarkdown, type AppendResult, type FinalizeResult, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { components as trustedMdxElements } from "@/mdx-components";
+import { createDemoComponents } from "@/lib/streaming-demo-registry";
 
 const regressionMdxEngine = createTrustedMdxEngine({
-  components: mdxComponents as Readonly<Record<string, ElementType>>,
+  components: trustedMdxElements as Readonly<Record<string, ElementType>>,
 });
 const regressionMdxEngines = { mdx: regressionMdxEngine };
 
@@ -393,19 +393,7 @@ export function HtmlRegressionHarness(): JSX.Element {
 
     return worker;
   }, []);
-  const tableElements = useMemo(() => createDemoTableElements(), []);
-  const htmlElements = useMemo(() => createDemoHtmlElements(), []);
-
-  const registry = useMemo(() => {
-    const next = new ComponentRegistry();
-    configureDemoRegistry({
-      registry: next,
-      tableElements,
-      htmlElements,
-      showCodeMeta: config.showCodeMeta,
-    });
-    return next;
-  }, [tableElements, htmlElements, config.showCodeMeta]);
+  const demoComponents = useMemo(() => createDemoComponents(config.showCodeMeta), [config.showCodeMeta]);
 
   useEffect(() => {
     instanceKeyRef.current = instanceKey;
@@ -1054,10 +1042,7 @@ export function HtmlRegressionHarness(): JSX.Element {
           scheduling={config.scheduling}
           contentPolicy={config.contentPolicy}
           engines={config.contentPolicy === "trusted-mdx" ? regressionMdxEngines : undefined}
-          components={registry.getBlockComponentMap()}
-          inlineComponents={registry.getInlineComponentMap()}
-          tableElements={tableElements}
-          htmlElements={htmlElements}
+          components={demoComponents}
           onError={handleStreamingError}
         />
       </div>
