@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import type { CodeNodeHandle } from "@stream-mdx/core";
 import { StreamingMarkdown, useCodeLines, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -125,6 +126,23 @@ async function mainCodeEngineUsesAdapterTokens(): Promise<void> {
   }
 }
 
+function autoCodeEngineIsRejectedBeforeAcceptingSource(): void {
+  const code = {
+    id: "auto-code-engine",
+    tokenizeLines({ lines }: { readonly lines: readonly string[] }) {
+      return { lines: lines.map((line) => ({ spans: [{ t: line }] })), state: null };
+    },
+  };
+  assert.throws(
+    () => renderToStaticMarkup(
+      <StreamingMarkdown engine="auto" text="source must not be accepted" engines={{ code }} />,
+    ),
+    (error: unknown) => error instanceof Error && error.name === "EngineCompatibilityError",
+    "a main-realm CodeEngine rejects auto mode before source acceptance",
+  );
+}
+
+autoCodeEngineIsRejectedBeforeAcceptingSource();
 mainCodeEngineUsesAdapterTokens().then(
   () => console.log("code-engine test passed"),
   (error) => {
