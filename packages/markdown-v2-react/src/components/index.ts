@@ -100,12 +100,12 @@ export function renderInlineNodes(
 ): React.ReactNode {
   return nodes.map((node, index) => {
     const key = `${node.kind}-${index}`;
-    const itemChildContext = animationContext
+    const itemChildContext = animationContext?.animated && !animationContext.isFinalized
       ? {
           ...animationContext,
           nodeKeyPrefix: animationContext.nodeKeyPrefix ? `${animationContext.nodeKeyPrefix}:${key}` : key,
         }
-      : undefined;
+      : animationContext;
     const presentInline = (nativeView: React.ReactNode) => {
       if (!registry) {
         return nativeView;
@@ -1052,7 +1052,7 @@ export class ComponentRegistry {
       if (blockId && this.animationTimeline) {
         this.animationTimeline.releasePrefix(blockId);
       }
-      return undefined;
+      return { isFinalized: true, nodeKeyPrefix: blockId };
     }
     if (!this.animatedOptions || !this.animationTimeline) {
       return undefined;
@@ -1367,13 +1367,16 @@ export class ComponentRegistry {
     parentTagName?: string,
     inlineContext?: RenderInlineAnimationContext,
   ): OwnedHtmlRenderContext {
+    const renderContext = inlineContext ?? (paragraph
+      ? this.getRenderInlineContext(paragraph.isFinalized, paragraph.id)
+      : undefined);
     return {
       elements: this.htmlElements,
       renderBlock,
       renderInline: (nodes, parentTagName) =>
-        renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName, inlineContext),
+        renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName, renderContext),
       renderInlinePresentation: (node, nativeView, key) =>
-        this.renderInlinePresentation(node, nativeView, key, inlineContext),
+        this.renderInlinePresentation(node, nativeView, key, renderContext),
       renderHtmlPresentation: (tagName, properties, nativeView, children, key) =>
         this.renderHtmlPresentation(
           tagName,
@@ -1381,8 +1384,8 @@ export class ComponentRegistry {
           nativeView,
           children,
           key,
-          String(paragraph?.id ?? parentTagName ?? "html"),
-          inlineContext?.isFinalized,
+          renderContext?.nodeKeyPrefix ?? String(paragraph?.id ?? parentTagName ?? "html"),
+          renderContext?.isFinalized ?? paragraph?.isFinalized ?? false,
         ),
       inlineComponents: this.inlineComponents,
       urlTransform: this.urlTransform,
@@ -1710,7 +1713,7 @@ export class ComponentRegistry {
                 segments, this.inlineComponents, DEFAULT_INLINE_HTML_RENDERERS,
                 this.htmlElements, this.literalTagContent, this.urlTransform, this, animCtx,
                 block.payload.meta?.mixedHtmlTrees as Record<number, HtmlTreeNode[]> | undefined,
-                (tree) => renderOwnedHtmlTree(tree, this.ownedHtmlRenderContext(undefined, undefined, "p")),
+                (tree) => renderOwnedHtmlTree(tree, this.ownedHtmlRenderContext(undefined, undefined, "p", animCtx)),
               )
             : renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform, this, "p", animCtx),
         };
@@ -1756,7 +1759,7 @@ export class ComponentRegistry {
           isSanitized: isWorkerSanitized,
           literalTagContent: this.literalTagContent,
           children: htmlTree
-            ? this.renderHtmlTree(htmlTree)
+            ? this.renderHtmlTree(htmlTree, undefined, block)
             : undefined,
         };
       }

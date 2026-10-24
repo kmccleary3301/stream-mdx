@@ -694,7 +694,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     recordViewRecords(store, block.payload.inline?.length ?? 0);
   }
-  const inlines = renderInlineNodes(block.payload.inline ?? [], inlineComponents, registry.getUrlTransform(), registry, "p");
+  const inlines = renderInlineNodes(block.payload.inline ?? [], inlineComponents, registry.getUrlTransform(), registry, "p", registry.getRenderInlineContext(block.isFinalized, block.id));
   const ParagraphComponent = registry.getBlockComponent("paragraph");
   const baseElement = React.createElement(ParagraphComponent, {
     inlines: block.payload.inline ?? [],
@@ -986,7 +986,8 @@ const MixedSegmentView: React.FC<{
         if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
           recordViewRecords(store, inline.length);
         }
-        return renderInlineNodes(inline, inlineComponents, urlTransform, registry, parentTagName);
+        const inlineContext = registry?.getRenderInlineContext(Boolean(node.block?.isFinalized), node.id);
+        return renderInlineNodes(inline, inlineComponents, urlTransform, registry, parentTagName, inlineContext);
       }
       const text = typeof node.props?.text === "string" ? (node.props?.text as string) : "";
       if (!text) return null;
@@ -996,11 +997,13 @@ const MixedSegmentView: React.FC<{
     case "blockquote-html":
     case "list-item-html": {
       const htmlTree = node.props?.htmlTree as HtmlTreeNode[] | undefined;
+      const isFinalized = Boolean(node.block?.isFinalized);
+      const inlineContext = registry?.getRenderInlineContext(isFinalized, node.id);
       if (registry && htmlTree !== undefined) {
         return <>{renderOwnedHtmlTree(htmlTree, {
           elements: registry.getHtmlElements(),
           renderBlock: (block) => <OwnedHtmlBlock key={block.id} block={block} registry={registry} />,
-          renderInline: (nodes, parentTagName) => renderInlineNodes(nodes, inlineComponents, urlTransform, registry, parentTagName),
+          renderInline: (nodes, parentTagName) => renderInlineNodes(nodes, inlineComponents, urlTransform, registry, parentTagName, inlineContext),
           inlineComponents,
           urlTransform,
           isAutolinkProtocolDisabled: (href) => registry.isAutolinkProtocolDisabled(href),
@@ -1010,9 +1013,9 @@ const MixedSegmentView: React.FC<{
           parentTagName,
           contentComponents: registry.getContentComponents(),
           renderInlinePresentation: (inlineNode, nativeView, key) =>
-            registry.renderInlinePresentation(inlineNode, nativeView, key),
+            registry.renderInlinePresentation(inlineNode, nativeView, key, inlineContext),
           renderHtmlPresentation: (tagName, properties, nativeView, children, key) =>
-            registry.renderHtmlPresentation(tagName, properties, nativeView, children, key, node.id),
+            registry.renderHtmlPresentation(tagName, properties, nativeView, children, key, node.id, inlineContext?.isFinalized ?? isFinalized),
         })}</>;
       }
       const raw = typeof node.props?.raw === "string" ? (node.props.raw as string) : undefined;
@@ -1057,7 +1060,7 @@ const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       (block, blockParentTagName) => (
         <OwnedHtmlBlock key={block.id} block={block} registry={registry} parentTagName={blockParentTagName} />
       ),
-      undefined,
+      node.block,
       parentTagName,
     )}</>;
   }
@@ -1529,7 +1532,14 @@ const ListItemView: React.FC<{ store: RendererStore; nodeId: string; index: numb
             if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
               recordViewRecords(store, childInline.length);
             }
-            childContent = renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform(), registry, childParentTagName);
+            childContent = renderInlineNodes(
+              childInline,
+              inlineComponents,
+              registry.getUrlTransform(),
+              registry,
+              childParentTagName,
+              registry.getRenderInlineContext(Boolean(childNode.block?.isFinalized), childId),
+            );
           }
           if (!childIsLoose) {
             return <React.Fragment key={childId}>{childContent}</React.Fragment>;

@@ -502,7 +502,13 @@ async function testHtmlPresentationPreservesSanitizedAttributes(): Promise<void>
       components={{
         "html:div": {
           wrapper: ({ children, metadata }) => (
-            <section className="presented-html" data-node-type={metadata.type}>{children}</section>
+            <section
+              className="presented-html"
+              data-node-type={metadata.type}
+              data-finalized={String(metadata.isFinalized)}
+            >
+              {children}
+            </section>
           ),
         },
       }}
@@ -517,7 +523,7 @@ async function testHtmlPresentationPreservesSanitizedAttributes(): Promise<void>
   assert.strictEqual(nativeDiv.getAttribute("onclick"), null, "forbidden event attributes must remain stripped");
   assert.strictEqual(nativeDiv.querySelector("strong")?.textContent, "text", "prepared nested HTML must render once");
   assert.strictEqual(wrapper?.getAttribute("data-node-type"), "html:div");
-  root.unmount();
+  assert.strictEqual(wrapper?.getAttribute("data-finalized"), "true");
 }
 
 

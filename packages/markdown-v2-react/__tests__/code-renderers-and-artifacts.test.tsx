@@ -247,7 +247,7 @@ async function testKaTeXMathAndOverride(): Promise<void> {
       "inline:math": {
         wrapper: ({ children, metadata }) => React.createElement(
           "span",
-          { className: "presented-math", "data-node-type": metadata.type },
+          { className: "presented-math", "data-node-type": metadata.type, "data-finalized": String(metadata.isFinalized) },
           children,
         ),
       },
@@ -260,9 +260,14 @@ async function testKaTeXMathAndOverride(): Promise<void> {
     );
     assert.strictEqual(container.querySelectorAll(".presented-math").length, 2);
     assert.strictEqual(container.querySelector(".presented-math")?.getAttribute("data-node-type"), "inline:math");
+    assert.strictEqual(container.querySelector(".presented-math")?.getAttribute("data-finalized"), "true");
 
-    const HeadlessMathView = ({ node, children }: InlineNodeViewProps) =>
-      React.createElement("span", { className: "headless-math", "data-node-kind": node.kind }, children);
+    const HeadlessMathView = ({ node, children, metadata }: InlineNodeViewProps) =>
+      React.createElement("span", {
+        className: "headless-math",
+        "data-node-kind": node.kind,
+        "data-finalized": String(metadata.isFinalized),
+      }, children);
     const headlessRegistry = new ComponentRegistry();
     headlessRegistry.setNodePresentations({
       "inline:math": {
@@ -278,6 +283,7 @@ async function testKaTeXMathAndOverride(): Promise<void> {
     assert.strictEqual(container.querySelectorAll(".headless-math").length, 2);
     assert.ok(container.querySelector('.headless-math[data-node-kind="math-inline"]'));
     assert.ok(container.querySelector('.headless-math[data-node-kind="math-display"]'));
+    assert.strictEqual(container.querySelector('.headless-math[data-node-kind="math-inline"]')?.getAttribute("data-finalized"), "true");
 
     assert.ok(container.querySelector(".math-display .katex .katex-mathml"), "display math must contain KaTeX MathML");
 
