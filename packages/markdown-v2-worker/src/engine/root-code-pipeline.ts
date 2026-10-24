@@ -14,7 +14,6 @@ import {
   type CodeLineRecord,
   type CodeTokenLine,
   type HighlightUnavailableReason,
-  type TokenLineV1,
   type NodeSnapshot,
   type Patch,
   type SourceSnapshot,
@@ -307,6 +306,7 @@ interface DiffGrammarCheckpoint {
   readonly newGrammarState: unknown;
   readonly configurationRevision: number;
   readonly language: string;
+  readonly fileLanguage: string;
   readonly highlighter: SharedHighlighter | null;
   readonly codeEngineId?: string;
   readonly darkTheme: CodeThemePair["dark"];
@@ -369,14 +369,14 @@ export function buildDiffTokenLinesWithCodeEngine(
   readonly diffTokenLines: readonly CodeDiffTokenLine[];
   readonly grammarState: CodeEngineDiffState;
 } {
-  const initialState = typeof grammarState === "object" && grammarState !== null
+  const state: CodeEngineDiffState = typeof grammarState === "object" && grammarState !== null
     ? grammarState as CodeEngineDiffState
     : {};
   const tokenLines: Array<CodeTokenLine | null> = new Array(lines.length).fill(null);
   const diffTokenLines = new Array<CodeDiffTokenLine>(lines.length);
-  let oldState = initialState.old;
-  let newState = initialState.new;
-  let currentLanguage = initialState.language ?? language;
+  let oldState = state.old;
+  let newState = state.new;
+  let currentLanguage = state.language ?? language;
   let currentKind: DiffLineInfo["kind"] | null = null;
   let currentRun: DiffLineInfo[] = [];
   let startIndex = 0;
@@ -437,10 +437,10 @@ export function buildDiffTokenLinesWithCodeEngine(
     currentRun.push(line);
   }
   flush();
-  grammarState.old = oldState;
-  grammarState.new = newState;
-  grammarState.language = currentLanguage;
-  return { tokenLines, diffTokenLines, grammarState };
+  state.old = oldState;
+  state.new = newState;
+  state.language = currentLanguage;
+  return { tokenLines, diffTokenLines, grammarState: state };
 }
 
 /** One continuation state per prepared code lease; range requests reuse it in source order. */
@@ -470,7 +470,7 @@ export class RootCodeHighlighter {
         if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
           config.counters?.recordTokenization(rows.length, input.length, "engine");
         }
-        let rendered: readonly CodeTokenLine[];
+        let rendered: readonly (CodeTokenLine | null)[];
         let html: readonly (string | null)[];
         if (config.codeEngine) {
           const result = tokenizeCodeLines(config.codeEngine, language, rows.map((row) => row.text), state.grammarState);
@@ -542,7 +542,7 @@ export class RootCodeHighlighter {
           return unavailable;
         }
 
-        let rendered: Array<CodeTokenLine | null>;
+        let rendered: readonly (CodeTokenLine | null)[];
         let html: Array<string | null>;
         let diffTokens: CodeDiffTokenLine[] | undefined;
         if (diffInfo.isDiff) {

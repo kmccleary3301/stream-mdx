@@ -4,7 +4,7 @@ import { StreamingMarkdown, useCodeLines, type StreamingMarkdownHandle } from "@
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "react-dom/client";
 
 type CodeViewProps = { readonly handle: CodeNodeHandle };
 
