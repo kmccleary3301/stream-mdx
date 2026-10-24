@@ -228,7 +228,6 @@
 
   Demo automation now observes synchronous source and completion state immediately after fast-forward or finalization, and restart opens a fresh wrapper session before replacing its worker.
 
-- Release queued iterator capacity waiters when a worker takeover adopts the already-accepted source frontier, even while the replacement worker is still initializing.
 - e7b4a0c: Reject reads from a code-node handle after its owning code document is replaced or removed; retained immutable range snapshots remain valid independently.
 - ccfd10b: Preserve authored line endings when copying selections that end at rendered code separators.
 - 7cd811e: Preserve incomplete code-line provisional state in cold exports only while the block is still open.

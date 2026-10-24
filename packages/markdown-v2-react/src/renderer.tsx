@@ -402,7 +402,6 @@ export class MarkdownRenderer implements Renderer {
       this.workerAdmittedSourceUnits = sourceAdmissionOffset;
       this.workerAdmissionGeneration = null;
       this.admissionFailure = null;
-      this.settleCapacityWaiters();
       this.settleSourceAdmissionWaiters();
     } else {
       this.resetSourceAdmission();
