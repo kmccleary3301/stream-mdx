@@ -864,12 +864,13 @@ export class MarkdownRenderer implements Renderer {
       this.bootstrapDeferredSource += text.slice(ownerText.length);
       this.bootstrapSourcePrefix += ownerText;
     }
+    this.requestBootstrapTakeover();
+    if (this.admissionFailure) throw this.admissionFailure;
     if (ownerText.length > 0) {
       if (this.workerSchemaReady) this.worker.postMessage({ type: "APPEND", text: ownerText } as WorkerIn);
       else this.pendingStreamCommands.push({ type: "APPEND", text: ownerText });
     }
     this.acceptedSourceUnits += text.length;
-    this.requestBootstrapTakeover();
     this.workerHasContent ||= text.length > 0;
     this.trustedRevisionFeed?.append(text);
     if (this.trustedRevisionFeed && text.length > 0) {

@@ -165,24 +165,32 @@ async function runAutoBootstrapUnitLimit(): Promise<void> {
   assert.ok(container);
   const root = createRoot(container);
   const handle = createRef<StreamingMarkdownHandle>();
+  const previousWorker = Object.getOwnPropertyDescriptor(globalThis, "Worker");
+  Object.defineProperty(globalThis, "Worker", {
+    configurable: true,
+    writable: true,
+    value: undefined,
+  });
   try {
     root.render(<StreamingMarkdown ref={handle} />);
     await waitForCondition(
       () => handle.current?.getState().workerReady === true,
       "auto inline owner did not become ready",
     );
-    const prefix = "😀".repeat(2048);
-    const result = handle.current!.append(`${prefix}x`);
-    assert.equal(result.acceptedSourceUnits, 4097);
-    await waitForCondition(
-      () => container.querySelector("p")?.textContent?.length === 4096,
-      "auto main-thread owner did not publish its 4096-unit prefix",
+    const attemptedSource = "😀".repeat(2048) + "x";
+    assert.throws(
+      () => handle.current!.append(attemptedSource),
+      /Unable to create a worker for automatic bootstrap takeover/,
+      "auto must reject an append atomically when takeover cannot create a worker",
     );
     await delay(30);
-    assert.equal(container.querySelector("p")?.textContent, prefix, "the inline owner must refuse units beyond 4096");
+    assert.equal(container.textContent, "", "a refused append must not publish any of its source");
+    assert.deepEqual(handle.current!.getState().blocks, [], "a refused append must leave no accepted blocks");
   } finally {
     root.unmount();
     container.remove();
+    if (previousWorker) Object.defineProperty(globalThis, "Worker", previousWorker);
+    else Reflect.deleteProperty(globalThis, "Worker");
     window.close();
   }
 }
