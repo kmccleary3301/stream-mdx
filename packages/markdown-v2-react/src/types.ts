@@ -11,7 +11,7 @@ import type {
   InlineHtmlDescriptor,
   InlineNode,
   LazyTokenizationPriority,
-  SyntaxRuleSpec,
+  SyntaxExtensionDescriptor,
   TokenLineV1,
 } from "@stream-mdx/core";
 import type { FinalizeResult } from "@stream-mdx/protocol";
@@ -19,7 +19,7 @@ import type { ContentComponentsMap } from "./components/content-components";
 import type { TrustedMdxEngine } from "./trusted-mdx-contract";
 import type { ComponentRegistry } from "./components";
 
-export type { HtmlOptions, SyntaxRuleSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
+export type { HtmlOptions, SyntaxRuleSpec, SyntaxExtensionDescriptor, ContainerExtensionSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
 export { defaultUrlTransform } from "@stream-mdx/core";
 import type {
   TableVirtualizationConfig,
@@ -277,7 +277,7 @@ export interface RendererConfig extends ElementFilterOptions {
   codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
   blockRenderer?: BlockRendererOverride;
-  syntax?: SyntaxRuleSpec[];
+  syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   urlTransform?: (url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined;
   tableVirtualization?: TableVirtualizationOptions;

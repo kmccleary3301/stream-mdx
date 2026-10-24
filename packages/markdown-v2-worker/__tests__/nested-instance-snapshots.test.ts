@@ -54,7 +54,10 @@ async function run(): Promise<void> {
   } });
   const markdown = "- @@ #ABC-12 [forward]\n\n  > # @@ #ABC-12 [forward]\n\n  ```js\n  const nested = 1;\n  ```";
   await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: markdown, prewarmLangs: [],
-    syntax: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
+    syntax: {
+      contractVersion: 1,
+      inline: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
+    },
     docPlugins: { html: true, tables: true, mdx: false, math: true, callouts: false, footnotes: false } });
   assert.equal(emitted.some((message) => message.type === "ERROR"), false);
   const initialList = store.getBlocks().find((block) => block.type === "list");

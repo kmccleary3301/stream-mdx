@@ -174,10 +174,22 @@ export interface SyntaxRuleSpec {
   name: string;
   pattern: { source: string; flags?: string };
   trigger?: string /* first char(s) for fast dispatch */;
+  /** Maximum UTF-16 code units passed to this rule's RegExp; omitted means unbounded. */
+  maxCandidateUnits?: number;
   before?: string /* Lezer inline parser to precede, e.g. 'Emphasis' */;
   attrs?: Record<string, number | string> /* capture group index or literal */;
   content?: number /* capture group parsed as inline children */;
   anticipation?: { open: string; close: string };
+}
+export interface ContainerExtensionSpec {
+  readonly name: string;
+  readonly component: string;
+}
+
+export interface SyntaxExtensionDescriptor {
+  readonly contractVersion: 1;
+  readonly inline?: readonly SyntaxRuleSpec[];
+  readonly containers?: readonly ContainerExtensionSpec[];
 }
 
 export interface HtmlOptions {
@@ -265,7 +277,7 @@ export type WorkerIn =
       };
       contentPolicy?: ContentPolicy;
       contentComponents?: readonly RestrictedComponentDescriptor[];
-      syntax?: SyntaxRuleSpec[];
+      syntax?: SyntaxExtensionDescriptor;
       html?: HtmlOptions;
     }
   | { type: "APPEND"; text: string }

@@ -254,10 +254,16 @@ export function materializeManagedTableBlock(block: Block, state: ManagedTableVi
   return result;
 }
 
-export function createBlockSnapshot(block: Block): NodeSnapshot;
+type HtmlTreeBlockSnapshotResolver = (block: Block) => NodeSnapshot | undefined;
 export function createBlockSnapshot(
   block: Block,
   onNodeCreated?: (node: NodeSnapshot) => void,
+  resolveHtmlTreeBlockSnapshot?: HtmlTreeBlockSnapshotResolver,
+): NodeSnapshot;
+export function createBlockSnapshot(
+  block: Block,
+  onNodeCreated?: (node: NodeSnapshot) => void,
+  resolveHtmlTreeBlockSnapshot?: HtmlTreeBlockSnapshotResolver,
 ): NodeSnapshot {
   const table = managedTableSnapshot(block);
   const paragraph = managedParagraphSnapshot(block);
@@ -286,8 +292,8 @@ export function createBlockSnapshot(
     case "paragraph":
       if (paragraph) return base;
       return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
-        ? enrichParagraphSnapshot(block, base, onNodeCreated)
-        : enrichParagraphSnapshot(block, base);
+        ? enrichParagraphSnapshot(block, base, onNodeCreated, resolveHtmlTreeBlockSnapshot)
+        : enrichParagraphSnapshot(block, base, undefined, resolveHtmlTreeBlockSnapshot);
     case "blockquote":
       return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
         ? enrichContainerSnapshot(block, base, onNodeCreated)
@@ -316,8 +322,8 @@ export function createBlockSnapshot(
       const htmlTree = block.payload.meta?.htmlTree;
       if (Array.isArray(htmlTree)) {
         base.children = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
-          ? createHtmlTreeBlockSnapshots(htmlTree, onNodeCreated)
-          : createHtmlTreeBlockSnapshots(htmlTree);
+          ? createHtmlTreeBlockSnapshots(htmlTree, onNodeCreated, resolveHtmlTreeBlockSnapshot)
+          : createHtmlTreeBlockSnapshots(htmlTree, undefined, resolveHtmlTreeBlockSnapshot);
       }
       return base;
     }
@@ -363,17 +369,19 @@ function enrichContainerSnapshot(
 function createHtmlTreeBlockSnapshots(
   nodes: readonly HtmlTreeNode[],
   onNodeCreated?: (node: NodeSnapshot) => void,
+  resolveHtmlTreeBlockSnapshot?: HtmlTreeBlockSnapshotResolver,
 ): NodeSnapshot[] {
   const snapshots: NodeSnapshot[] = [];
   const append = (tree: readonly HtmlTreeNode[]): void => {
     for (const node of tree) {
       if (node.kind === "block") {
-        const snapshot = createBlockSnapshot(node.block);
+        const resolved = resolveHtmlTreeBlockSnapshot?.(node.block);
+        const snapshot = resolved ?? createBlockSnapshot(node.block, onNodeCreated, resolveHtmlTreeBlockSnapshot);
         if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && onNodeCreated) {
           countClonedDescendants([snapshot], onNodeCreated);
         }
         snapshots.push(snapshot);
-      } else if (node.kind === "element") {
+      } else if (node.kind === "element" || node.kind === "component") {
         append(node.children);
       }
     }
@@ -387,23 +395,37 @@ function enrichParagraphSnapshot(
   block: Block,
   snapshot: NodeSnapshot,
   onNodeCreated?: (node: NodeSnapshot) => void,
+  resolveHtmlTreeBlockSnapshot?: HtmlTreeBlockSnapshotResolver,
 ): NodeSnapshot {
-  const meta = block.payload.meta as { mixedSegments?: MixedContentSegment[]; mixedHtmlTrees?: Record<number, HtmlTreeNode[]> } | undefined;
+  const meta = block.payload.meta as {
+    mixedSegments?: MixedContentSegment[];
+    mixedHtmlTrees?: Record<number, HtmlTreeNode[]>;
+    htmlOwnership?: boolean;
+    htmlTree?: HtmlTreeNode[];
+  } | undefined;
   const segments = Array.isArray(meta?.mixedSegments) ? (meta?.mixedSegments ?? []) : [];
+  const ownedHtmlBlocks = meta?.htmlOwnership === true && Array.isArray(meta.htmlTree)
+    ? createHtmlTreeBlockSnapshots(meta.htmlTree, onNodeCreated, resolveHtmlTreeBlockSnapshot)
+    : [];
   if (!segments.length) {
+    if (ownedHtmlBlocks.length > 0) snapshot.children = ownedHtmlBlocks;
     return snapshot;
   }
 
-  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && onNodeCreated) {
-    snapshot.children = segments.map((segment, index) => {
-      const segNode = createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index], onNodeCreated);
-      onNodeCreated(segNode);
-      return segNode;
-    });
-  } else {
-    snapshot.children = segments.map((segment, index) =>
-      createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index], onNodeCreated));
-  }
+  snapshot.children = segments.map((segment, index) => {
+    const segNode = createSegmentSnapshot(
+      block.id,
+      segment,
+      index,
+      "paragraph",
+      meta?.mixedHtmlTrees?.[index],
+      onNodeCreated,
+      resolveHtmlTreeBlockSnapshot,
+    );
+    onNodeCreated?.(segNode);
+    return segNode;
+  });
+  if (ownedHtmlBlocks.length > 0) snapshot.children.push(...ownedHtmlBlocks);
   return snapshot;
 }
 
@@ -415,6 +437,7 @@ function createSegmentSnapshot(
   parentType: "paragraph" | "blockquote" | "list-item",
   htmlTree?: HtmlTreeNode[],
   onNodeCreated?: (node: NodeSnapshot) => void,
+  resolveHtmlTreeBlockSnapshot?: HtmlTreeBlockSnapshotResolver,
 ): NodeSnapshot {
   const id = `${parentId}::${parentType}:segment:${index}`;
   const range = segment.range ? { ...segment.range } : undefined;
@@ -430,7 +453,9 @@ function createSegmentSnapshot(
         },
         meta: segment.sanitized ? { sanitized: true } : undefined,
         range,
-        children: htmlTree === undefined ? [] : createHtmlTreeBlockSnapshots(htmlTree, onNodeCreated),
+        children: htmlTree === undefined
+          ? []
+          : createHtmlTreeBlockSnapshots(htmlTree, onNodeCreated, resolveHtmlTreeBlockSnapshot),
       };
     case "mdx":
       return {
@@ -1749,6 +1774,46 @@ function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, Sn
     managed: false,
   };
 }
+function retainLegacyCodeLinePrefix(
+  previous: SnapshotCodeState,
+  next: SnapshotCodeState,
+): SnapshotCodeState {
+  if (previous.managed || next.managed
+    || previous.source.codeOwnerId !== next.source.codeOwnerId
+    || previous.source.sourceRange.from !== next.source.sourceRange.from) return next;
+  const sharedLimit = Math.min(previous.lines.length, next.lines.length);
+  let sharedPrefix = 0;
+  while (sharedPrefix < sharedLimit) {
+    const before = previous.lines.get(sharedPrefix);
+    const after = next.lines.get(sharedPrefix);
+    if (!before || !after
+      || before.id !== after.id
+      || before.index !== after.index
+      || before.text !== after.text
+      || before.ending !== after.ending
+      || before.sourceRange.from !== after.sourceRange.from
+      || before.sourceRange.to !== after.sourceRange.to
+      || before.sourceRevision !== after.sourceRevision
+      || before.isProvisional !== after.isProvisional
+      || before.decoration !== after.decoration
+      || before.diffKind !== after.diffKind
+      || before.oldNo !== after.oldNo
+      || before.newNo !== after.newNo) break;
+    sharedPrefix++;
+  }
+  if (sharedPrefix === 0) return next;
+  const lines = previous.lines.replaceTail(sharedPrefix, next.lines.readRange(sharedPrefix, next.lines.length));
+  return {
+    ...next,
+    source: {
+      ...next.source,
+      completeLineCount: lines.completeLineCount,
+      lineCount: lines.length,
+    },
+    lines,
+  };
+}
+
 
 
 function codeLineTokens(line: CodeLineRecord): TokenLineV1 | undefined {
@@ -2599,7 +2664,10 @@ function applyPropsToNode(snapshot: DocumentSnapshot, node: SnapshotNode, props:
         const incomingRange = incoming.payload.range;
         if (isAdmittedAuthoredRange(incomingRange, inputSourceSnapshot(snapshot))) node.range = { from: incomingRange.from, to: incomingRange.to };
         if (node.range) node.block.payload.range = { ...node.range };
-        node.codeState = createLegacyCodeState(node, snapshot.nodes, snapshot);
+        node.codeState = retainLegacyCodeLinePrefix(
+          node.codeState,
+          createLegacyCodeState(node, snapshot.nodes, snapshot),
+        );
         continue;
       }
       if (node.range) node.block.payload.range = { ...node.range };

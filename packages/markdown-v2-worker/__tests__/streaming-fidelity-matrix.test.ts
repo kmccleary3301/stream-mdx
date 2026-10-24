@@ -8,7 +8,8 @@ import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
-import type { Block, Patch, WorkerOut } from "@stream-mdx/core";
+import type { Block, Patch, RestrictedComponentDescriptor, SyntaxExtensionDescriptor, WorkerOut } from "@stream-mdx/core";
+import { ComponentRegistry } from "@stream-mdx/react";
 import { stripCodeFence } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
@@ -18,8 +19,30 @@ import { createWorkerHarness } from "./worker-test-harness";
 import { projectFootnotePublication, publishedFootnoteLabels } from "./footnote-publication";
 import { projectConsumerBlocks } from "./consumer-block-projection";
 import type { ConsumerBlockProjection } from "./consumer-block-projection";
+import syntaxDemo from "../../../apps/docs/lib/streaming-syntax-demo.tsx";
+
+const {
+  createStreamingSyntaxDemoRegistry,
+  STREAMING_SYNTAX_DEMO,
+  STREAMING_SYNTAX_DEMO_MARKDOWN,
+  STREAMING_SYNTAX_DEMO_WORKER_COMPONENTS,
+} = syntaxDemo;
 
 type CreditProfile = (chunkIndex: number) => number;
+
+type PartialSyntaxState = {
+  consumedChars: number;
+  sourceTail: string;
+  closer: string;
+  forbiddenMarkup?: string;
+};
+
+type SyntaxReplayOptions = {
+  descriptor: SyntaxExtensionDescriptor;
+  workerComponents: RestrictedComponentDescriptor[];
+  componentRegistry: ComponentRegistry;
+  partialStates?: readonly PartialSyntaxState[];
+};
 
 type Scenario = {
   name: string;
@@ -31,6 +54,27 @@ type Scenario = {
 };
 
 const STABILITY_MARGIN_CHARS = 320;
+
+const SYNTAX_DEMO_DOC = STREAMING_SYNTAX_DEMO_MARKDOWN;
+
+const SYNTAX_DEMO_REPLAY: SyntaxReplayOptions = {
+  descriptor: STREAMING_SYNTAX_DEMO,
+  workerComponents: STREAMING_SYNTAX_DEMO_WORKER_COMPONENTS,
+  componentRegistry: createStreamingSyntaxDemoRegistry(),
+  partialStates: [
+    {
+      consumedChars: SYNTAX_DEMO_DOC.indexOf("==highlight==") + "==hi".length,
+      sourceTail: "==hi",
+      closer: "==",
+    },
+    {
+      consumedChars: SYNTAX_DEMO_DOC.indexOf(":::note") + ":::no".length,
+      sourceTail: ":::no",
+      closer: ":::",
+      forbiddenMarkup: 'data-syntax-container="note"',
+    },
+  ],
+};
 
 function ensureDom(): void {
   if (typeof window !== "undefined") return;
@@ -64,10 +108,14 @@ function applyPatchMessages(store: RendererStore, messages: WorkerOut[]): void {
   }
 }
 
-function renderColdBlocks(blocks: ReadonlyArray<Block>): string {
+function renderColdBlocks(blocks: ReadonlyArray<Block>, componentRegistry?: ComponentRegistry): string {
   const coldExport = [...blocks];
   const store = createRendererStore(coldExport);
-  return renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: coldExport, store }));
+  return renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, {
+    blocks: coldExport,
+    store,
+    ...(componentRegistry ? { componentRegistry } : {}),
+  }));
 }
 
 function assertFootnotePublication(blocks: ReadonlyArray<Block>, label: string): void {
@@ -144,6 +192,7 @@ function assertFinalizedPrefixMatchesBaseline(
   baseline: ReadonlyArray<Block>,
   consumedChars: number,
   label: string,
+  componentRegistry?: ComponentRegistry,
 ): void {
   const dirtyIndices: number[] = [];
   const dirtyDetails: string[] = [];
@@ -175,11 +224,35 @@ function assertFinalizedPrefixMatchesBaseline(
   }
   assert.deepStrictEqual(
     actualProjections,
-    projectConsumerBlocks(expectedBlocks),
+    projectConsumerBlocks(expectedBlocks, componentRegistry),
     `[${label}] finalized consumer output diverged from the single-shot baseline`,
   );
 }
 
+function assertPartialSyntaxIsUncommitted(
+  blocks: ReadonlyArray<Block>,
+  state: PartialSyntaxState,
+  componentRegistry: ComponentRegistry,
+  label: string,
+): void {
+  const matching = blocks.filter((block) => block.payload.raw?.includes(state.sourceTail));
+  assert.ok(
+    matching.every((block) => !block.isFinalized),
+    `[${label}] partial ${state.sourceTail} must not be committed`,
+  );
+  for (const block of matching) {
+    assert.ok(block.payload.raw?.endsWith(state.sourceTail), `[${label}] authored source must remain exact at the partial syntax boundary`);
+    assert.equal(block.payload.raw?.endsWith(state.closer), false, `[${label}] anticipation must not author a closing delimiter`);
+  }
+  if (state.forbiddenMarkup) {
+    const rendered = projectConsumerBlocks(blocks, componentRegistry);
+    assert.equal(
+      rendered.some((block) => block.markup.includes(state.forbiddenMarkup ?? "")),
+      false,
+      `[${label}] an incomplete registered container must not render`,
+    );
+  }
+}
 function assertFinalizedBlocksImmutable(
   current: ReadonlyArray<ConsumerBlockProjection>,
   consumedChars: number,
@@ -242,7 +315,7 @@ function assertFinalizedCodeTextMatchesBaseline(
   }
 }
 
-async function createInitializedHarnessStore() {
+async function createInitializedHarnessStore(syntax?: SyntaxReplayOptions) {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
   const initMessages = await harness.send({
@@ -250,6 +323,13 @@ async function createInitializedHarnessStore() {
     schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     initialContent: "",
     prewarmLangs: [],
+    ...(syntax
+      ? {
+          contentPolicy: "restricted" as const,
+          contentComponents: syntax.workerComponents,
+          syntax: syntax.descriptor,
+        }
+      : {}),
     docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true, formatAnticipation: true, liveCodeHighlighting: false },
   });
   const init = initMessages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED");
@@ -259,16 +339,17 @@ async function createInitializedHarnessStore() {
   return { harness, store };
 }
 
-async function computeBaseline(doc: string): Promise<Block[]> {
-  const { harness, store } = await createInitializedHarnessStore();
+async function computeBaseline(doc: string, syntax?: SyntaxReplayOptions): Promise<Block[]> {
+  const { harness, store } = await createInitializedHarnessStore(syntax);
   applyPatchMessages(store, await harness.send({ type: "APPEND", text: doc }));
   applyPatchMessages(store, await harness.send({ type: "FINALIZE" }));
   applyPatchMessages(store, await harness.send({ type: "SET_CREDITS", credits: 1 }));
   return store.getBlocks();
 }
 
-async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void> {
-  const { harness, store } = await createInitializedHarnessStore();
+async function runScenario(scenario: Scenario, baseline: Block[], syntax?: SyntaxReplayOptions): Promise<void> {
+  const { harness, store } = await createInitializedHarnessStore(syntax);
+  const componentRegistry = syntax?.componentRegistry;
   const seenFinalized = new Map<string, ConsumerBlockProjection>();
 
   for (let index = 0, chunkIndex = 0; index < scenario.doc.length; index += scenario.chunkSize, chunkIndex += 1) {
@@ -284,10 +365,14 @@ async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void>
 
     const blocks = store.getBlocks();
     const published = publishedFootnoteLabels(blocks);
-    const consumerBlocks = projectConsumerBlocks(blocks.map((block) => projectFootnotePublication(block, published)));
+    const consumerBlocks = projectConsumerBlocks(blocks.map((block) => projectFootnotePublication(block, published)), componentRegistry);
     const stepLabel = `${scenario.name}:chunk=${chunkIndex}`;
     const consumedChars = Math.min(scenario.doc.length, index + scenario.chunkSize);
-    assertFinalizedPrefixMatchesBaseline(blocks, consumerBlocks, baseline, consumedChars, stepLabel);
+    const partialState = syntax?.partialStates?.find((state) => state.consumedChars === consumedChars);
+    if (partialState && componentRegistry) {
+      assertPartialSyntaxIsUncommitted(blocks, partialState, componentRegistry, stepLabel);
+    }
+    assertFinalizedPrefixMatchesBaseline(blocks, consumerBlocks, baseline, consumedChars, stepLabel, componentRegistry);
     assertFinalizedBlocksImmutable(consumerBlocks, consumedChars, seenFinalized, stepLabel);
     assertFinalizedTableMarkupShape(consumerBlocks, stepLabel);
     assertNoEmptyRenderedNestedLists(consumerBlocks, stepLabel);
@@ -296,18 +381,21 @@ async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void>
   applyPatchMessages(store, await harness.send({ type: "FINALIZE" }));
   const finalBlocks = store.getBlocks();
   const published = publishedFootnoteLabels(finalBlocks);
-  const finalConsumerBlocks = projectConsumerBlocks(finalBlocks.map((block) => projectFootnotePublication(block, published)));
+  const finalConsumerBlocks = projectConsumerBlocks(finalBlocks.map((block) => projectFootnotePublication(block, published)), componentRegistry);
   assertFootnotePublication(finalBlocks, `${scenario.name}:final`);
   assert.strictEqual(finalBlocks.length, baseline.length, `[${scenario.name}] block count mismatch`);
-  assert.deepStrictEqual(finalConsumerBlocks, projectConsumerBlocks(baseline.map((block) => projectFootnotePublication(block, published))),
-    `[${scenario.name}] chunked final consumer output must match complete compilation`);
+  assert.deepStrictEqual(
+    finalConsumerBlocks,
+    projectConsumerBlocks(baseline.map((block) => projectFootnotePublication(block, published)), componentRegistry),
+    `[${scenario.name}] chunked final consumer output must match complete compilation`,
+  );
 
   const footnoteVisible = (blocks: ReadonlyArray<Block>) => blocks.filter(
     (block) => block.type === "footnotes" || JSON.stringify(block).includes('"kind":"footnote-ref"'),
   );
   assert.strictEqual(
-    renderColdBlocks(footnoteVisible(finalBlocks)),
-    renderColdBlocks(footnoteVisible(baseline)),
+    renderColdBlocks(footnoteVisible(finalBlocks), componentRegistry),
+    renderColdBlocks(footnoteVisible(baseline), componentRegistry),
     `[${scenario.name}] finalized footnote SSR must exactly match complete compilation`,
   );
   assertFinalizedTableMarkupShape(finalConsumerBlocks, `${scenario.name}:final`);
@@ -319,7 +407,7 @@ async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void>
   const afterCredits = store.getBlocks();
   const afterPublished = publishedFootnoteLabels(afterCredits);
   assert.deepStrictEqual(
-    projectConsumerBlocks(afterCredits.map((block) => projectFootnotePublication(block, afterPublished))),
+    projectConsumerBlocks(afterCredits.map((block) => projectFootnotePublication(block, afterPublished)), componentRegistry),
     finalConsumerBlocks,
     `[${scenario.name}] credits after FINALIZE must not change consumer-visible output`,
   );
@@ -336,8 +424,29 @@ async function runStreamingFidelityMatrixTest(): Promise<void> {
   const fullBaseline = await computeBaseline(fullDoc);
   const lowSpeedBaseline = await computeBaseline(lowSpeedDoc);
   const coverageBaseline = await computeBaseline(COVERAGE_DOC);
+  const syntaxBaseline = await computeBaseline(SYNTAX_DEMO_DOC, SYNTAX_DEMO_REPLAY);
+  const syntaxColdDom = new JSDOM(renderColdBlocks(syntaxBaseline, SYNTAX_DEMO_REPLAY.componentRegistry));
+  try {
+    assert.equal(
+      syntaxColdDom.window.document.querySelector('[data-syntax-highlight="true"]')?.textContent,
+      "highlight",
+      "the demo syntax extension renders its inline rule in the cold output",
+    );
+    assert.equal(
+      syntaxColdDom.window.document.querySelector('[data-syntax-container="note"]')?.getAttribute("data-note-title"),
+      "Demo note",
+      "the demo syntax extension renders its registered container in the cold output",
+    );
+    assert.equal(
+      syntaxColdDom.window.document.querySelector('[data-syntax-container="note"]')?.getAttribute("data-component-status"),
+      "closed",
+      "the cold registered container receives its authored closer",
+    );
+  } finally {
+    syntaxColdDom.window.close();
+  }
 
-  const scenarios: Array<{ scenario: Scenario; baseline: Block[] }> = [
+  const scenarios: Array<{ scenario: Scenario; baseline: Block[]; syntax?: SyntaxReplayOptions }> = [
     {
       scenario: { name: "full-steady-89", doc: fullDoc, chunkSize: 89, preAppendCredit: () => 1 },
       baseline: fullBaseline,
@@ -379,6 +488,16 @@ async function runStreamingFidelityMatrixTest(): Promise<void> {
       scenario: { name: "coverage-steady-37", doc: COVERAGE_DOC, chunkSize: 37, preAppendCredit: () => 1 },
       baseline: coverageBaseline,
     },
+    {
+      scenario: {
+        name: "demo-syntax-every-character",
+        doc: SYNTAX_DEMO_DOC,
+        chunkSize: 1,
+        preAppendCredit: () => 1,
+      },
+      baseline: syntaxBaseline,
+      syntax: SYNTAX_DEMO_REPLAY,
+    },
   ];
 
   for (const chunkSize of [3, 5, 7, 11, 89, 233]) {
@@ -406,7 +525,7 @@ async function runStreamingFidelityMatrixTest(): Promise<void> {
   }
 
   for (const entry of scenarios) {
-    await runScenario(entry.scenario, entry.baseline);
+    await runScenario(entry.scenario, entry.baseline, entry.syntax);
   }
 }
 

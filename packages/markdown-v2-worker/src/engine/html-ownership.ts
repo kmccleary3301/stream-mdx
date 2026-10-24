@@ -1,10 +1,30 @@
 import type { MarkdownParser } from "@lezer/markdown";
-import { dedentIndentedCode, removeHeadingMarkers, sanitizeHtmlInWorker, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type ContentPolicy, type HtmlOptions, type HtmlTreeNode, type InlineNode, type RestrictedComponentDescriptor, type SourceSnapshot } from "@stream-mdx/core";
+import { dedentIndentedCode, removeHeadingMarkers, sanitizeHtmlInWorker, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type ContainerExtensionSpec, type ContentPolicy, type HtmlOptions, type HtmlTreeNode, type InlineNode, type RestrictedComponentDescriptor, type SourceSnapshot } from "@stream-mdx/core";
 import { trimProvisionalFenceTail } from "./parse-extract";
-import { buildRestrictedComponentInlineTree, buildRestrictedComponentTree, buildRestrictedHtmlComponentTree, isRegisteredRestrictedComponent, scanRegisteredRestrictedTags, type RestrictedInlineElement } from "./restricted-component-ownership";
+import { buildRegisteredContainerTree, buildRestrictedComponentInlineTree, buildRestrictedComponentTree, buildRestrictedHtmlComponentTree, isRegisteredRestrictedComponent, scanRegisteredContainerSource, scanRegisteredRestrictedTags, type RestrictedInlineElement } from "./restricted-component-ownership";
+import type { RegisteredContainerOpening } from "./registered-component-owner";
 import { escapeHtml, inlineHtml, normalizeNativeInlineParagraph } from "./native-inline-normalization";
 
 const VOID: Record<string, true> = { area: true, base: true, br: true, col: true, embed: true, hr: true, img: true, input: true, link: true, meta: true, param: true, source: true, track: true, wbr: true };
+
+function hasSourceLineTerminatorAfterBlock(
+  block: Block,
+  content: string | SourceSnapshot,
+  sourceOffset: number,
+): boolean {
+  const rangeTo = block.payload.range?.to;
+  if (typeof rangeTo !== "number") return false;
+  const localEnd = rangeTo - sourceOffset;
+  if (localEnd < 0 || localEnd >= content.length) return false;
+  const unit = typeof content === "string"
+    ? content[localEnd]
+    : content.read(localEnd, localEnd + 1);
+  if (unit === "\n") return true;
+  if (unit !== "\r" || localEnd + 1 >= content.length) return false;
+  return typeof content === "string"
+    ? content[localEnd + 1] === "\n"
+    : content.read(localEnd + 1, localEnd + 2) === "\n";
+}
 
 function isCompleteHtmlTag(tag: string): boolean {
   if (!tag.endsWith(">")) return false;
@@ -278,6 +298,45 @@ export function getActiveHtmlTreeKey(
   if (Array.isArray(meta?.htmlParagraphTree)) return "htmlParagraphTree";
   if (Array.isArray(meta?.htmlTree)) return "htmlTree";
 }
+export function finalizeOpenRegisteredContainerTree(nodes: readonly HtmlTreeNode[]): readonly HtmlTreeNode[] {
+  let next: HtmlTreeNode[] | undefined;
+  for (let index = 0; index < nodes.length; index += 1) {
+    const node = nodes[index]!;
+    let replacement = node;
+    if (node.kind === "component" || node.kind === "element") {
+      const children = finalizeOpenRegisteredContainerTree(node.children);
+      if (node.kind === "component") {
+        const containerName = /^:{3,}([A-Za-z][\w-]*)/.exec(node.rawSource?.trimStart() ?? "")?.[1];
+        replacement = node.status === "open" && containerName
+          ? { ...node, status: "incomplete", diagnostic: `Unclosed container :::${containerName}`, children: [...children] }
+          : children === node.children ? node : { ...node, children: [...children] };
+      } else {
+        replacement = children === node.children ? node : { ...node, children: [...children] };
+      }
+    } else if (node.kind === "block") {
+      const meta = node.block.payload.meta;
+      const key = getActiveHtmlTreeKey(meta);
+      const tree = key ? meta?.[key] : undefined;
+      if (key && Array.isArray(tree)) {
+        const children = finalizeOpenRegisteredContainerTree(tree as HtmlTreeNode[]);
+        if (children !== tree) {
+          replacement = {
+            ...node,
+            block: { ...node.block, payload: { ...node.block.payload, meta: { ...meta, [key]: children } } },
+          };
+        }
+      }
+    }
+    if (replacement !== node) {
+      next ??= nodes.slice(0, index);
+      next.push(replacement);
+    } else {
+      next?.push(node);
+    }
+  }
+  return next ?? nodes;
+}
+
 
 function withHtmlOwnership(
   meta: Block["payload"]["meta"],
@@ -289,13 +348,15 @@ function withHtmlOwnership(
 }
 
 /** Own balanced HTML regions across native block boundaries, retaining pending MDX roots. */
-export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string | SourceSnapshot, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean; contentPolicy?: ContentPolicy; contentComponents?: ReadonlyMap<string, RestrictedComponentDescriptor> }): Block[] {
+export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string | SourceSnapshot, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean; contentPolicy?: ContentPolicy; contentComponents?: ReadonlyMap<string, RestrictedComponentDescriptor>; syntaxContainers?: readonly ContainerExtensionSpec[] }): Block[] {
   const contentComponents = regionOptions?.contentPolicy === "markdown" || regionOptions?.contentPolicy === "trusted-mdx"
     ? undefined
     : regionOptions?.contentComponents;
+  const syntaxContainers = contentComponents ? regionOptions?.syntaxContainers ?? [] : [];
   const result: Block[] = [];
   let region: Block[] = [];
   let stack: string[] = [];
+  let containerStack: RegisteredContainerOpening[] = [];
   let pendingComponent = false;
   const buildComponentTree = (
     rawSource: string,
@@ -303,19 +364,35 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     childrenBlocks?: Block[],
     childBlockRanges?: readonly { readonly block: Block; readonly from: number; readonly to: number }[],
     componentSourceOffset?: number,
-  ) => contentComponents
-    ? buildRestrictedComponentTree(rawSource, contentComponents, {
-        forceFinalize: regionOptions?.forceFinalize,
-        parseInline,
-        childrenBlocks,
-        childBlockRanges,
-        sourceOffset: componentSourceOffset,
-        parser,
-        literalTagContent: options?.literalTagContent,
-        htmlOptions: options,
-        containerClosed,
-      })
-    : null;
+    trailingLineTerminator = false,
+  ) => {
+    if (!contentComponents) return null;
+    const containerTree = syntaxContainers.length > 0
+      ? buildRegisteredContainerTree(rawSource, contentComponents, syntaxContainers, {
+          forceFinalize: regionOptions?.forceFinalize,
+          parseInline,
+          childrenBlocks,
+          childBlockRanges,
+          sourceOffset: componentSourceOffset,
+          parser,
+          literalTagContent: options?.literalTagContent,
+          trailingLineTerminator,
+          htmlOptions: options,
+        })
+      : null;
+    return containerTree ?? buildRestrictedComponentTree(rawSource, contentComponents, {
+      forceFinalize: regionOptions?.forceFinalize,
+      parseInline,
+      childrenBlocks,
+      childBlockRanges,
+      sourceOffset: componentSourceOffset,
+      parser,
+      literalTagContent: options?.literalTagContent,
+      trailingLineTerminator,
+      htmlOptions: options,
+      containerClosed,
+    });
+  };
   const retainComponentTree = (block: Block, htmlTree: HtmlTreeNode[]): Block => ({
     ...block,
     isFinalized: htmlTree[0]?.kind === "component" ? htmlTree[0].status !== "open" : block.isFinalized,
@@ -332,6 +409,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       parser,
       literalTagContent: options?.literalTagContent,
       htmlOptions: options,
+      trailingLineTerminator: hasSourceLineTerminatorAfterBlock(block, content, sourceOffset),
     };
     const headingText = block.payload.meta?.headingText;
     const inlineSource = block.type === "heading"
@@ -339,7 +417,10 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       : block.payload.raw;
     let htmlTree = block.type === "html"
       ? buildRestrictedHtmlComponentTree(block.payload.raw, contentComponents, { ...admissionOptions, htmlOptions: options })
-      : block.type === "heading" ? null : buildRestrictedComponentTree(block.payload.raw, contentComponents, admissionOptions);
+      : block.type === "heading" ? null
+        : (syntaxContainers.length > 0
+          ? buildRegisteredContainerTree(block.payload.raw, contentComponents, syntaxContainers, admissionOptions)
+          : null) ?? buildRestrictedComponentTree(block.payload.raw, contentComponents, admissionOptions);
     if (!htmlTree && (block.type === "paragraph" || block.type === "heading")) {
       const inlineTree = buildRestrictedComponentInlineTree(inlineSource, contentComponents, admissionOptions);
       if (inlineTree) {
@@ -363,13 +444,20 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     };
   };
   const flush = () => {
-    if (stack.length > 0 && !pendingComponent) {
+    if ((stack.length > 0 || containerStack.length > 0) && !pendingComponent) {
       // An unclosed HTML tag is not evidence that later native paragraphs or lists belong to it.
       // Keep their original blocks and ranges; only an authored close can extend HTML ownership.
       for (const block of region) result.push(block);
     } else if (region.length === 1) {
       const single = region[0];
-      const compTree = buildComponentTree(single.payload.raw, stack.length === 0);
+      const compTree = buildComponentTree(
+        single.payload.raw,
+        stack.length === 0,
+        undefined,
+        undefined,
+        undefined,
+        hasSourceLineTerminatorAfterBlock(single, content, sourceOffset),
+      );
       result.push(compTree ? retainComponentTree(single, compTree) : single);
     } else if (region.length > 1) {
       const first = region[0];
@@ -393,7 +481,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         : typeof content === "string"
           ? content.slice((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset)
           : content.read((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset);
-      const childrenBlocks = stack.length === 0 ? region.slice(1, region.length - 1) : region.slice(1);
+      const childrenBlocks = stack.length === 0 && containerStack.length === 0 ? region.slice(1, region.length - 1) : region.slice(1);
       const firstSourceOffset = first.payload.range?.from ?? sourceOffset;
       let childBlockRanges: { block: Block; from: number; to: number }[] | undefined;
       if (rawParts) {
@@ -425,6 +513,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         childrenBlocks,
         childBlockRanges,
         rawParts ? undefined : firstSourceOffset,
+        !rawParts && hasSourceLineTerminatorAfterBlock(last, content, sourceOffset),
       );
       if (compTree) {
         const retained = retainComponentTree(first, compTree);
@@ -432,7 +521,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
           ...retained,
           isFinalized: compTree[0]?.kind === "component"
             ? compTree[0].status !== "open"
-            : (stack.length === 0 || regionOptions?.forceFinalize === true) && last.isFinalized,
+            : (stack.length === 0 && containerStack.length === 0 || regionOptions?.forceFinalize === true) && last.isFinalized,
           payload: {
             ...retained.payload,
             raw,
@@ -442,7 +531,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       } else {
         result.push({
           ...first,
-          isFinalized: (stack.length === 0 || regionOptions?.forceFinalize === true) && last.isFinalized,
+          isFinalized: (stack.length === 0 && containerStack.length === 0 || regionOptions?.forceFinalize === true) && last.isFinalized,
           payload: {
             ...first.payload,
             raw,
@@ -454,12 +543,21 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     }
     region = [];
     stack = [];
+    containerStack = [];
     pendingComponent = false;
   };
   for (const inputBlock of blocks) {
     let block = regionOptions?.joinLeafRaws || opensComponent(inputBlock, contentComponents, regionOptions?.mdxComponents === true)
       ? inputBlock
       : recoverHtmlPhysicalSourceRange(inputBlock, content, sourceOffset, options, parseInline);
+    if (block.type !== "code" && contentComponents && syntaxContainers.length > 0) {
+      scanRegisteredContainerSource(block.payload.raw, syntaxContainers, contentComponents, parser, {
+        openStack: containerStack,
+        trailingLineTerminator: hasSourceLineTerminatorAfterBlock(block, content, sourceOffset),
+        literalTagContent: options?.literalTagContent,
+        insideListItem: block.type === "list",
+      });
+    }
     if (block.type !== "code") {
       if (region.length > 0 || block.type === "html") {
         applyHtmlTagBalance(
@@ -480,7 +578,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         );
       }
     }
-    if (region.length === 0 && stack.length === 0) {
+    if (region.length === 0 && stack.length === 0 && containerStack.length === 0) {
       const compTree = buildComponentTree(block.payload.raw, true);
       result.push(compTree ? retainComponentTree(block, compTree) : admitNestedBlock(block));
       continue;
@@ -491,11 +589,11 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         (contentComponents && isRegisteredRestrictedComponent(top, contentComponents)) ||
         (regionOptions?.mdxComponents === true && /^[A-Z]/.test(top)),
       );
-      pendingComponent = isComp;
+      pendingComponent = containerStack.length > 0 || isComp;
     }
     if (region.length > 0 || !pendingComponent) block = admitNestedBlock(block);
     region.push(block);
-    if (stack.length === 0) flush();
+    if (stack.length === 0 && containerStack.length === 0) flush();
   }
   flush();
   return result;

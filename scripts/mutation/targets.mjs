@@ -57,6 +57,19 @@ export const targets = {
       "packages/markdown-v2-react/__tests__/native-code-handle-presentation.test.tsx",
     ],
   },
+  "worker-syntax-containers": {
+    package: "packages/markdown-v2-worker",
+    mutate: [
+      "src/engine/registered-component-owner.ts:50-90",
+      "src/engine/registered-component-owner.ts:92-95",
+    ],
+    redirects: workerEngineSource,
+    tests: [
+      "__tests__/worker-restricted-component-ownership.test.ts",
+      "packages/markdown-v2-react/__tests__/p7-container-rules.test.tsx",
+      "packages/markdown-v2-react/__tests__/p7-open-container.test.tsx",
+    ],
+  },
   "react-viewport-index": {
     package: "packages/markdown-v2-react",
     mutate: [

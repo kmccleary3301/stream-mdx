@@ -426,12 +426,20 @@ try {
     assert.equal(hosted.input.slice(beforeRapid).filter((message) => message.type === "FINALIZE").length, 1, "stale static generation cannot finalize replacement");
     assert.equal(container.textContent?.includes("Obsolete in-flight consumer document"), false);
 
-    const syntax: SyntaxRuleSpec[] = [{ name: "invalid", pattern: { source: "[unclosed(" } }, { name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }];
-    root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={`# Recoverable rules\n\n#ABC-123\n\n${replacement}`}
-      features={features} syntax={syntax} inlineComponents={{ ticket: ({ id }: { id?: string }) => <span data-ticket={id}>{id}</span> }} tableVirtualization={true} caret={false} />);
-    await waitFor(() => Boolean(container.querySelector('[data-ticket="ABC-123"]')) && Boolean(container.querySelector('[data-table-virtualized="true"]')),
-      "recoverable invalid syntax rule does not consume full INIT acknowledgement or prevent finalization");
-    assert.ok(handle.current?.getState().blocks.every((block) => block.isFinalized));
+    const syntax = {
+      contractVersion: 1 as const,
+      inline: [{ name: "invalid", pattern: { source: "[unclosed(" } }, { name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }] as readonly SyntaxRuleSpec[],
+    };
+    const syntaxErrors: Error[] = [];
+    const beforeSyntaxErrorOutput = hosted.output.length;
+    root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={`# Invalid syntax\n\n#ABC-123\n\n${replacement}`}
+      features={features} syntax={syntax} onError={(error) => syntaxErrors.push(error)}
+      inlineComponents={{ ticket: ({ id }: { id?: string }) => <span data-ticket={id}>{id}</span> }} tableVirtualization={true} caret={false} />);
+    await waitFor(() => syntaxErrors.length > 0, "invalid syntax INIT is surfaced to React");
+    assert.match(syntaxErrors[0]!.message, /Invalid regular expression/);
+    assert.ok(hosted.output.slice(beforeSyntaxErrorOutput).some((message) => message.type === "ERROR" && message.phase === "INIT"));
+    assert.equal(hosted.output.slice(beforeSyntaxErrorOutput).some((message) => message.type === "INITIALIZED"), false,
+      "invalid syntax cannot publish INITIALIZED through the hosted worker");
     const teardownErrors: Error[] = [];
     const pendingSource = source(500, "Unmounted pending source");
     const beforeUnmount = hosted.input.length;
