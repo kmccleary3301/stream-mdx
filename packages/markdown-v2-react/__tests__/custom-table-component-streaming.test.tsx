@@ -6,8 +6,11 @@ import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-n
 
 const HEADER_AND_FIRST_ROW = "# Funds\n\n| Fund | Margin |\n| --- | ---: |\n| Bridgewater | 25% |\n| Ren";
 const REST = "aissance | 31% |\n| Citadel | 18% |\n";
+const TABLE_SOURCE = HEADER_AND_FIRST_ROW.slice(HEADER_AND_FIRST_ROW.indexOf("| Fund")) + REST.slice(0, -1);
+let presentedTableActions: NodeViewProps["actions"] | undefined;
 
-function CustomTable({ children, metadata }: NodeViewProps) {
+function CustomTable({ children, metadata, actions }: NodeViewProps) {
+  presentedTableActions = actions;
   return (
     <section data-custom-table="true" data-align={(metadata.align ?? []).join(",")}>
       {children}
@@ -32,6 +35,12 @@ async function customTableComponentReceivesStreamedTable(): Promise<void> {
   document.body.append(container);
   const root = createRoot(container);
   const handle = React.createRef<StreamingMarkdownHandle>();
+  const clipboardWrites: string[] = [];
+  const previousClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (text: string) => { clipboardWrites.push(text); } },
+  });
   try {
     await act(async () => {
       root.render(
@@ -69,7 +78,14 @@ async function customTableComponentReceivesStreamedTable(): Promise<void> {
       ],
       align: ",right",
     });
+    assert.ok(presentedTableActions, "the table wrapper receives source-bound actions");
+    let copySucceeded = false;
+    await act(async () => { copySucceeded = await presentedTableActions!.copy(); });
+    assert.equal(copySucceeded, true);
+    assert.deepEqual(clipboardWrites, [TABLE_SOURCE], "table copy reads its owned Markdown range with internal newlines intact");
   } finally {
+    if (previousClipboard) Object.defineProperty(navigator, "clipboard", previousClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
     await act(async () => root.unmount());
     restore();
   }
