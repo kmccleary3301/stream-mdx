@@ -157,6 +157,7 @@
 
   Demo automation now observes synchronous source and completion state immediately after fast-forward or finalization, and restart opens a fresh wrapper session before replacing its worker.
 
+- Reduce repeated parsing for large streamed paragraphs by using 4,096-unit worker append slices.
 - a57c011: Apply a link reference definition title that streams in on the next line. A definition without a title stays open until the following line arrives, so `[label]: /url` followed by `  "Title"` gives the referencing link its title instead of starting a new paragraph.
 - 3091807: Preserve detected file grammars in diff checkpoints so streaming additions continue with the correct language.
 - 9771290: Reset unknown diff file paths to the configured base grammar so detected language cannot leak across file boundaries.
