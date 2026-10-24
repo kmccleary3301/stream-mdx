@@ -454,6 +454,73 @@ async function testBlockHtmlAllowedTagsAndAttributes(): Promise<void> {
   root.unmount();
 }
 
+async function testInlinePresentationWrapsPreparedLink(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "missing render root");
+
+  const root = createRoot(container!);
+  root.render(
+    <StreamingMarkdown
+      engine="main-thread"
+      text="Read [the guide](https://example.com/guide)."
+      components={{
+        "inline:link": {
+          wrapper: ({ children, metadata }) => (
+            <span className="presented-link" data-node-type={metadata.type}>{children}</span>
+          ),
+        },
+      }}
+    />,
+  );
+
+  await waitForMutation(container!, () => Boolean(container!.querySelector(".presented-link a")));
+  const wrappedAnchor = container!.querySelector(".presented-link a");
+  assert.ok(wrappedAnchor, "the link presentation must wrap the prepared native anchor");
+  assert.strictEqual(wrappedAnchor.getAttribute("href"), "https://example.com/guide");
+  assert.strictEqual(container!.querySelectorAll(".presented-link a").length, 1, "prepared link content must render exactly once");
+  assert.strictEqual(container!.querySelector(".presented-link")?.getAttribute("data-node-type"), "inline:link");
+  root.unmount();
+}
+
+async function testHtmlPresentationPreservesSanitizedAttributes(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container, "missing render root");
+
+  const root = createRoot(container!);
+  root.render(
+    <StreamingMarkdown
+      engine="main-thread"
+      text='<div data-safe="yes" onclick="alert(1)">Allowed <strong>text</strong></div>'
+      html={{
+        allowedTags: {
+          div: ["data-safe"],
+          strong: [],
+        },
+      }}
+      components={{
+        "html:div": {
+          wrapper: ({ children, metadata }) => (
+            <section className="presented-html" data-node-type={metadata.type}>{children}</section>
+          ),
+        },
+      }}
+    />,
+  );
+
+  await waitForMutation(container!, () => Boolean(container!.querySelector(".presented-html div strong")));
+  const wrapper = container!.querySelector(".presented-html");
+  const nativeDiv = wrapper?.querySelector("div");
+  assert.ok(nativeDiv, "the admitted HTML element must remain the wrapper child");
+  assert.strictEqual(nativeDiv.getAttribute("data-safe"), "yes", "allowed sanitized attributes must remain");
+  assert.strictEqual(nativeDiv.getAttribute("onclick"), null, "forbidden event attributes must remain stripped");
+  assert.strictEqual(nativeDiv.querySelector("strong")?.textContent, "text", "prepared nested HTML must render once");
+  assert.strictEqual(wrapper?.getAttribute("data-node-type"), "html:div");
+  root.unmount();
+}
+
+
 async function testAnticipationOverlapAndStreamingStatus(): Promise<void> {
   const patches: Array<{ blockId: string; meta?: Record<string, unknown> }> = [];
   const engine = new MarkdownEngine({
@@ -610,9 +677,13 @@ console.log("9: testLiteralTagContent");
 await testLiteralTagContent();
 console.log("10: testBlockHtmlAllowedTagsAndAttributes");
 await testBlockHtmlAllowedTagsAndAttributes();
-console.log("11: testAnticipationOverlapAndStreamingStatus");
+console.log("11: testInlinePresentationWrapsPreparedLink");
+await testInlinePresentationWrapsPreparedLink();
+console.log("12: testHtmlPresentationPreservesSanitizedAttributes");
+await testHtmlPresentationPreservesSanitizedAttributes();
+console.log("13: testAnticipationOverlapAndStreamingStatus");
 await testAnticipationOverlapAndStreamingStatus();
-console.log("12: testDynamicPropUpdatesReInits");
+console.log("14: testDynamicPropUpdatesReInits");
 await testDynamicPropUpdatesReInits();
 console.log("All syntax rules and HTML allowlist acceptance tests passed successfully.");
 

@@ -65,6 +65,8 @@ export type {
   TableElements,
   TableVirtualizationOptions,
   HeadlessNodeViewProps,
+  HtmlNodeViewProps,
+  InlineNodeViewProps,
   NativeNodeKey,
   NodeChildRange,
   NodeHandle,

@@ -47,10 +47,12 @@ import type {
   InlineComponents,
   InlineHtmlRendererMap,
   MathRenderer,
+  NodeViewActions,
+  NodeViewMetadata,
   NodePresentations,
   TableElements,
 } from "../types";
-import { resolveNodePresentation, validateNodePresentations } from "../renderer/node-presentations";
+import { renderPresentedNode, resolveNodePresentation, validateNodePresentations } from "../renderer/node-presentations";
 export type { CodeFenceRendererConfig, CodeFenceRendererProps };
 import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext, type ResolvedAnimatedOptions } from "../animation";
 import { DefaultDiffRenderer } from "./diff-renderer";
@@ -76,6 +78,15 @@ import {
 } from "./controls";
 export { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./link-safety-modal";
 
+function presentationText(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(presentationText).join("");
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) {
+    return presentationText(node.props.children);
+  }
+  return "";
+}
+
 /**
  * Render inline nodes to React elements
  */
@@ -95,12 +106,18 @@ export function renderInlineNodes(
           nodeKeyPrefix: animationContext.nodeKeyPrefix ? `${animationContext.nodeKeyPrefix}:${key}` : key,
         }
       : undefined;
+    const presentInline = (nativeView: React.ReactNode) => {
+      if (!registry) {
+        return nativeView;
+      }
+      return registry.renderInlinePresentation(node, nativeView, key, itemChildContext);
+    };
 
     switch (node.kind) {
       case "text": {
         const textComponent = components.text;
         if (textComponent && textComponent !== defaultInlineComponents.text) {
-          return React.createElement(textComponent, { key, text: node.text });
+          return presentInline(React.createElement(textComponent, { key, text: node.text }));
         }
         if (animationContext?.animated && !animationContext.isFinalized && animationContext.timeline) {
           const { animated, timeline, nodeKeyPrefix } = animationContext;
@@ -139,24 +156,24 @@ export function renderInlineNodes(
               segment,
             );
           });
-          return React.createElement(React.Fragment, { key }, ...spans);
+          return presentInline(React.createElement(React.Fragment, { key }, ...spans));
         }
-        return React.createElement(React.Fragment, { key, children: node.text });
+        return presentInline(React.createElement(React.Fragment, { key, children: node.text }));
       }
 
       case "strong": {
         if (!registry?.hasElementFilters()) {
-          return React.createElement(components.strong, {
+          return presentInline(React.createElement(components.strong, {
             key,
             children: renderInlineNodes(node.children, components, urlTransform, registry, "strong", itemChildContext),
-          });
+          }));
         }
         const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "strong", itemChildContext);
         const renderElement = () =>
-          React.createElement(components.strong, {
+          presentInline(React.createElement(components.strong, {
             key,
             children: renderChildren(),
-          });
+          }));
         return registry.filterElement(
           { tagName: "strong", properties: { key }, blockType: undefined },
           { source: "markdown", parentTagName },
@@ -167,17 +184,17 @@ export function renderInlineNodes(
 
       case "em": {
         if (!registry?.hasElementFilters()) {
-          return React.createElement(components.em, {
+          return presentInline(React.createElement(components.em, {
             key,
             children: renderInlineNodes(node.children, components, urlTransform, registry, "em", itemChildContext),
-          });
+          }));
         }
         const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "em", itemChildContext);
         const renderElement = () =>
-          React.createElement(components.em, {
+          presentInline(React.createElement(components.em, {
             key,
             children: renderChildren(),
-          });
+          }));
         return registry.filterElement(
           { tagName: "em", properties: { key }, blockType: undefined },
           { source: "markdown", parentTagName },
@@ -189,17 +206,17 @@ export function renderInlineNodes(
       case "strike": {
         const StrikeComponent = components.strike ?? ((props: { children: React.ReactNode }) => React.createElement("del", {}, props.children));
         if (!registry?.hasElementFilters()) {
-          return React.createElement(StrikeComponent, {
+          return presentInline(React.createElement(StrikeComponent, {
             key,
             children: renderInlineNodes(node.children, components, urlTransform, registry, "del", itemChildContext),
-          });
+          }));
         }
         const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "del", itemChildContext);
         const renderElement = () =>
-          React.createElement(StrikeComponent, {
+          presentInline(React.createElement(StrikeComponent, {
             key,
             children: renderChildren(),
-          });
+          }));
         return registry.filterElement(
           { tagName: "del", properties: { key }, blockType: undefined },
           { source: "markdown", parentTagName },
@@ -210,10 +227,10 @@ export function renderInlineNodes(
 
       case "code": {
         if (!registry?.hasElementFilters()) {
-          return React.createElement(components.code, { key, text: node.text });
+          return presentInline(React.createElement(components.code, { key, text: node.text }));
         }
         const renderChildren = () => node.text;
-        const renderElement = () => React.createElement(components.code, { key, text: node.text });
+        const renderElement = () => presentInline(React.createElement(components.code, { key, text: node.text }));
         return registry.filterElement(
           { tagName: "code", properties: { key, text: node.text }, blockType: undefined },
           { source: "markdown", parentTagName },
@@ -229,7 +246,7 @@ export function renderInlineNodes(
         const transform = urlTransform ?? defaultUrlTransform;
         const safeHref = transform(node.href ?? "", "href", { source: "markdown" });
         if (!registry?.hasElementFilters()) {
-          return React.createElement(
+          return presentInline(React.createElement(
             components.link,
             {
               key,
@@ -237,11 +254,11 @@ export function renderInlineNodes(
               title: node.title,
               children: renderInlineNodes(node.children, components, urlTransform, registry, "a", itemChildContext),
             },
-          );
+          ));
         }
         const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "a", itemChildContext);
         const renderElement = () =>
-          React.createElement(
+          presentInline(React.createElement(
             components.link,
             {
               key,
@@ -249,7 +266,7 @@ export function renderInlineNodes(
               title: node.title,
               children: renderChildren(),
             },
-          );
+          ));
         return registry.filterElement(
           { tagName: "a", properties: { key, href: safeHref, title: node.title }, blockType: undefined },
           { source: "markdown", parentTagName },
@@ -262,20 +279,20 @@ export function renderInlineNodes(
         const transform = urlTransform ?? defaultUrlTransform;
         const safeSrc = transform(node.src ?? "", "src", { source: "markdown" });
         if (!registry?.hasElementFilters()) {
-          return React.createElement(components.image, {
+          return presentInline(React.createElement(components.image, {
             key,
             ...(safeSrc != null ? { src: safeSrc } : {}),
             alt: node.alt ?? "",
             title: node.title,
-          });
+          }));
         }
         const renderElement = () =>
-          React.createElement(components.image, {
+          presentInline(React.createElement(components.image, {
             key,
             ...(safeSrc != null ? { src: safeSrc } : {}),
             alt: node.alt ?? "",
             title: node.title,
-          });
+          }));
         return registry.filterElement(
           { tagName: "img", properties: { key, src: safeSrc, alt: node.alt ?? "", title: node.title }, blockType: undefined },
           { source: "markdown", parentTagName },
@@ -286,20 +303,20 @@ export function renderInlineNodes(
 
       case "br": {
         if (!registry?.hasElementFilters()) {
-          return React.createElement(
+          return presentInline(React.createElement(
             React.Fragment,
             { key },
             React.createElement(components.br, {} as Record<string, never>),
             "\n",
-          );
+          ));
         }
         const renderElement = () =>
-          React.createElement(
+          presentInline(React.createElement(
             React.Fragment,
             { key },
             React.createElement(components.br, {} as Record<string, never>),
             "\n",
-          );
+          ));
         return registry.filterElement(
           { tagName: "br", properties: { key }, blockType: undefined },
           { source: "markdown", parentTagName },
@@ -310,16 +327,19 @@ export function renderInlineNodes(
       case "plugin": {
         const pluginComponent = components[node.name] ?? components.plugin;
         if (pluginComponent) {
-          return React.createElement(pluginComponent, {
+          const pluginChildren = node.children
+            ? renderInlineNodes(node.children, components, urlTransform, registry, parentTagName, itemChildContext)
+            : undefined;
+          return presentInline(React.createElement(pluginComponent, {
             key,
             ...node.attrs,
             name: node.name,
             attrs: node.attrs,
-            children: node.children ? renderInlineNodes(node.children, components, urlTransform, registry, parentTagName, itemChildContext) : undefined,
+            children: pluginChildren,
             raw: node.raw,
-          });
+          }));
         }
-        return React.createElement(React.Fragment, { key }, node.raw);
+        return presentInline(React.createElement(React.Fragment, { key }, node.raw));
       }
 
       case "trusted-mdx-inline":
@@ -328,8 +348,38 @@ export function renderInlineNodes(
       case "html": {
         const children = node.children ? renderInlineNodes(node.children, components, urlTransform, registry, node.tagName?.toLowerCase(), itemChildContext) : undefined;
         const textValue = node.children?.map((child) => child.kind === "text" ? child.text : "").join("");
-        if (components.html) {
-          return React.createElement(components.html, { key, ...node, children, textValue });
+        const htmlRenderer = components.html;
+        if (htmlRenderer && !registry?.isDefaultHtmlInlineRenderer(htmlRenderer)) {
+          return renderHtmlInlineNode(
+            node,
+            children,
+            undefined,
+            key,
+            textValue,
+            urlTransform,
+            registry?.hasElementFilters() ? (el, ctx, renderElement, renderChildren) => registry.filterElement(el, ctx, renderElement, renderChildren) : undefined,
+            parentTagName,
+            registry
+              ? (tagName, properties, nativeView, htmlChildren, presentationKey) =>
+                  registry.renderHtmlPresentation(
+                    tagName,
+                    properties,
+                    nativeView,
+                    htmlChildren,
+                    presentationKey,
+                    animationContext?.nodeKeyPrefix,
+                    animationContext?.isFinalized,
+                  )
+              : undefined,
+            (tagName, properties, htmlChildren, presentationKey) =>
+              React.createElement(htmlRenderer, {
+                ...node,
+                key: presentationKey,
+                children: htmlChildren,
+                textValue,
+                properties,
+              }),
+          );
         }
         return renderHtmlInlineNode(
           node,
@@ -338,17 +388,28 @@ export function renderInlineNodes(
           key,
           textValue,
           urlTransform,
-          registry?.hasElementFilters() ? (el, ctx, rEl, rCh) => registry.filterElement(el, ctx, rEl, rCh) : undefined,
+          registry?.hasElementFilters() ? (el, ctx, renderElement, renderChildren) => registry.filterElement(el, ctx, renderElement, renderChildren) : undefined,
           parentTagName,
+          registry
+            ? (tagName, properties, nativeView, htmlChildren, presentationKey) =>
+                registry.renderHtmlPresentation(
+                  tagName,
+                  properties,
+                  nativeView,
+                  htmlChildren,
+                  presentationKey,
+                  animationContext?.nodeKeyPrefix,
+                  animationContext?.isFinalized,
+                )
+            : undefined,
         );
       }
       default: {
-        // Handle custom/extensible nodes
         const component = components[node.kind];
         if (component) {
-          return React.createElement(component, { key, ...node });
+          return presentInline(React.createElement(component, { key, ...node }));
         }
-        return null;
+        return presentInline(React.createElement(React.Fragment, { key }, null));
       }
     }
   });
@@ -767,6 +828,7 @@ export class ComponentRegistry {
   private nodePresentations: NodePresentations = {};
   private inlineComponents: InlineComponents;
   private htmlElements: HtmlElements;
+  private defaultHtmlInlineRenderer: InlineComponents["html"] | undefined;
   private tableElements: TableElements;
   private literalTagContent?: string[];
   private codeRenderers: Record<string, CodeFenceRenderer> = {};
@@ -818,9 +880,12 @@ export class ComponentRegistry {
     if (options?.contentComponents) {
       this.contentComponents = options.contentComponents;
     }
+    const defaultHtmlInlineRenderer: InlineComponents["html"] = (
+      node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string },
+    ) => renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue, this.urlTransform);
+    this.defaultHtmlInlineRenderer = defaultHtmlInlineRenderer;
     if (!inlineComponents.html) {
-      this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string }) =>
-        renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue, this.urlTransform);
+      this.inlineComponents.html = defaultHtmlInlineRenderer;
     }
     this.tableElements = getDefaultTableElements();
     this.setNodePresentations(options?.components);
@@ -1087,6 +1152,94 @@ export class ComponentRegistry {
     return resolveNodePresentation(this.nodePresentations, key);
   }
 
+  isDefaultHtmlInlineRenderer(renderer: InlineComponents["html"] | undefined): boolean {
+    if (!renderer || !this.defaultHtmlInlineRenderer) {
+      return false;
+    }
+    return renderer === this.defaultHtmlInlineRenderer;
+  }
+
+  renderInlinePresentation(
+    node: InlineNode,
+    nativeView: React.ReactNode,
+    key: React.Key,
+    context?: RenderInlineAnimationContext,
+  ): React.ReactNode {
+    const keyName = (node.kind === "plugin" ? `extension:${node.name}` : `inline:${node.kind}`) as `inline:${string}` | `extension:${string}`;
+    const presentation = this.getNodePresentation(keyName);
+    if (!presentation) return nativeView;
+    let presentedNode = node;
+    if ("view" in presentation && presentation.view) {
+      const transform = this.urlTransform ?? defaultUrlTransform;
+      if (node.kind === "link") {
+        presentedNode = {
+          ...node,
+          href: transform(node.href ?? "", "href", { source: "markdown" }) ?? undefined,
+        };
+      } else if (node.kind === "image") {
+        presentedNode = {
+          ...node,
+          src: transform(node.src ?? "", "src", { source: "markdown" }) ?? "",
+        };
+      }
+    }
+    const metadata: NodeViewMetadata = Object.freeze({
+      id: `${context?.nodeKeyPrefix ?? "inline"}:${String(key)}`,
+      type: keyName,
+      isFinalized: context?.isFinalized ?? false,
+    });
+    const source = () => inlineToPlainText([node]);
+    const actions: NodeViewActions = Object.freeze({
+      copy: () => copyToClipboard(source()),
+      download: () => downloadFile(source(), `${node.kind}.txt`),
+    });
+    const children = React.isValidElement<{ children?: React.ReactNode }>(nativeView)
+      ? nativeView.props.children
+      : undefined;
+    return renderPresentedNode<`inline:${string}` | `extension:${string}`>(presentation, nativeView, {
+      key,
+      metadata,
+      actions,
+      viewProps: { node: presentedNode, children, metadata, actions },
+    });
+  }
+
+  renderHtmlPresentation(
+    tagName: string,
+    properties: Readonly<Record<string, unknown>>,
+    nativeView: React.ReactNode,
+    children: React.ReactNode,
+    key: React.Key,
+    ownerId?: string,
+    isFinalized = false,
+  ): React.ReactNode {
+    const keyName = `html:${tagName.toLowerCase()}` as `html:${string}`;
+    const presentation = this.getNodePresentation(keyName);
+    if (!presentation) return nativeView;
+    const viewProperties: Record<string, unknown> = {};
+    for (const [property, value] of Object.entries(properties)) {
+      if (property !== "key") {
+        viewProperties[property] = value;
+      }
+    }
+    const source = () => presentationText(children);
+    const metadata: NodeViewMetadata = Object.freeze({
+      id: `${ownerId ?? "html"}:${String(key)}`,
+      type: keyName,
+      isFinalized,
+    });
+    const actions: NodeViewActions = Object.freeze({
+      copy: () => copyToClipboard(source()),
+      download: () => downloadFile(source(), `${tagName.toLowerCase()}.txt`),
+    });
+    return renderPresentedNode<`html:${string}`>(presentation, nativeView, {
+      key,
+      metadata,
+      actions,
+      viewProps: { tagName: tagName.toLowerCase(), properties: viewProperties, children, metadata, actions },
+    });
+  }
+
   /**
    * A block type is "custom" only when the registered component differs from the
    * built-in default. Re-passing the built-in map (for example `components={registry.getBlockComponentMap()}`)
@@ -1211,6 +1364,18 @@ export class ComponentRegistry {
       renderBlock,
       renderInline: (nodes, parentTagName) =>
         renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName, inlineContext),
+      renderInlinePresentation: (node, nativeView, key) =>
+        this.renderInlinePresentation(node, nativeView, key, inlineContext),
+      renderHtmlPresentation: (tagName, properties, nativeView, children, key) =>
+        this.renderHtmlPresentation(
+          tagName,
+          properties,
+          nativeView,
+          children,
+          key,
+          String(paragraph?.id ?? parentTagName ?? "html"),
+          inlineContext?.isFinalized,
+        ),
       inlineComponents: this.inlineComponents,
       urlTransform: this.urlTransform,
       isAutolinkProtocolDisabled: (href) => this.isAutolinkProtocolDisabled(href),

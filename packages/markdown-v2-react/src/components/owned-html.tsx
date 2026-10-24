@@ -20,6 +20,14 @@ export type OwnedHtmlRenderContext = {
   parentTagName?: string;
   contentComponents?: ContentComponentsMap;
   renderParagraph?: (children: React.ReactNode) => React.ReactNode;
+  renderInlinePresentation?: (node: InlineNode, nativeView: React.ReactNode, key: React.Key) => React.ReactNode;
+  renderHtmlPresentation?: (
+    tagName: string,
+    properties: Readonly<Record<string, unknown>>,
+    nativeView: React.ReactNode,
+    children: React.ReactNode,
+    key: React.Key,
+  ) => React.ReactNode;
 };
 
 export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRenderContext): React.ReactNode {
@@ -28,40 +36,52 @@ export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRend
     context.elements,
     context.renderBlock,
     context.renderInline,
-    (node, children, parentTagName) => {
+    (node, children, parentTagName, key) => {
       if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
         const component = context.inlineComponents[node.kind];
-        if (node.kind === "link") {
-          if (node.autolink && context.isAutolinkProtocolDisabled(node.href)) return children;
-          const { href, ...linkProps } = node;
-          const transform = context.urlTransform ?? defaultUrlTransform;
-          const safeHref = transform(href ?? "", "href", { source: "markdown" });
-          const direct = component ? React.createElement(component, {
-            ...linkProps,
-            ...(safeHref != null ? { href: safeHref } : {}),
-            children,
-          }) : React.createElement("a", { href: safeHref ?? undefined }, children);
-          if (!context.filterElement) return direct;
-          return context.filterElement(
-            { tagName: "a", properties: { href: safeHref, title: node.title } },
-            { source: "markdown", parentTagName },
-            () => direct,
-            () => children,
-          );
-        }
-        const tag = node.kind === "strike" ? "del" : node.kind;
-        const direct = component ? React.createElement(component, { ...node, children }) : React.createElement(tag, {}, children);
-        if (!context.filterElement) return direct;
+        const renderElement = () => {
+          let direct: React.ReactNode;
+          if (node.kind === "link") {
+            if (node.autolink && context.isAutolinkProtocolDisabled(node.href)) return children;
+            const { href, ...linkProps } = node;
+            const transform = context.urlTransform ?? defaultUrlTransform;
+            const safeHref = transform(href ?? "", "href", { source: "markdown" });
+            direct = component ? React.createElement(component, {
+              ...linkProps,
+              key,
+              ...(safeHref != null ? { href: safeHref } : {}),
+              children,
+            }) : React.createElement("a", { key, href: safeHref ?? undefined }, children);
+          } else {
+            const tag = node.kind === "strike" ? "del" : node.kind;
+            direct = component
+              ? React.createElement(component, { ...node, key, children })
+              : React.createElement(tag, { key }, children);
+          }
+          return context.renderInlinePresentation
+            ? context.renderInlinePresentation(node, direct, key)
+            : direct;
+        };
+        if (!context.filterElement) return renderElement();
+        const tag = node.kind === "strike" ? "del" : node.kind === "link" ? "a" : node.kind;
+        const properties = node.kind === "link"
+          ? { href: context.urlTransform?.(node.href ?? "", "href", { source: "markdown" }) ?? node.href, title: node.title }
+          : {};
         return context.filterElement(
-          { tagName: tag, properties: {} },
+          { tagName: tag, properties },
           { source: "markdown", parentTagName },
-          () => direct,
+          renderElement,
           () => children,
         );
       }
       if (node.kind === "plugin") {
         const component = context.inlineComponents[node.name] ?? context.inlineComponents.plugin;
-        return component ? React.createElement(component, { ...node.attrs, name: node.name, attrs: node.attrs, raw: node.raw, children }) : node.raw;
+        const direct = component
+          ? React.createElement(component, { ...node.attrs, key, name: node.name, attrs: node.attrs, raw: node.raw, children })
+          : node.raw;
+        return context.renderInlinePresentation
+          ? context.renderInlinePresentation(node, direct, key)
+          : direct;
       }
       return context.renderInline([node], parentTagName);
     },
@@ -70,5 +90,6 @@ export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRend
     context.filterElement,
     context.parentTagName,
     context.contentComponents,
+    context.renderHtmlPresentation,
   );
 }

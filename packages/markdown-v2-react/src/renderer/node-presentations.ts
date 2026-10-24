@@ -1,4 +1,51 @@
-import type { NodePresentation, NodePresentations, PresentationProps } from "../types";
+import React from "react";
+import type {
+  HeadlessNodeViewProps,
+  NodePresentation,
+  NodePresentationKey,
+  NodeViewActions,
+  NodeViewMetadata,
+  NodePresentations,
+  PresentationProps,
+} from "../types";
+
+export interface PresentationRenderContext<K extends NodePresentationKey> {
+  readonly key: React.Key;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+  readonly viewProps: HeadlessNodeViewProps<K>;
+}
+
+export function renderPresentedNode<K extends NodePresentationKey>(
+  presentation: NodePresentation<K> | undefined,
+  nativeView: React.ReactNode,
+  context: PresentationRenderContext<K>,
+): React.ReactNode {
+  if (!presentation) return nativeView;
+  let prepared = nativeView;
+  if (presentation.props && React.isValidElement<Record<string, unknown>>(prepared) && typeof prepared.type === "string") {
+    prepared = React.cloneElement(
+      prepared,
+      mergeNodePresentationProps(prepared.props, presentation.props),
+    );
+  }
+  if ("view" in presentation && presentation.view) {
+    return React.createElement(presentation.view, {
+      ...(context.viewProps ?? {}),
+      key: context.key,
+    });
+  }
+  if ("wrapper" in presentation && presentation.wrapper) {
+    return React.createElement(presentation.wrapper, {
+      key: context.key,
+      children: prepared,
+      metadata: context.metadata,
+      actions: context.actions,
+    });
+  }
+  return prepared;
+}
+
 
 const PRESENTATION_KEY_PATTERNS = [
   /^[a-z][a-z0-9-]*$/,

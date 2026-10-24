@@ -295,12 +295,32 @@ export interface NodeViewProps {
   readonly actions: NodeViewActions;
 }
 
+export interface InlineNodeViewProps {
+  readonly node: InlineNode;
+  readonly children?: React.ReactNode;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
+export interface HtmlNodeViewProps {
+  readonly tagName: string;
+  /** Sanitized, URL-transformed native attributes. */
+  readonly properties: Readonly<Record<string, unknown>>;
+  readonly children?: React.ReactNode;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
 export type HeadlessNodeViewProps<K extends NodePresentationKey = NodePresentationKey> =
   K extends "code"
     ? { readonly handle: CodeNodeHandle }
     : K extends "table"
       ? { readonly handle: TableNodeHandle }
-      : { readonly handle: NodeHandle };
+      : K extends `inline:${string}` | `extension:${string}`
+        ? InlineNodeViewProps
+        : K extends `html:${string}`
+          ? HtmlNodeViewProps
+          : { readonly handle: NodeHandle };
 
 export interface PresentationProps {
   readonly className?: string;
