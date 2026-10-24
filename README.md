@@ -286,14 +286,16 @@ export default async function Page() {
 }
 ```
 
-### Mermaid as an opt-in renderer
+### Mermaid as an opt-in engine
 
 ```tsx
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "stream-mdx";
 
+const engines = { mermaid: createMermaidEngine() };
+
 export function DiagramDoc({ text }: { text: string }) {
-  return <StreamingMarkdown text={text} worker="/workers/markdown-worker.js" codeRenderers={{ mermaid: MermaidBlock }} />;
+  return <StreamingMarkdown text={text} worker="/workers/markdown-worker.js" engines={engines} />;
 }
 ```
 
@@ -319,7 +321,7 @@ const headingMetadata: DocumentPlugin = {
 serveMarkdownWorker({ extensions: { documentPlugins: [headingMetadata] } });
 ```
 
-The [plugin ABI](docs/PLUGIN_ABI.md#3-custom-bundled-worker-entry) includes a complete bundled entry with native Lezer markdown and inline extensions. App-level regex rules use the serializable `syntax` prop and named `inlineComponents`.
+The [plugin ABI](docs/PLUGIN_ABI.md#3-custom-bundled-worker-entry) includes a complete bundled entry with native Lezer markdown and inline extensions. App-level regex rules use the serializable `syntax` prop and render through `components["extension:<name>"]`.
 If you are deciding between package layers:
 
 1. Use `stream-mdx` unless you have a concrete reason not to.

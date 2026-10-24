@@ -62,7 +62,7 @@ export function Demo({ text }: { text: string }) {
 - `inlineComponents` → `components["inline:<kind>"]` or `components["extension:<name>"]`
 - `htmlElements` → `components["html:<tag>"]`
 - `tableElements` → `components.table` wrappers or headless table views with `useTableBlock` / `useTableRows`
-- `codeRenderers` → `components.code` wrappers or headless code views; wrappers receive `metadata.language`, and `slots.actions` replaces native code actions
+- `codeRenderers` → `components.code` wrappers or headless code views; wrappers receive `metadata.language`, and `slots.actions` replaces native code actions. Mermaid diagrams use `engines.mermaid` from `createMermaidEngine()`
 - `mathRenderer` → presentation becomes a math wrapper/view in `components["inline:math"]`; TeX rendering uses `engines.math` (KaTeX remains the default)
 - `mdxComponents` → restricted `contentComponents` registrations, or trusted `contentPolicy="trusted-mdx"` with `engines.mdx`
 

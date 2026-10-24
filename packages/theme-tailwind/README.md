@@ -54,7 +54,7 @@ Native output roots carry `data-stream-mdx` and `not-prose`. This gives the rend
 - Hosts using another theme mechanism should set `colorScheme` on the StreamMDX root.
 - The theme expects host design tokens like `--foreground` and `--border`; map them into your design system or replace them.
 - Shiki's dual-theme variables cover foreground, background, font style, font weight, and text decoration for both light and dark tokens.
-- StreamMDX component overrides (`components`, `inlineComponents`, `tableElements`) still work on top of the theme.
+- StreamMDX node presentations (`components`) still work on top of the theme.
 
 ## Documentation
 
