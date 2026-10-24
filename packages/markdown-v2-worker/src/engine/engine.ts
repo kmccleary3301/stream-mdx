@@ -8500,7 +8500,25 @@ export class MarkdownEngine {
 
     if (wantsTokens) {
       let diffLines: string[] = [];
-      if (diffInfo.isDiff) {
+      if (sourceOwner && this.extensions?.code) {
+        const ownerLines = sourceOwner.getLines();
+        tokenLines = ownerLines.readRange(0, ownerLines.length).map(({ decoration }) => {
+          if (
+            !decoration
+            || decoration.configurationRevision !== this.rootCodeConfigurationRevision
+            || decoration.exactness === "unavailable"
+          ) return null;
+          return decoration.tokens;
+        }) as unknown as Array<TokenLineV1 | null>;
+        if (diffInfo.isDiff) {
+          diffLines = codeBody.length > 0 ? codeBody.split("\n") : [];
+          const cursor: DiffCursorState = { oldLine: null, newLine: null };
+          const diffInfoLines = diffLines.map((line) => parseUnifiedDiffLine(line, cursor));
+          diffKind = diffInfoLines.map((line) => toDiffLineKind(line.kind));
+          diffOldNo = diffInfoLines.map((line) => line.oldNo ?? null);
+          diffNewNo = diffInfoLines.map((line) => line.newNo ?? null);
+        }
+      } else if (diffInfo.isDiff) {
         diffLines = codeBody.length > 0 ? codeBody.split("\n") : [];
         const cursor: DiffCursorState = { oldLine: null, newLine: null };
         const diffInfoLines = diffLines.map((line) => parseUnifiedDiffLine(line, cursor));
