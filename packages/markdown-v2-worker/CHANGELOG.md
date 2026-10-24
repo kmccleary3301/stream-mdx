@@ -282,6 +282,8 @@
 
   Remove obsolete ambient `document` and `DOMParser` stubs. Public worker/direct/React imports no longer install incomplete browser globals in Node SSR; actual worker MDX compilation uses the existing DOM-free dependency variants. Bundle the same complete native MDX pipeline for the public direct/compiler entries. ESM and CJS direct compilation decode entities and compile component, math, and nested code content without DOM globals or ESM-plugin namespace wrappers reaching unified as empty presets. Resolve browser-safe MDX dependency variants for public runtime/direct/compiler bundles, while building native `node` exports separately. Vite clients no longer receive vfile's Node `path`/`process`/`url` imports; all ESM/CJS/DTS output names stay unchanged, and the shared output directory is cleaned once before either build begins.
 
+- 123a873: Keep streamed HTML regions and interrupted blocks identical to a single-shot parse at every append boundary. An HTML region opened before the appended text and closed by it now regroups instead of splitting or duplicating its members, and a list, quote, or paragraph interrupted by an unterminated last line such as `</P` continues when the line completes as `</Pre>`.
+
 - Updated dependencies [1669abb]
 - Updated dependencies [0e96940]
 - Updated dependencies [a73209b]

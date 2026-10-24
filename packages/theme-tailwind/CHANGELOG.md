@@ -24,6 +24,8 @@
 
 ### Patch Changes
 
+- 24f5b42: Apply the theme's typography rules inside native `[data-stream-mdx]` roots. The roots' `not-prose` class had also excluded the theme's own paragraph, blockquote, list, table and code spacing. Nested `not-prose` islands and host content outside a root stay excluded.
+
 - 9c482bd: Keep long documents streaming at high input rates. On a 1 MB document fed at 20,000 characters per second, the worker previously needed about 127 seconds of parse time for a stream that lasts about 50 seconds, so it fell further behind with every append.
 
   Worker:

@@ -220,6 +220,8 @@
 ### Patch Changes
 
 - 721313b: Reject patches that would make a node its own ancestor, and record an invariant diagnostic instead of looping.
+- e4c905f: Finish background tokenization of finalized lazy code blocks shown in the bounded code viewport. Visible rows are still served first, and `lazyTokenizedUntil` now reaches the full line count.
+- 521be6f: Count code decorations computed for a superseded owner generation as stale work instead of invariant violations. They are still dropped. Decorations for an unknown owner or a newer generation are still diagnosed.
 - a9052cb: Honor reduced-motion preferences for bottom jumps and let wheel, touch, and scroll-key input interrupt smooth returns.
 - 3f24715: Bound host-accepted and in-flight source with generation-tagged worker admission acknowledgements. Imperative append accepts a whole UTF-16 chunk or refuses it without partial admission; automatic iterators losslessly split larger chunks and wait for capacity.
 
