@@ -48,6 +48,9 @@ interface OwnedInitialization {
   generation: number;
   workerGeneration?: number;
   callerManagedBaseline?: true;
+  takeoverSource?: string;
+  sourceAdmissionOffset?: number;
+  afterCommit?: () => void;
   resolve?: (blocks: Block[]) => void;
   reject?: (error: Error) => void;
 }
@@ -59,6 +62,7 @@ interface OwnedFinalization {
   workerGeneration?: number;
   acceptedSourceUnits: number;
   workerAdmissionBaselineSourceUnits: number;
+  workerAdmissionSourceOffset: number;
   revisionToken?: { generation: number; version: number };
   acknowledgement?: Extract<WorkerOut, { type: "FINALIZED" }>;
   dispatched: boolean;
@@ -203,6 +207,17 @@ export class MarkdownRenderer implements Renderer {
   private inputSealed = false;
   private acceptedSourceUnits = 0;
   private bootstrapOwnerSourceUnits = 0;
+  private bootstrapSourcePrefix = "";
+  private bootstrapInitializedSourceUnits = 0;
+  private bootstrapTakeoverRequested = false;
+  private bootstrapTakeoverHandler: (() => void) | null = null;
+  private bootstrapProjectionWaiters = new Set<{
+    targetSourceUnits: number;
+    resolve(): void;
+    reject(error: Error): void;
+  }>();
+  private pendingBootstrapFinalization: { resolve(result: FinalizeResult): void; reject(error: Error): void } | null = null;
+  private workerAdmissionSourceOffset = 0;
   private bootstrapDeferredSource = "";
   private workerAdmittedSourceUnits = 0;
   private workerAdmissionBaselineSourceUnits = 0;
@@ -269,20 +284,34 @@ export class MarkdownRenderer implements Renderer {
   attachWorker(worker: Worker, options?: {
     skipInit?: boolean;
     bootstrap?: boolean;
+    takeoverSource?: string;
     onInitialized?: () => void;
+    onTakeoverCommitted?: () => void;
     onInitializationError?: (error: Error) => void;
   }): void {
-    if (this.worker) this.detachWorker();
+    const takeover = options?.takeoverSource !== undefined;
+    if (this.worker) {
+      if (takeover) this.detachWorkerForTakeover();
+      else this.detachWorker();
+    }
     this.patchScheduler.restart();
     this.semanticAwaitingFlush = false;
-    this.componentRegistry.resetAnimationTimeline();
-    this.store.reset([]);
-    this.blocks = [];
-    if (this.updateCallbacks.length > 0) {
-      this.notifyUpdateCallbacks();
+    if (!takeover) {
+      this.componentRegistry.resetAnimationTimeline();
+      this.store.reset([]);
+      this.blocks = [];
+      if (this.updateCallbacks.length > 0) this.notifyUpdateCallbacks();
+      this.resetSourceAdmission();
+      this.inputSealed = false;
+    } else {
+      const sourceAdmissionOffset = this.acceptedSourceUnits;
+      this.workerAdmissionSourceOffset = sourceAdmissionOffset;
+      this.workerAdmissionBaselineSourceUnits = 0;
+      this.workerAdmittedSourceUnits = sourceAdmissionOffset;
+      this.workerAdmissionGeneration = null;
+      this.admissionFailure = null;
+      this.bootstrapMode = false;
     }
-    this.resetSourceAdmission();
-    this.inputSealed = false;
     this.worker = worker;
     this.bootstrapMode = options?.bootstrap ?? false;
     this.skipWorkerInit = options?.skipInit ?? false;
@@ -290,7 +319,6 @@ export class MarkdownRenderer implements Renderer {
     this.managedInitializationCallback = this.skipWorkerInit ? options?.onInitialized : undefined;
     this.managedInitializationErrorCallback = this.skipWorkerInit ? options?.onInitializationError : undefined;
     this.workerHasContent = false;
-    // Readiness requires the matching native schema-validated root, including for caller-managed workers.
     this.workerSchemaReady = false;
     this.lastWorkerError = null;
     this.initializationQueue = getWorkerInitializations(worker);
@@ -299,10 +327,21 @@ export class MarkdownRenderer implements Renderer {
     this.workerErrorListener = this.handleWorkerError.bind(this);
     this.worker.addEventListener("error", this.workerErrorListener);
     if (!this.skipWorkerInit) {
-      this.initializeWorker("", {
-        resolve: () => options?.onInitialized?.(),
-        reject: options?.onInitializationError,
-      });
+      this.initializeWorker(
+        options?.takeoverSource ?? "",
+        takeover
+          ? {
+              reject: options?.onInitializationError,
+              takeoverSource: options.takeoverSource,
+              sourceAdmissionOffset: this.workerAdmissionSourceOffset,
+              afterCommit: options.onTakeoverCommitted,
+            }
+          : {
+              resolve: () => options?.onInitialized?.(),
+              reject: options?.onInitializationError,
+            },
+        takeover ? { preserveSourceAdmission: true } : undefined,
+      );
     } else {
       this.currentInitialization = {
         owner: this,
@@ -312,13 +351,34 @@ export class MarkdownRenderer implements Renderer {
     }
   }
 
+  private detachWorkerForTakeover(): void {
+    if (!this.worker) return;
+    if (this.workerMessageListener) this.worker.removeEventListener("message", this.workerMessageListener);
+    if (this.workerErrorListener) this.worker.removeEventListener("error", this.workerErrorListener);
+    this.worker = null;
+    this.workerMessageListener = null;
+    this.workerErrorListener = null;
+    this.workerHasContent = false;
+    this.initializationQueue = null;
+  }
+
   private initializeWorker(
     initialContent = "",
     completion: Omit<OwnedInitialization, "owner" | "generation"> = {},
+    options?: { preserveSourceAdmission?: boolean },
   ): void {
     if (!this.worker) throw new Error("Worker not attached");
-    this.resetSourceAdmission();
-    this.inputSealed = false;
+    if (options?.preserveSourceAdmission) {
+      const sourceAdmissionOffset = completion.sourceAdmissionOffset ?? this.acceptedSourceUnits;
+      this.workerAdmissionSourceOffset = sourceAdmissionOffset;
+      this.workerAdmissionBaselineSourceUnits = 0;
+      this.workerAdmittedSourceUnits = sourceAdmissionOffset;
+      this.workerAdmissionGeneration = null;
+      this.admissionFailure = null;
+    } else {
+      this.resetSourceAdmission();
+      this.inputSealed = false;
+    }
     this.store.setThemes(this.config.themes);
     const codeHighlighting = this.config.plugins?.codeHighlighting;
     const outputMode = this.config.plugins?.outputMode;
@@ -473,11 +533,14 @@ export class MarkdownRenderer implements Renderer {
     finalization.resolve?.({
       generation: acknowledgement.generation,
       acceptedSourceUnits: finalization.acceptedSourceUnits,
-      committedSourceUnits: acknowledgement.admittedSourceUnits - finalization.workerAdmissionBaselineSourceUnits,
+      committedSourceUnits: finalization.workerAdmissionSourceOffset +
+        acknowledgement.admittedSourceUnits -
+        finalization.workerAdmissionBaselineSourceUnits,
     });
     finalization.resolve = undefined;
     finalization.reject = undefined;
   }
+
 
   private resetSourceAdmission(options: { preserveWorkerFrontier?: boolean } = {}): void {
     const preserveWorkerFrontier = options.preserveWorkerFrontier ?? false;
@@ -485,17 +548,104 @@ export class MarkdownRenderer implements Renderer {
       ? this.workerAdmissionBaselineSourceUnits + this.acceptedSourceUnits
       : 0;
     const workerAdmissionGeneration = preserveWorkerFrontier ? this.workerAdmissionGeneration : null;
-    this.resetFinalizationSession(new StreamSessionError("stale-generation", "Finalization belongs to an ended generation"));
-    this.rejectCapacityWaiters(new StreamSessionError("stale-generation", "Source capacity wait belongs to an ended generation"));
+    const error = new StreamSessionError("stale-generation", "Source admission belongs to an ended generation");
+    this.rejectPendingBootstrapFinalization(error);
+    this.settleBootstrapProjectionWaiters(error);
+    this.resetFinalizationSession(error);
+    this.rejectCapacityWaiters(error);
     this.admissionSession += 1;
     this.acceptedSourceUnits = 0;
     this.bootstrapOwnerSourceUnits = 0;
+    this.bootstrapSourcePrefix = "";
+    this.bootstrapInitializedSourceUnits = 0;
     this.bootstrapDeferredSource = "";
+    this.bootstrapTakeoverRequested = false;
+    this.workerAdmissionSourceOffset = 0;
     this.workerAdmissionBaselineSourceUnits = nextBaselineSourceUnits;
     this.workerAdmittedSourceUnits = nextBaselineSourceUnits;
     this.workerAdmissionGeneration = workerAdmissionGeneration;
     this.admissionFailure = null;
   }
+
+  private settleBootstrapProjectionWaiters(error?: Error): void {
+    for (const waiter of this.bootstrapProjectionWaiters) {
+      if (error) {
+        this.bootstrapProjectionWaiters.delete(waiter);
+        waiter.reject(error);
+      } else if (
+        this.bootstrapInitializedSourceUnits >= waiter.targetSourceUnits ||
+        this.workerAdmittedSourceUnits - this.workerAdmissionBaselineSourceUnits >= waiter.targetSourceUnits
+      ) {
+        this.bootstrapProjectionWaiters.delete(waiter);
+        waiter.resolve();
+      }
+    }
+  }
+
+  private requestBootstrapTakeover(): void {
+    if (!this.bootstrapMode || this.bootstrapDeferredSource.length === 0 || this.bootstrapTakeoverRequested) return;
+    this.bootstrapTakeoverRequested = true;
+    this.bootstrapTakeoverHandler?.();
+  }
+
+  private rejectPendingBootstrapFinalization(error: Error): void {
+    const pending = this.pendingBootstrapFinalization;
+    if (!pending) return;
+    this.pendingBootstrapFinalization = null;
+    this.finalizationPromise = null;
+    pending.reject(error);
+  }
+
+  private finishBootstrapTakeover(): void {
+    this.bootstrapTakeoverRequested = false;
+    this.bootstrapSourcePrefix = "";
+    this.bootstrapInitializedSourceUnits = 0;
+    this.bootstrapDeferredSource = "";
+    this.bootstrapOwnerSourceUnits = 0;
+    const pending = this.pendingBootstrapFinalization;
+    if (!pending) return;
+    this.pendingBootstrapFinalization = null;
+    this.finalizationPromise = null;
+    void this.finalize().then(pending.resolve, pending.reject);
+  }
+
+  failBootstrapTakeover(error: Error): void {
+    if (!this.bootstrapTakeoverRequested) return;
+    this.bootstrapTakeoverRequested = false;
+    this.failSourceAdmission(error.message);
+    this.rejectPendingBootstrapFinalization(error);
+    this.settleBootstrapProjectionWaiters(error);
+  }
+
+  setBootstrapTakeoverHandler(handler: (() => void) | null): () => void {
+    this.bootstrapTakeoverHandler = handler;
+    if (handler && this.bootstrapTakeoverRequested) handler();
+    return () => {
+      if (this.bootstrapTakeoverHandler === handler) this.bootstrapTakeoverHandler = null;
+    };
+  }
+
+  async waitForBootstrapProjection(): Promise<void> {
+    const targetSourceUnits = this.bootstrapOwnerSourceUnits;
+    if (
+      targetSourceUnits > 0 &&
+      this.bootstrapInitializedSourceUnits < targetSourceUnits &&
+      this.workerAdmittedSourceUnits - this.workerAdmissionBaselineSourceUnits < targetSourceUnits
+    ) {
+      await new Promise<void>((resolve, reject) => {
+        this.bootstrapProjectionWaiters.add({ targetSourceUnits, resolve, reject });
+      });
+    }
+    await this.patchScheduler.awaitIdle();
+  }
+
+  getBootstrapSourceForTakeover(): string {
+    if (!this.bootstrapTakeoverRequested || !this.bootstrapMode) {
+      throw new Error("No automatic bootstrap takeover is pending");
+    }
+    return this.bootstrapSourcePrefix + this.bootstrapDeferredSource;
+  }
+
 
   private failSourceAdmission(message: string, reason: "stale-generation" | "disposed" = "stale-generation"): void {
     const error = new StreamSessionError(reason, message);
@@ -682,12 +832,14 @@ export class MarkdownRenderer implements Renderer {
     if (this.bootstrapMode) {
       this.bootstrapOwnerSourceUnits += ownerText.length;
       this.bootstrapDeferredSource += text.slice(ownerText.length);
+      this.bootstrapSourcePrefix += ownerText;
     }
     if (ownerText.length > 0) {
       if (this.workerSchemaReady) this.worker.postMessage({ type: "APPEND", text: ownerText } as WorkerIn);
       else this.pendingStreamCommands.push({ type: "APPEND", text: ownerText });
     }
     this.acceptedSourceUnits += text.length;
+    this.requestBootstrapTakeover();
     this.workerHasContent ||= text.length > 0;
     this.trustedRevisionFeed?.append(text);
     if (this.trustedRevisionFeed && text.length > 0) {
@@ -723,6 +875,8 @@ export class MarkdownRenderer implements Renderer {
       if (this.bootstrapMode) {
         this.bootstrapOwnerSourceUnits = initialContent.length;
         this.bootstrapDeferredSource = text.slice(initialContent.length);
+        this.bootstrapSourcePrefix = initialContent;
+        this.requestBootstrapTakeover();
         this.acceptedSourceUnits = this.bootstrapDeferredSource.length;
       }
     });
@@ -830,11 +984,25 @@ export class MarkdownRenderer implements Renderer {
           break;
         }
         if (
-          this.workerAdmissionGeneration !== null &&
-          message.generation <= this.workerAdmissionGeneration
+          initialization?.takeoverSource !== undefined &&
+          message.snapshot.inputSource?.raw !== initialization.takeoverSource
         ) {
+          const messageText = "Worker takeover acknowledged a different canonical source frontier";
+          const error = new Error(messageText);
+          error.name = "WorkerSourceFrontierMismatch";
+          this.workerSchemaReady = false;
+          this.pendingStreamCommands = [];
+          if (this.currentInitialization === initialization) this.currentInitialization = null;
+          this.lastWorkerError = {
+            type: "ERROR",
+            phase: "INIT",
+            error: { name: error.name, message: messageText },
+          };
+          initialization.reject?.(error);
+          this.settleInitialization(error);
           break;
         }
+        if (this.workerAdmissionGeneration !== null && message.generation <= this.workerAdmissionGeneration) break;
         if (
           initialization &&
           this.trustedRevisionFeed &&
@@ -871,13 +1039,25 @@ export class MarkdownRenderer implements Renderer {
             if (this.managedInitializationPending) this.reportManagedInitializationError(error);
             break;
           }
-          if (this.workerAdmissionGeneration !== null) {
-            this.resetSourceAdmission();
-            this.inputSealed = false;
+          if (acceptedInitialization?.takeoverSource !== undefined) {
+            this.workerAdmissionSourceOffset = acceptedInitialization.sourceAdmissionOffset ?? 0;
+            this.workerAdmittedSourceUnits = this.workerAdmissionSourceOffset;
+            this.workerAdmissionBaselineSourceUnits = 0;
+          } else {
+            if (this.workerAdmissionGeneration !== null) {
+              this.resetSourceAdmission();
+              this.inputSealed = false;
+            }
+            this.workerAdmissionSourceOffset = 0;
+            this.workerAdmissionGeneration = message.generation;
+            this.workerAdmittedSourceUnits = 0;
+            this.workerAdmissionBaselineSourceUnits = 0;
+          }
+          if (this.bootstrapMode) {
+            this.bootstrapInitializedSourceUnits = message.snapshot.inputSource?.raw.length ?? 0;
+            this.settleBootstrapProjectionWaiters();
           }
           this.workerAdmissionGeneration = message.generation;
-          this.workerAdmittedSourceUnits = 0;
-          this.workerAdmissionBaselineSourceUnits = 0;
           this.admissionFailure = null;
           this.workerSchemaReady = true;
           this.lastWorkerError = null;
@@ -894,22 +1074,30 @@ export class MarkdownRenderer implements Renderer {
             this.managedInitializationErrorCallback = undefined;
             callback?.();
           }
+          if (acceptedInitialization?.takeoverSource !== undefined) {
+            const afterCommit = acceptedInitialization.afterCommit;
+            acceptedInitialization.afterCommit = undefined;
+            this.finishBootstrapTakeover();
+            afterCommit?.();
+          }
         }
         break;
       }
 
       case "SOURCE_ADMITTED": {
-        const sessionAdmittedSourceUnits = message.admittedSourceUnits - this.workerAdmissionBaselineSourceUnits;
+        const admittedSourceUnits = this.workerAdmissionSourceOffset + message.admittedSourceUnits;
+        const sessionAdmittedSourceUnits = admittedSourceUnits - this.workerAdmissionBaselineSourceUnits;
         if (
           message.generation !== this.workerAdmissionGeneration ||
-          !Number.isSafeInteger(message.admittedSourceUnits) ||
-          message.admittedSourceUnits < this.workerAdmissionBaselineSourceUnits ||
-          message.admittedSourceUnits < this.workerAdmittedSourceUnits ||
+          !Number.isSafeInteger(admittedSourceUnits) ||
+          message.admittedSourceUnits < 0 ||
+          admittedSourceUnits < this.workerAdmittedSourceUnits ||
           sessionAdmittedSourceUnits > this.acceptedSourceUnits
         ) {
           break;
         }
-        this.workerAdmittedSourceUnits = message.admittedSourceUnits;
+        this.workerAdmittedSourceUnits = admittedSourceUnits;
+        this.settleBootstrapProjectionWaiters();
         this.settleCapacityWaiters();
         break;
       }
@@ -1074,10 +1262,13 @@ export class MarkdownRenderer implements Renderer {
           break;
         }
         const committedSourceUnits = message.admittedSourceUnits - finalization.workerAdmissionBaselineSourceUnits;
+        const expectedWorkerSourceUnits =
+          finalization.acceptedSourceUnits - finalization.workerAdmissionSourceOffset;
         if (
           !Number.isSafeInteger(message.admittedSourceUnits) ||
           message.admittedSourceUnits < finalization.workerAdmissionBaselineSourceUnits ||
-          committedSourceUnits !== finalization.acceptedSourceUnits
+          expectedWorkerSourceUnits < 0 ||
+          committedSourceUnits !== expectedWorkerSourceUnits
         ) {
           this.rejectPendingFinalization(new Error("FINALIZED acknowledgment did not cover every accepted source unit"));
           break;
@@ -1172,6 +1363,20 @@ export class MarkdownRenderer implements Renderer {
       this.finalizationPromise = Promise.reject(failure);
       return this.finalizationPromise;
     }
+    if (this.bootstrapTakeoverRequested) {
+      let resolveFinalization!: (result: FinalizeResult) => void;
+      let rejectFinalization!: (error: Error) => void;
+      const promise = new Promise<FinalizeResult>((resolve, reject) => {
+        resolveFinalization = resolve;
+        rejectFinalization = reject;
+      });
+      this.finalizationPromise = promise;
+      this.pendingBootstrapFinalization = {
+        resolve: resolveFinalization,
+        reject: rejectFinalization,
+      };
+      return promise;
+    }
 
     let resolveFinalization!: (result: FinalizeResult) => void;
     let rejectFinalization!: (error: Error) => void;
@@ -1191,6 +1396,7 @@ export class MarkdownRenderer implements Renderer {
       dispatched: false,
       resolve: resolveFinalization,
       reject: rejectFinalization,
+      workerAdmissionSourceOffset: this.workerAdmissionSourceOffset,
     };
     this.pendingFinalization = finalization;
     const queue = this.initializationQueue;

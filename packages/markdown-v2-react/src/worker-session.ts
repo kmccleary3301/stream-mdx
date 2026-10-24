@@ -165,6 +165,49 @@ export function useWorkerSession({
       setInitializationError(reported);
       onErrorRef.current?.(reported);
     };
+    let takeoverLease: WorkerLease | null = null;
+    let removeBootstrapTakeover: (() => void) | null = null;
+    const failTakeover = (lease: WorkerLease | null, cause: unknown) => {
+      const error = cause instanceof Error ? cause : new Error(String(cause));
+      if (lease) {
+        if (takeoverLease !== lease) return;
+        takeoverLease = null;
+        lease.dispose();
+      }
+      renderer.failBootstrapTakeover(error);
+      reportError(error);
+    };
+    const startBootstrapTakeover = () => {
+      if (cancelled || readyRendererRef.current !== renderer || takeoverLease) return;
+      const lease = instantiateWorker(workerSource, factories);
+      if (!lease) {
+        failTakeover(null, new Error("Unable to create a worker for automatic bootstrap takeover"));
+        return;
+      }
+      takeoverLease = lease;
+      const bootstrapLease = activeInstanceRef.current?.lease;
+      void renderer.waitForBootstrapProjection().then(() => {
+        if (cancelled || readyRendererRef.current !== renderer || takeoverLease !== lease) {
+          if (takeoverLease === lease) takeoverLease = null;
+          lease.dispose();
+          return;
+        }
+        renderer.attachWorker(lease.worker, {
+          takeoverSource: renderer.getBootstrapSourceForTakeover(),
+          onTakeoverCommitted: () => {
+            if (cancelled || readyRendererRef.current !== renderer) {
+              takeoverLease = null;
+              lease.dispose();
+              return;
+            }
+            activeInstanceRef.current = { lease, source: workerSource, engine, session, managedWorker };
+            takeoverLease = null;
+            if (bootstrapLease !== lease) bootstrapLease?.dispose();
+          },
+          onInitializationError: (error) => failTakeover(lease, error),
+        });
+      }).catch((error: unknown) => failTakeover(lease, error));
+    };
     const attach = (lease: WorkerLease) => {
       renderer.detachWorker();
       readyRendererRef.current = renderer;
@@ -184,6 +227,9 @@ export function useWorkerSession({
       });
       workerReadyRef.current = true;
       setWorkerReady(true);
+      if (engine === "auto" && !managedWorker) {
+        removeBootstrapTakeover = renderer.setBootstrapTakeoverHandler(startBootstrapTakeover);
+      }
     };
     const existing = activeInstanceRef.current;
     if (existing && existing.source === workerSource && existing.engine === engine && existing.managedWorker === managedWorker && (managedWorker || existing.session === session)) {
@@ -217,6 +263,11 @@ export function useWorkerSession({
       workerReadyRef.current = false;
       setInputReady(false);
       inputReadyRef.current = false;
+      removeBootstrapTakeover?.();
+      if (takeoverLease) {
+        takeoverLease.dispose();
+        takeoverLease = null;
+      }
       if (readyRendererRef.current === renderer) readyRendererRef.current = null;
       renderer.detachWorker();
     };

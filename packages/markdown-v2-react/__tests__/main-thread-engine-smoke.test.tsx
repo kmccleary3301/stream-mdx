@@ -7,6 +7,9 @@ import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { StreamingMarkdown } from "../src/streaming-markdown";
 import type { StreamingMarkdownHandle, StreamingMarkdownProps } from "../src/streaming-markdown";
+import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
+import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
+
 const validEngineMode: StreamingMarkdownProps["engine"] = "main";
 // @ts-expect-error The removed engine mode must remain a public type error.
 const retiredEngineMode: StreamingMarkdownProps["engine"] = "main-thread";
@@ -185,6 +188,188 @@ async function runAutoBootstrapUnitLimit(): Promise<void> {
 }
 
 await runAutoBootstrapUnitLimit();
+
+interface RecordingWorker {
+  worker: Worker;
+  commands: WorkerIn[];
+  isReady(): boolean;
+}
+
+function createRecordingWorker(initDelayMs: number): RecordingWorker {
+  const worker = createInlineEngineWorker();
+  const commands: WorkerIn[] = [];
+  const originalPostMessage = worker.postMessage.bind(worker);
+  let isReady = false;
+  worker.addEventListener("message", (event) => {
+    if ((event as MessageEvent<WorkerOut>).data.type === "INITIALIZED") isReady = true;
+  });
+  worker.postMessage = ((message: unknown) => {
+    const command = message as WorkerIn;
+    commands.push(command);
+    if (command.type === "INIT" && initDelayMs > 0) {
+      setTimeout(() => originalPostMessage(message), initDelayMs);
+    } else {
+      originalPostMessage(message);
+    }
+  }) as Worker["postMessage"];
+  return { worker, commands, isReady: () => isReady };
+}
+
+function sourceFromWorkerCommands(commands: readonly WorkerIn[]): string {
+  let source = "";
+  for (const command of commands) {
+    if (command.type === "INIT") source = command.initialContent ?? "";
+    else if (command.type === "APPEND") source += command.text;
+  }
+  return source;
+}
+
+async function runAutoWorkerTakeover(): Promise<void> {
+  const window = await setupDom();
+  const autoContainer = window.document.getElementById("root");
+  assert.ok(autoContainer);
+  const autoRoot = createRoot(autoContainer);
+  const autoHandle = createRef<StreamingMarkdownHandle>();
+  const previousWorker = Object.getOwnPropertyDescriptor(globalThis, "Worker");
+  Object.defineProperty(globalThis, "Worker", {
+    configurable: true,
+    writable: true,
+    value: class {},
+  });
+
+  const bootstrapHeading = "# Bootstrap prefix\n\n";
+  const prefixBody = "bootstrap-token ".repeat(512);
+  const prefix = `${bootstrapHeading}${prefixBody.slice(0, 4096 - bootstrapHeading.length)}`;
+  assert.equal(prefix.length, 4096);
+  const suffix = "\n\n# Taken-over suffix\n\nAccepted suffix source.";
+  const expectedSource = prefix + suffix;
+  let releaseSuffix!: () => void;
+  const suffixPermission = new Promise<void>((resolve) => {
+    releaseSuffix = resolve;
+  });
+  async function* autoInput(): AsyncGenerator<string> {
+    yield prefix;
+    await suffixPermission;
+    yield suffix;
+  }
+
+  let factoryCalls = 0;
+  let autoRecorder: RecordingWorker | null = null;
+  const zeroBlockCommits: number[] = [];
+  let observer: MutationObserver | null = null;
+  try {
+    autoRoot.render(
+      <StreamingMarkdown
+        ref={autoHandle}
+        className="markdown-renderer"
+        engine="auto"
+        worker={() => {
+          factoryCalls++;
+          autoRecorder = createRecordingWorker(150);
+          return autoRecorder.worker;
+        }}
+        stream={autoInput()}
+      />,
+    );
+    await waitForCondition(
+      () => autoContainer.querySelector("h1")?.textContent === "Bootstrap prefix" &&
+        (autoContainer.querySelector("p")?.textContent?.includes("bootstrap-token") ?? false),
+      "auto bootstrap content was not published before the source crossed the takeover limit",
+    );
+    assert.equal(factoryCalls, 0, "short bootstrap source does not create the caller worker");
+    const stableRendererRoot = autoContainer.querySelector(".markdown-renderer");
+    assert.ok(stableRendererRoot, "the public renderer root is mounted");
+    const bootstrapHeadingNode = autoContainer.querySelector("h1");
+    const bootstrapParagraphNode = autoContainer.querySelector("p");
+    assert.ok(bootstrapHeadingNode && bootstrapParagraphNode);
+    observer = new window.MutationObserver(() => {
+      if (autoContainer.querySelectorAll("h1,h2,h3,h4,h5,h6,p,blockquote,ul,ol,table,pre,hr").length === 0) {
+        zeroBlockCommits.push(Date.now());
+      }
+    });
+    observer.observe(autoContainer, { childList: true, subtree: true, characterData: true });
+
+    releaseSuffix();
+    await waitForCondition(
+      () => factoryCalls === 1 && autoRecorder?.commands.some((command) => command.type === "INIT") === true,
+      "overflow did not start a replacement worker",
+    );
+    assert.equal(autoRecorder!.isReady(), false, "the replacement worker remains unready during its delayed INIT");
+    assert.equal(autoContainer.querySelector("h1"), bootstrapHeadingNode);
+    assert.equal(autoContainer.querySelector("p"), bootstrapParagraphNode);
+    assert.equal(autoContainer.querySelector(".markdown-renderer"), stableRendererRoot);
+    assert.ok(autoContainer.textContent?.includes("bootstrap-token"), "the bootstrap projection stays visible while INIT is delayed");
+
+    await waitForCondition(
+      () => autoRecorder!.isReady() &&
+        autoContainer.querySelector("h1:nth-of-type(2)")?.textContent === "Taken-over suffix" &&
+        (autoContainer.textContent?.includes("Accepted suffix source.") ?? false),
+      "the replacement worker did not commit the complete stream",
+    );
+    const autoFinalization = await autoHandle.current!.finalize();
+    assert.equal(autoFinalization.acceptedSourceUnits, expectedSource.length);
+    assert.equal(autoFinalization.committedSourceUnits, expectedSource.length);
+    await delay(30);
+    observer.disconnect();
+    observer = null;
+    assert.equal(autoContainer.querySelector(".markdown-renderer"), stableRendererRoot,
+      "takeover preserves the public renderer root node");
+    assert.deepEqual(zeroBlockCommits, [], "takeover never renders an empty block projection");
+
+    const autoHtml = autoContainer.innerHTML;
+    const autoSource = sourceFromWorkerCommands(autoRecorder!.commands);
+    assert.equal(autoSource, expectedSource, "takeover preserves the accepted source order");
+    assert.equal(autoSource.length, expectedSource.length, "takeover preserves the accepted UTF-16 unit total");
+
+    const workerContainer = window.document.createElement("div");
+    window.document.body.append(workerContainer);
+    const workerRoot = createRoot(workerContainer);
+    const workerHandle = createRef<StreamingMarkdownHandle>();
+    let workerRecorder: RecordingWorker | null = null;
+    try {
+      workerRoot.render(
+        <StreamingMarkdown
+          ref={workerHandle}
+          className="markdown-renderer"
+          engine="worker"
+          worker={() => {
+            workerRecorder = createRecordingWorker(0);
+            return workerRecorder.worker;
+          }}
+          stream={(async function* () {
+            yield prefix;
+            yield suffix;
+          })()}
+        />,
+      );
+      await waitForCondition(
+        () => workerContainer.querySelector("h1:nth-of-type(2)")?.textContent === "Taken-over suffix" &&
+          (workerContainer.textContent?.includes("Accepted suffix source.") ?? false),
+        "worker-only mode did not render the comparison stream",
+      );
+      const workerFinalization = await workerHandle.current!.finalize();
+      assert.equal(workerFinalization.acceptedSourceUnits, expectedSource.length);
+      assert.equal(workerFinalization.committedSourceUnits, expectedSource.length);
+      assert.equal(autoHtml, workerContainer.innerHTML, "auto takeover matches worker-only final DOM");
+      const workerSource = sourceFromWorkerCommands(workerRecorder!.commands);
+      assert.equal(workerSource, expectedSource, "worker-only mode consumes the same source order");
+      assert.equal(workerSource.length, expectedSource.length, "worker-only mode consumes the same UTF-16 unit total");
+    } finally {
+      workerRoot.unmount();
+      workerContainer.remove();
+    }
+  } finally {
+    observer?.disconnect();
+    autoRoot.unmount();
+    autoContainer.remove();
+    if (previousWorker) Object.defineProperty(globalThis, "Worker", previousWorker);
+    else Reflect.deleteProperty(globalThis, "Worker");
+    window.close();
+  }
+}
+
+await runAutoWorkerTakeover();
+
 
 
 async function runCallbackUpdateDuringStream(): Promise<void> {
