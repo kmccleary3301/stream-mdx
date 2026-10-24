@@ -201,6 +201,29 @@ export class MarkdownRenderer implements Renderer {
   private flushListeners = new Set<(result: PatchFlushResult) => void>();
   private workerMessageListener: ((event: MessageEvent<WorkerOut>) => void) | null = null;
   private workerErrorListener: ((event: Event) => void) | null = null;
+  private pendingCodeHighlightRequests: Array<Extract<WorkerIn, { type: "TOKENIZE_RANGE" }>> = [];
+  private pendingCodeHighlightWorker: Worker | null = null;
+  private codeHighlightRequestsScheduled = false;
+  private readonly flushPendingCodeHighlightRequests = (): void => {
+    this.codeHighlightRequestsScheduled = false;
+    const pendingWorker = this.pendingCodeHighlightWorker;
+    const requests = this.pendingCodeHighlightRequests;
+    this.pendingCodeHighlightWorker = null;
+    if (!pendingWorker || pendingWorker !== this.worker) {
+      requests.length = 0;
+      return;
+    }
+
+    for (const pending of requests) {
+      if (pending.priority === "prefetch") continue;
+      pendingWorker.postMessage(pending);
+    }
+    for (const pending of requests) {
+      if (pending.priority !== "prefetch") continue;
+      pendingWorker.postMessage(pending);
+    }
+    requests.length = 0;
+  };
   private readonly trustedRevisionFeed: TrustedRevisionFeed | null;
   private trustedFinalizedGeneration: number | null = null;
   private trustedFinalizedVersion: number | null = null;
@@ -1426,14 +1449,24 @@ export class MarkdownRenderer implements Renderer {
   }
 
   requestCodeHighlightRange(request: CodeHighlightRangeRequest): void {
-    if (!this.worker) return;
-    this.worker.postMessage({
+    const worker = this.worker;
+    if (!worker) return;
+    if (this.pendingCodeHighlightWorker !== worker) {
+      this.pendingCodeHighlightRequests.length = 0;
+      this.pendingCodeHighlightWorker = worker;
+    }
+    this.pendingCodeHighlightRequests.push({
       type: "TOKENIZE_RANGE",
       blockId: request.blockId,
       startLine: request.startLine,
       endLine: request.endLine,
       priority: request.priority,
-    } as WorkerIn);
+    });
+    if (this.codeHighlightRequestsScheduled) return;
+    this.codeHighlightRequestsScheduled = true;
+
+    if (typeof queueMicrotask === "function") queueMicrotask(this.flushPendingCodeHighlightRequests);
+    else setTimeout(this.flushPendingCodeHighlightRequests, 0);
   }
 
   getPatchHistory(limit?: number): ReadonlyArray<PatchFlushResult> {

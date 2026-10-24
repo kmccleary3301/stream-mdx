@@ -66,7 +66,7 @@ export function useLazyCodeHighlightRequest({
         blockId,
         startLine: 0,
         endLine: totalLazyLineCount,
-        priority: "visible",
+        priority: "prefetch",
         reason: "finalize-full",
       });
     };
