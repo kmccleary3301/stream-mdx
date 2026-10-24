@@ -11,7 +11,8 @@ import type { Block, CodeHighlightingMode, ContentPolicy, FormatAnticipationConf
 import { SourceCapacityError, StreamSessionError, type AppendResult, type FinalizeResult, type WaitForCapacityOptions } from "@stream-mdx/protocol";
 import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./source-admission-limits";
 export { SourceCapacityError, StreamSessionError } from "@stream-mdx/protocol";
-export { EngineCompatibilityError } from "./worker-session";
+import { EngineCompatibilityError } from "./worker-session";
+export { EngineCompatibilityError };
 export type { AppendResult, FinalizeResult, WaitForCapacityOptions } from "@stream-mdx/protocol";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
@@ -24,6 +25,7 @@ import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
 import { DocumentMathMacroScope, DocumentMathMacroScopeContext } from "./components/katex-math";
 import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type InlineComponents, type MathEngine, type MathOptions, type MermaidEngine, type NodePresentations, type RendererConfig, type SyntaxExtensionDescriptor, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import type { CodeEngine } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
   resolve(): void;
@@ -61,6 +63,7 @@ interface StreamingMarkdownConfigSignature {
   html?: HtmlOptions;
   themes?: { light: string; dark: string };
   mathOptions?: MathOptions;
+  codeEngineId?: string;
 }
 
 export interface StreamingSchedulerOptions {
@@ -170,6 +173,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   contentPolicy?: ContentPolicy;
   contentComponents?: ContentComponentsMap;
   engines?: {
+    code?: CodeEngine;
     math?: MathEngine;
     mermaid?: MermaidEngine;
     mdx?: TrustedMdxEngine;
@@ -288,6 +292,9 @@ function StreamingMarkdownComponent(
   if ((engine as string) === "main-thread") {
     throw new Error('engine="main-thread" has been removed; use engine="main" instead.');
   }
+  if (engines?.code && engine !== "main") {
+    throw new EngineCompatibilityError('The main-realm CodeEngine requires engine="main".');
+  }
   if (text !== undefined && stream !== undefined) {
     throw new Error("StreamingMarkdown expects either `text` or `stream`, not both.");
   }
@@ -317,8 +324,9 @@ function StreamingMarkdownComponent(
         html,
         themes: effectiveThemes,
         mathOptions,
+        codeEngineId: engines?.code?.id,
       }),
-    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes, mathOptions],
+    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes, mathOptions, engines?.code?.id],
   );
   const rendererRef = useRef<{
     renderer: MarkdownRenderer;
@@ -326,6 +334,7 @@ function StreamingMarkdownComponent(
     trustedEngine: TrustedMdxEngine | undefined;
     mathEngine: MathEngine | undefined;
     mermaidEngine: MermaidEngine | undefined;
+    codeEngine: CodeEngine | undefined;
   }>();
   const [session, setSession] = useState(0);
   const sessionRef = useRef(session);
@@ -345,6 +354,7 @@ function StreamingMarkdownComponent(
   const trustedEngine = contentPolicy === "trusted-mdx" ? engines?.mdx : undefined;
   const mathEngine = engines?.math;
   const mermaidEngine = engines?.mermaid;
+  const codeEngine = engines?.code;
 
   if (
     !rendererRef.current ||
@@ -352,6 +362,7 @@ function StreamingMarkdownComponent(
     rendererRef.current.trustedEngine !== trustedEngine ||
     rendererRef.current.mathEngine !== mathEngine ||
     rendererRef.current.mermaidEngine !== mermaidEngine
+    || rendererRef.current.codeEngine !== codeEngine
   ) {
     const rendererConfig: RendererConfig = {
       themes: effectiveThemes,
@@ -393,6 +404,7 @@ function StreamingMarkdownComponent(
       trustedEngine,
       mathEngine,
       mermaidEngine,
+      codeEngine,
     };
   }
 
@@ -604,7 +616,7 @@ function StreamingMarkdownComponent(
 
 
   const { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationEpoch, initializationError, readyRendererRef } = useWorkerSession({
-    renderer, workerSource, engine, session, managedWorker, onErrorRef, debug: DEBUG_WORKER,
+    renderer, workerSource, engine, session, managedWorker, codeEngine, onErrorRef, debug: DEBUG_WORKER,
   });
   const rejectPendingCapacityWaiters = useCallback((pending: PendingStreamingCommands, error: Error) => {
     for (const waiter of pending.capacityWaiters) {

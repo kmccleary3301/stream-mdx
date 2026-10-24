@@ -46,6 +46,7 @@ export type {
   ElementFilterDescriptor,
   ElementFilterOptions,
   MathEngine,
+  CodeEngine,
   MathEngineOutput,
   MathOptions,
   MermaidEngine,

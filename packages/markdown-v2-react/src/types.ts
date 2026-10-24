@@ -18,9 +18,11 @@ import type {
 import type { FinalizeResult } from "@stream-mdx/protocol";
 import type { ContentComponentsMap } from "./components/content-components";
 import type { TrustedMdxEngine } from "./trusted-mdx-contract";
+import type { CodeEngine } from "@stream-mdx/worker/engine";
 import type { ComponentRegistry } from "./components";
 
 export type { HtmlOptions, SyntaxRuleSpec, SyntaxExtensionDescriptor, ContainerExtensionSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
+export type { CodeEngine } from "@stream-mdx/worker/engine";
 export { defaultUrlTransform } from "@stream-mdx/core";
 import type {
   TableVirtualizationConfig,
@@ -333,6 +335,7 @@ export interface RendererConfig extends ElementFilterOptions {
   contentComponents?: ContentComponentsMap;
   components?: NodePresentations;
   engines?: {
+    code?: CodeEngine;
     math?: MathEngine;
     mermaid?: MermaidEngine;
     mdx?: TrustedMdxEngine;

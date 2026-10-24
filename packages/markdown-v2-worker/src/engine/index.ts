@@ -10,6 +10,7 @@ export { MarkdownEngine } from "./engine";
 export { serveMarkdownWorker, createInlineEngineWorker } from "./transport";
 export type {
   InlineExtension,
+  CodeEngine,
   EngineExtensions,
   MarkdownEngineOptions,
   InlineEngineWorkerOptions,
