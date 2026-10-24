@@ -1282,6 +1282,73 @@ try {
     await waitFor(() => copiedMarkdown !== undefined, "the native copy action writes to the browser clipboard");
     assert.equal(copiedMarkdown, authoredTable,
       "native Markdown copy preserves the authored table source and excludes the trailing paragraph");
+    const coldTableBlock: Block = {
+      id: "cold-authored-table",
+      type: "table",
+      isFinalized: true,
+      payload: {
+        raw: authoredTable,
+        meta: {
+          header: [[text("Item")], [text("Notes")]],
+          rows: [
+            [[text("first")], [text("plain | text")]],
+            [[text("second")], [text("code | 🎉")]],
+            [[text("third")], [text("emoji 😀")]],
+          ],
+        },
+      },
+    };
+    const coldRegistry = new ComponentRegistry();
+    coldRegistry.setControls({ table: { copy: ["markdown"], download: ["markdown"] } });
+    const previousCreateObjectURL = Object.getOwnPropertyDescriptor(URL, "createObjectURL");
+    const previousRevokeObjectURL = Object.getOwnPropertyDescriptor(URL, "revokeObjectURL");
+    const previousAnchorClick = dom.window.HTMLAnchorElement.prototype.click;
+    let downloadedBlob: Blob | null = null;
+    let downloadName: string | null = null;
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: (blob: Blob) => {
+        downloadedBlob = blob;
+        return "blob:cold-table";
+      },
+    });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: () => {} });
+    dom.window.HTMLAnchorElement.prototype.click = function () {
+      downloadName = this.download;
+    };
+    try {
+      await act(async () => {
+        copyRoot.render(
+          <SourceMarkdownBlocksRenderer blocks={[coldTableBlock]} componentRegistry={coldRegistry} />,
+        );
+      });
+      await waitFor(
+        () => container.querySelector<HTMLButtonElement>('button[data-stream-mdx-action="copy-markdown"]') !== null,
+        "the cold fallback table exposes Markdown copy",
+      );
+      copiedMarkdown = undefined;
+      container.querySelector<HTMLButtonElement>('button[data-stream-mdx-action="copy-markdown"]')?.click();
+      await waitFor(() => copiedMarkdown !== undefined, "the cold fallback copy writes to the browser clipboard");
+      assert.equal(copiedMarkdown, authoredTable,
+        "cold fallback Markdown copy preserves escaped pipes, inline Markdown, and authored CRLFs");
+      const markdownDownloadButton = container.querySelector<HTMLButtonElement>(
+        'button[data-stream-mdx-action="download-markdown"]',
+      );
+      assert.ok(markdownDownloadButton, "the cold fallback table exposes Markdown download");
+      markdownDownloadButton.click();
+      await waitFor(() => downloadedBlob !== null && downloadName !== null,
+        "the cold fallback Markdown download is created");
+      assert.equal(downloadName, "table.md");
+      assert.ok(downloadedBlob);
+      assert.deepEqual(Buffer.from(await downloadedBlob.arrayBuffer()), Buffer.from(authoredTable),
+        "cold fallback Markdown download preserves the authored source slice");
+    } finally {
+      dom.window.HTMLAnchorElement.prototype.click = previousAnchorClick;
+      if (previousCreateObjectURL) Object.defineProperty(URL, "createObjectURL", previousCreateObjectURL);
+      else Reflect.deleteProperty(URL, "createObjectURL");
+      if (previousRevokeObjectURL) Object.defineProperty(URL, "revokeObjectURL", previousRevokeObjectURL);
+      else Reflect.deleteProperty(URL, "revokeObjectURL");
+    }
   } finally {
     copyRoot.unmount();
     if (previousClipboard) Object.defineProperty(clipboardNavigator, "clipboard", previousClipboard);

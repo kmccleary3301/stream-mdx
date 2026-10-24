@@ -13,7 +13,6 @@ import {
   renderParagraphMixedSegments,
   resolveTableControls,
   tableToCsv,
-  tableToMarkdown,
   tableToTsv,
 } from "../components";
 import type { ComponentRegistry } from "../components";
@@ -1759,6 +1758,8 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   const resolvedTableControls = resolveTableControls(registry.getControls());
   const ControlsComponent = registry.getControlsComponent();
   const tableMeta = node?.block?.payload?.meta;
+  const authoredMarkdown = typeof node?.block?.payload.raw === "string" ? node.block.payload.raw : "";
+  const getAuthoredMarkdown = React.useCallback(() => authoredMarkdown, [authoredMarkdown]);
   // Cell text is only needed for copy/download; skip the walk on the streaming hot path when controls are off.
   const tableData = React.useMemo(
     () => (resolvedTableControls.enabled ? collectTableText(tableMeta, theadCellIds, rowIds, store) : null),
@@ -1834,7 +1835,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
         isFinalized={isFinalized}
         onCopy={(format) => {
           if (!isFinalized) return;
-          const text = format === "markdown" ? tableToMarkdown(tableData.headers, tableData.rows, tableData.align) : tableToTsv(tableData.headers, tableData.rows);
+          const text = format === "markdown" ? authoredMarkdown : tableToTsv(tableData.headers, tableData.rows);
           return copyToClipboard(text);
         }}
         onDownload={(format) => {
@@ -1842,7 +1843,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
           if (format === "tsv") {
             downloadFile(tableToTsv(tableData.headers, tableData.rows), "table.tsv", "text/tab-separated-values;charset=utf-8");
           } else if (format === "markdown") {
-            downloadFile(tableToMarkdown(tableData.headers, tableData.rows, tableData.align), "table.md", "text/markdown;charset=utf-8");
+            downloadFile(authoredMarkdown, "table.md", "text/markdown;charset=utf-8");
           } else {
             downloadFile(tableToCsv(tableData.headers, tableData.rows), "table.csv", "text/csv;charset=utf-8");
           }
@@ -1855,6 +1856,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
         rows={tableData.rows}
         align={tableData.align}
         isFinalized={isFinalized}
+        getMarkdownSource={getAuthoredMarkdown}
         config={resolvedTableControls}
       />
     );
