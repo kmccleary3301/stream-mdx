@@ -949,7 +949,7 @@ async function runStreamingCodeViewportTest(): Promise<void> {
         await act(async () => {
           shortFollowTailRoot.render(React.createElement(StreamingMarkdown, {
             ref: shortFollowTailHandle,
-            engine: "main-thread",
+            engine: "main",
             stream: shortFollowTailStream,
             features: { tables: false, html: false, mdx: false, math: false },
             codeVirtualization: { followTail: true, virtualizeThreshold: 2, windowSize: 4, bufferSize: 1 },
