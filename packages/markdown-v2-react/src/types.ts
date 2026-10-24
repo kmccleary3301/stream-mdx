@@ -1,7 +1,6 @@
 import type React from "react";
 
 import type {
-  Block,
   CodeNodeHandle,
   TableNodeHandle,
   CodeHighlightOutputMode,
@@ -227,7 +226,6 @@ export interface NodeViewProps {
   readonly children: React.ReactNode;
   readonly metadata: NodeViewMetadata;
   readonly actions: NodeViewActions;
-  readonly block?: Block;
 }
 
 export interface InlineNodeViewProps {

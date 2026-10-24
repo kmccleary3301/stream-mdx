@@ -80,6 +80,73 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
   }
 }
 
+async function finalizedParagraphPresentationKeepsColdSourceBehindActions(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  let presentation: NodeViewProps | undefined;
+  const clipboardWrites: string[] = [];
+  const previousClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (text: string) => { clipboardWrites.push(text); } },
+  });
+  const components = {
+    paragraph: {
+      wrapper: (props: NodeViewProps) => {
+        presentation = props;
+        return <section data-paragraph-presentation>{props.children}</section>;
+      },
+    },
+  } satisfies NodePresentations;
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready");
+    const store = handle.current!.getState().store;
+    const getColdBlock = store.getParagraphColdBlock.bind(store);
+    let coldReads = 0;
+    store.getParagraphColdBlock = (id) => {
+      coldReads += 1;
+      return getColdBlock(id);
+    };
+    await act(async () => {
+      handle.current?.append("**Paragraph source**");
+      await handle.current?.finalize();
+    });
+    await waitFor(() => container.querySelector("section[data-paragraph-presentation]"), "finalized paragraph wrapper");
+    assert.ok(presentation, "the paragraph wrapper receives bounded presentation props");
+    assert.equal(Object.prototype.hasOwnProperty.call(presentation, "block"), false, "wrappers never receive the full block");
+    assert.equal(coldReads, 0, "rendering a finalized paragraph does not materialize its cold block");
+    assert.equal(presentation.metadata.type, "paragraph");
+    let copied = false;
+    await act(async () => {
+      copied = await presentation!.actions.copy();
+    });
+    assert.equal(copied, true);
+    assert.equal(coldReads, 1, "copy materializes source only when the explicit action runs");
+    assert.deepEqual(clipboardWrites, ["**Paragraph source**"]);
+  } finally {
+    if (previousClipboard) Object.defineProperty(navigator, "clipboard", previousClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
 function runNodePresentationsTest(): void {
   const components = {
     paragraph: { wrapper: Chrome, props: { className: "host-paragraph", "data-owner": "host" } },
@@ -126,4 +193,5 @@ function runNodePresentationsTest(): void {
 runNodePresentationsTest();
 
 await finalizedHeadingPresentationMatchesServerOutput();
+await finalizedParagraphPresentationKeepsColdSourceBehindActions();
 console.log("Unified node presentation registry checks passed");

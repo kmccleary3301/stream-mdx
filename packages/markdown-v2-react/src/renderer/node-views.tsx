@@ -105,6 +105,7 @@ export function renderNodePresentation(
 
   const codeHandle = type === "code" ? store.getCodeNodeHandle(id) : undefined;
   const tableState = type === "table" ? store.getTableBlock(id) : undefined;
+  const paragraphState = type === "paragraph" ? store.getParagraphBlock(id) : undefined;
   const codeMetadata = codeHandle?.readMetadata();
   const blockLanguage = block?.payload.meta?.lang;
   const language = codeMetadata?.language ??
@@ -121,17 +122,28 @@ export function renderNodePresentation(
       align: tableState.header.align,
     }),
   });
-  const readSource = () => {
+  const readSource = (): string | null => {
     if (codeHandle) return codeHandle.readSource();
     if (tableState) return store.getTableBlock(id)?.sourceSnapshot.materialize() ?? block?.payload.raw ?? "";
+    if (paragraphState) {
+      if (store.getParagraphBlock(id) !== paragraphState) return null;
+      const raw = store.getParagraphColdBlock(id)?.payload.raw;
+      return typeof raw === "string" ? raw : null;
+    }
     const raw = block?.payload.raw;
     return typeof raw === "string" ? raw : "";
   };
   const actions: NodeViewActions = Object.freeze({
-    copy: () => copyToClipboard(readSource()),
-    download: () => downloadFile(readSource(), `${type}.txt`),
+    copy: () => {
+      const source = readSource();
+      return source === null ? Promise.resolve(false) : copyToClipboard(source);
+    },
+    download: () => {
+      const source = readSource();
+      if (source !== null) downloadFile(source, `${type}.txt`);
+    },
   });
-  return React.createElement(presentation.wrapper, { children, metadata, actions, block });
+  return React.createElement(presentation.wrapper, { children, metadata, actions });
 }
 
 
@@ -361,12 +373,6 @@ export const BlockNodeRenderer: React.FC<{
   if (node.type === "paragraph" && store.getParagraphBlock(blockId)) {
     const block = node.block;
     if (!block) return null;
-    const ownerState = store.getParagraphBlock(blockId);
-    const presentation = registry.getNodePresentation("paragraph");
-    const needsSource = presentation !== undefined && "wrapper" in presentation && presentation.wrapper !== undefined;
-    const rendererBlock = needsSource && ownerState?.source.state !== "open"
-      ? store.getParagraphColdBlock(blockId) ?? block
-      : block;
     return (
       <ManagedParagraphBlockView
         store={store}
@@ -374,7 +380,7 @@ export const BlockNodeRenderer: React.FC<{
         registry={registry}
         renderNested={renderParagraphChild}
         renderPresentation={(nativeView) => renderNodePresentation(
-          rendererBlock,
+          block,
           nativeView,
           store,
           registry,
