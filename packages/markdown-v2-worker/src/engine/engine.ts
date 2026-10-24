@@ -174,6 +174,7 @@ import {
   pruneLazyTokenizationStates,
   selectNextLazyRequest,
   shouldLazyTokenizeBlock,
+  type LazyTokenizationQueue,
 } from "./lazy-tokenization";
 import {
   WorkerMetricsCollector,
@@ -1170,6 +1171,10 @@ function isCustomDocumentPlugin(plugin: DocumentPlugin): boolean {
 }
 
 
+const LAZY_TOKENIZATION_SLICE_TARGET_MS = 4;
+const DEFAULT_LAZY_TOKENIZATION_SLICE_LINES = 32;
+const MAX_LAZY_TOKENIZATION_SLICE_LINES = 128;
+
 export class MarkdownEngine {
   private readonly postFn: (message: WorkerOut) => void;
   public readonly extensions?: EngineExtensions;
@@ -1258,10 +1263,11 @@ export class MarkdownEngine {
   private readonly incrementalHighlightStates = new Map<string, IncrementalHighlightState>();
 
   private readonly lazyTokenizationStates = new Map<string, LazyTokenizationState>();
-  private readonly lazyTokenizationQueue = new Map<string, LazyTokenizationRequest>();
+  private readonly lazyTokenizationQueue: LazyTokenizationQueue = new Map();
   private lazyTokenizationScheduled = false;
   private lazyTokenizationProcessing = false;
   private lazyTokenizationThresholdLines = DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
+  private lazyTokenizationSliceLines = DEFAULT_LAZY_TOKENIZATION_SLICE_LINES;
   private lazyTokenizationEnabled = true;
   private mdxEnabled = true;
   private loggedMdxSkipCount = 0;
@@ -2128,6 +2134,7 @@ export class MarkdownEngine {
     this.incrementalHighlightStates.clear();
     this.lazyTokenizationStates.clear();
     this.lazyTokenizationQueue.clear();
+    this.lazyTokenizationSliceLines = DEFAULT_LAZY_TOKENIZATION_SLICE_LINES;
     this.lazyTokenizationScheduled = false;
     this.lazyTokenizationProcessing = false;
 
@@ -10519,8 +10526,13 @@ export class MarkdownEngine {
       while (!this.disposed && generation === this.documentGeneration && this.lazyTokenizationQueue.size > 0) {
         const next = selectNextLazyRequest(this.lazyTokenizationQueue);
         if (!next) break;
-        this.lazyTokenizationQueue.delete(next.blockId);
+        const requests = this.lazyTokenizationQueue.get(next.blockId);
+        requests?.delete(next.priority);
+        if (requests?.size === 0) this.lazyTokenizationQueue.delete(next.blockId);
         await this.handleLazyTokenizationRequest(next);
+        if (!this.disposed && generation === this.documentGeneration && this.lazyTokenizationQueue.size > 0) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        }
       }
     } finally {
       if (generation === this.documentGeneration) this.lazyTokenizationProcessing = false;
@@ -10725,10 +10737,11 @@ export class MarkdownEngine {
       state.processedLines = 0;
     }
 
-    const targetEnd = Math.min(endLine, codeLines.length);
-    if (targetEnd <= state.processedLines) {
+    const requestedEndLine = endLine;
+    if (requestedEndLine <= state.processedLines) {
       return;
     }
+    const targetEnd = Math.min(requestedEndLine, state.processedLines + this.lazyTokenizationSliceLines);
 
     const metricsCollector = new WorkerMetricsCollector(this.workerGrammarEngine);
     this.activeMetricsCollector = metricsCollector;
@@ -10816,7 +10829,21 @@ export class MarkdownEngine {
     if (nextDiffCursor) state.diffCursor = nextDiffCursor;
     state.processedLines = targetEnd;
     const tokenizationDuration = now() - tokenizationStart;
-    metricsCollector.recordLazyTokenization(targetEnd - startLine, tokenizationDuration, this.lazyTokenizationQueue.size);
+    this.lazyTokenizationSliceLines = Math.max(
+      1,
+      Math.min(
+        MAX_LAZY_TOKENIZATION_SLICE_LINES,
+        Math.floor((segmentLines.length * LAZY_TOKENIZATION_SLICE_TARGET_MS) / Math.max(tokenizationDuration, 0.1)),
+      ),
+    );
+    metricsCollector.recordLazyTokenization(segmentLines.length, tokenizationDuration, this.lazyTokenizationQueue.size);
+    if (state.processedLines < requestedEndLine) {
+      enqueueLazyTokenization(this.lazyTokenizationQueue, this.lazyTokenizationEnabled, {
+        ...request,
+        startLine: state.processedLines,
+        endLine: requestedEndLine,
+      });
+    }
 
     const updated = cloneBlock(commitTarget.block);
     delete updated.payload.highlightedHtml;
