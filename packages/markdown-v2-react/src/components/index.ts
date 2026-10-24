@@ -46,9 +46,10 @@ import type {
   NodeViewActions,
   NodeViewMetadata,
   NodePresentations,
+  PresentationProps,
   TableElements,
 } from "../types";
-import { renderPresentedNode, resolveNodePresentation, validateNodePresentations } from "../renderer/node-presentations";
+import { mergeNodePresentationProps, renderPresentedNode, resolveNodePresentation, validateNodePresentations } from "../renderer/node-presentations";
 import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext, type ResolvedAnimatedOptions } from "../animation";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
@@ -510,8 +511,8 @@ export const defaultInlineComponents: InlineComponents = {
  * Default block components
  */
 type DefaultBlockComponents = {
-  paragraph: React.FC<{ inlines: InlineNode[]; raw?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
-  heading: React.FC<{ level: 1 | 2 | 3 | 4 | 5 | 6; inlines: InlineNode[]; text?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
+  paragraph: React.FC<{ inlines: InlineNode[]; raw?: string; meta?: Record<string, unknown>; children?: React.ReactNode } & PresentationProps>;
+  heading: React.FC<{ level: 1 | 2 | 3 | 4 | 5 | 6; inlines: InlineNode[]; text?: string; meta?: Record<string, unknown>; children?: React.ReactNode } & PresentationProps>;
   code: React.FC<{
     html?: string;
     meta?: Record<string, unknown>;
@@ -532,15 +533,50 @@ type DefaultBlockComponents = {
   callout: React.FC<{ kind?: string; inlines?: InlineNode[] }>;
 };
 
+function blockPresentationProps(props: object): PresentationProps | undefined {
+  const decoration: Record<string, unknown> = {};
+  for (const [property, value] of Object.entries(props)) {
+    if (
+      property === "className" ||
+      property === "style" ||
+      property === "title" ||
+      property.startsWith("data-") ||
+      property.startsWith("aria-")
+    ) {
+      decoration[property] = value;
+    }
+  }
+  return Object.keys(decoration).length > 0 ? decoration as PresentationProps : undefined;
+}
+
+function applyBlockPresentationProps(
+  nativeView: React.ReactNode,
+  decoration: PresentationProps | undefined,
+): React.ReactNode {
+  if (!decoration) return nativeView;
+  if (Array.isArray(nativeView)) {
+    return nativeView.map((child) => applyBlockPresentationProps(child, decoration));
+  }
+  if (!React.isValidElement(nativeView)) return nativeView;
+  if (nativeView.type === React.Fragment) {
+    const children = React.Children.map(nativeView.props.children, (child) =>
+      applyBlockPresentationProps(child, decoration),
+    );
+    return React.cloneElement(nativeView, undefined, children);
+  }
+  return React.cloneElement(
+    nativeView,
+    mergeNodePresentationProps(nativeView.props as Record<string, unknown>, decoration),
+  );
+}
 const defaultBlockComponents: DefaultBlockComponents = {
-  paragraph: ({ inlines, raw, meta, children }) => {
+  paragraph: (props) => {
+    const { inlines, raw, meta, children } = props;
+    const decoration = blockPresentationProps(props);
     if (children !== undefined) {
-      return React.createElement(
-        "p",
-        {
-          className: "markdown-paragraph",
-        },
-        children,
+      return applyBlockPresentationProps(
+        React.createElement("p", { className: "markdown-paragraph" }, children),
+        decoration,
       );
     }
 
@@ -550,9 +586,12 @@ const defaultBlockComponents: DefaultBlockComponents = {
     if (segments && segments.length > 0) {
       const structured = renderParagraphMixedSegments(segments, defaultInlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
       if (structured.length === 1) {
-        return structured[0];
+        return applyBlockPresentationProps(structured[0], decoration);
       }
-      return React.createElement(React.Fragment, {}, ...structured);
+      return applyBlockPresentationProps(
+        React.createElement(React.Fragment, {}, ...structured),
+        decoration,
+      );
     }
     const filteredInlines = inlines && raw && inlines.length > 0 ? inlines.filter((node) => !(node.kind === "text" && node.text === raw)) : (inlines ?? []);
     const effectiveInlines: InlineNode[] =
@@ -566,16 +605,19 @@ const defaultBlockComponents: DefaultBlockComponents = {
               },
             ] as InlineNode[])
           : [];
-    return React.createElement(
-      "p",
-      {
-        className: "markdown-paragraph",
-      },
-      effectiveInlines.length > 0 ? renderInlineNodes(effectiveInlines, defaultInlineComponents) : (raw ?? ""),
+    return applyBlockPresentationProps(
+      React.createElement(
+        "p",
+        { className: "markdown-paragraph" },
+        effectiveInlines.length > 0 ? renderInlineNodes(effectiveInlines, defaultInlineComponents) : (raw ?? ""),
+      ),
+      decoration,
     );
   },
 
-  heading: ({ level, inlines, text, meta, children }) => {
+  heading: (props) => {
+    const { level, inlines, text, meta, children } = props;
+    const decoration = blockPresentationProps(props);
     const tag = `h${level}` as keyof JSX.IntrinsicElements;
     const onlyPlainText = Array.isArray(inlines) && inlines.length > 0 && inlines.every((node) => node.kind === "text");
     const content =
@@ -585,16 +627,20 @@ const defaultBlockComponents: DefaultBlockComponents = {
           ? inlines.map((node) => (node.kind === "text" ? node.text : "")).join("")
           : renderInlineNodes(inlines, defaultInlineComponents);
     const headingId = typeof meta?.headingId === "string" && meta.headingId.length > 0 ? meta.headingId : undefined;
-    return React.createElement(
-      tag,
-      {
-        className: `markdown-heading markdown-h${level}`,
-        ...(text ? { "data-heading-text": text } : {}),
-        ...(headingId ? { id: headingId, "data-heading-id": headingId } : {}),
-      },
-      content,
+    return applyBlockPresentationProps(
+      React.createElement(
+        tag,
+        {
+          className: `markdown-heading markdown-h${level}`,
+          ...(text ? { "data-heading-text": text } : {}),
+          ...(headingId ? { id: headingId, "data-heading-id": headingId } : {}),
+        },
+        content,
+      ),
+      decoration,
     );
   },
+
 
   code: ({ html, meta, lines, children, lang, preAttrs, codeAttrs }) => {
     const rawLanguage = typeof lang === "string" ? lang : typeof meta?.lang === "string" ? String(meta.lang) : "";

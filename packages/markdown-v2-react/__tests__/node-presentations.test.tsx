@@ -28,6 +28,11 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
   anchorPrototype.click = function () { downloads.push(this.download); };
   const components = {
     heading: {
+      props: {
+        className: "host-heading",
+        title: "heading tooltip",
+        "data-presentation": "heading",
+      },
       wrapper: ({ children, metadata, actions }: NodeViewProps) => {
         presentedActions = actions;
         return <section data-heading-presentation data-finalized={metadata.isFinalized}>{children}</section>;
@@ -54,6 +59,10 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
       await handle.current?.finalize();
     });
     await waitFor(() => container.querySelector("section[data-heading-presentation]"), "finalized heading wrapper");
+    const nativeHeading = container.querySelector("h2[data-presentation='heading']");
+    assert.ok(nativeHeading, "constrained heading props decorate the native h2");
+    assert.equal(nativeHeading.className, "markdown-heading markdown-h2 host-heading");
+    assert.equal(nativeHeading.title, "heading tooltip");
     const streamingPresentation = container.querySelector("section[data-heading-presentation]");
     assert.ok(presentedActions, "the wrapper receives source-bound presentation actions");
     let copySucceeded = false;
@@ -79,6 +88,90 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
     restore();
   }
 }
+
+async function nativeBlockDecorationsReachTheirElements(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const components = {
+    heading: {
+      props: {
+        className: "host-heading",
+        style: { color: "red" },
+        "data-presentation": "heading",
+      },
+    },
+    paragraph: { props: { "data-presentation": "paragraph" } },
+    blockquote: { props: { "data-presentation": "blockquote" } },
+    list: { props: { "data-presentation": "list" } },
+    code: { props: { "data-presentation": "code" } },
+    table: { props: { "data-presentation": "table" } },
+    hr: { props: { "data-presentation": "hr" } },
+  } satisfies NodePresentations;
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: true, math: false }}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready for block decoration");
+    await act(async () => {
+      handle.current?.append([
+        "## Decorated heading",
+        "",
+        "Decorated paragraph.",
+        "",
+        "> Decorated quote.",
+        "",
+        "- Decorated list item.",
+        "",
+        "```text",
+        "decorated code",
+        "```",
+        "",
+        "| Cell |",
+        "| --- |",
+        "| value |",
+        "",
+        "---",
+      ].join("\n"));
+      await handle.current?.finalize();
+    });
+    await waitFor(() => container.querySelector("h2[data-presentation='heading']"), "decorated heading");
+
+    for (const [selector, type] of [
+      ["h2", "heading"],
+      ["p", "paragraph"],
+      ["blockquote", "blockquote"],
+      ["ul", "list"],
+      ["div", "code"],
+      ["table", "table"],
+      ["hr", "hr"],
+    ] as const) {
+      assert.ok(
+        container.querySelector(`${selector}[data-presentation='${type}']`),
+        `${type} presentation props decorate the native ${selector}`,
+      );
+    }
+    const decoratedHeading = container.querySelector("h2[data-presentation='heading']");
+    assert.equal(decoratedHeading?.className, "markdown-heading markdown-h2 host-heading");
+    assert.equal(decoratedHeading?.getAttribute("style"), "color: red;");
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
 
 function runNodePresentationsTest(): void {
   const components = {
@@ -126,4 +219,5 @@ function runNodePresentationsTest(): void {
 runNodePresentationsTest();
 
 await finalizedHeadingPresentationMatchesServerOutput();
+await nativeBlockDecorationsReachTheirElements();
 console.log("Unified node presentation registry checks passed");
