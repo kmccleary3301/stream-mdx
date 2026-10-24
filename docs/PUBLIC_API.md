@@ -90,7 +90,7 @@ export function Example() {
 | `text` | `string` | Static markdown. Mutating it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Append-only stream; provide **either** `text` or `stream`. |
 | `worker` | `WorkerLike` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |
-| `engine` | `"auto" \| "main" \| "worker"` | Default `"auto"`. Selects automatic, main-thread, or dedicated-worker execution. See execution modes below. |
+| `engine` | `"auto" \| "main" \| "worker"` | Default `"auto"`. Selects automatic (`"auto"`; the default), inline (`"main"`), or dedicated-worker (`"worker"`) execution. See execution modes below. |
 | `managedWorker` | `boolean` | Requires a supplied Worker instance or caller-accessible factory. The caller sends `INIT` and document commands; automatic commands are disabled. URL/default workers and internally created main-thread engines are rejected. Factory workers remain component-owned; supplied instances remain caller-owned. |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
 | `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `outputMode`, and `lazyTokenization`. |

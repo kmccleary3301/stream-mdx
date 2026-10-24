@@ -15,7 +15,7 @@ If you’re looking for the consumer API first, start with:
 
 StreamMDX is a streaming-first Markdown/MDX renderer for React built around:
 
-- **Instance-scoped parsing** with worker, main-thread, and automatic execution modes
+- **Instance-scoped parsing** with `worker`, `main`, and `auto` (default) execution modes
 - **Incremental patching** (updates are applied to an existing render)
 - **Backpressure guardrails** (prevents UI lockups on large documents/high update rates)
 - **Modular feature flags** (tables/html/mdx/math/footnotes/callouts)
