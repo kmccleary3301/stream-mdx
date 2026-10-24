@@ -13,7 +13,7 @@ export interface PresentationRenderContext<K extends NodePresentationKey> {
   readonly key: React.Key;
   readonly metadata: NodeViewMetadata;
   readonly actions: NodeViewActions;
-  readonly viewProps?: HeadlessNodeViewProps<K>;
+  readonly viewProps: HeadlessNodeViewProps<K>;
 }
 
 export function renderPresentedNode<K extends NodePresentationKey>(
@@ -35,9 +35,6 @@ export function renderPresentedNode<K extends NodePresentationKey>(
     );
   }
   if ("view" in presentation && presentation.view) {
-    if (!context.viewProps) {
-      throw new TypeError("headless node view props are required to render a presentation view");
-    }
     return React.createElement(presentation.view, {
       ...context.viewProps,
       key: context.key,
@@ -66,16 +63,25 @@ export function renderTablePartPresentation<K extends NativeTablePartPresentatio
   },
 ): React.ReactNode {
   if (!presentation) return nativeView;
+  let prepared = nativeView;
+  if (presentation.props && React.isValidElement<Record<string, unknown>>(prepared)) {
+    prepared = React.cloneElement(
+      prepared,
+      mergeNodePresentationProps(prepared.props, presentation.props),
+    );
+  }
+  if (!presentation.wrapper) return prepared;
   const metadata = Object.freeze({
     id: context.id,
     type: context.type,
     isFinalized: context.isFinalized,
   });
-  return renderPresentedNode(presentation, nativeView, {
+  return React.createElement(presentation.wrapper, {
     key: context.id,
+    children: prepared,
     metadata,
     actions: context.actions,
-  }, true);
+  });
 }
 
 

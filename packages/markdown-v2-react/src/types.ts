@@ -288,7 +288,7 @@ export type NodePresentation<K extends NodePresentationKey = NodePresentationKey
     slots?: NodePresentationSlots<K>;
   }> &
   (
-    K extends "table-row" | "table-cell"
+    [K] extends ["table-row" | "table-cell"]
       ? { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
       :
           | { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
