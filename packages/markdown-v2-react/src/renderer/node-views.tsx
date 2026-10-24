@@ -3,7 +3,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 import { normalizeBlockquoteText, PATCH_ROOT_ID, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { CodeNodeHandle, TableNodeHandle } from "@stream-mdx/core";
-import type { CodeNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
+import type { HeadlessNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
 import {
   TableControlsBar,
   copyToClipboard,
@@ -46,7 +46,7 @@ import { mergeNodePresentationProps } from "./node-presentations";
 const HeadlessNativeCodeView: React.FC<{
   blockId: string;
   handle: CodeNodeHandle;
-  view: React.ComponentType<CodeNodeViewProps>;
+  view: React.ComponentType<HeadlessNodeViewProps<"code">>;
 }> = ({ blockId, handle, view: CodeView }) => {
   const context = React.useMemo(() => ({ blockId, handle }), [blockId, handle]);
   return (

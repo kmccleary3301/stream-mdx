@@ -42,7 +42,6 @@ export type {
   AnimatedAnimationName,
   AnimatedOptions,
   AnimatedProp,
-  CodeNodeViewProps,
   ElementFilterContext,
   ElementFilterDescriptor,
   ElementFilterOptions,
