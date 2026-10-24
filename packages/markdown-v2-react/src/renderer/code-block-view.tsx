@@ -152,6 +152,25 @@ function codeLineSelectionPoint(node: Node, offset: number): {
 } | null {
   const endpoint = node.nodeType === 1 ? node as Element : node.parentElement;
   const line = endpoint?.closest<HTMLElement>(".line[data-line]");
+  if (!line && node.nodeType === 3 && node.parentElement?.tagName === "CODE" && node.textContent === "\n") {
+    if (offset !== 0 && offset !== 1) return null;
+    const previousSibling = node.previousSibling;
+    const previousLine = previousSibling?.nodeType === 1
+      ? (previousSibling as Element).closest<HTMLElement>(".line[data-line]")
+      : null;
+    const nextSibling = node.nextSibling;
+    const nextLine = nextSibling?.nodeType === 1
+      ? (nextSibling as Element).closest<HTMLElement>(".line[data-line]")
+      : null;
+    const selectedLine = offset === 0 ? previousLine : nextLine ?? previousLine;
+    const adjacentLineNumber = Number(selectedLine?.dataset.line);
+    if (!selectedLine || !Number.isSafeInteger(adjacentLineNumber) || adjacentLineNumber < 1) return null;
+    return {
+      line: selectedLine,
+      lineNumber: offset === 1 && !nextLine ? adjacentLineNumber + 1 : adjacentLineNumber,
+      textOffset: offset === 0 ? selectedLine.textContent?.length ?? 0 : 0,
+    };
+  }
   const lineNumber = Number(line?.dataset.line);
   if (!line || !Number.isSafeInteger(lineNumber) || lineNumber < 1) return null;
 

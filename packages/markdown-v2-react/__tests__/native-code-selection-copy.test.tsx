@@ -102,6 +102,23 @@ async function run(): Promise<void> {
     lastRow.dispatchEvent(copyEvent);
     assert.equal(copyEvent.defaultPrevented, true, "native selection copy is handled at the code viewport");
     assert.equal(clipboardText, expectedSelection, "copy preserves the exact selected CRLF source across rows");
+    const thirdRow = container.querySelector<HTMLElement>('.line[data-line="3"]');
+    assert.ok(thirdRow);
+    const newlineNode = thirdRow.nextSibling;
+    assert.ok(newlineNode?.nodeType === window.Node.TEXT_NODE, "line spans have a standalone newline text node between them");
+    const newlineRange = window.document.createRange();
+    newlineRange.setStart(firstText, 0);
+    newlineRange.setEnd(newlineNode, newlineNode.textContent?.length ?? 0);
+    selection.removeAllRanges();
+    selection.addRange(newlineRange);
+    clipboardText = null;
+    const newlineCopyEvent = new window.Event("copy", { bubbles: true, cancelable: true });
+    Object.defineProperty(newlineCopyEvent, "clipboardData", { value: clipboardData });
+    thirdRow.dispatchEvent(newlineCopyEvent);
+    assert.equal(newlineCopyEvent.defaultPrevented, true, "copy handles a selection ending in the newline text node");
+    assert.equal(clipboardText, `${codeLines[1]}\r\n${codeLines[2]}\r\n`,
+      "the selected standalone line break maps to the authored CRLF separator");
+
 
     const downloadButton = container.querySelector<HTMLButtonElement>('button[data-stream-mdx-action="download"]');
     assert.ok(downloadButton);
