@@ -469,6 +469,8 @@ A registered opener uses at least three colons followed by its name. It is recog
 
 `HtmlOptions` is `{ allowedTags?: Record<string, string[]>; literalTagContent?: string[] }`. `allowedTags` adds permitted tags and replaces their tag-specific attribute lists while retaining global schema attributes. URL protocol checks still apply to `href`/`src`/`action`/`formaction`/`xlink:href`; `script`/`style` tags remain excluded. `on*` event handler attributes and `srcdoc` are strictly forbidden and always stripped regardless of `allowedTags`. Raw HTML `style` attributes are sanitized using DOM-free safe property allowlists. Custom allowlists are trusted application policy. `components["html:<tag>"]` decorates permitted tags; headless views receive sanitized attributes and typed children.
 Raw HTML block content is literal by default. Supplying `literalTagContent`, even `[]`, opts into engine-owned inline markdown parsing inside eligible HTML children. `code`, `pre`, and `textarea`, plus listed tags, stay literal. Inline syntax plugins and the engine's math flag apply to opt-in children; mapped components do not reparse strings. HTML must also be enabled via `features.html`.
+Restricted `contentComponents` can be decorated with `props` and wrapped by `components["component:<registrationName>"]`. This key rejects headless `view` entries when the presentation registry is configured because restricted components do not expose the native `NodeHandle` contract; use a rich wrapper when replacing their presentation.
+
 
 ## 3.3) Block Controls (Copy & Download)
 

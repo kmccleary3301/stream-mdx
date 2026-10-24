@@ -1267,7 +1267,17 @@ export class ComponentRegistry {
   ): React.ReactNode {
     const keyName = `component:${name}` as const;
     const presentation = this.getNodePresentation(keyName);
-    if (!presentation || !("wrapper" in presentation) || !presentation.wrapper) return nativeView;
+    if (!presentation) return nativeView;
+    if ("view" in presentation && presentation.view) {
+      throw new TypeError(`node presentation for ${keyName}: headless views are not supported for restricted content components`);
+    }
+    const preparedNativeView = presentation.props
+      ? React.cloneElement(
+          nativeView,
+          mergeNodePresentationProps(nativeView.props as Record<string, unknown>, presentation.props),
+        )
+      : nativeView;
+    if (!("wrapper" in presentation) || !presentation.wrapper) return preparedNativeView;
 
     const source = () => {
       sourceGuard?.();
@@ -1283,7 +1293,7 @@ export class ComponentRegistry {
       copy: () => copyToClipboard(source()),
       download: () => downloadFile(source(), `${name}.txt`),
     });
-    return React.createElement(presentation.wrapper, { key, children: nativeView, metadata, actions });
+    return React.createElement(presentation.wrapper, { key, children: preparedNativeView, metadata, actions });
   }
 
 
