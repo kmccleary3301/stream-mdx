@@ -80,6 +80,13 @@ async function main(): Promise<void> {
     });
     page.on("pageerror", (error) => pageErrors.push(String(error)));
     await page.goto(origin, { waitUntil: "load", timeout: TIMEOUT_MS });
+    await page.evaluate(async () => {
+      const fixture = (window as Window & {
+        __P4_VIEWPORT_SMOKE__?: { start?: () => Promise<void> };
+      }).__P4_VIEWPORT_SMOKE__;
+      if (!fixture?.start) throw new Error("the public fixture cannot append initial source");
+      await fixture.start();
+    });
 
     const table = page.locator('[data-table-virtualized="true"]');
     try {
@@ -102,19 +109,30 @@ async function main(): Promise<void> {
     assert.equal(initialTableWidths.length, 2, "the 10,000-row table exposes both measured columns");
     const initialBodyRows = await table.locator("tbody tr[data-row-id]").count();
     assert.ok(initialBodyRows < 10_000, `the browser mounts a bounded table window, not ${initialBodyRows} rows`);
+    await page.evaluate(async () => {
+      const fixture = (window as Window & {
+        __P4_VIEWPORT_SMOKE__?: { start?: () => Promise<void>; appendLiveTableRow?: () => Promise<void> };
+      }).__P4_VIEWPORT_SMOKE__;
+      if (!fixture?.appendLiveTableRow) throw new Error("the public fixture cannot append a live table row");
+      await fixture.appendLiveTableRow();
+    });
+    await page.waitForFunction(() =>
+      document.querySelector<HTMLElement>('[data-table-virtualized="true"]')?.getAttribute("data-table-total-rows") === "10001",
+    undefined, { timeout: TIMEOUT_MS });
 
     await table.evaluate((element) => {
       const viewport = element as HTMLElement;
       viewport.scrollTop = viewport.scrollHeight;
       viewport.dispatchEvent(new Event("scroll", { bubbles: true }));
     });
-    await page.waitForFunction(() =>
-      document.querySelector<HTMLElement>('[data-table-virtualized="true"]')?.textContent?.includes("Row-9999") ?? false,
-    undefined, { timeout: TIMEOUT_MS });
+    await page.waitForFunction(() => {
+      const viewport = document.querySelector<HTMLElement>('[data-table-virtualized="true"]');
+      return viewport?.textContent?.includes("Row-9999") && viewport.textContent.includes("Live-append-row");
+    }, undefined, { timeout: TIMEOUT_MS });
     const tailTableWidths = await table.locator("col").evaluateAll((columns) =>
       columns.map((column) => getComputedStyle(column).width),
     );
-    assert.deepEqual(tailTableWidths, initialTableWidths, "table column widths remain stable at the tail");
+    assert.deepEqual(tailTableWidths, initialTableWidths, "table column widths remain stable after the live append and tail scroll");
     const tailBodyRows = await table.locator("tbody tr[data-row-id]").count();
     assert.ok(tailBodyRows < 100, `the browser keeps the tail table window bounded (${tailBodyRows} rows)`);
     await table.evaluate((element) => {
@@ -268,7 +286,7 @@ async function main(): Promise<void> {
     assert.deepEqual(consoleErrors, [], "Chromium reports no console errors");
     assert.deepEqual(pageErrors, [], "the public React surface reports no uncaught browser errors");
     console.log(`p4-viewport-browser-smoke: PASS (${Date.now() - startedAt}ms)`);
-    console.log("10,000 table rows and 5,000 code lines scrolled end/back; widths stayed stable; CRLF selection and full-source Blob download matched.");
+    console.log("10,000 table rows plus a live append and 5,000 code lines stayed bounded; widths stayed stable; CRLF selection and full-source Blob download matched.");
   } finally {
     if (browser) await browser.close();
     if (server?.listening) {
