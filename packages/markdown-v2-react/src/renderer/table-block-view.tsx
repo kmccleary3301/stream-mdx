@@ -18,7 +18,7 @@ import type { TableControlsData } from "../components/controls";
 import { useRendererNode } from "./hooks";
 import { subscribeRendererNode } from "./node-subscriptions";
 import type { RendererStore } from "./store";
-import { getStoreResetVersion, type PrivateRendererStore } from "./store-reset-version";
+import { captureNodeSourceGuard, getStoreResetVersion, type PrivateRendererStore } from "./store-reset-version";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
 import { useVirtualizedTable, type IndexedTableRows, type TableVirtualizationRowRange } from "./virtualized-table";
 import { mergeNodePresentationProps, renderTablePartPresentation, type NativeTablePartPresentationKey } from "./node-presentations";
@@ -31,20 +31,15 @@ function renderManagedTablePart<K extends NativeTablePartPresentationKey>(
   registry: ComponentRegistry,
   tableId: string,
   generation: number | undefined,
-  resetVersion: number,
   isFinalized: boolean,
 ): React.ReactNode {
   const presentation = registry.getNodePresentation(key);
   if (!presentation) return nativeView;
+  const sourceGuard = captureNodeSourceGuard(store, id, { tableId, generation });
   const readSource = () => {
+    sourceGuard();
     const current = store.getTableBlock(tableId);
-    if (
-      getStoreResetVersion(store) !== resetVersion ||
-      !current ||
-      current.source.generation !== generation
-    ) {
-      throw new Error("Table content belongs to a replaced or disposed owner");
-    }
+    if (!current) throw new Error("Cannot read source from a stale or removed node");
     return current.sourceSnapshot.materialize();
   };
   const actions: NodeViewActions = Object.freeze({
@@ -533,7 +528,6 @@ const ManagedTableHeaderView: React.FC<{
     registry,
     blockId,
     generation,
-    getStoreResetVersion(store),
     true,
   );
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -649,7 +643,6 @@ const ManagedTableRowRangeView: React.FC<{
         registry,
         blockId,
         generation,
-        getStoreResetVersion(store),
         !row.isProvisional,
       ) as React.ReactElement);
     }
@@ -806,7 +799,6 @@ const ManagedTableCellView: React.FC<{
     registry,
     blockId,
     generation,
-    getStoreResetVersion(store),
     isFinalized,
   );
 });
