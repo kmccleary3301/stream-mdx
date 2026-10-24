@@ -127,8 +127,8 @@ async function runManagedParagraphEngineRendererRegression(): Promise<void> {
     return getColdParagraphBlock(id);
   };
   const componentRegistry = new ComponentRegistry();
-  componentRegistry.setInlineComponents({
-    strong: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children),
+  componentRegistry.setNodePresentations({
+    "inline:strong": { wrapper: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children) },
   });
 
   try {
@@ -408,10 +408,9 @@ async function runManagedParagraphOverrideRegression(): Promise<void> {
     if ("text" in node && typeof node.text === "string") return node.text;
     return "";
   }).join("");
-  const componentRegistry = new ComponentRegistry({
-    strong: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children),
-  });
+  const componentRegistry = new ComponentRegistry();
   componentRegistry.setNodePresentations({
+    "inline:strong": { wrapper: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children) },
     paragraph: {
       wrapper: ({ block, children }) => {
         const inlines = block?.payload.inline ?? [];

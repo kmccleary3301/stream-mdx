@@ -5,7 +5,6 @@ import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot, type Root } from "react-dom/client";
 
-import type { CodeFenceRendererProps } from "../src/components";
 import { MarkdownRenderer } from "../src/renderer";
 import { MarkdownBlocksRenderer } from "../src/renderer/blocks-renderer";
 import { CodeHighlightRequestContext, type CodeHighlightRequest } from "../src/renderer/code-highlight-context";
@@ -112,13 +111,14 @@ async function testInlineWorkerNativeCodeHighlighting(): Promise<void> {
   assert.ok(container, "missing worker-backed test root container");
   let root: Root | null = null;
   try {
-    renderer.setCodeRenderers({
-      ts: (props: CodeFenceRendererProps) => React.createElement(
-        "div",
-        { "data-native-code-renderer": "true", "data-language": props.language },
-        React.createElement("pre", { "data-authored-source": "true" }, props.code),
-        React.createElement("div", { "data-native-code-view": "true" }, props.renderCode),
-      ),
+    renderer.getComponentRegistry().setNodePresentations({
+      code: {
+        wrapper: ({ children, metadata }) => React.createElement(
+          "div",
+          { "data-native-code-renderer": "true", "data-language": metadata.language },
+          React.createElement("div", { "data-native-code-view": "true" }, children),
+        ),
+      },
     });
     root = createRoot(container);
     root.render(
@@ -228,7 +228,6 @@ async function testInlineWorkerNativeCodeHighlighting(): Promise<void> {
     assert.equal(workerError(), null);
 
     assert.equal(container.querySelector("[data-native-code-renderer]")?.getAttribute("data-language"), "ts");
-    assert.equal(container.querySelector("[data-authored-source]")?.textContent, replacementCode);
     const highlightedRows = Array.from(container.querySelectorAll("[data-native-code-view] [data-line]"));
     assert.equal(highlightedRows.length, expectedLineCount, "replacement should render every highlighted source line");
     assert.equal(

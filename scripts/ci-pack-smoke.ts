@@ -106,7 +106,7 @@ function rewriteNextDemoComponent(demoPath: string) {
   const content = `"use client";
 
 import { useMemo, useRef, useState } from "react";
-import { StreamingMarkdown, type RendererMetrics, type StreamingMarkdownHandle } from "stream-mdx";
+import { StreamingMarkdown, type NodeViewProps, type RendererMetrics, type StreamingMarkdownHandle } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 import { createUnifiedRenderer } from "@stream-mdx/unified";
 import remarkGfm from "remark-gfm";
@@ -119,16 +119,29 @@ const unifiedRenderer = createUnifiedRenderer({
   rehypePlugins: [rehypeSlug],
   blockTypes: ["heading", "paragraph", "table"],
 });
+function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "mermaid") return children;
+  const code = block?.payload.meta?.code;
+  return (
+    <MermaidBlock
+      code={typeof code === "string" ? code : ""}
+      renderCode={children}
+      language={metadata.language ?? "mermaid"}
+      blockId={metadata.id}
+      controls={{ copy: true }}
+      copy={actions.copy}
+    />
+  );
+}
+
 
 export default function StreamingDemo() {
   const streamingRef = useRef<StreamingMarkdownHandle>(null);
   const [text, setText] = useState(ARTICLE);
   const [lastMetrics, setLastMetrics] = useState<RendererMetrics | null>(null);
 
-  const codeRenderers = useMemo(
-    () => ({
-      mermaid: MermaidBlock,
-    }),
+  const components = useMemo(
+    () => ({ ...unifiedRenderer, code: { wrapper: MermaidPresentation } }),
     [],
   );
 
@@ -145,8 +158,7 @@ export default function StreamingDemo() {
           ref={streamingRef}
           text={text}
           engine="main-thread"
-          codeRenderers={codeRenderers}
-          components={unifiedRenderer}
+          components={components}
           features={{ math: true, mdx: true, tables: true, html: true }}
           prewarmLangs={["tsx", "python"]}
           onMetrics={(metric) => {
@@ -270,7 +282,7 @@ export default defineConfig({
     `import React from "react";
 import ReactDOM from "react-dom/client";
 import "@stream-mdx/theme-tailwind/theme.css";
-import { StreamingMarkdown } from "stream-mdx";
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 import { createUnifiedRenderer } from "@stream-mdx/unified";
 import remarkGfm from "remark-gfm";
@@ -282,14 +294,30 @@ const unifiedRenderer = createUnifiedRenderer({
   rehypePlugins: [rehypeSlug],
   blockTypes: ["heading", "paragraph", "table"],
 });
+function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "mermaid") return children;
+  const code = block?.payload.meta?.code;
+  return (
+    <MermaidBlock
+      code={typeof code === "string" ? code : ""}
+      renderCode={children}
+      language={metadata.language ?? "mermaid"}
+      blockId={metadata.id}
+      controls={{ copy: true }}
+      copy={actions.copy}
+    />
+  );
+}
+
+const components = { ...unifiedRenderer, code: { wrapper: MermaidPresentation } };
+
 
 function App() {
   return (
     <div style={{ padding: 24 }}>
       <StreamingMarkdown
         engine="main-thread"
-        codeRenderers={{ mermaid: MermaidBlock }}
-        components={unifiedRenderer}
+        components={components}
         text={${JSON.stringify(smokeMarkdown)}}
       />
     </div>

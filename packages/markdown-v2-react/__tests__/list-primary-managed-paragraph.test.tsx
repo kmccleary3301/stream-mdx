@@ -142,8 +142,8 @@ async function runMountedListPrimaryParagraphRegression(): Promise<void> {
   const roots: Root[] = [];
   try {
     const liveRegistry = new ComponentRegistry();
-    liveRegistry.setInlineComponents({
-      strong: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children),
+    liveRegistry.setNodePresentations({
+      "inline:strong": { wrapper: ({ children }) => createElement("strong", { "data-managed-inline": "strong" }, children) },
     });
     const live = await mountNativeList(dom, roots, "- **live**", liveRegistry);
     const listId = rootListId(live.store);

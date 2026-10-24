@@ -428,7 +428,10 @@ try {
 
     const syntax: SyntaxRuleSpec[] = [{ name: "invalid", pattern: { source: "[unclosed(" } }, { name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }];
     root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={`# Recoverable rules\n\n#ABC-123\n\n${replacement}`}
-      features={features} syntax={syntax} inlineComponents={{ ticket: ({ id }: { id?: string }) => <span data-ticket={id}>{id}</span> }} tableVirtualization={true} caret={false} />);
+      features={features} syntax={syntax} components={{ "extension:ticket": { view: ({ node }) => {
+        const id = node.kind === "plugin" ? String(node.attrs?.id ?? "") : "";
+        return <span data-ticket={id}>{id}</span>;
+      } } }} tableVirtualization={true} caret={false} />);
     await waitFor(() => Boolean(container.querySelector('[data-ticket="ABC-123"]')) && Boolean(container.querySelector('[data-table-virtualized="true"]')),
       "recoverable invalid syntax rule does not consume full INIT acknowledgement or prevent finalization");
     assert.ok(handle.current?.getState().blocks.every((block) => block.isFinalized));

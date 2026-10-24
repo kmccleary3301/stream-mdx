@@ -3,7 +3,7 @@ import type { Block, DiffBlock } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { ComponentRegistry, type CodeFenceRendererProps } from "../src/components";
+import { ComponentRegistry } from "../src/components";
 import type { InlineNodeViewProps } from "../src/types";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
@@ -38,70 +38,6 @@ async function setupDom() {
   return window;
 }
 
-// Test 1: codeRenderers precedence and normalization
-async function testCodeRenderersNormalizationAndPrecedence(): Promise<void> {
-  const window = await setupDom();
-  let capturedProps: CodeFenceRendererProps | null = null;
-
-  const CustomPython = (props: CodeFenceRendererProps) => {
-    capturedProps = props;
-    return React.createElement("div", { id: "custom-python", "data-finalized": String(props.isFinalized) }, props.code);
-  };
-
-  const registry = new ComponentRegistry();
-  // Register with mixed case
-  registry.setCodeRenderers({
-    PyThOn: CustomPython,
-  });
-
-  // Block with uppercase language
-  const block: Block = {
-    id: "block-py",
-    type: "code",
-    isFinalized: true,
-    payload: {
-      raw: "```PYTHON\nprint('hello')\n```",
-      meta: { lang: "PYTHON" },
-    },
-  };
-
-  const store = createRendererStore([block]);
-  const container = window.document.getElementById("root");
-  assert.ok(container, "root container missing");
-  const root = createRoot(container);
-  root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-  await sleep(30);
-
-  const customEl = container.querySelector("#custom-python");
-  assert.ok(customEl, "custom renderer should be matched case-insensitively");
-  assert.strictEqual(capturedProps?.isFinalized, true, "isFinalized flag must be passed to code renderer");
-  assert.strictEqual(capturedProps?.code.trim(), "print('hello')", "code must be stripped of fence markers");
-  assert.strictEqual(capturedProps?.language, "PYTHON", "original language string preserved");
-
-  root.unmount();
-
-  // Unknown language falls back to code view
-  const window2 = await setupDom();
-  const unknownBlock: Block = {
-    id: "block-unknown",
-    type: "code",
-    isFinalized: false,
-    payload: {
-      raw: "```rust\nfn main() {}\n```",
-      meta: { lang: "rust" },
-    },
-  };
-  const store2 = createRendererStore([unknownBlock]);
-  const container2 = window2.document.getElementById("root");
-  assert.ok(container2);
-  const root2 = createRoot(container2);
-  root2.render(React.createElement(BlockNodeRenderer, { store: store2, blockId: unknownBlock.id, registry }));
-  await sleep(30);
-
-  assert.strictEqual(container2.querySelector("#custom-python"), null);
-  assert.ok(container2.querySelector("pre"), "unknown language must fall back to standard code view");
-  root2.unmount();
-}
 
 // Test 2: Structured diff renderer rows, line numbers, and token colors
 async function testDiffRendererRowsAndTokens(): Promise<void> {
@@ -212,8 +148,8 @@ async function testDiffRendererRowsAndTokens(): Promise<void> {
 }
 
 
-// Test 4: KaTeX math rendering and custom mathRenderer override
-async function testKaTeXMathAndOverride(): Promise<void> {
+// Test 3: KaTeX math rendering and node presentations
+async function testKaTeXMathPresentations(): Promise<void> {
   const window = await setupDom();
   const container = window.document.getElementById("root");
   assert.ok(container);
@@ -287,20 +223,6 @@ async function testKaTeXMathAndOverride(): Promise<void> {
 
     assert.ok(container.querySelector(".math-display .katex .katex-mathml"), "display math must contain KaTeX MathML");
 
-    const registry = new ComponentRegistry();
-    registry.setMathRenderer({
-      inline: ({ tex }) => React.createElement("span", { id: "mathjax-inline" }, `[MathJax: ${tex}]`),
-      display: ({ tex }) => React.createElement("div", { id: "mathjax-display" }, `[MathJax Display: ${tex}]`),
-    });
-    renderMath(registry);
-    await waitFor(
-      container,
-      () => Boolean(container.querySelector("#mathjax-inline") && container.querySelector("#mathjax-display")),
-      "compiled math must use both registry overrides through the store-backed renderer",
-    );
-    assert.strictEqual(container.querySelector("#mathjax-inline")?.textContent, "[MathJax: E = mc^2]");
-    assert.strictEqual(container.querySelector("#mathjax-display")?.textContent, "[MathJax Display: \\int x dx]");
-    assert.strictEqual(container.querySelector(".katex"), null, "custom math renderers must replace the defaults");
   } finally {
     root.unmount();
   }
@@ -349,8 +271,7 @@ async function testArtifactFencesRemainInertByDefault(): Promise<void> {
   }
 }
 
-await testCodeRenderersNormalizationAndPrecedence();
 await testDiffRendererRowsAndTokens();
-await testKaTeXMathAndOverride();
+await testKaTeXMathPresentations();
 await testArtifactFencesRemainInertByDefault();
 console.log("Code renderers, diff, custom fence, and math tests passed successfully.");

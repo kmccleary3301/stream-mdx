@@ -89,38 +89,6 @@ export interface ControlsComponentProps {
   children?: React.ReactNode;
 }
 
-export interface CodeFenceRendererProps {
-  code: string;
-  language: string;
-  meta?: Record<string, unknown>;
-  info?: string;
-  isFinalized?: boolean;
-  blockId?: string;
-  renderCode: React.ReactNode;
-  /** Host link handler (honors `linkSafety`). Renderers that surface links, such as artifacts, route clicks through it. */
-  openLink?: (url: string) => void;
-  /** Controls configuration exposed to fence renderers (e.g. copy, download flags) */
-  controls?: {
-    copy?: boolean;
-    download?: boolean;
-    fullscreen?: boolean;
-  };
-  /** Helper to copy the fence raw source code to clipboard */
-  copy?: () => Promise<boolean>;
-  /** Helper to download the fence source code snippet */
-  download?: () => void;
-}
-
-export interface CodeFenceRendererConfig {
-  component: React.ComponentType<CodeFenceRendererProps>;
-  defer?: boolean;
-  /** Extra fence languages (case-insensitive) that resolve to this renderer. */
-  aliases?: string[];
-}
-
-export type CodeFenceRenderer =
-  | React.ComponentType<CodeFenceRendererProps>
-  | CodeFenceRendererConfig;
 
 export interface ElementFilterDescriptor {
   tagName: string;
@@ -152,18 +120,6 @@ export interface ElementFilterOptions {
   disableAutolinkProtocols?: string[];
 }
 
-export interface MathRendererProps {
-  tex: string;
-  display?: boolean;
-  className?: string;
-}
-
-export type MathRenderer =
-  | React.ComponentType<MathRendererProps>
-  | {
-      inline?: React.ComponentType<{ tex: string; className?: string }>;
-      display?: React.ComponentType<{ tex: string; className?: string }>;
-    };
 
 export type GenericComponent = React.ComponentType<any>;
 
@@ -366,8 +322,6 @@ export interface RendererConfig extends ElementFilterOptions {
     emitHighlightTokens?: boolean;
     emitDiffBlocks?: boolean;
   };
-  codeRenderers?: Record<string, CodeFenceRenderer>;
-  mathRenderer?: MathRenderer;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
   urlTransform?: (url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined;
@@ -410,9 +364,6 @@ export interface Renderer {
   finalize(): Promise<FinalizeResult>;
   renderStatic(text: string): Promise<Block[]>;
   onUpdate(cb: (blocks: ReadonlyArray<Block>) => void): () => void;
-  setInlineComponents(map: Partial<InlineComponents>): void;
-  setCodeRenderers(map: Record<string, CodeFenceRenderer>): void;
-  setMathRenderer(renderer: MathRenderer): void;
   setTableVirtualization(options: TableVirtualizationOptions): void;
   getComponentRegistry(): ComponentRegistry;
   getStore(): RendererStore;

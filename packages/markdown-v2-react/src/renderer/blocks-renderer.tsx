@@ -3,8 +3,8 @@ import React, { useMemo, useRef } from "react";
 
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
-import type { AnimatedProp, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, ElementFilterOptions, NodePresentations } from "../types";
 import type { ContentComponentsMap } from "../components/content-components";
+import type { AnimatedProp, ControlsComponentProps, ControlsConfig, ElementFilterOptions, NodePresentations } from "../types";
 import { RenderConfigVersionContext, useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
 import { createRendererStore, type RendererStore } from "./store";
@@ -15,7 +15,6 @@ import { createRendererStore, type RendererStore } from "./store";
 export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
   blocks: ReadonlyArray<Block>;
   componentRegistry?: ComponentRegistry;
-  codeRenderers?: Record<string, CodeFenceRenderer>;
   className?: string;
   style?: React.CSSProperties;
   store?: RendererStore;
@@ -43,7 +42,6 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
   ({
     blocks,
     componentRegistry,
-    codeRenderers,
     components,
     urlTransform,
     allowedElements,
@@ -66,9 +64,6 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     const { registry: resolvedRegistry, version: renderConfigVersion } = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
       const previous = applied.current;
-      if (codeRenderers) {
-        reg.setCodeRenderers(codeRenderers);
-      }
       if (components !== undefined || previous.components !== undefined) {
         reg.setNodePresentations(components);
       }
@@ -112,7 +107,6 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       return { registry: reg, version };
     }, [
       componentRegistry,
-      codeRenderers,
       components,
       urlTransform,
       allowedElements,

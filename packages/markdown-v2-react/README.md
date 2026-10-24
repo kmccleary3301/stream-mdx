@@ -55,7 +55,18 @@ export function Demo({ text }: { text: string }) {
 
 `engine` defaults to `"auto"`. It tries a browser Worker and dynamically imports the in-process engine only when Worker creation is unavailable or fails. `"worker"` requires a Worker; `"main-thread"` skips the Worker and runs parsing on the browser thread. Engine setup runs after mounting, not during SSR. Use compiled snapshots and the server entry for server markup.
 
-`mathRenderer` replaces math views; `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.
+### Rendering customization
+
+`components` replaces the removed renderer maps:
+
+- `inlineComponents` → `components["inline:<kind>"]` or `components["extension:<name>"]`
+- `htmlElements` → `components["html:<tag>"]`
+- `tableElements` → `components.table` wrappers or headless table views with `useTableBlock` / `useTableRows`
+- `codeRenderers` → `components.code` wrappers or headless code views; wrappers receive `metadata.language`, and `slots.actions` replaces native code actions
+- `mathRenderer` → `components["inline:math"]` for inline and display math
+- `mdxComponents` → restricted `contentComponents` registrations, or trusted `contentPolicy="trusted-mdx"` with `engines.mdx`
+
+`features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, restricted/trusted MDX, inert artifact fences, and optional finalized-block unified routing.
 
 ## Typical Uses
 

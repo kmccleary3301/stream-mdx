@@ -4,10 +4,11 @@ import assert from "node:assert";
 import React from "react";
 import { JSDOM } from "jsdom";
 import { createRoot } from "react-dom/client";
-import type { SyntaxRuleSpec } from "@stream-mdx/core";
+import type { InlineNode, SyntaxRuleSpec } from "@stream-mdx/core";
 import { MarkdownEngine } from "@stream-mdx/worker/engine";
 import { StreamingMarkdown } from "../src/streaming-markdown";
 
+import type { HtmlNodeViewProps, InlineNodeViewProps } from "../src/types";
 async function setupDom(): Promise<Window & typeof globalThis> {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     pretendToBeVisual: true,
@@ -22,6 +23,9 @@ async function setupDom(): Promise<Window & typeof globalThis> {
   (globalThis as unknown as Record<string, unknown>).cancelAnimationFrame = window.cancelAnimationFrame.bind(window);
   return window as unknown as Window & typeof globalThis;
 }
+const getTicketId = (node: InlineNode): string => node.kind === "plugin" ? String(node.attrs?.id ?? "") : "";
+const mappedKbdView = ({ properties, children }: HtmlNodeViewProps) =>
+  React.createElement("kbd", { ...properties, className: "mapped-kbd", "data-mapped": "true" } as React.HTMLAttributes<HTMLElement>, children);
 
 /**
  * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
@@ -109,11 +113,10 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
     attrs: { id: 1 },
   };
 
-  const TicketComponent = ({ id }: { id?: string }) => (
-    <span className="custom-ticket" data-ticket-id={id}>
-      Ticket: {id}
-    </span>
-  );
+  const TicketComponent = ({ node }: InlineNodeViewProps) => {
+    const id = getTicketId(node);
+    return <span className="custom-ticket" data-ticket-id={id}>Ticket: {id}</span>;
+  };
 
   // 1. Static render
   const root = createRoot(container!);
@@ -122,7 +125,7 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
       engine="main-thread"
       text="See issue #ABC-123 for details."
       syntax={[ticketRule]}
-      inlineComponents={{ ticket: TicketComponent }}
+      components={{ "extension:ticket": { view: TicketComponent } }}
     />,
   );
 
@@ -153,7 +156,7 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
       engine="main-thread"
       stream={generateOneCharChunks()}
       syntax={[ticketRule]}
-      inlineComponents={{ ticket: TicketComponent }}
+      components={{ "extension:ticket": { view: TicketComponent } }}
     />,
   );
 
@@ -184,11 +187,10 @@ async function testSyntaxRuleNestedInBold(): Promise<void> {
     attrs: { id: 1 },
   };
 
-  const TicketComponent = ({ id }: { id?: string }) => (
-    <span className="nested-ticket" data-id={id}>
-      [{id}]
-    </span>
-  );
+  const TicketComponent = ({ node }: InlineNodeViewProps) => {
+    const id = getTicketId(node);
+    return <span className="nested-ticket" data-id={id}>[{id}]</span>;
+  };
 
   const root = createRoot(container!);
   root.render(
@@ -196,7 +198,7 @@ async function testSyntaxRuleNestedInBold(): Promise<void> {
       engine="main-thread"
       text="This is **bold #ABC-1** text."
       syntax={[ticketRule]}
-      inlineComponents={{ ticket: TicketComponent }}
+      components={{ "extension:ticket": { view: TicketComponent } }}
     />,
   );
 
@@ -215,13 +217,8 @@ async function testAllowedTagsAndHtmlElements(): Promise<void> {
   const container = window.document.getElementById("root");
   assert.ok(container, "missing render root");
 
-  const KbdComponent = (props: React.HTMLAttributes<HTMLElement>) => (
-    <kbd className="mapped-kbd" data-mapped="true" {...props}>
-      {props.children}
-    </kbd>
-  );
-
   const root = createRoot(container!);
+
   root.render(
     <StreamingMarkdown
       engine="main-thread"
@@ -231,9 +228,7 @@ async function testAllowedTagsAndHtmlElements(): Promise<void> {
           kbd: ["data-x"],
         },
       }}
-      htmlElements={{
-        kbd: KbdComponent,
-      }}
+      components={{ "html:kbd": { view: mappedKbdView } }}
     />,
   );
 
@@ -246,7 +241,7 @@ async function testAllowedTagsAndHtmlElements(): Promise<void> {
   assert.strictEqual(kbd.getAttribute("data-x"), "1", "data-x attribute must be preserved");
   assert.strictEqual(kbd.getAttribute("bad"), null, "unlisted 'bad' attribute must be stripped");
   assert.strictEqual(kbd.getAttribute("data-unlisted"), null, "unlisted 'data-unlisted' attribute must be stripped");
-  assert.strictEqual(kbd.getAttribute("data-mapped"), "true", "must map to htmlElements.kbd");
+  assert.strictEqual(kbd.getAttribute("data-mapped"), "true", "the html:kbd presentation is applied");
   root.unmount();
 }
 async function testNestedSyntaxRuleWithCaptureAndCursorOffset(): Promise<void> {
@@ -267,15 +262,12 @@ async function testNestedSyntaxRuleWithCaptureAndCursorOffset(): Promise<void> {
     },
   ];
 
-  const ContainerComp = ({ children }: { children?: React.ReactNode }) => (
-    <span className="custom-container">{children}</span>
-  );
+  const ContainerComp = ({ children }: { children?: React.ReactNode }) => <span className="custom-container">{children}</span>;
 
-  const TicketComp = ({ attrs }: { attrs?: Record<string, string | number> }) => (
-    <span className="custom-ticket" data-ticket-id={String(attrs?.id ?? "")}>
-      {String(attrs?.id ?? "")}
-    </span>
-  );
+  const TicketComp = ({ node }: InlineNodeViewProps) => {
+    const id = getTicketId(node);
+    return <span className="custom-ticket" data-ticket-id={id}>{id}</span>;
+  };
 
   const root = createRoot(container!);
   root.render(
@@ -283,9 +275,9 @@ async function testNestedSyntaxRuleWithCaptureAndCursorOffset(): Promise<void> {
       engine="main-thread"
       text="Check [[contained issue #XYZ-99]] here."
       syntax={syntax}
-      inlineComponents={{
-        containerBox: ContainerComp,
-        ticket: TicketComp,
+      components={{
+        "extension:containerBox": { wrapper: ContainerComp },
+        "extension:ticket": { view: TicketComp },
       }}
     />,
   );
@@ -318,11 +310,10 @@ async function testHeadingRendersPluginNodes(): Promise<void> {
     },
   ];
 
-  const TicketComp = ({ attrs }: { attrs?: Record<string, string | number> }) => (
-    <span className="custom-ticket" data-ticket-id={String(attrs?.id ?? "")}>
-      {String(attrs?.id ?? "")}
-    </span>
-  );
+  const TicketComp = ({ node }: InlineNodeViewProps) => {
+    const id = getTicketId(node);
+    return <span className="custom-ticket" data-ticket-id={id}>{id}</span>;
+  };
 
   const root = createRoot(container!);
   root.render(
@@ -330,9 +321,7 @@ async function testHeadingRendersPluginNodes(): Promise<void> {
       engine="main-thread"
       text="# Issue #ABC-123 Tracker"
       syntax={syntax}
-      inlineComponents={{
-        ticket: TicketComp,
-      }}
+      components={{ "extension:ticket": { view: TicketComp } }}
     />,
   );
 
@@ -362,12 +351,14 @@ async function testHtmlChildrenPreservedInMapping(): Promise<void> {
           strong: [],
         },
       }}
-      htmlElements={{
-        span: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-          <span className={`custom-span ${className ?? ""}`.trim()} {...props}>
-            {children}
-          </span>
-        ),
+      components={{
+        "html:span": {
+          view: ({ properties, children }) => React.createElement(
+            "span",
+            { ...properties, className: `custom-span ${String(properties.className ?? "")}`.trim() } as React.HTMLAttributes<HTMLElement>,
+            children,
+          ),
+        },
       }}
     />,
   );
@@ -433,12 +424,14 @@ async function testBlockHtmlAllowedTagsAndAttributes(): Promise<void> {
           kbd: ["hotkey"],
         },
       }}
-      htmlElements={{
-        kbd: (props: React.HTMLAttributes<HTMLElement>) => (
-          <kbd className="mapped-block-kbd" {...props}>
-            {props.children}
-          </kbd>
-        ),
+      components={{
+        "html:kbd": {
+          view: ({ properties, children }) => React.createElement(
+            "kbd",
+            { ...properties, className: "mapped-block-kbd" } as React.HTMLAttributes<HTMLElement>,
+            children,
+          ),
+        },
       }}
     />,
   );
@@ -612,12 +605,13 @@ async function testDynamicPropUpdatesReInits(): Promise<void> {
       engine="main-thread"
       text="Ticket #DEF-456 active"
       syntax={syntax}
-      inlineComponents={{
-        ticket: ({ attrs }: { attrs?: Record<string, string | number> }) => (
-          <span className="dynamic-ticket" data-id={String(attrs?.id ?? "")}>
-            {String(attrs?.id ?? "")}
-          </span>
-        ),
+      components={{
+        "extension:ticket": {
+          view: ({ node }) => {
+            const id = getTicketId(node);
+            return <span className="dynamic-ticket" data-id={id}>{id}</span>;
+          },
+        },
       }}
     />,
   );

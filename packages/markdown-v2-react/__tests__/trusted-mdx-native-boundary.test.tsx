@@ -7,7 +7,7 @@ import { projectTrustedMdxServerDocument } from "../src/trusted-mdx/server";
 import { TrustedMdxNativeChildrenSlot } from "@stream-mdx/react/_internal/trusted-mdx-native-children";
 import type { TrustedMdxEngine } from "../src/trusted-mdx-contract";
 import { StreamingMarkdown, type StreamingMarkdownHandle } from "../src/streaming-markdown";
-import type { CodeFenceRendererProps } from "../src/types";
+import type { NodeViewProps } from "../src/types";
 import {
   RetainedFrameRenderFailureContext,
   TrustedDocumentProjection,
@@ -15,7 +15,6 @@ import {
   features,
   installTrustedNativeTestDom,
   makeEngine,
-  nativeTableElements,
   trustedOwners,
   waitFor,
   workerFactory,
@@ -98,6 +97,12 @@ function wholeDocumentSource(value: string): string {
   ].join("\n");
 }
 
+const nativeTableComponents = {
+  table: {
+    wrapper: ({ children }: NodeViewProps) => <div data-native-table-wrapper="true">{children}</div>,
+  },
+};
+
 async function testActualWholeDocumentProjectionAndIndependentConsumers(): Promise<void> {
   const Card: React.FC<{ value?: string; title?: string; children?: React.ReactNode }> = ({ value, title, children }) => {
     if (value === "boom") throw new Error("candidate render failed");
@@ -129,7 +134,7 @@ async function testActualWholeDocumentProjectionAndIndependentConsumers(): Promi
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            tableElements={nativeTableElements}
+            components={nativeTableComponents}
             text={source}
             caret={false}
           />
@@ -143,7 +148,7 @@ async function testActualWholeDocumentProjectionAndIndependentConsumers(): Promi
           contentPolicy="trusted-mdx"
           engines={{ mdx: engine }}
           features={features}
-          tableElements={nativeTableElements}
+          components={nativeTableComponents}
           text={source}
           caret={false}
         />,
@@ -342,15 +347,15 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
   let candidateBlocks: readonly Block[] = [];
   const tokenizeRangeRequests: string[] = [];
   let renderedCodeTokenizedUntil: number | null = null;
-  const captureCodeMetadata: React.FC<CodeFenceRendererProps> = ({ code, meta, renderCode }) => {
-    if (code.includes(codeLines[0])) {
-      renderedCodeTokenizedUntil = typeof meta?.lazyTokenizedUntil === "number"
-        ? meta.lazyTokenizedUntil
-        : null;
+  const captureCodeMetadata: React.FC<NodeViewProps> = ({ block, children }) => {
+    const code = block?.payload.meta?.code;
+    const tokenizedUntil = block?.payload.meta?.lazyTokenizedUntil;
+    if (typeof code === "string" && code.includes(codeLines[0])) {
+      renderedCodeTokenizedUntil = typeof tokenizedUntil === "number" ? tokenizedUntil : null;
     }
-    return <>{renderCode}</>;
+    return <>{children}</>;
   };
-  const codeRenderers = { js: captureCodeMetadata };
+  const codePresentations = { code: { wrapper: captureCodeMetadata } };
   // Live enrichment must arrive after the good revision commits, so hold range requests until then.
   const tokenizeGate = deferred<void>();
   const workerWithTrace = () => workerFactory((blockId) => {
@@ -371,7 +376,7 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            codeRenderers={codeRenderers}
+            components={codePresentations}
             text={source}
             caret={false}
           />
@@ -414,7 +419,7 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            codeRenderers={codeRenderers}
+            components={codePresentations}
             text={candidateSource}
             caret={false}
           />
@@ -503,7 +508,7 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            codeRenderers={codeRenderers}
+            components={codePresentations}
             text={candidateSource}
             caret={false}
           />
@@ -536,7 +541,7 @@ async function testCompleteTextReplacementFailureAndSameLeaseRollback(): Promise
             contentPolicy="trusted-mdx"
             engines={{ mdx: engine }}
             features={features}
-            codeRenderers={codeRenderers}
+            components={codePresentations}
             text={validReplacementSource}
             caret={false}
           />

@@ -53,7 +53,7 @@ async function runTests() {
     }),
   });
 
-  const registry = new ComponentRegistry({}, {}, {
+  const registry = new ComponentRegistry({
     contentComponents: registrations,
   });
 

@@ -355,7 +355,7 @@ export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): Uni
   const inflightJobs = new Map<string, UnifiedJob>();
   const processor = buildProcessor(options);
   const registry = Object.keys(options.components ?? {}).length > 0
-    ? new ComponentRegistry({}, {}, { components: options.components })
+    ? new ComponentRegistry({ components: options.components })
     : null;
   const routedTypeMap: Record<string, true> = options.blockTypes
     ? Object.fromEntries(options.blockTypes.map((type) => [type, true]))

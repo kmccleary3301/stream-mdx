@@ -14,7 +14,7 @@ export {
   type RenderInlineAnimationContext,
 } from "../animation";
 export { defaultUrlTransform, type UrlTransform, type UrlTransformContext } from "@stream-mdx/core";
-import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, normalizeLang, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
+import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
 import type { UrlTransform } from "@stream-mdx/core";
 import type { ContentComponentsMap } from "./content-components";
 import type {
@@ -34,9 +34,6 @@ import type {
   AnimatedProp,
   GenericComponent,
 
-  CodeFenceRenderer,
-  CodeFenceRendererConfig,
-  CodeFenceRendererProps,
   CodeNodeViewProps,
   ControlsComponentProps,
   ControlsConfig,
@@ -46,14 +43,12 @@ import type {
   HtmlElements,
   InlineComponents,
   InlineHtmlRendererMap,
-  MathRenderer,
   NodeViewActions,
   NodeViewMetadata,
   NodePresentations,
   TableElements,
 } from "../types";
 import { renderPresentedNode, resolveNodePresentation, validateNodePresentations } from "../renderer/node-presentations";
-export type { CodeFenceRendererConfig, CodeFenceRendererProps };
 import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext, type ResolvedAnimatedOptions } from "../animation";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
@@ -106,11 +101,11 @@ export function renderInlineNodes(
           nodeKeyPrefix: animationContext.nodeKeyPrefix ? `${animationContext.nodeKeyPrefix}:${key}` : key,
         }
       : animationContext;
-    const presentInline = (nativeView: React.ReactNode) => {
+    const presentInline = (nativeView: React.ReactNode, renderedChildren?: React.ReactNode) => {
       if (!registry) {
         return nativeView;
       }
-      return registry.renderInlinePresentation(node, nativeView, key, itemChildContext);
+      return registry.renderInlinePresentation(node, nativeView, key, itemChildContext, renderedChildren);
     };
 
     switch (node.kind) {
@@ -326,10 +321,11 @@ export function renderInlineNodes(
       }
       case "plugin": {
         const pluginComponent = components[node.name] ?? components.plugin;
+        const hasExtensionPresentation = registry?.getNodePresentation(`extension:${node.name}`) !== undefined;
+        const pluginChildren = node.children && (pluginComponent || hasExtensionPresentation)
+          ? renderInlineNodes(node.children, components, urlTransform, registry, parentTagName, itemChildContext)
+          : undefined;
         if (pluginComponent) {
-          const pluginChildren = node.children
-            ? renderInlineNodes(node.children, components, urlTransform, registry, parentTagName, itemChildContext)
-            : undefined;
           return presentInline(React.createElement(pluginComponent, {
             key,
             ...node.attrs,
@@ -337,7 +333,10 @@ export function renderInlineNodes(
             attrs: node.attrs,
             children: pluginChildren,
             raw: node.raw,
-          }));
+          }), pluginChildren);
+        }
+        if (hasExtensionPresentation) {
+          return presentInline(React.createElement(React.Fragment, { key }, pluginChildren ?? node.raw), pluginChildren);
         }
         return presentInline(React.createElement(React.Fragment, { key }, node.raw));
       }
@@ -853,9 +852,7 @@ export class ComponentRegistry {
   private defaultHtmlInlineRenderer: InlineComponents["html"] | undefined;
   private tableElements: TableElements;
   private literalTagContent?: string[];
-  private codeRenderers: Record<string, CodeFenceRenderer> = {};
   private contentComponents?: ContentComponentsMap;
-  private linkHandler: ((url: string) => void) | undefined;
   private tableVirtualization: TableVirtualizationConfig = DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
   private tableVirtualizationListeners = new Set<() => void>();
   private codeVirtualization: VirtualizedCodeConfig = DEFAULT_VIRTUALIZED_CODE_CONFIG;
@@ -874,22 +871,17 @@ export class ComponentRegistry {
   private disableAutolinkProtocols?: ReadonlySet<string>;
   private hasFilterConfig = false;
 
-  constructor(
-    inlineComponents: Partial<InlineComponents> = {},
-    codeRenderers: Record<string, CodeFenceRenderer> = {},
-    options?: {
-      mathRenderer?: MathRenderer;
-      tableVirtualization?: TableVirtualizationOptions;
-      codeVirtualization?: Partial<VirtualizedCodeConfig>;
-      urlTransform?: UrlTransform;
-      controls?: ControlsConfig;
-      controlsComponent?: React.ComponentType<ControlsComponentProps>;
-      animated?: AnimatedProp;
-      contentComponents?: ContentComponentsMap;
-      components?: NodePresentations;
-    } & ElementFilterOptions,
-  ) {
-    this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
+  constructor(options?: {
+    tableVirtualization?: TableVirtualizationOptions;
+    codeVirtualization?: Partial<VirtualizedCodeConfig>;
+    urlTransform?: UrlTransform;
+    controls?: ControlsConfig;
+    controlsComponent?: React.ComponentType<ControlsComponentProps>;
+    animated?: AnimatedProp;
+    contentComponents?: ContentComponentsMap;
+    components?: NodePresentations;
+  } & ElementFilterOptions) {
+    this.inlineComponents = { ...defaultInlineComponents };
     this.htmlElements = getDefaultHtmlElements();
     if (options?.urlTransform) {
       this.urlTransform = options.urlTransform;
@@ -901,17 +893,9 @@ export class ComponentRegistry {
       node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string },
     ) => renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue, this.urlTransform);
     this.defaultHtmlInlineRenderer = defaultHtmlInlineRenderer;
-    if (!inlineComponents.html) {
-      this.inlineComponents.html = defaultHtmlInlineRenderer;
-    }
+    this.inlineComponents.html = defaultHtmlInlineRenderer;
     this.tableElements = getDefaultTableElements();
     this.setNodePresentations(options?.components);
-    if (codeRenderers) {
-      this.setCodeRenderers(codeRenderers);
-    }
-    if (options?.mathRenderer) {
-      this.setMathRenderer(options.mathRenderer);
-    }
     if (options?.tableVirtualization !== undefined) {
       this.setTableVirtualization(options.tableVirtualization);
     }
@@ -930,6 +914,13 @@ export class ComponentRegistry {
     if (options) {
       this.setElementFilters(options);
     }
+  }
+  setLinkSafetyRenderer(renderer?: InlineComponents["link"]): void {
+    this.inlineComponents = {
+      ...this.inlineComponents,
+      link: renderer ?? defaultInlineComponents.link,
+    } as InlineComponents;
+    this.inlineComponentMapCache = null;
   }
 
   hasElementFilters(): boolean {
@@ -1004,24 +995,8 @@ export class ComponentRegistry {
     return null;
   }
 
-  setCodeRenderers(renderers: Record<string, CodeFenceRenderer>): void {
-    const next: Record<string, CodeFenceRenderer> = { ...this.codeRenderers };
-    for (const [lang, renderer] of Object.entries(renderers)) {
-      next[lang.trim().toLowerCase()] = renderer;
-      if (typeof renderer === "object" && renderer.aliases) {
-        for (const alias of renderer.aliases) {
-          next[alias.trim().toLowerCase()] = renderer;
-        }
-      }
-    }
-    this.codeRenderers = next;
-  }
 
 
-  /** Link handler handed to code fence renderers as `openLink` (StreamingMarkdown installs its `linkSafety`-aware handler). */
-  setLinkHandler(handler: ((url: string) => void) | undefined): void {
-    this.linkHandler = handler;
-  }
   setUrlTransform(transform?: UrlTransform): void {
     this.urlTransform = transform;
   }
@@ -1087,49 +1062,11 @@ export class ComponentRegistry {
     return this.urlTransform;
   }
 
-  getLinkHandler(): ((url: string) => void) | undefined {
-    return this.linkHandler;
-  }
 
   releaseFinalizedBlockAnimations(blockId: string): void {
     this.animationTimeline?.releasePrefix(blockId);
   }
 
-  setMathRenderer(mathRenderer: MathRenderer): void {
-    if (typeof mathRenderer === "function") {
-      this.inlineComponents = {
-        ...this.inlineComponents,
-        "math-inline": ({ tex }: { tex: string }) => React.createElement(mathRenderer, { tex, display: false }),
-        "math-display": ({ tex }: { tex: string }) => React.createElement(mathRenderer, { tex, display: true }),
-      } as InlineComponents;
-    } else if (mathRenderer && typeof mathRenderer === "object") {
-      const inlineComp = mathRenderer.inline;
-      const displayComp = mathRenderer.display;
-      this.inlineComponents = {
-        ...this.inlineComponents,
-        ...(inlineComp ? { "math-inline": ({ tex }: { tex: string }) => React.createElement(inlineComp, { tex }) } : {}),
-        ...(displayComp ? { "math-display": ({ tex }: { tex: string }) => React.createElement(displayComp, { tex }) } : {}),
-      } as InlineComponents;
-    }
-    this.inlineComponentMapCache = null;
-  }
-
-  getCodeRenderer(language: string): CodeFenceRenderer | undefined {
-    const normalized = (language ?? "").trim().toLowerCase();
-    if (Object.prototype.hasOwnProperty.call(this.codeRenderers, normalized)) {
-      return this.codeRenderers[normalized];
-    }
-    // Authored `js` still reaches a renderer registered as `javascript`.
-    const canonical = normalizeLang(normalized);
-    if (canonical !== normalized && Object.prototype.hasOwnProperty.call(this.codeRenderers, canonical)) {
-      return this.codeRenderers[canonical];
-    }
-    return undefined;
-  }
-
-  getCodeRendererMap(): Record<string, CodeFenceRenderer> {
-    return { ...this.codeRenderers };
-  }
 
   setNodePresentations(presentations?: NodePresentations): void {
     validateNodePresentations(presentations);
@@ -1152,6 +1089,7 @@ export class ComponentRegistry {
     nativeView: React.ReactNode,
     key: React.Key,
     context?: RenderInlineAnimationContext,
+    renderedChildren?: React.ReactNode,
   ): React.ReactNode {
     const keyName = (
       node.kind === "plugin"
@@ -1162,6 +1100,11 @@ export class ComponentRegistry {
     ) as `inline:${string}` | `extension:${string}`;
     const presentation = this.getNodePresentation(keyName);
     if (!presentation) return nativeView;
+    const hasPluginComponent = node.kind === "plugin" &&
+      (this.inlineComponents[node.name] !== undefined || this.inlineComponents.plugin !== undefined);
+    const preparedNativeView = node.kind === "plugin" && !hasPluginComponent && renderedChildren !== undefined
+      ? React.createElement(React.Fragment, { key }, renderedChildren)
+      : nativeView;
     let presentedNode = node;
     if ("view" in presentation && presentation.view) {
       const transform = this.urlTransform ?? defaultUrlTransform;
@@ -1189,10 +1132,10 @@ export class ComponentRegistry {
     });
     const children = node.kind === "math-inline" || node.kind === "math-display"
       ? nativeView
-      : React.isValidElement<{ children?: React.ReactNode }>(nativeView)
-        ? nativeView.props.children
-        : undefined;
-    return renderPresentedNode<`inline:${string}` | `extension:${string}`>(presentation, nativeView, {
+      : renderedChildren ?? (React.isValidElement<{ children?: React.ReactNode }>(preparedNativeView)
+        ? preparedNativeView.props.children
+        : undefined);
+    return renderPresentedNode<`inline:${string}` | `extension:${string}`>(presentation, preparedNativeView, {
       key,
       metadata,
       actions,
@@ -1237,18 +1180,6 @@ export class ComponentRegistry {
   }
 
 
-  /**
-   * Update inline components
-   */
-  setInlineComponents(components: Partial<InlineComponents>): void {
-    this.inlineComponents = { ...this.inlineComponents, ...components } as InlineComponents;
-    this.inlineComponentMapCache = null;
-  }
-
-  /** Update HTML element mapping for html blocks */
-  setHtmlElements(map: Partial<HtmlElements>): void {
-    this.htmlElements = { ...this.htmlElements, ...map } as HtmlElements;
-  }
 
   /** Get HTML element mapping */
   getHtmlElements(): HtmlElements {
@@ -1265,19 +1196,6 @@ export class ComponentRegistry {
     return this.literalTagContent;
   }
 
-  /** Update table element mapping for table blocks */
-  setTableElements(map: Partial<TableElements>): void {
-    if (
-      (map.Table === undefined || map.Table === this.tableElements.Table) &&
-      (map.Thead === undefined || map.Thead === this.tableElements.Thead) &&
-      (map.Tbody === undefined || map.Tbody === this.tableElements.Tbody) &&
-      (map.Tr === undefined || map.Tr === this.tableElements.Tr) &&
-      (map.Th === undefined || map.Th === this.tableElements.Th) &&
-      (map.Td === undefined || map.Td === this.tableElements.Td)
-    ) return;
-    this.tableElements = { ...this.tableElements, ...map } as TableElements;
-    this.setTableVirtualization(this.tableVirtualization);
-  }
   setControls(controls?: ControlsConfig): void {
     this.controls = controls ?? false;
   }
@@ -1352,8 +1270,8 @@ export class ComponentRegistry {
       renderBlock,
       renderInline: (nodes, parentTagName) =>
         renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName, renderContext),
-      renderInlinePresentation: (node, nativeView, key) =>
-        this.renderInlinePresentation(node, nativeView, key, renderContext),
+      renderInlinePresentation: (node, nativeView, key, children) =>
+        this.renderInlinePresentation(node, nativeView, key, renderContext, children),
       renderHtmlPresentation: (tagName, properties, nativeView, children, key) =>
         this.renderHtmlPresentation(
           tagName,
@@ -1382,12 +1300,6 @@ export class ComponentRegistry {
   }
 
 
-  getInlineComponentMap(): InlineComponents {
-    if (!this.inlineComponentMapCache) {
-      this.inlineComponentMapCache = { ...this.inlineComponents } as InlineComponents;
-    }
-    return this.inlineComponentMapCache;
-  }
 
   getTableElements(): TableElements {
     return this.tableElements;
@@ -1477,56 +1389,19 @@ export class ComponentRegistry {
       if (block.type === "code") {
         const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
         const lang = typeof meta.lang === "string" ? String(meta.lang) : "";
-        const normalizedLang = lang.trim().toLowerCase();
-        const codeRenderer = this.getCodeRenderer(normalizedLang);
         const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
         const metaCode = typeof meta.code === "string" ? (meta.code as string) : null;
         const normalizedRaw = raw.replace(/\r\n?/g, "\n");
         const fenced = stripCodeFence(block.isFinalized ? normalizedRaw : trimProvisionalFenceTail(normalizedRaw));
         const codeText = metaCode !== null ? metaCode.replace(/\r\n?/g, "\n") : (fenced.hadFence ? fenced.code : normalizedRaw);
-        const infoText = typeof meta.info === "string" ? (meta.info as string) : lang;
-
         const codeControls = resolveCodeControls(this.getControls());
-        if (codeRenderer) {
-          const RendererComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
-          return React.createElement(RendererComponent, {
-            key: block.id,
-            code: codeText,
-            language: lang,
-            meta,
-            info: infoText,
-            isFinalized: block.isFinalized,
-            blockId: block.id,
-            renderCode: element,
-            openLink: this.linkHandler,
-            controls: {
-              copy: codeControls.copy,
-              download: codeControls.download,
-            },
-            copy: () => copyToClipboard(codeText),
-            download: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
-          });
-        }
-
         if (Array.isArray(meta.diffBlocks) && meta.diffBlocks.length > 0) {
           return React.createElement(DefaultDiffRenderer, {
             key: block.id,
-            code: codeText,
-            language: lang,
             meta,
-            info: infoText,
-            isFinalized: block.isFinalized,
-            blockId: block.id,
             renderCode: element,
-            controls: {
-              copy: codeControls.copy,
-              download: codeControls.download,
-            },
-            copy: () => copyToClipboard(codeText),
-            download: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
           });
         }
-
         if (codeControls.enabled) {
           const ControlsComponent = this.getControlsComponent();
           const controlsElement = ControlsComponent ? (

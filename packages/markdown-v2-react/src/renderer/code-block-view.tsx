@@ -11,7 +11,6 @@ import {
 import type { ComponentRegistry } from "../components";
 import type { ResolvedCodeControls } from "../components/controls";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
-import type { CodeFenceRendererProps } from "../types";
 import { DeferredRenderContext } from "./deferred-render-context";
 import { useRendererNode } from "./hooks";
 import { subscribeRendererNode } from "./node-subscriptions";
@@ -333,11 +332,6 @@ export const CodeBlockView: React.FC<{
 
   if (!node || !codeBlock) return null;
 
-  const infoText =
-    codeBlock.info ||
-    (typeof blockMeta?.info === "string" ? blockMeta.info : undefined) ||
-    lang ||
-    "";
   const preAttrs = (node.props?.preAttrs as Record<string, string> | undefined) ?? undefined;
   const codeAttrs = (node.props?.codeAttrs as Record<string, string> | undefined) ?? undefined;
   const storeThemes = store.getThemes?.();
@@ -345,8 +339,6 @@ export const CodeBlockView: React.FC<{
   const composedPreAttrs = preAttrs ?? defaultWrapperAttrs.preAttrs;
   const composedCodeAttrs = codeAttrs ?? defaultWrapperAttrs.codeAttrs;
   const CodeComponent = registry.getBlockComponent("code");
-  const normalizedLang = (lang ?? "").trim().toLowerCase();
-  const codeRenderer = registry.getCodeRenderer(normalizedLang);
   const resolvedCodeControls = resolveCodeControls(registry.getControls());
   const ControlsComponent = registry.getControlsComponent();
   const codeFrameClass = "not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm";
@@ -367,10 +359,7 @@ export const CodeBlockView: React.FC<{
     registry.getNodePresentation("code")?.props,
   ) as React.HTMLAttributes<HTMLDivElement>;
 
-  const useIncrementalRanges =
-    !shouldVirtualize &&
-    !codeRenderer &&
-    !registry.hasElementFilters();
+  const useIncrementalRanges = !shouldVirtualize && !registry.hasElementFilters();
   const showFullContent = fullContentMode || virtualization.isPrinting;
   const renderWindow = showFullContent
     ? { ...window, startIndex: 0, endIndex: lineCount }
@@ -479,7 +468,7 @@ export const CodeBlockView: React.FC<{
       const spacerTopHeight = showFullContent ? 0 : virtualization.spacerTopHeight;
       const spacerBottomHeight = showFullContent ? 0 : virtualization.spacerBottomHeight;
       return (
-        <div {...codeFrameProps}>
+        <div {...codeFrameProps} ref={deferredRef}>
           <div
             ref={containerRef}
             id={viewportId}
@@ -500,7 +489,7 @@ export const CodeBlockView: React.FC<{
       );
     })()
   ) : (
-    <div {...codeFrameProps}>
+    <div {...codeFrameProps} ref={deferredRef}>
       {rendered}
     </div>
   );
@@ -547,57 +536,10 @@ export const CodeBlockView: React.FC<{
   };
 
   const elementToFilter = (() => {
-    if (codeRenderer) {
-      const CustomComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
-      const shouldOptInDefer = Boolean(
-        (typeof codeRenderer === "object" && codeRenderer !== null && codeRenderer.defer) ||
-          (CustomComponent && typeof CustomComponent === "function" && "defer" in CustomComponent && Boolean(CustomComponent.defer)),
-      );
-      const renderCustomCode = (): React.ReactElement => {
-        const rendererProps: CodeFenceRendererProps = {
-          code: typeof blockMeta?.code === "string" ? blockMeta.code : readCurrentCodeSource() ?? "",
-          language: lang ?? "",
-          meta: blockMeta,
-          info: infoText,
-          isFinalized: blockIsFinalized,
-          blockId,
-          renderCode: codeView,
-          openLink: registry.getLinkHandler(),
-          controls: {
-            copy: resolvedCodeControls.copy,
-            download: resolvedCodeControls.download,
-          },
-          copy: copyCurrentCode,
-          download: downloadCurrentCode,
-        };
-        return React.createElement(CustomComponent, rendererProps);
-      };
-
-      if (shouldOptInDefer && deferredConfig) {
-        return (
-          <div ref={deferredRef}>
-            {shouldRenderDeferred ? renderCustomCode() : codeView}
-          </div>
-        );
-      }
-      return renderCustomCode();
-    }
-
     if (Array.isArray(blockMeta?.diffBlocks) && blockMeta.diffBlocks.length > 0) {
       const diffView = React.createElement(DefaultDiffRenderer, {
-        code: "",
-        language: lang ?? "",
         meta: blockMeta,
-        info: infoText,
-        isFinalized: blockIsFinalized,
-        blockId,
         renderCode: codeView,
-        controls: {
-          copy: resolvedCodeControls.copy,
-          download: resolvedCodeControls.download,
-        },
-        copy: copyCurrentCode,
-        download: downloadCurrentCode,
       });
       const controls = renderControls();
       return controls ? wrapWithCodeControls(controls, diffView) : diffView;
@@ -612,11 +554,15 @@ export const CodeBlockView: React.FC<{
   };
 
 
+  const presentNativeView = (nativeView: React.ReactNode) =>
+    renderPresentation && (!registry.getNodePresentation("code") || shouldRenderDeferred)
+      ? renderPresentation(nativeView)
+      : nativeView;
   if (!registry.hasElementFilters()) {
     const nativeView = withFullContentToggle(
       React.isValidElement(elementToFilter) ? elementToFilter : <>{elementToFilter}</>,
     );
-    return renderPresentation ? renderPresentation(nativeView) : nativeView;
+    return presentNativeView(nativeView);
   }
   let hostAllowed = false;
   const filtered = registry.filterElement(
@@ -630,7 +576,7 @@ export const CodeBlockView: React.FC<{
   );
   if (filtered === null || filtered === undefined) return null;
   const nativeView = withFullContentToggle(React.isValidElement(filtered) ? filtered : <>{filtered}</>);
-  return hostAllowed && renderPresentation ? renderPresentation(nativeView) : nativeView;
+  return hostAllowed ? presentNativeView(nativeView) : nativeView;
 });
 
 CodeBlockView.displayName = "CodeBlockView";

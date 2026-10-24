@@ -88,9 +88,15 @@ const html: HtmlOptions = { allowedTags: { del: [], span: ["data-safe"], kbd: []
 const text = '<del>\n\n**#ABC-123** and <span data-safe="yes" onclick="alert(1)">*nested*</span> <kbd>**literal**</kbd>\n\n</del>\n';
 const store = await streamed(text, { html, syntax });
 const registry = new ComponentRegistry({
-  ticket: ({ attrs }: { attrs: Record<string, string> }) => <mark data-ticket={attrs.id}>{attrs.id}</mark>,
+  components: {
+    "extension:ticket": {
+      view: ({ node }) => node.kind === "plugin" ? <mark data-ticket={String(node.attrs?.id ?? "")}>{String(node.attrs?.id ?? "")}</mark> : null,
+    },
+    "html:del": {
+      view: ({ properties, children }) => React.createElement("del", { ...properties, "data-mapped": "yes" } as React.HTMLAttributes<HTMLElement>, children),
+    },
+  },
 });
-registry.setHtmlElements({ del: (props: React.HTMLAttributes<HTMLElement>) => <del {...props} data-mapped="yes" /> });
 const document = new JSDOM(render([], registry, store)).window.document;
 assert.equal(document.querySelector('del[data-mapped="yes"] p strong mark')?.textContent, "ABC-123");
 assert.equal(document.querySelector('del p span[data-safe="yes"] em')?.textContent, "nested");
@@ -139,7 +145,11 @@ const captureStore = await streamed('start [[<a href="/outer">[inner](/inner) tr
   syntax: [{ name: "capture", pattern: { source: "\\[\\[([\\s\\S]*?)\\]\\]" }, content: 1 }],
 });
 const captureRegistry = new ComponentRegistry({
-  capture: ({ children }: { children?: React.ReactNode }) => <mark data-capture="configured">{children}</mark>,
+  components: {
+    "extension:capture": {
+      view: ({ children }) => <mark data-capture="configured">{children}</mark>,
+    },
+  },
 });
 const captureDocument = new JSDOM(render([], captureRegistry, captureStore)).window.document;
 assert.ok(captureDocument.querySelector('mark[data-capture="configured"]'));
@@ -243,9 +253,9 @@ const codeStore = await streamed(codeSource, codeInit);
 const customCodeRegistry = new ComponentRegistry();
 customCodeRegistry.setNodePresentations({
   paragraph: { wrapper: ({ children }) => <div data-paragraph="configured">{children}</div> },
-});
-customCodeRegistry.setInlineComponents({
-  code: ({ text }) => <code className="inline-code" data-code="configured">{text}</code>,
+  "inline:code": {
+    view: ({ node }) => node.kind === "code" ? <code className="inline-code" data-code="configured">{node.text}</code> : null,
+  },
 });
 for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
   for (const element of [

@@ -160,6 +160,12 @@ export function useVirtualizedTable(
   enabledCondition: boolean,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerElement, setContainerElement] = useState<HTMLDivElement | null>(null);
+  const containerCallbackRef = useCallback((container: HTMLDivElement | null) => {
+    if (containerRef.current === container) return;
+    containerRef.current = container;
+    setContainerElement(container);
+  }, []);
   const [domTargets, setDOMTargets] = useState<TableDOMTargets | null>(null);
   const targetsRef = useRef<TableDOMTargets | null>(null);
   const viewportGeneration = useRef(0);
@@ -258,7 +264,7 @@ export function useVirtualizedTable(
       isPrintingRef.current = false;
       printSnapshot.current = null;
     };
-  }, [isEligible, rowIdentity]);
+  }, [isEligible, rowIdentity, containerElement]);
   const retainedRowIndices = useMemo(() => {
     if (!isVirtualized || !retainedRows || retainedRows.identity !== rowIdentity ||
       retainedRows.owner !== focusOwnerGeneration.current) return [];
@@ -454,7 +460,7 @@ export function useVirtualizedTable(
     if (container && container.scrollTop !== 0) container.scrollTop = 0;
     setScrollTop(0);
     invalidateMeasurements();
-  }, [rowIdentity, invalidateMeasurements]);
+  }, [rowIdentity, invalidateMeasurements, containerElement]);
 
   // Track actual DOM replacements, including adapters which replace their own native nodes.
   useEffect(() => {
@@ -494,7 +500,7 @@ export function useVirtualizedTable(
       setDOMTargets(null);
       invalidateMeasurements();
     };
-  }, [isEligible, invalidateMeasurements]);
+  }, [isEligible, invalidateMeasurements, containerElement]);
   useEffect(() => {
     const container = containerRef.current;
     if (!isEligible || !domTargets || !container || container.querySelector("table") !== domTargets.table) return;
@@ -561,7 +567,7 @@ export function useVirtualizedTable(
       focusOwnerGeneration.current++;
       setRetainedRows((current) => current?.owner === owner ? null : current);
     };
-  }, [isEligible, domTargets?.table, rowIdentity]);
+  }, [isEligible, domTargets?.table, rowIdentity, containerElement]);
 
   useEffect(() => {
     if (!isEligible || !domTargets || isPrintGeometrySuspended || printGeometrySuspendedRef.current || isPrintingRef.current) return;
@@ -595,7 +601,7 @@ export function useVirtualizedTable(
       active = false;
       observer.disconnect();
     };
-  }, [isEligible, domTargets?.table, domTargets?.header, config.maxHeight, isPrinting, isPrintGeometrySuspended]);
+  }, [isEligible, domTargets?.table, domTargets?.header, config.maxHeight, isPrinting, isPrintGeometrySuspended, containerElement]);
 
   useEffect(() => {
     if (!isEligible || !domTargets) return;
@@ -603,7 +609,7 @@ export function useVirtualizedTable(
     const table = domTargets.table;
     if (!container || !table) return;
     return normalizeTableScrollAncestors(table, container);
-  }, [isEligible, domTargets?.table]);
+  }, [isEligible, domTargets?.table, containerElement]);
 
   // Commit the header and first bounded row chunk before each initial or width-change measurement.
   useEffect(() => {
@@ -621,7 +627,7 @@ export function useVirtualizedTable(
       tableWidth: table.getBoundingClientRect().width,
       columnWidths: columnWidths.every((width) => width > 0) ? columnWidths : [],
     });
-  }, [isEligible, isVirtualized, domTargets?.table, rowIdentity, containerWidth, isPrinting, isPrintGeometrySuspended]);
+  }, [isEligible, isVirtualized, domTargets?.table, rowIdentity, containerWidth, isPrinting, isPrintGeometrySuspended, containerElement]);
 
   useEffect(() => {
     if (!isEligible) return;
@@ -648,7 +654,7 @@ export function useVirtualizedTable(
     const observer = new Observer(updateBackground);
     for (const ancestor of ancestors) observer.observe(ancestor, { attributes: true, attributeFilter: ["class", "style"] });
     return () => observer.disconnect();
-  }, [isEligible]);
+  }, [isEligible, containerElement]);
 
   useEffect(() => {
     if (!isVirtualized || !domTargets || isPrintGeometrySuspended || printGeometrySuspendedRef.current || isPrintingRef.current) return;
@@ -713,7 +719,7 @@ export function useVirtualizedTable(
       active = false;
       observer.disconnect();
     };
-  }, [isVirtualized, domTargets?.rows, rowIds, rowCount, rowIdentity, hasIndexedRows, window.startIndex, window.endIndex, containerWidth, config.estimatedRowHeight, isPrinting, isPrintGeometrySuspended]);
+  }, [isVirtualized, domTargets?.rows, rowIds, rowCount, rowIdentity, hasIndexedRows, window.startIndex, window.endIndex, containerWidth, config.estimatedRowHeight, isPrinting, isPrintGeometrySuspended, containerElement]);
 
   // Newly measured tail rows may move the scroll boundary. Keep a bottom scroll at the bottom.
   useEffect(() => {
@@ -721,7 +727,7 @@ export function useVirtualizedTable(
     if (!isVirtualized || !container || !atBottom.current || isPrintGeometrySuspended || printGeometrySuspendedRef.current || isPrintingRef.current) return;
     container.scrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
     setScrollTop(container.scrollTop);
-  }, [isVirtualized, offsetAt, isPrinting, isPrintGeometrySuspended]);
+  }, [isVirtualized, offsetAt, isPrinting, isPrintGeometrySuspended, containerElement]);
 
-  return { containerRef, window, handleScroll, config, isEligible, isVirtualized, isPrinting, naturalLayout, headerBackgroundColor };
+  return { containerRef: containerCallbackRef, window, handleScroll, config, isEligible, isVirtualized, isPrinting, naturalLayout, headerBackgroundColor };
 }

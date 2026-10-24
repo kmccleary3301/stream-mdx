@@ -20,7 +20,12 @@ export type OwnedHtmlRenderContext = {
   parentTagName?: string;
   contentComponents?: ContentComponentsMap;
   renderParagraph?: (children: React.ReactNode) => React.ReactNode;
-  renderInlinePresentation?: (node: InlineNode, nativeView: React.ReactNode, key: React.Key) => React.ReactNode;
+  renderInlinePresentation?: (
+    node: InlineNode,
+    nativeView: React.ReactNode,
+    key: React.Key,
+    children?: React.ReactNode,
+  ) => React.ReactNode;
   renderHtmlPresentation?: (
     tagName: string,
     properties: Readonly<Record<string, unknown>>,
@@ -80,7 +85,7 @@ export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRend
           ? React.createElement(component, { ...node.attrs, key, name: node.name, attrs: node.attrs, raw: node.raw, children })
           : node.raw;
         return context.renderInlinePresentation
-          ? context.renderInlinePresentation(node, direct, key)
+          ? context.renderInlinePresentation(node, direct, key, children)
           : direct;
       }
       return context.renderInline([node], parentTagName);

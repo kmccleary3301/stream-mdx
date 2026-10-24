@@ -4,10 +4,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
-import {
-  ComponentRegistry,
-  type CodeFenceRendererProps,
-} from "../src/components";
+import { ComponentRegistry } from "../src/components";
 import { MarkdownBlocksRenderer } from "../src/renderer/blocks-renderer";
 import { createRendererStore } from "../src/renderer/store";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
@@ -64,7 +61,7 @@ async function testDisallowedElementsRemovesImages(): Promise<void> {
   const window = await setupDom();
   const rootEl = window.document.getElementById("root")!;
   const store = createRendererStore(blocks);
-  const registry = new ComponentRegistry({}, {}, { disallowedElements: ["img"] });
+  const registry = new ComponentRegistry({ disallowedElements: ["img"] });
 
   const root = createRoot(rootEl);
   await act(async () => {
@@ -130,7 +127,7 @@ async function testAllowedElementsWithUnwrapDisallowed(): Promise<void> {
   const window = await setupDom();
   const rootEl = window.document.getElementById("root")!;
   const store = createRendererStore(blocks);
-  const registry = new ComponentRegistry({}, {}, { allowedElements: ["p"], unwrapDisallowed: true });
+  const registry = new ComponentRegistry({ allowedElements: ["p"], unwrapDisallowed: true });
 
   const root = createRoot(rootEl);
   await act(async () => {
@@ -216,46 +213,38 @@ async function testAllowElementCallbackSeesRawHtml(): Promise<void> {
   assert.strictEqual(h1Call?.source, "markdown", "Expected h1 source to be 'markdown'");
 }
 
-// 4. codeRenderers language aliases: alias array resolves JS -> renderer case-insensitively
-async function testCodeRenderersAliases(): Promise<void> {
-  const markdown = [
-    "```JS",
-    "console.log('hello');",
-    "```",
-    "",
-    "```py",
-    "print('hello')",
-    "```",
-  ].join("\n");
-
+// 4. code presentations can route authored language aliases via node metadata.
+async function testCodePresentationLanguageAliases(): Promise<void> {
+  const languages = ["JS", "js", "MJS", "JavaScript", "py"];
+  const markdown = languages.map((language) =>
+    `\`\`\`${language}\nconsole.log("hello");\n\`\`\``,
+  ).join("\n\n");
   const { blocks } = await compileMarkdownSnapshotDirect({
     text: markdown,
     init: { docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true } },
   });
 
-  let jsRendered = false;
-  const CustomJsRenderer: React.FC<CodeFenceRendererProps> = ({ code }) => {
-    jsRendered = true;
-    return React.createElement("div", { id: "custom-js-alias" }, code);
-  };
+  const javascriptAliases: Record<string, true> = { js: true, mjs: true, javascript: true };
+  let customLanguages = 0;
+  const registry = new ComponentRegistry({
+    components: {
+      code: {
+        wrapper: ({ children, metadata }) => {
+          const language = metadata.language?.toLowerCase();
+          if (!language || !javascriptAliases[language]) return children;
+          customLanguages++;
+          return React.createElement("div", { "data-custom-js-alias": language }, children);
+        },
+      },
+    },
+  });
 
-  const jsRenderer = { component: CustomJsRenderer, aliases: ["JS", "mjs"] };
-  const registry = new ComponentRegistry({}, { javascript: jsRenderer });
-
-  for (const lang of ["JS", "js", "MJS", "JavaScript"]) {
-    assert.strictEqual(registry.getCodeRenderer(lang.toLowerCase()), jsRenderer, `Expected '${lang}' to resolve to the javascript renderer`);
-  }
-  assert.strictEqual(registry.getCodeRenderer("py"), undefined, "Unaliased languages keep the default renderer");
-
-  // SSR test
   const ssrHtml = renderToStaticMarkup(
-    React.createElement(MarkdownBlocksRenderer, {
-      blocks,
-      componentRegistry: registry,
-    }),
+    React.createElement(MarkdownBlocksRenderer, { blocks, componentRegistry: registry }),
   );
-  assert.ok(ssrHtml.includes('id="custom-js-alias"'), `Expected custom JS renderer in SSR: ${ssrHtml}`);
-  assert.ok(jsRendered, "Expected CustomJsRenderer to be called");
+  assert.equal(customLanguages, 4, "all authored JavaScript aliases route through the custom code presentation");
+  assert.equal(new JSDOM(ssrHtml).window.document.querySelectorAll("[data-custom-js-alias]").length, 4);
+  assert.equal(new JSDOM(ssrHtml).window.document.querySelectorAll('[data-custom-js-alias="py"]').length, 0);
 }
 
 // 5. disableAutolinkProtocols ['mailto']: leaves foo@bar.com as text while explicit [x](mailto:..) remains
@@ -319,7 +308,7 @@ async function testDisableAutolinkProtocolsMailto(): Promise<void> {
 // 6. allowedElements and disallowedElements are mutually exclusive, but swapping between them across renders works
 async function testMutuallyExclusiveElements(): Promise<void> {
   assert.throws(
-    () => new ComponentRegistry({}, {}, { allowedElements: ["p"], disallowedElements: ["img"] }),
+    () => new ComponentRegistry({ allowedElements: ["p"], disallowedElements: ["img"] }),
     /Cannot specify both allowedElements and disallowedElements/,
   );
 
@@ -369,7 +358,7 @@ async function testHtmlOwnedParagraphFilters(): Promise<void> {
       wrapperCalls++;
       return <p data-custom-paragraph>{children}</p>;
     };
-    const registry = new ComponentRegistry({}, {}, {
+    const registry = new ComponentRegistry({
       ...filters,
       components: {
         paragraph: { wrapper: countingWrapper },
@@ -392,7 +381,7 @@ async function testHtmlOwnedParagraphFilters(): Promise<void> {
     await act(async () => { root.unmount(); });
   }
   const seenParagraphs: Array<{ source: string; blockType?: string }> = [];
-  const callbackRegistry = new ComponentRegistry({}, {}, {
+  const callbackRegistry = new ComponentRegistry({
     unwrapDisallowed: true,
     allowElement: (element, context) => {
       if (element.tagName !== "p") return true;
@@ -422,7 +411,7 @@ async function testMarkdownBlockFiltersSkipPresentations(): Promise<void> {
       wrapperCalls++;
       return <p data-custom-block>{children}</p>;
     };
-    const registry = new ComponentRegistry({}, {}, {
+    const registry = new ComponentRegistry({
       disallowedElements: [tag],
       components: { [type]: { wrapper: countingWrapper } },
     });
@@ -440,7 +429,7 @@ async function runAllTests(): Promise<void> {
   await testDisallowedElementsRemovesImages();
   await testAllowedElementsWithUnwrapDisallowed();
   await testAllowElementCallbackSeesRawHtml();
-  await testCodeRenderersAliases();
+  await testCodePresentationLanguageAliases();
   await testDisableAutolinkProtocolsMailto();
   await testMutuallyExclusiveElements();
   await testHtmlOwnedParagraphFilters();

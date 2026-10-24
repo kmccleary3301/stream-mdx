@@ -959,8 +959,8 @@ const MixedSegmentView: React.FC<{
             : undefined,
           parentTagName,
           contentComponents: registry.getContentComponents(),
-          renderInlinePresentation: (inlineNode, nativeView, key) =>
-            registry.renderInlinePresentation(inlineNode, nativeView, key, inlineContext),
+          renderInlinePresentation: (inlineNode, nativeView, key, children) =>
+            registry.renderInlinePresentation(inlineNode, nativeView, key, inlineContext, children),
           renderHtmlPresentation: (tagName, properties, nativeView, children, key) =>
             registry.renderHtmlPresentation(tagName, properties, nativeView, children, key, node.id, inlineContext?.isFinalized ?? isFinalized),
         })}</>;

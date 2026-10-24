@@ -21,7 +21,7 @@ import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
-import { defaultUrlTransform, type AnimatedProp, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type NodePresentations, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type InlineComponents, type NodePresentations, type RendererConfig, type SyntaxRuleSpec, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
   resolve(): void;
@@ -162,9 +162,6 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   features?: StreamingFeatureFlags;
   themes?: { light: string; dark: string };
   components?: NodePresentations;
-  tableElements?: Partial<TableElements>;
-  htmlElements?: Partial<HtmlElements>;
-  inlineComponents?: Partial<InlineComponents>;
   scheduling?: StreamingSchedulerOptions;
   contentPolicy?: ContentPolicy;
   contentComponents?: ContentComponentsMap;
@@ -177,8 +174,6 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   style?: React.CSSProperties;
   caret?: StreamingCaret;
   linkSafety?: LinkSafetyConfig;
-  codeRenderers?: Record<string, CodeFenceRenderer>;
-  mathRenderer?: MathRenderer;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
@@ -252,12 +247,9 @@ function StreamingMarkdownComponent(
     features = {},
     themes,
     components,
-    tableElements,
-    htmlElements,
     contentPolicy = "restricted",
     contentComponents,
     engines,
-    inlineComponents,
     scheduling,
     managedWorker = false,
     onMetrics,
@@ -266,13 +258,11 @@ function StreamingMarkdownComponent(
     style,
     caret,
     linkSafety,
-    codeRenderers,
     allowedElements,
     disallowedElements,
     allowElement,
     unwrapDisallowed,
     disableAutolinkProtocols,
-    mathRenderer,
     deferHeavyBlocks,
     syntax,
     html,
@@ -317,8 +307,6 @@ function StreamingMarkdownComponent(
       }),
     [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes],
   );
-  // Stable indirection lets renderers use the current linkSafety handler.
-  const linkHandlerRef = useRef<(url: string) => Promise<void>>();
   const rendererRef = useRef<{
     renderer: MarkdownRenderer;
     signature: string;
@@ -340,13 +328,11 @@ function StreamingMarkdownComponent(
     const rendererConfig: RendererConfig = {
       themes: effectiveThemes,
       components,
-      codeRenderers,
       allowedElements,
       disallowedElements,
       allowElement,
       unwrapDisallowed,
       disableAutolinkProtocols,
-      mathRenderer,
       tableVirtualization,
       codeVirtualization,
       urlTransform,
@@ -373,9 +359,6 @@ function StreamingMarkdownComponent(
       html,
     };
     const nextRenderer = new MarkdownRenderer(rendererConfig);
-    nextRenderer.getComponentRegistry().setLinkHandler((url) => {
-      void linkHandlerRef.current?.(url);
-    });
     rendererRef.current = {
       renderer: nextRenderer,
       signature: rendererKey,
@@ -448,7 +431,6 @@ function StreamingMarkdownComponent(
       setLinkModalState({ url: safe, isOpen: true, isChecking: false });
     };
   }, [linkSafety, linkSafetyEnabled, openLink, urlTransform]);
-  linkHandlerRef.current = handleLinkClick;
 
   const handleLinkClose = useMemo(() => {
     return () => setLinkModalState((prev) => ({ ...prev, isOpen: false }));
@@ -487,9 +469,9 @@ function StreamingMarkdownComponent(
     };
   }, [linkModalState.url]);
 
-  const resolvedInlineComponents = useMemo(() => {
+  const resolvedLinkRenderer = useMemo(() => {
     if (!linkSafetyEnabled) {
-      return inlineComponents;
+      return undefined;
     }
     const LinkComponent: InlineComponents["link"] = ({ href, title, children }) => {
       const url = typeof href === "string" ? href : "";
@@ -512,8 +494,8 @@ function StreamingMarkdownComponent(
         children,
       );
     };
-    return { ...(inlineComponents ?? {}), link: LinkComponent };
-  }, [handleLinkClick, inlineComponents, linkSafetyEnabled]);
+    return LinkComponent;
+  }, [handleLinkClick, linkSafetyEnabled]);
 
   useEffect(() => {
     adaptiveSwitchedRef.current = false;
@@ -550,30 +532,14 @@ function StreamingMarkdownComponent(
   }, [renderer]);
 
   useEffect(() => {
-    renderer.getComponentRegistry().setNodePresentations(components);
+    const reg = renderer.getComponentRegistry();
+    reg.setNodePresentations(components);
     if (normalizedContentComponents) {
       renderer.setContentComponents(normalizedContentComponents);
     }
-    if (inlineComponents) {
-      renderer.setInlineComponents(resolvedInlineComponents ?? inlineComponents);
-    } else if (resolvedInlineComponents) {
-      renderer.setInlineComponents(resolvedInlineComponents);
-    }
-    if (tableElements) {
-      renderer.getComponentRegistry().setTableElements(tableElements);
-    }
-    if (htmlElements) {
-      renderer.getComponentRegistry().setHtmlElements(htmlElements);
-    }
-    if (codeRenderers) {
-      renderer.setCodeRenderers(codeRenderers);
-    }
-    const reg = renderer.getComponentRegistry();
-    if (mathRenderer) {
-      renderer.setMathRenderer(mathRenderer);
-    }
+    reg.setLinkSafetyRenderer(resolvedLinkRenderer);
     reg.setTableVirtualization(tableVirtualization);
-  }, [renderer, components, normalizedContentComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, tableVirtualization]);
+  }, [renderer, components, normalizedContentComponents, resolvedLinkRenderer, tableVirtualization]);
 
   useEffect(() => {
     renderer.getComponentRegistry().setCodeVirtualization(codeVirtualization);
@@ -981,7 +947,6 @@ function StreamingMarkdownComponent(
       blocks={EMPTY_BLOCKS}
       componentRegistry={renderer.getComponentRegistry()}
       components={components}
-      codeRenderers={codeRenderers}
       urlTransform={urlTransform}
       controls={controls}
       controlsComponent={controlsComponent}
