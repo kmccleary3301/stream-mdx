@@ -75,4 +75,16 @@ export const targets = {
       "__tests__/table-virtualization.test.tsx",
     ],
   },
+  "react-node-presentations": {
+    package: "packages/markdown-v2-react",
+    mutate: ["src/renderer/node-views.tsx:63-135"],
+    tests: [
+      "__tests__/node-presentations.test.tsx",
+      "__tests__/custom-table-component-streaming.test.tsx",
+      "__tests__/native-table-handle-presentation.test.tsx",
+      "__tests__/native-code-highlight-lifecycle.test.ts",
+      "__tests__/node-handle-hooks.test.tsx",
+      "__tests__/mixed-paragraph-custom-inlines.test.tsx",
+    ],
+  },
 };
