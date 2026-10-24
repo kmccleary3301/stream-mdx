@@ -113,6 +113,16 @@ export function renderNodePresentation(
       </NodeViewRenderContext.Provider>
     );
   }
+  if (type === "code" && "view" in presentation && presentation.view) {
+    const handle = store.getCodeNodeHandle(id);
+    if (!handle) return null;
+    const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: CodeNodeHandle }>;
+    return (
+      <NodeViewRenderContext.Provider value={{ store, registry }}>
+        <HeadlessView handle={handle} />
+      </NodeViewRenderContext.Provider>
+    );
+  }
   if (type !== "code" && "view" in presentation && presentation.view) {
     const handle = store.getNodeHandle(id);
     if (!handle) return null;

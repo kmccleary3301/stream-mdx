@@ -7,7 +7,7 @@ import { JSDOM } from "jsdom";
 import { createRoot } from "react-dom/client";
 import rehypeSlug from "rehype-slug";
 import { visit } from "unist-util-visit";
-import type { Block, WorkerOut } from "@stream-mdx/core";
+import type { Block, CodeNodeHandle, WorkerOut } from "@stream-mdx/core";
 import type { Node } from "unist";
 import { MarkdownBlocksRenderer, createRendererStore, type NodePresentations, type NodeViewProps } from "@stream-mdx/react";
 import { MarkdownEngine, createInlineEngineWorker } from "../../markdown-v2-worker/src/engine";
@@ -150,6 +150,24 @@ async function runTests() {
       React.createElement(MarkdownBlocksRenderer, { blocks: [heading], components: unifiedRenderer }),
     );
     assert.match(html, /<section data-unified-heading="true" data-finalized="true"><h2>Shared presentation<\/h2><\/section>/);
+  }
+
+  // A headless code presentation replaces the unified renderer's prepared native output.
+  {
+    const blocks = await compileBlocks("```text\nfirst line\nsecond line\n```");
+    const code = blocks.find((block) => block.type === "code");
+    assert.ok(code, "the finalized code block is available for presentation");
+    const CodeView: React.FC<{ readonly handle: CodeNodeHandle }> = ({ handle }) => (
+      <output data-unified-code-view>{handle.readSource()}</output>
+    );
+    const components = {
+      code: { view: CodeView },
+    } satisfies NodePresentations;
+    const renderer = createUnifiedRenderer({ components });
+    const html = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(MarkdownBlocksRenderer, { blocks: [code], components: renderer }),
+    );
+    assert.match(html, /<output data-unified-code-view="true">```text\nfirst line\nsecond line\n```<\/output>/);
   }
 
   // Test 3: late reference definitions reach the cold export and unified renderer
