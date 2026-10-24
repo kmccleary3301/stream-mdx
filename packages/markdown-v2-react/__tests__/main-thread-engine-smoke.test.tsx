@@ -367,6 +367,8 @@ async function runAutoWorkerTakeover(): Promise<void> {
         (autoContainer.textContent?.includes("Accepted suffix source.") ?? false),
       "the replacement worker did not commit the complete stream",
     );
+    assert.equal(autoContainer.querySelector("h1"), bootstrapHeadingNode,
+      "takeover preserves the existing heading node after worker commit");
     const autoFinalization = await autoHandle.current!.finalize();
     assert.equal(autoFinalization.acceptedSourceUnits, expectedSource.length);
     assert.equal(autoFinalization.committedSourceUnits, expectedSource.length);
