@@ -3,7 +3,7 @@ import React, { useMemo, useRef } from "react";
 
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
-import type { AnimatedProp, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, ElementFilterOptions } from "../types";
+import type { AnimatedProp, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, ElementFilterOptions, NodePresentations } from "../types";
 import type { ContentComponentsMap } from "../components/content-components";
 import { RenderConfigVersionContext, useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
@@ -20,6 +20,7 @@ export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
   style?: React.CSSProperties;
   store?: RendererStore;
   blockRenderer?: BlockRendererOverride;
+  components?: NodePresentations;
   urlTransform?: UrlTransform;
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
@@ -30,6 +31,7 @@ export interface MarkdownBlocksRendererProps extends ElementFilterOptions {
 
 interface AppliedRenderConfig {
   blockRenderer?: BlockRendererOverride;
+  components?: NodePresentations;
   urlTransform?: UrlTransform;
   filters?: ElementFilterOptions;
   controls?: ControlsConfig;
@@ -45,6 +47,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     componentRegistry,
     codeRenderers,
     blockRenderer,
+    components,
     urlTransform,
     allowedElements,
     disallowedElements,
@@ -65,12 +68,15 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
     const applied = useRef<AppliedRenderConfig>({ version: 0 });
     const { registry: resolvedRegistry, version: renderConfigVersion } = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
+      const previous = applied.current;
       if (codeRenderers) {
         reg.setCodeRenderers(codeRenderers);
       }
-      const previous = applied.current;
       if (blockRenderer !== undefined || previous.blockRenderer !== undefined) {
         reg.setBlockRenderer(blockRenderer);
+      }
+      if (components !== undefined || previous.components !== undefined) {
+        reg.setNodePresentations(components);
       }
       if (urlTransform !== undefined || previous.urlTransform !== undefined) {
         reg.setUrlTransform(urlTransform);
@@ -102,17 +108,19 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       const changed =
         urlTransform !== previous.urlTransform ||
         controlsComponent !== previous.controlsComponent ||
+        components !== previous.components ||
         !sameElementFilters(filters, previous.filters) ||
         !samePlainConfig(controls, previous.controls) ||
         !samePlainConfig(animated, previous.animated) ||
         contentComponents !== previous.contentComponents;
       const version = changed ? previous.version + 1 : previous.version;
-      applied.current = { blockRenderer, urlTransform, filters, controls, controlsComponent, animated, contentComponents, version };
+      applied.current = { blockRenderer, components, urlTransform, filters, controls, controlsComponent, animated, contentComponents, version };
       return { registry: reg, version };
     }, [
       componentRegistry,
       codeRenderers,
       blockRenderer,
+      components,
       urlTransform,
       allowedElements,
       disallowedElements,

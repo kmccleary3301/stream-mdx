@@ -60,7 +60,7 @@ const NodeViewRenderContext = React.createContext<{
   readonly store: RendererStore;
   readonly registry: ComponentRegistry;
 } | null>(null);
-function renderNodePresentation(
+export function renderNodePresentation(
   block: Block | undefined,
   nativeView: React.ReactNode,
   store: RendererStore,

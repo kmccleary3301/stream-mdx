@@ -1,10 +1,62 @@
 import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
-import React from "react";
-import { StreamingMarkdown, type NodePresentations } from "@stream-mdx/react";
+import React, { act } from "react";
+import { createRoot } from "react-dom/client";
+import { StreamingMarkdown, type NodePresentations, type NodeViewProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { MarkdownBlocksRenderer as ServerMarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-native-fixture";
 import { mergeNodePresentationProps, resolveNodePresentation, validateNodePresentations } from "../src/renderer/node-presentations";
 
 const Chrome: React.FC<{ children?: React.ReactNode }> = ({ children }) => <section data-chrome>{children}</section>;
+
+async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const components = {
+    heading: {
+      wrapper: ({ children, metadata }: NodeViewProps) => (
+        <section data-heading-presentation data-finalized={metadata.isFinalized}>{children}</section>
+      ),
+    },
+  } satisfies NodePresentations;
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready");
+    await act(async () => {
+      handle.current?.append("## Shared heading");
+      await handle.current?.finalize();
+    });
+    await waitFor(() => container.querySelector("section[data-heading-presentation]"), "finalized heading wrapper");
+
+    const serverMarkup = renderToStaticMarkup(
+      <ServerMarkdownBlocksRenderer blocks={handle.current?.getState().blocks ?? []} components={components} />,
+    );
+    const streamingPresentation = container.querySelector("section[data-heading-presentation]");
+    const serverContainer = document.createElement("div");
+    serverContainer.innerHTML = serverMarkup;
+    const serverPresentation = serverContainer.querySelector("section[data-heading-presentation]");
+    assert.strictEqual(streamingPresentation?.outerHTML, serverPresentation?.outerHTML);
+    assert.strictEqual(streamingPresentation?.getAttribute("data-finalized"), "true");
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
 
 function runNodePresentationsTest(): void {
   const components = {
@@ -50,4 +102,6 @@ function runNodePresentationsTest(): void {
 }
 
 runNodePresentationsTest();
+
+await finalizedHeadingPresentationMatchesServerOutput();
 console.log("Unified node presentation registry checks passed");

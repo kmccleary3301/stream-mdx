@@ -33,8 +33,14 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 
 const unifiedRenderer = createUnifiedRenderer({
   rehypePlugins: [rehypeSlug, rehypeAutolinkHeadings],
-  // Optional custom components mapping
   components: {
+    heading: {
+      wrapper: ({ children, metadata }) => (
+        <section data-finalized={metadata.isFinalized}>{children}</section>
+      ),
+    },
+  },
+  hastComponents: {
     a: (props) => <a {...props} className="text-blue-500 hover:underline" />,
   },
   onError: (error, block) => {
@@ -60,7 +66,8 @@ export function Doc({ text }: { text: string }) {
 |---|---|---|---|
 | `remarkPlugins` | `PluggableList` | `[]` | List of remark plugins or plugin tuples `[plugin, options]` |
 | `rehypePlugins` | `PluggableList` | `[]` | List of rehype plugins or plugin tuples `[plugin, options]` |
-| `components` | `Record<string, Component>` | `{}` | Custom React component mapping passed to `hast-util-to-jsx-runtime` |
+| `components` | `NodePresentations` | `{}` | Node wrapper/view registry shared with the streaming and static React renderer |
+| `hastComponents` | `Record<string, Component>` | `{}` | Custom React component mapping passed to `hast-util-to-jsx-runtime` |
 | `blockTypes` | `string[]` | `['paragraph', 'heading', 'blockquote', 'list', 'table', 'code', 'thematicBreak']` | Block types to route to unified pipeline |
 | `cacheSize` | `number` | `500` | Maximum number of rendered blocks to retain in LRU cache |
 | `math` | `boolean` | `false` | Enable `remark-math` support |

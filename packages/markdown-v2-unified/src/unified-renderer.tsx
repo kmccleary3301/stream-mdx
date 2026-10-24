@@ -7,7 +7,7 @@ import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { defaultUrlTransform, isForbiddenAttribute, type Block, type BlockResolvedLinkReference, type UrlTransform } from "@stream-mdx/core";
-import type { FinalizedBlockRenderProps } from "@stream-mdx/react";
+import { ComponentRegistry, createRendererStore, renderNodePresentation, type FinalizedBlockRenderProps } from "@stream-mdx/react";
 import type { UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
 function sanitizeHastUrls(node: unknown, transform: UrlTransform): void {
@@ -237,7 +237,7 @@ export function getOrCreateJob(
         Fragment,
         jsx,
         jsxs,
-        components: options.components,
+        components: options.hastComponents,
       });
       const outcome: JobOutcome = { kind: "success", node };
       job.outcome = outcome;
@@ -268,6 +268,7 @@ interface UnifiedBlockItemProps {
   options: UnifiedRendererOptions;
   cache: BoundedLruCache<string, React.ReactNode>;
   inflightJobs: Map<string, UnifiedJob>;
+  registry: ComponentRegistry | null;
 }
 
 export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
@@ -277,7 +278,12 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
   options,
   cache,
   inflightJobs,
+  registry,
 }) => {
+  const presentationStore = useMemo(
+    () => registry === null ? null : createRendererStore([block]),
+    [block, registry],
+  );
   const source = typeof block.payload.raw === "string" ? block.payload.raw : "";
   const metaRefs = block.payload.meta?.linkReferences;
   const serializedRefs = metaRefs && metaRefs.length > 0 ? JSON.stringify(metaRefs) : "";
@@ -335,16 +341,22 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
     output = asyncState.node;
   }
 
-  if (React.isValidElement(output)) {
-    return output;
+  const presentedOutput = registry === null || presentationStore === null
+    ? output
+    : renderNodePresentation(block, output, presentationStore, registry);
+  if (React.isValidElement(presentedOutput)) {
+    return presentedOutput;
   }
-  return <>{output}</>;
+  return <>{presentedOutput}</>;
 };
 
 export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): UnifiedRenderer {
   const cache = new BoundedLruCache<string, React.ReactNode>(options.cacheSize ?? 500);
   const inflightJobs = new Map<string, UnifiedJob>();
   const processor = buildProcessor(options);
+  const registry = Object.keys(options.components ?? {}).length > 0
+    ? new ComponentRegistry({}, {}, {}, { components: options.components })
+    : null;
   const routedTypeMap: Record<string, true> = options.blockTypes
     ? Object.fromEntries(options.blockTypes.map((type) => [type, true]))
     : DEFAULT_ROUTED_BLOCK_TYPES;
@@ -357,6 +369,7 @@ export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): Uni
 
     return (
       <UnifiedBlockItem
+        registry={registry}
         key={block.id}
         block={block}
         element={element}

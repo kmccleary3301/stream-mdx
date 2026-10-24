@@ -9,7 +9,7 @@ import rehypeSlug from "rehype-slug";
 import { visit } from "unist-util-visit";
 import type { Block, WorkerOut } from "@stream-mdx/core";
 import type { Node } from "unist";
-import { MarkdownBlocksRenderer, createRendererStore } from "@stream-mdx/react";
+import { MarkdownBlocksRenderer, createRendererStore, type NodePresentations, type NodeViewProps } from "@stream-mdx/react";
 import { MarkdownEngine, createInlineEngineWorker } from "../../markdown-v2-worker/src/engine";
 import { createUnifiedRenderer } from "../src";
 
@@ -133,11 +133,30 @@ async function runTests() {
     console.log("✓ Test 1 passed: Finalized heading received id attribute from rehype-slug synchronously");
   }
 
+  // Node presentations use the same finalized block dispatch as streaming.
+  {
+    const blocks = await compileBlocks("## Shared presentation");
+    const heading = blocks.find((block) => block.type === "heading");
+    assert.ok(heading, "the finalized heading is available for presentation");
+    const components = {
+      heading: {
+        wrapper: ({ children, metadata }: NodeViewProps) => (
+          <section data-unified-heading data-finalized={metadata.isFinalized}>{children}</section>
+        ),
+      },
+    } satisfies NodePresentations;
+    const unifiedRenderer = createUnifiedRenderer({ components });
+    const html = ReactDOMServer.renderToStaticMarkup(
+      unifiedRenderer({ block: heading, element: React.createElement("h2", null, "Unified heading") }),
+    );
+    assert.match(html, /<section data-unified-heading="true" data-finalized="true"><h2>Shared presentation<\/h2><\/section>/);
+  }
+
   // Test 3: late reference definitions reach the cold export and unified renderer
   {
     console.log("Test 3: late reference definitions reach the cold export...");
     const unifiedRenderer = createUnifiedRenderer({
-      components: {
+      hastComponents: {
         a: (props) => React.createElement("a", { ...props, className: "custom-ref-link" }),
       },
     });
