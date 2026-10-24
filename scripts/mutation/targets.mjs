@@ -77,6 +77,11 @@ export const targets = {
   },
   "react-node-presentations": {
     package: "packages/markdown-v2-react",
+    redirects: {
+      "@stream-mdx/react": "src/index.ts",
+      "@stream-mdx/react/server": "../../dist/server.mjs",
+      "@stream-mdx/react/_internal/trusted-mdx-native-children": "../../dist/trusted-mdx/native-children-slot.mjs",
+    },
     mutate: ["src/renderer/node-views.tsx:63-135"],
     tests: [
       "__tests__/node-presentations.test.tsx",
