@@ -71,6 +71,13 @@ export function createDemoComponents(showCodeMeta = false): NodePresentations {
     blockquote: { props: { className: "markdown-blockquote" } },
     code: { wrapper: createDemoCodePresentation(showCodeMeta) },
     table: { wrapper: DemoTablePresentation },
+    "table-row": { props: { className: "border-b transition-colors hover:bg-muted/50" } },
+    "table-cell": {
+      props: {
+        className:
+          "align-middle [&:is(td)]:p-4 [&:is(th)]:h-12 [&:is(th)]:px-4 [&:is(th)]:text-left [&:is(th)]:font-medium [&:is(th)]:text-muted-foreground",
+      },
+    },
     "inline:math": { view: InlinePresentation },
     "inline:mention": { view: InlinePresentation },
     "html:table": { wrapper: HtmlTablePresentation, props: { className: "w-full text-sm" } },

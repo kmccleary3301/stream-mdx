@@ -35,6 +35,9 @@ const DEFAULT_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   liveCodeHighlighting: false,
 };
 
+// Snapshots and progress invariants compare full rendered code text; the bounded code viewport has its own browser smoke.
+const FULL_CODE_CONTENT = { enabled: false } as const;
+
 const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
   batch: "microtask",
   frameBudgetMs: 10,
@@ -1035,6 +1038,7 @@ export function HtmlRegressionHarness(): JSX.Element {
       <div id="regression-root" ref={rootRef} data-fixture="" data-scenario="">
         <StreamingMarkdown
           engine="worker"
+          codeVirtualization={FULL_CODE_CONTENT}
           key={instanceKey}
           ref={handleInstanceRef}
           worker={createHarnessWorker}
