@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 import { MarkdownEngine } from "@stream-mdx/worker/engine";
 import { createChunkTrace } from "./chunk-trace";
 
@@ -29,23 +30,20 @@ function percentile(sorted: number[], p: number): number {
 const round = (value: number) => Math.round(value * 10) / 10;
 
 // Mirrors PARITY_FEATURES in apps/docs/components/perf/perf-harness.tsx as mapped by the React renderer's INIT.
-const PARITY_INIT: WorkerIn = {
-  type: "INIT",
-  initialContent: "",
-  prewarmLangs: [],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: false,
-    tables: true,
-    callouts: false,
-    math: true,
-    formatAnticipation: { inline: true, mathInline: true, mathBlock: true, html: true, mdx: false, regex: false },
-    liveCodeHighlighting: true,
-    emitDiffBlocks: false,
-  },
-  mdx: { compileMode: "server" },
-} as WorkerIn;
+const PARITY_INIT: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+prewarmLangs: [],
+docPlugins: {
+  footnotes: true,
+  html: true,
+  mdx: false,
+  tables: true,
+  callouts: false,
+  math: true,
+  formatAnticipation: { inline: true, mathInline: true, mathBlock: true, html: true, mdx: false, regex: false },
+  liveCodeHighlighting: true,
+  emitDiffBlocks: false,
+},
+mdx: { compileMode: "server" }, } as WorkerIn;
 
 async function main(): Promise<void> {
   const fixtureName = arg("fixture") ?? "stress-mega";

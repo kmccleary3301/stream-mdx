@@ -5,7 +5,6 @@ Legacy tests live under `lib/markdown-v2/tests/`. As part of the refactor we’r
 ## Current status
 
 - ✅ `backpressure.test.ts`
-- ✅ `coalescing.property.test.ts`
 
 ## TODO
 

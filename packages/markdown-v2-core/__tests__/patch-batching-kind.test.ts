@@ -1,10 +1,17 @@
 import assert from "node:assert";
 
 import type { Patch } from "../src/types";
-import { getPatchKind, splitPatchBatch } from "../src/perf/patch-batching";
+import { getPatchKind } from "../src/perf/patch-batching";
 
 function testSemanticDefaultClassification(): void {
   const patches: Patch[] = [
+    {
+      op: "appendInputSource",
+      at: { blockId: "__root__" },
+      generation: 1,
+      from: 0,
+      text: "x",
+    },
     {
       op: "insertChild",
       at: { blockId: "list-1" },
@@ -15,12 +22,6 @@ function testSemanticDefaultClassification(): void {
       op: "setProps",
       at: { blockId: "p-1", nodeId: "p-1" },
       props: { text: "hello" },
-    },
-    {
-      op: "appendLines",
-      at: { blockId: "code-1", nodeId: "code-1" },
-      startIndex: 0,
-      lines: ["const x = 1;"],
     },
     {
       op: "deleteChild",
@@ -100,55 +101,50 @@ function testExplicitEnrichmentClassification(): void {
   assert.strictEqual(getPatchKind(reservedHtmlEnrichment), "enrichment");
 }
 
-function testSemanticBatchesDoNotMixWithEnrichment(): void {
-  const patches: Patch[] = [
-    {
-      op: "setProps",
-      at: { blockId: "p-1", nodeId: "p-1" },
-      props: { text: "semantic-a" },
-    },
-    {
-      op: "setProps",
-      at: { blockId: "code-1", nodeId: "code-1" },
-      props: { highlightedHtml: "<pre><code>a</code></pre>" },
-      meta: { kind: "enrichment" },
-    },
-    {
-      op: "setProps",
-      at: { blockId: "p-2", nodeId: "p-2" },
-      props: { text: "semantic-b" },
-    },
-  ];
 
-  const groups = splitPatchBatch(patches, 32);
-  assert.strictEqual(groups.length, 3, "semantic patches should flush as atomic units around enrichment work");
-  assert.strictEqual(getPatchKind(groups[1]?.[0] as Patch), "enrichment");
+function testParagraphOperationsStaySemantic(): void {
+  const paragraph = {
+    paragraphOwnerId: "paragraph-1",
+    generation: 1,
+    revision: 2,
+    state: "open" as const,
+    processedTo: 0,
+    completeSpanCount: 0,
+    spanCount: 0,
+    sourceRange: { from: 0, to: 0 },
+  };
+  const append: Patch = {
+    op: "appendParagraph",
+    at: { blockId: "paragraph-1" },
+    paragraphOwnerId: "paragraph-1",
+    generation: 1,
+    expectedRevision: 1,
+    revision: 2,
+    sourceAppend: "",
+    fromSpan: 0,
+    spans: [],
+    paragraph,
+    meta: { kind: "enrichment" },
+  };
+  const update: Patch = {
+    op: "updateParagraphSpans",
+    at: { blockId: "paragraph-1" },
+    paragraphOwnerId: "paragraph-1",
+    generation: 1,
+    expectedRevision: 1,
+    revision: 2,
+    updates: [],
+    paragraph,
+    meta: { kind: "enrichment" },
+  };
+
+  assert.strictEqual(getPatchKind(append), "semantic");
+  assert.strictEqual(getPatchKind(update), "semantic");
+
 }
 
-function testConsecutiveSemanticPatchesStayAtomic(): void {
-  const patches: Patch[] = [
-    {
-      op: "setProps",
-      at: { blockId: "list-1", nodeId: "list-1" },
-      props: { ordered: true },
-      meta: { kind: "semantic", tx: 20, parseEpoch: 20, blockEpoch: 19 },
-    },
-    {
-      op: "insertChild",
-      at: { blockId: "list-1", nodeId: "list-1" },
-      index: 1,
-      node: { id: "list-1::item:1", type: "list-item" },
-      meta: { kind: "semantic", tx: 20, parseEpoch: 20, blockEpoch: 19 },
-    },
-  ];
-
-  const groups = splitPatchBatch(patches, 32);
-  assert.strictEqual(groups.length, 1, "consecutive semantic patches from one tx must stay in one atomic batch");
-  assert.strictEqual(groups[0]?.length, 2, "semantic batch should preserve both patches together");
-}
+testParagraphOperationsStaySemantic();
 
 testSemanticDefaultClassification();
 testExplicitEnrichmentClassification();
-testSemanticBatchesDoNotMixWithEnrichment();
-testConsecutiveSemanticPatchesStayAtomic();
 console.log("patch-batching-kind test passed");

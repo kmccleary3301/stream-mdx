@@ -100,14 +100,11 @@ export function extractHighlightedLines(html: string, fallbackLength: number): H
   if (parser) {
     try {
       const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
-      const nodes = doc.querySelectorAll("span.line");
-      if (nodes.length > 0) {
-        const lines: HighlightedLine[] = [];
-        for (const node of nodes) {
-          lines.push(node instanceof Element ? node.innerHTML : null);
-        }
-        return normalizeHighlightedLines(lines, fallbackLength);
+      const lines: HighlightedLine[] = [];
+      for (const node of doc.getElementsByTagName("span")) {
+        if (node.classList.contains("line")) lines.push(node.innerHTML);
       }
+      if (lines.length > 0) return normalizeHighlightedLines(lines, fallbackLength);
     } catch (error) {
       // fall through to manual extraction
     }

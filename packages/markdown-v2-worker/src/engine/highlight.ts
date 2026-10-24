@@ -1,6 +1,9 @@
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import { type BundledLanguage, type BundledTheme, type Highlighter, type SpecialLanguage, bundledLanguages, bundledThemes, createHighlighter } from "shiki";
 import type {
+  CodeDiffStatus,
+  CodeDiffTokenLine,
+  CodeTokenLine,
   DiffBlock,
   DiffKind,
   DiffLine,
@@ -163,7 +166,18 @@ export async function getSharedHighlighter(prewarmLangs: string[] = []): Promise
       langs: initialLangs,
       themes: ["github-dark", "github-light"],
     }).then(
-      (h) => {
+      (created) => {
+        // Shiki stops a line after 500 ms by default and emits its rest as one token, so a cold or loaded
+        // thread would change colors. Highlighting through the shared highlighter is never time-limited.
+        const h: SharedHighlighter = {
+          ...created,
+          codeToTokensWithThemes: (code, options) => {
+            // Shiki 1.29 forwards tokenizer options to each theme pass; its multi-theme declaration omits them.
+            const unbounded = { ...options, tokenizeTimeLimit: 0 };
+            return created.codeToTokensWithThemes(code, unbounded);
+          },
+          codeToHtml: (code, options) => created.codeToHtml(code, { ...options, tokenizeTimeLimit: 0 }),
+        };
         sharedHighlighter = h;
         return h;
       },
@@ -337,12 +351,19 @@ export function detectDiffLanguage(lang: string, meta: Record<string, unknown>):
   return { isDiff: false, diffLang: normalized, baseLang: null };
 }
 
-export function parseDiffHunkHeader(line: string): { oldStart: number; newStart: number } | null {
+export function parseDiffHunkHeader(line: string): {
+  oldStart: number;
+  oldCount: number;
+  newStart: number;
+  newCount: number;
+} | null {
   const match = line.match(/^@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@/);
   if (!match) return null;
   return {
     oldStart: Number.parseInt(match[1], 10),
+    oldCount: Number.parseInt(match[2] ?? "1", 10),
     newStart: Number.parseInt(match[3], 10),
+    newCount: Number.parseInt(match[4] ?? "1", 10),
   };
 }
 
@@ -361,32 +382,53 @@ export function isDiffMetaLine(line: string): boolean {
   );
 }
 
-export function parseUnifiedDiffLine(line: string, cursor: DiffCursorState): DiffLineInfo {
+export function isDiffFileBoundary(line: string, cursor: DiffCursorState): boolean {
+  const inHunk = (cursor.oldRemaining ?? 0) > 0 || (cursor.newRemaining ?? 0) > 0;
+  return line.startsWith("diff --git") || (!inHunk && line.startsWith("--- "));
+}
+
+export function parseUnifiedDiffLine(line: string, cursor: DiffCursorState): DiffLineInfo;
+export function parseUnifiedDiffLine(line: string, cursor: DiffCursorState, cursorOnly: true): undefined;
+export function parseUnifiedDiffLine(
+  line: string,
+  cursor: DiffCursorState,
+  cursorOnly = false,
+): DiffLineInfo | undefined {
+  if (isDiffFileBoundary(line, cursor)) {
+    cursor.oldLine = null;
+    cursor.newLine = null;
+    delete cursor.oldRemaining;
+    delete cursor.newRemaining;
+  }
+
   if (line.startsWith("@@")) {
     const header = parseDiffHunkHeader(line);
     if (header) {
       cursor.oldLine = header.oldStart;
       cursor.newLine = header.newStart;
+      cursor.oldRemaining = header.oldCount;
+      cursor.newRemaining = header.newCount;
     }
+    if (cursorOnly) return;
     return { text: line, kind: "hunk", prefix: "", content: line, oldNo: null, newNo: null, raw: line, hunkHeader: true };
   }
-  if (line.startsWith("--- ") || line.startsWith("+++ ") || isDiffMetaLine(line)) {
+  const inHunk = (cursor.oldRemaining ?? 0) > 0 || (cursor.newRemaining ?? 0) > 0;
+  if (!inHunk && isDiffMetaLine(line)) {
+    if (cursorOnly) return;
     return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null, raw: line };
   }
   if (line.startsWith("+")) {
-    if (line.startsWith("+++")) {
-      return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null, raw: line };
-    }
     const newNo = cursor.newLine;
     if (cursor.newLine !== null) cursor.newLine += 1;
+    if (cursor.newRemaining !== undefined && cursor.newRemaining > 0) cursor.newRemaining -= 1;
+    if (cursorOnly) return;
     return { text: line, kind: "add", prefix: "+", content: line.slice(1), oldNo: null, newNo, raw: line };
   }
   if (line.startsWith("-")) {
-    if (line.startsWith("---")) {
-      return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null, raw: line };
-    }
     const oldNo = cursor.oldLine;
     if (cursor.oldLine !== null) cursor.oldLine += 1;
+    if (cursor.oldRemaining !== undefined && cursor.oldRemaining > 0) cursor.oldRemaining -= 1;
+    if (cursorOnly) return;
     return { text: line, kind: "remove", prefix: "-", content: line.slice(1), oldNo, newNo: null, raw: line };
   }
   if (line.startsWith(" ")) {
@@ -394,9 +436,54 @@ export function parseUnifiedDiffLine(line: string, cursor: DiffCursorState): Dif
     const newNo = cursor.newLine;
     if (cursor.oldLine !== null) cursor.oldLine += 1;
     if (cursor.newLine !== null) cursor.newLine += 1;
+    if (cursor.oldRemaining !== undefined && cursor.oldRemaining > 0) cursor.oldRemaining -= 1;
+    if (cursor.newRemaining !== undefined && cursor.newRemaining > 0) cursor.newRemaining -= 1;
+    if (cursorOnly) return;
     return { text: line, kind: "context", prefix: " ", content: line.slice(1), oldNo, newNo, raw: line };
   }
+  if (cursorOnly) return;
   return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null, raw: line };
+}
+
+/** Reports whether this line starts a new hunk or file while rows are still owed. */
+export function abandonsOwedRows(text: string, cursor: DiffCursorState): boolean {
+  const owesRows = (cursor.oldRemaining ?? 0) > 0 || (cursor.newRemaining ?? 0) > 0;
+  return owesRows && (text.startsWith("@@") || isDiffFileBoundary(text, cursor));
+}
+
+/** Advances hunk counts and reports malformed headers or boundaries abandoning owed rows. */
+export function advanceDiffCursor(text: string, cursor: DiffCursorState): boolean {
+  const invalidHunkHeader =
+    text.startsWith("@@") && parseDiffHunkHeader(text) === null;
+  const abandonsRows = abandonsOwedRows(text, cursor);
+  parseUnifiedDiffLine(text, cursor, true);
+  return abandonsRows || invalidHunkHeader;
+}
+
+/** Computes diff status from committed cursor state plus the current uncommitted tail. */
+export function codeDiffStatus(
+  cursor: DiffCursorState,
+  rowsAbandoned: boolean,
+  provisionalTailText: string | undefined,
+  sealed: boolean,
+): CodeDiffStatus {
+  const statusCursor = { ...cursor };
+  let abandoned = rowsAbandoned;
+
+  const incompleteProvisionalHunkHeader = provisionalTailText !== undefined
+    && !sealed
+    && provisionalTailText.startsWith("@@")
+    && parseDiffHunkHeader(provisionalTailText) === null;
+  if (
+    provisionalTailText !== undefined
+    && !incompleteProvisionalHunkHeader
+    && advanceDiffCursor(provisionalTailText, statusCursor)
+  ) {
+    abandoned = true;
+  }
+  const hasOwedRows = (statusCursor.oldRemaining ?? 0) > 0 || (statusCursor.newRemaining ?? 0) > 0;
+  if (abandoned || (sealed && hasOwedRows)) return "malformed";
+  return hasOwedRows ? "incomplete" : "complete";
 }
 
 export function normalizeDiffPath(value: string | null): string | null {
@@ -512,7 +599,7 @@ export function toDiffLineKind(kind: DiffKind): DiffLineKind {
   return kind;
 }
 
-export function toThemedLine(tokenLine: TokenLineV1 | null, theme: keyof typeof CODE_HIGHLIGHT_THEMES): ThemedLine | null {
+export function toThemedLine(tokenLine: CodeTokenLine | null, theme: keyof typeof CODE_HIGHLIGHT_THEMES): ThemedLine | null {
   if (!tokenLine) return null;
   return tokenLine.spans.map((span) => {
     const style = span.s ?? span.v?.[theme];
@@ -523,17 +610,6 @@ export function toThemedLine(tokenLine: TokenLineV1 | null, theme: keyof typeof 
   });
 }
 
-export function stripPrefixFromThemedLine(tokens: ThemedLine | null, prefix: string): ThemedLine | null {
-  if (!tokens || !prefix) return tokens;
-  if (tokens.length === 0) return tokens;
-  const first = tokens[0];
-  if (!first || !first.content.startsWith(prefix)) return tokens;
-  const rest = first.content.slice(prefix.length);
-  if (rest.length === 0) {
-    return tokens.slice(1);
-  }
-  return [{ ...first, content: rest }, ...tokens.slice(1)];
-}
 
 export function buildDiffBlocksFromLines(
   lines: DiffLineInfo[],
@@ -589,10 +665,7 @@ export function buildDiffBlocksFromLines(
     if (line.kind === "add") additions += 1;
     if (line.kind === "remove") deletions += 1;
 
-    let themed = tokenLines ? toThemedLine(tokenLines[i] ?? null, "dark") : null;
-    if (line.kind === "add" || line.kind === "remove" || line.kind === "context") {
-      themed = stripPrefixFromThemedLine(themed, line.prefix ?? "");
-    }
+    const themed = tokenLines ? toThemedLine(tokenLines[i] ?? null, "dark") : null;
 
     const entry: DiffLine = {
       kind: toDiffLineKind(line.kind),
@@ -637,6 +710,26 @@ export function renderTokenLines(tokens: ShikiThemedToken[][]): Array<TokenLineV
     spans: lineTokens.map((token) => toTokenSpan(token)),
   }));
 }
+const DIFF_GRAMMAR_TRACK_SNAPSHOT = Symbol("diff-grammar-track-snapshot");
+
+interface DiffGrammarTrackSnapshot {
+  readonly [DIFF_GRAMMAR_TRACK_SNAPSHOT]: true;
+  readonly old: unknown;
+  readonly new: unknown;
+  readonly language: string;
+}
+
+interface DiffGrammarState {
+  old?: unknown;
+  new?: unknown;
+  context?: unknown;
+  language?: string;
+}
+
+function isDiffGrammarTrackSnapshot(value: unknown): value is DiffGrammarTrackSnapshot {
+  return typeof value === "object" && value !== null && DIFF_GRAMMAR_TRACK_SNAPSHOT in value;
+}
+
 
 export async function tokenizeDiffRun(
   lines: DiffLineInfo[],
@@ -648,7 +741,7 @@ export async function tokenizeDiffRun(
   if (lines.length === 0) {
     return { tokenLines: [], grammarState };
   }
-  const text = lines.map((line) => line.raw).join("\n");
+  const text = lines.map((line) => line.content ?? "").join("\n");
   // Shiki 1.29 forwards this continuation option to codeToTokensBase, although
   // its multi-theme options declaration omits it.
   const options = {
@@ -667,36 +760,63 @@ export async function tokenizeDiffRun(
 export async function buildDiffTokenLines(
   lines: DiffLineInfo[],
   language: string,
-  grammarState: {
-    add?: unknown;
-    remove?: unknown;
-    context?: unknown;
-  },
+  grammarState: DiffGrammarState,
   highlighter: SharedHighlighter,
   themes: CodeThemePair = DEFAULT_CODE_HIGHLIGHT_THEMES,
-): Promise<{ tokenLines: Array<TokenLineV1 | null>; grammarState: typeof grammarState }> {
+): Promise<{
+  tokenLines: Array<TokenLineV1 | null>;
+  diffTokenLines: CodeDiffTokenLine[];
+  grammarState: typeof grammarState;
+}> {
   if (lines.length === 0) {
-    return { tokenLines: [], grammarState };
+    return { tokenLines: [], diffTokenLines: [], grammarState };
   }
   const tokenLines: Array<TokenLineV1 | null> = new Array(lines.length).fill(null);
+  const diffTokenLines = new Array<CodeDiffTokenLine>(lines.length);
+  const storedTracks = isDiffGrammarTrackSnapshot(grammarState.context) ? grammarState.context : undefined;
+  const hasOldState = Object.prototype.hasOwnProperty.call(grammarState, "old");
+  const hasNewState = Object.prototype.hasOwnProperty.call(grammarState, "new");
+  let oldGrammarState = hasOldState ? grammarState.old : storedTracks ? storedTracks.old : grammarState.context;
+  let newGrammarState = hasNewState ? grammarState.new : storedTracks ? storedTracks.new : grammarState.context;
+  let currentLanguage = grammarState.language ?? storedTracks?.language ?? language;
   let currentKind: DiffLineInfo["kind"] | null = null;
   let currentRun: DiffLineInfo[] = [];
   let startIndex = 0;
 
   const flush = async () => {
     if (!currentKind || currentRun.length === 0) return;
-    const stateKey = currentKind === "add" ? "add" : currentKind === "remove" ? "remove" : "context";
-    const priorState = grammarState[stateKey];
-    const { tokenLines: runTokens, grammarState: nextState } = await tokenizeDiffRun(
-      currentRun,
-      language,
-      priorState,
-      highlighter,
-      themes,
-    );
-    grammarState[stateKey] = nextState;
-    for (let i = 0; i < runTokens.length; i += 1) {
-      tokenLines[startIndex + i] = runTokens[i] ?? null;
+    let oldRunTokens: Array<TokenLineV1 | null> | undefined;
+    let newRunTokens: Array<TokenLineV1 | null> | undefined;
+    if (currentKind === "context") {
+      const oldRun = await tokenizeDiffRun(currentRun, currentLanguage, oldGrammarState, highlighter, themes);
+      oldGrammarState = oldRun.grammarState;
+      oldRunTokens = oldRun.tokenLines;
+      const newRun = await tokenizeDiffRun(currentRun, currentLanguage, newGrammarState, highlighter, themes);
+      newGrammarState = newRun.grammarState;
+      newRunTokens = newRun.tokenLines;
+    } else {
+      const useNewGrammar = currentKind === "add";
+      const result = await tokenizeDiffRun(
+        currentRun,
+        currentLanguage,
+        useNewGrammar ? newGrammarState : oldGrammarState,
+        highlighter,
+        themes,
+      );
+      if (useNewGrammar) {
+        newGrammarState = result.grammarState;
+        newRunTokens = result.tokenLines;
+      } else {
+        oldGrammarState = result.grammarState;
+        oldRunTokens = result.tokenLines;
+      }
+    }
+    for (let i = 0; i < currentRun.length; i += 1) {
+      const oldTokens = oldRunTokens?.[i] ?? null;
+      const newTokens = newRunTokens?.[i] ?? null;
+      const lineIndex = startIndex + i;
+      tokenLines[lineIndex] = currentKind === "remove" ? oldTokens : newTokens;
+      diffTokenLines[lineIndex] = { old: oldTokens, new: newTokens };
     }
     currentRun = [];
     currentKind = null;
@@ -704,9 +824,21 @@ export async function buildDiffTokenLines(
 
   for (let i = 0; i < lines.length; i += 1) {
     const info = lines[i];
-    if (info.kind === "meta" || info.hunkHeader) {
+    if (info.kind === "meta" || info.kind === "hunk" || info.hunkHeader) {
       await flush();
+      const fileBoundary = info.kind === "meta"
+        && (info.raw.startsWith("diff --git") || info.raw.startsWith("--- ") || info.raw.startsWith("+++ "));
+      if (fileBoundary) {
+        oldGrammarState = undefined;
+        newGrammarState = undefined;
+        const filePath = extractDiffFilePath(info.raw);
+        if (filePath) {
+          const detectedLanguage = guessLanguageFromPath(filePath);
+          currentLanguage = await resolveHighlightLanguage(highlighter, detectedLanguage ?? language);
+        }
+      }
       tokenLines[i] = null;
+      diffTokenLines[i] = { old: null, new: null };
       continue;
     }
     if (currentKind !== info.kind) {
@@ -717,7 +849,17 @@ export async function buildDiffTokenLines(
     currentRun.push(info);
   }
   await flush();
-  return { tokenLines, grammarState };
+
+  grammarState.old = oldGrammarState;
+  grammarState.new = newGrammarState;
+  grammarState.language = currentLanguage;
+  grammarState.context = Object.freeze({
+    [DIFF_GRAMMAR_TRACK_SNAPSHOT]: true as const,
+    old: oldGrammarState,
+    new: newGrammarState,
+    language: currentLanguage,
+  });
+  return { tokenLines, diffTokenLines, grammarState };
 }
 
 export function enhanceHighlightedHtml(html: string, language?: string): string {

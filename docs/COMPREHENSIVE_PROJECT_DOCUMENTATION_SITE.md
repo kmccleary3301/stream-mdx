@@ -58,7 +58,7 @@ Enable only what your route needs:
 
 - `html`, `tables`, `math`, `mdx`, `formatAnticipation`
 - `@stream-mdx/mermaid` for Mermaid blocks
-- Design-system overrides via `htmlElements` and `tableElements`
+- Design-system overrides via `components.table` wrappers and `components["html:<tag>"]`
 
 ## 6) Plugins
 
@@ -80,13 +80,11 @@ Recommended usage:
 
 See integration guide: [`/docs/react-integration`](/docs/react-integration)
 
-## 8) MDX hydration and parity
+## 8) Restricted and trusted MDX
 
-For MDX-heavy docs:
-
-- Choose compile mode intentionally (server API vs worker)
-- Keep component registries explicit and versioned
-- Track hydration latency and error rates in perf harness
+- `features.mdx` enables syntax recognition; it does not evaluate authored code.
+- Restricted source components use host `defineContentComponent` registrations through `contentComponents`; only descriptors cross the worker boundary.
+- Full MDX requires trusted content, `contentPolicy="trusted-mdx"`, an explicit engine and host import map, and `unsafe-eval` in `script-src`. It is host-realm execution, not a sandbox.
 
 ## 9) Security model (CSP + sanitization)
 

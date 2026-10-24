@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { InlineNode, Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
@@ -21,15 +23,12 @@ async function collectBlocks(docPlugins: { html?: boolean; mdx?: boolean; math?:
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins,
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const sample = [
     "Inline math $a+b=c$ and display:\n",

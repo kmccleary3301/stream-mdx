@@ -1,3 +1,7 @@
+import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
+import type { StreamingDemoAutomationApiV2 } from "../apps/docs/components/screens/streaming-markdown-demo-v2/automation-api";
+import type { PerfWindow } from "./perf/demo-worker-lifecycle-browser";
 import { chromium, type ConsoleMessage, type Page } from "playwright";
 
 type Args = {
@@ -152,58 +156,194 @@ async function runRegressionSurface(page: Page, url: string, iterations: number)
 }
 
 async function runDemoSurface(page: Page, url: string, iterations: number): Promise<Record<string, unknown>> {
+  const lifecycleBundle = await build({
+    entryPoints: [fileURLToPath(new URL("./perf/demo-worker-lifecycle-browser.ts", import.meta.url))],
+    platform: "browser",
+    bundle: true,
+    write: false,
+    target: "es2020",
+  });
+  const lifecycleScript = lifecycleBundle.outputFiles[0]?.text;
+  if (!lifecycleScript) throw new Error("Could not bundle the worker lifecycle observer.");
+  await page.addInitScript({ content: lifecycleScript });
   await page.goto(url, { waitUntil: "commit", timeout: 90_000 });
 
+  let automationFallbackReason: string | null = null;
   const hasAutomation = await page
     .waitForFunction(() => Boolean((window as any).__STREAMING_DEMO__), { timeout: 10_000 })
     .then(() => true)
-    .catch(() => false);
+    .catch((error) => {
+      automationFallbackReason = error instanceof Error ? error.message : String(error);
+      return false;
+    });
 
   if (hasAutomation) {
     const summary = await page.evaluate(async ({ runIterations }) => {
-      const api = (window as any).__STREAMING_DEMO__;
-      await api.waitForWorker();
+      const root = window as Window & {
+        __STREAMING_DEMO__?: StreamingDemoAutomationApiV2;
+      };
+      const api = root.__STREAMING_DEMO__;
+      const observer = (root as PerfWindow).__STREAM_MDX_WORKER_LIFECYCLE__;
+      if (!api || !observer) throw new Error("Demo automation or worker lifecycle observer is unavailable.");
+
+      // Native methods survive Playwright serialization without Node-side naming helpers.
+      const completion = {
+        async within<T>(promise: Promise<T>, label: string): Promise<T> {
+          const { promise: timeoutPromise, reject } = Promise.withResolvers<T>();
+          const timer = window.setTimeout(
+            () => reject(new Error(`${label} timed out after 10,000ms.`)),
+            10_000,
+          );
+          try {
+            return await Promise.race([promise, timeoutPromise]);
+          } finally {
+            window.clearTimeout(timer);
+          }
+        },
+        delay(milliseconds: number): Promise<void> {
+          const { promise, resolve } = Promise.withResolvers<void>();
+          window.setTimeout(resolve, milliseconds);
+          return promise;
+        },
+        async worker(label: string): Promise<void> {
+          if (!api.waitForWorker) throw new Error("Demo automation does not expose worker readiness.");
+          await this.within(api.waitForWorker(), label);
+        },
+        async event<T>(readEvent: () => T | null, label: string): Promise<T> {
+          const startedAt = Date.now();
+          while (true) {
+            const event = readEvent();
+            if (event !== null) return event;
+            if (Date.now() - startedAt > 10_000) throw new Error(`${label} timed out after 10,000ms.`);
+            await this.delay(20);
+          }
+        },
+      };
+
+      await completion.worker("Initial demo worker readiness");
       api.setRate(20_000);
       api.setTick(1);
 
+      let lastAcceptedSourceUnits: number | null = null;
       for (let i = 0; i < runIterations; i += 1) {
+        const afterSequence = observer.sequence;
         api.restart();
-        if (i % 3 === 0) {
-          api.restart();
-        }
-        await api.waitForWorker();
+        if (i % 3 === 0) api.restart();
+        await completion.worker(`Demo worker readiness in iteration ${i}`);
+        const worker = api.getWorker?.() ?? null;
+        observer.watch(worker);
+        const workerId = observer.workerIdFor(worker);
+        if (workerId === null) throw new Error(`Demo worker was unavailable in iteration ${i}.`);
+        const initSent = await completion.event(
+          () => {
+            const events = observer.events.filter(
+              (event) =>
+                event.sequence > afterSequence &&
+                event.workerId === workerId &&
+                event.direction === "input" &&
+                event.type === "INIT",
+            );
+            return events[events.length - 1] ?? null;
+          },
+          `Worker INIT in iteration ${i}`,
+        );
+        await completion.event(
+          () =>
+            observer.events.find(
+              (event) =>
+                event.sequence > initSent.sequence &&
+                event.workerId === workerId &&
+                event.generation === initSent.generation &&
+                event.direction === "output" &&
+                event.type === "INITIALIZED",
+            ) ?? null,
+          `Worker INITIALIZED in iteration ${i}`,
+        );
         api.resume();
-        await new Promise((resolve) => setTimeout(resolve, 12));
+        await completion.delay(12);
         if (i % 2 === 0) {
-          await api.fastForward();
+          if (!api.fastForward) throw new Error("Demo automation does not expose fast-forward.");
+          await completion.within(Promise.resolve(api.fastForward()), `Demo fast-forward in iteration ${i}`);
+          const offered = api.getState();
+          if (offered.idx !== offered.fullTextLength || offered.workerSentIdx !== offered.idx) {
+            throw new Error(`Fast-forward did not publish its offered/admitted source frontier: ${JSON.stringify({
+              idx: offered.idx,
+              fullTextLength: offered.fullTextLength,
+              workerSentIdx: offered.workerSentIdx,
+            })}`);
+          }
         }
-        api.finalize();
-        await api.flushPending();
-        await api.waitForIdle();
+        const finalizeBoundary = observer.sequence;
+        if (!api.finalize) throw new Error("Demo automation does not expose host finalization.");
+        const result = await completion.within(api.finalize(), `Host finalization in iteration ${i}`);
+        lastAcceptedSourceUnits = result.acceptedSourceUnits;
+        const finalizeSent = await completion.event(
+          () =>
+            observer.events.find(
+              (event) =>
+                event.sequence > finalizeBoundary &&
+                event.workerId === workerId &&
+                event.generation === initSent.generation &&
+                event.direction === "input" &&
+                event.type === "FINALIZE",
+            ) ?? null,
+          `Worker FINALIZE in iteration ${i}`,
+        );
+        await completion.event(
+          () =>
+            observer.events.find(
+              (event) =>
+                event.sequence > finalizeSent.sequence &&
+                event.workerId === workerId &&
+                event.generation === initSent.generation &&
+                event.direction === "output" &&
+                event.type === "FINALIZED",
+            ) ?? null,
+          `Worker FINALIZED in iteration ${i}`,
+        );
+        const state = api.getState();
+        if (
+          !Number.isSafeInteger(result.generation) ||
+          result.generation < 0 ||
+          (result.acceptedSourceUnits > 0 && result.generation !== state.nativeAdmissionGeneration) ||
+          result.generation !== state.nativeFinalizedGeneration ||
+          result.acceptedSourceUnits !== state.workerSentIdx ||
+          result.committedSourceUnits !== result.acceptedSourceUnits ||
+          state.isHostComplete !== true ||
+          state.isFinalizing !== false ||
+          state.streamError !== null
+        ) {
+          throw new Error(`Host finalization status/counts did not match native worker evidence in iteration ${i}: ${JSON.stringify({
+            result,
+            nativeAdmissionGeneration: state.nativeAdmissionGeneration,
+            nativeFinalizedGeneration: state.nativeFinalizedGeneration,
+            workerSentIdx: state.workerSentIdx,
+            isHostComplete: state.isHostComplete,
+            isFinalizing: state.isFinalizing,
+            streamError: state.streamError,
+          })}`);
+        }
+        await completion.within(Promise.resolve(api.flushPending()), `Renderer flush in iteration ${i}`);
+        await completion.within(Promise.resolve(api.waitForIdle()), `Renderer idle in iteration ${i}`);
       }
 
-      const startedAt = Date.now();
-      let finalTextLength = 0;
-      while (true) {
-        finalTextLength = (document.querySelector(".markdown-v2-output")?.textContent ?? "").length;
-        if (finalTextLength >= 80) break;
-        await api.flushPending?.();
-        await api.waitForIdle?.();
-        if (Date.now() - startedAt > 7_000) break;
-        await new Promise((resolve) => setTimeout(resolve, 40));
+      if (lastAcceptedSourceUnits === 0) {
+        await completion.event(
+          () => document.querySelector(".markdown-v2-output")?.textContent === "" ? true : null,
+          "Empty finalized generation must not retain the prior rendered document",
+        );
       }
+      const finalTextLength = (document.querySelector(".markdown-v2-output")?.textContent ?? "").length;
       const state = api.getState();
       return {
         mode: "automation",
         state,
+        nativeAdmissionGeneration: state.nativeAdmissionGeneration,
+        nativeFinalizedGeneration: state.nativeFinalizedGeneration,
         textLength: finalTextLength,
       };
     }, { runIterations: iterations });
 
-    const textLength = Number((summary as { textLength?: number }).textLength ?? 0);
-    if (textLength < 80) {
-      throw new Error(`demo surface rendered too little content after restart race (${textLength} chars)`);
-    }
     return summary as Record<string, unknown>;
   }
 
@@ -279,7 +419,10 @@ async function runDemoSurface(page: Page, url: string, iterations: number): Prom
     throw new Error(`demo fallback surface rendered too little content after restart race (${textLength} chars)`);
   }
 
-  return summary as Record<string, unknown>;
+  return {
+    ...(summary as Record<string, unknown>),
+    automationFallbackReason,
+  };
 }
 
 async function runBenchmarkSurface(page: Page, url: string, iterations: number): Promise<Record<string, unknown>> {

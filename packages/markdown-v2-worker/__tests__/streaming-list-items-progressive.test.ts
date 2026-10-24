@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
@@ -29,7 +31,7 @@ function countListItems(store: ReturnType<typeof createRendererStore>, listId: s
 async function applyWorkerMessages(store: ReturnType<typeof createRendererStore>, messages: WorkerOut[]): Promise<void> {
   for (const message of messages) {
     if (message.type === "INITIALIZED") {
-      store.reset(message.blocks);
+      store.resetSnapshot(message.snapshot);
     }
     if (message.type === "PATCH") {
       store.applyPatches(message.patches as Patch[], { captureMetrics: false });
@@ -41,12 +43,9 @@ async function runStreamingListItemsProgressive(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true }, });
   await applyWorkerMessages(store, initMessages);
 
   const content = [

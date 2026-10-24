@@ -1,92 +1,57 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
+import type { Block, Patch, WorkerOut } from "@stream-mdx/core";
+import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 
-import type { WorkerOut } from "@stream-mdx/core";
-
+import { projectConsumerBlocks } from "./consumer-block-projection";
 import { createWorkerHarness } from "./worker-test-harness";
 
-function findParagraphMeta(messages: WorkerOut[]) {
-  const init = messages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
-  if (!init) return null;
-  const paragraph = init.blocks.find((block) => block.type === "paragraph" || block.type === "blockquote" || block.type === "mdx");
-  return paragraph?.payload.meta as Record<string, unknown> | undefined;
+function coldBlocks(messages: WorkerOut[]): Block[] {
+  const store = createRendererStore();
+  for (const message of messages) {
+    if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
+    else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
+  }
+  return store.getBlocks();
 }
 
-async function testHtmlInlineProviderAppearsInMixedLookahead(): Promise<void> {
+async function testHtmlContentRemainsInColdParagraph(): Promise<void> {
+  const source = "Prefix <kbd>code";
   const harness = await createWorkerHarness();
-  const messages = await harness.send({
+  const blocks = coldBlocks(await harness.send({
     type: "INIT",
-    initialContent: "Prefix <kbd>code",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: source,
     prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: { inline: true, html: true },
-    },
-  });
-
-  const meta = findParagraphMeta(messages);
-  assert.ok(meta, "expected paragraph metadata");
-  const decisions = Array.isArray(meta?.mixedLookahead) ? (meta?.mixedLookahead as Array<Record<string, unknown>>) : [];
-  const htmlDecision = decisions.find((entry) => entry.providerId === "html-inline-provider");
-  assert.ok(htmlDecision, "expected html-inline-provider mixed lookahead decision");
+    docPlugins: { html: true, formatAnticipation: { inline: true, html: true } },
+  }));
+  const paragraph = blocks.find((block) => block.type === "paragraph" && block.payload.raw === source);
+  assert.ok(paragraph, "HTML source must remain available as a cold paragraph export");
+  const projection = projectConsumerBlocks([paragraph])[0];
+  assert.ok(projection.markup.includes("Prefix"), "rendered HTML content must preserve the paragraph prefix");
+  assert.ok(projection.markup.includes("code"), "rendered HTML content must preserve authored text after the tag");
 }
 
-async function testMdxTagProviderAppearsInMixedLookahead(): Promise<void> {
+async function testRegisteredRestrictedComponentRemainsInColdParagraph(): Promise<void> {
+  const source = 'Prefix <InlineChip tone="warm"> suffix';
   const harness = await createWorkerHarness();
-  const messages = await harness.send({
+  const blocks = coldBlocks(await harness.send({
     type: "INIT",
-    initialContent: "Prefix <InlineChip tone=\"warm\"> suffix",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: source,
     prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: { inline: true, mdx: true },
-      mdxComponentNames: ["InlineChip"],
-    },
-  });
-
-  const meta = findParagraphMeta(messages);
-  assert.ok(meta, "expected paragraph metadata");
-  const decisions = Array.isArray(meta?.mixedLookahead) ? (meta?.mixedLookahead as Array<Record<string, unknown>>) : [];
-  const mdxDecision = decisions.find((entry) => entry.providerId === "mdx-tag-provider");
-  assert.ok(mdxDecision, "expected mdx-tag-provider mixed lookahead decision");
+    contentPolicy: "restricted",
+    contentComponents: [{ name: "InlineChip" }],
+    docPlugins: { mdx: true, formatAnticipation: { inline: true, mdx: true } },
+  }));
+  const paragraph = blocks.find((block) => block.type === "paragraph" && block.payload.raw === source);
+  assert.ok(paragraph, "restricted registered-component source must remain available as a cold paragraph export");
+  const projection = projectConsumerBlocks([paragraph])[0];
+  assert.ok(projection.markup.includes("Prefix"), "rendered paragraph must preserve its prefix");
+  assert.ok(projection.markup.includes("suffix"), "rendered paragraph must preserve text after the component tag");
 }
 
-async function testMdxExpressionProviderAppearsInMixedLookahead(): Promise<void> {
-  const harness = await createWorkerHarness();
-  const messages = await harness.send({
-    type: "INIT",
-    initialContent: "Prefix {expr and trailing prose",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: { inline: true, mdx: true },
-      mdxComponentNames: ["InlineChip"],
-    },
-  });
-
-  const meta = findParagraphMeta(messages);
-  assert.ok(meta, "expected paragraph metadata");
-  const decisions = Array.isArray(meta?.mixedLookahead) ? (meta?.mixedLookahead as Array<Record<string, unknown>>) : [];
-  const mdxExpressionDecision = decisions.find((entry) => entry.providerId === "mdx-expression-provider");
-  assert.ok(mdxExpressionDecision, "expected mdx-expression-provider mixed lookahead decision");
-  assert.strictEqual(mdxExpressionDecision?.decision, "terminate");
-}
-
-await testHtmlInlineProviderAppearsInMixedLookahead();
-await testMdxTagProviderAppearsInMixedLookahead();
-await testMdxExpressionProviderAppearsInMixedLookahead();
-console.log("mixed lookahead provider tests passed");
+await testHtmlContentRemainsInColdParagraph();
+await testRegisteredRestrictedComponentRemainsInColdParagraph();
+console.log("mixed lookahead consumer tests passed");

@@ -15,13 +15,11 @@ StreamMDX keeps output stable while text arrives.
 - Backpressure guardrails
 
 \`\`\`ts
-type Patch = {
-  op: "appendLines" | "setProps";
-  blockId: string;
-};
+import type { Patch } from "@stream-mdx/core";
+type NativeCodePatch = Extract<Patch, { op: "appendCode" | "decorateCode" }>;
 \`\`\`
 
-Inline code stays readable while streaming.`;
+Inline code stays readable while streaming.`
 
 const SPEEDS = {
   slow: { label: "Slow", cps: 180 },

@@ -3,6 +3,7 @@ import type { LookaheadDecision, LookaheadDecisionTrace, LookaheadRepairOp, Look
 type MathTraceAnalysis = NonNullable<NonNullable<LookaheadDecisionTrace["analysis"]>["math"]>;
 
 export type MathShadowAnalysisInput = {
+  /** Authored math source only; trusted MDX inline nodes are not parsed or evaluated here. */
   raw: string;
   surface: Extract<LookaheadSurface, "math-inline" | "math-block">;
   decision: LookaheadDecision;
@@ -298,7 +299,7 @@ function summarizeOps(ops: readonly LookaheadRepairOp[]): string[] {
       case "self-close-tag":
         return op.kind;
       default:
-        return op.kind satisfies never;
+        return op satisfies never;
     }
   });
 }

@@ -21,6 +21,7 @@ StreamMDX is a streaming-first Markdown/MDX renderer for React with a worker-fir
 - [Why This Exists](#why-this-exists)
 - [At a Glance](#at-a-glance)
 - [Install Profiles](#install-profiles)
+- [Migrating from 0.5.x](#migrating-from-05x)
 - [Quickstart](#quickstart)
 - [Usage Patterns](#usage-patterns)
 - [Package Matrix](#package-matrix)
@@ -84,6 +85,24 @@ Minimal modular baseline:
 npm install @stream-mdx/react @stream-mdx/worker @stream-mdx/core @stream-mdx/plugins
 ```
 
+## Native source and prepared content
+
+List items keep primary text in a managed paragraph child. Task markers remain in authored source and render one checkbox, including empty tasks. Explicit cold `Block[]` exports retain the legacy item inline and mixed-content representation.
+
+Late link definitions update existing nested paragraphs, tables and headings without widening authored ranges. Footnote publication updates affected paragraph and table occurrences in document reference order. Earlier cold snapshots remain historical; list looseness changes layout without rebuilding completed item content.
+
+Generic nodes publish heading metadata and physical ranges with content updates. Metadata replacement and clearing reach both Core and React cold exports without changing earlier snapshots; managed source owners retain their existing guards.
+
+CR is a Markdown line ending immediately; a following LF completes the same physical CRLF ending. Splitting that pair does not turn a valid table header back into prose. Canonical input retains both UTF-16 units. Root source-kind changes retire the old paragraph lease before publishing its replacement, including definition syntax that later becomes prose again.
+
+Provisional HTML and allowlisted MDX lookahead changes only prepared content, not canonical input, physical UTF-16 ranges or cold raw exports. Repair stays within the owning paragraph. Rejected or over-budget markup, and openings left unclosed at `FINALIZE`, render literally. Speculative repair does not authorize MDX execution.
+
+## Migrating from 0.5.x
+
+Upgrade all StreamMDX packages together to the same release and rebuild or recopy the matching hosted worker. This is a breaking release for React integrations, protocol consumers, plugins, and optional theme users.
+
+The complete before-and-after checklist is in the [0.5.x migration guide](docs/MIGRATION.md). For current API contracts, see [Public API](docs/PUBLIC_API.md) and [Security Model](docs/SECURITY_MODEL.md).
+
 ## Quickstart
 
 ### 1. Host the worker bundle
@@ -109,11 +128,9 @@ export function Demo({ text }: { text: string }) {
         tables: true,
         html: true,
         math: true,
-        mdx: true,
         footnotes: true,
         codeHighlighting: "incremental",
       }}
-      mdxCompileMode="worker"
       prewarmLangs={["tsx", "bash", "json"]}
     />
   );
@@ -133,7 +150,7 @@ npm -w stream-mdx-docs run dev
 > [!NOTE]
 > `StreamingMarkdown` is a client component. In Next.js App Router, import it behind a `"use client"` boundary.
 
-`engine` defaults to `"auto"`, which tries a browser Worker and falls back to a dynamically imported in-process engine only when Worker creation is unavailable or fails. Use `engine="worker"` to require a Worker or `engine="main-thread"` to run parsing on the browser thread without hosting a worker asset. This does not change SSR behavior; use snapshot compilation for server markup. See [execution modes](docs/PUBLIC_API.md#execution-modes-and-ssr).
+`engine` defaults to `"auto"`. It uses the existing inline engine to publish up to 4,096 accepted UTF-16 source units while worker setup and grammar prewarm are pending; further source is deferred beyond that bootstrap budget. Use `engine="worker"` to require a Worker or `engine="main"` to keep parsing on the browser thread. This does not change SSR behavior; use snapshot compilation for server markup. See [execution modes](docs/PUBLIC_API.md#execution-modes-and-ssr).
 
 ## Usage Patterns
 
@@ -157,38 +174,78 @@ export function Article({ markdown }: { markdown: string }) {
 ```
 
 ### Append-only streaming with imperative control
+
+The host handle admits each imperative `append()` string atomically in JavaScript UTF-16 units. Offers over the 262,144-unit hard limit fail with non-retryable `SourceCapacityError` and accept no partial source. Keep offers at or below 65,536 units; when an offer returns `shouldPause`, wait for capacity before the next offer.
+
 ```tsx
 "use client";
 
 import { useEffect, useRef } from "react";
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "stream-mdx";
+import { SourceCapacityError, StreamingMarkdown, type AppendResult, type StreamingMarkdownHandle } from "stream-mdx";
+
+const MAX_OFFER_UNITS = 65_536;
 
 export function LiveStream({ chunks }: { chunks: string[] }) {
   const ref = useRef<StreamingMarkdownHandle>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     async function run() {
-      ref.current?.restart();
-      for (const chunk of chunks) {
-        if (cancelled) break;
-        ref.current?.append(chunk);
-        ref.current?.flushPending();
-        await ref.current?.waitForIdle();
+      const handle = ref.current;
+      if (!handle) return;
+
+      const expectedSourceUnits = chunks.reduce((total, source) => total + source.length, 0);
+      handle.restart();
+      for (const source of chunks) {
+        for (let offset = 0; offset < source.length;) {
+          if (controller.signal.aborted) return;
+          const chunk = source.slice(offset, offset + MAX_OFFER_UNITS);
+          let admission: AppendResult;
+          while (true) {
+            try {
+              admission = handle.append(chunk);
+              break;
+            } catch (error) {
+              if (!(error instanceof SourceCapacityError) || !error.retryable) throw error;
+              await handle.waitForCapacity({ units: chunk.length, signal: controller.signal });
+            }
+          }
+          offset += chunk.length;
+          if (admission.shouldPause && offset < source.length) {
+            await handle.waitForCapacity({
+              units: Math.min(MAX_OFFER_UNITS, source.length - offset),
+              signal: controller.signal,
+            });
+          }
+        }
+        handle.flushPending();
+        await handle.waitForIdle();
       }
-      ref.current?.finalize();
+      if (!controller.signal.aborted) {
+        const result = await handle.finalize();
+        if (
+          !Number.isSafeInteger(result.generation) ||
+          result.generation < 0 ||
+          result.acceptedSourceUnits !== expectedSourceUnits ||
+          result.committedSourceUnits !== expectedSourceUnits
+        ) {
+          throw new Error("Host finalization did not cover the complete source generation.");
+        }
+      }
     }
 
-    void run();
-    return () => {
-      cancelled = true;
-    };
+    void run().catch((error: unknown) => {
+      if (!controller.signal.aborted) console.error("Streaming source failed", error);
+    });
+    return () => controller.abort(new Error("Stream generation cancelled"));
   }, [chunks]);
 
-  return <StreamingMarkdown ref={ref} managedWorker worker="/workers/markdown-worker.js" />;
+  return <StreamingMarkdown ref={ref} worker="/workers/markdown-worker.js" />;
 }
 ```
+
+`append()` returns `AppendResult` with cumulative admitted session units, current pending units, and `shouldPause`. Retry only a retryable `SourceCapacityError`, using `waitForCapacity` for the exact next offer; aborts and ended sessions remain visible failures. Automatic `stream` adapters preserve larger iterator chunks by losslessly slicing them into offers; they do not impose an arbitrary source-size cap. Session counters exclude `INIT.initialContent`. `finalize()` immediately seals host admission and resolves to `FinalizeResult` only after the native semantic-store barrier; it is not a DOM-commit or enrichment barrier.
 
 ### Static / server compilation for SSR, SSG, and docs builds
 
@@ -207,7 +264,6 @@ export default async function Page() {
         math: true,
         footnotes: true,
       },
-      mdx: { compileMode: "server" },
       prewarmLangs: ["typescript"],
     },
   });
@@ -216,14 +272,16 @@ export default async function Page() {
 }
 ```
 
-### Mermaid as an opt-in renderer
+### Mermaid as an opt-in engine
 
 ```tsx
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "stream-mdx";
 
+const engines = { mermaid: createMermaidEngine() };
+
 export function DiagramDoc({ text }: { text: string }) {
-  return <StreamingMarkdown text={text} worker="/workers/markdown-worker.js" codeRenderers={{ mermaid: MermaidBlock }} />;
+  return <StreamingMarkdown text={text} worker="/workers/markdown-worker.js" engines={engines} />;
 }
 ```
 
@@ -249,7 +307,7 @@ const headingMetadata: DocumentPlugin = {
 serveMarkdownWorker({ extensions: { documentPlugins: [headingMetadata] } });
 ```
 
-The [plugin ABI](docs/PLUGIN_ABI.md#3-custom-bundled-worker-entry) includes a complete bundled entry with native Lezer markdown and inline extensions. App-level regex rules use the serializable `syntax` prop and named `inlineComponents`.
+The [plugin ABI](docs/PLUGIN_ABI.md#3-custom-bundled-worker-entry) includes a complete bundled entry with native Lezer markdown and inline extensions. App-level regex rules use the serializable `syntax` prop and render through `components["extension:<name>"]`.
 If you are deciding between package layers:
 
 1. Use `stream-mdx` unless you have a concrete reason not to.
@@ -329,7 +387,7 @@ stream-mdx/
 | Build everything | `npm run build` | Includes the starter app build. |
 | Run all workspace tests | `npm test` | Package-level tests across the monorepo. |
 | Build hosted worker for docs/app surfaces | `npm run docs:worker:build` | Produces and copies `markdown-worker.js`. |
-| Build docs snapshots | `npm run docs:snapshots:build` | Compiles markdown docs into snapshot artifacts. |
+| Build docs snapshots | `npm run docs:snapshots:build` | Builds packages and the hosted worker, then compiles doc snapshots. |
 | Run docs locally | `npm run docs:dev` | Prepares packages, worker, docs snapshots, then starts Next dev. |
 | Build docs for production | `npm run docs:build` | End-to-end docs build/export path. |
 | Run regression suites | `npm run test:regression` | HTML + style snapshot suites. |
@@ -349,6 +407,8 @@ npm run build:packages
 npm run test:regression:seeded-smoke:server
 npm run docs:dev
 ```
+
+Managed seeded smoke writes static-server output to `tmp/seeded-smoke/docs-server.log`. The server logs directly to that file, so synchronous replay commands cannot stall HTTP responses by filling a log pipe.
 
 ## Architecture Summary
 

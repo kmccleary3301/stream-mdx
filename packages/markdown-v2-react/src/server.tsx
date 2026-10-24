@@ -6,26 +6,29 @@ export const MarkdownBlocksRenderer: React.FC<MarkdownBlocksRendererProps> = (pr
   React.createElement(BaseMarkdownBlocksRenderer, { ...props, animated: false });
 export type { MarkdownBlocksRendererProps };
 export { ComponentRegistry } from "./components";
+export { defineContentComponent } from "./components/content-components";
+export type {
+  BroadContentComponentOptions,
+  ContentComponentHostProps,
+  ContentComponentProps,
+  ContentComponentPropsGuard,
+  ContentComponentRegistration,
+  ContentComponentsMap,
+  ValidatedContentComponentOptions,
+} from "./components/content-components";
+export { TrustedMdxServerRegionProvider } from "./trusted-mdx/server-regions";
 export { createRendererStore } from "./renderer/store";
+export { NativeNodeView } from "./renderer/node-views";
 export { defaultUrlTransform } from "@stream-mdx/core";
 export { STREAM_MDX_ANIMATION_CSS, DEFAULT_ANIMATED_OPTIONS } from "./animation";
 export type {
   AllowElementFn,
-  BlockComponents,
-  CodeFenceRenderer,
-  CodeFenceRendererConfig,
-  CodeFenceRendererProps,
   ElementFilterContext,
   ElementFilterDescriptor,
   ElementFilterOptions,
-  HtmlElements,
-  InlineComponents,
   InlineHtmlRenderer,
   InlineHtmlRendererMap,
-  MathRenderer,
-  MathRendererProps,
-  RendererConfig,
-  TableElements,
+  MathOptions,
   UrlTransform,
   UrlTransformContext,
   ControlsConfig,

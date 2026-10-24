@@ -7,6 +7,12 @@ export type GuideItem = {
 
 export const GUIDE_ITEMS: GuideItem[] = [
   {
+    slug: "migration",
+    title: "Migrating from 0.5.x",
+    file: "migration.md",
+    description: "Breaking API, worker protocol, and theme changes when upgrading from 0.5.x.",
+  },
+  {
     slug: "streaming-fundamentals",
     title: "Streaming Fundamentals",
     file: "streaming-fundamentals.md",
@@ -22,7 +28,7 @@ export const GUIDE_ITEMS: GuideItem[] = [
     slug: "mdx-and-html",
     title: "MDX and HTML in StreamMDX",
     file: "mdx-and-html.md",
-    description: "MDX compile strategies, HTML safety, and when to use each feature.",
+    description: "Restricted and trusted MDX policies, HTML safety, and when to use each feature.",
   },
   {
     slug: "plugins-and-extensions",

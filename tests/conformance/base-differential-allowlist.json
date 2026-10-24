@@ -1,0 +1,8 @@
+[
+  {
+    "id": "table-escaping-alignment",
+    "chunking": "*",
+    "classification": "no-spec",
+    "reason": "CRLF pipe table; candidate equals micromark+GFM; base renders a paragraph"
+  }
+]

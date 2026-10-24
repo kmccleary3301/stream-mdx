@@ -32,17 +32,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 1,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -51,23 +52,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -76,16 +73,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -98,17 +92,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 1,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -117,23 +112,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -142,16 +133,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -164,17 +152,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 1,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -183,23 +172,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -208,16 +193,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -230,17 +212,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 1,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -249,23 +232,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -274,16 +253,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -296,17 +272,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 1,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -315,23 +292,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -340,16 +313,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -362,17 +332,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 1,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -381,23 +352,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -406,16 +373,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -428,17 +392,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 1,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -447,23 +412,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -472,16 +433,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -494,17 +452,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 1,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -513,23 +472,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -538,16 +493,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -560,17 +512,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 1,
         "meta": {
           "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -579,23 +532,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
-        "hasMath": true
+        "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+      "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12Another nested item with inline math $x + yReturn to sibling list item with ++plu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -604,82 +553,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
+          "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMath",
-      "appendedChars": 242,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 4,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.7999999821186066,
-        "lastDurationMs": 0.699999988079071,
-        "meta": {
-          "fixtureId": "nested-blockquote-list-crossover",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": true,
-        "hasMath": true
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 1,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis <em>alpha</em><div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code <code class=\"inline-code\">beta</code></p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
-      "textSample": "Root bullet with partial emphasis alphaBlockquote layer with partial code betaNested list in quote with cite {cite:12Another nested item with inline math x+yx + yx+yReturn to sibling list item with ++",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 1,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -692,28 +572,27 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Root bullet with partial emphasis *alpha<div class=\"markdown-list-item-children\"><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Blockquote layer with partial code `beta</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested list in quote with cite {cite:12</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Another nested item with inline math $x + y</li></ul></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Return to sibling list item with ++plugin-like marker</li></ul></div></li></ul></div>",
     "runtimeState": {
-      "rendererVersion": 6,
+      "rendererVersion": 5,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
       "lastTx": 3,
-      "lastPatchToDomMs": 7.0999999940395355,
-      "lastDurationMs": 0.19999998807907104,
+      "lastPatchToDomMs": 9.699999988079071,
+      "lastDurationMs": 1.100000023841858,
       "meta": {
         "fixtureId": "nested-blockquote-list-crossover",
-        "scenarioId": "S4_chunky_network",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S4_chunky_network"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -727,8 +606,6 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       }
@@ -737,13 +614,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "9113841c452d01eefd504772ebc9320a01ce0881b90aa639a81e6541a18a146f",
+        "hash": "540cd1908f1ea6f6a8b8737e62e146f4ec22e28ba18e51161624917d8e01ec76",
         "textSample": "Root bullet with partial emphasis *alphaBlockquote layer with partial code `betaNested list in quote with cite {cite:12A"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

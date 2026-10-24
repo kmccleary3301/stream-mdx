@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { TocHeading, WorkerOut } from "@stream-mdx/core";
@@ -11,12 +13,9 @@ function getToc(messages: WorkerOut[]): TocHeading[] {
 
 async function collectToc(content: string): Promise<Array<{ id: string; text: string; level: number }>> {
   const harness = await createWorkerHarness();
-  await harness.send({
-    type: "INIT",
-    initialContent: content,
-    prewarmLangs: [],
-    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true },
-  });
+  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: content,
+  prewarmLangs: [],
+  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true }, });
   await harness.send({ type: "FINALIZE" });
   const dump = await harness.send({ type: "DUMP_BLOCKS" });
   return getToc(dump).map((heading) => ({ id: heading.id, text: heading.text, level: heading.level }));

@@ -31,17 +31,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.9000000357627869,
+        "lastDurationMs": 0.9000000357627869,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -50,8 +51,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -60,12 +59,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math\">MDX Math</h1></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math\" id=\"mdx-math\" data-heading-id=\"mdx-math\">MDX Math</h1></div>",
       "textSample": "MDX Math",
       "structure": {
         "topLevelTags": [
@@ -76,15 +73,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -97,17 +91,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 4,
-        "lastPatchToDomMs": 14.5,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 8,
+        "lastPatchToDomMs": 0.800000011920929,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -116,8 +111,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -126,12 +119,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixe</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">This fixture mixe</p></div>",
       "textSample": "MDX Math Code MixedThis fixture mixe",
       "structure": {
         "topLevelTags": [
@@ -142,15 +133,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -163,17 +151,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 7,
-        "lastPatchToDomMs": 14.599999994039536,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 14,
+        "lastPatchToDomMs": 0.7999999523162842,
+        "lastDurationMs": 0.09999996423721313,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -182,8 +171,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -192,12 +179,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>,</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>,</p></div>",
       "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2,",
       "structure": {
         "topLevelTags": [
@@ -208,15 +193,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -229,17 +211,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 7,
-        "lastPatchToDomMs": 14.599999994039536,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 14,
+        "lastPatchToDomMs": 0.7999999523162842,
+        "lastDurationMs": 0.09999996423721313,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -248,8 +231,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -258,12 +239,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>,</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph streaming-partial markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>,</p></div>",
       "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2,",
       "structure": {
         "topLevelTags": [
@@ -274,87 +253,78 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
     {
-      "id": "event-hasMdxPending",
-      "appendedChars": 150,
+      "id": "event-hasPre",
+      "appendedChars": 160,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 18,
+        "rendererVersion": 19,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 15,
-        "lastPatchToDomMs": 14.400000005960464,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 32,
+        "lastPatchToDomMs": 5.100000023841858,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
         "hasTable": false,
-        "hasPre": false,
+        "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
       "counts": {
         "table": 0,
-        "pre": 0,
+        "pre": 1,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.Compiling MDX (server)…",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nS</code></pre></div></div>",
+      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.<Preview codeblock>\nS",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 0,
+          "pre": 1,
           "blockquote": 0,
           "katex": 1,
-          "mdxPending": 1,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
+        "codeBlocks": [
           {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
+            "text": "<Preview codeblock>\nS",
+            "lineCount": 2
           }
-        ],
-        "codeBlocks": []
+        ]
       }
     },
     {
@@ -366,154 +336,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 17,
-        "lastPatchToDomMs": 14.5,
-        "lastDurationMs": 0,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 34,
+        "lastPatchToDomMs": 0.9000000357627869,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": true
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p>\nStability n</div>",
-      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.\nStability n",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMdxCompiled",
-      "appendedChars": 280,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 31,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 28,
-        "lastPatchToDomMs": 5.0999999940395355,
-        "lastDurationMs": 0.09999999403953552,
-        "meta": {
-          "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": false,
-        "hasMath": true
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3e3489dd\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stability note:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">First ordered item with <code class=\"mdx-code\">inline code</code></li>\n<li class=\"mdx-li\">Second ordered item with math <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.8974em; vertical-align: -0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></li>\n</ol></figure></div></div>",
-      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.Stability note:\nFirst ordered item with inline code\nSecond ",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stability note:\nFirst ordered item with inline code\nSecond ordered item with math a2+b2=c2a^2 + b^2 = c^2a2+b2=c2\n"
-          }
-        ],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasPre",
-      "appendedChars": 290,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 32,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 29,
-        "lastPatchToDomMs": 9,
-        "lastDurationMs": 0.09999999403953552,
-        "meta": {
-          "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -522,8 +356,6 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -531,14 +363,12 @@
         "table": 0,
         "pre": 1,
         "blockquote": 0,
-        "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
+        "katex": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3e3489dd\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stability note:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">First ordered item with <code class=\"mdx-code\">inline code</code></li>\n<li class=\"mdx-li\">Second ordered item with math <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.8974em; vertical-align: -0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">St</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.Stability note:\nFirst ordered item with inline code\nSecond ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nStability n</code></pre></div></div>",
+      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.<Preview codeblock>\nStability n",
       "structure": {
         "topLevelTags": [
           "div"
@@ -547,25 +377,17 @@
           "table": 0,
           "pre": 1,
           "blockquote": 0,
-          "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
+          "katex": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stability note:\nFirst ordered item with inline code\nSecond ordered item with math a2+b2=c2a^2 + b^2 = c^2a2+b2=c2\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "St",
-            "lineCount": 1
+            "text": "<Preview codeblock>\nStability n",
+            "lineCount": 2
           }
         ]
       }
@@ -579,17 +401,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 33,
-        "lastPatchToDomMs": 15,
-        "lastDurationMs": 0.29999999701976776,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 66,
+        "lastPatchToDomMs": 1.2999999523162842,
+        "lastDurationMs": 0.2999999523162842,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -598,47 +421,39 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
       "counts": {
         "table": 0,
-        "pre": 1,
+        "pre": 2,
         "blockquote": 0,
-        "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
+        "katex": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3e3489dd\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stability note:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">First ordered item with <code class=\"mdx-code\">inline code</code></li>\n<li class=\"mdx-li\">Second ordered item with math <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.8974em; vertical-align: -0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">Stability note:</span>\n<span class=\"line\"></span>\n<span class=\"line\">1. First ordered item wit</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.Stability note:\nFirst ordered item with inline code\nSecond ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nStability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"19dcd456\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\" data-provisional=\"true\">1. First ordered item wit</span></code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.<Preview codeblock>\nStability note:\n\n1. First ordered item ",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 1,
+          "pre": 2,
           "blockquote": 0,
-          "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
+          "katex": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stability note:\nFirst ordered item with inline code\nSecond ordered item with math a2+b2=c2a^2 + b^2 = c^2a2+b2=c2\n"
-          }
-        ],
         "codeBlocks": [
+          {
+            "text": "<Preview codeblock>\nStability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n</Preview>",
+            "lineCount": 6
+          },
           {
             "text": "Stability note:\n\n1. First ordered item wit",
             "lineCount": 3
@@ -655,17 +470,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 50,
-        "lastPatchToDomMs": 15.5,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 100,
+        "lastPatchToDomMs": 1.199999988079071,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -674,147 +490,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 4,
         "blockquote": 0,
-        "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
+        "katex": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3e3489dd\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stability note:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">First ordered item with <code class=\"mdx-code\">inline code</code></li>\n<li class=\"mdx-li\">Second ordered item with math <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.8974em; vertical-align: -0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span></code></pre></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> answer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 42</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre></div></div></div></div></div></div>\n| Model | Score | Notes |\n| --- | --- | --- |\n| Alp</div>",
-      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.Stability note:\nFirst ordered item with inline code\nSecond ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nStability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"19dcd456\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"text\" class=\"language-text language-text\" style=\"\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"121d5c9e\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"ts\" class=\"language-ts language-ts\" style=\"\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">export const</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> answer</span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\"> =</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> 42</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n| Model | Score | Notes |\n| --- | --- | --- |\n| Alp</code></pre></div></div>",
+      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.<Preview codeblock>\nStability note:\n\n1. First ordered item ",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 4,
           "blockquote": 0,
-          "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
+          "katex": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stability note:\nFirst ordered item with inline code\nSecond ordered item with math a2+b2=c2a^2 + b^2 = c^2a2+b2=c2\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$",
+            "text": "<Preview codeblock>\nStability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n</Preview>",
+            "lineCount": 6
+          },
+          {
+            "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n",
+            "lineCount": 5
+          },
+          {
+            "text": "export const answer = 42;\n",
+            "lineCount": 2
+          },
+          {
+            "text": "<Preview>\n| Model | Score | Notes |\n| --- | --- | --- |\n| Alp",
             "lineCount": 4
-          },
-          {
-            "text": "export const answer = 42;",
-            "lineCount": 1
-          }
-        ]
-      }
-    },
-    {
-      "id": "event-hasTable",
-      "appendedChars": 560,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 59,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 56,
-        "lastPatchToDomMs": 13.900000005960464,
-        "lastDurationMs": 0.10000000894069672,
-        "meta": {
-          "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": true,
-        "hasPre": true,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": false,
-        "hasMath": true
-      },
-      "counts": {
-        "table": 1,
-        "pre": 2,
-        "blockquote": 0,
-        "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3e3489dd\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stability note:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">First ordered item with <code class=\"mdx-code\">inline code</code></li>\n<li class=\"mdx-li\">Second ordered item with math <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.8974em; vertical-align: -0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span></code></pre></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> answer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 42</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:75d8107a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Score</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">Alpha</td><td class=\"mdx-td\">0.91</td><td class=\"mdx-td\">stable</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">Beta</td><td class=\"mdx-td\">0.87</td><td class=\"mdx-td\">review</td></tr></tbody></table></figure></div><p class=\"markdown-paragraph\">$$$$</p></div>",
-      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.Stability note:\nFirst ordered item with inline code\nSecond ",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 1,
-          "pre": 2,
-          "blockquote": 0,
-          "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [
-          {
-            "headerColumns": 3,
-            "rowCellCounts": [
-              3,
-              3
-            ],
-            "emptyBodyCellCount": 0
-          }
-        ],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stability note:\nFirst ordered item with inline code\nSecond ordered item with math a2+b2=c2a^2 + b^2 = c^2a2+b2=c2\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "ModelScoreNotesAlpha0.91stableBeta0.87review"
-          }
-        ],
-        "codeBlocks": [
-          {
-            "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$",
-            "lineCount": 4
-          },
-          {
-            "text": "export const answer = 42;",
-            "lineCount": 1
           }
         ]
       }
@@ -828,86 +547,70 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 59,
-        "lastPatchToDomMs": 15,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 118,
+        "lastPatchToDomMs": 1.600000023841858,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
-        "hasTable": true,
+        "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
       "counts": {
-        "table": 1,
-        "pre": 2,
+        "table": 0,
+        "pre": 4,
         "blockquote": 0,
         "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3e3489dd\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stability note:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">First ordered item with <code class=\"mdx-code\">inline code</code></li>\n<li class=\"mdx-li\">Second ordered item with math <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.8974em; vertical-align: -0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span></code></pre></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> answer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 42</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:75d8107a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Score</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">Alpha</td><td class=\"mdx-td\">0.91</td><td class=\"mdx-td\">stable</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">Beta</td><td class=\"mdx-td\">0.87</td><td class=\"mdx-td\">review</td></tr></tbody></table></figure></div><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-error\" title=\"ParseError: KaTeX parse error: Unexpected end of input in a macro argument, expected '}' at end of input: …, dx = \\frac{1}\" style=\"color:#cc0000\">\\int_0^1 x^2 \\, dx = \\frac{1}</span></span></div></div></div></div></div></div></div>",
-      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.Stability note:\nFirst ordered item with inline code\nSecond ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nStability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"19dcd456\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"text\" class=\"language-text language-text\" style=\"\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"121d5c9e\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"ts\" class=\"language-ts language-ts\" style=\"\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">export const</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> answer</span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\"> =</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> 42</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n| Model | Score | Notes |\n| --- | --- | --- |\n| Alpha | 0.91 | stable |\n| Beta | 0.87 | review |\n&lt;/Preview&gt;</code></pre></div><div class=\"math-display katex-block markdown-math-display\" data-tex=\"\\int_0^1 x^2 \\, dx = \\frac{1}{}\" style=\"overflow-x: auto;\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><msup><mi>x</mi><mn>2</mn></msup><mtext> </mtext><mi>d</mi><mi>x</mi><mo>=</mo><mfrac><mn>1</mn><mrow></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x^2 \\, dx = \\frac{1}{}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:2.0074em;vertical-align:-0.686em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.3214em;\"><span style=\"top:-2.314em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.677em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.686em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span></div></div>",
+      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.<Preview codeblock>\nStability note:\n\n1. First ordered item ",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 1,
-          "pre": 2,
+          "table": 0,
+          "pre": 4,
           "blockquote": 0,
           "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
-        "tables": [
-          {
-            "headerColumns": 3,
-            "rowCellCounts": [
-              3,
-              3
-            ],
-            "emptyBodyCellCount": 0
-          }
-        ],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stability note:\nFirst ordered item with inline code\nSecond ordered item with math a2+b2=c2a^2 + b^2 = c^2a2+b2=c2\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "ModelScoreNotesAlpha0.91stableBeta0.87review"
-          }
-        ],
+        "tables": [],
         "codeBlocks": [
           {
-            "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$",
-            "lineCount": 4
+            "text": "<Preview codeblock>\nStability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n</Preview>",
+            "lineCount": 6
           },
           {
-            "text": "export const answer = 42;",
-            "lineCount": 1
+            "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n",
+            "lineCount": 5
+          },
+          {
+            "text": "export const answer = 42;\n",
+            "lineCount": 2
+          },
+          {
+            "text": "<Preview>\n| Model | Score | Notes |\n| --- | --- | --- |\n| Alpha | 0.91 | stable |\n| Beta | 0.87 | review |\n</Preview>",
+            "lineCount": 6
           }
         ]
       }
@@ -921,17 +624,99 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 66,
-        "lastPatchToDomMs": 15.899999991059303,
-        "lastDurationMs": 0.5,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 132,
+        "lastPatchToDomMs": 1.5,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "mdx-math-code-mixed",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S1_slow_small"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasBlockquote": false,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 5,
+        "blockquote": 0,
+        "katex": 2,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nStability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"19dcd456\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"text\" class=\"language-text language-text\" style=\"\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"121d5c9e\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"ts\" class=\"language-ts language-ts\" style=\"\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">export const</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> answer</span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\"> =</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> 42</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n| Model | Score | Notes |\n| --- | --- | --- |\n| Alpha | 0.91 | stable |\n| Beta | 0.87 | review |\n&lt;/Preview&gt;</code></pre></div><div class=\"math-display katex-block markdown-math-display\" data-tex=\"\\int_0^1 x^2 \\, dx = \\frac{1}{3}\" style=\"overflow-x: auto;\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><msup><mi>x</mi><mn>2</mn></msup><mtext> </mtext><mi>d</mi><mi>x</mi><mo>=</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x^2 \\, dx = \\frac{1}{3}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:2.0074em;vertical-align:-0.686em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.3214em;\"><span style=\"top:-2.314em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">3</span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.677em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.686em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"6053b280\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-python\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-python\" data-language=\"python\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"python\" class=\"language-python\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">def</span><span style=\"--shiki-dark: #B392F0; --shiki-light: #6F42C1;\"> square</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">(x: </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">int</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">) -&gt; </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">int</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">:</span></span>\n<span class=\"line\" data-line=\"2\" data-provisional=\"true\">    return x * x</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.<Preview codeblock>\nStability note:\n\n1. First ordered item ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 5,
+          "blockquote": 0,
+          "katex": 2,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "codeBlocks": [
+          {
+            "text": "<Preview codeblock>\nStability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n</Preview>",
+            "lineCount": 6
+          },
+          {
+            "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n",
+            "lineCount": 5
+          },
+          {
+            "text": "export const answer = 42;\n",
+            "lineCount": 2
+          },
+          {
+            "text": "<Preview>\n| Model | Score | Notes |\n| --- | --- | --- |\n| Alpha | 0.91 | stable |\n| Beta | 0.87 | review |\n</Preview>",
+            "lineCount": 6
+          },
+          {
+            "text": "def square(x: int) -> int:\n    return x * x\n",
+            "lineCount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "event-hasTable",
+      "appendedChars": 656,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 70,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "workerInitialized": true,
+        "workerFinalized": true,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 133,
+        "lastPatchToDomMs": 5.5,
+        "lastDurationMs": 0.40000003576278687,
+        "meta": {
+          "fixtureId": "mdx-math-code-mixed",
+          "scenarioId": "S1_slow_small"
+        },
+        "storeCounters": {
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -940,8 +725,6 @@
         "hasTable": true,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -950,13 +733,11 @@
         "pre": 3,
         "blockquote": 0,
         "katex": 3,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3e3489dd\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stability note:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">First ordered item with <code class=\"mdx-code\">inline code</code></li>\n<li class=\"mdx-li\">Second ordered item with math <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.8974em; vertical-align: -0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span></code></pre></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> answer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 42</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:75d8107a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Score</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">Alpha</td><td class=\"mdx-td\">0.91</td><td class=\"mdx-td\">stable</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">Beta</td><td class=\"mdx-td\">0.87</td><td class=\"mdx-td\">review</td></tr></tbody></table></figure></div><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><msup><mi>x</mi><mn>2</mn></msup><mtext> </mtext><mi>d</mi><mi>x</mi><mo>=</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x^2 \\, dx = \\frac{1}{3}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:2.0074em;vertical-align:-0.686em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.3214em;\"><span style=\"top:-2.314em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">3</span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.677em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.686em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span></span></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">def square(x: int) -&gt; int:</span>\n<span class=\"line\">    return x * x</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.Stability note:\nFirst ordered item with inline code\nSecond ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"markdown-paragraph markdown-paragraph\">Stability note:</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item with <code class=\"inline-code\">inline code</code></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></li></ol></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"19dcd456\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"121d5c9e\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-ts language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">export const</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> answer</span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\"> =</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> 42</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n</code></pre></div></div></div></div></div></div></div><figure class=\"styles_preview__avcYR not-prose\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"58de1e21\" data-table-virtualized=\"false\" data-table-total-rows=\"2\" data-table-mounted-rows=\"2\" data-table-start-index=\"0\" data-table-end-index=\"2\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Model</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Score</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"58de1e21::row:0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">0.91</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">stable</td></tr><tr data-row-id=\"58de1e21::row:1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">0.87</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">review</td></tr></tbody></table></div></div></figure><div class=\"math-display katex-block markdown-math-display\" data-tex=\"\\int_0^1 x^2 \\, dx = \\frac{1}{3}\" style=\"overflow-x: auto;\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><msup><mi>x</mi><mn>2</mn></msup><mtext> </mtext><mi>d</mi><mi>x</mi><mo>=</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x^2 \\, dx = \\frac{1}{3}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:2.0074em;vertical-align:-0.686em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.3214em;\"><span style=\"top:-2.314em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">3</span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.677em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.686em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"6053b280\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-python\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-python\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-python language-python\" data-language=\"python\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">def</span><span style=\"--shiki-dark: #B392F0; --shiki-light: #6F42C1;\"> square</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">(x: </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">int</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">) -&gt; </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">int</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">:</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">    return</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> x </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">*</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> x</span></span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalized MDX preview blocks.Stability note:First ordered item with inline codeSecond or",
       "structure": {
         "topLevelTags": [
           "div"
@@ -966,8 +747,6 @@
           "pre": 3,
           "blockquote": 0,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
@@ -983,28 +762,18 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stability note:\nFirst ordered item with inline code\nSecond ordered item with math a2+b2=c2a^2 + b^2 = c^2a2+b2=c2\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "ModelScoreNotesAlpha0.91stableBeta0.87review"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$",
-            "lineCount": 4
+            "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n",
+            "lineCount": 5
           },
           {
-            "text": "export const answer = 42;",
-            "lineCount": 1
-          },
-          {
-            "text": "def square(x: int) -> int:\n    return x * x",
+            "text": "export const answer = 42;\n",
             "lineCount": 2
+          },
+          {
+            "text": "def square(x: int) -> int:\n    return x * x\n",
+            "lineCount": 3
           }
         ]
       }
@@ -1018,28 +787,27 @@
       "hasTable": true,
       "hasPre": true,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": true,
       "hasBlockquote": false,
       "hasMath": true
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3e3489dd\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stability note:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">First ordered item with <code class=\"mdx-code\">inline code</code></li>\n<li class=\"mdx-li\">Second ordered item with math <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.8974em; vertical-align: -0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right: 0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height: 0.8141em;\"><span style=\"top: -3.063em; margin-right: 0.05em;\"><span class=\"pstrut\" style=\"height: 2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span></code></pre></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> answer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 42</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:75d8107a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Score</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">Alpha</td><td class=\"mdx-td\">0.91</td><td class=\"mdx-td\">stable</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">Beta</td><td class=\"mdx-td\">0.87</td><td class=\"mdx-td\">review</td></tr></tbody></table></figure></div><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><msup><mi>x</mi><mn>2</mn></msup><mtext> </mtext><mi>d</mi><mi>x</mi><mo>=</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x^2 \\, dx = \\frac{1}{3}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:2.0074em;vertical-align:-0.686em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.3214em;\"><span style=\"top:-2.314em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">3</span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.677em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.686em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span></span></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-python\" data-language=\"python\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">def</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> square</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(x: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">int</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) -&gt; </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">int</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">:</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> x </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">*</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> x</span></span></code></pre></div></div></div></div></div></div></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Math Code Mixed\" id=\"mdx-math-code-mixed\" data-heading-id=\"mdx-math-code-mixed\">MDX Math Code Mixed</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture mixes inline math like <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>, standalone code blocks, and multiple finalized MDX preview blocks.</p><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"markdown-paragraph markdown-paragraph\">Stability note:</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item with <code class=\"inline-code\">inline code</code></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with math <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2 + b^2 = c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span></li></ol></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"19dcd456\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stability note:</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span>1. First ordered item with `inline code`</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Second ordered item with math $a^2 + b^2 = c^2$</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"121d5c9e\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-ts language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">export const</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> answer</span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\"> =</span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\"> 42</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n</code></pre></div></div></div></div></div></div></div><figure class=\"styles_preview__avcYR not-prose\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"58de1e21\" data-table-virtualized=\"false\" data-table-total-rows=\"2\" data-table-mounted-rows=\"2\" data-table-start-index=\"0\" data-table-end-index=\"2\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Model</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Score</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"58de1e21::row:0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">0.91</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">stable</td></tr><tr data-row-id=\"58de1e21::row:1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">0.87</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">review</td></tr></tbody></table></div></div></figure><div class=\"math-display katex-block markdown-math-display\" data-tex=\"\\int_0^1 x^2 \\, dx = \\frac{1}{3}\" style=\"overflow-x: auto;\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><msup><mi>x</mi><mn>2</mn></msup><mtext> </mtext><mi>d</mi><mi>x</mi><mo>=</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x^2 \\, dx = \\frac{1}{3}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8641em;\"><span style=\"top:-3.113em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:2.0074em;vertical-align:-0.686em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.3214em;\"><span style=\"top:-2.314em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">3</span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.677em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\"><span class=\"mord\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.686em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"6053b280\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-python\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-python\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-python language-python\" data-language=\"python\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">def</span><span style=\"--shiki-dark: #B392F0; --shiki-light: #6F42C1;\"> square</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">(x: </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">int</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">) -&gt; </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">int</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">:</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">    return</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> x </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">*</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> x</span></span>\n</code></pre></div></div></div></div></div></div></div></div>",
     "runtimeState": {
-      "rendererVersion": 71,
+      "rendererVersion": 70,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 68,
-      "lastPatchToDomMs": 12.200000002980232,
-      "lastDurationMs": 0.9000000059604645,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
+      "lastTx": 133,
+      "lastPatchToDomMs": 5.5,
+      "lastDurationMs": 0.40000003576278687,
       "meta": {
         "fixtureId": "mdx-math-code-mixed",
-        "scenarioId": "S1_slow_small",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S1_slow_small"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -1053,8 +821,6 @@
         "pre": 3,
         "blockquote": 0,
         "katex": 3,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       }
@@ -1063,7 +829,7 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "8c83f20e7dfc69033f42827b853bc3eb6042e1ce8c0daea6591e76120a2bca04",
+        "hash": "79ec5dde3e537c321539836778a6337334d0f9ac5854b08c17839b52c0e8d24d",
         "textSample": "MDX Math Code MixedThis fixture mixes inline math like E=mc2E = mc^2E=mc2, standalone code blocks, and multiple finalize"
       }
     ],
@@ -1078,28 +844,18 @@
           "emptyBodyCellCount": 0
         }
       ],
-      "mdxBlocks": [
-        {
-          "status": "compiled",
-          "textSample": "Stability note:\nFirst ordered item with inline code\nSecond ordered item with math a2+b2=c2a^2 + b^2 = c^2a2+b2=c2\n"
-        },
-        {
-          "status": "compiled",
-          "textSample": "ModelScoreNotesAlpha0.91stableBeta0.87review"
-        }
-      ],
       "codeBlocks": [
         {
-          "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$",
-          "lineCount": 4
+          "text": "Stability note:\n\n1. First ordered item with `inline code`\n2. Second ordered item with math $a^2 + b^2 = c^2$\n",
+          "lineCount": 5
         },
         {
-          "text": "export const answer = 42;",
-          "lineCount": 1
-        },
-        {
-          "text": "def square(x: int) -> int:\n    return x * x",
+          "text": "export const answer = 42;\n",
           "lineCount": 2
+        },
+        {
+          "text": "def square(x: int) -> int:\n    return x * x\n",
+          "lineCount": 3
         }
       ]
     }

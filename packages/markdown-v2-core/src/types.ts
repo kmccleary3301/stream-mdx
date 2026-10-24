@@ -1,3 +1,14 @@
+import type { RestrictedComponentDescriptor } from "./admission";
+
+import type { CodeLineDecorationUpdate, CodeLineRecord } from "./code-records";
+import type { TableBlockSnapshot, TableBlockSourceMetadata, TableHeaderRecord, TableRowRecord } from "./table-records";
+import type { ParagraphBlockSnapshot, ParagraphBlockSourceMetadata, ParagraphSpanRecord, ParagraphSpanUpdate } from "./paragraph-records";
+import type { TableRowIndexUpdate } from "./table-row-index";
+import type { CodeDiffStatus } from "./node-handles";
+
+/** Matching worker, renderer and NDJSON schema identity; protocol re-exports this value. */
+export const STREAM_MDX_SCHEMA_VERSION = "2.0";
+
 // Core contracts (public types) - V2 Markdown Renderer
 // Based on final_spec.md architecture
 
@@ -16,6 +27,8 @@ export interface BlockMeta {
   /** Sanitized HTML ownership with inline text prepared by the owning engine parser. */
   htmlTree?: HtmlTreeNode[];
   htmlParagraphTree?: HtmlTreeNode[];
+  /** Engine-prepared Markdown owners for compiler-authored trusted MDX flow children. */
+  trustedMdxNativeChildren?: HtmlTreeNode[];
   [key: string]: unknown;
 }
 
@@ -31,25 +44,35 @@ export interface Block {
     inline?: InlineNode[]; // serialized inline tree
     highlightedHtml?: string; // safe HTML (code only)
     sanitizedHtml?: string; // sanitized HTML (html blocks)
-    compiledMdxRef?: { id: string } | null; // server-compiled artifact key
-    compiledMdxModule?: CompiledMdxModule | null; // inline compiled module (worker/client side)
     meta?: BlockMeta; // e.g., code fence info, table align, linkReferences
     range?: { from: number; to: number }; // original source offsets
   };
 }
 
-/** Sanitized HTML ownership tree. Block leaves retain the engine's prepared markdown. */
+export type ContentPolicy = "markdown" | "restricted" | "trusted-mdx";
+
+/** Sanitized HTML and restricted component ownership tree. Block leaves retain the engine's prepared markdown. */
 export type HtmlTreeNode =
-  | { kind: "text"; text: string; inline?: InlineNode[] }
-  | { kind: "element"; tagName: string; attributes: Record<string, string>; children: HtmlTreeNode[]; inlineNode?: InlineNode; paragraphRoot?: boolean }
+  | { kind: "text"; text: string; inline?: InlineNode[]; diagnostic?: string; rawSource?: string }
+  | {
+      kind: "element";
+      tagName: string;
+      attributes: Record<string, string>;
+      children: HtmlTreeNode[];
+      inlineNode?: InlineNode;
+      paragraphRoot?: boolean;
+    }
+  | {
+      kind: "component";
+      name: string;
+      props: Readonly<Record<string, unknown>>;
+      status: "open" | "closed" | "incomplete";
+      children: HtmlTreeNode[];
+      rawSource?: string;
+      diagnostic?: string;
+    }
   | { kind: "block"; block: Block };
 
-export interface CompiledMdxModule {
-  id: string;
-  code: string;
-  dependencies?: string[];
-  source?: "server" | "worker";
-}
 
 export interface MixedContentSegment {
   kind: "text" | "html" | "mdx";
@@ -57,8 +80,6 @@ export interface MixedContentSegment {
   range?: { from: number; to: number };
   inline?: InlineNode[];
   sanitized?: string;
-  status?: "pending" | "compiled" | "error";
-  error?: string;
   lookahead?: unknown[];
 }
 
@@ -102,7 +123,7 @@ export interface ProtectedRange {
 /**
  * Inline node types for rich text rendering
  */
-export type InlineNode =
+export type InlineNode = (
   | { kind: "text"; text: string }
   | { kind: "strong"; children: InlineNode[] }
   | { kind: "em"; children: InlineNode[] }
@@ -129,13 +150,18 @@ export type InlineNode =
   | { kind: "math-inline"; tex: string }
   | { kind: "math-display"; tex: string }
   | { kind: "footnote-ref"; label: string; number?: number; occurrence?: number; defined?: boolean }
+  | { kind: "trusted-mdx-inline"; raw: string; ownerId: string }
   | {
       kind: "plugin";
       name: string;
       attrs: Record<string, string>;
       children?: InlineNode[];
       raw: string;
-    };
+    }
+) & {
+  /** Authored UTF-16 offsets; absent when exact source provenance is unavailable. */
+  sourceRange?: { from: number; to: number };
+};
 
 export interface FootnoteItem {
   number: number;
@@ -148,10 +174,22 @@ export interface SyntaxRuleSpec {
   name: string;
   pattern: { source: string; flags?: string };
   trigger?: string /* first char(s) for fast dispatch */;
+  /** Maximum UTF-16 code units passed to this rule's RegExp; omitted means unbounded. */
+  maxCandidateUnits?: number;
   before?: string /* Lezer inline parser to precede, e.g. 'Emphasis' */;
   attrs?: Record<string, number | string> /* capture group index or literal */;
   content?: number /* capture group parsed as inline children */;
   anticipation?: { open: string; close: string };
+}
+export interface ContainerExtensionSpec {
+  readonly name: string;
+  readonly component: string;
+}
+
+export interface SyntaxExtensionDescriptor {
+  readonly contractVersion: 1;
+  readonly inline?: readonly SyntaxRuleSpec[];
+  readonly containers?: readonly ContainerExtensionSpec[];
 }
 
 export interface HtmlOptions {
@@ -212,8 +250,10 @@ export type LazyTokenizationPriority = "visible" | "prefetch";
 export type WorkerIn =
   | {
       type: "INIT";
+      schemaVersion: typeof STREAM_MDX_SCHEMA_VERSION;
       initialContent?: string;
       prewarmLangs?: string[];
+      bootstrap?: boolean;
       themes?: CodeHighlightThemes;
       docPlugins?: {
         footnotes?: boolean;
@@ -229,15 +269,15 @@ export type WorkerIn =
         liveTokenization?: boolean;
         emitHighlightTokens?: boolean;
         emitDiffBlocks?: boolean;
-        mdxComponentNames?: string[];
         lazyTokenization?: {
           enabled?: boolean;
           thresholdLines?: number;
         };
         themes?: CodeHighlightThemes;
       };
-      mdx?: { compileMode?: "server" | "worker" };
-      syntax?: SyntaxRuleSpec[];
+      contentPolicy?: ContentPolicy;
+      contentComponents?: readonly RestrictedComponentDescriptor[];
+      syntax?: SyntaxExtensionDescriptor;
       html?: HtmlOptions;
     }
   | { type: "APPEND"; text: string }
@@ -245,8 +285,6 @@ export type WorkerIn =
   | { type: "DEBUG_STATE" }
   | { type: "DUMP_BLOCKS" }
   | { type: "TOKENIZE_RANGE"; blockId: string; startLine: number; endLine: number; priority?: LazyTokenizationPriority }
-  | { type: "MDX_COMPILED"; blockId: string; compiledId: string; rawSignature?: string }
-  | { type: "MDX_ERROR"; blockId: string; error?: string; rawSignature?: string }
   | { type: "SET_CREDITS"; credits: number };
 
 export type WorkerPhase = WorkerIn["type"] | "UNKNOWN";
@@ -258,9 +296,10 @@ export interface WorkerErrorPayload {
 }
 
 export type WorkerOut =
-  | { type: "INITIALIZED"; blocks: Block[] }
-  | { type: "FINALIZED" }
-  | { type: "PATCH"; tx: number; patches: Patch[]; metrics?: PatchMetrics }
+  | { type: "INITIALIZED"; schemaVersion: typeof STREAM_MDX_SCHEMA_VERSION; generation: number; snapshot: NodeSnapshot }
+  | { type: "SOURCE_ADMITTED"; generation: number; admittedSourceUnits: number }
+  | { type: "FINALIZED"; generation: number; admittedSourceUnits: number }
+  | { type: "PATCH"; generation: number; tx: number; patches: Patch[]; metrics?: PatchMetrics }
   | { type: "RESET"; reason: string }
   | { type: "METRICS"; metrics: PerformanceMetrics }
   | { type: "DUMP_BLOCKS"; blocks: Block[]; tocHeadings?: TocHeading[] }
@@ -375,6 +414,28 @@ export interface PerformanceMetrics {
  */
 export const PATCH_ROOT_ID = "__root__";
 
+/** Immutable authored-source frontier for one generation-bound code owner. */
+export interface CodeBlockSourceMetadata {
+  readonly codeOwnerId: string;
+  readonly generation: number;
+  readonly revision: number;
+  readonly state: "open" | "closed" | "finalized";
+  readonly processedTo: number;
+  readonly completeLineCount: number;
+  readonly lineCount: number;
+  readonly sourceRange: { readonly from: number; readonly to: number };
+  readonly diffStatus?: CodeDiffStatus;
+}
+
+/** Cold initial/replacement transport; routine appends carry only their changed tail. */
+export interface CodeBlockSnapshot extends CodeBlockSourceMetadata {
+  readonly configurationRevision: number;
+  readonly info: string;
+  readonly language?: string;
+  readonly lines: readonly CodeLineRecord[];
+  readonly raw: string;
+}
+
 export interface NodeSnapshot {
   id: string;
   type: string;
@@ -382,6 +443,10 @@ export interface NodeSnapshot {
   children?: NodeSnapshot[];
   range?: { from: number; to: number };
   meta?: Record<string, unknown>;
+  code?: CodeBlockSnapshot;
+  table?: TableBlockSnapshot;
+  paragraph?: ParagraphBlockSnapshot;
+  inputSource?: { generation: number; raw: string };
 }
 
 export interface NodePath {
@@ -419,6 +484,14 @@ export interface TocHeading {
 }
 
 export type Patch =
+  | {
+      op: "appendInputSource";
+      at: NodePath;
+      generation: number;
+      from: number;
+      text: string;
+      meta?: PatchMeta;
+    }
   | { op: "insertChild"; at: NodePath; index: number; node: NodeSnapshot; meta?: PatchMeta }
   | { op: "deleteChild"; at: NodePath; index: number; meta?: PatchMeta }
   | { op: "replaceChild"; at: NodePath; index: number; node: NodeSnapshot; meta?: PatchMeta }
@@ -427,15 +500,67 @@ export type Patch =
   | { op: "finalize"; at: NodePath; meta?: PatchMeta }
   | { op: "reorder"; at: NodePath; from: number; to: number; count: number; meta?: PatchMeta }
   | {
-      op: "appendLines";
+      op: "appendParagraph";
       at: NodePath;
-      startIndex: number;
-      lines: string[];
-      highlight?: Array<string | null>;
-      tokens?: Array<TokenLineV1 | null>;
-      diffKind?: Array<DiffLineKind | null>;
-      oldNo?: Array<number | null>;
-      newNo?: Array<number | null>;
+      paragraphOwnerId: string;
+      generation: number;
+      expectedRevision: number;
+      revision: number;
+      sourceAppend: string;
+      fromSpan: number;
+      spans: readonly ParagraphSpanRecord[];
+      paragraph: ParagraphBlockSourceMetadata;
+      meta?: PatchMeta;
+    }
+  | {
+      op: "updateParagraphSpans";
+      at: NodePath;
+      paragraphOwnerId: string;
+      generation: number;
+      expectedRevision: number;
+      revision: number;
+      updates: readonly ParagraphSpanUpdate[];
+      paragraph: ParagraphBlockSourceMetadata;
+      meta?: PatchMeta;
+    }
+  | {
+      op: "appendTableRows";
+      at: NodePath;
+      table: TableBlockSourceMetadata;
+      expectedRevision: number;
+      fromRow: number;
+      rows: readonly TableRowRecord[];
+      sourceAppend: string;
+      meta?: PatchMeta;
+    }
+  | {
+      op: "updateTableRows";
+      at: NodePath;
+      tableOwnerId: string;
+      generation: number;
+      expectedRevision: number;
+      revision: number;
+      updates: readonly TableRowIndexUpdate[];
+      header?: TableHeaderRecord;
+      meta?: PatchMeta;
+    }
+  | {
+      op: "appendCode";
+      at: NodePath;
+      code: CodeBlockSourceMetadata;
+      expectedRevision: number;
+      fromLine: number;
+      lines: readonly CodeLineRecord[];
+      sourceAppend: string;
+      meta?: PatchMeta;
+    }
+  | {
+      op: "decorateCode";
+      at: NodePath;
+      codeOwnerId: string;
+      generation: number;
+      configurationRevision: number;
+      decorations: readonly CodeLineDecorationUpdate[];
       meta?: PatchMeta;
     }
   | {
@@ -473,7 +598,6 @@ export interface CoalescingMetrics {
   outputPatchCount: number;
   coalescedCount: number;
   durationMs: number;
-  appendLinesCoalesced: number;
   setPropsCoalesced: number;
   insertChildCoalesced: number;
 }

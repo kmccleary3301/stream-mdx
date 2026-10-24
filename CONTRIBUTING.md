@@ -27,6 +27,17 @@ Run tests:
 npm test
 ```
 
+Each package runs its test files in separate processes, up to `min(4, cores - 1)` at once. Set `STREAM_MDX_TEST_CONCURRENCY=1` for serial runs.
+
+Mutation-test a pure owner after building packages (targets live in `scripts/mutation/targets.mjs`; reports go to `tmp/mutation/<target>.json`):
+
+```bash
+npm run mutation -- core-table-state                 # every mutant in the target's files
+npm run mutation -- core-table-state --since=main    # only lines changed since main
+```
+
+Every test file of every mutant runs in its own prewarmed process, and results are never reused between runs. Cross-package consumer tests reach the mutated source through the target's `redirects`.
+
 Build the hosted worker for the example app:
 
 ```bash

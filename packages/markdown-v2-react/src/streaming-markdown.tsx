@@ -1,22 +1,52 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
-import type { Block, CodeHighlightingMode, CompiledMdxModule, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
 import { MarkdownRenderer } from "./renderer";
 import { MarkdownBlocksRenderer } from "./renderer";
 import { CodeHighlightRequestContext, type CodeHighlightRequest } from "./renderer/code-highlight-context";
 import { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./components";
-import { useMdxCoordinator } from "./mdx-coordinator";
-import { MdxHydrationContext, type MdxHydrationOptions, createMdxHydrationController } from "./mdx-hydration-context";
-import { type MdxHydrationSummary, getMdxHydrationSummary, recordMdxHydrationLongTask } from "./mdx-hydration-metrics";
-import { MdxPrefetchQueue } from "./mdx-prefetch";
-import { prefetchMdxRuntime } from "./mdx-runtime";
+import type { ContentComponentsMap } from "./components/content-components";
+import { normalizeContentComponents } from "./components/content-components";
+import type { TrustedMdxEngine } from "./trusted-mdx-contract";
+import type { Block, CodeHighlightingMode, ContentPolicy, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
+import { SourceCapacityError, StreamSessionError, type AppendResult, type FinalizeResult, type WaitForCapacityOptions } from "@stream-mdx/protocol";
+import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./source-admission-limits";
+export { SourceCapacityError, StreamSessionError } from "@stream-mdx/protocol";
+import { EngineCompatibilityError } from "./worker-session";
+export { EngineCompatibilityError };
+export type { AppendResult, FinalizeResult, WaitForCapacityOptions } from "@stream-mdx/protocol";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
-import { useRendererBlocks } from "./renderer/hooks";
+import { useRendererHasProvisionalBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
-import type { RendererStore } from "./renderer/store";
-import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
+import { capturePreparedRendererStore, type RendererStore } from "./renderer/store";
+import { useWorkerSession } from "./worker-session";
+import { useStreamInputSession } from "./stream-input-session";
+import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
+import { getTrustedRevisionFeed } from "./trusted-revision-feed";
+import { DocumentMathMacroScope, DocumentMathMacroScopeContext } from "./components/katex-math";
+import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type InlineComponents, type MathEngine, type MathOptions, type MermaidEngine, type NodePresentations, type RendererConfig, type SyntaxExtensionDescriptor, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import type { CodeEngine } from "./types";
+type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
+type PendingCapacityWaiter = {
+  resolve(): void;
+  reject(error: Error): void;
+  options: WaitForCapacityOptions;
+  signal?: AbortSignal;
+  abort?: () => void;
+};
+type PendingStreamingCommands = {
+  owner: string;
+  commands: PendingStreamingCommand[];
+  nextIndex: number;
+  sealed: boolean;
+  acceptedSourceUnits: number;
+  pendingSourceUnits: number;
+  capacityWaiters: Set<PendingCapacityWaiter>;
+  finalizationPromise: Promise<FinalizeResult> | null;
+  resolveFinalization?: (result: FinalizeResult) => void;
+  rejectFinalization?: (error: Error) => void;
+  drainAbortController: AbortController | null;
+};
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
 function createConfigSignature(input: StreamingMarkdownConfigSignature): string {
@@ -27,12 +57,13 @@ interface StreamingMarkdownConfigSignature {
   features: StreamingFeatureFlags;
   prewarm: string[];
   scheduling: StreamingSchedulerOptions | undefined;
-  mdxStrategy?: "server" | "worker";
-  mdxComponentKeys: string[];
-  mdxHydration?: MdxHydrationOptions;
-  syntax?: SyntaxRuleSpec[];
+  contentPolicy?: ContentPolicy;
+  contentComponentKeys: string[];
+  syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   themes?: { light: string; dark: string };
+  mathOptions?: MathOptions;
+  codeEngineId?: string;
 }
 
 export interface StreamingSchedulerOptions {
@@ -100,15 +131,15 @@ export interface RendererStateSnapshot {
   rendererVersion: number;
   store: RendererStore;
   lastMetrics: RendererMetrics | null;
-  mdxHydration?: MdxHydrationSummary & { pending: number };
 }
 
 export interface StreamingMarkdownHandle {
   pause(): void;
   resume(): void;
   restart(): void;
-  finalize(): void;
-  append(text: string): void;
+  finalize(): Promise<FinalizeResult>;
+  append(text: string): AppendResult;
+  waitForCapacity(options: WaitForCapacityOptions): Promise<void>;
   setCredits(value: number): void;
   flushPending(): PatchFlushResult | null;
   waitForIdle(): Promise<void>;
@@ -125,7 +156,7 @@ export type LinkSafetyConfig = {
   renderModal?: (props: LinkSafetyModalProps) => React.ReactNode;
 };
 
-export type MarkdownEngineMode = "worker" | "main-thread" | "auto";
+export type MarkdownEngineMode = "auto" | "main" | "worker";
 
 export interface StreamingMarkdownProps extends ElementFilterOptions {
   text?: string;
@@ -136,124 +167,54 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   prewarmLangs?: string[];
   features?: StreamingFeatureFlags;
   themes?: { light: string; dark: string };
-  components?: Partial<BlockComponents>;
-  tableElements?: Partial<TableElements>;
-  htmlElements?: Partial<HtmlElements>;
-  mdxComponents?: Record<string, React.ComponentType<unknown>>;
-  inlineComponents?: Partial<InlineComponents>;
+  colorScheme?: "light" | "dark" | "system";
+  components?: NodePresentations;
   scheduling?: StreamingSchedulerOptions;
-  mdxCompileMode?: "server" | "worker";
-  mdxHydration?: MdxHydrationOptions;
+  contentPolicy?: ContentPolicy;
+  contentComponents?: ContentComponentsMap;
+  engines?: {
+    code?: CodeEngine;
+    math?: MathEngine;
+    mermaid?: MermaidEngine;
+    mdx?: TrustedMdxEngine;
+  };
   onMetrics?: (metrics: RendererMetrics) => void;
   onError?: (error: Error) => void;
   className?: string;
   style?: React.CSSProperties;
   caret?: StreamingCaret;
   linkSafety?: LinkSafetyConfig;
-  codeRenderers?: Record<string, CodeFenceRenderer>;
-  mathRenderer?: MathRenderer;
-  artifactHtml?: boolean;
+  mathOptions?: MathOptions;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
-  blockRenderer?: BlockRendererOverride;
-  syntax?: SyntaxRuleSpec[];
+  syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   tableVirtualization?: TableVirtualizationOptions;
+  codeVirtualization?: Partial<VirtualizedCodeConfig>;
   urlTransform?: UrlTransform;
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
   animated?: AnimatedProp;
+  statusMessage?: string;
 }
 
-const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
-  const blocks = useRendererBlocks(store);
-  useMdxCoordinator(blocks, undefined, { store, mode });
-  return null;
-};
 
-const MdxPrefetchBridge: React.FC<{ store: RendererStore }> = ({ store }) => {
-  const blocks = useRendererBlocks(store);
-  const prefetchedRuntimeRef = useRef(false);
-  const trackedIdsRef = useRef(new Set<string>());
-  const queueRef = useRef<MdxPrefetchQueue | null>(null);
 
-  if (!queueRef.current) {
-    queueRef.current = new MdxPrefetchQueue();
-  }
-
-  useEffect(() => {
-    const queue = queueRef.current;
-    if (!queue) return;
-    const nextIds = new Map<string, { id: string; compiledModule: CompiledMdxModule | null }>();
-    let shouldPrefetchRuntime = false;
-
-    for (const block of blocks) {
-      if (block.type === "mdx") {
-        shouldPrefetchRuntime = true;
-        const compiledModule = block.payload.compiledMdxModule ?? null;
-        const compiledRef = block.payload.compiledMdxRef;
-        if (compiledModule && typeof compiledModule.id === "string") {
-          nextIds.set(compiledModule.id, { id: compiledModule.id, compiledModule });
-        } else if (compiledRef?.id && compiledRef.id !== "pending") {
-          nextIds.set(compiledRef.id, { id: compiledRef.id, compiledModule: null });
-        }
-      }
-      const meta = block.payload.meta as { mixedSegments?: Array<{ kind?: string }> } | undefined;
-      const segments = Array.isArray(meta?.mixedSegments) ? meta?.mixedSegments : [];
-      if (segments.some((segment) => segment?.kind === "mdx")) {
-        shouldPrefetchRuntime = true;
-      }
-    }
-
-    if (shouldPrefetchRuntime && !prefetchedRuntimeRef.current) {
-      prefetchedRuntimeRef.current = true;
-      prefetchMdxRuntime();
-    }
-
-    for (const id of trackedIdsRef.current) {
-      if (!nextIds.has(id)) {
-        queue.cancel(id);
-      }
-    }
-
-    for (const entry of nextIds.values()) {
-      if (!trackedIdsRef.current.has(entry.id)) {
-        queue.enqueue({ id: entry.id, compiledModule: entry.compiledModule });
-      }
-    }
-
-    trackedIdsRef.current = new Set(nextIds.keys());
-  }, [blocks]);
-
-  useEffect(() => {
-    return () => {
-      queueRef.current?.cancelAll();
-    };
-  }, []);
-
-  return null;
-};
-
-interface WorkerInstance {
-  worker: Worker | null;
-  owned: boolean;
-  release?: () => void;
-}
 
 const DEFAULT_HISTORY_LIMIT =
   typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production" ? 80 : 200;
 const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
-  batch: "microtask",
-  frameBudgetMs: 10,
+  batch: "rAF",
+  frameBudgetMs: 4,
   maxBatchesPerFlush: 12,
-  lowPriorityFrameBudgetMs: 6,
+  lowPriorityFrameBudgetMs: 2,
   maxLowPriorityBatchesPerFlush: 2,
   urgentQueueThreshold: 4,
 };
 const DEFAULT_SCHEDULING_SMOOTH: StreamingSchedulerOptions = {
   batch: "rAF",
-  frameBudgetMs: 6,
+  frameBudgetMs: 4,
   maxBatchesPerFlush: 4,
-  lowPriorityFrameBudgetMs: 3,
+  lowPriorityFrameBudgetMs: 2,
   maxLowPriorityBatchesPerFlush: 1,
   urgentQueueThreshold: 2,
 };
@@ -296,14 +257,12 @@ function StreamingMarkdownComponent(
     prewarmLangs = [],
     features = {},
     themes,
+    colorScheme,
     components,
-    tableElements,
-    htmlElements,
-    mdxComponents,
-    inlineComponents,
+    contentPolicy = "restricted",
+    contentComponents,
+    engines,
     scheduling,
-    mdxCompileMode,
-    mdxHydration,
     managedWorker = false,
     onMetrics,
     onError,
@@ -311,26 +270,31 @@ function StreamingMarkdownComponent(
     style,
     caret,
     linkSafety,
-    codeRenderers,
     allowedElements,
     disallowedElements,
     allowElement,
     unwrapDisallowed,
     disableAutolinkProtocols,
-    mathRenderer,
-    artifactHtml,
+    mathOptions,
     deferHeavyBlocks,
-    blockRenderer,
     syntax,
     html,
     tableVirtualization,
+    codeVirtualization,
     urlTransform,
     controls,
     controlsComponent,
     animated,
+    statusMessage,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
+  if ((engine as string) === "main-thread") {
+    throw new Error('engine="main-thread" has been removed; use engine="main" instead.');
+  }
+  if (engines?.code && engine !== "main") {
+    throw new EngineCompatibilityError('The main-realm CodeEngine requires engine="main".');
+  }
   if (text !== undefined && stream !== undefined) {
     throw new Error("StreamingMarkdown expects either `text` or `stream`, not both.");
   }
@@ -344,65 +308,78 @@ function StreamingMarkdownComponent(
       ? effectiveScheduling.maxBatchesPerFlush
       : DEFAULT_ADAPTIVE_QUEUE_THRESHOLD);
   const effectiveThemes = themes ?? features?.themes;
+  const normalizedContentComponents = useMemo(
+    () => normalizeContentComponents(contentComponents),
+    [contentComponents],
+  );
   const configSignature = useMemo(
     () =>
       createConfigSignature({
         features,
         prewarm: prewarmLangs,
         scheduling: effectiveScheduling,
-        mdxStrategy: mdxCompileMode,
-        mdxComponentKeys: mdxComponents ? Object.keys(mdxComponents).sort() : [],
-        mdxHydration,
+        contentPolicy,
+        contentComponentKeys: Object.keys(normalizedContentComponents).sort(),
         syntax,
         html,
         themes: effectiveThemes,
+        mathOptions,
+        codeEngineId: engines?.code?.id,
       }),
-    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration, syntax, html, effectiveThemes],
+    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes, mathOptions, engines?.code?.id],
   );
-
-  const mdxHydrationController = useMemo(() => createMdxHydrationController(mdxHydration), [mdxHydration]);
-  const mdxHydrationContextValue = useMemo(
-    () => ({
-      controller: mdxHydrationController,
-      options: mdxHydration,
-    }),
-    [mdxHydrationController, mdxHydration],
-  );
-  // Stable indirection so renderers built once (artifact frames) always reach the current linkSafety handler.
-  const linkHandlerRef = useRef<(url: string) => Promise<void>>();
-  const rendererRef = useRef<{ renderer: MarkdownRenderer; signature: string }>();
+  const rendererRef = useRef<{
+    renderer: MarkdownRenderer;
+    signature: string;
+    trustedEngine: TrustedMdxEngine | undefined;
+    mathEngine: MathEngine | undefined;
+    mermaidEngine: MermaidEngine | undefined;
+    codeEngine: CodeEngine | undefined;
+  }>();
   const [session, setSession] = useState(0);
+  const sessionRef = useRef(session);
+  if (session > sessionRef.current) sessionRef.current = session;
   const rendererKey = `${configSignature}:${session}`;
+  const mathMacroScope = useMemo(
+    () => mathOptions?.macroScope === "document" ? new DocumentMathMacroScope() : null,
+    [rendererKey, text, stream, mathOptions?.macroScope],
+  );
+  useEffect(() => () => mathMacroScope?.dispose(), [mathMacroScope]);
   const onErrorRef = useRef(onError);
   useEffect(() => {
     onErrorRef.current = onError;
   }, [onError]);
 
   const historyLimit = effectiveScheduling.historyLimit ?? DEFAULT_HISTORY_LIMIT;
+  const trustedEngine = contentPolicy === "trusted-mdx" ? engines?.mdx : undefined;
+  const mathEngine = engines?.math;
+  const mermaidEngine = engines?.mermaid;
+  const codeEngine = engines?.code;
 
-  if (!rendererRef.current || rendererRef.current.signature !== rendererKey) {
-    const mdxConfig =
-      mdxCompileMode || mdxComponents
-        ? {
-            compileStrategy: mdxCompileMode ?? "server",
-            components: mdxComponents,
-          }
-        : undefined;
+  if (
+    !rendererRef.current ||
+    rendererRef.current.signature !== rendererKey ||
+    rendererRef.current.trustedEngine !== trustedEngine ||
+    rendererRef.current.mathEngine !== mathEngine ||
+    rendererRef.current.mermaidEngine !== mermaidEngine
+    || rendererRef.current.codeEngine !== codeEngine
+  ) {
     const rendererConfig: RendererConfig = {
       themes: effectiveThemes,
-      codeRenderers,
+      components,
       allowedElements,
       disallowedElements,
       allowElement,
       unwrapDisallowed,
       disableAutolinkProtocols,
-      mathRenderer,
-      artifactHtml,
       tableVirtualization,
+      codeVirtualization,
       urlTransform,
-      blockRenderer,
       controls,
       controlsComponent,
+      contentPolicy,
+      contentComponents: normalizedContentComponents,
+      engines,
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
       performance: {
@@ -417,21 +394,24 @@ function StreamingMarkdownComponent(
         startupMicrotaskFlushes: effectiveScheduling.startupMicrotaskFlushes,
         adaptiveBudgeting: effectiveScheduling.adaptiveBudgeting,
       },
-      mdx: mdxConfig,
       syntax,
       html,
     };
     const nextRenderer = new MarkdownRenderer(rendererConfig);
-    nextRenderer.getComponentRegistry().setLinkHandler((url) => {
-      void linkHandlerRef.current?.(url);
-    });
     rendererRef.current = {
       renderer: nextRenderer,
       signature: rendererKey,
+      trustedEngine,
+      mathEngine,
+      mermaidEngine,
+      codeEngine,
     };
   }
 
   const renderer = rendererRef.current.renderer;
+  const sessionDisposedRef = useRef(false);
+  const sessionHandleTokenRef = useRef<object | null>(null);
+  const trustedRevisionFeed = getTrustedRevisionFeed(renderer);
   const highlightRequester = useCallback(
     (request: CodeHighlightRequest) => {
       renderer.requestCodeHighlightRange(request);
@@ -439,45 +419,14 @@ function StreamingMarkdownComponent(
     [renderer],
   );
   const store = renderer.getStore();
-  const blocks = useRendererBlocks(store);
+  const hasActiveBlocks = useRendererHasProvisionalBlocks(store);
   const adaptiveSwitchedRef = useRef(false);
   const adaptiveFirstFlushRef = useRef(false);
-  const mdxMode: "server" | "worker" = mdxCompileMode ?? "server";
-  const [workerReady, setWorkerReady] = useState(false);
-  const workerReadyRef = useRef(false);
-  const readyRendererRef = useRef<MarkdownRenderer | null>(null);
-  const [streamStatus, setStreamStatus] = useState<"idle" | "streaming" | "done">("idle");
-  const iteratorSequenceRef = useRef(0);
-  const activeIteratorRef = useRef<number | null>(null);
-  const consumedIteratorsRef = useRef<WeakSet<AsyncIterator<string>>>();
   const imperativeActivityRef = useRef(false);
+  const pendingCommandsRef = useRef<PendingStreamingCommands | null>(null);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
 
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof PerformanceObserver === "undefined") {
-      return undefined;
-    }
-    let observer: PerformanceObserver | null = null;
-    try {
-      observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          const duration = entry.duration;
-          const start = (entry as PerformanceEntry).startTime;
-          if (Number.isFinite(duration) && Number.isFinite(start)) {
-            recordMdxHydrationLongTask(start, duration);
-          }
-        }
-      });
-      observer.observe({ entryTypes: ["longtask"] });
-    } catch (error) {
-      observer = null;
-      console.warn("[streaming-markdown] Long task observer unavailable", error);
-    }
-    return () => {
-      observer?.disconnect();
-    };
-  }, []);
 
   const linkSafetyEnabled = Boolean(linkSafety?.enabled);
   const [linkModalState, setLinkModalState] = useState<{ url: string; isOpen: boolean; isChecking: boolean }>({
@@ -526,7 +475,6 @@ function StreamingMarkdownComponent(
       setLinkModalState({ url: safe, isOpen: true, isChecking: false });
     };
   }, [linkSafety, linkSafetyEnabled, openLink, urlTransform]);
-  linkHandlerRef.current = handleLinkClick;
 
   const handleLinkClose = useMemo(() => {
     return () => setLinkModalState((prev) => ({ ...prev, isOpen: false }));
@@ -565,9 +513,9 @@ function StreamingMarkdownComponent(
     };
   }, [linkModalState.url]);
 
-  const resolvedInlineComponents = useMemo(() => {
+  const resolvedLinkRenderer = useMemo(() => {
     if (!linkSafetyEnabled) {
-      return inlineComponents;
+      return undefined;
     }
     const LinkComponent: InlineComponents["link"] = ({ href, title, children }) => {
       const url = typeof href === "string" ? href : "";
@@ -590,12 +538,8 @@ function StreamingMarkdownComponent(
         children,
       );
     };
-    return { ...(inlineComponents ?? {}), link: LinkComponent };
-  }, [handleLinkClick, inlineComponents, linkSafetyEnabled]);
-
-  useEffect(() => {
-    setStreamStatus("idle");
-  }, [session]);
+    return LinkComponent;
+  }, [handleLinkClick, linkSafetyEnabled]);
 
   useEffect(() => {
     adaptiveSwitchedRef.current = false;
@@ -632,35 +576,18 @@ function StreamingMarkdownComponent(
   }, [renderer]);
 
   useEffect(() => {
-    if (components) {
-      renderer.setBlockComponents(components);
-    }
-    if (mdxComponents) {
-      renderer.setMdxComponents(mdxComponents);
-    }
-    if (inlineComponents) {
-      renderer.setInlineComponents(resolvedInlineComponents ?? inlineComponents);
-    } else if (resolvedInlineComponents) {
-      renderer.setInlineComponents(resolvedInlineComponents);
-    }
-    if (tableElements) {
-      renderer.getComponentRegistry().setTableElements(tableElements);
-    }
-    if (htmlElements) {
-      renderer.getComponentRegistry().setHtmlElements(htmlElements);
-    }
-    if (codeRenderers) {
-      renderer.setCodeRenderers(codeRenderers);
-    }
     const reg = renderer.getComponentRegistry();
-    if (mathRenderer) {
-      renderer.setMathRenderer(mathRenderer);
+    reg.setNodePresentations(components);
+    if (normalizedContentComponents) {
+      renderer.setContentComponents(normalizedContentComponents);
     }
-    if (artifactHtml !== undefined) {
-      reg.setArtifactHtml(artifactHtml);
-    }
+    reg.setLinkSafetyRenderer(resolvedLinkRenderer);
     reg.setTableVirtualization(tableVirtualization);
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization]);
+  }, [renderer, components, normalizedContentComponents, resolvedLinkRenderer, tableVirtualization]);
+
+  useEffect(() => {
+    renderer.getComponentRegistry().setCodeVirtualization(codeVirtualization);
+  }, [renderer, codeVirtualization]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
@@ -687,280 +614,351 @@ function StreamingMarkdownComponent(
     }
   }, [historyLimit]);
 
-  const activeInstanceRef = useRef<{ worker: Worker; owned: boolean; release?: () => void; source: unknown; engine: string; session: number } | null>(null);
 
+  const { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationEpoch, initializationError, readyRendererRef } = useWorkerSession({
+    renderer, workerSource, engine, session, managedWorker, codeEngine, onErrorRef, debug: DEBUG_WORKER,
+  });
+  const rejectPendingCapacityWaiters = useCallback((pending: PendingStreamingCommands, error: Error) => {
+    for (const waiter of pending.capacityWaiters) {
+      if (waiter.signal && waiter.abort) waiter.signal.removeEventListener("abort", waiter.abort);
+      waiter.reject(error);
+    }
+    pending.capacityWaiters.clear();
+  }, []);
+  const invalidatePendingCommands = useCallback((pending: PendingStreamingCommands, error: Error) => {
+    pending.drainAbortController?.abort(error);
+    pending.drainAbortController = null;
+    rejectPendingCapacityWaiters(pending, error);
+    pending.rejectFinalization?.(error);
+    pending.resolveFinalization = undefined;
+    pending.rejectFinalization = undefined;
+  }, [rejectPendingCapacityWaiters]);
   useEffect(() => {
-    let cancelled = false;
-
-    if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
-      // eslint-disable-next-line no-console
-      console.info("[debug] instantiate worker effect");
-    }
-
-    setWorkerReady(false);
-    workerReadyRef.current = false;
-
-    const setupWorker = (inst: WorkerInstance) => {
-      if (cancelled) {
-        if (inst.owned && inst.worker) {
-          try {
-            inst.worker.terminate();
-          } catch {}
-          inst.release?.();
-        }
-        return;
-      }
-
-      if (!inst.worker) {
-        onErrorRef.current?.(new Error("Failed to create markdown worker instance"));
-        return;
-      }
-
-      activeInstanceRef.current = {
-        worker: inst.worker,
-        owned: managedWorker ? false : inst.owned,
-        release: inst.release,
-        source: workerSource,
-        engine,
-        session,
-      };
-
-      renderer.detachWorker();
-      renderer.attachWorker(inst.worker, { skipInit: managedWorker });
-      readyRendererRef.current = renderer;
-      setWorkerReady(true);
-      workerReadyRef.current = true;
+    sessionDisposedRef.current = false;
+    return () => {
+      sessionDisposedRef.current = true;
+      const pending = pendingCommandsRef.current;
+      if (!pending) return;
+      pendingCommandsRef.current = null;
+      invalidatePendingCommands(pending, new StreamSessionError("disposed", "The source session was unmounted"));
     };
-
-    // If an existing worker instance matches the current (workerSource, engine, session), reuse it
-    const existing = activeInstanceRef.current;
-    if (existing && existing.source === workerSource && existing.engine === engine && (managedWorker || existing.session === session)) {
-      renderer.attachWorker(existing.worker, { skipInit: managedWorker });
-      readyRendererRef.current = renderer;
-      setWorkerReady(true);
-      workerReadyRef.current = true;
-      return () => {
-        setWorkerReady(false);
-        workerReadyRef.current = false;
-        if (readyRendererRef.current === renderer) readyRendererRef.current = null;
-        renderer.detachWorker();
-      };
-    }
-
-    // Terminate old instance if source/engine/session changed
-    if (existing?.owned && existing.worker) {
-      try {
-        existing.worker.terminate();
-      } catch {}
-      existing.release?.();
-      activeInstanceRef.current = null;
-    }
-
-    const resolveAndSetup = async () => {
-      if (engine === "main-thread") {
-        try {
-          // Dynamic import: avoids bundling @stream-mdx/worker/engine into consumer bundles unless main-thread is explicitly selected
-          const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
-          if (cancelled) return;
-          const inlineWorker = createInlineEngineWorker();
-          setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
-        } catch (error) {
-          onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+  }, [invalidatePendingCommands]);
+  const resetPendingSourceSession = useCallback(() => {
+    const pending = pendingCommandsRef.current;
+    if (!pending) return;
+    pendingCommandsRef.current = null;
+    invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source commands belong to an ended generation"));
+  }, [invalidatePendingCommands]);
+  const { streamStatus, setStreamStatus, activeIteratorRef } = useStreamInputSession({
+    renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationEpoch, initializationError, session, managedWorker,
+    readyRendererRef, onSourceSessionReset: resetPendingSourceSession,
+    imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
+  });
+  const flushPendingCommandsRef = useRef<(() => void) | null>(null);
+  const flushPendingCommands = useCallback(() => {
+    const pending = pendingCommandsRef.current;
+    if (!pending || pending.owner !== rendererKey || !workerReadyRef.current || pending.drainAbortController) return;
+    try {
+      while (pending.nextIndex < pending.commands.length) {
+        const command = pending.commands[pending.nextIndex];
+        if (command.type === "append") {
+          const result = renderer.append(command.text);
+          pending.pendingSourceUnits -= command.text.length;
+          pending.acceptedSourceUnits = result.acceptedSourceUnits;
+          imperativeActivityRef.current = true;
+        } else {
+          void renderer.finalize().then(
+            (result) => {
+              pending.resolveFinalization?.(result);
+              pending.resolveFinalization = undefined;
+              pending.rejectFinalization = undefined;
+            },
+            (error: unknown) => {
+              pending.rejectFinalization?.(error instanceof Error ? error : new Error(String(error)));
+              pending.resolveFinalization = undefined;
+              pending.rejectFinalization = undefined;
+            },
+          );
+          imperativeActivityRef.current = false;
         }
-        return;
+        pending.nextIndex += 1;
       }
-
-      if (engine === "worker") {
-        if (typeof window === "undefined" || typeof Worker === "undefined") {
-          onErrorRef.current?.(new Error("Worker is not supported in this environment"));
+      if (pending.sealed) {
+        rejectPendingCapacityWaiters(pending, new StreamSessionError("sealed", "The source session is sealed"));
+      } else {
+        if (pendingCommandsRef.current === pending) pendingCommandsRef.current = null;
+        for (const waiter of pending.capacityWaiters) {
+          if (waiter.signal && waiter.abort) waiter.signal.removeEventListener("abort", waiter.abort);
+          void renderer.waitForCapacity(waiter.options).then(waiter.resolve, waiter.reject);
+        }
+        pending.capacityWaiters.clear();
+      }
+    } catch (error) {
+      if (error instanceof SourceCapacityError && error.retryable) {
+        const command = pending.commands[pending.nextIndex];
+        if (command?.type === "append") {
+          const controller = new AbortController();
+          pending.drainAbortController = controller;
+          void renderer.waitForCapacity({ units: command.text.length, signal: controller.signal }).then(() => {
+            if (pending.drainAbortController === controller) pending.drainAbortController = null;
+            if (pendingCommandsRef.current === pending) flushPendingCommandsRef.current?.();
+          }).catch((waitError: unknown) => {
+            if (pending.drainAbortController === controller) pending.drainAbortController = null;
+            if (pendingCommandsRef.current !== pending) return;
+            pendingCommandsRef.current = null;
+            const failure = waitError instanceof Error ? waitError : new Error(String(waitError));
+            invalidatePendingCommands(pending, failure);
+            onErrorRef.current?.(failure);
+          });
           return;
         }
-        const inst = instantiateWorker(workerSource);
-        setupWorker(inst);
-        return;
       }
-
-      // Default: "auto"
-      let inst: WorkerInstance = { worker: null, owned: false };
-      if (typeof window !== "undefined" && typeof Worker !== "undefined") {
-        try {
-          inst = instantiateWorker(workerSource);
-        } catch {
-          inst = { worker: null, owned: false };
-        }
-      }
-
-      if (inst.worker) {
-        setupWorker(inst);
-        return;
-      }
-
-      // Worker unavailable or failed in auto mode -> fall back to main-thread inline engine
+      const failure = error instanceof Error ? error : new Error(String(error));
+      const sealed = pending.sealed;
+      if (pendingCommandsRef.current === pending) pendingCommandsRef.current = null;
+      invalidatePendingCommands(pending, failure);
+      if (!sealed) throw error;
+    }
+  }, [renderer, rendererKey, workerReadyRef, rejectPendingCapacityWaiters, invalidatePendingCommands, onErrorRef]);
+  flushPendingCommandsRef.current = flushPendingCommands;
+  const queuePendingAppend = useCallback((text: string): AppendResult => {
+    const owner = `${configSignature}:${sessionRef.current}`;
+    let pending = pendingCommandsRef.current;
+    if (pending && pending.owner !== owner) {
+      invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source append belongs to an ended generation"));
+      pending = null;
+    }
+    if (!pending) {
+      pending = {
+        owner,
+        commands: [],
+        nextIndex: 0,
+        sealed: false,
+        acceptedSourceUnits: 0,
+        pendingSourceUnits: 0,
+        capacityWaiters: new Set(),
+        finalizationPromise: null,
+        drainAbortController: null,
+      };
+      pendingCommandsRef.current = pending;
+    }
+    if (pending.sealed) throw new StreamSessionError("sealed", "Cannot append after FINALIZE; start a new generation first");
+    const pendingSourceUnits = pending.pendingSourceUnits;
+    if (text.length > SOURCE_ADMISSION_HARD_LIMIT - pendingSourceUnits) {
+      throw new SourceCapacityError(text.length, pendingSourceUnits, SOURCE_ADMISSION_HARD_LIMIT);
+    }
+    pending.commands.push({ type: "append", text });
+    pending.acceptedSourceUnits += text.length;
+    pending.pendingSourceUnits += text.length;
+    return {
+      acceptedSourceUnits: pending.acceptedSourceUnits,
+      pendingSourceUnits: pending.pendingSourceUnits,
+      shouldPause: pending.pendingSourceUnits >= SOURCE_ADMISSION_SOFT_LIMIT,
+    };
+  }, [configSignature, sessionRef, invalidatePendingCommands]);
+  const queuePendingFinalize = useCallback((): Promise<FinalizeResult> => {
+    const owner = `${configSignature}:${sessionRef.current}`;
+    let pending = pendingCommandsRef.current;
+    if (pending && pending.owner !== owner) {
+      invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Finalization belongs to an ended generation"));
+      pending = null;
+    }
+    if (!pending) {
+      pending = {
+        owner,
+        commands: [],
+        nextIndex: 0,
+        sealed: false,
+        acceptedSourceUnits: 0,
+        pendingSourceUnits: 0,
+        capacityWaiters: new Set(),
+        finalizationPromise: null,
+        drainAbortController: null,
+      };
+      pendingCommandsRef.current = pending;
+    }
+    if (pending.finalizationPromise) return pending.finalizationPromise;
+    pending.sealed = true;
+    rejectPendingCapacityWaiters(pending, new StreamSessionError("sealed", "The source session is sealed"));
+    const finalizationState = pending;
+    const promise = new Promise<FinalizeResult>((resolve, reject) => {
+      finalizationState.resolveFinalization = resolve;
+      finalizationState.rejectFinalization = reject;
+    });
+    finalizationState.finalizationPromise = promise;
+    finalizationState.commands.push({ type: "finalize" });
+    return promise;
+  }, [configSignature, sessionRef, invalidatePendingCommands, rejectPendingCapacityWaiters]);
+  const waitForCapacity = useCallback((options: WaitForCapacityOptions): Promise<void> => {
+    const currentRendererKey = `${configSignature}:${sessionRef.current}`;
+    if (initializationError) {
+      return Promise.reject(new StreamSessionError("disposed", initializationError.message));
+    }
+    const pending = pendingCommandsRef.current;
+    if (pending && pending.owner !== currentRendererKey) {
+      pendingCommandsRef.current = null;
+      invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source capacity wait belongs to an ended generation"));
+    }
+    const currentPending = pendingCommandsRef.current;
+    if (!currentPending || currentPending.owner !== currentRendererKey) {
       try {
-        // Dynamic import: avoids bundling @stream-mdx/worker/engine into consumer bundles unless auto-fallback activates
-        const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
-        if (cancelled) return;
-        const inlineWorker = createInlineEngineWorker();
-        setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
+        if (workerReadyRef.current) flushPendingCommands();
+        return renderer.waitForCapacity(options);
       } catch (error) {
-        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+        return Promise.reject(error);
       }
-    };
-
-    void resolveAndSetup();
-
-    return () => {
-      cancelled = true;
-      setWorkerReady(false);
-      workerReadyRef.current = false;
-      if (readyRendererRef.current === renderer) readyRendererRef.current = null;
-      renderer.detachWorker();
-    };
-  }, [renderer, workerSource, engine, session, managedWorker]);
-
-  useEffect(() => {
-    return () => {
-      const current = activeInstanceRef.current;
-      if (current?.owned && current.worker) {
-        try {
-          current.worker.terminate();
-        } catch (error) {
-          console.warn("Unable to terminate markdown worker", error);
-        }
-        current.release?.();
-        activeInstanceRef.current = null;
+    }
+    if (currentPending.sealed) return Promise.reject(new StreamSessionError("sealed", "The source session is sealed"));
+    const { units, signal } = options;
+    if (!Number.isSafeInteger(units) || units < 0) return Promise.reject(new RangeError("Capacity units must be a nonnegative safe integer"));
+    if (units > SOURCE_ADMISSION_HARD_LIMIT) {
+      return Promise.reject(new SourceCapacityError(units, currentPending.pendingSourceUnits, SOURCE_ADMISSION_HARD_LIMIT));
+    }
+    if (signal?.aborted) {
+      return Promise.reject(signal.reason instanceof Error ? signal.reason : new Error("Capacity wait aborted"));
+    }
+    if (
+      currentPending.pendingSourceUnits < SOURCE_ADMISSION_SOFT_LIMIT &&
+      currentPending.pendingSourceUnits + units <= SOURCE_ADMISSION_HARD_LIMIT
+    ) {
+      return Promise.resolve();
+    }
+    if (workerReadyRef.current) {
+      try {
+        flushPendingCommands();
+        return renderer.waitForCapacity(options);
+      } catch (error) {
+        return Promise.reject(error);
       }
-    };
-  }, []);
+    }
+    return new Promise<void>((resolve, reject) => {
+      const waiter: PendingCapacityWaiter = { resolve, reject, options, signal };
+      if (signal) {
+        const abort = () => {
+          currentPending.capacityWaiters.delete(waiter);
+          signal.removeEventListener("abort", abort);
+          const reason = signal.reason;
+          const error = reason instanceof Error ? reason : new Error("Capacity wait aborted");
+          if (error.name === "Error") error.name = "AbortError";
+          reject(error);
+        };
+        waiter.abort = abort;
+        signal.addEventListener("abort", abort, { once: true });
+      }
+      currentPending.capacityWaiters.add(waiter);
+    });
+  }, [renderer, configSignature, sessionRef, workerReadyRef, flushPendingCommands, initializationError, invalidatePendingCommands]);
   useEffect(() => {
-    const restartToken = session;
-    void restartToken;
-    let cancelled = false;
-    if (!workerReady || readyRendererRef.current !== renderer) {
-      return () => {
-        cancelled = true;
-      };
+    const pending = pendingCommandsRef.current;
+    if (pending && pending.owner !== rendererKey) {
+      pendingCommandsRef.current = null;
+      invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source append belongs to an ended generation"));
     }
-
-    if (managedWorker) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (text !== undefined) {
-      imperativeActivityRef.current = false;
-      setStreamStatus("streaming");
-      void renderer.renderStatic(text).then(() => {
-        if (cancelled || readyRendererRef.current !== renderer) return;
-        renderer.finalize();
-        setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
-      }).catch((error: unknown) => {
-        if (cancelled || readyRendererRef.current !== renderer) return;
-        setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
-        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-      });
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (!stream) {
-      return () => {
-        cancelled = true;
-      };
-    }
-    let iterator: AsyncIterator<string>;
-    // Different iterable wrappers can return the same single-use iterator.
-    try {
-      iterator = stream[Symbol.asyncIterator]();
-      const consumedIterators = consumedIteratorsRef.current ??= new WeakSet<AsyncIterator<string>>();
-      if (consumedIterators.has(iterator)) return;
-      consumedIterators.add(iterator);
-    } catch (error) {
-      onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+    if (initializationError) {
+      const failed = pendingCommandsRef.current;
+      pendingCommandsRef.current = null;
+      if (failed) invalidatePendingCommands(failed, new StreamSessionError("disposed", initializationError.message));
       return;
     }
-
-    const iteratorOwner = ++iteratorSequenceRef.current;
-    activeIteratorRef.current = iteratorOwner;
-    (async () => {
-      try {
-        imperativeActivityRef.current = false;
-        setStreamStatus("streaming");
-        renderer.restart();
-        for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) {
-          if (cancelled || activeIteratorRef.current !== iteratorOwner) {
-            break;
-          }
-          renderer.append(chunk);
-          if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
-            // eslint-disable-next-line no-console
-            console.info("[debug] streaming chunk", chunk.length);
-          }
-        }
-        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
-          renderer.finalize();
-          setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
-        }
-      } catch (error) {
-        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
-          setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
-          onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-        }
-      } finally {
-        if (activeIteratorRef.current === iteratorOwner) activeIteratorRef.current = null;
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      if (activeIteratorRef.current === iteratorOwner) {
-        activeIteratorRef.current = null;
-        setStreamStatus(imperativeActivityRef.current ? "streaming" : "idle");
-      }
-    };
-  }, [renderer, text, stream, workerReady, session, managedWorker]);
-
+    try {
+      flushPendingCommands();
+    } catch (error) {
+      onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+    }
+  }, [rendererKey, workerReady, initializationError, flushPendingCommands, onErrorRef, invalidatePendingCommands]);
   useImperativeHandle(
     ref,
-    () => ({
+    () => {
+      const handleToken = {};
+      sessionHandleTokenRef.current = handleToken;
+      const assertSessionActive = (): void => {
+        if (sessionDisposedRef.current) {
+          throw new StreamSessionError("disposed", "The source session was unmounted");
+        }
+        if (sessionHandleTokenRef.current !== handleToken) {
+          throw new StreamSessionError("stale-generation", "The source session belongs to an ended generation");
+        }
+      };
+      return {
       pause() {
+        assertSessionActive();
         renderer.pause();
       },
       resume() {
+        assertSessionActive();
         renderer.resume();
       },
       restart() {
+        assertSessionActive();
+        workerReadyRef.current = false;
+        inputReadyRef.current = false;
+        const pending = pendingCommandsRef.current;
+        if (pending) {
+          pendingCommandsRef.current = null;
+          invalidatePendingCommands(pending, new StreamSessionError("stale-generation", "Source append belongs to an ended generation"));
+        }
         imperativeActivityRef.current = false;
         activeIteratorRef.current = null;
+        renderer.restart({ reinitializeWorker: false });
         setStreamStatus("idle");
-        setSession((prev) => prev + 1);
+        sessionRef.current += 1;
+        setSession(sessionRef.current);
       },
-      finalize() {
-        renderer.finalize();
+      finalize(): Promise<FinalizeResult> {
+        try {
+          assertSessionActive();
+        } catch (error) {
+          return Promise.reject(error);
+        }
+        const promise = queuePendingFinalize();
+        if (workerReadyRef.current) flushPendingCommands();
         imperativeActivityRef.current = false;
         setStreamStatus(activeIteratorRef.current === null ? "done" : "streaming");
+        return promise;
       },
       append(text: string) {
-        if (!text || !workerReadyRef.current) return;
-        imperativeActivityRef.current = true;
-        setStreamStatus("streaming");
-        renderer.append(text);
+        assertSessionActive();
+        const pending = pendingCommandsRef.current;
+        const result = workerReadyRef.current && pending === null
+          ? renderer.append(text)
+          : queuePendingAppend(text);
+        if (workerReadyRef.current && pending !== null) flushPendingCommands();
+        if (text.length > 0) {
+          imperativeActivityRef.current = true;
+          setStreamStatus("streaming");
+        }
+        return result;
+      },
+      waitForCapacity(options: WaitForCapacityOptions) {
+        try {
+          assertSessionActive();
+        } catch (error) {
+          return Promise.reject(error);
+        }
+        return waitForCapacity(options);
       },
       setCredits(value: number) {
+        assertSessionActive();
         renderer.setCredits(value);
       },
       flushPending() {
+        assertSessionActive();
         return renderer.flushPendingPatches();
       },
       waitForIdle() {
+        try {
+          assertSessionActive();
+        } catch (error) {
+          return Promise.reject(error);
+        }
         return renderer.waitForPatchQueueIdle();
       },
       onFlush(listener: (result: PatchFlushResult) => void) {
+        assertSessionActive();
         return renderer.addFlushListener(listener);
       },
       getState() {
+        assertSessionActive();
         const currentBlocks = store.getBlocks();
         return {
           blocks: currentBlocks,
@@ -971,20 +969,20 @@ function StreamingMarkdownComponent(
           rendererVersion: store.getVersion(),
           store,
           lastMetrics: lastMetricsRef.current,
-          mdxHydration: summarizeMdxHydration(currentBlocks),
         };
       },
       getPatchHistory(limit) {
+        assertSessionActive();
         if (limit === undefined || limit >= patchHistoryRef.current.length) {
           return [...patchHistoryRef.current];
         }
         return patchHistoryRef.current.slice(patchHistoryRef.current.length - limit);
       },
-    }),
-    [renderer, store],
+      };
+    },
+    [renderer, rendererKey, store, flushPendingCommands, queuePendingAppend, queuePendingFinalize, waitForCapacity, invalidatePendingCommands, workerReadyRef, inputReadyRef, activeIteratorRef, imperativeActivityRef, setStreamStatus, sessionRef, setSession],
   );
 
-  const hasActiveBlocks = useMemo(() => blocks.some((block) => !block.isFinalized), [blocks]);
   const caretValue = useMemo(() => {
     if (!caret) {
       return null;
@@ -1028,36 +1026,47 @@ function StreamingMarkdownComponent(
       })
     : null;
 
+  const renderNativeFrame = (frameStore: RendererStore): React.ReactElement => (
+    <MarkdownBlocksRenderer
+      blocks={EMPTY_BLOCKS}
+      componentRegistry={renderer.getComponentRegistry()}
+      components={components}
+      urlTransform={urlTransform}
+      controls={controls}
+      controlsComponent={controlsComponent}
+      animated={animated}
+      statusMessage={statusMessage}
+      contentComponents={normalizedContentComponents}
+      allowedElements={allowedElements}
+      disallowedElements={disallowedElements}
+      allowElement={allowElement}
+      unwrapDisallowed={unwrapDisallowed}
+      disableAutolinkProtocols={disableAutolinkProtocols}
+      className={resolvedClassName}
+      colorScheme={colorScheme}
+      style={resolvedStyle}
+      store={frameStore}
+    />
+  );
+
   return (
-    <MdxHydrationContext.Provider value={mdxHydrationContextValue}>
-      <DeferredRenderContext.Provider value={deferredConfig}>
-        <MdxPrefetchBridge store={store} />
-        {mdxMode === "server" ? <MdxCoordinatorBridge store={store} mode={mdxMode} /> : null}
-        <CodeHighlightRequestContext.Provider value={highlightRequester}>
-        <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
-          <MarkdownBlocksRenderer
-            blocks={EMPTY_BLOCKS}
-            componentRegistry={renderer.getComponentRegistry()}
-            codeRenderers={codeRenderers}
-            blockRenderer={blockRenderer}
-            urlTransform={urlTransform}
-            controls={controls}
-            controlsComponent={controlsComponent}
-            animated={animated}
-            allowedElements={allowedElements}
-            disallowedElements={disallowedElements}
-            allowElement={allowElement}
-            unwrapDisallowed={unwrapDisallowed}
-            disableAutolinkProtocols={disableAutolinkProtocols}
-            className={resolvedClassName}
-            style={resolvedStyle}
-            store={store}
-          />
-        </StreamingActivityContext.Provider>
-        </CodeHighlightRequestContext.Provider>
-        {linkModal}
-      </DeferredRenderContext.Provider>
-    </MdxHydrationContext.Provider>
+    <DocumentMathMacroScopeContext.Provider value={mathMacroScope}>
+    <DeferredRenderContext.Provider value={deferredConfig}>
+      <CodeHighlightRequestContext.Provider value={highlightRequester}>
+      <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
+        <TrustedMdxBoundary
+          engine={trustedEngine}
+          feed={trustedRevisionFeed}
+          captureNativeFrame={() => capturePreparedRendererStore(store)}
+          renderNativeFrame={renderNativeFrame}
+        >
+          {renderNativeFrame(store)}
+        </TrustedMdxBoundary>
+      </StreamingActivityContext.Provider>
+      </CodeHighlightRequestContext.Provider>
+      {linkModal}
+    </DeferredRenderContext.Provider>
+    </DocumentMathMacroScopeContext.Provider>
   );
 }
 
@@ -1068,55 +1077,6 @@ export const StreamingMarkdown = StreamingMarkdownWithRef as React.ForwardRefExo
   StreamingMarkdownProps & React.RefAttributes<StreamingMarkdownHandle>
 >;
 
-function isWorkerInstance(value: unknown): value is Worker {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !(value instanceof URL) &&
-    (value instanceof Worker ||
-      (typeof (value as Worker).postMessage === "function" &&
-        typeof (value as Worker).addEventListener === "function"))
-  );
-}
-
-function instantiateWorker(source?: Worker | URL | (() => Worker) | string): WorkerInstance {
-  if (typeof window === "undefined" || typeof Worker === "undefined") {
-    return { worker: null, owned: false };
-  }
-  if (isWorkerInstance(source)) {
-    return { worker: source, owned: false };
-  }
-  if (typeof source === "function") {
-    try {
-      const worker = source();
-      return { worker, owned: true };
-    } catch (error) {
-      console.warn("StreamingMarkdown: worker factory failed", error);
-      return { worker: null, owned: false };
-    }
-  }
-  const name = "markdown-v2";
-  const createWorkerFromUrl = (url: string | URL): WorkerInstance => {
-    try {
-      return { worker: new Worker(url, { type: "module", name }), owned: true };
-    } catch (error) {
-      console.warn("StreamingMarkdown: unable to instantiate worker", error);
-      return { worker: null, owned: false };
-    }
-  };
-  if (source instanceof URL || typeof source === "string") {
-    return createWorkerFromUrl(source);
-  }
-  const autoWorker = createDefaultWorker();
-  if (autoWorker) {
-    return {
-      worker: autoWorker,
-      owned: true,
-      release: () => releaseDefaultWorker(autoWorker),
-    };
-  }
-  return createWorkerFromUrl("/workers/markdown-worker.js");
-}
 
 function summarizeFlush(result: PatchFlushResult): RendererMetrics {
   const batches = result.batches;
@@ -1159,22 +1119,6 @@ function summarizeFlush(result: PatchFlushResult): RendererMetrics {
   };
 }
 
-function summarizeMdxHydration(blocks: ReadonlyArray<Block>): MdxHydrationSummary & { pending: number } {
-  const summary = getMdxHydrationSummary();
-  let pending = 0;
-
-  for (const block of blocks) {
-    if (block.type !== "mdx") continue;
-    const meta = block.payload.meta as { mdxStatus?: unknown } | undefined;
-    const status = typeof meta?.mdxStatus === "string" ? meta.mdxStatus : undefined;
-    const compiled = block.payload.compiledMdxRef ?? block.payload.compiledMdxModule;
-    if (!compiled || status === "pending") {
-      pending += 1;
-    }
-  }
-
-  return { ...summary, pending };
-}
 
 function average(values: number[]): number {
   if (values.length === 0) return 0;

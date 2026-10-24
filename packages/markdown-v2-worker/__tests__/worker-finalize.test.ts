@@ -1,54 +1,120 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
+import type { RendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
+import { projectConsumerBlocks } from "./consumer-block-projection";
 
-async function runFinalizePatchTest(): Promise<void> {
-  const harness = await createWorkerHarness();
+function applyMessages(store: RendererStore, messages: WorkerOut[]): void {
+  for (const message of messages) {
+    if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
+    else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
+  }
+}
 
+type WorkerHarness = Awaited<ReturnType<typeof createWorkerHarness>>;
+
+async function runFinalizeConsumerTest(harness: WorkerHarness): Promise<void> {
   const store = createRendererStore();
-
-  const initMessages = await harness.send({
+  applyMessages(store, await harness.send({
     type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     initialContent: "",
     prewarmLangs: [],
     docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true },
-  });
-  const init = initMessages.find((m) => m.type === "INITIALIZED") as Extract<WorkerOut, { type: "INITIALIZED" }> | undefined;
-  assert.ok(init, "worker did not emit INITIALIZED message");
-  store.reset(init.blocks);
+  }));
 
   const sample = ["## Heading", "", "Partial paragraph stream"].join("\n");
-  const appendMessages = await harness.send({ type: "APPEND", text: sample });
-  const appendPatches = appendMessages.filter((m): m is Extract<WorkerOut, { type: "PATCH" }> => m.type === "PATCH");
-  assert.ok(appendPatches.length > 0, "missing patch message after append");
-  for (const patchMsg of appendPatches) {
-    store.applyPatches(patchMsg.patches as Patch[], { captureMetrics: false });
-  }
+  applyMessages(store, await harness.send({ type: "APPEND", text: sample }));
+  const before = store.getBlocks();
+  assert.ok(before.some((block) => !block.isFinalized), "expected an unfinished cold export before FINALIZE");
+  const beforeProjection = projectConsumerBlocks(before);
 
-  const dirtyBefore = store.getBlocks().filter((b) => !b.isFinalized);
-  assert.ok(dirtyBefore.length > 0, "expected at least one non-finalized block prior to FINALIZE");
+  applyMessages(store, await harness.send({ type: "FINALIZE" }));
+  const after = store.getBlocks();
+  assert.ok(after.every((block) => block.isFinalized), "FINALIZE must expose only finalized cold blocks");
+  assert.ok(after.some((block) => block.type === "heading" && block.payload.raw === "## Heading"), "FINALIZE must retain the authored heading");
+  assert.ok(after.some((block) => block.type === "paragraph" && block.payload.raw === "Partial paragraph stream"), "FINALIZE must retain the authored paragraph");
+  const afterProjection = projectConsumerBlocks(after);
+  assert.deepStrictEqual(
+    afterProjection.map(({ isFinalized: _isFinalized, ...consumer }) => consumer),
+    beforeProjection.map(({ isFinalized: _isFinalized, ...consumer }) => consumer),
+    "FINALIZE must preserve block identity, authored source, range, and rendered output",
+  );
 
-  const finalizeMessages = await harness.send({ type: "FINALIZE" });
-  const finalizePatchMessages = finalizeMessages.filter((m): m is Extract<WorkerOut, { type: "PATCH" }> => m.type === "PATCH");
-  assert.ok(finalizePatchMessages.length > 0, "FINALIZE should emit PATCH message when blocks are dirty");
-
-  const finalizePatches = finalizePatchMessages.flatMap((msg) => msg.patches as Patch[]);
-  const finalizedIds = finalizePatches
-    .filter((patch) => patch?.op === "finalize" && patch?.at?.blockId)
-    .map((patch) => patch.at.blockId as string)
-    .sort();
-  const dirtyIds = dirtyBefore.map((block) => block.id).sort();
-  assert.deepStrictEqual(finalizedIds, dirtyIds, "FINALIZE patches should target only previously dirty blocks");
-
-  for (const patchMsg of finalizePatchMessages) {
-    store.applyPatches(patchMsg.patches as Patch[], { captureMetrics: false });
-  }
-
-  const finalizeAgainMessages = await harness.send({ type: "FINALIZE" });
-  const secondPatch = finalizeAgainMessages.find((m) => m.type === "PATCH");
-  assert.strictEqual(secondPatch, undefined, "second FINALIZE should be a no-op when all blocks finalized");
+  applyMessages(store, await harness.send({ type: "FINALIZE" }));
+  assert.deepStrictEqual(
+    projectConsumerBlocks(store.getBlocks()),
+    afterProjection,
+    "a repeated FINALIZE must leave the consumer export unchanged",
+  );
 }
 
-await runFinalizePatchTest();
-console.log("Worker finalize patch test passed");
+async function runTailHeadingFinalizeConsumerTest(harness: WorkerHarness): Promise<void> {
+  const store = createRendererStore();
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true },
+  }));
+
+  const content = ["## Repeat", "", "## Repeat", "", "## Repeat"].join("\n");
+  applyMessages(store, await harness.send({ type: "APPEND", text: content }));
+  const before = store.getBlocks().filter((block) => block.type === "heading");
+  assert.deepStrictEqual(
+    before.map((block) => block.payload.meta?.headingId),
+    ["repeat", "repeat-2", "repeat-3"],
+    "duplicate heading slugs should remain deterministic before FINALIZE",
+  );
+  assert.ok(before[2] && !before[2].isFinalized, "expected the trailing heading to remain unfinished");
+  const beforePrefix = projectConsumerBlocks(before.slice(0, 2));
+
+  applyMessages(store, await harness.send({ type: "FINALIZE" }));
+  const after = store.getBlocks();
+  const afterHeadings = after.filter((block) => block.type === "heading");
+  assert.ok(after.every((block) => block.isFinalized), "FINALIZE must settle every block");
+  assert.deepStrictEqual(
+    afterHeadings.map((block) => block.payload.meta?.headingId),
+    ["repeat", "repeat-2", "repeat-3"],
+    "FINALIZE must preserve duplicate heading slugs across the retained prefix and tail",
+  );
+  assert.deepStrictEqual(
+    projectConsumerBlocks(afterHeadings.slice(0, 2)),
+    beforePrefix,
+    "FINALIZE must preserve the rendered semantics of finalized prefix headings",
+  );
+}
+
+async function runClosedFenceConsumerTest(harness: WorkerHarness): Promise<void> {
+  const store = createRendererStore();
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "```ts\nconst value = 1;\n",
+    prewarmLangs: [],
+    docPlugins: { codeHighlighting: "none", footnotes: false, html: false, mdx: false, tables: false },
+  }));
+  applyMessages(store, await harness.send({ type: "APPEND", text: "```" }));
+  const code = store.getBlocks().find((block) => block.type === "code");
+  assert.ok(code);
+  assert.equal(store.getCodeBlock(code.id)?.source.state, "open", "an unterminated closing line can still change");
+
+  applyMessages(store, await harness.send({ type: "APPEND", text: "\n" }));
+  assert.equal(store.getCodeBlock(code.id)?.source.state, "finalized", "a physical closing fence settles source before document EOF");
+  assert.equal(store.getBlocks().find((block) => block.id === code.id)?.payload.raw, "```ts\nconst value = 1;\n```");
+
+  applyMessages(store, await harness.send({ type: "FINALIZE" }));
+  assert.equal(store.getCodeBlock(code.id)?.source.state, "finalized");
+  assert.equal(store.getBlocks().find((block) => block.id === code.id)?.payload.raw, "```ts\nconst value = 1;\n```");
+}
+
+const harness = await createWorkerHarness();
+await runClosedFenceConsumerTest(harness);
+await runTailHeadingFinalizeConsumerTest(harness);
+
+await runFinalizeConsumerTest(harness);
+console.log("worker finalize consumer test passed");

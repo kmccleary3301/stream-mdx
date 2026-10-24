@@ -135,8 +135,11 @@ async function run(): Promise<void> {
     await page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "networkidle" });
     await page.waitForFunction(() => Boolean(window.__streammdxRegression));
     await page.evaluate(
-      ({ fixtureId, scenarioId }) => window.__streammdxRegression?.setMeta({ fixtureId, scenarioId }),
-      { fixtureId: fixture.id, scenarioId: scenario.id },
+      async ({ fixtureId, scenarioId, contentPolicy }) => {
+        window.__streammdxRegression?.setMeta({ fixtureId, scenarioId });
+        await window.__streammdxRegression?.setConfig({ contentPolicy });
+      },
+      { fixtureId: fixture.id, scenarioId: scenario.id, contentPolicy: fixture.contentPolicy ?? "markdown" },
     );
     await page.evaluate(() => window.__streammdxRegression?.waitForReady());
 
@@ -146,19 +149,6 @@ async function run(): Promise<void> {
 
     await page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush());
 
-    if (fixture.waitForMdxCompiled ?? fixture.tags?.includes("mdx")) {
-      try {
-        await page.waitForFunction(() => {
-          const summary = window.__streammdxRegression?.getSummary();
-          if (!summary) return false;
-          return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
-        });
-      } catch (error) {
-        failures += 1;
-        console.error(`\nMDX compile timeout for ${fixture.id}/${scenario.id}`);
-        console.error(error);
-      }
-    }
 
     const targets = (await page.evaluate((targets) => window.__streammdxRegression?.getComputedStyles(targets), STYLE_TARGETS)) as Record<string, unknown>;
 

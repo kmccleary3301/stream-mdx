@@ -104,6 +104,242 @@ export function extractMixedContentSegmentsWithLookahead(
   }
   return { segments, lookahead };
 }
+/** `sourcePositions[i]` is the absolute authored UTF-16 offset of `rawSource[i]`. */
+export function prepareTrustedMdxInlineNodes(
+  nodes: readonly InlineNode[],
+  rawSource: string,
+  baseOffset: number,
+  ownerIdPrefix: string,
+  options?: Pick<MixedContentOptions, "protectedRanges" | "protectedRangeKinds">,
+  sourcePositions?: readonly number[],
+): InlineNode[] {
+  const hasSourcePositions = sourcePositions !== undefined;
+  if (
+    (hasSourcePositions && sourcePositions.length !== rawSource.length) ||
+    (!hasSourcePositions && (!Number.isSafeInteger(baseOffset) || baseOffset < 0)) ||
+    !ownerIdPrefix
+  ) return nodes as InlineNode[];
+
+  if (sourcePositions) {
+    let previous = -1;
+    for (const position of sourcePositions) {
+      if (!Number.isSafeInteger(position) || position < 0 || position <= previous) return nodes as InlineNode[];
+      previous = position;
+    }
+  }
+
+  const lowerBound = (target: number): number => {
+    let low = 0;
+    let high = sourcePositions?.length ?? 0;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if ((sourcePositions as readonly number[])[middle] < target) low = middle + 1;
+      else high = middle;
+    }
+    return low;
+  };
+  const localRangeForSourceRange = (from: number, to: number): { from: number; to: number } | undefined => {
+    if (sourcePositions) {
+      const localFrom = lowerBound(from);
+      const localTo = lowerBound(to);
+      return localFrom < localTo &&
+        sourcePositions[localFrom] === from &&
+        sourcePositions[localTo - 1] + 1 === to
+        ? { from: localFrom, to: localTo }
+        : undefined;
+    }
+    const localFrom = from - baseOffset;
+    const localTo = to - baseOffset;
+    return localFrom >= 0 && localTo <= rawSource.length && localTo > localFrom
+      ? { from: localFrom, to: localTo }
+      : undefined;
+  };
+  const sourceRangeForLocalRange = (from: number, to: number): { from: number; to: number } | undefined => {
+    if (from < 0 || to <= from || to > rawSource.length) return undefined;
+    return sourcePositions
+      ? { from: sourcePositions[from], to: sourcePositions[to - 1] + 1 }
+      : { from: baseOffset + from, to: baseOffset + to };
+  };
+
+  const extractionOptions = sourcePositions && options?.protectedRanges
+    ? {
+        ...options,
+        protectedRanges: options.protectedRanges.flatMap((range) => {
+          const from = lowerBound(range.from);
+          const to = lowerBound(range.to);
+          return from < to ? [{ ...range, from, to }] : [];
+        }),
+      }
+    : options;
+  type Candidate = {
+    from: number;
+    to: number;
+    localFrom: number;
+    localTo: number;
+    raw: string;
+    ownerId: string;
+  };
+  let candidateOrdinal = 0;
+  const candidates: Candidate[] = extractMixedContentSegments(
+    rawSource,
+    sourcePositions ? 0 : baseOffset,
+    () => [],
+    extractionOptions,
+  ).flatMap((segment) => {
+    const range = segment.range;
+    if (segment.kind !== "mdx" || !range || range.to <= range.from) return [];
+    const localFrom = range.from - (sourcePositions ? 0 : baseOffset);
+    const localTo = range.to - (sourcePositions ? 0 : baseOffset);
+    const sourceRange = sourceRangeForLocalRange(localFrom, localTo);
+    if (!sourceRange) return [];
+    const index = candidateOrdinal++;
+    return [{
+      ...sourceRange,
+      localFrom,
+      localTo,
+      raw: rawSource.slice(localFrom, localTo),
+      ownerId: `${ownerIdPrefix}::native-mdx:${index}`,
+    }];
+  });
+  if (candidates.length === 0) return nodes as InlineNode[];
+
+  const resolved = new Set<Candidate>();
+  const trustedNode = (candidate: Candidate): InlineNode => ({
+    kind: "trusted-mdx-inline",
+    raw: candidate.raw,
+    ownerId: candidate.ownerId,
+    sourceRange: { from: candidate.from, to: candidate.to },
+  });
+  const splitTextNode = (
+    node: InlineNode,
+    range: { from: number; to: number },
+    candidatesInside: readonly Candidate[],
+  ): InlineNode[] | undefined => {
+    if (node.kind !== "text") return undefined;
+    const localNode = localRangeForSourceRange(range.from, range.to);
+    if (!localNode) return undefined;
+    const result: InlineNode[] = [];
+    const splitCandidates: Candidate[] = [];
+    let cursor = localNode.from;
+    for (const candidate of candidatesInside) {
+      if (candidate.localFrom < cursor || candidate.localTo > localNode.to) continue;
+      if (candidate.localFrom > cursor) {
+        const sourceRange = sourceRangeForLocalRange(cursor, candidate.localFrom);
+        if (!sourceRange) return undefined;
+        result.push({
+          kind: "text",
+          text: rawSource.slice(cursor, candidate.localFrom),
+          sourceRange,
+        });
+      }
+      result.push(trustedNode(candidate));
+      splitCandidates.push(candidate);
+      cursor = candidate.localTo;
+    }
+    if (cursor < localNode.to) {
+      const sourceRange = sourceRangeForLocalRange(cursor, localNode.to);
+      if (!sourceRange) return undefined;
+      result.push({ kind: "text", text: rawSource.slice(cursor, localNode.to), sourceRange });
+    }
+    for (const candidate of splitCandidates) resolved.add(candidate);
+    return result;
+  };
+
+  const transformList = (values: readonly InlineNode[]): InlineNode[] => {
+    let result: InlineNode[] | undefined;
+    for (let index = 0; index < values.length; index++) {
+      const node = values[index];
+      const range = node.sourceRange;
+      const exact = range && candidates.find(
+        (candidate) => !resolved.has(candidate) && candidate.from === range.from && candidate.to === range.to,
+      );
+      let transformed: InlineNode[];
+      if (exact) {
+        resolved.add(exact);
+        transformed = [trustedNode(exact)];
+      } else {
+        if ("children" in node && Array.isArray(node.children)) {
+          const children = transformList(node.children);
+          transformed = children === node.children ? [node] : [{
+            ...node,
+            ...(range ? { sourceRange: { ...range } } : {}),
+            children,
+          }];
+        } else if (node.kind === "text" && range) {
+          const inside = candidates.filter(
+            (candidate) => !resolved.has(candidate) && candidate.from >= range.from && candidate.to <= range.to,
+          );
+          transformed = inside.length > 0 ? splitTextNode(node, range, inside) ?? [node] : [node];
+        } else {
+          transformed = [node];
+        }
+      }
+      if (!result && (transformed.length !== 1 || transformed[0] !== node)) {
+        result = values.slice(0, index);
+      }
+      if (result) result.push(...transformed);
+    }
+
+    let current = result ?? values as InlineNode[];
+    for (const candidate of candidates) {
+      if (resolved.has(candidate)) continue;
+      let first = -1;
+      let last = -1;
+      for (let index = 0; index < current.length; index++) {
+        const range = current[index].sourceRange;
+        if (!range || range.to <= candidate.from || range.from >= candidate.to) continue;
+        if (first < 0) first = index;
+        last = index;
+      }
+      if (first < 0 || first === last) continue;
+      const firstNode = current[first];
+      const lastNode = current[last];
+      const firstRange = firstNode.sourceRange;
+      const lastRange = lastNode.sourceRange;
+      if (!firstRange || !lastRange || candidate.from < firstRange.from || candidate.to > lastRange.to) continue;
+      const firstLocal = firstRange.from < candidate.from
+        ? localRangeForSourceRange(firstRange.from, firstRange.to)
+        : undefined;
+      const lastLocal = candidate.to < lastRange.to
+        ? localRangeForSourceRange(lastRange.from, lastRange.to)
+        : undefined;
+      if (firstRange.from < candidate.from &&
+          (firstNode.kind !== "text" || !firstLocal || rawSource.slice(firstLocal.from, firstLocal.to) !== firstNode.text ||
+            candidate.localFrom <= firstLocal.from || candidate.localFrom >= firstLocal.to)) continue;
+      if (candidate.to < lastRange.to &&
+          (lastNode.kind !== "text" || !lastLocal || rawSource.slice(lastLocal.from, lastLocal.to) !== lastNode.text ||
+            candidate.localTo <= lastLocal.from || candidate.localTo >= lastLocal.to)) continue;
+      let fullyCovered = true;
+      for (let index = first + 1; index < last; index++) {
+        const range = current[index].sourceRange;
+        if (!range || range.from < candidate.from || range.to > candidate.to) {
+          fullyCovered = false;
+          break;
+        }
+      }
+      if (!fullyCovered) continue;
+
+      const replacement: InlineNode[] = [];
+      if (firstLocal) {
+        const beforeRange = sourceRangeForLocalRange(firstLocal.from, candidate.localFrom);
+        if (!beforeRange) continue;
+        replacement.push({ kind: "text", text: rawSource.slice(firstLocal.from, candidate.localFrom), sourceRange: beforeRange });
+      }
+      replacement.push(trustedNode(candidate));
+      if (lastLocal) {
+        const afterRange = sourceRangeForLocalRange(candidate.localTo, lastLocal.to);
+        if (!afterRange) continue;
+        replacement.push({ kind: "text", text: rawSource.slice(candidate.localTo, lastLocal.to), sourceRange: afterRange });
+      }
+      current = [...current.slice(0, first), ...replacement, ...current.slice(last + 1)];
+      resolved.add(candidate);
+    }
+    return current;
+  };
+
+  return transformList(nodes);
+}
+
 
 function splitByTagSegments(
   source: string,
@@ -214,7 +450,6 @@ function splitByTagSegments(
           kind: "mdx",
           value: repaired,
           range: createSegmentRange(baseOffset, start, end),
-          status: "pending",
           lookahead: anticipated.trace,
         });
         cursor = end;
@@ -287,7 +522,6 @@ function splitByTagSegments(
           segment.lookahead = anticipated.trace;
         }
       }
-      segment.status = "pending";
     }
     segments.push(segment);
     cursor = end;
@@ -328,6 +562,14 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
   while (match !== null) {
     const start = match.index;
     const end = exprPattern.lastIndex;
+    let precedingBackslashes = 0;
+    for (let slashIndex = start - 1; slashIndex >= 0 && value[slashIndex] === "\\"; slashIndex--) {
+      precedingBackslashes++;
+    }
+    if (precedingBackslashes % 2 !== 0) {
+      match = exprPattern.exec(value);
+      continue;
+    }
     const absoluteStart = (rangeStart ?? 0) + start;
     const absoluteEnd = (rangeStart ?? 0) + end;
     if (protectedKinds && protectedRanges.some((range) => protectedKinds.has(range.kind) && range.from <= absoluteStart && range.to >= absoluteEnd)) {
@@ -344,7 +586,6 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
     const expressionSegment: MixedContentSegment = {
       kind: "mdx",
       value: expressionValue,
-      status: "pending",
     };
     setSegmentRange(expressionSegment, createSegmentRange(rangeStart, start, end));
     results.push(expressionSegment);

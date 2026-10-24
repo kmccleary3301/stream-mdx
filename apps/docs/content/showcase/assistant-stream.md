@@ -1,6 +1,6 @@
-# Architecture Walkthrough & Sandboxed Artifacts
+# Architecture walkthrough and inert code fences
 
-StreamMDX engine-v2 supports dual engine execution modes: a dedicated Web Worker thread (offloading parser work from the main thread) and an inline main-thread engine (for environments without Web Worker support).
+StreamMDX engine-v2 defaults to automatic execution: it bootstraps on an inline main-thread engine, then takes over atomically with a dedicated Web Worker. Set `engine="main"` to stay inline or `engine="worker"` to require a dedicated Web Worker.
 
 ### Mathematical Formulation: Bayes' Theorem
 
@@ -30,7 +30,7 @@ graph TD
   E --> F
   F --> G[Patch Commit Scheduler]
   G --> H[Code Renderers Map]
-  H --> I[ArtifactFrame Sandbox]
+  H --> I[Inert HTML Code Fence]
   H --> J[MermaidBlock]
   H --> K[Custom Metric Renderer]
 ```
@@ -48,9 +48,9 @@ The block below demonstrates a custom code fence renderer for the `metric` langu
 }
 ```
 
-### Interactive Sandboxed Visualization Artifact
+### Fenced HTML sample (inert)
 
-Below is an interactive HTML artifact rendered by `ArtifactFrame`. Its iframe uses `sandbox="allow-scripts"` without `allow-same-origin` for host DOM/origin isolation. The default CSP blocks connection APIs such as `fetch` and `WebSocket` and restricts resource loads; it does not guarantee total network isolation or prevent iframe self-navigation. This demo is self-contained. Click the button to switch sample distributions using inline code with no external resource requests or animations.
+The sample below is shown as code only. `artifact` and `html-artifact` fences do not execute or mount a preview.
 
 ```html-artifact
 <!DOCTYPE html>
@@ -176,7 +176,7 @@ Below is an interactive HTML artifact rendered by `ArtifactFrame`. Its iframe us
       </svg>
     </div>
     <div class="footer">
-      <span>Self-contained sandbox (connect-src 'none')</span>
+      <span>Self-contained HTML sample; not executed</span>
       <a href="https://github.com/kmccleary3301/stream-mdx" target="_blank">Link Safety Check</a>
     </div>
   </div>
@@ -208,9 +208,9 @@ Below is an interactive HTML artifact rendered by `ArtifactFrame`. Its iframe us
 </html>
 ```
 
-### Outbound Link Safety
+### Outbound link handling
 
-All hyperlinks in generated agent markdown and enclosed artifacts are subject to safe defaults (`features.mdx: false`). Outbound navigation is intercepted by `linkSafety`:
+`linkSafety` applies to links rendered by StreamMDX's Markdown link renderer. It does not secure custom renderer output. The HTML example above is an inert code fence; its script does not run.
 
 - Test external link interception: [StreamMDX GitHub Repository](https://github.com/kmccleary3301/stream-mdx)
 - Security documentation: [Deployment and Security Guide](/docs/guides/deployment-and-security)

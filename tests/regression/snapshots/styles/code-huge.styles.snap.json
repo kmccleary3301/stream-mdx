@@ -40,31 +40,31 @@
       "selector": "#regression-root pre",
       "computed": {
         "display": "block",
-        "padding-top": "11.9px",
+        "padding-top": "31.5px",
         "padding-right": "14px",
         "padding-bottom": "11.9px",
         "padding-left": "14px",
         "margin-top": "0px",
         "margin-bottom": "0px",
-        "border-top-width": "1px",
-        "border-right-width": "1px",
-        "border-bottom-width": "1px",
-        "border-left-width": "1px",
-        "border-top-color": "rgb(232, 232, 232)",
-        "border-right-color": "rgb(232, 232, 232)",
-        "border-bottom-color": "rgb(232, 232, 232)",
-        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(32, 32, 32)",
+        "border-right-color": "rgb(32, 32, 32)",
+        "border-bottom-color": "rgb(32, 32, 32)",
+        "border-left-color": "rgb(32, 32, 32)",
         "border-top-left-radius": "10.5px",
         "border-top-right-radius": "10.5px",
         "border-bottom-left-radius": "10.5px",
         "border-bottom-right-radius": "10.5px",
         "background-color": "rgba(0, 0, 0, 0)",
         "box-shadow": "none",
-        "overflow": "auto",
-        "overflow-x": "auto",
-        "overflow-y": "auto",
+        "overflow": "hidden",
+        "overflow-x": "hidden",
+        "overflow-y": "hidden",
         "font-family": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
-        "font-size": "11.9px",
+        "font-size": "12.25px",
         "white-space": "pre"
       }
     },
@@ -132,13 +132,9 @@
       "missing": true,
       "selector": "#regression-root .footnotes .footnote-backref"
     },
-    "preview-pre-adjacent": {
+    "preview-code-adjacent": {
       "missing": true,
-      "selector": "#regression-root .markdown-mdx + pre"
-    },
-    "mdx-block": {
-      "missing": true,
-      "selector": "#regression-root .markdown-mdx"
+      "selector": "#regression-root figure[data-with-codeblock=\"true\"] + :is(pre, figure, div[data-code-block=\"true\"], div:has(> div > [data-radix-scroll-area-viewport]))"
     },
     "math-inline": {
       "missing": true,

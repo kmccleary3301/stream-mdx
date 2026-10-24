@@ -54,9 +54,6 @@ export class WorkerMetricsCollector {
   private readonly blockTypeDurations = new Map<string, number>();
   private readonly blockTypeSizes = new Map<string, number>();
   private readonly highlightByLanguage = new Map<string, { time: number; count: number }>();
-  appendLineBatchCount = 0;
-  appendLineTotalLines = 0;
-  appendLineMaxLines = 0;
   lazyTokenizationRequests = 0;
   lazyTokenizationRangeTotal = 0;
   lazyTokenizationRangeMax = 0;
@@ -117,17 +114,6 @@ export class WorkerMetricsCollector {
     entry.time += Math.max(0, Number(duration));
     entry.count += 1;
     this.highlightByLanguage.set(lang, entry);
-  }
-
-  recordAppendLines(lineCount: number | null | undefined): void {
-    if (!Number.isFinite(lineCount ?? Number.NaN)) return;
-    const normalized = Math.max(0, Math.floor(Number(lineCount)));
-    if (normalized <= 0) return;
-    this.appendLineBatchCount += 1;
-    this.appendLineTotalLines += normalized;
-    if (normalized > this.appendLineMaxLines) {
-      this.appendLineMaxLines = normalized;
-    }
   }
 
   recordLazyTokenization(rangeLines: number | null | undefined, latencyMs: number | null | undefined, queueDepth: number | null | undefined): void {
@@ -194,9 +180,6 @@ export class WorkerMetricsCollector {
       enrichTime: this.enrichMs ? roundMetric(this.enrichMs) : undefined,
       queueDepth: this.queueDepth || undefined,
       patchBytes: this.patchBytes || undefined,
-      appendLineBatches: this.appendLineBatchCount || undefined,
-      appendLineTotalLines: this.appendLineTotalLines || undefined,
-      appendLineMaxLines: this.appendLineMaxLines || undefined,
     };
   }
 
@@ -221,9 +204,6 @@ export class WorkerMetricsCollector {
       blockEnrichMsByType: mapToNumberRecord(this.blockTypeDurations, true),
       blockSizeByType: mapToNumberRecord(this.blockTypeSizes),
       highlightByLanguage: mapToHighlightRecord(this.highlightByLanguage),
-      appendLineBatches: this.appendLineBatchCount || undefined,
-      appendLineTotalLines: this.appendLineTotalLines || undefined,
-      appendLineMaxLines: this.appendLineMaxLines || undefined,
       lazyTokenization:
         this.lazyTokenizationRequests > 0
           ? {

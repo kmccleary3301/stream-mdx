@@ -498,10 +498,17 @@ export const CodeControlsBar: React.FC<CodeControlsBarProps> = ({ code, language
   );
 };
 
+export interface TableControlsData {
+  headers: string[];
+  rows: string[][];
+  align?: Array<"left" | "center" | "right" | null>;
+}
 export interface TableControlsBarProps {
   headers: string[];
   rows: string[][];
   align?: Array<"left" | "center" | "right" | null>;
+  getTableData?: () => TableControlsData;
+  getMarkdownSource?: () => string;
   isFinalized: boolean;
   config: ResolvedTableControls;
   className?: string;
@@ -511,24 +518,53 @@ export const TableControlsBar: React.FC<TableControlsBarProps> = ({
   headers,
   rows,
   align,
+  getTableData,
+  getMarkdownSource,
   isFinalized,
   config,
   className,
 }) => {
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
+  const copiedFeedbackTimeout = React.useRef<number | undefined>(undefined);
+  const mounted = React.useRef(true);
   const { labels } = config;
+
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      window.clearTimeout(copiedFeedbackTimeout.current);
+    };
+  }, []);
 
   const handleCopy = useCallback(
     async (format: TableCopyFormat) => {
       if (!isFinalized) return;
-      const text = format === "markdown" ? tableToMarkdown(headers, rows, align) : tableToTsv(headers, rows);
+      let text: string;
+      if (format === "markdown") {
+        const source = getMarkdownSource?.();
+        if (source !== undefined) {
+          text = source;
+        } else {
+          const data = getTableData?.() ?? { headers, rows, align };
+          text = tableToMarkdown(data.headers, data.rows, data.align);
+        }
+      } else {
+        const data = getTableData?.() ?? { headers, rows, align };
+        text = tableToTsv(data.headers, data.rows);
+      }
       const success = await copyToClipboard(text);
       if (success) {
+        if (!mounted.current) return;
         setCopiedFormat(format);
-        setTimeout(() => setCopiedFormat(null), 2000);
+        window.clearTimeout(copiedFeedbackTimeout.current);
+        copiedFeedbackTimeout.current = window.setTimeout(() => {
+          copiedFeedbackTimeout.current = undefined;
+          setCopiedFormat(null);
+        }, 2000);
       }
     },
-    [headers, rows, align, isFinalized],
+    [headers, rows, align, getTableData, getMarkdownSource, isFinalized],
   );
 
   const handleDownload = useCallback(
@@ -537,22 +573,28 @@ export const TableControlsBar: React.FC<TableControlsBarProps> = ({
       let text = "";
       let filename = "table.csv";
       let mimeType = "text/csv;charset=utf-8";
-      if (format === "tsv") {
-        text = tableToTsv(headers, rows);
-        filename = "table.tsv";
-        mimeType = "text/tab-separated-values;charset=utf-8";
-      } else if (format === "markdown") {
-        text = tableToMarkdown(headers, rows, align);
+      if (format === "markdown") {
+        const source = getMarkdownSource?.();
+        if (source !== undefined) {
+          text = source;
+        } else {
+          const data = getTableData?.() ?? { headers, rows, align };
+          text = tableToMarkdown(data.headers, data.rows, data.align);
+        }
         filename = "table.md";
         mimeType = "text/markdown;charset=utf-8";
+      } else if (format === "tsv") {
+        const data = getTableData?.() ?? { headers, rows, align };
+        text = tableToTsv(data.headers, data.rows);
+        filename = "table.tsv";
+        mimeType = "text/tab-separated-values;charset=utf-8";
       } else {
-        text = tableToCsv(headers, rows);
-        filename = "table.csv";
-        mimeType = "text/csv;charset=utf-8";
+        const data = getTableData?.() ?? { headers, rows, align };
+        text = tableToCsv(data.headers, data.rows);
       }
       downloadFile(text, filename, mimeType);
     },
-    [headers, rows, align, isFinalized],
+    [headers, rows, align, getTableData, getMarkdownSource, isFinalized],
   );
 
   return (

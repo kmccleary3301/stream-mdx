@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { InlineNode, Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
@@ -20,15 +22,12 @@ async function runStreamingInlineStability(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const chunks = ["This is *italic", " text* and ~~strike", "~~ done"];
   for (const chunk of chunks) {

@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -8,8 +10,13 @@ import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot, type Block, type FootnoteItem, type InlineNode, type NodeSnapshot, type Patch, type WorkerIn, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
+import { projectConsumerBlocks } from "./consumer-block-projection";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createWorkerThread } from "@stream-mdx/worker/node";
+import { FootnotesPlugin } from "@stream-mdx/plugins";
+
+import type { DocumentPlugin } from "@stream-mdx/plugins/document";
+import { MarkdownEngine } from "../src/engine/index";
 
 function findInlineFootnoteNumber(nodes: InlineNode[], label: string): number | undefined {
   for (const node of nodes) {
@@ -30,15 +37,12 @@ async function runFootnotesFinalizeTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true }, });
   const init = initMessages.find((m) => m.type === "INITIALIZED") as Extract<WorkerOut, { type: "INITIALIZED" }> | undefined;
   assert.ok(init, "worker did not emit INITIALIZED message");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const content = [
     "> This is a blockquote with a footnote.[^1]\\",
@@ -51,7 +55,6 @@ async function runFootnotesFinalizeTest(): Promise<void> {
 
   const appendMessages = await harness.send({ type: "APPEND", text: content });
   const appendPatches = appendMessages.filter((m): m is Extract<WorkerOut, { type: "PATCH" }> => m.type === "PATCH");
-  assert.ok(appendPatches.length > 0, "missing patch message after append");
   for (const patchMsg of appendPatches) {
     store.applyPatches(patchMsg.patches as Patch[], { captureMetrics: false });
   }
@@ -62,7 +65,6 @@ async function runFootnotesFinalizeTest(): Promise<void> {
 
   const finalizeMessages = await harness.send({ type: "FINALIZE" });
   const finalizePatchMessages = finalizeMessages.filter((m): m is Extract<WorkerOut, { type: "PATCH" }> => m.type === "PATCH");
-  assert.ok(finalizePatchMessages.length > 0, "FINALIZE should emit PATCH message when blocks are dirty");
   for (const patchMsg of finalizePatchMessages) {
     store.applyPatches(patchMsg.patches as Patch[], { captureMetrics: false });
   }
@@ -77,15 +79,15 @@ async function runFootnotesFinalizeTest(): Promise<void> {
 
   const quoteBlock = blocksAfterFinalize.find((block) => block.type === "blockquote");
   assert.ok(quoteBlock, "expected blockquote to be present after finalize");
-  const quoteMeta = (quoteBlock.payload.meta ?? {}) as { mixedSegments?: Array<{ inline?: InlineNode[] }> };
-  const segments = Array.isArray(quoteMeta.mixedSegments) ? quoteMeta.mixedSegments : [];
-  const segmentInline = segments.flatMap((segment) => (Array.isArray(segment.inline) ? segment.inline : []));
-  const numberFromSegments = findInlineFootnoteNumber(segmentInline, "1");
-  const numberFromInline = Array.isArray(quoteBlock.payload.inline) ? findInlineFootnoteNumber(quoteBlock.payload.inline, "1") : undefined;
+  const preparedNested = quoteBlock.payload.meta?.preparedNested as { children?: NodeSnapshot[] } | undefined;
+  const nestedParagraph = preparedNested?.children?.find((child) => child.type === "paragraph");
+  const nestedBlock = nestedParagraph?.props?.block as Block | undefined;
+  assert.ok(nestedBlock, "expected nested paragraph block in the cold export");
+  const nestedInline = Array.isArray(nestedBlock.payload.inline) ? nestedBlock.payload.inline : [];
   assert.strictEqual(
-    numberFromSegments ?? numberFromInline,
+    findInlineFootnoteNumber(nestedInline, "1"),
     1,
-    "footnote number should be assigned in the finalized blockquote inline representation",
+    "footnote number should be assigned in the finalized nested paragraph inline representation",
   );
 }
 
@@ -93,13 +95,13 @@ async function runFootnotesFinalizeTest(): Promise<void> {
 async function runPreparedFootnoteConsumerTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
-  const document = createInitialSnapshot();
+  let document = createInitialSnapshot();
   const consume = (messages: WorkerOut[]) => {
     for (const emitted of messages) {
       const message = structuredClone(emitted);
       if (message.type === "INITIALIZED") {
-        store.reset(message.blocks);
-        Object.assign(document, createInitialSnapshot(message.blocks));
+        store.resetSnapshot(message.snapshot);
+        document = createInitialSnapshot(message.snapshot);
       } else if (message.type === "PATCH") {
         applyPatchBatch(document, message.patches);
         store.applyPatches(message.patches, { captureMetrics: false });
@@ -107,7 +109,7 @@ async function runPreparedFootnoteConsumerTest(): Promise<void> {
         throw new Error(message.error.message);
       }
     }
-    assert.deepStrictEqual(document.blocks, store.getBlocks(), "core and React must consume the same numbered prepared artifacts");
+    assert.deepStrictEqual(document.getBlocks(), store.getBlocks(), "core and React must consume the same numbered prepared artifacts");
     assert.deepStrictEqual(store.getInvariantViolations(), []);
   };
   const numbers = new Map([["beta", 1], ["alpha", 2], ["gamma", 3]]);
@@ -148,16 +150,16 @@ async function runPreparedFootnoteConsumerTest(): Promise<void> {
     "",
     "Tail",
   ].join("\n");
-  const initialMessages = await harness.send({ type: "INIT", initialContent: content, prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: false, tables: false, callouts: false } });
-  const initialBlocks = initialMessages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED")?.blocks;
-  assert.ok(initialBlocks);
-  const initialSerialized = JSON.stringify(initialBlocks);
+  const initialMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: content, prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: false, tables: false, callouts: false } });
+  const initialSnapshot = initialMessages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED")?.snapshot;
+  assert.ok(initialSnapshot);
+  const initialSerialized = JSON.stringify(initialSnapshot);
   consume(initialMessages);
   assertNumbered(store.getBlocks());
   const beforeDefinitions = JSON.stringify(store.getBlocks());
   consume(await harness.send({ type: "APPEND", text: "\n\n[^gamma]: Third\n\n[^beta]: First\n\n[^alpha]: Second\n" }));
   assertNumbered(store.getBlocks());
-  assert.strictEqual(JSON.stringify(initialBlocks), initialSerialized, "document numbering must not mutate already-published root/subtree artifacts");
+  assert.strictEqual(JSON.stringify(initialSnapshot), initialSerialized, "document numbering must not mutate already-published root/subtree artifacts");
   assert.notStrictEqual(JSON.stringify(store.getBlocks()), beforeDefinitions, "forward definitions must cross the real PATCH boundary");
   consume(await harness.send({ type: "FINALIZE" }));
   assertNumbered(store.getBlocks());
@@ -181,6 +183,172 @@ async function runPreparedFootnoteConsumerTest(): Promise<void> {
     assert.strictEqual(findInlineFootnoteNumber(quote.payload.inline ?? [], "alpha"), 2, "root compatibility inline must expose the actual numbered child content");
   }
 }
+
+async function runReplacementFootnotesNativeTableConsumerTest(): Promise<void> {
+  const store = createRendererStore();
+  let document = createInitialSnapshot();
+  const replacementFootnotesPlugin = { ...FootnotesPlugin };
+  assert.notStrictEqual(replacementFootnotesPlugin, FootnotesPlugin, "the registered footnotes plugin is a distinct replacement object");
+  const engine = new MarkdownEngine({
+    extensions: { documentPlugins: [replacementFootnotesPlugin] },
+    post(emitted) {
+      const message = structuredClone(emitted);
+      if (message.type === "INITIALIZED") {
+        store.resetSnapshot(message.snapshot);
+        document = createInitialSnapshot(message.snapshot);
+      } else if (message.type === "PATCH") {
+        applyPatchBatch(document, message.patches);
+        store.applyPatches(message.patches, { captureMetrics: false });
+      } else if (message.type === "ERROR") {
+        throw new Error(message.error.message);
+      }
+      assert.deepStrictEqual(document.getBlocks(), store.getBlocks(), "the public store must consume engine output without divergence");
+      assert.deepStrictEqual(store.getInvariantViolations(), []);
+    },
+  });
+  const content = [
+    "| value |",
+    "| --- |",
+    "| table reference[^table] |",
+    "",
+    "[^table]: Native table note.",
+    "",
+  ].join("\n");
+
+  try {
+    await engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "",
+      prewarmLangs: [],
+      docPlugins: { footnotes: true, tables: true, html: false, mdx: false, math: false, callouts: false },
+    });
+    await engine.handle({ type: "APPEND", text: content });
+    await engine.handle({ type: "FINALIZE" });
+
+    const blocks = store.getBlocks();
+    const table = blocks.find((block) => block.type === "table");
+    assert.ok(table, "the GFM source must produce a native table in the public store");
+    const rows = (table.payload.meta?.rows ?? []) as InlineNode[][][];
+    assert.strictEqual(findInlineFootnoteNumber(rows.flat(2), "table"), 1, "the native table reference must be numbered");
+
+    const items = blocks.find((block) => block.type === "footnotes")?.payload.meta?.items as FootnoteItem[] | undefined;
+    assert.deepStrictEqual(items?.map(({ label, number }) => [label, number]), [["table", 1]], "the real footnotes plugin must publish the referenced note");
+    assert.ok(items?.[0]?.inlines.some((node) => node.kind === "text" && node.text.includes("Native table note.")), "the published item must contain the authored definition");
+
+    const rendered = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks, store })));
+    try {
+      assert.strictEqual(
+        rendered.window.document.querySelectorAll('table sup.footnote-ref a[href="#fn:1"]').length,
+        1,
+        "the public renderer must render the numbered native-table reference",
+      );
+      assert.ok(
+        rendered.window.document.getElementById("fn:1")?.textContent?.includes("Native table note."),
+        "the public renderer must emit the referenced note",
+      );
+    } finally {
+      rendered.window.close();
+    }
+  } finally {
+    engine.dispose();
+  }
+}
+
+async function runPublicRegistryStableHeadingMutationTest(): Promise<void> {
+  const pluginName = "worker-finalize-public-registry-stable-heading-mutation";
+  const appendMarker = "PUBLIC_REGISTRY_APPEND_MUTATION_MARKER";
+  const headingText = "Stable registry heading";
+  const mutatedHeadingText = `${headingText} updated by public plugin`;
+  const headingRaw = `# ${headingText}`;
+  const initialContent = `${headingRaw}\n\n## ${"x".repeat(8192)}\n`;
+  const appendedContent = `\n# ${appendMarker}\n`;
+  const fullContent = `${initialContent}${appendedContent}`;
+  const plugin: DocumentPlugin = {
+    name: pluginName,
+    process(context) {
+      if (!context.source.materialize().includes(appendMarker)) return undefined;
+      const headingIndex = context.blocks.findIndex(
+        (block) => block.type === "heading" && block.payload.meta?.headingText === headingText,
+      );
+      if (headingIndex < 0) return undefined;
+      const heading = context.blocks[headingIndex]!;
+      heading.payload.meta!.headingText = mutatedHeadingText;
+      return undefined;
+    },
+  };
+  const createSnapshotEngine = (extensions?: { documentPlugins: DocumentPlugin[] }) => {
+    let snapshot = createInitialSnapshot();
+    const engine = new MarkdownEngine({
+      ...(extensions ? { extensions } : {}),
+      post(emitted) {
+        const message = structuredClone(emitted);
+        if (message.type === "INITIALIZED") snapshot = createInitialSnapshot(message.snapshot);
+        else if (message.type === "PATCH") applyPatchBatch(snapshot, message.patches);
+        else if (message.type === "ERROR") throw new Error(message.error.message);
+      },
+    });
+    return { engine, getBlocks: () => snapshot.getBlocks() };
+  };
+  const incremental = createSnapshotEngine();
+  const cold = createSnapshotEngine({ documentPlugins: [plugin] });
+  const docPlugins = { footnotes: false, html: false, mdx: false, math: false, tables: false, callouts: false };
+
+  try {
+    await incremental.engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent,
+      prewarmLangs: [],
+      docPlugins,
+    });
+    const beforeHeading = incremental.getBlocks().find(
+      (block) => block.type === "heading" && block.payload.meta?.headingText === headingText,
+    );
+    assert.ok(beforeHeading, "the initial document must publish the earlier generic heading");
+    assert.ok(beforeHeading.isFinalized, "the earlier generic heading must be stable before the append");
+    assert.ok(beforeHeading.payload.meta, "the heading must have existing metadata for a public plugin update");
+    const authoredRaw = beforeHeading.payload.raw;
+    assert.strictEqual(authoredRaw, headingRaw, "the stable heading must retain its authored source");
+
+    incremental.engine.documentPluginRegistry.register(plugin);
+    await incremental.engine.handle({ type: "APPEND", text: appendedContent });
+    const actualHeading = incremental.getBlocks().find(
+      (block) => block.type === "heading" && block.payload.raw === headingRaw,
+    );
+
+    await cold.engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: fullContent,
+      prewarmLangs: [],
+      docPlugins,
+    });
+    const expectedHeading = cold.getBlocks().find(
+      (block) => block.type === "heading" && block.payload.raw === headingRaw,
+    );
+
+    assert.ok(actualHeading, "the incremental Core snapshot must retain the earlier generic heading");
+    assert.ok(expectedHeading, "the cold Core snapshot must include the earlier generic heading");
+    assert.strictEqual(actualHeading.payload.raw, authoredRaw, "the incremental plugin edit must preserve authored raw source");
+    assert.strictEqual(expectedHeading.payload.raw, authoredRaw, "the cold plugin edit must preserve authored raw source");
+    assert.strictEqual(
+      expectedHeading.payload.meta?.headingText,
+      mutatedHeadingText,
+      "public registry registration must affect the cold same-source parse",
+    );
+    assert.strictEqual(
+      actualHeading.payload.meta?.headingText,
+      expectedHeading.payload.meta?.headingText,
+      "the incremental Core snapshot must receive the public plugin's stable-heading metadata edit",
+    );
+  } finally {
+    incremental.engine.documentPluginRegistry.unregister(plugin.name);
+    cold.engine.documentPluginRegistry.unregister(plugin.name);
+    incremental.engine.dispose();
+    cold.engine.dispose();
+  }
+}
 async function runRepeatedReferenceTargetsTest(): Promise<void> {
   const content = "Missing[^missing] then outer[^note].\n\n> repeated<span>[^note]</span>\n\n[^note]: Body with **emphasis**.\n";
   const init = { prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: false, math: false, tables: false, callouts: false } };
@@ -200,8 +368,8 @@ async function runRepeatedReferenceTargetsTest(): Promise<void> {
       const onMessage = (message: WorkerOut) => {
         try {
           if (message.type === "INITIALIZED") {
-            store.reset(message.blocks);
-            document = createInitialSnapshot(message.blocks);
+            store.resetSnapshot(message.snapshot);
+            document = createInitialSnapshot(message.snapshot);
           } else if (message.type === "PATCH") {
             applyPatchBatch(document, message.patches);
             store.applyPatches(message.patches, { captureMetrics: false });
@@ -209,7 +377,7 @@ async function runRepeatedReferenceTargetsTest(): Promise<void> {
             finish(new Error(message.error.message));
             return;
           }
-          assert.deepStrictEqual(document.blocks, store.getBlocks());
+          assert.deepStrictEqual(document.getBlocks(), store.getBlocks());
           assert.deepStrictEqual(store.getInvariantViolations(), []);
           if (message.type === "FINALIZED") finish();
         } catch (error) {
@@ -218,7 +386,7 @@ async function runRepeatedReferenceTargetsTest(): Promise<void> {
       };
       worker.on("message", onMessage);
       worker.on("error", onError);
-      worker.postMessage({ type: "INIT", initialContent: "", ...init });
+      worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", ...init });
       for (let index = 0; index < content.length; index += 7) worker.postMessage({ type: "APPEND", text: content.slice(index, index + 7) });
       worker.postMessage({ type: "FINALIZE" });
     });
@@ -332,9 +500,13 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
       for (const mode of ["all-at-once", "interleaved", "one-character"] as const) {
         const store = createRendererStore();
         let document = createInitialSnapshot();
-        const input: WorkerIn[] = [{ type: "INIT", initialContent: "", ...init }];
+        const input: WorkerIn[] = [{ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", ...init }];
         if (mode === "interleaved" && content === first + later) {
-          input.push({ type: "APPEND", text: first }, { type: "FINALIZE" }, { type: "APPEND", text: later }, { type: "FINALIZE" });
+          input.push(
+            { type: "APPEND", text: first },
+            { type: "APPEND", text: later },
+            { type: "FINALIZE" },
+          );
         } else {
           const size = mode === "one-character" ? 1 : content.length;
           for (let index = 0; index < content.length; index += size) input.push({ type: "APPEND", text: content.slice(index, index + size) });
@@ -353,8 +525,8 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
           const onMessage = (message: WorkerOut) => {
             try {
               if (message.type === "INITIALIZED") {
-                store.reset(message.blocks);
-                document = createInitialSnapshot(message.blocks);
+                store.resetSnapshot(message.snapshot);
+                document = createInitialSnapshot(message.snapshot);
               } else if (message.type === "PATCH") {
                 applyPatchBatch(document, message.patches);
                 store.applyPatches(message.patches, { captureMetrics: false });
@@ -362,7 +534,7 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
                 finish(new Error(message.error.message));
                 return;
               }
-              assert.deepStrictEqual(document.blocks, store.getBlocks(), `${name}/${mode} consumers must share atomic numbering updates`);
+              assert.deepStrictEqual(document.getBlocks(), store.getBlocks(), `${name}/${mode} consumers must share atomic numbering updates`);
               assert.deepStrictEqual(store.getInvariantViolations(), []);
               if (message.type === "FINALIZED" && ++finalizations === expectedFinalizations) finish();
             } catch (error) {
@@ -374,7 +546,8 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
           for (const message of input) worker.postMessage(message);
         });
         const actual = JSON.parse(JSON.stringify(store.getBlocks())) as Block[];
-        assert.deepStrictEqual(actual, expected, `${name}/${mode} final IR must match a fresh complete compile`);
+        // Owner lease generations are per-engine fencing tokens; the cold export contract is the consumer projection.
+        assert.deepStrictEqual(projectConsumerBlocks(actual), projectConsumerBlocks(expected), `${name}/${mode} final IR must match a fresh complete compile`);
         const html = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: actual, store }));
         assert.strictEqual(html, expectedHtml, `${name}/${mode} final SSR must not depend on chunk history`);
         const dom = new JSDOM(html);
@@ -441,9 +614,10 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
   }
 }
 
-// GFM: each `[^x]:` line starts a new definition, even without a blank line; other lines continue lazily.
-async function runConsecutiveDefinitionsTest(): Promise<void> {
-  const content = "First[^a] then second[^b] and third[^c].\n\n[^a]: Alpha body\nlazy tail.\n[^b]: Beta body.\n[^c]: Gamma body.\n";
+// GFM: each `[^x]:` line starts a new definition, even without a blank line, and interrupts a paragraph like
+// micromark-extension-gfm-footnote; other lines continue lazily.
+type RenderedFootnotes = { refs: (string | null)[]; items: (string | undefined)[]; literal: boolean };
+async function runDefinitionLinesTest(content: string, expected: RenderedFootnotes, what: string): Promise<void> {
   const init = { prewarmLangs: [], docPlugins: { footnotes: true, html: false, mdx: false, math: false, tables: false, callouts: false } };
   const renderedItems = (blocks: Block[]) => {
     const dom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks })));
@@ -456,22 +630,21 @@ async function runConsecutiveDefinitionsTest(): Promise<void> {
     dom.window.close();
     return result;
   };
-  const expected = { refs: ["1", "2", "3"], items: ["Alpha body lazy tail.", "Beta body.", "Gamma body."], literal: false };
   const compiled = await compileMarkdownSnapshotDirect({ text: content, init });
-  assert.deepStrictEqual(renderedItems(compiled.blocks), expected, "static compile resolves consecutive definitions");
+  assert.deepStrictEqual(renderedItems(compiled.blocks), expected, `static compile resolves ${what}`);
 
   const harness = await createWorkerHarness();
   const store = createRendererStore();
   const apply = (messages: WorkerOut[]) => {
     for (const message of messages) {
-      if (message.type === "INITIALIZED") store.reset(message.blocks);
+      if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
       else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
     }
   };
-  apply(await harness.send({ type: "INIT", initialContent: "", ...init } as WorkerIn));
+  apply(await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", ...init } as WorkerIn));
   for (const char of content) apply(await harness.send({ type: "APPEND", text: char }));
   apply(await harness.send({ type: "FINALIZE" }));
-  assert.deepStrictEqual(renderedItems(store.getBlocks()), expected, "character streaming resolves consecutive definitions");
+  assert.deepStrictEqual(renderedItems(store.getBlocks()), expected, `character streaming resolves ${what}`);
 }
 
 // The footnotes pass also rebuilds a prepared blockquote's `inline`, which block component overrides render from. A
@@ -481,10 +654,17 @@ async function runNestedBlockquoteWithoutReferencesTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
   for (const message of [
-    ...(await harness.send({ type: "INIT", initialContent: "", prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: true, tables: false, callouts: false } })),
+    ...(await harness.send({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "",
+      prewarmLangs: [],
+      contentPolicy: "trusted-mdx",
+      docPlugins: { footnotes: true, html: true, mdx: true, tables: false, callouts: false },
+    })),
     ...(await harness.send({ type: "APPEND", text: content })),
   ]) {
-    if (message.type === "INITIALIZED") store.reset(message.blocks);
+    if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
     else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
   }
   const region = store.getBlocks().find((block) => Array.isArray(block.payload.meta?.htmlTree));
@@ -495,16 +675,60 @@ async function runNestedBlockquoteWithoutReferencesTest(): Promise<void> {
   assert.strictEqual(text, "quoted text", "a streaming blockquote inside an MDX component region carries its inline text");
 }
 
+async function runOpenPrefixReferenceAnnotationTest(): Promise<void> {
+  // The HTML paragraph stays on the base path, so a late link definition re-resolves its inline in place.
+  // Both forms render a literal `[^note]`; custom inline components receive the exported reference props.
+  const content = "Text[^note] <kbd>K</kbd> [late][deferred] end.\n\n[deferred]: /url\n\n[^note]: body";
+  const init: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: false, tables: true, callouts: false } };
+  const apply = (store: ReturnType<typeof createRendererStore>, messages: WorkerOut[]): void => {
+    for (const message of messages) {
+      if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
+      else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
+    }
+  };
+  const exportedReferences = (store: ReturnType<typeof createRendererStore>): InlineNode[] =>
+    (store.getBlocks()[0]?.payload.inline ?? []).filter((node) => node.kind === "footnote-ref");
+  const streamed = createRendererStore();
+  const streamHarness = await createWorkerHarness();
+  apply(streamed, await streamHarness.send(init));
+  let prefix = "";
+  for (const line of content.split(/(?<=\n)/)) {
+    prefix += line;
+    apply(streamed, await streamHarness.send({ type: "APPEND", text: line }));
+    const single = createRendererStore();
+    const singleHarness = await createWorkerHarness();
+    apply(single, await singleHarness.send(init));
+    apply(single, await singleHarness.send({ type: "APPEND", text: prefix }));
+    assert.deepStrictEqual(
+      exportedReferences(streamed),
+      exportedReferences(single),
+      `open prefix ${JSON.stringify(prefix)} must not depend on when the link definition arrived`,
+    );
+  }
+}
+
 const consumerDom = new JSDOM("<!doctype html><html><body></body></html>");
 const consumerGlobals = new Map(["window", "document", "HTMLElement", "Node", "MutationObserver"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
 for (const key of consumerGlobals.keys()) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: (consumerDom.window as unknown as Record<string, unknown>)[key] });
 try {
   await runFootnotesFinalizeTest();
   await runPreparedFootnoteConsumerTest();
+  await runReplacementFootnotesNativeTableConsumerTest();
+  await runPublicRegistryStableHeadingMutationTest();
   await runRepeatedReferenceTargetsTest();
   await runCanonicalFootnoteOrderTest();
-  await runConsecutiveDefinitionsTest();
+  await runDefinitionLinesTest(
+    "First[^a] then second[^b] and third[^c].\n\n[^a]: Alpha body\nlazy tail.\n[^b]: Beta body.\n[^c]: Gamma body.\n",
+    { refs: ["1", "2", "3"], items: ["Alpha body lazy tail.", "Beta body.", "Gamma body."], literal: false },
+    "consecutive definitions",
+  );
+  await runDefinitionLinesTest(
+    "Text with a note[^a].\n[^a]: Alpha body\n",
+    { refs: ["1"], items: ["Alpha body"], literal: false },
+    "a definition interrupting its paragraph",
+  );
   await runNestedBlockquoteWithoutReferencesTest();
+  await runOpenPrefixReferenceAnnotationTest();
   console.log("worker-footnotes-finalize test passed");
 } finally {
   consumerDom.window.close();

@@ -1,6 +1,9 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
-import type { TocHeading, WorkerOut } from "@stream-mdx/core";
+import type { Patch, WorkerOut } from "@stream-mdx/core";
+import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 
 const DOC_PLUGINS = {
@@ -12,10 +15,7 @@ const DOC_PLUGINS = {
   math: true,
 };
 
-function extractTocFromDump(messages: WorkerOut[]): TocHeading[] {
-  const dump = messages.find((message): message is Extract<WorkerOut, { type: "DUMP_BLOCKS" }> => message.type === "DUMP_BLOCKS");
-  return dump?.tocHeadings ?? [];
-}
+type ConsumerHeading = { id: unknown; text: unknown; level: unknown };
 
 function splitBySizes(text: string, sizes: number[]): string[] {
   const chunks: string[] = [];
@@ -33,24 +33,30 @@ function splitBySizes(text: string, sizes: number[]): string[] {
   return chunks;
 }
 
-async function collectTocForChunks(chunks: string[]): Promise<TocHeading[]> {
+// Heading ids as a consumer renders them: the finalized store's heading blocks.
+async function collectTocForChunks(chunks: string[]): Promise<ConsumerHeading[]> {
   assert.ok(chunks.length > 0, "expected at least one chunk");
   const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const apply = (messages: WorkerOut[]): void => {
+    for (const message of messages) {
+      if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
+      else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
+    }
+  };
 
-  await harness.send({
-    type: "INIT",
-    initialContent: chunks[0],
-    prewarmLangs: [],
-    docPlugins: DOC_PLUGINS,
-  });
+  apply(await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: chunks[0],
+  prewarmLangs: [],
+  docPlugins: DOC_PLUGINS, }));
 
   for (const chunk of chunks.slice(1)) {
-    await harness.send({ type: "APPEND", text: chunk });
+    apply(await harness.send({ type: "APPEND", text: chunk }));
   }
 
-  await harness.send({ type: "FINALIZE" });
-  const dumpMessages = await harness.send({ type: "DUMP_BLOCKS" });
-  return extractTocFromDump(dumpMessages);
+  apply(await harness.send({ type: "FINALIZE" }));
+  return store.getBlocks()
+    .filter((block) => block.type === "heading")
+    .map((block) => ({ id: block.payload.meta?.headingId, text: block.payload.meta?.headingText, level: block.payload.meta?.headingLevel }));
 }
 
 async function runHeadingIdConformanceTest(): Promise<void> {
@@ -113,6 +119,18 @@ async function runChunkingInvariantTest(): Promise<void> {
     baseline.map((heading) => ({ id: heading.id, text: heading.text, level: heading.level })),
     "toc headings should be stable with one-character streaming chunks",
   );
+
+  // A closing root fence resumes parsing after it; earlier headings still count toward collisions.
+  const afterFence = ["## Lists", "", "```text", "code", "```", "", "# Lists"].join("\n");
+  const afterFenceBaseline = await collectTocForChunks([afterFence]);
+  assert.deepStrictEqual(afterFenceBaseline.map((heading) => heading.id), ["lists", "lists-2"]);
+  for (const size of [1, 4, 9]) {
+    assert.deepStrictEqual(
+      await collectTocForChunks(splitBySizes(afterFence, new Array(Math.ceil(afterFence.length / size)).fill(size))),
+      afterFenceBaseline,
+      `heading ids after a closed root fence must match single-shot with chunk size ${size}`,
+    );
+  }
 }
 
 await runHeadingIdConformanceTest();

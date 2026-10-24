@@ -9,47 +9,45 @@ This showcase demonstrates mapping raw HTML and standard markdown tags to design
 - This is the safest path for design-system alignment without forking parser behavior.
 - It keeps your docs/demo surface aligned with the same renderer logic used in production.
 
-## Example: map table tags to ShadCN wrappers
+## Example: wrap Markdown tables with ShadCN
+
+The `table` presentation wraps the native block, keeping its row structure and virtualization intact:
 
 ```tsx
-import type { TableElements } from "stream-mdx";
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 
-const tableElements: Partial<TableElements> = {
-  Table: ({ className, ...props }) => (
-    <div className="overflow-x-auto rounded-md border border-border/60">
-      <table className={`w-full text-sm ${className ?? ""}`} {...props} />
-    </div>
-  ),
-  Th: ({ className, ...props }) => <th className={`bg-muted/40 text-left font-semibold ${className ?? ""}`} {...props} />,
-  Td: ({ className, ...props }) => <td className={`align-top ${className ?? ""}`} {...props} />,
-};
+function ShadcnTablePresentation({ children }: NodeViewProps) {
+  return <div className="overflow-x-auto rounded-md border border-border/60">{children}</div>;
+}
 
-<StreamingMarkdown text={markdown} tableElements={tableElements} worker="/workers/markdown-worker.js" />;
+<StreamingMarkdown
+  text={markdown}
+  components={{ table: { wrapper: ShadcnTablePresentation } }}
+  worker="/workers/markdown-worker.js"
+/>;
 ```
 
-## Example: map raw HTML tags
+## Example: decorate raw HTML tags
 
 ```tsx
-import type { HtmlElements } from "stream-mdx";
-
-const htmlElements: Partial<HtmlElements> = {
-  blockquote: ({ className, ...props }) => (
-    <blockquote className={`border-l-4 border-foreground/30 bg-muted/30 px-4 py-2 italic ${className ?? ""}`} {...props} />
-  ),
-  pre: ({ className, ...props }) => (
-    <div className="overflow-x-auto rounded-md border border-border/60">
-      <pre className={className} {...props} />
-    </div>
-  ),
+const components = {
+  "html:blockquote": {
+    props: { className: "border-l-4 border-foreground/30 bg-muted/30 px-4 py-2 italic" },
+  },
+  "html:pre": {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <div className="overflow-x-auto rounded-md border border-border/60">{children}</div>
+    ),
+  },
 };
 
-<StreamingMarkdown text={markdown} features={{ html: true }} htmlElements={htmlElements} worker="/workers/markdown-worker.js" />;
+<StreamingMarkdown text={markdown} features={{ html: true }} components={components} worker="/workers/markdown-worker.js" />;
 ```
 
 ## Rendered HTML samples
 
 <blockquote>
-  This blockquote is emitted from raw HTML content and can be restyled safely via <code>htmlElements.blockquote</code>.
+  This blockquote is emitted from raw HTML content and can be restyled safely via <code>components["html:blockquote"]</code>.
 </blockquote>
 
 <table>
@@ -70,7 +68,7 @@ const htmlElements: Partial<HtmlElements> = {
 
 ## When not to use overrides
 
-Do **not** reach for `htmlElements` or `tableElements` when the thing you want is actually parser behavior.
+Do **not** reach for `components.table` or `components["html:<tag>"]` when the thing you want is actually parser behavior.
 
 Use overrides when:
 

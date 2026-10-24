@@ -28,17 +28,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.3999999985098839,
-        "lastDurationMs": 0.29999999701976776,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.5999999642372131,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "table-incremental",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -47,8 +48,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -57,13 +56,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to</p></div>",
-      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to</p></div>",
+      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
       "structure": {
         "topLevelTags": [
           "div"
@@ -73,8 +70,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -94,7 +89,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -107,17 +101,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.3999999985098839,
-        "lastDurationMs": 0.29999999701976776,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.5999999642372131,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "table-incremental",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -126,8 +121,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -136,13 +129,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to</p></div>",
-      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to</p></div>",
+      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
       "structure": {
         "topLevelTags": [
           "div"
@@ -152,8 +143,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -173,7 +162,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -186,17 +174,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.3999999985098839,
-        "lastDurationMs": 0.29999999701976776,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.5999999642372131,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "table-incremental",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -205,8 +194,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -215,13 +202,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to</p></div>",
-      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to</p></div>",
+      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
       "structure": {
         "topLevelTags": [
           "div"
@@ -231,8 +216,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -252,7 +235,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -265,17 +247,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.3999999985098839,
-        "lastDurationMs": 0.29999999701976776,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.5999999642372131,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "table-incremental",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -284,8 +267,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -294,13 +275,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to</p></div>",
-      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to</p></div>",
+      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
       "structure": {
         "topLevelTags": [
           "div"
@@ -310,8 +289,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -331,7 +308,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -344,17 +320,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.3999999985098839,
-        "lastDurationMs": 0.29999999701976776,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.5999999642372131,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "table-incremental",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -363,8 +340,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -373,13 +348,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to</p></div>",
-      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to</p></div>",
+      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
       "structure": {
         "topLevelTags": [
           "div"
@@ -389,8 +362,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -410,7 +381,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -423,17 +393,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.3999999985098839,
-        "lastDurationMs": 0.29999999701976776,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.5999999642372131,
+        "lastDurationMs": 1.5999999642372131,
         "meta": {
           "fixtureId": "table-incremental",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -442,8 +413,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -452,13 +421,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to</p></div>",
-      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to</p></div>",
+      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
       "structure": {
         "topLevelTags": [
           "div"
@@ -468,8 +435,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -489,7 +454,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -502,17 +466,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 4,
+        "lastPatchToDomMs": 2.700000047683716,
+        "lastDurationMs": 0.7000000476837158,
         "meta": {
           "fixtureId": "table-incremental",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -521,8 +486,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -531,13 +494,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
-      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
+      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
       "structure": {
         "topLevelTags": [
           "div"
@@ -547,8 +508,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -568,7 +527,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -581,17 +539,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 4,
+        "lastPatchToDomMs": 2.700000047683716,
+        "lastDurationMs": 0.7000000476837158,
         "meta": {
           "fixtureId": "table-incremental",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -600,8 +559,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -610,13 +567,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
-      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
+      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
       "structure": {
         "topLevelTags": [
           "div"
@@ -626,8 +581,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -647,7 +600,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -660,17 +612,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 4,
+        "lastPatchToDomMs": 2.700000047683716,
+        "lastDurationMs": 0.7000000476837158,
         "meta": {
           "fixtureId": "table-incremental",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -679,8 +632,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -689,13 +640,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
-      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
+      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
       "structure": {
         "topLevelTags": [
           "div"
@@ -705,8 +654,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -726,7 +673,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -739,28 +685,27 @@
       "hasTable": true,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\" id=\"table-incremental\" data-heading-id=\"table-incremental\">Table Incremental</h1><div data-table-block-root=\"46b1bcff\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"46b1bcff\" data-table-virtualized=\"false\" data-table-total-rows=\"6\" data-table-mounted-rows=\"6\" data-table-start-index=\"0\" data-table-end-index=\"6\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column A</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column B</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Column C</th></tr></thead><tbody><tr data-row-id=\"46b1bcff::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td></tr><tr data-row-id=\"46b1bcff::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Delta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Epsilon</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Zeta</td></tr><tr data-row-id=\"46b1bcff::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Eta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Theta</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Iota</td></tr><tr data-row-id=\"46b1bcff::row:3\" data-row-index=\"3\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Kappa</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Lambda</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Mu</td></tr><tr data-row-id=\"46b1bcff::row:4\" data-row-index=\"4\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Nu</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Xi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Omicron</td></tr><tr data-row-id=\"46b1bcff::row:5\" data-row-index=\"5\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Pi</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Rho</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Sigma</td></tr></tbody></table></div></div></div><p class=\"markdown-paragraph markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
     "runtimeState": {
-      "rendererVersion": 7,
+      "rendererVersion": 6,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 4,
-      "lastPatchToDomMs": 12.200000002980232,
-      "lastDurationMs": 0.20000000298023224,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
+      "lastTx": 5,
+      "lastPatchToDomMs": 1.199999988079071,
+      "lastDurationMs": 0.09999996423721313,
       "meta": {
         "fixtureId": "table-incremental",
-        "scenarioId": "S4_chunky_network",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S4_chunky_network"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -774,8 +719,6 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       }
@@ -784,8 +727,8 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "82988eafcea5fe029babe1adcf9a69aca7feefa83d2253b0ef0cf119fdd66479",
-        "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolli"
+        "hash": "c315aea1cef00f352c99ea3b9a44cadd7f72f0a15651fc7f6e46d7917318590c",
+        "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThi"
       }
     ],
     "inspection": {
@@ -803,7 +746,6 @@
           "emptyBodyCellCount": 0
         }
       ],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

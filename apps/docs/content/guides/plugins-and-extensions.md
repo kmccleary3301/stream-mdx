@@ -20,68 +20,65 @@ Most behavior is enabled with the `features` prop:
 
 You do not need to pass plugins for common features. The worker already knows how to parse these blocks.
 
-## Custom syntax and custom worker bundles
+## Custom syntax and worker bundles
 
-If you need custom syntax (custom regex, domain tokens, or non-standard blocks), build a custom worker bundle and enable the plugin there. The `Mermaid` addon is a good example of an opt-in block renderer.
+Use the `syntax` prop with a `SyntaxExtensionDescriptor` for serializable inline rules and registered colon containers. Native Lezer extensions and document plugins are functions, so bundle them into a custom worker instead of sending them through `INIT`. Mermaid is an opt-in engine registered through `engines.mermaid`.
 
 ### Worker bundle workflow
 
 1. Start from the default worker package.
-2. Add your plugin registry setup.
+2. Register a `DocumentPlugin` or `InlineExtension` under `extensions`.
 3. Build a hosted worker bundle.
 
 ```ts
-import type { DocumentPlugin } from "@stream-mdx/plugins/document";
+import { headingMetadata } from "./heading-metadata";
 import { serveMarkdownWorker } from "@stream-mdx/worker/engine";
-
-const customPlugin: DocumentPlugin = {
-  name: "custom-plugin",
-  process(ctx) {
-    // Custom document transformation
-    return undefined;
-  },
-};
 
 serveMarkdownWorker({
   extensions: {
-    documentPlugins: [customPlugin],
+    documentPlugins: [headingMetadata],
   },
 });
 ```
 
 ## Mermaid diagrams
 
-Mermaid is an optional addon that turns ```mermaid code fences into diagrams. It does not change the parser; it replaces the code block renderer for `mermaid` fences.
+Mermaid is an optional addon that routes `mermaid` fences through `engines.mermaid`:
 
 ```tsx
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown } from "stream-mdx";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 
-<StreamingMarkdown
-  text={content}
-  codeRenderers={{ mermaid: MermaidBlock }}
-/>
+const mermaidEngine = createMermaidEngine();
+
+<StreamingMarkdown text={content} engines={{ mermaid: mermaidEngine }} />;
 ```
 
-## Sandboxed artifacts and generic codeRenderers
+This keeps Mermaid rendering in the native code-owner path without a language wrapper or a `block.payload` read. The engine can also be configured with `createMermaidEngine({ config, defaultView, debounceMs })`.
 
-You can register custom code fence renderers for arbitrary languages using `codeRenderers`. Built-in options include `MermaidBlock` and `ArtifactFrame`, which sandboxes HTML visualizations inside an isolated iframe:
+## Code presentations
+
+Use `components.code.wrapper` to route presentation by bounded metadata while preserving the prepared native children. Wrappers no longer receive the full `Block`:
 
 ```tsx
-import { ArtifactFrame, StreamingMarkdown } from "@stream-mdx/react";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 
-<StreamingMarkdown
-  text={content}
-  engine="worker" // or "main-thread"
-  codeRenderers={{
-    mermaid: MermaidBlock,
-    "html-artifact": ArtifactFrame,
-    artifact: ArtifactFrame,
-  }}
-/>
+function CodePresentation({ children, metadata }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "custom") return children;
+  return <section data-code-language={metadata.language}>{children}</section>;
+}
+
+<StreamingMarkdown text={content} components={{ code: { wrapper: CodePresentation } }} />;
 ```
 
-For security guidelines, sandbox restrictions, and a complete chat-thread demo with dual-engine selection, see the [Deployment and Security Guide](/docs/guides/deployment-and-security#sandboxed-agent-artifacts-and-code-renderers) and the [`/showcase/assistant-stream`](/showcase/assistant-stream) showcase.
+Use `engines.code` with a `CodeEngine` for custom tokenization; it requires `engine="main"`. A code renderer that changes visual presentation remains under `components.code`.
+
+## Keep artifact fences inert
+
+Fences labeled `artifact` or `html-artifact` remain code unless the host supplies an explicit presentation. StreamMDX does not provide a default artifact frame or sandbox. A presentation that activates source content needs a host-owned security boundary.
+
+For security guidance and the chat-thread demo, see the [Deployment and Security Guide](/docs/guides/deployment-and-security#agent-content-and-code-renderers) and [`/showcase/assistant-stream`](/showcase/assistant-stream).
+
 
 ## Remark and Rehype plugins (@stream-mdx/unified)
 
@@ -98,37 +95,49 @@ import { StreamingMarkdown } from "stream-mdx";
 import { createUnifiedRenderer } from "@stream-mdx/unified";
 import rehypeSlug from "rehype-slug";
 
-const unifiedRenderer = createUnifiedRenderer({
+const unifiedComponents = createUnifiedRenderer({
   rehypePlugins: [rehypeSlug],
 });
 
 <StreamingMarkdown
   text={content}
-  blockRenderer={unifiedRenderer}
+  components={unifiedComponents}
 />
 ```
 
 Both synchronous and asynchronous remark/rehype plugins are supported. Synchronous plugins execute immediately for SSR compatibility, while asynchronous plugins process off the streaming critical path without blocking streaming or hydration.
 
-## Custom regex patterns
+## Declarative syntax extensions
 
-Regex patterns typically live in a custom worker bundle. If you only need rendering changes (no parsing), use `components` and `inlineComponents`.
+Pass custom inline rules as a serializable `SyntaxExtensionDescriptor`. Render a matched rule by its name with `components["extension:<name>"]`:
 
-### Example: citation syntax
+```tsx
+import { StreamingMarkdown, type InlineNodeViewProps } from "stream-mdx";
+import type { SyntaxExtensionDescriptor } from "@stream-mdx/core";
 
-```ts
-// Worker-side: register a custom regex block/inline matcher.
-registry.use({
-  name: "citation",
-  inline: {
-    full: /\{cite:(\d+)\}/g,
-    start: /\{cite:/g,
-    render: ({ match }) => ({ type: "inline", tag: "span", props: { className: "citation", children: `[${match[1]}]` } }),
-  },
-});
+const syntax: SyntaxExtensionDescriptor = {
+  contractVersion: 1,
+  inline: [{
+    name: "citation",
+    pattern: { source: "\\{cite:(\\d+)\\}" },
+    trigger: "{cite:",
+    attrs: { id: 1 },
+  }],
+};
+
+function CitationView({ node }: InlineNodeViewProps) {
+  if (node.kind !== "plugin") return null;
+  return <span className="citation">[{node.attrs?.id ?? ""}]</span>;
+}
+
+<StreamingMarkdown
+  text="See {cite:42}."
+  syntax={syntax}
+  components={{ "extension:citation": { view: CitationView } }}
+/>;
 ```
 
-If you enable format anticipation for regex, use `start` patterns that are safe to close within a newline boundary.
+Syntax descriptors can also register colon containers whose `component` names an entry in `contentComponents`. A rule can use `anticipation: { open, close }` for incomplete streaming input. See the [Plugin ABI](https://github.com/kmccleary3301/stream-mdx/blob/main/docs/PLUGIN_ABI.md) for the descriptor fields and admission behavior.
 
 ## Format anticipation
 

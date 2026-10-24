@@ -1,0 +1,1 @@
+export const PARAGRAPH_SPAN_RANGE_SIZE = 64;

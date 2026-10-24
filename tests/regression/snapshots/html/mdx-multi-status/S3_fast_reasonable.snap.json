@@ -1,6 +1,6 @@
 {
   "fixtureId": "mdx-multi-status",
-  "fixtureTitle": "MDX Multi Status",
+  "fixtureTitle": "Mixed MDX Inputs Stay Markdown",
   "scenarioId": "S3_fast_reasonable",
   "scenario": {
     "id": "S3_fast_reasonable",
@@ -17,7 +17,6 @@
       "mdx",
       "math",
       "code",
-      "error",
       "stress"
     ]
   },
@@ -32,17 +31,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.10000000894069672,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.199999988079071,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -51,8 +51,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -61,12 +59,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This</p></div>",
       "textSample": "MDX Multi StatusThis",
       "structure": {
         "topLevelTags": [
@@ -77,15 +73,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -98,17 +91,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0,
-        "lastDurationMs": 0,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 4,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 0.5,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -117,8 +111,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -127,12 +119,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multi</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multi</p></div>",
       "textSample": "MDX Multi StatusThis fixture exercises multi",
       "structure": {
         "topLevelTags": [
@@ -143,15 +133,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -164,17 +151,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 3,
-        "lastPatchToDomMs": 13.900000005960464,
-        "lastDurationMs": 0,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 6,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -183,8 +171,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -193,12 +179,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multiple finalized MDX blocks</p></div>",
       "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks",
       "structure": {
         "topLevelTags": [
@@ -209,15 +193,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -230,17 +211,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 7,
-        "lastPatchToDomMs": 15,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 14,
+        "lastPatchToDomMs": 1.199999988079071,
+        "lastDurationMs": 0.09999996423721313,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -249,74 +231,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex-error\" title=\"ParseError: KaTeX parse error: Expected group after '^' at position 9: f(x) = x^̲\" style=\"color:#cc0000\">f(x) = x^</span></span></p></div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x) = x^",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMdxPending",
-      "appendedChars": 192,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 11,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 8,
-        "lastPatchToDomMs": 13.099999994039536,
-        "lastDurationMs": 0.09999999403953552,
-        "meta": {
-          "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -325,13 +239,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.Compiling MDX (",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mrow></mrow></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^{}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.363em;\"><span style=\"top:-2.363em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"></span></span></span></span></span></span></span></span></span></span></span></span></p></div>",
+      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=xf(x) = x^{}f(x)=x",
       "structure": {
         "topLevelTags": [
           "div"
@@ -341,43 +253,36 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 1,
-          "mdxPending": 1,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
         "codeBlocks": []
       }
     },
     {
       "id": "event-hasMath",
-      "appendedChars": 192,
+      "appendedChars": 168,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 11,
+        "rendererVersion": 10,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 8,
-        "lastPatchToDomMs": 13.099999994039536,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 14,
+        "lastPatchToDomMs": 1.199999988079071,
+        "lastDurationMs": 0.09999996423721313,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -386,8 +291,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -396,13 +299,11 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.Compiling MDX (",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mrow></mrow></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^{}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.363em;\"><span style=\"top:-2.363em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"></span></span></span></span></span></span></span></span></span></span></span></span></p></div>",
+      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=xf(x) = x^{}f(x)=x",
       "structure": {
         "topLevelTags": [
           "div"
@@ -412,25 +313,17 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 1,
-          "mdxPending": 1,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
         "codeBlocks": []
       }
     },
     {
-      "id": "event-hasMdxCompiled",
+      "id": "event-hasPre",
       "appendedChars": 264,
       "rootChildCount": 1,
       "runtimeState": {
@@ -438,88 +331,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 11,
-        "lastPatchToDomMs": 8.899999991059303,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 22,
+        "lastPatchToDomMs": 3.399999976158142,
+        "lastDurationMs": 0.7999999523162842,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": false,
-        "hasMath": true
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:e63c5a3\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stable preview payload:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">Alpha lane</li>\n<li class=\"mdx-li\">Beta lane</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"></div></div></div></div></div></div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.Stable preview ",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stable preview payload:\nAlpha lane\nBeta lane\n"
-          }
-        ],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasPre",
-      "appendedChars": 288,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 15,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 12,
-        "lastPatchToDomMs": 12.699999988079071,
-        "lastDurationMs": 0.5999999940395355,
-        "meta": {
-          "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -528,8 +351,6 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -538,13 +359,11 @@
         "pre": 1,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:e63c5a3\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stable preview payload:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">Alpha lane</li>\n<li class=\"mdx-li\">Beta lane</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">Stable preview payl</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.Stable preview ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p>\nStable preview payload:\n<ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Alpha lane</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Beta lane\n&lt;/Preview&gt;</li></ol><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7e0b8dc7\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\" data-provisional=\"true\"></span></code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.\nStable preview",
       "structure": {
         "topLevelTags": [
           "div"
@@ -554,24 +373,16 @@
           "pre": 1,
           "blockquote": 0,
           "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stable preview payload:\nAlpha lane\nBeta lane\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Stable preview payl",
-            "lineCount": 1
+            "text": "",
+            "lineCount": 0
           }
         ]
       }
@@ -581,21 +392,22 @@
       "appendedChars": 312,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 16,
-        "queueDepth": 0,
-        "pendingBatches": 0,
+        "rendererVersion": 17,
+        "queueDepth": 1,
+        "pendingBatches": 1,
         "workerReady": true,
-        "lastTx": 13,
-        "lastPatchToDomMs": 13.099999994039536,
-        "lastDurationMs": 0.5,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 28,
+        "lastPatchToDomMs": 2.699999988079071,
+        "lastDurationMs": 0.2999999523162842,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -604,8 +416,6 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -614,13 +424,11 @@
         "pre": 1,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:e63c5a3\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stable preview payload:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">Alpha lane</li>\n<li class=\"mdx-li\">Beta lane</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">Stable preview payload:</span>\n<span class=\"line\"></span>\n<span class=\"line\">1. Alpha lane</span>\n<span class=\"line\">2. B</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.Stable preview ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p>\nStable preview payload:\n<ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Alpha lane</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Beta lane\n&lt;/Preview&gt;</li></ol><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7e0b8dc7\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\" data-language=\"text\"><code data-theme=\"github-dark github-light\" style=\"display: grid;\" data-language=\"text\" class=\"language-text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\" data-provisional=\"true\">2. B</span></code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.\nStable preview",
       "structure": {
         "topLevelTags": [
           "div"
@@ -630,20 +438,12 @@
           "pre": 1,
           "blockquote": 0,
           "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stable preview payload:\nAlpha lane\nBeta lane\n"
-          }
-        ],
         "codeBlocks": [
           {
             "text": "Stable preview payload:\n\n1. Alpha lane\n2. B",
@@ -657,21 +457,22 @@
       "appendedChars": 456,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 22,
+        "rendererVersion": 26,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 19,
-        "lastPatchToDomMs": 14.5,
-        "lastDurationMs": 0.19999998807907104,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 42,
+        "lastPatchToDomMs": 0.7000000476837158,
+        "lastDurationMs": 0.20000004768371582,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -680,54 +481,42 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
       "counts": {
         "table": 0,
-        "pre": 1,
+        "pre": 2,
         "blockquote": 0,
         "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:e63c5a3\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stable preview payload:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">Alpha lane</li>\n<li class=\"mdx-li\">Beta lane</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Beta lane</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Unexpected empty expression</div></div><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi>i</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding=\"application/x-tex\">\\sum_{i=1}^{4} i = 10</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:3.0788em;vertical-align:-1.2777em;\"></span><span class=\"mop op-limits\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.8011em;\"><span style=\"top:-1.8723em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">i</span><span class=\"mrel mtight\">=</span><span class=\"mord mtight\">1</span></span></span></span><span style=\"top:-3.05em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span><span class=\"mop op-symbol large-op\">∑</span></span></span><span style=\"top:-4.3em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.2777em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">10</span></span></span></span></span></span></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"></div></div></div></div></div></div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.Stable preview ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p>\nStable preview payload:\n<ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Alpha lane</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Beta lane\n&lt;/Preview&gt;</li></ol><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7e0b8dc7\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code style=\"\" data-language=\"text\" class=\"language-text language-text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Beta lane</span></span>\n</code></pre></div></div></div></div></div></div></div>\nThis block should fail compilation and render the MDX error state.\n<p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi>i</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding=\"application/x-tex\">\\sum_{i=1}^{4} i = 10</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:3.0788em;vertical-align:-1.2777em;\"></span><span class=\"mop op-limits\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.8011em;\"><span style=\"top:-1.8723em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">i</span><span class=\"mrel mtight\">=</span><span class=\"mord mtight\">1</span></span></span></span><span style=\"top:-3.05em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span><span class=\"mop op-symbol large-op\">∑</span></span></span><span style=\"top:-4.3em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.2777em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">10</span></span></span></span></span></span></div></div></div></div></div></p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1c515d82\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\" data-provisional=\"true\"></span></code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.\nStable preview",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 1,
+          "pre": 2,
           "blockquote": 0,
           "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stable preview payload:\nAlpha lane\nBeta lane\n"
-          },
-          {
-            "status": "error",
-            "textSample": "MDX failedUnexpected empty expression"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Stable preview payload:\n\n1. Alpha lane\n2. Beta lane",
-            "lineCount": 4
+            "text": "Stable preview payload:\n\n1. Alpha lane\n2. Beta lane\n",
+            "lineCount": 5
+          },
+          {
+            "text": "",
+            "lineCount": 0
           }
         ]
       }
@@ -737,21 +526,22 @@
       "appendedChars": 552,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 26,
+        "rendererVersion": 34,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 23,
-        "lastPatchToDomMs": 14.800000011920929,
-        "lastDurationMs": 0.10000000894069672,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 53,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.09999996423721313,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -760,8 +550,6 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -770,13 +558,11 @@
         "pre": 2,
         "blockquote": 0,
         "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:e63c5a3\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stable preview payload:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">Alpha lane</li>\n<li class=\"mdx-li\">Beta lane</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Beta lane</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Unexpected empty expression</div></div><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi>i</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding=\"application/x-tex\">\\sum_{i=1}^{4} i = 10</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:3.0788em;vertical-align:-1.2777em;\"></span><span class=\"mop op-limits\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.8011em;\"><span style=\"top:-1.8723em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">i</span><span class=\"mrel mtight\">=</span><span class=\"mord mtight\">1</span></span></span></span><span style=\"top:-3.05em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span><span class=\"mop op-symbol large-op\">∑</span></span></span><span style=\"top:-4.3em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.2777em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">10</span></span></span></span></span></span></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> lanes</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"alpha\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">];</span></span></code></pre></div></div></div></div></div></div>\n| Track | Status |\n| --- | --</div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.Stable preview ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p>\nStable preview payload:\n<ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Alpha lane</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Beta lane\n&lt;/Preview&gt;</li></ol><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7e0b8dc7\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code style=\"\" data-language=\"text\" class=\"language-text language-text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Beta lane</span></span>\n</code></pre></div></div></div></div></div></div></div>\nThis block should fail compilation and render the MDX error state.\n<p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi>i</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding=\"application/x-tex\">\\sum_{i=1}^{4} i = 10</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:3.0788em;vertical-align:-1.2777em;\"></span><span class=\"mop op-limits\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.8011em;\"><span style=\"top:-1.8723em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">i</span><span class=\"mrel mtight\">=</span><span class=\"mord mtight\">1</span></span></span></span><span style=\"top:-3.05em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span><span class=\"mop op-symbol large-op\">∑</span></span></span><span style=\"top:-4.3em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.2777em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">10</span></span></span></span></span></span></div></div></div></div></div></p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1c515d82\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code style=\"\" data-language=\"ts\" class=\"language-ts language-ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">export</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">const</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">lanes</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">=</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> [</span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"alpha\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">, </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"beta\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">, </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"gamma\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">];</span></span>\n</code></pre></div></div></div></div></div></div></div>\n| Track | Status |\n| --- | --</div>",
+      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.\nStable preview",
       "structure": {
         "topLevelTags": [
           "div"
@@ -786,32 +572,20 @@
           "pre": 2,
           "blockquote": 0,
           "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stable preview payload:\nAlpha lane\nBeta lane\n"
-          },
-          {
-            "status": "error",
-            "textSample": "MDX failedUnexpected empty expression"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Stable preview payload:\n\n1. Alpha lane\n2. Beta lane",
-            "lineCount": 4
+            "text": "Stable preview payload:\n\n1. Alpha lane\n2. Beta lane\n",
+            "lineCount": 5
           },
           {
-            "text": "export const lanes = [\"alpha\", \"beta\", \"gamma\"];",
-            "lineCount": 1
+            "text": "export const lanes = [\"alpha\", \"beta\", \"gamma\"];\n",
+            "lineCount": 2
           }
         ]
       }
@@ -821,21 +595,22 @@
       "appendedChars": 608,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 29,
+        "rendererVersion": 37,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 26,
-        "lastPatchToDomMs": 14.700000002980232,
-        "lastDurationMs": 0.10000000894069672,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 59,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -844,8 +619,6 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -854,13 +627,11 @@
         "pre": 2,
         "blockquote": 0,
         "katex": 2,
-        "mdxPending": 1,
-        "mdxCompiled": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:e63c5a3\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stable preview payload:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">Alpha lane</li>\n<li class=\"mdx-li\">Beta lane</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Beta lane</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Unexpected empty expression</div></div><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi>i</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding=\"application/x-tex\">\\sum_{i=1}^{4} i = 10</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:3.0788em;vertical-align:-1.2777em;\"></span><span class=\"mop op-limits\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.8011em;\"><span style=\"top:-1.8723em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">i</span><span class=\"mrel mtight\">=</span><span class=\"mord mtight\">1</span></span></span></span><span style=\"top:-3.05em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span><span class=\"mop op-symbol large-op\">∑</span></span></span><span style=\"top:-4.3em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.2777em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">10</span></span></span></span></span></span></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> lanes</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"alpha\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">];</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.Stable preview ",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p>\nStable preview payload:\n<ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Alpha lane</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Beta lane\n&lt;/Preview&gt;</li></ol><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7e0b8dc7\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code style=\"\" data-language=\"text\" class=\"language-text language-text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Beta lane</span></span>\n</code></pre></div></div></div></div></div></div></div>\nThis block should fail compilation and render the MDX error state.\n<p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi>i</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding=\"application/x-tex\">\\sum_{i=1}^{4} i = 10</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:3.0788em;vertical-align:-1.2777em;\"></span><span class=\"mop op-limits\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.8011em;\"><span style=\"top:-1.8723em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">i</span><span class=\"mrel mtight\">=</span><span class=\"mord mtight\">1</span></span></span></span><span style=\"top:-3.05em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span><span class=\"mop op-symbol large-op\">∑</span></span></span><span style=\"top:-4.3em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.2777em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">10</span></span></span></span></span></span></div></div></div></div></div></p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1c515d82\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code style=\"\" data-language=\"ts\" class=\"language-ts language-ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">export</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">const</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">lanes</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">=</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> [</span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"alpha\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">, </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"beta\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">, </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"gamma\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">];</span></span>\n</code></pre></div></div></div></div></div></div></div>\n| Track | Status |\n| --- | --- |\n| Stable | Compiled |\n| Broken | Error |\n</div>",
+      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.\nStable preview",
       "structure": {
         "topLevelTags": [
           "div"
@@ -870,133 +641,20 @@
           "pre": 2,
           "blockquote": 0,
           "katex": 2,
-          "mdxPending": 1,
-          "mdxCompiled": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stable preview payload:\nAlpha lane\nBeta lane\n"
-          },
-          {
-            "status": "error",
-            "textSample": "MDX failedUnexpected empty expression"
-          },
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Stable preview payload:\n\n1. Alpha lane\n2. Beta lane",
-            "lineCount": 4
+            "text": "Stable preview payload:\n\n1. Alpha lane\n2. Beta lane\n",
+            "lineCount": 5
           },
           {
-            "text": "export const lanes = [\"alpha\", \"beta\", \"gamma\"];",
-            "lineCount": 1
-          }
-        ]
-      }
-    },
-    {
-      "id": "event-hasTable",
-      "appendedChars": 608,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 31,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 28,
-        "lastPatchToDomMs": 11.700000002980232,
-        "lastDurationMs": 0.5,
-        "meta": {
-          "fixtureId": "mdx-multi-status",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": true,
-        "hasPre": true,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": false,
-        "hasMath": true
-      },
-      "counts": {
-        "table": 1,
-        "pre": 2,
-        "blockquote": 0,
-        "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:e63c5a3\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stable preview payload:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">Alpha lane</li>\n<li class=\"mdx-li\">Beta lane</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Beta lane</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Unexpected empty expression</div></div><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi>i</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding=\"application/x-tex\">\\sum_{i=1}^{4} i = 10</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:3.0788em;vertical-align:-1.2777em;\"></span><span class=\"mop op-limits\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.8011em;\"><span style=\"top:-1.8723em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">i</span><span class=\"mrel mtight\">=</span><span class=\"mord mtight\">1</span></span></span></span><span style=\"top:-3.05em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span><span class=\"mop op-symbol large-op\">∑</span></span></span><span style=\"top:-4.3em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.2777em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">10</span></span></span></span></span></span></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> lanes</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"alpha\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">];</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:69afb31d\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Track</th><th class=\"mdx-th\">Status</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">Stable</td><td class=\"mdx-td\">Compiled</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">Broken</td><td class=\"mdx-td\">Error</td></tr></tbody></table></figure></div></div>",
-      "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.Inline math stays active here: f(x)=x2+1f(x) = x^2 + 1f(x)=x2+1.Stable preview ",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 1,
-          "pre": 2,
-          "blockquote": 0,
-          "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [
-          {
-            "headerColumns": 2,
-            "rowCellCounts": [
-              2,
-              2
-            ],
-            "emptyBodyCellCount": 0
-          }
-        ],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Stable preview payload:\nAlpha lane\nBeta lane\n"
-          },
-          {
-            "status": "error",
-            "textSample": "MDX failedUnexpected empty expression"
-          },
-          {
-            "status": "compiled",
-            "textSample": "TrackStatusStableCompiledBrokenError"
-          }
-        ],
-        "codeBlocks": [
-          {
-            "text": "Stable preview payload:\n\n1. Alpha lane\n2. Beta lane",
-            "lineCount": 4
-          },
-          {
-            "text": "export const lanes = [\"alpha\", \"beta\", \"gamma\"];",
-            "lineCount": 1
+            "text": "export const lanes = [\"alpha\", \"beta\", \"gamma\"];\n",
+            "lineCount": 2
           }
         ]
       }
@@ -1007,31 +665,30 @@
     "appendedChars": 608,
     "rootChildCount": 1,
     "selectors": {
-      "hasTable": true,
+      "hasTable": false,
       "hasPre": true,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": true,
       "hasBlockquote": false,
       "hasMath": true
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\">MDX Multi Status</h1><p class=\"markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:e63c5a3\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Stable preview payload:</p><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">Alpha lane</li>\n<li class=\"mdx-li\">Beta lane</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Beta lane</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Unexpected empty expression</div></div><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi>i</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding=\"application/x-tex\">\\sum_{i=1}^{4} i = 10</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:3.0788em;vertical-align:-1.2777em;\"></span><span class=\"mop op-limits\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.8011em;\"><span style=\"top:-1.8723em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">i</span><span class=\"mrel mtight\">=</span><span class=\"mord mtight\">1</span></span></span></span><span style=\"top:-3.05em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span><span class=\"mop op-symbol large-op\">∑</span></span></span><span style=\"top:-4.3em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.2777em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">10</span></span></span></span></span></span></div></div></div></div></div></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> lanes</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"alpha\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">];</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:69afb31d\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Track</th><th class=\"mdx-th\">Status</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">Stable</td><td class=\"mdx-td\">Compiled</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">Broken</td><td class=\"mdx-td\">Error</td></tr></tbody></table></figure></div></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Multi Status\" id=\"mdx-multi-status\" data-heading-id=\"mdx-multi-status\">MDX Multi Status</h1><p class=\"markdown-paragraph markdown-paragraph\">This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.</p><p class=\"markdown-paragraph markdown-paragraph\">Inline math stays active here: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span></span>.</p>\nStable preview payload:\n<ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Alpha lane</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Beta lane\n&lt;/Preview&gt;</li></ol><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7e0b8dc7\" data-code-virtualized=\"false\" data-code-total-lines=\"4\" data-code-mounted-lines=\"4\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code style=\"\" data-language=\"text\" class=\"language-text language-text\"><span class=\"line\" data-line=\"1\"><span>Stable preview payload:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>1. Alpha lane</span></span>\n<span class=\"line\" data-line=\"4\"><span>2. Beta lane</span></span>\n</code></pre></div></div></div></div></div></div></div>\nThis block should fail compilation and render the MDX error state.\n<p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi>i</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding=\"application/x-tex\">\\sum_{i=1}^{4} i = 10</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:3.0788em;vertical-align:-1.2777em;\"></span><span class=\"mop op-limits\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.8011em;\"><span style=\"top:-1.8723em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">i</span><span class=\"mrel mtight\">=</span><span class=\"mord mtight\">1</span></span></span></span><span style=\"top:-3.05em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span><span class=\"mop op-symbol large-op\">∑</span></span></span><span style=\"top:-4.3em;margin-left:0em;\"><span class=\"pstrut\" style=\"height:3.05em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.2777em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">10</span></span></span></span></span></span></div></div></div></div></div></p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1c515d82\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code style=\"\" data-language=\"ts\" class=\"language-ts language-ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">export</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">const</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">lanes</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">=</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> [</span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"alpha\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">, </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"beta\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">, </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"gamma\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">];</span></span>\n</code></pre></div></div></div></div></div></div></div>\n| Track | Status |\n| --- | --- |\n| Stable | Compiled |\n| Broken | Error |\n</div>",
     "runtimeState": {
-      "rendererVersion": 31,
+      "rendererVersion": 38,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 28,
-      "lastPatchToDomMs": 11.700000002980232,
-      "lastDurationMs": 0.5,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
+      "lastTx": 60,
+      "lastPatchToDomMs": 7.899999976158142,
+      "lastDurationMs": 0.19999998807907104,
       "meta": {
         "fixtureId": "mdx-multi-status",
-        "scenarioId": "S3_fast_reasonable",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S3_fast_reasonable"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -1041,12 +698,10 @@
         "div"
       ],
       "counts": {
-        "table": 1,
+        "table": 0,
         "pre": 2,
         "blockquote": 0,
         "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       }
@@ -1055,43 +710,20 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "767e65f20e5a0966c14c5ac2170323a17cbbccca4250701b9f58bfca30d6e39f",
+        "hash": "257c711cb1fbc642485f003aa9de99c4041c31074cf8209ab1fdbb00b2c2623b",
         "textSample": "MDX Multi StatusThis fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code"
       }
     ],
     "inspection": {
-      "tables": [
-        {
-          "headerColumns": 2,
-          "rowCellCounts": [
-            2,
-            2
-          ],
-          "emptyBodyCellCount": 0
-        }
-      ],
-      "mdxBlocks": [
-        {
-          "status": "compiled",
-          "textSample": "Stable preview payload:\nAlpha lane\nBeta lane\n"
-        },
-        {
-          "status": "error",
-          "textSample": "MDX failedUnexpected empty expression"
-        },
-        {
-          "status": "compiled",
-          "textSample": "TrackStatusStableCompiledBrokenError"
-        }
-      ],
+      "tables": [],
       "codeBlocks": [
         {
-          "text": "Stable preview payload:\n\n1. Alpha lane\n2. Beta lane",
-          "lineCount": 4
+          "text": "Stable preview payload:\n\n1. Alpha lane\n2. Beta lane\n",
+          "lineCount": 5
         },
         {
-          "text": "export const lanes = [\"alpha\", \"beta\", \"gamma\"];",
-          "lineCount": 1
+          "text": "export const lanes = [\"alpha\", \"beta\", \"gamma\"];\n",
+          "lineCount": 2
         }
       ]
     }

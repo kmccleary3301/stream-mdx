@@ -5,9 +5,9 @@ _Last updated: 2025-12-17_
 This cookbook focuses on the parts of the “plugins” story that are relevant to **real app integration**:
 
 - How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled.
-- How the worker is configured (`docPlugins`, `mdxCompileMode`).
-- How to keep MDX compilation parity (server vs worker).
-- Where “custom plugins” actually live in the architecture (worker bundle customization).
+- How the worker is configured (`docPlugins` and `contentPolicy`).
+- How restricted source components differ from full MDX evaluation.
+- How to opt into full MDX with an explicit trusted engine.
 
 If you are looking for the top-level React API, start with `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.
 
@@ -51,14 +51,13 @@ import { StreamingMarkdown } from "stream-mdx";
     footnotes: true,
     callouts: false,
   }}
-  mdxCompileMode="worker"
 />;
 ```
 
 Notes:
 
-- `features` configures both the worker and the renderer.
-- `mdxCompileMode` enables MDX compilation/hydration and selects `"server"` vs `"worker"`.
+- `features` configures parsing and renderer behavior.
+- `contentPolicy` defaults to `"restricted"`; `features.mdx` alone does not evaluate authored source.
 
 ---
 
@@ -67,8 +66,11 @@ Notes:
 If you are not using `<StreamingMarkdown />` (e.g. you build a custom renderer loop), initialize the worker with matching flags:
 
 ```ts
+import { STREAM_MDX_SCHEMA_VERSION } from "stream-mdx/core";
+
 worker.postMessage({
   type: "INIT",
+  schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   prewarmLangs: ["typescript", "bash"],
   docPlugins: {
@@ -79,74 +81,76 @@ worker.postMessage({
     callouts: false,
     math: true,
   },
-  mdx: { compileMode: "worker" },
+  contentPolicy: "restricted",
 });
 ```
 
-The hosted worker bundle already includes StreamMDX’s built-in implementations for those domains. `docPlugins` controls what is enabled during parsing/aggregation.
+The hosted worker bundle includes the built-in implementations for those domains. `docPlugins` controls parsing and aggregation. `contentPolicy` defaults to `"restricted"`; worker parsing does not evaluate authored MDX. In restricted mode, host registrations are created with `defineContentComponent`; only serializable names and render conditions cross `INIT`, never validators or component functions. Native projected children remain host React nodes.
 
 ---
 
-## 4) MDX parity (server vs worker)
+## 4) Full MDX for trusted source
 
-StreamMDX is designed to keep server and worker compilation **equivalent**. For server compilation, use:
-
-```ts
-import { compileMdxContent } from "stream-mdx/worker/mdx-compile";
-```
-
-This is the same pipeline used by the worker compilation path (remark/rehype stack + `@mdx-js/mdx` output as `function-body`).
-
-### Next.js route example
-
-```ts
-import { NextRequest, NextResponse } from "next/server";
-import { compileMdxContent } from "stream-mdx/worker/mdx-compile";
-
-export async function POST(request: NextRequest) {
-  const { content, blockId } = await request.json();
-  const compiled = await compileMdxContent(content);
-  return NextResponse.json({
-    id: blockId,
-    code: compiled.code,
-    dependencies: compiled.dependencies,
-  });
-}
-```
-
----
-
-## 5) Tables (Shadcn wrappers)
-
-Tables are rendered via the table “elements” map, not by overriding raw HTML tags:
+`features.mdx` enables component syntax parsing, not automatic evaluation. Restricted source can use host `defineContentComponent` registrations in `contentComponents`. For full MDX, create an explicit engine and pass it through the React integration:
 
 ```tsx
 import { StreamingMarkdown } from "stream-mdx";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
+import { Callout } from "./Callout";
 
-const tableElements = {
-  Table,
-  Thead: TableHeader,
-  Tbody: TableBody,
-  Tr: TableRow,
-  Th: TableHead,
-  Td: TableCell,
+const hostWidgets = { Callout };
+const mdxEngine = createTrustedMdxEngine({
+  components: hostWidgets,
+  imports: { "host:widgets": hostWidgets },
+});
+
+<StreamingMarkdown
+  text={trustedContent}
+  features={{ mdx: true }}
+  contentPolicy="trusted-mdx"
+  engines={{ mdx: mdxEngine }}
+/>;
+```
+
+The trusted engine evaluates authored code in the host realm. Use it only for reviewed, trusted input; it is not a sandbox. See `docs/SECURITY_MODEL.md` for CSP requirements and limitations.
+
+The explicit import map resolves authored specifiers only to supplied host bindings; no modules are fetched. Trusted evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox. Native worker `FINALIZED` does not imply trusted projection or host render commit readiness. See `docs/SECURITY_MODEL.md` for the lease, stale-work, and CSP boundaries.
+
+---
+
+## 5) Table presentations
+
+Tables use semantic presentation keys instead of a separate element map. Wrap the native table with `components.table` and style rows or cells with `components["table-row"]` and `components["table-cell"]`.
+
+```tsx
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
+
+const tablePresentations = {
+  table: {
+    wrapper: ({ children }: NodeViewProps) => (
+      <div className="my-4 overflow-x-auto rounded-md border">{children}</div>
+    ),
+  },
+  "table-row": {
+    props: { className: "border-b last:border-0" },
+  },
+  "table-cell": {
+    props: { className: "px-3 py-2 text-left" },
+  },
 };
 
-<StreamingMarkdown text={text} tableElements={tableElements} />;
+<StreamingMarkdown text={text} components={tablePresentations} />;
 ```
 
 ---
 
 ## 6) “Custom plugins” (custom syntax)
 
-Custom syntax (citations, mentions, bespoke tags) is a **worker-side concern**. The default hosted worker bundle only knows about built-in domains.
+Use serializable `syntax` rules for supported inline patterns. Custom tokenizers and document plugins require a custom worker bundle; the default hosted worker only includes built-in domains.
 
-The recommended approach is:
-
-1. Build a custom worker bundle that registers your tokenizers/matchers.
-2. Host it and pass it via the `worker` prop.
-3. Render any emitted nodes via `inlineComponents` / `components`.
+1. Add supported inline rules through `syntax`, or register custom tokenizers and document plugins in a custom worker.
+2. Host the custom worker bundle and pass it via the `worker` prop.
+3. Render emitted inline extension nodes through `components["extension:<name>"]`, using a wrapper or headless view.
 
 If you control the worker bundle, plugin primitives live under `@stream-mdx/plugins/document` (and native extensions via `docs/PLUGIN_ABI.md`).
 
@@ -165,8 +169,8 @@ Quick sanity check:
 
 ## 8) Troubleshooting
 
-- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode="worker"` (or implement `/api/mdx-compile-v2` for `"server"`).
+- **MDX renders as restricted content**: `contentPolicy` defaults to `"restricted"` and does not evaluate authored expressions. Register native source components with `defineContentComponent`; full MDX requires `engines.mdx` from `createTrustedMdxEngine`, trusted input, an explicit import map, and CSP permission for `unsafe-eval`.
 - **Worker fails under strict CSP**: host the worker bundle and use `worker="/workers/markdown-worker.js"` (avoid `blob:`).
-- **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes).
+- **Tables render as plain HTML**: style native tables with `components.table`, `components["table-row"]`, and `components["table-cell"]`, or ensure your CSS covers the default table classes.
 - **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps.
 

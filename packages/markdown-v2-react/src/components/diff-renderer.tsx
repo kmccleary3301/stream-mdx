@@ -1,8 +1,8 @@
 import type { DiffBlock, DiffLine } from "@stream-mdx/core";
 import React from "react";
-import type { CodeFenceRendererProps } from "../types";
-
-export interface DiffRendererProps extends CodeFenceRendererProps {
+export interface DiffRendererProps {
+  meta?: Record<string, unknown>;
+  renderCode: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }

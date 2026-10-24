@@ -27,17 +27,25 @@ async function setupDom() {
 
 async function runMermaidRoutingTest(): Promise<void> {
   const window = await setupDom();
-
-  const Mermaid = ({ code }: { code: string }) => React.createElement("div", { id: "mermaid" }, code);
-  const registry = new ComponentRegistry({}, {}, { mermaid: Mermaid });
-  // Mermaid code fence should route to registry.mermaid and receive stripped code (no fences).
+  const MermaidPresentation = ({ actions, children, metadata }: {
+    actions: { readSource: () => string };
+    children: React.ReactNode;
+    metadata: { language?: string };
+  }) => {
+    if (metadata.language?.toLowerCase() !== "mermaid") return children;
+    return React.createElement("div", { id: "mermaid" }, actions.readSource());
+  };
+  const registry = new ComponentRegistry({
+    components: { code: { wrapper: MermaidPresentation } },
+  });
+  // The consumer reads the authored Mermaid source through the generation-bound action.
   const mermaidBlock: Block = {
     id: "code-mermaid",
     type: "code",
     isFinalized: false,
     payload: {
       raw: "```mermaid\ngraph TD; A-->B;\n```",
-      meta: { lang: "mermaid" },
+      meta: { lang: "mermaid", code: "graph TD; A-->B;" },
     },
   };
 
@@ -49,13 +57,16 @@ async function runMermaidRoutingTest(): Promise<void> {
   await sleep(30);
 
   assert.ok(container.querySelector("#mermaid"), "expected mermaid block component to render");
-  assert.ok(container.textContent?.includes("graph TD"), "expected stripped mermaid code to be passed through");
-  assert.ok(!container.textContent?.includes("```mermaid"), "expected code fences to be stripped before rendering");
-  assert.strictEqual(container.querySelector("pre"), null, "expected mermaid block not to be wrapped in the standard code <pre> frame");
+  assert.strictEqual(
+    container.textContent,
+    mermaidBlock.payload.raw,
+    "expected authored Mermaid Markdown to be passed through",
+  );
+  assert.strictEqual(container.querySelector("pre"), null, "expected Mermaid presentation to replace the standard code view");
 
   root.unmount();
 
-  // Non-mermaid languages should render as normal code blocks even if registry has a mermaid component registered.
+  // Non-Mermaid languages preserve the native code view.
   const window2 = await setupDom();
   const block: Block = {
     id: "code-ts",
@@ -63,7 +74,7 @@ async function runMermaidRoutingTest(): Promise<void> {
     isFinalized: true,
     payload: {
       raw: "```ts\nconsole.log(1)\n```",
-      meta: { lang: "ts" },
+      meta: { lang: "ts", code: "console.log(1)" },
     },
   };
   const store2 = createRendererStore([block]);
@@ -73,12 +84,13 @@ async function runMermaidRoutingTest(): Promise<void> {
   root2.render(React.createElement(BlockNodeRenderer, { store: store2, blockId: block.id, registry }));
   await sleep(30);
 
-  assert.strictEqual(container2.querySelector("#mermaid"), null, "did not expect mermaid component for non-mermaid language");
-  assert.ok(container2.querySelector("pre"), "expected standard code <pre> wrapper for non-mermaid code blocks");
+  assert.strictEqual(container2.querySelector("#mermaid"), null, "did not expect Mermaid presentation for non-Mermaid language");
+  assert.ok(container2.querySelector("pre"), "expected standard code <pre> wrapper for non-Mermaid code blocks");
 
   root2.unmount();
 }
 
 await runMermaidRoutingTest();
-console.log("mermaid routing test passed");
+console.log("mermaid presentation routing test passed");
+
 

@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { Block, WorkerOut } from "@stream-mdx/core";
@@ -26,12 +28,9 @@ async function run(): Promise<void> {
   const harness = await createWorkerHarness();
   const initialContent = ["# Alpha", "", "## Beta", "", "### Gamma"].join("\n");
 
-  await harness.send({
-    type: "INIT",
-    initialContent,
-    prewarmLangs: [],
-    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true },
-  });
+  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent,
+  prewarmLangs: [],
+  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true }, });
 
   const firstDump = getDump(await harness.send({ type: "DUMP_BLOCKS" }));
   const baseline = extractHeadingMeta(firstDump.blocks);

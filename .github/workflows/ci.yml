@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-test-pack:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +27,7 @@ jobs:
         run: npm run test
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: node node_modules/playwright/cli.js install --with-deps chromium
 
       - name: Worker regression guards
         run: |
@@ -36,15 +36,14 @@ jobs:
           npx tsx __tests__/deferred-stale-replay-guard.test.ts
           npx tsx __tests__/mixed-segment-canonicalization.test.ts
 
-      - name: Worker streaming fidelity matrix (x2)
+      # `npm run test` above already ran the matrix once; this second run under a larger heap keeps the two-run
+      # determinism check.
+      - name: Worker streaming fidelity matrix (second run)
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: |
           cd packages/markdown-v2-worker
-          for run in 1 2; do
-            echo "[stream-mdx] matrix run ${run}/2"
-            npx tsx __tests__/streaming-fidelity-matrix.test.ts
-          done
+          npx tsx __tests__/streaming-fidelity-matrix.test.ts
 
       - name: Determinism matrix (node vs browser worker)
         run: npm run determinism:matrix
@@ -52,11 +51,47 @@ jobs:
       - name: HTML parity (server blocks renderer vs browser final DOM)
         run: npm run determinism:html-parity
 
+      # Fails when a baseline-passing spec example stops passing on any StreamMDX path (static, streamed at chunk
+      # sizes 1/7/64, SSR).
+      - name: CommonMark/GFM conformance ratchet
+        run: |
+          npm run worker:build
+          npm run test:conformance
+
+      # Fails when the streamed store's rendered HTML at any publication frontier differs from a cold render of the same
+      # prefix, for blocks nested in quotes and lists and for the regression fixtures (spec examples are covered by the
+      # ratchet's streamed paths).
+      - name: Render frontier parity (nested + fixtures)
+        run: |
+          npm run -s test:conformance:render-frontiers -- --corpus nested
+          npm run -s test:conformance:render-frontiers -- --corpus fixtures
+
       - name: Benchmark methodology contract
         run: npm run test:benchmarks:methodology
 
       - name: Pack (dry-run)
         run: npm --workspaces --if-present pack --dry-run
+
+  # Docs-site surface checks need only the built packages, so they run beside build-test-pack instead of after it.
+  docs-site:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build:packages
+
+      - name: Install Playwright Chromium
+        run: node node_modules/playwright/cli.js install --with-deps chromium
 
       - name: Build docs site (static export)
         env:
@@ -108,7 +143,7 @@ jobs:
           if-no-files-found: ignore
 
   docs-seeded-regression:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -121,8 +156,11 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Chromium
+        run: node node_modules/playwright/cli.js install --with-deps chromium
+
+      - name: Inline-style HTML normalization regression
+        run: npx tsx tests/regression/__tests__/html-style-normalization.test.ts
 
       - name: Seeded regression smoke (managed docs server)
         run: npm run test:regression:seeded-smoke:server

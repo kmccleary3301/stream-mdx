@@ -3,8 +3,9 @@ import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Worker as NodeWorker } from "node:worker_threads";
-import type { SyntaxRuleSpec, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type Block, type SyntaxRuleSpec, type WorkerIn, type WorkerOut } from "@stream-mdx/core";
 import { MarkdownRenderer, StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import type { AppendResult, FinalizeResult } from "@stream-mdx/protocol";
 import { createWorkerThread } from "@stream-mdx/worker/node";
 import { JSDOM } from "jsdom";
 import React from "react";
@@ -21,20 +22,75 @@ class HostedWorker extends EventTarget {
   readonly thread = createWorkerThread();
   readonly input: WorkerIn[] = [];
   readonly output: WorkerOut[] = [];
+  private heldMessages: WorkerOut[] = [];
+  private heldInitialization: { heading: string; replacementSource: string } | null = null;
+  private heldInitErrors: WorkerOut[] = [];
+  private holdNextInitError = false;
+  private failNextInitialization = false;
+
   constructor() {
     super();
     this.thread.on("message", (data: WorkerOut) => {
       this.output.push(data);
-      const event = new TransportEvent("message");
-      Object.defineProperty(event, "data", { value: data });
-      this.dispatchEvent(event);
+      if (this.holdNextInitError && data.type === "ERROR" && data.phase === "INIT") {
+        this.holdNextInitError = false;
+        this.heldInitErrors.push(data);
+        return;
+      }
+
+      const initializedHeading = data.type === "INITIALIZED"
+        ? (data.snapshot.children?.[0]?.props?.block as Block | undefined)?.payload.raw
+        : undefined;
+      if (this.heldMessages.length > 0 ||
+        (this.heldInitialization !== null && this.heldInitialization.heading === initializedHeading)) {
+        this.heldMessages.push(data);
+        return;
+      }
+      this.deliver(data);
     });
     this.thread.on("error", (error) => { throw error; });
   }
-  postMessage(message: WorkerIn) { this.input.push(message); this.thread.postMessage(message); }
+  private deliver(data: WorkerOut): void {
+    const event = new TransportEvent("message");
+    Object.defineProperty(event, "data", { value: data });
+    this.dispatchEvent(event);
+  }
+  holdInitializationUntilReplacement(heading: string, replacementSource: string): void {
+    this.heldInitialization = { heading, replacementSource };
+  }
+  hasHeldInitialization(): boolean {
+    return this.heldMessages[0]?.type === "INITIALIZED";
+  }
+  postMessage(message: WorkerIn) {
+    this.input.push(message);
+    const failInitialization = this.failNextInitialization && message.type === "INIT";
+    if (failInitialization) this.failNextInitialization = false;
+    this.thread.postMessage(failInitialization ? { ...message, schemaVersion: -1 } : message);
+    if (message.type === "INIT" && this.heldInitErrors.length > 0) {
+      const errors = this.heldInitErrors;
+      this.heldInitErrors = [];
+      for (const error of errors) this.deliver(error);
+    }
+    if (this.heldInitialization !== null && message.type === "INIT" && message.initialContent === this.heldInitialization.replacementSource) {
+      this.heldInitialization = null;
+      const heldMessages = this.heldMessages;
+      this.heldMessages = [];
+      for (const held of heldMessages) this.deliver(held);
+    }
+  }
+  holdInitErrorUntilReplacement(): void {
+    this.holdNextInitError = true;
+  }
+  failNextInitializationSchema(): void {
+    this.failNextInitialization = true;
+  }
+  hasHeldInitializationError(): boolean {
+    return this.heldInitErrors.some((message) => message.type === "ERROR" && message.phase === "INIT");
+  }
   terminate() { return this.thread.terminate(); }
   asBrowserWorker(): Worker { return this as unknown as Worker; }
 }
+
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
 const globals = {
@@ -71,6 +127,207 @@ async function waitFor(predicate: () => boolean, message: string) {
   }
 }
 
+const orderedWorker = new HostedWorker();
+const orderedRenderer = new MarkdownRenderer({ plugins: features });
+let initializationReady = false;
+try {
+  orderedRenderer.attachWorker(orderedWorker.asBrowserWorker());
+  const readiness = orderedRenderer.whenInitialized().then(() => {
+    initializationReady = true;
+  });
+  orderedRenderer.append("# Queued before initialization ACK\n\n");
+  const orderedFinalization = orderedRenderer.finalize();
+  assert.strictEqual(initializationReady, false,
+    "queued commands do not publish readiness before INITIALIZED");
+  assert.deepStrictEqual(orderedWorker.input.map((message) => message.type), ["INIT"],
+    "stream commands remain queued until the matching initialization ACK");
+  await waitFor(() => orderedWorker.input.length === 3, "matching ACK releases queued commands");
+  assert.deepStrictEqual(
+    orderedWorker.input.map((message) => message.type),
+    ["INIT", "APPEND", "FINALIZE"],
+    "accepted streaming commands retain FIFO order behind INIT",
+  );
+  await readiness;
+  await orderedFinalization;
+  assert.strictEqual(initializationReady, true, "matching initialization ACK publishes readiness");
+  await waitFor(() => {
+    const blocks = orderedRenderer.getStore().getBlocks();
+    return blocks.some((block) => block.payload.raw.includes("Queued before initialization ACK"))
+      && blocks.every((block) => block.isFinalized);
+  }, "pre-ACK append and finalize are applied after initialization");
+} finally {
+  orderedRenderer.detachWorker();
+  await orderedWorker.terminate();
+}
+{
+  const worker = new HostedWorker();
+  const renderer = new MarkdownRenderer({ plugins: features });
+  const initialContentBeforeAttach = "# Root emitted before managed renderer attachment\n\n";
+  const currentInitialContent = "# Caller-managed current root\n\nOriginal managed paragraph.";
+  const queuedText = "\n\nQueued managed continuation.";
+  const queuedMarker = "Queued managed continuation.";
+  const initialize = (initialContent: string): WorkerIn => ({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent,
+    prewarmLangs: [],
+    docPlugins: {
+      footnotes: true,
+      html: true,
+      mdx: false,
+      tables: true,
+      callouts: false,
+      math: false,
+    },
+  });
+  let readinessState: "pending" | "resolved" | "rejected" = "pending";
+  let readinessError: unknown = null;
+  let readinessBeforeCurrentRoot: "pending" | "resolved" | "rejected" | null = null;
+  let appendResult: AppendResult | null = null;
+  let appendError: unknown = null;
+  let capacityError: unknown = null;
+  let finalizationResult: FinalizeResult | null = null;
+  let finalizationError: unknown = null;
+  try {
+    const priorOutputStart = worker.output.length;
+    worker.postMessage(initialize(initialContentBeforeAttach));
+    await waitFor(
+      () => worker.output.slice(priorOutputStart).some((message) => message.type === "INITIALIZED"),
+      "the real hosted worker initializes its source before managed renderer attachment",
+    );
+    const priorRoot = worker.output.slice(priorOutputStart).findLast(
+      (message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED",
+    );
+    assert.ok(priorRoot, "the worker must publish the pre-attachment native root");
+    assert.equal(priorRoot.snapshot.inputSource?.raw, initialContentBeforeAttach);
+
+    renderer.attachWorker(worker.asBrowserWorker(), { skipInit: true });
+    const coldStoreAtAttach = renderer.getStore().getBlocks();
+    const readiness = renderer.whenInitialized().then(
+      () => { readinessState = "resolved"; },
+      (error: unknown) => {
+        readinessState = "rejected";
+        readinessError = error;
+      },
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+    readinessBeforeCurrentRoot = readinessState;
+
+    try {
+      appendResult = renderer.append(queuedText);
+    } catch (error) {
+      appendError = error;
+    }
+    try {
+      renderer.append("x".repeat(1024 * 1024));
+    } catch (error) {
+      capacityError = error;
+    }
+
+    const currentRootStart = worker.output.length;
+    worker.postMessage(initialize(currentInitialContent));
+    await waitFor(
+      () => worker.output.slice(currentRootStart).some((message) => message.type === "INITIALIZED"),
+      "the caller's fresh INIT publishes a real current root after managed attachment",
+    );
+    const currentRoot = worker.output.slice(currentRootStart).findLast(
+      (message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED",
+    );
+    assert.ok(currentRoot, "the caller's INIT must publish its native root");
+    await readiness;
+
+    const finalizationStart = worker.output.length;
+    let finalization: Promise<void> | null = null;
+    try {
+      finalization = renderer.finalize().then(
+        (result) => { finalizationResult = result; },
+        (error: unknown) => { finalizationError = error; },
+      );
+    } catch (error) {
+      finalizationError = error;
+    }
+    if (finalization) {
+      await waitFor(
+        () => worker.output.slice(finalizationStart).some((message) => message.type === "FINALIZED"),
+        "the native worker reports the managed append's finalization frontier",
+      );
+      await finalization;
+    }
+    const nativeFinalization = worker.output.slice(finalizationStart).findLast(
+      (message): message is Extract<WorkerOut, { type: "FINALIZED" }> => message.type === "FINALIZED",
+    );
+    const coldStoreSource = renderer.getStore().getBlocks().map((block) => block.payload.raw).join("\n");
+    const queuedOccurrences = coldStoreSource.split(queuedMarker).length - 1;
+
+    assert.equal(readinessBeforeCurrentRoot, "pending",
+      "skipInit readiness must not resolve from a root emitted before attachment");
+    assert.equal(readinessState, "resolved", "the fresh validated root resolves managed readiness");
+    assert.equal(readinessError, null);
+    assert.equal(coldStoreAtAttach.length, 0, "the managed renderer did not observe the old root");
+    assert.equal(appendError, null, "the public pre-ready append contract accepts queued managed text");
+    assert.equal(appendResult?.acceptedSourceUnits, queuedText.length);
+    assert.equal(appendResult?.pendingSourceUnits, queuedText.length);
+    assert.equal(capacityError instanceof Error ? capacityError.name : null, "SourceCapacityError",
+      "the pre-ready source queue retains its existing hard capacity bound");
+    assert.equal(currentRoot.snapshot.inputSource?.raw, currentInitialContent,
+      "whenInitialized resolves against the caller's current native source root");
+    assert.notEqual(currentRoot.generation, priorRoot.generation,
+      "the caller's fresh INIT supplies a new worker-observed generation");
+    assert.ok(coldStoreSource.includes("Caller-managed current root"));
+    assert.equal(queuedOccurrences, 1, "the queued source survives the fresh INIT exactly once in the public cold store");
+    assert.equal(finalizationError, null, "finalization reports all accepted source as committed");
+    assert.equal(finalizationResult?.generation, currentRoot.generation);
+    assert.equal(finalizationResult?.acceptedSourceUnits, queuedText.length);
+    assert.equal(finalizationResult?.committedSourceUnits, queuedText.length);
+    assert.equal(nativeFinalization?.generation, currentRoot.generation);
+    assert.equal(nativeFinalization?.admittedSourceUnits, queuedText.length);
+    assert.equal(finalizationResult?.committedSourceUnits, nativeFinalization?.admittedSourceUnits,
+      "the public committed frontier matches the native FINALIZED frontier");
+  } finally {
+    renderer.detachWorker();
+    await worker.terminate();
+  }
+}
+{
+  const worker = new HostedWorker();
+  const detachedRenderer = new MarkdownRenderer({ plugins: features });
+  let currentRenderer: MarkdownRenderer | undefined;
+  try {
+    worker.holdInitErrorUntilReplacement();
+    worker.failNextInitializationSchema();
+    detachedRenderer.attachWorker(worker.asBrowserWorker());
+    const detachedReadiness = assert.rejects(
+      detachedRenderer.whenInitialized(),
+      /Worker detached before initialization completed/,
+    );
+    await waitFor(() => worker.hasHeldInitializationError(), "real worker emits and holds the detached INIT error");
+    detachedRenderer.detachWorker();
+    await detachedReadiness;
+
+    currentRenderer = new MarkdownRenderer({ plugins: features });
+    currentRenderer.attachWorker(worker.asBrowserWorker());
+    const readiness = currentRenderer.whenInitialized();
+    currentRenderer.append("# Current initialization owner\n\n");
+    const currentFinalization = currentRenderer.finalize();
+    await readiness;
+    await currentFinalization;
+    await waitFor(() => {
+      const blocks = currentRenderer?.getStore().getBlocks() ?? [];
+      return blocks.some((block) => block.payload.raw.includes("Current initialization owner"))
+        && blocks.every((block) => block.isFinalized);
+    }, "new renderer initializes, appends, and finalizes after the detached INIT error");
+    assert.ok(currentRenderer.getStore().getBlocks().some(
+      (block) => block.payload.raw === "# Current initialization owner",
+    ));
+  } finally {
+    detachedRenderer.detachWorker();
+    currentRenderer?.detachWorker();
+    await worker.terminate();
+  }
+}
+
+
 try {
   const worker = new HostedWorker();
   const renderer = new MarkdownRenderer({ plugins: features });
@@ -82,30 +339,43 @@ try {
     const first = renderer.renderStatic(firstSource);
     const second = renderer.renderStatic(secondSource);
     const [firstBlocks, secondBlocks] = await Promise.all([first, second]);
-    assert.equal(firstBlocks[0].payload.raw, "First FIFO document", "empty attach ACK cannot resolve full-content waiter");
-    assert.equal(secondBlocks[0].payload.raw, "Second FIFO document", "full-content ACKs resolve FIFO owners");
-    renderer.finalize();
+    assert.equal(firstBlocks[0].payload.raw, "# First FIFO document", "empty attach ACK cannot resolve full-content waiter");
+    assert.equal(secondBlocks[0].payload.raw, "# Second FIFO document", "full-content ACKs resolve FIFO owners");
+    await renderer.finalize();
     await waitFor(() => renderer.getStore().getBlocks().some((block) => block.type === "table") && renderer.getStore().getBlocks().every((block) => block.isFinalized), "real hosted FIFO replacement finalizes");
-    assert.equal(renderer.getStore().getBlocks()[0].payload.raw, "Second FIFO document");
+    assert.equal(renderer.getStore().getBlocks()[0].payload.raw, "# Second FIFO document");
     assert.equal(worker.input.filter((message) => message.type === "APPEND").length, 0);
     assert.ok(renderer.getStore().getBlocks().find((block) => block.type === "table")?.payload.raw.includes("PK-0499"));
+    const ownSource = source(250, "Reattached owner document");
+    worker.holdInitializationUntilReplacement("Cancelled detached document", ownSource);
     const cancelled = renderer.renderStatic(source(500, "Cancelled detached document"));
-    const rejection = assert.rejects(cancelled, /Worker detached/);
+    const rejection = assert.rejects(cancelled);
+    await waitFor(() => worker.hasHeldInitialization(), "detached static operation has a received but withheld ACK");
     renderer.detachWorker();
     await rejection;
     const reusedRenderer = new MarkdownRenderer({ plugins: features });
     reusedRenderer.attachWorker(worker.asBrowserWorker());
     try {
-      const ownSource = source(250, "Reattached owner document");
       const ownBlocks = await reusedRenderer.renderStatic(ownSource);
-      assert.equal(ownBlocks[0]?.payload.raw, "Reattached owner document",
+      assert.equal(ownBlocks[0]?.payload.raw, "# Reattached owner document",
         "pending detached INIT acknowledgment cannot resolve the new attachment's full-content promise");
-      reusedRenderer.finalize();
+      await reusedRenderer.finalize();
       await waitFor(() => reusedRenderer.getStore().getBlocks().every((block) => block.isFinalized),
         "reused hosted worker finalizes its current document");
-      assert.equal(reusedRenderer.getStore().getBlocks()[0]?.payload.raw, "Reattached owner document");
+      assert.equal(reusedRenderer.getStore().getBlocks()[0]?.payload.raw, "# Reattached owner document");
     } finally {
       reusedRenderer.detachWorker();
+    }
+    const managedRenderer = new MarkdownRenderer({ plugins: features });
+    managedRenderer.attachWorker(worker.asBrowserWorker(), { skipInit: true });
+    try {
+      const beforeManagedRestart = worker.input.length;
+      managedRenderer.append("\n\nExternally managed continuation\n\n");
+      managedRenderer.restart();
+      assert.equal(worker.input.slice(beforeManagedRestart).some((message) => message.type === "INIT"), false,
+        "managed restart leaves caller-initialized hosted worker state untouched");
+    } finally {
+      managedRenderer.detachWorker();
     }
   } finally {
     renderer.detachWorker();
@@ -144,19 +414,35 @@ try {
     const obsolete = source(250, "Obsolete in-flight consumer document");
     const latest = source(500, "Latest in-flight consumer document");
     const beforeRapid = hosted.input.length;
+    // Hold the real worker's obsolete ACK until replacement INIT is sent, so the
+    // pending-generation race does not depend on worker speed or polling timing.
+    // Subsequent transport messages are released in their original FIFO order.
+    hosted.holdInitializationUntilReplacement("Obsolete in-flight consumer document", latest);
     root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={obsolete} features={features} tableVirtualization={true} caret={false} />);
     await waitFor(() => hosted.input.slice(beforeRapid).some((message) => message.type === "INIT" && message.initialContent === obsolete), "obsolete INIT is genuinely in flight");
+    await waitFor(() => hosted.hasHeldInitialization(), "obsolete INITIALIZED is received but held before replacement");
     root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={latest} features={features} tableVirtualization={true} caret={false} />);
     await waitFor(() => container.querySelector("h1")?.textContent === "Latest in-flight consumer document" && Boolean(container.querySelector('[data-table-virtualized="true"]')), "latest rapid replacement owns finalization");
     assert.equal(hosted.input.slice(beforeRapid).filter((message) => message.type === "FINALIZE").length, 1, "stale static generation cannot finalize replacement");
     assert.equal(container.textContent?.includes("Obsolete in-flight consumer document"), false);
 
-    const syntax: SyntaxRuleSpec[] = [{ name: "invalid", pattern: { source: "[unclosed(" } }, { name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }];
-    root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={`# Recoverable rules\n\n#ABC-123\n\n${replacement}`}
-      features={features} syntax={syntax} inlineComponents={{ ticket: ({ id }: { id?: string }) => <span data-ticket={id}>{id}</span> }} tableVirtualization={true} caret={false} />);
-    await waitFor(() => Boolean(container.querySelector('[data-ticket="ABC-123"]')) && Boolean(container.querySelector('[data-table-virtualized="true"]')),
-      "recoverable invalid syntax rule does not consume full INIT acknowledgement or prevent finalization");
-    assert.ok(handle.current?.getState().blocks.every((block) => block.isFinalized));
+    const syntax = {
+      contractVersion: 1 as const,
+      inline: [{ name: "invalid", pattern: { source: "[unclosed(" } }, { name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }] as readonly SyntaxRuleSpec[],
+    };
+    const syntaxErrors: Error[] = [];
+    const beforeSyntaxErrorOutput = hosted.output.length;
+    root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={`# Invalid syntax\n\n#ABC-123\n\n${replacement}`}
+      features={features} syntax={syntax} onError={(error) => syntaxErrors.push(error)}
+      components={{ "extension:ticket": { view: ({ node }) => {
+        const id = node.kind === "plugin" ? String(node.attrs?.id ?? "") : "";
+        return <span data-ticket={id}>{id}</span>;
+      } } }} tableVirtualization={true} caret={false} />);
+    await waitFor(() => syntaxErrors.length > 0, "invalid syntax INIT is surfaced to React");
+    assert.match(syntaxErrors[0]!.message, /Invalid regular expression/);
+    assert.ok(hosted.output.slice(beforeSyntaxErrorOutput).some((message) => message.type === "ERROR" && message.phase === "INIT"));
+    assert.equal(hosted.output.slice(beforeSyntaxErrorOutput).some((message) => message.type === "INITIALIZED"), false,
+      "invalid syntax cannot publish INITIALIZED through the hosted worker");
     const teardownErrors: Error[] = [];
     const pendingSource = source(500, "Unmounted pending source");
     const beforeUnmount = hosted.input.length;

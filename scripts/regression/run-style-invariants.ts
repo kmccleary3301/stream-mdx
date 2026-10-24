@@ -326,16 +326,16 @@ async function checkNestedListCodeIndentation(page: Page, theme: "light" | "dark
   await setTheme(page, theme);
 
   const nestedCode = await page.evaluate(() => {
-    const blocks = Array.from(document.querySelectorAll("#regression-root .markdown-list-item-children pre[data-code-block='true']")) as HTMLElement[];
-    return blocks.map((pre) => {
-      const childContainer = pre.closest(".markdown-list-item-children") as HTMLElement | null;
-      const code = pre.querySelector("code");
-      const rect = pre.getBoundingClientRect();
+    const blocks = Array.from(document.querySelectorAll("#regression-root .markdown-list-item-children [data-code-block='true']")) as HTMLElement[];
+    return blocks.map((frame) => {
+      const childContainer = frame.closest(".markdown-list-item-children") as HTMLElement | null;
+      const code = frame.querySelector("code");
+      const rect = frame.getBoundingClientRect();
       const containerRect = childContainer?.getBoundingClientRect();
       const text = code?.textContent ?? "";
       const lines = text.split("\n").filter((line) => line.length > 0);
       return {
-        preLeft: rect.left,
+        frameLeft: rect.left,
         containerLeft: containerRect?.left ?? null,
         text,
         firstLine: lines[0] ?? "",
@@ -346,7 +346,7 @@ async function checkNestedListCodeIndentation(page: Page, theme: "light" | "dark
   assert.strictEqual(nestedCode.length, 3, `expected three nested list code blocks in ${theme}`);
   nestedCode.forEach((block, index) => {
     assert.ok(block.containerLeft !== null, `nested code block ${index} should live under a list-item child container in ${theme}`);
-    assert.ok(Math.abs(block.preLeft - (block.containerLeft ?? 0)) <= 2, `nested code block ${index} should align with its list-item child container in ${theme}`);
+    assert.ok(Math.abs(block.frameLeft - (block.containerLeft ?? 0)) <= 2, `nested code block ${index} should align with its list-item child container in ${theme}`);
     assert.ok(!/^[ \t]{2,}\S/.test(block.firstLine), `nested code block ${index} should not keep phantom leading indentation in ${theme}`);
   });
 
@@ -365,7 +365,7 @@ async function checkRenderedMarkdownScope(page: Page, theme: "light" | "dark"): 
     const heading = firstOutput?.querySelector("h1") as HTMLElement | null;
     const list = firstOutput?.querySelector(".markdown-list") as HTMLElement | null;
     const table = firstOutput?.querySelector("table") as HTMLElement | null;
-    const code = firstOutput?.querySelector(".docs-code-block, pre.markdown-code-block, pre[data-code-block='true']") as HTMLElement | null;
+    const code = firstOutput?.querySelector(".docs-code-block, pre.markdown-code-block, [data-code-block='true']") as HTMLElement | null;
 
     return {
       outputCount: outputs.length,

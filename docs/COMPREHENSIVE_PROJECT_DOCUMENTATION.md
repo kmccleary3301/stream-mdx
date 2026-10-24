@@ -31,8 +31,7 @@ export function StreamingArticle({ text }: { text: string }) {
     <StreamingMarkdown
       text={text}
       worker="/workers/markdown-worker.js"
-      features={{ html: true, tables: true, math: true, mdx: true }}
-      mdxCompileMode="worker"
+      features={{ html: true, tables: true, math: true }}
     />
   );
 }
@@ -164,11 +163,13 @@ Math support typically involves:
 - optional delayed rendering / stabilization during streaming
 
 See:
-- `features.math` and `mathRenderer` in `docs/PUBLIC_API.md`
+- `features.math`, `engines.math`, and `components["inline:math"]` in `docs/PUBLIC_API.md`
 - `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
 ### 6.5 MDX
 
-MDX adds a compilation/hydration pipeline and therefore additional deployment and security considerations. StreamMDX aims for **parity** between worker compilation and server compilation (see §8).
+MDX component syntax defaults to the restricted policy. `contentComponents` uses host adapters created by `defineContentComponent`; narrow source JSON props require a type-predicate validator, native projected children remain separate, and only serializable registration descriptors cross the worker boundary. This path does not evaluate authored code.
+
+Full MDX is a separate opt-in. Create a `TrustedMdxEngine` from `@stream-mdx/react/trusted-mdx`, pass it through `engines.mdx` with `contentPolicy="trusted-mdx"`, and provide an explicit host import map. Imports are not fetched. Evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox; use only trusted, reviewed content.
 
 Start from:
 - `@stream-mdx/plugins/mdx`
@@ -205,29 +206,25 @@ Patterns:
 See:
 - `docs/REACT_INTEGRATION_GUIDE.md`
 
-## 8. MDX Hydration & Parity
+## 8. Full MDX
 
-StreamMDX aims to keep **client-side vs server-side** MDX compilation outputs aligned so:
+Full MDX does not select a server or worker mode through a React prop. The default restricted policy does not evaluate authored expressions. Full evaluation requires an explicit `TrustedMdxEngine`, a host import map, and CSP permission for `unsafe-eval`; it runs in the host realm and is not a sandbox.
 
-- streaming mode and non-streaming mode match
-- worker compilation and server compilation match
-
-If you’re changing MDX behavior, treat parity as a regression surface. Start from:
+Use the restricted policy for untrusted content. `FINALIZED` marks native semantic completion, not trusted compilation, projection, or actual render commit. See:
 - `docs/REACT_INTEGRATION_GUIDE.md`
-- `docs/PUBLIC_API.md`
+- `docs/SECURITY_MODEL.md`
 
 ## 9. Security (CSP + Sanitization)
 
-Key principles:
-
-- prefer worker isolation for parsing/HTML
-- sanitize HTML aggressively if enabled
-- deploy with CSP suitable for your plugins/components (especially embeds)
+- Prefer hosted workers for parsing and HTML processing.
+- Keep raw HTML sanitized when enabled, and extend allowlists only for trusted content.
+- Keep the default restricted MDX policy for untrusted source. Full MDX requires an explicit trusted engine and is not sandboxed.
+- Fences labeled `artifact` and `html-artifact` render as code unless the host supplies a custom renderer. StreamMDX does not provide a built-in artifact sandbox.
 
 References:
 
 - `@stream-mdx/core/worker-html-sanitizer`
-- `docs/STREAMING_MARKDOWN_V2_STATUS.md`
+- `docs/SECURITY_MODEL.md`
 
 ## 10. Performance & Tuning
 

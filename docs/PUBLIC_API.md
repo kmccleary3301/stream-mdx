@@ -1,6 +1,6 @@
 # Public API — StreamMDX
 
-*Last updated: 2026-10-07*
+*Last updated: 2026-10-23*
 
 ## Packages & Entry Points
 
@@ -23,6 +23,24 @@ When you install `stream-mdx`, you can also import:
 - `stream-mdx/worker/direct` (in-process compile helper for runtimes without `worker_threads`)
 - `stream-mdx/worker/engine` or `@stream-mdx/worker/engine` for isolated engines, an in-process Worker adapter, and custom worker entries
 - `stream-mdx/plugins/*` (common plugin entrypoints; useful for pnpm users)
+
+### Core parser and snapshot contracts
+
+`@stream-mdx/core` retains `InlineParser`, its extension/configuration types, the streaming preparation APIs, and `prepareNestedBlockSnapshot`. Worker integrations also retain `createBlockCompatibilityExtension`, `extractLezerCode`, `collectLinkReferences`, and `diffLinkReferences`. `compileSyntaxRuleToExtension` remains available for native inline extension registration.
+
+The Lezer converter, math extension factory, link-label normalization, entity decoder, and default/regex plugin adapter helpers are implementation details, not root exports.
+
+`createBlockSnapshot(block)` uses `block.payload.meta.preparedNested` when present, preserving the owning parser's registered extensions. Without prepared data, container snapshots use the built-in parser and honor `block.payload.meta.mathEnabled`, including `false`. This fallback cannot recover registered extensions or reference definitions that were not stored in the block. Prepare nested snapshots with the owning parsers before serialization when those settings matter; the snapshot function takes no additional parser/configuration argument.
+
+Live worker `INITIALIZED` snapshots include the root `NodeSnapshot.inputSource`
+baseline, whose generation matches the message generation; an empty raw baseline
+is valid. Every later admitted chunk arrives as an ordered semantic
+`appendInputSource` root patch with its exact UTF-16 offset and newly admitted
+text. Consumers must reject a live initialization without this baseline before
+resetting prior state. Standalone `Block[]` and cold snapshots may omit it and
+retain honest per-block raw slices; they do not reconstruct missing document
+gaps. Root input generation is independent of native code, table, and paragraph
+owner generations. Source retention does not signal semantic completion.
 
 ## Runtime Context Matrix
 
@@ -57,9 +75,7 @@ export function Example() {
       text="## Hello\n\nStreaming **markdown**"
       engine="auto"
       worker="/workers/markdown-worker.js"
-      features={{ tables: true, html: true, math: true, mdx: true }}
-      mdxCompileMode="worker"
-      prewarmLangs={["python", "bash"]}
+      features={{ tables: true, html: true, math: true }}
       onMetrics={(metrics) => console.table(metrics.queueDelay)}
       onError={(error) => console.error(error)}
     />
@@ -74,55 +90,78 @@ export function Example() {
 | `text` | `string` | Static markdown. Mutating it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Append-only stream; provide **either** `text` or `stream`. |
 | `worker` | `WorkerLike` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |
-| `engine` | `"worker" \| "main-thread" \| "auto"` | Default `"auto"`. Selects the browser worker or dynamically imported in-process engine. See execution modes below. |
-| `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |
+| `engine` | `"auto" \| "main" \| "worker"` | Default `"auto"`. Selects automatic (`"auto"`; the default), inline (`"main"`), or dedicated-worker (`"worker"`) execution. See execution modes below. |
+| `managedWorker` | `boolean` | Requires a supplied Worker instance or caller-accessible factory. The caller sends `INIT` and document commands; automatic commands are disabled. URL/default workers and internally created main-thread engines are rejected. Factory workers remain component-owned; supplied instances remain caller-owned. |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
 | `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `outputMode`, and `lazyTokenization`. |
 | `themes` | `{ light: string; dark: string }` | Configures light and dark Shiki theme IDs (e.g. `{ light: "min-light", dark: "nord" }`). Changing themes re-initializes the engine. Unknown themes report an INIT error and fall back to GitHub light/dark. |
-| `mdxCompileMode` | `MdxCompileMode` | Enables MDX compilation/hydration and selects the compile strategy. |
-| `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
-| `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
-| `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
-| `tableVirtualization` | `boolean \| Partial<TableVirtualizationConfig>` | Opt-in row virtualization for large finalized tables. Default `false`. |
-| `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
+| `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
+| `contentComponents` | `ContentComponentsMap` | Host registrations for restricted source components. Separate from native Markdown presentation overrides. |
+| `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator required with `contentPolicy="trusted-mdx"`. |
+| `engines.math` | `MathEngine` | Synchronous, server-render-safe TeX adapter. KaTeX remains the default when omitted. |
+| `engines.mermaid` | `MermaidEngine` | Main-thread presentation engine for Mermaid code fences. |
+| `engines.code` | `CodeEngine` | Custom code-line tokenization. Main-realm only; requires `engine="main"`. |
+| `components` | `NodePresentations` | Semantic block, inline, extension, and HTML wrappers or headless views. |
+| `tableVirtualization` | `boolean \| Partial<TableVirtualizationConfig>` | Opt-in row virtualization for large tables while streaming or finalized. Default `false`; configured thresholds and overscan remain in effect during streaming. |
+| `codeVirtualization` | `Partial<VirtualizedCodeConfig>` | Configures the native code viewport. Code blocks over the default 200-line threshold are windowed; the full-content control is explicit. |
 | `html` | `HtmlOptions` | Per-tag attribute allowlists and opt-in markdown parsing inside raw HTML blocks. Requires `features.html`. |
-| `syntax` | `SyntaxRuleSpec[]` | Serializable regex rules for inline plugin nodes. Map rule names in `inlineComponents`. |
-| `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |
+| `syntax` | `SyntaxExtensionDescriptor` | Versioned descriptor (`contractVersion: 1`) with optional `inline` rules and registered `containers`; each container's `component` references a `contentComponents` key. Render inline rule names with `components["extension:<name>"]`. |
 | `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |
+| `statusMessage` | `string` | Optional host-coordinated milestone text rendered in one atomic polite status region. Omit it by default; update at coarse milestones, never per token. |
 | `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. Rejected URLs never navigate. |
 | `urlTransform` | `UrlTransform` | Custom URL transformation callback `(url, attribute, context) => string \| null \| undefined`. Defaults to `defaultUrlTransform` from `@stream-mdx/core`. |
 | `deferHeavyBlocks` | `DeferHeavyBlocks` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |
-| `codeRenderers` | `Record<string, CodeFenceRenderer>` | Language-keyed code fence components or `{ component, defer?, aliases? }`. Keys and aliases resolve case-insensitively. |
-| `allowedElements` | `string[]` | Whitelist HTML tag names to allow (mutually exclusive with `disallowedElements`). Filtered at render time across markdown and raw HTML tags. |
+| `allowedElements` | `string[]` | Whitelist HTML tag names (mutually exclusive with `disallowedElements`). Filtered at render time across markdown and raw HTML. |
 | `disallowedElements` | `string[]` | Tag names to disallow (mutually exclusive with `allowedElements`). Removed tags drop subtrees unless `unwrapDisallowed` is enabled. |
 | `allowElement` | `(element, context) => boolean` | Custom element filter callback. Receives `{ tagName, properties, blockType? }` and `{ source: "markdown" | "html", parentTagName? }`. |
 | `unwrapDisallowed` | `boolean` | When true, disallowed tags render their child content in place instead of dropping their entire subtree. Default `false`. |
 | `disableAutolinkProtocols` | `string[]` | Protocols (e.g. `["mailto"]`, case-insensitive, trailing colon optional) whose autolinks render as plain text. Explicit markdown links `[label](url)` remain links. |
-| `mathRenderer` | `MathRenderer` | Replace inline/display KaTeX rendering without changing math parsing. |
-| `artifactHtml` | `boolean` | Default `false`. Render ordinary `html` fences as artifacts; `artifact` and `html-artifact` fences already select `ArtifactFrame`. |
-| `blockRenderer` | `BlockRendererOverride` | Finalized-block override receiving `{ block, element }`. Streaming blocks retain native rendering. |
 | `scheduling` | `StreamingSchedulerOptions` | Patch scheduler/backpressure knobs. |
 | `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |
 | `onError` | `(error: Error) => void` | Render-time errors. Updating the callback does not restart the engine or discard streamed content. (Worker runtime errors surface via `error` events on the Worker.) |
 | `className`, `style` | React props forwarded to the root container. |
+
+Table-row and table-cell presentations accept only `wrapper` and `props`; headless table customization goes through `components.table.view` with `useTableRows`.
+
+`CodeEngine` has this contract:
+
+```ts
+import type { CodeTokenLine } from "stream-mdx/core";
+
+interface CodeEngine {
+  readonly id: string;
+  tokenizeLines(request: {
+    readonly language: string;
+    readonly lines: readonly string[];
+    readonly state: unknown | null;
+  }): {
+    readonly lines: readonly CodeTokenLine[];
+    readonly state: unknown;
+  };
+}
+```
+
+The initial `state` is `null`; return the next state to pass to the next call for that code block. Return one token line per requested source line. Keep `id` stable for the same tokenizer. Changing it is a configuration change, like changing `themes` or `features`: the component starts a new renderer session with the new tokenizer. Source appended through the imperative handle is not carried into that session, so append it again.
+
+`engines.code` runs in the main realm and is accepted only with `engine="main"`. Using it with `"auto"` or `"worker"` throws `EngineCompatibilityError`. For worker-realm tokenization, register the adapter in a custom worker with `serveMarkdownWorker({ extensions: { code } })`; worker functions are not passed through `engines.code`.
 Notes:
-- When `linkSafety.enabled` is on, the component replaces the `link` entry, including a supplied `inlineComponents.link`, with its confirmation-aware link renderer.
+- When `linkSafety.enabled` is on, the component replaces the `inline:link` presentation, including a supplied `components["inline:link"]`, with its confirmation-aware link renderer.
 - Owned `text` renders initialize the complete document in one parse, then finalize the tail. Replacing text does not simulate chunked streaming. Rapid replacements match initialization acknowledgements in order; only the current source generation finalizes or reports a rejected initialization. Async iterators and imperative `append()` retain incremental parsing.
 - Borrowed workers may be reused after detachment. Pending static calls reject on detach, but their initialization acknowledgement slots remain with the worker until drained; a later attachment cannot consume an older document's response as its own.
 
 Type aliases:
 - `type WorkerLike = Worker | URL | string | (() => Worker)`
-- `type MdxCompileMode = "server" | "worker"`
 - `type CaretMode = "block" | "circle" | string | false`
 - `type DeferHeavyBlocks = boolean | { rootMargin?: string; idleTimeoutMs?: number; debounceMs?: number }`
 
 ### Execution modes and SSR
 
 - `"worker"` requires browser `Worker` support and uses `worker` or the default worker strategy. It does not fall back to the main thread.
-- `"main-thread"` dynamically imports `@stream-mdx/worker/engine` and creates an in-process Worker adapter. It ignores `worker` and runs parsing on the browser thread.
-- `"auto"` first tries to construct a browser Worker. If Worker support is absent or construction fails, it dynamically imports the in-process engine. This fallback covers creation only, not later worker script loading, runtime errors, or failed `INIT` messages.
+- `"main"` dynamically imports `@stream-mdx/worker/engine` and creates an in-process Worker adapter. It ignores `worker` and runs parsing on the browser thread.
+- `"auto"` bootstraps up to 4,096 accepted UTF-16 source units with the existing inline engine on the main thread, without waiting for worker readiness or grammar prewarm. Further source is deferred beyond that limit. When auto hands off to the worker, the worker rebuilds the projection from the same canonical source. Node IDs, the stream generation, and accepted-source order do not change. Node, code and table handles are issued again once: views receive the new handles, and handles or saved presentation actions retained from before the handoff reject as stale.
 
-Engine creation runs in a React effect, not during SSR. Selecting `"main-thread"` does not compile server markup. For SSR/SSG, compile a snapshot with the Node/direct helper and render it with `@stream-mdx/react/server`. The default React import does not eagerly import the engine implementation. Applications still need a client boundary for `<StreamingMarkdown />`.
+Engine creation runs in a React effect, not during SSR. Selecting `"main"` does not compile server markup. For SSR/SSG, compile a snapshot with the Node/direct helper and render it with `@stream-mdx/react/server`. The default React import does not eagerly import the engine implementation. Applications still need a client boundary for `<StreamingMarkdown />`.
+The retired `"main-thread"` value is a type error and throws a migration error at runtime; use `"main"`.
 
 Changing `onError` uses the latest callback without restarting the engine or clearing streamed content. Worker protocol `ERROR` messages are distinct from browser Worker `error` events.
 
@@ -133,8 +172,9 @@ type StreamingMarkdownHandle = {
   pause(): void;
   resume(): void;
   restart(): void;
-  finalize(): void;
-  append(text: string): void;
+  finalize(): Promise<FinalizeResult>;
+  append(text: string): AppendResult;
+  waitForCapacity(options: WaitForCapacityOptions): Promise<void>;
   setCredits(value: number): void;
   flushPending(): PatchFlushResult | null;
   waitForIdle(): Promise<void>;
@@ -144,9 +184,34 @@ type StreamingMarkdownHandle = {
 };
 ```
 
+export type AppendResult = {
+  acceptedSourceUnits: number;
+  pendingSourceUnits: number;
+  shouldPause: boolean;
+};
+
+export type FinalizeResult = {
+  generation: number;
+  acceptedSourceUnits: number;
+  committedSourceUnits: number;
+};
+
+The React entry point exports `AppendResult`, `FinalizeResult`, `WaitForCapacityOptions`, `SourceCapacityError`, and `StreamSessionError`.
+
+- `append(text)` offers the whole imperative string atomically, measured in JavaScript UTF-16 code units. It returns cumulative `acceptedSourceUnits`, current `pendingSourceUnits`, and `shouldPause`. The soft threshold is 65,536 pending units and the hard limit is 262,144; refused offers accept no partial source. Session counts exclude `INIT.initialContent`.
+- An imperative offer larger than the 262,144-unit hard limit rejects atomically with a non-retryable `SourceCapacityError`. Keep imperative offers at or below 65,536 units. If `shouldPause` is true, wait before offering the next piece: `await handle.waitForCapacity({ units: nextPiece.length, signal })`.
+- Retry a refused offer only when it throws a retryable `SourceCapacityError`; wait for capacity for that exact offer, then retry it without reordering or dropping source. `waitForCapacity({ units, signal })` waits for room for the requested next offer. Requests larger than the hard limit reject with non-retryable `SourceCapacityError`; an offer refused only because capacity is currently occupied has a retryable `SourceCapacityError`. `StreamSessionError` reasons are `sealed`, `stale-generation`, and `disposed`. An aborted signal rejects the wait.
+- Automatically owned `stream` adapters losslessly split iterator chunks larger than the imperative offer size before calling `append()`. They do not impose an arbitrary source-chunk cap or drop source.
+- `finalize()` seals every host session synchronously, returns the same promise for repeated calls in that generation, and drains source accepted before the seal. It resolves to `FinalizeResult` (`{ generation, acceptedSourceUnits, committedSourceUnits }`) only after the matching native `FINALIZED` acknowledgement covers the accepted units and semantic patches have flushed into the renderer store.
+- The `FinalizeResult` promise is a native semantic-store barrier, not a React DOM-commit or optional-enrichment barrier. It does not wait for trusted MDX projection, code highlighting/tokenization, decoration, or a React commit. Use the corresponding public store, scheduler, DOM, or enrichment observation when those are part of the caller's completion criteria.
+- `waitForIdle()` resolves once the worker has admitted all source this session has accepted so far and the patch queue has committed it. It does not wait for a `stream` iterator to finish or for finalization; call `finalize()` when finalization is required. It rejects with `StreamSessionError` on a disposed or stale handle.
+- After unmount, synchronous methods on a previously captured handle throw `StreamSessionError` with reason `disposed`; promise-returning methods reject with the same error.
+
+Host handles seal regardless of `contentPolicy`; a reset or replacement opens the next host generation. This contract does not change raw `MarkdownEngine`, `MarkdownWorkerClient`, or worker-protocol controls. They remain lower-level APIs and do not provide the host admission ledger or `FinalizeResult` barrier.
+
 `restart()` clears the renderer-owned document and cancels the current iterator generation. It does not rewind a single-use iterator, including after EOF. Supply a fresh iterator to `stream` to begin another stream; reiterable sources that return fresh iterators are supported. Each actual iterator is consumed at most once during the component's mounted lifetime, including renderer/readiness changes. A pending `next()` may settle before cancellation closes that iterator; cancelled chunks are discarded.
 
-Removing an open stream releases that generation's activity. It does not end a replacement iterator or an independently open imperative session; call `finalize()` to close imperative activity.
+Removing an open stream releases that generation's activity. It does not end a replacement iterator or an independently open imperative session; call and await `finalize()` to close imperative activity.
 
 ---
 
@@ -172,6 +237,10 @@ Worker ownership semantics:
 - `worker={undefined}`
   - StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.
 
+`managedWorker={true}` requires `worker={existingWorker}` or a stable caller-accessible factory. Initialize that worker yourself with `INIT` and send document commands yourself or through the ref handle. Managed mode does not change lifecycle ownership: StreamMDX terminates factory-created workers on detach but never terminates a borrowed instance. Worker URL strings, URL objects, omitted/default workers, and `engine="main"` internal adapters are rejected in managed mode because the caller cannot initialize them through an accessible handle. Do not rely on an automatic engine fallback for managed workers.
+Invalid managed sources and unavailable or failed worker creation report an error through `onError`; they do not silently create an inline engine.
+Managed mode rejects `engine="main"` even when a Worker instance or factory is supplied. Use `engine="worker"` or `"auto"` with the caller-accessible worker source.
+
 For advanced worker instantiation (CSP overrides, shared worker instances), see `createDefaultWorker()` in `stream-mdx/worker`.
 
 ### Node / CLI runtimes
@@ -193,24 +262,29 @@ See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `Do
 
 ```ts
 import { MarkdownEngine } from "@stream-mdx/worker/engine";
-import type { WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "@stream-mdx/core";
 
 const messages: WorkerOut[] = [];
 const engine = new MarkdownEngine({
   post: (message) => messages.push(message),
 });
 
-await engine.handle({ type: "INIT", docPlugins: { math: false } });
+await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, docPlugins: { math: false } });
 await engine.handle({ type: "APPEND", text: "# Hello\n\nOne document." });
 await engine.handle({ type: "FINALIZE" });
 // A new INIT resets document state and retains this instance's extensions.
-await engine.handle({ type: "INIT", initialContent: "Another document." });
+await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Another document." });
 engine.dispose();
 ```
 
 `handle(message: WorkerIn): Promise<void>` serializes protocol messages. Reset with `INIT`; there is no separate `reset()` or `emit()` method. `post(message: WorkerOut): void` sends through the supplied callback. `dispose(): void` releases instance state and stops further output. Disposal is terminal: afterwards `handle()` resolves immediately without processing the message, queued messages are skipped, and `post()` drops output. Create a new engine instead of reusing a disposed one.
 
-The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, and `syntax?: SyntaxRuleSpec[]`. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions })`, or create an adapter with `createInlineEngineWorker({ extensions })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
+Every live `PATCH` `WorkerOut` requires the root document `generation` that
+matches its `INITIALIZED` source baseline. Reject mismatched messages before
+queueing or committing them; do not infer a generation when delayed messages
+arrive.
+
+The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, `syntax?: SyntaxExtensionDescriptor`, and `code?: CodeEngine`. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions })`, or create an adapter with `createInlineEngineWorker({ extensions })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
 
 
 ---
@@ -219,9 +293,9 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
 
 `features` toggles built-in capabilities in the worker + renderer:
 
-- `tables`: GitHub-flavored markdown tables → table block snapshots (`tableElements` controls rendering).
-- `html`: enables inline/raw HTML (sanitized by default; `htmlElements` controls rendering).
-- `mdx`: recognizes MDX blocks (requires `mdxCompileMode` to compile/hydrate). A balanced JSX/MDX component whose native HTML block would be split by blank lines (for example `<SmokeBox>` … `</SmokeBox>`) stays one owning root and compiles as a single module; while it is still unclosed it remains a pending `html` root and is not compiled until it closes or the document finalizes.
+- `tables`: GitHub-flavored markdown tables → table block snapshots (`components.table` controls presentation).
+- `html`: enables inline/raw HTML (sanitized by default; `components["html:<tag>"]` controls presentation).
+- `mdx`: recognizes component syntax. The default restricted policy renders only registered `contentComponents`; full MDX evaluation requires an explicit `TrustedMdxEngine` with `contentPolicy="trusted-mdx"`. A balanced JSX/MDX component whose native HTML block would be split by blank lines (for example `<SmokeBox>` … `</SmokeBox>`) stays one owning root and remains pending until it closes or the document finalizes.
 - `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).
 - `footnotes`: enables footnote aggregation.
 - `callouts`: enables callout blockquote syntax (disabled by default in the worker).
@@ -242,12 +316,12 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
 | `tables` | Yes | Yes | Preview |
 | `html` | Yes (sanitized) | Yes (sanitized) | Preview |
 | `math` | Yes | Yes | Preview |
-| `mdx` | Yes (`server` or `worker` mode) | Yes (`server` compile mode) | Preview (`server` compile mode) |
+| `mdx` | Restricted source by default; full MDX requires an explicit `TrustedMdxEngine` in the browser React integration. | Snapshot parsing does not automatically evaluate MDX. | Snapshot parsing does not automatically evaluate MDX. |
 | `footnotes` | Yes | Yes | Preview |
 | `callouts` | Yes | Yes | Preview |
 | Code themes (`themes`) | Yes | Yes | Preview |
 | Mermaid addon (`@stream-mdx/mermaid`) | Yes (renderer component) | Yes (renderer component) | Preview (renderer component) |
-| Unified adapter (`@stream-mdx/unified`) | Yes (blockRenderer) | Yes (blockRenderer) | Yes (blockRenderer) |
+| Unified adapter (`@stream-mdx/unified`) | Yes (returns `NodePresentations` for `components`) | Yes (returns `NodePresentations` for `components`) | Yes (returns `NodePresentations` for `components`) |
 
 ---
 
@@ -260,15 +334,18 @@ npm install @stream-mdx/mermaid
 ```
 
 ```tsx
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "@stream-mdx/react";
 
-<StreamingMarkdown codeRenderers={{ mermaid: MermaidBlock }} />;
+const mermaidEngine = createMermaidEngine({
+  config: { theme: "neutral" },
+});
+
+<StreamingMarkdown
+  text={"```mermaid\nflowchart TD\n  A --> B\n```"}
+  engines={{ mermaid: mermaidEngine }}
+/>;
 ```
-
-When registered, fenced `mermaid` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.
-
-### `createMermaidBlock(options?)`
 
 Creates a customized Mermaid code fence renderer with isolated configuration, default views, debounce settings, custom error components, and custom Mermaid module instances or loaders:
 
@@ -290,33 +367,24 @@ const CustomMermaidBlock = createMermaidBlock({
 ```
 
 Mermaid renders are serialized through an internal module queue so concurrent blocks with different factory configs do not interleave. Default `securityLevel: 'strict'` is preserved unless explicitly overridden in `config`. If `mermaid` is omitted, the block lazily imports `mermaid` on first diagram render.
-## 3.2) Code Fence Renderers (`codeRenderers`)
+## 3.2) Code Presentations
 
-Custom code fence rendering is registered via `codeRenderers` on `<StreamingMarkdown />` or `<MarkdownBlocksRenderer />`:
+`components.code.wrapper` receives the current block, its language metadata, native code children, and actions. Return those children for languages you do not customize:
 
 ```tsx
-import { ArtifactFrame, StreamingMarkdown } from "@stream-mdx/react";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown, type NodeViewProps } from "@stream-mdx/react";
+
+function CodePresentation({ children, metadata }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "chart") return children;
+  return <section><p>Language: {metadata.language}</p>{children}</section>;
+}
 
 export function CodeExample({ text }: { text: string }) {
-  return (
-    <StreamingMarkdown
-      text={text}
-      codeRenderers={{
-        mermaid: MermaidBlock,
-        artifact: (props) => <ArtifactFrame {...props} maxHeight="480px" />,
-        custom: ({ language, renderCode }) => (
-          <section><p>Language: {language}</p>{renderCode}</section>
-        ),
-      }}
-    />
-  );
+  return <StreamingMarkdown text={text} components={{ code: { wrapper: CodePresentation } }} />;
 }
 ```
 
-### Code fence renderer contract
-
-Language keys are trimmed and lowercased. Entries accept a component or `{ component: Component, defer?: boolean, aliases?: string[] }`; each alias resolves to the same renderer.
+Native code views keep their highlighting, streaming updates, virtualization, and controls. A wrapper should preserve the provided `children` except when it intentionally renders a specialized presentation.
 
 Language matching is case-insensitive (e.g. `JS` resolves to the `js` renderer). A key that misses falls back to the canonical grammar name, so a renderer registered as `javascript` also receives ```` ```js ```` fences. `defer: true` opts that renderer into viewport/idle deferral when `deferHeavyBlocks` is enabled.
 
@@ -337,26 +405,115 @@ interface CodeFenceRendererProps {
 }
 ```
 
-`renderCode` is an already rendered React node, not a function. Return it directly when your custom view is unavailable. Explicit language renderers take precedence over built-in artifact/diff rendering and `components.code`.
+`renderCode` is an already rendered React node, not a function. Return it directly when your custom view is unavailable. Explicit language renderers take precedence over built-in diff rendering and `components.code`.
 
 With `features.emitDiffBlocks: true`, fences with diff metadata use `DefaultDiffRenderer`, including line numbers and token colors. Without diff metadata it returns `renderCode`. A custom language renderer overrides that view.
 
-### Artifacts and math
 
-`ArtifactFrame` keeps `renderCode` while streaming, then mounts finalized HTML in `<iframe sandbox="allow-scripts">`. It does not grant `allow-same-origin`. Its CSP precedes artifact content and defaults to `default-src 'none'`, inline scripts/styles, data/blob images, data fonts, `connect-src 'none'`, `base-uri 'none'`, and `form-action 'none'`. `csp` can explicitly permit additional resources; only `connectSrc` replaces rather than extends the defaults. Treat these overrides as application security policy.
+### Headless diff code views
 
-The sandbox provides host DOM/origin isolation. The default CSP blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`, and restricts resource loading. It is not a guarantee of total network isolation or prevention of iframe self-navigation. Use self-contained artifact content; link confirmation applies to the intercepted anchor-click path, not every navigation a script can initiate.
+A headless code presentation can read diff state and prepared rows without reparsing Markdown:
 
-The frame accepts size/link messages only from its own `contentWindow`. Allowed outgoing links are absolute `http:`, `https:`, and `mailto:` URLs. `onLinkClick` takes precedence over `openLink`; the latter applies the host's `linkSafety`. Without either callback, links open with `noopener,noreferrer`. An `onLinkClick` override owns confirmation itself. `maxHeight?: number | string`, default `600`, caps the scrolling wrapper, not the measured iframe. `themeCssVars` supplies frame-local CSS variables.
+```tsx
+import type { CodeNodeHandle } from "@stream-mdx/core";
+import { StreamingMarkdown, useCodeDiff } from "@stream-mdx/react";
 
-Math uses KaTeX by default. `mathRenderer` accepts either a component with `{ tex: string; display?: boolean; className?: string }` or `{ inline?, display? }` components with `{ tex: string; className?: string }`. Unspecified entries retain their existing renderer. `features.math: false` disables math recognition, including inside opt-in HTML markdown. A render override does not re-enable parsing.
+function DiffView({ handle }: { handle: CodeNodeHandle }) {
+  const { diffStatus, lines } = useCodeDiff(handle, { from: 0, to: 100 });
+  return (
+    <section data-diff-status={diffStatus}>
+      {lines.map((line) => (
+        <div
+          key={line.id}
+          data-kind={line.diffKind}
+          data-old-no={line.oldNo}
+          data-new-no={line.newNo}
+          data-exactness={line.decoration?.exactness}
+        >
+          {line.text}
+        </div>
+      ))}
+    </section>
+  );
+}
 
-### Inline rules and HTML
+<StreamingMarkdown components={{ code: { view: DiffView } }} />;
+```
 
-`syntax` accepts `SyntaxRuleSpec[]` from `@stream-mdx/core`. Each rule emits a `"plugin"` inline node with a name, string attributes, optional parsed children, and raw matched text. Public `inlineComponents` maps that name to a React component receiving `{ name, attrs, children, raw }`. Unmapped rules use `inlineComponents.plugin` when present, otherwise raw matched text. Standard map keys include `text`, `strong`, `em`, `strike`, `code`, `link`, `image`, and `br`. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for capture, lookahead, anticipation, and invalid-`INIT` behavior.
+The `{ from, to }` range is half-open and zero-based; choose the rows the view needs rather than reading the whole code block. `diffStatus` is `complete`, `incomplete`, or `malformed` for diff fences, and each `CodeLineRecord` retains its `diffKind`, `oldNo`, `newNo`, and current token-decoration exactness.
 
-`HtmlOptions` is `{ allowedTags?: Record<string, string[]>; literalTagContent?: string[] }`. `allowedTags` adds permitted tags and replaces their tag-specific attribute lists while retaining global schema attributes. URL protocol checks still apply to `href`/`src`/`action`/`formaction`/`xlink:href`; `script`/`style` tags remain excluded. `on*` event handler attributes and `srcdoc` are strictly forbidden and always stripped regardless of `allowedTags`. Raw HTML `style` attributes are sanitized using DOM-free safe property allowlists. Custom allowlists are trusted application policy. `htmlElements` maps permitted tag names to React components and supplies sanitized attributes and typed children.
+### Headless table views
+
+A headless table presentation can read stable column metadata and a bounded range of prepared body rows:
+
+```tsx
+import type { TableNodeHandle, TableRowRange } from "@stream-mdx/core";
+import { StreamingMarkdown, useTableBlock, useTableRows } from "@stream-mdx/react";
+
+const FIRST_ROWS: TableRowRange = { from: 0, to: 20 };
+
+function TableView({ handle }: { handle: TableNodeHandle }) {
+  const table = useTableBlock(handle);
+  const rows = useTableRows(handle, FIRST_ROWS);
+  return (
+    <table>
+      <thead>
+        <tr>{table.header.cells.map((cell) => <th key={cell.id}>{cell.raw}</th>)}</tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.id}>{row.cells.map((cell) => <td key={cell.id}>{cell.raw}</td>)}</tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+<StreamingMarkdown features={{ tables: true }} components={{ table: { view: TableView } }} />;
+```
+
+`useTableRows` takes a zero-based half-open `{ from, to }` range. `useTableBlock` exposes current table metadata and its stable header; row consumers are notified only when records in their requested range change.
+
+### Explicit preview slots
+
+`PreviewSlot` is an ordinary node view, not a renderer option or an execution feature. A registered view can keep the prepared native node as an inert fallback:
+
+```tsx
+import type { CodeNodeHandle } from "@stream-mdx/core";
+import { NativeNodeView, PreviewSlot, StreamingMarkdown } from "@stream-mdx/react";
+
+function CodePreview({ handle }: { handle: CodeNodeHandle }) {
+  return (
+    <PreviewSlot handle={handle}>
+      <NativeNodeView handle={handle} />
+    </PreviewSlot>
+  );
+}
+
+<StreamingMarkdown components={{ code: { view: CodePreview } }} />;
+```
+
+Without a runtime, the slot wraps `children` in `data-stream-mdx-preview-slot` with `data-preview-runtime="none"`; it does not execute or interpret the source. A host can pass an explicit `PreviewRuntime` to render its `view`, which receives the `NodeRevisionFeed`, current `NodeRevisionSnapshot`, and native `fallback`.
+
+`useNodeRevisionFeed(handle)` returns `{ feed, snapshot }`. Snapshots are frozen and keep their identity until `revision` or `isFinalized` changes. `feed.readSource()` is an explicit cold read, not part of subscription or rendering. Code handles use their generation-bound source reader; other node handles use the presentation's store-backed source. Reads from an obsolete generation throw the existing stale-handle error. This API provides neither a compiler nor a sandbox: hosts remain responsible for authorizing and isolating any runtime they install.
+
+### Artifact-like code fences
+
+Fences labeled `artifact` or `html-artifact` render as ordinary code unless a `components.code.wrapper` explicitly routes them elsewhere. StreamMDX does not ship a default artifact iframe or sandbox. A custom presentation is application code; if it turns source into active content, the host owns its isolation and security policy.
+
+
+Math uses KaTeX by default. To replace TeX rendering, provide `engines.math`, whose synchronous `render(tex, { displayMode })` method returns React output and has a stable `id`. Math presentations at `components["inline:math"]` only wrap or view that engine output; they do not perform a second TeX render. `features.math: false` disables math recognition, including inside opt-in HTML markdown.
+
+### Syntax extensions and HTML
+
+`syntax` accepts `SyntaxExtensionDescriptor` from `@stream-mdx/core`: `contractVersion` is `1`, `inline` contains `SyntaxRuleSpec` rules, and `containers` contains `{ name, component }` registrations. Each `component` must name an entry in `contentComponents`. Inline rules emit `"plugin"` inline nodes with a name, string attributes, optional parsed children, and raw matched text. Map plugin names with `components["extension:<name>"]` views receiving `InlineNodeViewProps` (`node`, prepared `children`, metadata, and actions). Standard inline keys include `"inline:text"`, `"inline:strong"`, `"inline:em"`, `"inline:code"`, `"inline:link"`, and `"inline:image"`. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for capture, lookahead, anticipation, and invalid-`INIT` behavior.
+
+A registered opener uses at least three colons followed by its name. It is recognized at a block start or after a paragraph-separating blank line; code and escaped source keep precedence. A bare closer closes only the innermost container when its colon count exactly matches the opener. Unmatched closers remain literal source. `FINALIZE` marks unclosed containers `incomplete` and supplies the diagnostic `Unclosed container :::<name>`.
+
+`HtmlOptions` is `{ allowedTags?: Record<string, string[]>; literalTagContent?: string[] }`. `allowedTags` adds permitted tags and replaces their tag-specific attribute lists while retaining global schema attributes. URL protocol checks still apply to `href`/`src`/`action`/`formaction`/`xlink:href`; `script`/`style` tags remain excluded. `on*` event handler attributes and `srcdoc` are strictly forbidden and always stripped regardless of `allowedTags`. Raw HTML `style` attributes are sanitized using DOM-free safe property allowlists. Custom allowlists are trusted application policy. `components["html:<tag>"]` decorates permitted tags; headless views receive sanitized attributes and typed children.
 Raw HTML block content is literal by default. Supplying `literalTagContent`, even `[]`, opts into engine-owned inline markdown parsing inside eligible HTML children. `code`, `pre`, and `textarea`, plus listed tags, stay literal. Inline syntax plugins and the engine's math flag apply to opt-in children; mapped components do not reparse strings. HTML must also be enabled via `features.html`.
+Restricted `contentComponents` can be decorated with `props` and wrapped by `components["component:<registrationName>"]`. This key rejects headless `view` entries when the presentation registry is configured because restricted components do not expose the native `NodeHandle` contract; use a rich wrapper when replacing their presentation.
+
 
 ## 3.3) Block Controls (Copy & Download)
 
@@ -385,10 +542,11 @@ import { StreamingMarkdown } from "@stream-mdx/react";
 
 ### Features
 
-- **Code blocks**: Copy button writes the raw authored code text directly to clipboard via `navigator.clipboard.writeText` (never highlighted HTML). Download saves `snippet.<ext>` matching the authored fence language (e.g. `.ts`, `.py`, `.rs`, `.sql`). Fully compatible with virtualized code.
-- **Tables**: Copy as TSV (ready to paste into spreadsheets) or Markdown. Download as CSV, TSV, or Markdown with strict RFC 4180 escaping (quotes, commas, newlines). Table controls are enabled only once the table block is finalized; streaming tables show disabled controls.
+- **Code blocks**: The Copy button writes the full authored source. Native text selection inside a code viewport copies only that exact authored range, preserving its line endings. Download saves the complete source as `snippet.<ext>` (e.g. `.ts`, `.py`, `.rs`, `.sql`) with its original line endings and trailing newline. Both actions work with virtualized code.
+- **Tables**: Copy as TSV (ready to paste into spreadsheets) or Markdown. Download as CSV, TSV, or Markdown with strict RFC 4180 escaping (quotes, commas, newlines). Table controls become active when the native table closes, even if the surrounding document stream continues. Built-in managed-table controls read row text only when copied or downloaded.
+- **Managed custom table controls**: `ControlsComponentProps` supplies `headers`, `align`, and `getTableData()`. It intentionally omits the full `rows` array so rendering does not materialize the table prefix; call `getTableData()` inside a user action when complete row strings are needed. `onCopy` and `onDownload` retain the built-in action behavior.
 - **Mermaid / Code Fences**: Exposed through `CodeFenceRendererProps` (`controls` flags and `copy()` helper). `MermaidBlock` opts in to source diagram code copying in its toolbar and code view.
-- **Accessibility & SSR**: Buttons are real `<button type="button">` with `aria-label`, `data-stream-mdx-control`, and semantic classes. Rendering is 100% SSR-safe (no `window` access during render).
+- **Accessibility & SSR**: Buttons are real `<button type="button">` with `aria-label`, `data-stream-mdx-control`, and semantic classes. Both `StreamingMarkdown` and `MarkdownBlocksRenderer` omit live regions by default; `statusMessage` enables one atomic polite region for host-coordinated milestones. Rendering is 100% SSR-safe (no `window` access during render).
 - **Replacement slot**: Fully replaceable via `controlsComponent` prop on `<StreamingMarkdown />` or `ComponentRegistry.setControlsComponent()`.
 
 ## 3.4) Animated Streaming (`animated`)
@@ -451,10 +609,10 @@ const unifiedRenderer = createUnifiedRenderer({
 });
 
 export function Article({ markdown }: { markdown: string }) {
-  return <StreamingMarkdown text={markdown} blockRenderer={unifiedRenderer} />;
+  return <StreamingMarkdown text={markdown} components={unifiedRenderer} />;
 }
 ```
-Explicit `blockTypes` replaces the default routing list. Routed lists and blockquotes replace native container children, including prepared nested snapshots, with the unified result. Exclude those containers to retain native code, math, HTML, and syntax components inside them. A successful `blockRenderer` replacement has precedence over that block's native rendering.
+Explicit `blockTypes` replaces the default routing list. Routed lists and blockquotes replace native container children, including prepared nested snapshots, with the unified result. Exclude those containers to retain native code, math, HTML, and syntax components inside them. A successful unified presentation replaces that block's native rendering.
 
 
 ### Options
@@ -494,13 +652,13 @@ Opt in to render a viewport-sized subset of a large finalized table. Server rend
 ### Rendering behavior
 
 - Disabled by default. `true` enables the defaults; an options object enables virtualization unless `enabled` is `false`.
-- Only mounted, finalized tables at or above `minRows` virtualize, and only when the surrounding streaming session is inactive. A completed table followed by an unfinished paragraph stays fully rendered. Imperative `append()` opens a session; `finalize()` closes it when no async iterator is active. Normal iterator EOF finalizes the tail and closes its session. Imperative append/finalize still works after EOF or after removing the stream prop; an unconsumed stream prop does not own a session.
+- Only mounted, finalized tables at or above `minRows` virtualize, and only when the surrounding streaming session is inactive. A completed table followed by an unfinished paragraph stays fully rendered. Imperative `append()` opens a session; `await finalize()` closes and seals it when no async iterator is active. Normal iterator EOF also awaits finalization before closing its activity. After EOF or explicit finalization, call `restart()` or replace the owned source to begin a new generation before appending again. Removing a stream prop does not itself reopen a sealed generation.
 - Replacing `text`, replacing an iterator, or calling `restart()` clears the renderer-owned engine document using its existing initialization options. Old iterator generations cannot finalize the replacement session. With `managedWorker`, the caller owns engine initialization: restart clears the renderer store without sending `INIT` or discarding the caller's engine document.
 - The scroll container has a native sticky `<thead>` and an accessible name. Spacer rows are `aria-hidden`. Only mounted body rows appear in the accessibility tree; disable virtualization when every row must be available to assistive technology, browser find, or printing.
 - The initial full table uses native automatic column sizing. Measured column widths then populate an explicit `<colgroup>` while rows are windowed. Container width changes trigger another full-table natural-layout pass and invalidate cached row heights. A `ResizeObserver` measures mounted multiline rows and later content resizes.
 - Disabling virtualization or replacing its native table/header invalidates natural column widths and every cached row height. Re-enabling measures the complete current table even at unchanged viewport width. Adapter replacement rebinds observers to the current native table, header, and mounted rows; detached-node callbacks cannot update the new measurement generation.
 - Row keys and `data-row-id` values stay stable as the window changes. Spacer heights account for omitted rows. Scrolling to the bottom mounts the final row.
-- Custom `tableElements` render the table, sections, cells, and spacers. They must forward DOM props and preserve native table tags. Existing overflow-wrapped Table adapters are supported. Only scroll/clipping wrappers between the native table and the owned viewport temporarily receive `overflow: visible !important`; the outer viewport owns both scroll axes. Original overflow shorthand/longhand declarations and priorities are restored in their original order on disable/unmount. Unrelated inline styles remain untouched; inline overflow changes made by the component while managed transfer cleanup ownership to the component.
+- Custom `components.table.wrapper` presentations wrap the native table viewport. The renderer keeps its native rows, sections, cells, and spacers; wrappers between the table and owned viewport may have overflow normalized to preserve virtualization. Original overflow shorthand/longhand declarations and priorities are restored on disable/unmount. Unrelated inline styles remain untouched.
 - Changing or removing `tableVirtualization` updates the existing view without restarting the parser. `maxHeight` limits the outer scroll container and `overscan` is clamped to 1–50 rows on each side.
 - Sticky headers have an opaque background taken from the nearest opaque ancestor, or the CSS system color `Canvas`. Theme class/style changes update that fallback. Set `--stream-mdx-table-header-background` to a valid opaque CSS color to override it, not an HSL channel-only token.
 
@@ -515,18 +673,21 @@ Try `/showcase/table-virtualization` in the docs app. It contains up to 500 rows
 | `estimatedRowHeight` | `number` | `40` | Estimated height in pixels for unmeasured rows. |
 | `overscan` | `number` | `8` | Number of buffer rows rendered above and below the viewport (bounded 1-50). |
 | `maxHeight` | `number \| string` | `"600px"` | Maximum height of the scroll container. |
-## 3.7) Math Rendering (`mathRenderer`)
-StreamMDX includes first-party KaTeX math rendering by default for inline (`$...$`) and display (`$$...$$`) math.
+## 3.7) Math Rendering (`engines.math`)
+StreamMDX includes first-party KaTeX rendering by default for inline (`$...$`) and display (`$$...$$`) math. Set `engines.math` to replace only the renderer while preserving parsing:
 
-To override or use MathJax:
 ```tsx
-<StreamingMarkdown
-  mathRenderer={{
-    inline: ({ tex }) => <span className="mathjax-inline">\({tex}\)</span>,
-    display: ({ tex }) => <div className="mathjax-display">\[{tex}\]</div>,
-  }}
-/>
+import type { MathEngine } from "stream-mdx";
+
+const mathEngine: MathEngine = {
+  id: "mathjax",
+  render: (tex, { displayMode }) => <MathJaxFormula tex={tex} display={displayMode} />,
+};
+
+<StreamingMarkdown engines={{ math: mathEngine }} />;
 ```
+
+`MathEngine.render` runs synchronously on the main thread and must be safe during server rendering. A presentation configured at `components["inline:math"]` receives the engine output as its children; it owns only the view or wrapper and does not render TeX a second time. Omitting `engines.math` keeps KaTeX.
 ## 3.5) Element Filtering and Autolink Protocols
 
 StreamMDX mirrors Streamdown / react-markdown element filtering semantics:
@@ -553,13 +714,34 @@ Filtering applies consistently at render time across client streaming, client no
   }}
 />
 ```
-## 4) MDX Compilation Modes
 
-`mdxCompileMode` selects how MDX blocks are compiled:
-- `"worker"`: compilation happens client-side in the worker.
-- `"server"`: compilation requests go to `/api/mdx-compile-v2` by default (you must implement this endpoint in your app).
+## 4) MDX
 
-See `docs/REACT_INTEGRATION_GUIDE.md` for a complete Next.js wiring guide and parity notes.
+`contentPolicy` defaults to `"restricted"`. Register approved source names using `defineContentComponent`; raw constructors are not registrations. A type-predicate validator is required for narrower source JSON props, and native projected `children` are supplied separately as host React nodes. `contentComponents` is active only under `"restricted"` policy, not `"markdown"` or `"trusted-mdx"`.
+
+For trusted, reviewed full MDX, create an explicit engine from `@stream-mdx/react/trusted-mdx` and pass it through `engines.mdx`:
+
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
+import { Callout } from "./Callout";
+
+const hostWidgets = { Callout };
+const mdxEngine = createTrustedMdxEngine({
+  components: hostWidgets,
+  imports: { "host:widgets": hostWidgets },
+});
+
+<StreamingMarkdown
+  text={text}
+  features={{ mdx: true }}
+  contentPolicy="trusted-mdx"
+  engines={{ mdx: mdxEngine }}
+/>;
+```
+
+
+The import map is the host's capability grant for authored module specifiers; unresolved imports fail instead of being fetched. Trusted evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox. Use it only for trusted, reviewed source. Native worker `FINALIZED` confirms semantic completion only; trusted projection and actual React commit readiness are separate and asynchronous. See the [React Integration Guide](./REACT_INTEGRATION_GUIDE.md) and [Security Model](./SECURITY_MODEL.md) for the lease lifecycle and safety requirements.
 
 ### Next.js App Router (server-safe rendering)
 
@@ -572,7 +754,6 @@ export default async function Page() {
     text: "# Hello\\n\\nStreaming-safe server render.",
     init: {
       docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-      mdx: { compileMode: "server" },
       prewarmLangs: ["typescript"],
     },
   });
@@ -580,6 +761,9 @@ export default async function Page() {
   return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;
 }
 ```
+
+
+If an RSC constructs restricted registrations, import the pure `defineContentComponent` factory from `@stream-mdx/react/server`, not the client root.
 
 ### Static build pipeline (SSG/export)
 
@@ -602,7 +786,6 @@ export default async function EdgeLikePage() {
     text: "# Hello\\n\\nEdge-safe deterministic compile.",
     init: {
       docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-      mdx: { compileMode: "server" },
       prewarmLangs: ["typescript"],
     },
     cache: {

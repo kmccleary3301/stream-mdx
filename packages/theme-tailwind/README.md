@@ -27,33 +27,34 @@ Import after your Tailwind directives:
 @import "@stream-mdx/theme-tailwind/theme.css";
 ```
 
-Recommended markup structure for new integrations:
+Recommended native markup:
 
 ```tsx
 import { StreamingMarkdown } from "stream-mdx";
 
 export function Article({ content }: { content: string }) {
-  return (
-    <div className="prose">
-      <StreamingMarkdown text={content} worker="/workers/markdown-worker.js" />
-    </div>
-  );
+  return <StreamingMarkdown text={content} worker="/workers/markdown-worker.js" colorScheme="system" />;
 }
 ```
 
+Native output roots carry `data-stream-mdx` and `not-prose`. This gives the renderer its scoped typography and keeps enclosing Tailwind typography-plugin styles from restyling native output.
+
+
 ## What It Styles
 
-- Renderer output hooks such as `.markdown-v2-output`, `.markdown-list`, `.markdown-list-item`, `.markdown-code-block`, and `.markdown-link`
-- Prose compatibility when used with `@tailwindcss/typography`
-- Legacy `.markdown` compatibility for applications that already adopted the older wrapper pattern
+- Native renderer output hooks such as `.markdown-v2-output`, `.markdown-list`, `.markdown-list-item`, `.markdown-code-block`, and `.markdown-link`
+- Prose and legacy `.markdown` compatibility helpers
+- Shiki light/dark foreground, background, font-style, font-weight, and text-decoration tokens
 
 ## Notes
 
-- Prefer one prose owner around rendered output. Do not stack `.prose markdown` in new code unless you are maintaining an older integration.
-- If you want full `prose` defaults, install and enable `@tailwindcss/typography`.
-- The theme expects CSS variables like `--foreground` and `--border`; map them into your design system or replace them.
-- Highlighted code uses Shiki's light tokens by default and dark tokens under a `.dark` ancestor (Tailwind `darkMode: "class"`, `next-themes`). Apps that switch themes another way should map `--shiki-dark` themselves.
-- StreamMDX component overrides (`components`, `inlineComponents`, `tableElements`) still work on top of the theme.
+- CSS custom properties and native output rules are scoped to `[data-stream-mdx]`; they do not change host styles outside a renderer root.
+- Standalone legacy `.markdown` wrappers outside a native StreamMDX root no longer receive the theme's custom-property defaults; migrate them to `StreamingMarkdown` or `MarkdownBlocksRenderer`.
+- `colorScheme` accepts `"light"`, `"dark"`, or `"system"`. An explicit value wins; `"system"` follows `prefers-color-scheme` in CSS without a JavaScript media listener. When unset, a `.dark` ancestor retains the existing class-based behavior.
+- Hosts using another theme mechanism should set `colorScheme` on the StreamMDX root.
+- The theme expects host design tokens like `--foreground` and `--border`; map them into your design system or replace them.
+- Shiki's dual-theme variables cover foreground, background, font style, font weight, and text decoration for both light and dark tokens.
+- StreamMDX node presentations (`components`) still work on top of the theme.
 
 ## Documentation
 

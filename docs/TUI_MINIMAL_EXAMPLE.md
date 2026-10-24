@@ -18,6 +18,7 @@ From the repo root:
 ```bash
 npm install
 npm run build:packages
+npm run worker:build
 npm run example:tui-minimal
 ```
 
@@ -60,21 +61,35 @@ terminal renderer
 import { createWorkerThread } from "stream-mdx/worker/node";
 import { createSnapshotStore } from "@stream-mdx/tui";
 import type { WorkerOut } from "stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION } from "stream-mdx/core";
 
 const worker = createWorkerThread({ stdout: true, stderr: true });
 const store = createSnapshotStore();
+let generation: number | null = null;
 
 worker.on("message", (msg: WorkerOut) => {
-  if (msg.type !== "PATCH") return;
+  if (msg.type === "INITIALIZED") {
+    const inputSource = msg.snapshot.inputSource;
+    if (
+      msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+      !Number.isSafeInteger(msg.generation) ||
+      inputSource?.generation !== msg.generation ||
+      typeof inputSource?.raw !== "string"
+    ) throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
+    store.setSnapshot(msg.snapshot);
+    generation = msg.generation;
+    return;
+  }
+  if (msg.type !== "PATCH" || msg.generation !== generation) return;
   store.applyPatches(msg.patches);
   renderToTerminal(store.getBlocks());
 });
 
 worker.postMessage({
   type: "INIT",
+  schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-  mdx: { compileMode: "worker" },
 });
 
 worker.postMessage({ type: "APPEND", text: "# Hello\n\nStreaming **markdown** in a TUI.\n" });

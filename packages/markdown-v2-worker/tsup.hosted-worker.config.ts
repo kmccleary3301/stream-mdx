@@ -16,7 +16,11 @@ export default defineConfig({
   sourcemap,
   dts: false,
   minify: false,
+  minifySyntax: true,
   clean: true,
+  define: {
+    __STREAM_MDX_COUNTERS__: "false",
+  },
   outDir: join(__dirname, "dist/hosted"),
   // NOTE: This must be a single self-contained file for static hosting (no bare
   // module specifiers like `import "character-entities"`).
