@@ -364,15 +364,29 @@ async function testHtmlOwnedParagraphFilters(): Promise<void> {
     { disallowedElements: ["p"], unwrapDisallowed: false },
     { disallowedElements: ["p"], unwrapDisallowed: true },
   ]) {
-    const registry = new ComponentRegistry({}, {}, filters);
+    let wrapperCalls = 0;
+    const countingWrapper = ({ children }: { children?: React.ReactNode }) => {
+      wrapperCalls++;
+      return <p data-custom-paragraph>{children}</p>;
+    };
+    const registry = new ComponentRegistry({}, {}, {
+      ...filters,
+      components: {
+        paragraph: { wrapper: countingWrapper },
+        "html:p": { wrapper: countingWrapper },
+      },
+    });
     const element = React.createElement(MarkdownBlocksRenderer, { blocks, componentRegistry: registry });
-    const ssrDocument = new JSDOM(renderToStaticMarkup(element)).window.document;
+    const ssrMarkup = renderToStaticMarkup(element);
+    assert.strictEqual(wrapperCalls, 0, "filtered HTML-owned paragraph must not invoke a block or HTML presentation in SSR");
+    const ssrDocument = new JSDOM(ssrMarkup).window.document;
     assert.strictEqual(ssrDocument.querySelector("p"), null, "HTML-owned paragraph must obey tag filtering in SSR");
     // normalizeHtmlParagraph serializes `</p>\n`; that separator text node is a sibling of the paragraph root, not subtree content.
     assert.strictEqual(ssrDocument.body.textContent?.trim(), filters.unwrapDisallowed ? "Before inside after" : "", "paragraph filtering must unwrap or drop the entire subtree");
     const rootEl = window.document.getElementById("root")!;
     const root = createRoot(rootEl);
     await act(async () => { root.render(element); });
+    assert.strictEqual(wrapperCalls, 0, "filtered HTML-owned paragraph must not invoke a block or HTML presentation on the client");
     assert.strictEqual(rootEl.querySelector("p"), null, "HTML-owned paragraph must obey tag filtering on the client");
     assert.strictEqual(rootEl.textContent?.trim(), filters.unwrapDisallowed ? "Before inside after" : "", "client paragraph filtering must unwrap or drop the entire subtree");
     await act(async () => { root.unmount(); });
@@ -394,6 +408,33 @@ async function testHtmlOwnedParagraphFilters(): Promise<void> {
   assert.deepStrictEqual(seenParagraphs, [{ source: "markdown", blockType: "paragraph" }], "normalized paragraph must use the Markdown p filter exactly once");
 }
 
+async function testMarkdownBlockFiltersSkipPresentations(): Promise<void> {
+  for (const { text, tag, type } of [
+    { text: "Hello", tag: "p", type: "paragraph" },
+    { text: "# Title", tag: "h1", type: "heading" },
+  ]) {
+    const { blocks } = await compileMarkdownSnapshotDirect({
+      text,
+      init: { prewarmLangs: [], docPlugins: { html: true, mdx: false } },
+    });
+    let wrapperCalls = 0;
+    const countingWrapper = ({ children }: { children?: React.ReactNode }) => {
+      wrapperCalls++;
+      return <p data-custom-block>{children}</p>;
+    };
+    const registry = new ComponentRegistry({}, {}, {
+      disallowedElements: [tag],
+      components: { [type]: { wrapper: countingWrapper } },
+    });
+    const document = new JSDOM(renderToStaticMarkup(
+      React.createElement(MarkdownBlocksRenderer, { blocks, componentRegistry: registry }),
+    )).window.document;
+    assert.strictEqual(wrapperCalls, 0, `filtered ${type} must not invoke its presentation in SSR`);
+    assert.strictEqual(document.querySelector("p"), null, `filtered ${type} must not render a custom paragraph wrapper`);
+    assert.strictEqual(document.querySelector(tag), null, `filtered ${type} must not render its native host`);
+  }
+}
+
 async function runAllTests(): Promise<void> {
   console.log("Running element filtering and code alias tests...");
   await testDisallowedElementsRemovesImages();
@@ -403,7 +444,7 @@ async function runAllTests(): Promise<void> {
   await testDisableAutolinkProtocolsMailto();
   await testMutuallyExclusiveElements();
   await testHtmlOwnedParagraphFilters();
+  await testMarkdownBlockFiltersSkipPresentations();
   console.log("All element filtering and code alias tests passed successfully!");
 }
-
 await runAllTests();

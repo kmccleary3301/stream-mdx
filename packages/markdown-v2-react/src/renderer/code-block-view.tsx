@@ -200,7 +200,12 @@ function copyAuthoredSelection(event: ClipboardEvent, viewport: HTMLElement, rea
 
 
 // Private code-rendering owner; block dispatch and finalized wrappers remain in node-views.
-export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+export const CodeBlockView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  renderPresentation?: (nativeView: React.ReactNode) => React.ReactNode;
+}> = React.memo(({ store, blockId, registry, renderPresentation }) => {
   const node = useRendererNode(store, blockId);
   const codeBlock = store.getCodeBlock(blockId);
   const codeGeneration = codeBlock?.source.generation ?? null;
@@ -608,18 +613,24 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
 
 
   if (!registry.hasElementFilters()) {
-    return withFullContentToggle(
+    const nativeView = withFullContentToggle(
       React.isValidElement(elementToFilter) ? elementToFilter : <>{elementToFilter}</>,
     );
+    return renderPresentation ? renderPresentation(nativeView) : nativeView;
   }
+  let hostAllowed = false;
   const filtered = registry.filterElement(
     { tagName: "div", properties: { className: codeFrameClass }, blockType: "code" },
     { source: "markdown" },
-    () => elementToFilter,
+    () => {
+      hostAllowed = true;
+      return elementToFilter;
+    },
     () => readCurrentCodeSource() ?? "",
   );
   if (filtered === null || filtered === undefined) return null;
-  return withFullContentToggle(React.isValidElement(filtered) ? filtered : <>{filtered}</>);
+  const nativeView = withFullContentToggle(React.isValidElement(filtered) ? filtered : <>{filtered}</>);
+  return hostAllowed && renderPresentation ? renderPresentation(nativeView) : nativeView;
 });
 
 CodeBlockView.displayName = "CodeBlockView";

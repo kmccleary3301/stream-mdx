@@ -1329,8 +1329,12 @@ export class ComponentRegistry {
     renderBlock: (block: Block, parentTagName?: string) => React.ReactNode = (block) => this.renderBlock(block),
     paragraph?: Block,
     parentTagName?: string,
+    renderParagraphPresentation?: (nativeView: React.ReactNode) => React.ReactNode,
   ): React.ReactNode {
-    return renderOwnedHtmlTree(tree, this.ownedHtmlRenderContext(renderBlock, paragraph, parentTagName));
+    return renderOwnedHtmlTree(
+      tree,
+      this.ownedHtmlRenderContext(renderBlock, paragraph, parentTagName, undefined, renderParagraphPresentation),
+    );
   }
 
   private ownedHtmlRenderContext(
@@ -1338,6 +1342,7 @@ export class ComponentRegistry {
     paragraph?: Block,
     parentTagName?: string,
     inlineContext?: RenderInlineAnimationContext,
+    renderParagraphPresentation?: (nativeView: React.ReactNode) => React.ReactNode,
   ): OwnedHtmlRenderContext {
     const renderContext = inlineContext ?? (paragraph
       ? this.getRenderInlineContext(paragraph.isFinalized, paragraph.id)
@@ -1367,9 +1372,12 @@ export class ComponentRegistry {
         : undefined,
       parentTagName,
       contentComponents: this.contentComponents,
-      renderParagraph: paragraph ? (children) => React.createElement(this.getBlockComponent("paragraph"), {
-        ...this.getBlockProps(paragraph), children,
-      }) : undefined,
+      renderParagraph: paragraph ? (children) => {
+        const nativeView = React.createElement(this.getBlockComponent("paragraph"), {
+          ...this.getBlockProps(paragraph), children,
+        });
+        return renderParagraphPresentation ? renderParagraphPresentation(nativeView) : nativeView;
+      } : undefined,
     };
   }
 
@@ -1424,14 +1432,25 @@ export class ComponentRegistry {
   /**
    * Render a block
    */
-  renderBlock(block: Block): React.ReactElement {
+  renderBlock(
+    block: Block,
+    renderPresentation?: (nativeView: React.ReactNode) => React.ReactNode,
+  ): React.ReactElement {
     const meta = block.payload.meta;
     const sourceOwnedHtmlTree = meta?.htmlOwnership === true && Array.isArray(meta.htmlTree) ? meta.htmlTree : undefined;
     if (block.type === "paragraph" && sourceOwnedHtmlTree) {
-      return React.createElement(React.Fragment, {}, this.renderHtmlTree(sourceOwnedHtmlTree, undefined, block));
+      return React.createElement(
+        React.Fragment,
+        {},
+        this.renderHtmlTree(sourceOwnedHtmlTree, undefined, block, undefined, renderPresentation),
+      );
     }
     if (block.type === "paragraph" && meta?.htmlParagraphTree) {
-      return React.createElement(React.Fragment, {}, this.renderHtmlTree(meta.htmlParagraphTree, undefined, block));
+      return React.createElement(
+        React.Fragment,
+        {},
+        this.renderHtmlTree(meta.htmlParagraphTree, undefined, block, undefined, renderPresentation),
+      );
     }
     const Component = this.getBlockComponent(block.type);
     const props = this.getBlockProps(block);
@@ -1626,7 +1645,7 @@ export class ComponentRegistry {
         const filtered = this.filterElement(
           { tagName: blockTagName, properties: props, blockType: block.type },
           { source: "markdown" },
-          () => finalElement,
+          () => renderPresentation ? renderPresentation(finalElement) : finalElement,
           renderChildren,
         );
         if (filtered === null || filtered === undefined) {
@@ -1636,7 +1655,10 @@ export class ComponentRegistry {
       }
     }
 
-    return finalElement;
+    const presented = renderPresentation ? renderPresentation(finalElement) : finalElement;
+    return React.isValidElement(presented)
+      ? presented
+      : React.createElement(React.Fragment, { key: block.id }, presented);
   }
 
   /**

@@ -59,6 +59,7 @@ const NodeViewRenderContext = React.createContext<{
   readonly store: RendererStore;
   readonly registry: ComponentRegistry;
 } | null>(null);
+type NodePresentationRenderer = (nativeView: React.ReactNode) => React.ReactNode;
 export function renderNodePresentation(
   block: Block | undefined,
   nativeView: React.ReactNode,
@@ -303,6 +304,17 @@ export const BlockNodeRenderer: React.FC<{
   bypassPresentationFor?: string;
 }> = ({ store, blockId, registry, nativeFlowChild = false, parentTagName, bypassPresentationFor }) => {
   const node = useRendererNode(store, blockId);
+  const renderPresentation = React.useCallback(
+    (nativeView: React.ReactNode) => renderNodePresentation(
+      node?.block,
+      nativeView,
+      store,
+      registry,
+      blockId,
+      bypassPresentationFor === blockId,
+    ),
+    [blockId, bypassPresentationFor, node?.block, registry, store],
+  );
   const renderParagraphChild = React.useCallback(
     (nodeId: string) => (
       <MixedSegmentView
@@ -334,42 +346,48 @@ export const BlockNodeRenderer: React.FC<{
     const HeadlessCodeView = registry.getCodeNodeView();
     if (HeadlessCodeView) {
       const handle = store.getCodeNodeHandle(blockId);
-      return handle
-        ? <HeadlessNativeCodeView blockId={blockId} handle={handle} view={HeadlessCodeView} />
-        : null;
+      if (!handle) return null;
+      const nativeView = <HeadlessNativeCodeView blockId={blockId} handle={handle} view={HeadlessCodeView} />;
+      if (!registry.hasElementFilters()) return nativeView;
+      return registry.filterElement(
+        { tagName: "pre", properties: {}, blockType: "code" },
+        { source: "markdown" },
+        () => nativeView,
+        () => handle.readSource(),
+      );
     }
   }
 
   if (node.type === "paragraph" && store.getParagraphBlock(blockId)) {
     const block = node.block;
     if (!block) return null;
-    const element = (
-      <ManagedParagraphBlockView
-        store={store}
-        blockId={blockId}
-        registry={registry}
-        renderNested={renderParagraphChild}
-      />
-    );
     const ownerState = store.getParagraphBlock(blockId);
     const presentation = registry.getNodePresentation("paragraph");
     const needsSource = presentation !== undefined && "wrapper" in presentation && presentation.wrapper !== undefined;
     const rendererBlock = needsSource && ownerState?.source.state !== "open"
       ? store.getParagraphColdBlock(blockId) ?? block
       : block;
-    return <>{renderNodePresentation(rendererBlock, element, store, registry, undefined, bypassPresentationFor === blockId)}</>;
+    return (
+      <ManagedParagraphBlockView
+        store={store}
+        blockId={blockId}
+        registry={registry}
+        renderNested={renderParagraphChild}
+        renderPresentation={(nativeView) => renderNodePresentation(
+          rendererBlock,
+          nativeView,
+          store,
+          registry,
+          blockId,
+          bypassPresentationFor === blockId,
+        )}
+      />
+    );
   }
 
   const block = node.block;
   if (!block && node.type === "code" && store.getCodeBlock(blockId)) {
-    return renderNodePresentation(
-      undefined,
-      <CodeBlockView store={store} blockId={blockId} registry={registry} />,
-      store,
-      registry,
-      blockId,
-      bypassPresentationFor === blockId,
-    );
+    return <CodeBlockView store={store} blockId={blockId} registry={registry} renderPresentation={renderPresentation} />;
   }
   if (!block) {
     const parentTagName = node.type.startsWith("list-item-") ? "li" : node.type.startsWith("blockquote-") ? "blockquote" : "p";
@@ -379,41 +397,46 @@ export const BlockNodeRenderer: React.FC<{
   const hasPreparedMdxInline = block.type === "paragraph" && hasTrustedMdxInline(block.payload.inline ?? []);
   const mixedParagraph = block.type === "paragraph" && Array.isArray(block.payload.meta?.mixedSegments) && !hasPreparedMdxInline;
   if (mixedParagraph) {
-    return <>{renderNodePresentation(block, registry.renderBlock(block), store, registry, undefined, bypassPresentationFor === blockId)}</>;
+    return <>{registry.renderBlock(block, renderPresentation)}</>;
   }
 
   let element: React.ReactElement | null;
+  let presentationHandled = true;
   switch (block.type) {
     case "paragraph":
-      element = <ParagraphBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <ParagraphBlockView store={store} blockId={block.id} registry={registry} renderPresentation={renderPresentation} />;
       break;
     case "blockquote":
-      element = <BlockquoteBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <BlockquoteBlockView store={store} blockId={block.id} registry={registry} renderPresentation={renderPresentation} />;
       break;
     case "list":
-      element = <ListBlockView store={store} blockId={block.id} registry={registry} depth={0} />;
+      element = <ListBlockView store={store} blockId={block.id} registry={registry} depth={0} renderPresentation={renderPresentation} />;
       break;
     case "table":
       element = store.getTableBlock(block.id)
-        ? <ManagedTableBlockView store={store} blockId={block.id} registry={registry} />
-        : <TableBlockView store={store} blockId={block.id} registry={registry} />;
+        ? <ManagedTableBlockView store={store} blockId={block.id} registry={registry} renderPresentation={renderPresentation} />
+        : <TableBlockView store={store} blockId={block.id} registry={registry} renderPresentation={renderPresentation} />;
       break;
     case "code":
-      element = <CodeBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <CodeBlockView store={store} blockId={block.id} registry={registry} renderPresentation={renderPresentation} />;
       break;
     case "html":
       element = <HtmlBlockView store={store} blockId={block.id} registry={registry} parentTagName={parentTagName} />;
+      presentationHandled = false;
       break;
     case "mdx":
       element = <MdxBlockView store={store} blockId={block.id} registry={registry} />;
+      presentationHandled = false;
       break;
     default:
-      element = registry.renderBlock(block);
+      element = registry.renderBlock(block, renderPresentation);
       break;
   }
 
   if (element === null) return null;
-  return <>{renderNodePresentation(block, element, store, registry, undefined, bypassPresentationFor === blockId)}</>;
+  return presentationHandled
+    ? <>{element}</>
+    : <>{renderNodePresentation(block, element, store, registry, undefined, bypassPresentationFor === blockId)}</>;
 };
 export const NativeNodeView: React.FC<{ readonly handle: NodeHandle }> = ({ handle }) => {
   const context = React.useContext(NodeViewRenderContext);
@@ -431,7 +454,12 @@ export const NativeNodeView: React.FC<{ readonly handle: NodeHandle }> = ({ hand
   );
 };
 
-const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+const ParagraphBlockView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  renderPresentation: NodePresentationRenderer;
+}> = React.memo(({ store, blockId, registry, renderPresentation }) => {
   const trustedSnapshot = React.useContext(TrustedMdxProjectionContext);
   const node = useRendererNode(store, blockId);
   const block = node?.block;
@@ -447,62 +475,85 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
   const inlineComponents = registry.getInlineComponents();
   const htmlElements = registry.getHtmlElements();
   const literalTagContent = registry.getLiteralTagContent();
+  const renderFilteredParagraph = (
+    nativeView: React.ReactNode,
+    renderChildren: () => React.ReactNode,
+    className = "markdown-paragraph",
+  ): React.ReactNode => {
+    if (!registry.hasElementFilters()) return renderPresentation(nativeView);
+    let hostAllowed = false;
+    const filtered = registry.filterElement(
+      { tagName: "p", properties: { className }, blockType: "paragraph" },
+      { source: "markdown" },
+      () => {
+        hostAllowed = true;
+        return nativeView;
+      },
+      renderChildren,
+    );
+    return hostAllowed ? renderPresentation(filtered) : filtered;
+  };
   const meta = block.payload.meta;
   const sourceOwnedHtmlTree = meta?.htmlOwnership === true && Array.isArray(meta.htmlTree) ? meta.htmlTree : undefined;
   if (sourceOwnedHtmlTree) {
-    return <>{registry.renderHtmlTree(sourceOwnedHtmlTree, undefined, block)}</>;
+    return <>{registry.renderHtmlTree(sourceOwnedHtmlTree, undefined, block, undefined, renderPresentation)}</>;
   }
   if (meta?.htmlParagraphTree) {
-    return <>{registry.renderHtmlTree(meta.htmlParagraphTree, undefined, block)}</>;
+    return <>{registry.renderHtmlTree(meta.htmlParagraphTree, undefined, block, undefined, renderPresentation)}</>;
   }
 
   if (block.isFinalized && trustedSnapshot) {
     const flowSegments = splitTrustedFlowNodes(block.payload.inline ?? [], trustedSnapshot);
     if (flowSegments) {
       const ParagraphComponent = registry.getBlockComponent("paragraph");
-      return (
-        <>
-          {flowSegments.map((segment, index) => {
-            const key = `${block.id}:trusted-flow:${index}`;
-            if (segment.kind === "flow") {
-              const flowProjection = trustedSnapshot.projections[segment.node.ownerId];
-              const nativeChildren =
-                flowProjection !== undefined &&
-                (flowProjection.kind === "render" || flowProjection.kind === "server-content") &&
-                flowProjection.nativeChildren === true
-                  ? renderTrustedMdxNativeChildren(block, flowProjection.rootElementName, registry, store, flowProjection.nativeChildOwners, flowProjection.flowChildren)
-                  : undefined;
-              return (
-                <React.Fragment key={key}>
-                  {renderTrustedMdxOwner(segment.node.ownerId, trustedSnapshot, segment.node.raw, true, nativeChildren)}
-                </React.Fragment>
-              );
-            }
-            const children = renderInlineNodes(
-              segment.nodes,
-              inlineComponents,
-              registry.getUrlTransform(),
-              registry,
-              "p",
-              registry.getRenderInlineContext(block.isFinalized, key),
-            );
-            const paragraph = React.createElement(ParagraphComponent, {
-              key,
-              inlines: segment.nodes,
-              raw: block.payload.raw,
-              meta: block.payload.meta,
-              children,
-            });
-            if (!registry.hasElementFilters()) return paragraph;
-            return registry.filterElement(
-              { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
-              { source: "markdown" },
-              () => paragraph,
-              () => children,
-            );
-          })}
-        </>
-      );
+      let hasParagraphHost = false;
+      const renderedSegments = flowSegments.map((segment, index) => {
+        const key = `${block.id}:trusted-flow:${index}`;
+        if (segment.kind === "flow") {
+          const flowProjection = trustedSnapshot.projections[segment.node.ownerId];
+          const nativeChildren =
+            flowProjection !== undefined &&
+            (flowProjection.kind === "render" || flowProjection.kind === "server-content") &&
+            flowProjection.nativeChildren === true
+              ? renderTrustedMdxNativeChildren(block, flowProjection.rootElementName, registry, store, flowProjection.nativeChildOwners, flowProjection.flowChildren)
+              : undefined;
+          return (
+            <React.Fragment key={key}>
+              {renderTrustedMdxOwner(segment.node.ownerId, trustedSnapshot, segment.node.raw, true, nativeChildren)}
+            </React.Fragment>
+          );
+        }
+        const children = renderInlineNodes(
+          segment.nodes,
+          inlineComponents,
+          registry.getUrlTransform(),
+          registry,
+          "p",
+          registry.getRenderInlineContext(block.isFinalized, key),
+        );
+        const paragraph = React.createElement(ParagraphComponent, {
+          key,
+          inlines: segment.nodes,
+          raw: block.payload.raw,
+          meta: block.payload.meta,
+          children,
+        });
+        if (!registry.hasElementFilters()) {
+          hasParagraphHost = true;
+          return paragraph;
+        }
+        return registry.filterElement(
+          { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
+          { source: "markdown" },
+          () => {
+            hasParagraphHost = true;
+            return paragraph;
+          },
+          () => children,
+        );
+      });
+      const nativeView = <>{renderedSegments}</>;
+      return hasParagraphHost ? renderPresentation(nativeView) : nativeView;
     }
   }
 
@@ -514,7 +565,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     if (segments.length > 0 && !includesTrustedMdx) {
       const allowMixedStreaming = Boolean((meta as { allowMixedStreaming?: boolean }).allowMixedStreaming);
       if (!allowMixedStreaming) {
-        return <p className="markdown-paragraph streaming-partial">{raw}</p>;
+        return renderFilteredParagraph(<p className="markdown-paragraph streaming-partial">{raw}</p>, () => raw, "markdown-paragraph streaming-partial");
       }
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
         recordViewRecords(store, segments.length);
@@ -522,9 +573,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
       const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
       if (structured.length === 1) {
         const [single] = structured;
-        return React.isValidElement(single) ? single : single;
+        return renderPresentation(single);
       }
-      return structured;
+      return renderPresentation(structured);
     }
 
     if (meta.inlineStatus === "complete" || meta.inlineStatus === "anticipated" || registry.getAnimatedOptions()) {
@@ -544,35 +595,27 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
         if (structured.length === 1) {
           const [single] = structured;
-          return React.isValidElement(single) ? single : single;
+          return renderPresentation(single);
         }
-        return structured;
+        return renderPresentation(structured);
       }
 
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
         recordViewRecords(store, inlineNodes.length);
       }
       const partialInline = renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry, "p", registry.getRenderInlineContext(block.isFinalized, block.id));
-      if (!registry.hasElementFilters()) {
-        return <p className="markdown-paragraph streaming-partial">{partialInline}</p>;
-      }
-      return registry.filterElement(
-        { tagName: "p", properties: { className: "markdown-paragraph streaming-partial" }, blockType: "paragraph" },
-        { source: "markdown" },
-        () => <p className="markdown-paragraph streaming-partial">{partialInline}</p>,
+      return renderFilteredParagraph(
+        <p className="markdown-paragraph streaming-partial">{partialInline}</p>,
         () => partialInline,
-      ) as React.ReactElement | null;
+        "markdown-paragraph streaming-partial",
+      );
     }
 
-    if (!registry.hasElementFilters()) {
-      return <p className="markdown-paragraph streaming-partial">{raw}</p>;
-    }
-    return registry.filterElement(
-      { tagName: "p", properties: { className: "markdown-paragraph streaming-partial" }, blockType: "paragraph" },
-      { source: "markdown" },
-      () => <p className="markdown-paragraph streaming-partial">{raw}</p>,
+    return renderFilteredParagraph(
+      <p className="markdown-paragraph streaming-partial">{raw}</p>,
       () => raw,
-    ) as React.ReactElement | null;
+      "markdown-paragraph streaming-partial",
+    );
   }
 
   const propsBlock = node.props?.block as Block | undefined;
@@ -582,15 +625,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     (node.props?.inlineStatus as string | undefined);
   if (inlineStatus && inlineStatus !== "complete") {
     const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
-    if (!registry.hasElementFilters()) {
-      return <p className="markdown-paragraph">{raw}</p>;
-    }
-    return registry.filterElement(
-      { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
-      { source: "markdown" },
-      () => <p className="markdown-paragraph">{raw}</p>,
-      () => raw,
-    ) as React.ReactElement | null;
+    return renderFilteredParagraph(<p className="markdown-paragraph">{raw}</p>, () => raw);
   }
 
   const segments = Array.isArray((block.payload.meta as { mixedSegments?: MixedContentSegment[] } | undefined)?.mixedSegments)
@@ -604,9 +639,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
     if (structured.length === 1) {
       const [single] = structured;
-      return React.isValidElement(single) ? single : single;
+      return renderPresentation(single);
     }
-    return structured;
+    return renderPresentation(structured);
   }
 
   const inlineNodes = block.payload.inline ?? [];
@@ -625,9 +660,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
     if (structured.length === 1) {
       const [single] = structured;
-      return React.isValidElement(single) ? single : single;
+      return renderPresentation(single);
     }
-    return structured;
+    return renderPresentation(structured);
   }
 
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -659,9 +694,6 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     }
     return <p className="markdown-paragraph">{inlines}</p>;
   };
-  if (!registry.hasElementFilters()) {
-    return renderParagraph();
-  }
   const renderChildren = () => {
     if (childIds.length > 0) {
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -671,17 +703,15 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     }
     return inlines;
   };
-  const filtered = registry.filterElement(
-    { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
-    { source: "markdown" },
-    renderParagraph,
-    renderChildren,
-  );
-  if (filtered === null || filtered === undefined) return null;
-  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
+  return renderFilteredParagraph(renderParagraph(), renderChildren);
 });
 
-const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+const BlockquoteBlockView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  renderPresentation: NodePresentationRenderer;
+}> = React.memo(({ store, blockId, registry, renderPresentation }) => {
   const node = useRendererNode(store, blockId);
   const block = node?.block;
   const childIds = useRendererChildren(store, blockId);
@@ -710,6 +740,24 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
       ? normalizeBlockquoteText(typeof block.payload.raw === "string" ? block.payload.raw : "")
       : "";
   const inlineComponents = registry.getInlineComponents();
+  const renderFilteredBlockquote = (
+    nativeView: React.ReactNode,
+    renderChildren: () => React.ReactNode,
+    className = "markdown-blockquote",
+  ): React.ReactNode => {
+    if (!registry.hasElementFilters()) return renderPresentation(nativeView);
+    let hostAllowed = false;
+    const filtered = registry.filterElement(
+      { tagName: "blockquote", properties: { className }, blockType: "blockquote" },
+      { source: "markdown" },
+      () => {
+        hostAllowed = true;
+        return nativeView;
+      },
+      renderChildren,
+    );
+    return hostAllowed ? renderPresentation(filtered) : filtered;
+  };
 
   const renderTextWithBreaks = (text: string, keyPrefix: string) => {
     const lines = text.split("\n");
@@ -818,15 +866,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
 
   if (block.payload.meta?.preparedNested && childIds.length === 0) {
     const emptyQuote = <blockquote className="markdown-blockquote" />;
-    if (!registry.hasElementFilters()) {
-      return emptyQuote;
-    }
-    return registry.filterElement(
-      { tagName: "blockquote", properties: { className: "markdown-blockquote" }, blockType: "blockquote" },
-      { source: "markdown" },
-      () => emptyQuote,
-      () => null,
-    ) as React.ReactElement | null;
+    return renderFilteredBlockquote(emptyQuote, () => null);
   }
   if (!block.isFinalized) {
     const streamingContent = childIds.length
@@ -839,15 +879,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
     const shouldShowStreaming = !block.isFinalized && (!streamingContent || (Array.isArray(streamingContent) && streamingContent.length === 0));
     const className = shouldShowStreaming ? "markdown-blockquote streaming-partial" : "markdown-blockquote";
     const streamingQuote = <blockquote className={className}>{streamingContent}</blockquote>;
-    if (!registry.hasElementFilters()) {
-      return streamingQuote;
-    }
-    return registry.filterElement(
-      { tagName: "blockquote", properties: { className }, blockType: "blockquote" },
-      { source: "markdown" },
-      () => streamingQuote,
-      () => streamingContent,
-    ) as React.ReactElement | null;
+    return renderFilteredBlockquote(streamingQuote, () => streamingContent, className);
   }
   const renderedContent = (() => {
     if (childIds.length > 0) {
@@ -872,17 +904,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   })();
 
   const base = <blockquote className="markdown-blockquote">{renderedContent}</blockquote>;
-  if (!registry.hasElementFilters()) {
-    return base;
-  }
-  const filtered = registry.filterElement(
-    { tagName: "blockquote", properties: { className: "markdown-blockquote" }, blockType: "blockquote" },
-    { source: "markdown" },
-    () => base,
-    () => renderedContent,
-  );
-  if (filtered === null || filtered === undefined) return null;
-  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
+  return renderFilteredBlockquote(base, () => renderedContent);
 });
 
 BlockquoteBlockView.displayName = "BlockquoteBlockView";
@@ -1126,8 +1148,14 @@ type ListProjectionCache = {
   needsListItemIds: boolean;
   token: number;
 };
-const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry; depth?: number }> = React.memo(
-  ({ store, blockId, registry, depth = 0 }) => {
+const ListBlockView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  depth?: number;
+  renderPresentation?: NodePresentationRenderer;
+}> = React.memo(
+  ({ store, blockId, registry, depth = 0, renderPresentation }) => {
     const nodeSnapshot = useRendererNodeSnapshot(store, blockId);
     const node = nodeSnapshot.node;
     const block = node?.block;
@@ -1307,24 +1335,33 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         {renderChildren()}
       </Tag>
     );
+    let hostAllowed = false;
     let renderedList: React.ReactNode;
     if (!hasElementFilters) {
+      hostAllowed = true;
       renderedList = renderElement();
     } else {
       const filtered = registry.filterElement(
         { tagName: Tag, properties: { className: `markdown-list ${ordered ? "ordered" : "unordered"}` }, blockType: "list" },
         { source: "markdown" },
-        renderElement,
+        () => {
+          hostAllowed = true;
+          return renderElement();
+        },
         renderChildren,
       );
       if (filtered === null || filtered === undefined) return null;
       renderedList = React.isValidElement(filtered) ? filtered : <>{filtered}</>;
     }
-    return (
+    const nativeView = (
       <ListItemLayoutContext.Provider value={itemLayout}>
         {renderedList}
       </ListItemLayoutContext.Provider>
     );
+    if (!hostAllowed) return nativeView;
+    return renderPresentation
+      ? renderPresentation(nativeView)
+      : renderNodePresentation(block, nativeView, store, registry, blockId);
   },
 );
 
@@ -1664,7 +1701,12 @@ const ListProjectionRoot: React.FC<{
 
 ListProjectionRoot.displayName = "ListProjectionRoot";
 
-const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+const TableBlockView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  renderPresentation: NodePresentationRenderer;
+}> = React.memo(({ store, blockId, registry, renderPresentation }) => {
   const node = useRendererNode(store, blockId);
   const [fullContentMode, toggleFullContentMode] = useTableFullContentMode(
     store,
@@ -1805,11 +1847,15 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     [resolvedTableControls.enabled, tableMeta, theadCellIds, rowIds, store],
   );
 
+  let hostAllowed = !registry.hasElementFilters();
   const filteredTable = registry.hasElementFilters()
     ? registry.filterElement(
         { tagName: "table", properties: { className: "markdown-table" }, blockType: "table" },
         { source: "markdown" },
-        () => tableElement,
+        () => {
+          hostAllowed = true;
+          return tableElement;
+        },
         () => (
           <>
             {childIds.map((sectionId) => {
@@ -1898,16 +1944,18 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
       />
     );
 
-    return (
+    const nativeView = (
       <div className="stream-mdx-table-wrapper relative">
         {tableControlsElement}
         {fullContentToggle}
         {renderedContent}
       </div>
     );
+    return hostAllowed ? renderPresentation(nativeView) : nativeView;
   }
 
-  return <>{fullContentToggle}{renderedContent}</>;
+  const nativeView = <>{fullContentToggle}{renderedContent}</>;
+  return hostAllowed ? renderPresentation(nativeView) : nativeView;
 });
 
 TableBlockView.displayName = "TableBlockView";

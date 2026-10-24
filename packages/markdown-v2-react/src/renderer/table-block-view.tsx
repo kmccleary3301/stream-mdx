@@ -113,7 +113,12 @@ export const TableFullContentToggle: React.FC<{
   </div>
 );
 
-export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+export const ManagedTableBlockView: React.FC<{
+  store: RendererStore;
+  blockId: string;
+  registry: ComponentRegistry;
+  renderPresentation?: (nativeView: React.ReactNode) => React.ReactNode;
+}> = React.memo(({ store, blockId, registry, renderPresentation }) => {
   const node = useRendererNode(store, blockId);
   const tableState = store.getTableBlock(blockId);
   const generation = tableState?.source.generation;
@@ -300,11 +305,15 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
       {renderSections()}
     </tableElements.Table>
   );
+  let hostAllowed = !registry.hasElementFilters();
   const filteredTable = registry.hasElementFilters()
     ? registry.filterElement(
         { tagName: "table", properties: { className: "markdown-table" }, blockType: "table" },
         { source: "markdown" },
-        () => tableElement,
+        () => {
+          hostAllowed = true;
+          return tableElement;
+        },
         renderSections,
       )
     : tableElement;
@@ -365,10 +374,12 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
     }
     return current.sourceSnapshot.materialize();
   }, [blockId, generation, store]);
+  const presentIfHostAllowed = (nativeView: React.ReactNode): React.ReactNode =>
+    hostAllowed && renderPresentation ? renderPresentation(nativeView) : nativeView;
   if (!node || filteredTable === null || filteredTable === undefined) return null;
   const actionsSlot = registry.getNodePresentation("table")?.slots?.actions;
   if (actionsSlot !== undefined) {
-    return <div className="stream-mdx-table-wrapper relative">{actionsSlot}{renderedContent}</div>;
+    return presentIfHostAllowed(<div className="stream-mdx-table-wrapper relative">{actionsSlot}{renderedContent}</div>);
   }
 
   const tableControlsElement = resolvedTableControls.enabled && tableState ? (
@@ -421,15 +432,15 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
     <TableFullContentToggle controlId={viewportId} pressed={fullContentMode} onClick={toggleFullContentMode} />
   ) : null;
   if (tableControlsElement) {
-    return (
+    return presentIfHostAllowed(
       <div className="stream-mdx-table-wrapper relative">
         {tableControlsElement}
         {fullContentToggle}
         {renderedContent}
-      </div>
+      </div>,
     );
   }
-  return <>{fullContentToggle}{renderedContent}</>;
+  return presentIfHostAllowed(<>{fullContentToggle}{renderedContent}</>);
 });
 
 ManagedTableBlockView.displayName = "ManagedTableBlockView";
