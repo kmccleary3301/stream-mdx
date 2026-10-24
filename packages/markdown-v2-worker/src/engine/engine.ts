@@ -1222,6 +1222,8 @@ export class MarkdownEngine {
   private readonly emittedRootTableIds = new Set<string>();
   private pendingRootTablePatches: Patch[] = [];
   private rootNativeFragmentOffset: number | null = null;
+  /** Tags each root HTML block leaves open when balanced from an empty stack, keyed by the raw it was computed for. */
+  private readonly htmlBlockOpenTags = new WeakMap<Block, { readonly raw: string; readonly openTags: string[] }>();
   private readonly rootCodeOwnersByStart = new Map<number, RootCodeSourceOwner>();
   private readonly emittedRootCodeIds = new Set<string>();
   private readonly nativeContainerTails = new Map<string, NativeContainerTailParser>();
@@ -3871,6 +3873,38 @@ export class MarkdownEngine {
     );
   }
 
+  /**
+   * Source start of the HTML region whose authored tags are still open at the document tail. A later block can
+   * close that region and join it, as in a single-shot parse, so tail parsing must restart at the region start.
+   */
+  private openHtmlRegionStart(): number | undefined {
+    const contentComponents = this.contentPolicy === "markdown" || this.contentPolicy === "trusted-mdx"
+      ? undefined
+      : this.getActiveContentComponents();
+    const mdxComponents = this.mdxEnabled && this.contentPolicy === "trusted-mdx";
+    const stack: string[] = [];
+    let regionStart: number | undefined;
+    for (const block of this.blocks) {
+      if (block.type === "code" || (stack.length === 0 && block.type !== "html")) continue;
+      const raw = block.payload.raw ?? "";
+      if (!raw.includes("<")) continue;
+      if (stack.length === 0) {
+        // Most HTML blocks balance on their own; remember what each leaves open so appends stay O(blocks).
+        const cached = this.htmlBlockOpenTags.get(block);
+        const openTags = cached?.raw === raw ? cached.openTags : [];
+        if (cached?.raw !== raw) {
+          applyHtmlTagBalance(raw, this.mdParser, openTags, mdxComponents, contentComponents, this.htmlConfig?.literalTagContent);
+          this.htmlBlockOpenTags.set(block, { raw, openTags });
+        }
+        stack.push(...openTags);
+        if (stack.length > 0) regionStart = block.payload.range?.from;
+        continue;
+      }
+      applyHtmlTagBalance(raw, this.mdParser, stack, mdxComponents, contentComponents, this.htmlConfig?.literalTagContent);
+    }
+    return stack.length > 0 ? regionStart : undefined;
+  }
+
   private async appendRootNativeTail(
     appendedText: string,
     metrics?: WorkerMetricsCollector,
@@ -3912,7 +3946,35 @@ export class MarkdownEngine {
     const source = this.sourceDocument.snapshot();
     const referenceContinuationStart = this.trailingLinkReferenceContinuationStart(source, oldLength);
     if (referenceContinuationStart !== undefined) tailOffset = Math.min(tailOffset, referenceContinuationStart);
-    await this.parseRootNativeTail(tailOffset, oldLength, source.length, metrics);
+    const openHtmlRegionStart = this.openHtmlRegionStart();
+    if (openHtmlRegionStart !== undefined) tailOffset = Math.min(tailOffset, openHtmlRegionStart);
+    // A provisional block (such as a grouped HTML region) cannot be reparsed from inside its own range.
+    for (const block of this.blocks) {
+      const range = block.payload.range;
+      if (!block.isFinalized && range && range.from < tailOffset && tailOffset < range.to) tailOffset = range.from;
+    }
+    // A block interrupted on the unterminated last line is provisional: "</P" opens an HTML block, "</Pre>" may not.
+    const previousRootParagraphOwners = this.rootParagraphOwners.slice();
+    if (oldLength > 0 && !/[\r\n]/.test(source.read(oldLength - 1, oldLength)) && tailOffset >= sourceLineStart(source, oldLength)) {
+      const previous = this.rootBlockBeforeSourceOffset(tailOffset);
+      const previousRange = previous?.payload.range;
+      let paragraphOwner: RootParagraphSourceOwner | undefined;
+      for (const owner of this.rootParagraphOwners) {
+        const from = owner.getMetadata().sourceRange.from;
+        if (from < tailOffset && (!paragraphOwner || from > paragraphOwner.getMetadata().sourceRange.from)) paragraphOwner = owner;
+      }
+      const paragraphRange = paragraphOwner?.getMetadata().sourceRange;
+      if (paragraphOwner && paragraphRange && (!previousRange || paragraphRange.from > previousRange.from)) {
+        if (isSingleNativeContainerBridge(source, paragraphRange.to, tailOffset)) {
+          this.retireRootParagraphOwner(paragraphOwner);
+          tailOffset = Math.min(tailOffset, paragraphRange.from);
+        }
+      } else if (previousRange && (previous.type === "list" || previous.type === "blockquote" || previous.type === "paragraph")
+        && isSingleNativeContainerBridge(source, previousRange.to, tailOffset)) {
+        tailOffset = Math.min(tailOffset, previousRange.from);
+      }
+    }
+    await this.parseRootNativeTail(tailOffset, oldLength, source.length, metrics, false, [], previousRootParagraphOwners);
   }
   /**
    * Where to reparse a replaced root paragraph: its line start, so indentation before the paragraph text still counts,
