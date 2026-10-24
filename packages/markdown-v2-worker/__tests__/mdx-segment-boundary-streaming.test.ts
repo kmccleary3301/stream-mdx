@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { Patch, WorkerOut } from "@stream-mdx/core";
@@ -48,8 +50,9 @@ async function runMdxSegmentBoundaryStreamingTest(): Promise<void> {
 
   const initMessages = await harness.send({
     type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     initialContent: "",
-    prewarmLangs: [],
+    contentPolicy: "trusted-mdx",
     docPlugins: {
       footnotes: true,
       html: true,
@@ -63,7 +66,7 @@ async function runMdxSegmentBoundaryStreamingTest(): Promise<void> {
   });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const chunks = [
     '- Item with prefix <InlineChip tone="warm">',
@@ -87,26 +90,23 @@ async function runMdxSegmentBoundaryStreamingTest(): Promise<void> {
   if (!listBlock) return;
 
   const subtreeIds = collectSubtreeNodeIds(store, listBlock.id);
-  const mdxNodes = subtreeIds
+  const listItems = subtreeIds
     .map((id) => store.getNode(id))
     .filter((node): node is NonNullable<typeof node> => Boolean(node))
-    .filter((node) => node.type === "list-item-mdx");
+    .filter((node) => node.type === "list-item");
+  assert.strictEqual(listItems.length, 1, "expected one list item");
 
-  assert.strictEqual(mdxNodes.length, 1, "expected one list-item-mdx node");
+  const inline = listItems[0]?.props?.inline as Array<{ kind: string; raw?: string; text?: string }> | undefined;
+  const mdxOwners = inline?.filter((node) => node.kind === "trusted-mdx-inline") ?? [];
+  assert.strictEqual(mdxOwners.length, 1, "expected one trusted MDX inline owner");
   assert.strictEqual(
-    mdxNodes[0]?.props?.raw,
+    mdxOwners[0]?.raw,
     '<InlineChip tone="warm">Hot</InlineChip>',
-    "expected paired MDX segment value under list item",
+    "expected paired MDX source in the native inline owner",
   );
 
-  const textNodeRawValues = subtreeIds
-    .map((id) => store.getNode(id))
-    .filter((node): node is NonNullable<typeof node> => Boolean(node))
-    .filter((node) => node.type === "list-item-text")
-    .map((node) => (typeof node.props?.text === "string" ? node.props.text : ""))
-    .join("\n");
-
-  assert.ok(!textNodeRawValues.includes("</InlineChip>"), "closing MDX tag should not leak into plain text segment nodes");
+  const inlineText = inline?.filter((node) => node.kind === "text").map((node) => node.text ?? "").join("\n") ?? "";
+  assert.ok(!inlineText.includes("</InlineChip>"), "closing MDX tag should not leak into native text runs");
 }
 
 await runMdxSegmentBoundaryStreamingTest();

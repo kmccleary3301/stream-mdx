@@ -1,22 +1,35 @@
 import type { MarkdownConfig } from "@lezer/markdown";
 import type {
   Block,
+  CodeTokenLine,
   DiffKind,
   DiffLineKind,
   InlineExtension,
-  SyntaxRuleSpec,
   TokenLineV1,
+  SyntaxExtensionDescriptor,
   WorkerOut,
 } from "@stream-mdx/core";
 import type { DocumentPlugin } from "@stream-mdx/plugins";
+export type { InlineExtension, SyntaxRuleSpec, SyntaxExtensionDescriptor, ContainerExtensionSpec, HtmlOptions } from "@stream-mdx/core";
 
-export type { InlineExtension, SyntaxRuleSpec, HtmlOptions } from "@stream-mdx/core";
+export interface CodeEngine {
+  readonly id: string;
+  tokenizeLines(request: {
+    readonly language: string;
+    readonly lines: readonly string[];
+    readonly state: unknown | null;
+  }): {
+    readonly lines: readonly CodeTokenLine[];
+    readonly state: unknown;
+  };
+}
 
 export interface EngineExtensions {
   markdown?: MarkdownConfig[];
   inline?: InlineExtension[];
   documentPlugins?: DocumentPlugin[];
-  syntax?: SyntaxRuleSpec[];
+  syntax?: SyntaxExtensionDescriptor;
+  code?: CodeEngine;
 }
 
 export interface MarkdownEngineOptions {
@@ -34,7 +47,6 @@ export interface ServeMarkdownWorkerOptions {
 }
 
 export type CodeHighlightingMode = "final" | "incremental" | "live";
-export type WorkerMdxMode = "server" | "worker";
 
 export interface ShikiTokenStyle {
   color?: string;
@@ -54,6 +66,11 @@ export interface ShikiThemedToken {
 export interface DiffCursorState {
   oldLine: number | null;
   newLine: number | null;
+  /** Undefined before a valid hunk; zero is retained after that side is exhausted. */
+  oldRemaining?: number;
+  newRemaining?: number;
+  /** First source line of the current unified-diff file, when known. */
+  fileStartLine?: number;
 }
 
 export interface DiffLineInfo {
@@ -101,15 +118,15 @@ export interface ContentChangeRange {
   toB: number;
 }
 
-export interface MdxStatusUpdate {
-  compiledRef?: { id: string };
-  status: "compiled" | "error";
-  error?: string;
-  rawSignature?: string;
-}
 
 export interface ParseOptions {
   forceFinalize?: boolean;
   firstChangedPos?: number;
   previousBlocks?: Block[];
+  sourceOffset?: number;
+  /** Nested reparses of one document keep the document's heading slug counts. */
+  continueHeadingIds?: boolean;
+  admitRootCodeOwners?: boolean;
+  admitRootTableOwners?: boolean;
+  admitRootParagraphOwners?: boolean;
 }

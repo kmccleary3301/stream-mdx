@@ -1,5 +1,7 @@
+import type { InlineContext } from "@lezer/markdown";
 import type { InlineNode, RegexInlinePlugin, SyntaxRuleSpec } from "../types";
 import type { InlineExtension } from "./types";
+import { reportIncompleteNativeCandidate } from "./native-inline-state";
 
 function ensureSticky(re: RegExp): RegExp {
   if (re.sticky) return re;
@@ -14,6 +16,8 @@ export function compileRegexPluginToExtension(plugin: RegexInlinePlugin): Inline
   const nodeName = `Custom_${plugin.id.replace(/[^A-Za-z0-9_]/g, "_")}`;
   const stickyRe = ensureSticky(plugin.re);
   const fastCheck = plugin.fastCheck;
+  // A context's text is immutable; do not rescan it at every token position.
+  const fastCheckResults = fastCheck ? new WeakMap<InlineContext, boolean>() : undefined;
 
   let before: string | undefined;
   let after: string | undefined;
@@ -42,12 +46,22 @@ export function compileRegexPluginToExtension(plugin: RegexInlinePlugin): Inline
           before,
           after,
           parse(cx, _next, pos) {
-            if (fastCheck && !fastCheck(cx.text)) {
-              return -1;
+            if (fastCheck && fastCheckResults) {
+              let eligible = fastCheckResults.get(cx);
+              if (eligible === undefined) {
+                eligible = fastCheck(cx.text);
+                fastCheckResults.set(cx, eligible);
+              }
+              if (!eligible) return -1;
             }
             stickyRe.lastIndex = pos;
             const match = stickyRe.exec(cx.text);
             if (!match || match.index !== pos || match[0].length === 0) {
+              if (plugin.id === "citations") {
+                if (_next === 64) reportIncompleteNativeCandidate(cx, pos, "@cite{", "}", true);
+                else if (_next === 123) reportIncompleteNativeCandidate(cx, pos, "{cite:", "}", true);
+                else if (_next === 91) reportIncompleteNativeCandidate(cx, pos, "[^", "]", true);
+              }
               return -1;
             }
             const end = pos + match[0].length;
@@ -93,10 +107,24 @@ export function createDefaultRegexPlugins(): RegexInlinePlugin[] {
   ];
 }
 
+function isCandidateWithinLimit(rule: SyntaxRuleSpec, candidate: string): boolean {
+  const maxCandidateUnits = rule.maxCandidateUnits;
+  if (maxCandidateUnits === undefined || candidate.length <= maxCandidateUnits) return true;
+  console.warn(
+    `[stream-mdx] Syntax rule "${rule.name}" skipped an oversized candidate ` +
+      `(${candidate.length} UTF-16 code units; maxCandidateUnits=${maxCandidateUnits}); preserving literal source.`,
+  );
+  return false;
+}
+
 /**
  * Compiles a declarative SyntaxRuleSpec into a Lezer InlineExtension.
  */
 export function compileSyntaxRuleToExtension(rule: SyntaxRuleSpec): InlineExtension {
+  if (rule.maxCandidateUnits !== undefined &&
+    (!Number.isSafeInteger(rule.maxCandidateUnits) || rule.maxCandidateUnits <= 0)) {
+    throw new RangeError(`Syntax rule "${rule.name}" maxCandidateUnits must be a positive integer.`);
+  }
   const nodeName = `Custom_Rule_${rule.name.replace(/[^A-Za-z0-9_]/g, "_")}`;
   const rawFlags = rule.pattern.flags || "";
   const cleanedFlags = rawFlags.replace(/[gy]/g, "");
@@ -126,9 +154,13 @@ export function compileSyntaxRuleToExtension(rule: SyntaxRuleSpec): InlineExtens
             if (trigger && !cx.text.startsWith(trigger, localPos)) {
               return -1;
             }
+            if (!isCandidateWithinLimit(rule, cx.text)) return -1;
             stickyRe.lastIndex = localPos;
             const match = stickyRe.exec(cx.text);
             if (!match || match.index !== localPos || match[0].length === 0) {
+              if (rule.anticipation) {
+                reportIncompleteNativeCandidate(cx, pos, rule.anticipation.open, rule.anticipation.close);
+              }
               return -1;
             }
             const end = pos + match[0].length;
@@ -153,6 +185,7 @@ export function compileSyntaxRuleToExtension(rule: SyntaxRuleSpec): InlineExtens
       ],
     },
     toInline(element, text, convertChildren) {
+      if (!isCandidateWithinLimit(rule, text)) return null;
       stickyRe.lastIndex = element.from;
       const match = stickyRe.exec(text);
       if (!match || match.index !== element.from) {

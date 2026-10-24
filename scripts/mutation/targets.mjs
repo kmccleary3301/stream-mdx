@@ -1,0 +1,109 @@
+// Mutation targets: pure owners and reducers with the public-seam tests that should kill their
+// mutants. `mutate` and package-relative `tests` are relative to the package; tests starting with
+// "packages/" are other packages' consumers. `redirects` maps the specifiers those consumers import
+// to sandbox source, so they exercise the mutated code (every core subpath shares one module graph).
+const coreSource = { "@stream-mdx/core": "src/index.ts", "@stream-mdx/core/*": "src/*.ts" };
+const workerEngineSource = { "@stream-mdx/worker/engine": "src/engine/index.ts" };
+
+export const targets = {
+  "core-table-state": {
+    package: "packages/markdown-v2-core",
+    mutate: ["src/table-block-state.ts", "src/table-row-index.ts"],
+    redirects: coreSource,
+    tests: [
+      "__tests__/table-block-state.test.ts",
+      "__tests__/table-row-index.test.ts",
+      "__tests__/table-records.test.ts",
+      "__tests__/table-owner-replacement.test.ts",
+      "packages/markdown-v2-worker/__tests__/native-table-owned-frontier.test.ts",
+      "packages/markdown-v2-worker/__tests__/worker-table-boundary-streaming.test.ts",
+      "packages/markdown-v2-react/__tests__/store-table-retraction.test.ts",
+      "packages/markdown-v2-react/__tests__/custom-table-component-streaming.test.tsx",
+      "packages/markdown-v2-react/__tests__/table-virtualization.test.tsx",
+    ],
+  },
+  "core-paragraph-spans": {
+    package: "packages/markdown-v2-core",
+    mutate: ["src/paragraph-span-index.ts", "src/paragraph-block-state.ts"],
+    tests: [
+      "__tests__/paragraph-span-index.test.ts",
+      "__tests__/paragraph-block-state.test.ts",
+      "__tests__/paragraph-records.test.ts",
+      "__tests__/paragraph-owner-replacement.test.ts",
+    ],
+  },
+  "core-patch-coalescing": {
+    package: "packages/markdown-v2-core",
+    mutate: ["src/perf/patch-coalescing.ts"],
+    tests: [
+      "__tests__/patch-coalescing-control-meta.test.ts",
+      "__tests__/patch-coalescing-equivalence.test.ts",
+      "__tests__/patch-batching-kind.test.ts",
+      "__tests__/patch-batching-partition.test.ts",
+    ],
+  },
+  // Equivalent survivor: advanceDiffCursor discards parseUnifiedDiffLine's optional return value.
+  "worker-diff-status": {
+    package: "packages/markdown-v2-worker",
+    mutate: [
+      "src/engine/highlight.ts:449-452",
+      "src/engine/highlight.ts:454-461",
+      "src/engine/highlight.ts:463-478",
+    ],
+    redirects: workerEngineSource,
+    tests: [
+      "__tests__/code-document.test.ts",
+      "__tests__/worker-diff-tokenization.test.ts",
+      "__tests__/lazy-tokenization-parity.test.ts",
+      "packages/markdown-v2-react/__tests__/native-code-handle-presentation.test.tsx",
+    ],
+  },
+  "worker-syntax-containers": {
+    package: "packages/markdown-v2-worker",
+    mutate: [
+      "src/engine/registered-component-owner.ts:50-90",
+      "src/engine/registered-component-owner.ts:92-95",
+    ],
+    redirects: workerEngineSource,
+    tests: [
+      "__tests__/worker-restricted-component-ownership.test.ts",
+      "packages/markdown-v2-react/__tests__/p7-container-rules.test.tsx",
+      "packages/markdown-v2-react/__tests__/p7-open-container.test.tsx",
+    ],
+  },
+  "react-viewport-index": {
+    package: "packages/markdown-v2-react",
+    mutate: [
+      "src/renderer/viewport-height-index.ts",
+      "src/renderer/virtualized-table.ts:31-47",
+      "src/renderer/virtualized-table.ts:82-95",
+      "src/renderer/virtualized-table.ts:367-427",
+    ],
+    redirects: {
+      "@stream-mdx/react": "src/index.ts",
+      "@stream-mdx/react/server": "../../dist/server.mjs",
+      "@stream-mdx/react/_internal/trusted-mdx-native-children": "../../dist/trusted-mdx/native-children-slot.mjs",
+    },
+    tests: [
+      "__tests__/virtualized-code-metadata.test.ts",
+      "__tests__/table-virtualization.test.tsx",
+    ],
+  },
+  "react-node-presentations": {
+    package: "packages/markdown-v2-react",
+    redirects: {
+      "@stream-mdx/react": "src/index.ts",
+      "@stream-mdx/react/server": "../../dist/server.mjs",
+      "@stream-mdx/react/_internal/trusted-mdx-native-children": "../../dist/trusted-mdx/native-children-slot.mjs",
+    },
+    mutate: ["src/renderer/node-views.tsx:63-135"],
+    tests: [
+      "__tests__/node-presentations.test.tsx",
+      "__tests__/custom-table-component-streaming.test.tsx",
+      "__tests__/native-table-handle-presentation.test.tsx",
+      "__tests__/native-code-highlight-lifecycle.test.ts",
+      "__tests__/node-handle-hooks.test.tsx",
+      "__tests__/lifecycle-defect-fixes.test.tsx",
+    ],
+  },
+};

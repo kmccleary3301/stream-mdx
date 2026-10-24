@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:44.473Z",
-  "hash": "9da82c305f82ecdb7b6ca70324e6a8865b05ded6316d2e1d2e41eeb98f0952d2",
-  "contentHash": "e4acbbf25a3cb6c2b780fdaa88dc9d4975a7893719cd17c32693409d8d893289",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "createdAt": "2026-10-21T20:39:33.791Z",
+  "hash": "0f2c4715254644cf83bfd6f18b18de0cd62e48a98afa6c111b54268f8c831816",
+  "contentHash": "2a473ea8ddf7fd0a1cec28c64bd3349e5ffb37ff16e04e59479db502dfcfcc0f",
+  "configHash": "d64d46ce02762d98863946deda7988b7bcd8ea1dc64e6560ca32dea58f9aee58",
+  "hashSalt": "docs-snapshots-v3:a1af5d4ffe8abd279e6137ad50c87f390f5afe18b69fff05e82bf96e33ef3700",
   "blocks": [
     {
       "id": "db082c0",
@@ -809,7 +809,7 @@
       "type": "table",
       "isFinalized": true,
       "payload": {
-        "raw": "| Package | Notes |\n| --- | --- |\n| `stream-mdx` | Convenience wrapper; stable import paths for apps (recommended). |\n| `@stream-mdx/react` | `<StreamingMarkdown />`, renderer store, patch scheduler, node views. |\n| `@stream-mdx/worker` | Worker client utilities + hosted worker bundle (`dist/hosted/markdown-worker.js`). |\n| `@stream-mdx/core` | Types, snapshot helpers, sanitization primitives, perf helpers. |\n| `@stream-mdx/plugins/*` | Worker/plugin primitives and built-in domain helpers. |\n| `@stream-mdx/unified` | Optional remark/rehype adapter for finalized blocks. |\n| `@stream-mdx/mermaid` | Optional Mermaid fence renderer. |",
+        "raw": "| Package | Notes |\n| --- | --- |\n| `stream-mdx` | Convenience wrapper; stable import paths for apps (recommended). |\n| `@stream-mdx/react` | `<StreamingMarkdown />`, renderer store, patch scheduler, node views. |\n| `@stream-mdx/react/trusted-mdx` | Explicit full-MDX engine for trusted, reviewed source; not re-exported from the React root. |\n| `@stream-mdx/worker` | Worker client utilities + hosted worker bundle (`dist/hosted/markdown-worker.js`). |\n| `@stream-mdx/core` | Types, snapshot helpers, sanitization primitives, perf helpers. |\n| `@stream-mdx/plugins/*` | Worker/plugin primitives and built-in domain helpers. |\n| `@stream-mdx/unified` | Optional remark/rehype adapter for finalized blocks. |\n| `@stream-mdx/mermaid` | Optional Mermaid fence renderer. |",
         "meta": {
           "lezerNodeType": "Table",
           "header": [
@@ -860,6 +860,20 @@
                 {
                   "kind": "text",
                   "text": ", renderer store, patch scheduler, node views."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/react/trusted-mdx"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Explicit full-MDX engine for trusted, reviewed source; not re-exported from the React root."
                 }
               ]
             ],
@@ -945,13 +959,13 @@
         },
         "range": {
           "from": 770,
-          "to": 1408
+          "to": 1538
         },
         "inline": []
       }
     },
     {
-      "id": "48ea1d92",
+      "id": "4ac93cb4",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -960,13 +974,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 1410,
-          "to": 1413
+          "from": 1540,
+          "to": 1543
         }
       }
     },
     {
-      "id": "2aba8f87",
+      "id": "63846a5b",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -978,8 +992,8 @@
           "headingId": "3-pipeline-overview"
         },
         "range": {
-          "from": 1415,
-          "to": 1438
+          "from": 1545,
+          "to": 1568
         },
         "inline": [
           {
@@ -990,7 +1004,7 @@
       }
     },
     {
-      "id": "2240b7df",
+      "id": "6bfe4203",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1002,8 +1016,8 @@
           "headingId": "3-1-worker"
         },
         "range": {
-          "from": 1440,
-          "to": 1454
+          "from": 1570,
+          "to": 1584
         },
         "inline": [
           {
@@ -1014,7 +1028,7 @@
       }
     },
     {
-      "id": "306afa78",
+      "id": "36fed91a",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1071,17 +1085,17 @@
             },
             "children": [
               {
-                "id": "306afa78::item:0",
+                "id": "36fed91a::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1456,
-                  "to": 1509
+                  "from": 1586,
+                  "to": 1639
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "306afa78::item:0",
+                    "id": "36fed91a::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1097,8 +1111,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1456,
-                        "to": 1509
+                        "from": 1586,
+                        "to": 1639
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1142,17 +1156,17 @@
                 "children": []
               },
               {
-                "id": "306afa78::item:1",
+                "id": "36fed91a::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1510,
-                  "to": 1615
+                  "from": 1640,
+                  "to": 1745
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "306afa78::item:1",
+                    "id": "36fed91a::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1172,8 +1186,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1510,
-                        "to": 1615
+                        "from": 1640,
+                        "to": 1745
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1225,17 +1239,17 @@
                 "children": []
               },
               {
-                "id": "306afa78::item:2",
+                "id": "36fed91a::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 1616,
-                  "to": 1938
+                  "from": 1746,
+                  "to": 2068
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "306afa78::item:2",
+                    "id": "36fed91a::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1247,8 +1261,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1616,
-                        "to": 1938
+                        "from": 1746,
+                        "to": 2068
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1268,18 +1282,18 @@
                           },
                           "children": [
                             {
-                              "id": "306afa78::item:2::bulletlist:1",
+                              "id": "36fed91a::item:2::bulletlist:1",
                               "type": "list",
                               "props": {
                                 "block": {
-                                  "id": "306afa78::item:2::bulletlist:1",
+                                  "id": "36fed91a::item:2::bulletlist:1",
                                   "type": "list",
                                   "isFinalized": true,
                                   "payload": {
                                     "raw": "- Parse Markdown incrementally.\n  - Enrich blocks (e.g., syntax highlighting, MDX detection).\n  - Emit patch batches + optional worker-side metrics.\n  - Own an isolated `MarkdownEngine`; custom worker entries configure native Lezer extensions and document plugins through `@stream-mdx/worker/engine`.",
                                     "range": {
-                                      "from": 1638,
-                                      "to": 1938
+                                      "from": 1768,
+                                      "to": 2068
                                     },
                                     "meta": {
                                       "sourceContainer": "list",
@@ -1292,17 +1306,17 @@
                                         },
                                         "children": [
                                           {
-                                            "id": "306afa78::item:2::bulletlist:1::item:0",
+                                            "id": "36fed91a::item:2::bulletlist:1::item:0",
                                             "type": "list-item",
                                             "range": {
-                                              "from": 1638,
-                                              "to": 1669
+                                              "from": 1768,
+                                              "to": 1799
                                             },
                                             "props": {
                                               "ordered": false,
                                               "loose": false,
                                               "block": {
-                                                "id": "306afa78::item:2::bulletlist:1::item:0",
+                                                "id": "36fed91a::item:2::bulletlist:1::item:0",
                                                 "type": "list-item",
                                                 "isFinalized": true,
                                                 "payload": {
@@ -1314,8 +1328,8 @@
                                                     }
                                                   ],
                                                   "range": {
-                                                    "from": 1638,
-                                                    "to": 1669
+                                                    "from": 1768,
+                                                    "to": 1799
                                                   },
                                                   "meta": {
                                                     "sourceContainer": "list",
@@ -1351,17 +1365,17 @@
                                             "children": []
                                           },
                                           {
-                                            "id": "306afa78::item:2::bulletlist:1::item:1",
+                                            "id": "36fed91a::item:2::bulletlist:1::item:1",
                                             "type": "list-item",
                                             "range": {
-                                              "from": 1672,
-                                              "to": 1731
+                                              "from": 1802,
+                                              "to": 1861
                                             },
                                             "props": {
                                               "ordered": false,
                                               "loose": false,
                                               "block": {
-                                                "id": "306afa78::item:2::bulletlist:1::item:1",
+                                                "id": "36fed91a::item:2::bulletlist:1::item:1",
                                                 "type": "list-item",
                                                 "isFinalized": true,
                                                 "payload": {
@@ -1373,8 +1387,8 @@
                                                     }
                                                   ],
                                                   "range": {
-                                                    "from": 1672,
-                                                    "to": 1731
+                                                    "from": 1802,
+                                                    "to": 1861
                                                   },
                                                   "meta": {
                                                     "sourceContainer": "list",
@@ -1410,17 +1424,17 @@
                                             "children": []
                                           },
                                           {
-                                            "id": "306afa78::item:2::bulletlist:1::item:2",
+                                            "id": "36fed91a::item:2::bulletlist:1::item:2",
                                             "type": "list-item",
                                             "range": {
-                                              "from": 1734,
-                                              "to": 1786
+                                              "from": 1864,
+                                              "to": 1916
                                             },
                                             "props": {
                                               "ordered": false,
                                               "loose": false,
                                               "block": {
-                                                "id": "306afa78::item:2::bulletlist:1::item:2",
+                                                "id": "36fed91a::item:2::bulletlist:1::item:2",
                                                 "type": "list-item",
                                                 "isFinalized": true,
                                                 "payload": {
@@ -1432,8 +1446,8 @@
                                                     }
                                                   ],
                                                   "range": {
-                                                    "from": 1734,
-                                                    "to": 1786
+                                                    "from": 1864,
+                                                    "to": 1916
                                                   },
                                                   "meta": {
                                                     "sourceContainer": "list",
@@ -1469,17 +1483,17 @@
                                             "children": []
                                           },
                                           {
-                                            "id": "306afa78::item:2::bulletlist:1::item:3",
+                                            "id": "36fed91a::item:2::bulletlist:1::item:3",
                                             "type": "list-item",
                                             "range": {
-                                              "from": 1789,
-                                              "to": 1938
+                                              "from": 1919,
+                                              "to": 2068
                                             },
                                             "props": {
                                               "ordered": false,
                                               "loose": false,
                                               "block": {
-                                                "id": "306afa78::item:2::bulletlist:1::item:3",
+                                                "id": "36fed91a::item:2::bulletlist:1::item:3",
                                                 "type": "list-item",
                                                 "isFinalized": true,
                                                 "payload": {
@@ -1507,8 +1521,8 @@
                                                     }
                                                   ],
                                                   "range": {
-                                                    "from": 1789,
-                                                    "to": 1938
+                                                    "from": 1919,
+                                                    "to": 2068
                                                   },
                                                   "meta": {
                                                     "sourceContainer": "list",
@@ -1584,22 +1598,22 @@
                                 "loose": false
                               },
                               "range": {
-                                "from": 1638,
-                                "to": 1938
+                                "from": 1768,
+                                "to": 2068
                               },
                               "children": [
                                 {
-                                  "id": "306afa78::item:2::bulletlist:1::item:0",
+                                  "id": "36fed91a::item:2::bulletlist:1::item:0",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 1638,
-                                    "to": 1669
+                                    "from": 1768,
+                                    "to": 1799
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "306afa78::item:2::bulletlist:1::item:0",
+                                      "id": "36fed91a::item:2::bulletlist:1::item:0",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -1611,8 +1625,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 1638,
-                                          "to": 1669
+                                          "from": 1768,
+                                          "to": 1799
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -1648,17 +1662,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "306afa78::item:2::bulletlist:1::item:1",
+                                  "id": "36fed91a::item:2::bulletlist:1::item:1",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 1672,
-                                    "to": 1731
+                                    "from": 1802,
+                                    "to": 1861
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "306afa78::item:2::bulletlist:1::item:1",
+                                      "id": "36fed91a::item:2::bulletlist:1::item:1",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -1670,8 +1684,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 1672,
-                                          "to": 1731
+                                          "from": 1802,
+                                          "to": 1861
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -1707,17 +1721,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "306afa78::item:2::bulletlist:1::item:2",
+                                  "id": "36fed91a::item:2::bulletlist:1::item:2",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 1734,
-                                    "to": 1786
+                                    "from": 1864,
+                                    "to": 1916
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "306afa78::item:2::bulletlist:1::item:2",
+                                      "id": "36fed91a::item:2::bulletlist:1::item:2",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -1729,8 +1743,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 1734,
-                                          "to": 1786
+                                          "from": 1864,
+                                          "to": 1916
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -1766,17 +1780,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "306afa78::item:2::bulletlist:1::item:3",
+                                  "id": "36fed91a::item:2::bulletlist:1::item:3",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 1789,
-                                    "to": 1938
+                                    "from": 1919,
+                                    "to": 2068
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "306afa78::item:2::bulletlist:1::item:3",
+                                      "id": "36fed91a::item:2::bulletlist:1::item:3",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -1804,8 +1818,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 1789,
-                                          "to": 1938
+                                          "from": 1919,
+                                          "to": 2068
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -1891,18 +1905,18 @@
                 },
                 "children": [
                   {
-                    "id": "306afa78::item:2::bulletlist:1",
+                    "id": "36fed91a::item:2::bulletlist:1",
                     "type": "list",
                     "props": {
                       "block": {
-                        "id": "306afa78::item:2::bulletlist:1",
+                        "id": "36fed91a::item:2::bulletlist:1",
                         "type": "list",
                         "isFinalized": true,
                         "payload": {
                           "raw": "- Parse Markdown incrementally.\n  - Enrich blocks (e.g., syntax highlighting, MDX detection).\n  - Emit patch batches + optional worker-side metrics.\n  - Own an isolated `MarkdownEngine`; custom worker entries configure native Lezer extensions and document plugins through `@stream-mdx/worker/engine`.",
                           "range": {
-                            "from": 1638,
-                            "to": 1938
+                            "from": 1768,
+                            "to": 2068
                           },
                           "meta": {
                             "sourceContainer": "list",
@@ -1915,17 +1929,17 @@
                               },
                               "children": [
                                 {
-                                  "id": "306afa78::item:2::bulletlist:1::item:0",
+                                  "id": "36fed91a::item:2::bulletlist:1::item:0",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 1638,
-                                    "to": 1669
+                                    "from": 1768,
+                                    "to": 1799
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "306afa78::item:2::bulletlist:1::item:0",
+                                      "id": "36fed91a::item:2::bulletlist:1::item:0",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -1937,8 +1951,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 1638,
-                                          "to": 1669
+                                          "from": 1768,
+                                          "to": 1799
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -1974,17 +1988,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "306afa78::item:2::bulletlist:1::item:1",
+                                  "id": "36fed91a::item:2::bulletlist:1::item:1",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 1672,
-                                    "to": 1731
+                                    "from": 1802,
+                                    "to": 1861
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "306afa78::item:2::bulletlist:1::item:1",
+                                      "id": "36fed91a::item:2::bulletlist:1::item:1",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -1996,8 +2010,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 1672,
-                                          "to": 1731
+                                          "from": 1802,
+                                          "to": 1861
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -2033,17 +2047,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "306afa78::item:2::bulletlist:1::item:2",
+                                  "id": "36fed91a::item:2::bulletlist:1::item:2",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 1734,
-                                    "to": 1786
+                                    "from": 1864,
+                                    "to": 1916
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "306afa78::item:2::bulletlist:1::item:2",
+                                      "id": "36fed91a::item:2::bulletlist:1::item:2",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -2055,8 +2069,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 1734,
-                                          "to": 1786
+                                          "from": 1864,
+                                          "to": 1916
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -2092,17 +2106,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "306afa78::item:2::bulletlist:1::item:3",
+                                  "id": "36fed91a::item:2::bulletlist:1::item:3",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 1789,
-                                    "to": 1938
+                                    "from": 1919,
+                                    "to": 2068
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "306afa78::item:2::bulletlist:1::item:3",
+                                      "id": "36fed91a::item:2::bulletlist:1::item:3",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -2130,8 +2144,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 1789,
-                                          "to": 1938
+                                          "from": 1919,
+                                          "to": 2068
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -2207,22 +2221,22 @@
                       "loose": false
                     },
                     "range": {
-                      "from": 1638,
-                      "to": 1938
+                      "from": 1768,
+                      "to": 2068
                     },
                     "children": [
                       {
-                        "id": "306afa78::item:2::bulletlist:1::item:0",
+                        "id": "36fed91a::item:2::bulletlist:1::item:0",
                         "type": "list-item",
                         "range": {
-                          "from": 1638,
-                          "to": 1669
+                          "from": 1768,
+                          "to": 1799
                         },
                         "props": {
                           "ordered": false,
                           "loose": false,
                           "block": {
-                            "id": "306afa78::item:2::bulletlist:1::item:0",
+                            "id": "36fed91a::item:2::bulletlist:1::item:0",
                             "type": "list-item",
                             "isFinalized": true,
                             "payload": {
@@ -2234,8 +2248,8 @@
                                 }
                               ],
                               "range": {
-                                "from": 1638,
-                                "to": 1669
+                                "from": 1768,
+                                "to": 1799
                               },
                               "meta": {
                                 "sourceContainer": "list",
@@ -2271,17 +2285,17 @@
                         "children": []
                       },
                       {
-                        "id": "306afa78::item:2::bulletlist:1::item:1",
+                        "id": "36fed91a::item:2::bulletlist:1::item:1",
                         "type": "list-item",
                         "range": {
-                          "from": 1672,
-                          "to": 1731
+                          "from": 1802,
+                          "to": 1861
                         },
                         "props": {
                           "ordered": false,
                           "loose": false,
                           "block": {
-                            "id": "306afa78::item:2::bulletlist:1::item:1",
+                            "id": "36fed91a::item:2::bulletlist:1::item:1",
                             "type": "list-item",
                             "isFinalized": true,
                             "payload": {
@@ -2293,8 +2307,8 @@
                                 }
                               ],
                               "range": {
-                                "from": 1672,
-                                "to": 1731
+                                "from": 1802,
+                                "to": 1861
                               },
                               "meta": {
                                 "sourceContainer": "list",
@@ -2330,17 +2344,17 @@
                         "children": []
                       },
                       {
-                        "id": "306afa78::item:2::bulletlist:1::item:2",
+                        "id": "36fed91a::item:2::bulletlist:1::item:2",
                         "type": "list-item",
                         "range": {
-                          "from": 1734,
-                          "to": 1786
+                          "from": 1864,
+                          "to": 1916
                         },
                         "props": {
                           "ordered": false,
                           "loose": false,
                           "block": {
-                            "id": "306afa78::item:2::bulletlist:1::item:2",
+                            "id": "36fed91a::item:2::bulletlist:1::item:2",
                             "type": "list-item",
                             "isFinalized": true,
                             "payload": {
@@ -2352,8 +2366,8 @@
                                 }
                               ],
                               "range": {
-                                "from": 1734,
-                                "to": 1786
+                                "from": 1864,
+                                "to": 1916
                               },
                               "meta": {
                                 "sourceContainer": "list",
@@ -2389,17 +2403,17 @@
                         "children": []
                       },
                       {
-                        "id": "306afa78::item:2::bulletlist:1::item:3",
+                        "id": "36fed91a::item:2::bulletlist:1::item:3",
                         "type": "list-item",
                         "range": {
-                          "from": 1789,
-                          "to": 1938
+                          "from": 1919,
+                          "to": 2068
                         },
                         "props": {
                           "ordered": false,
                           "loose": false,
                           "block": {
-                            "id": "306afa78::item:2::bulletlist:1::item:3",
+                            "id": "36fed91a::item:2::bulletlist:1::item:3",
                             "type": "list-item",
                             "isFinalized": true,
                             "payload": {
@@ -2427,8 +2441,8 @@
                                 }
                               ],
                               "range": {
-                                "from": 1789,
-                                "to": 1938
+                                "from": 1919,
+                                "to": 2068
                               },
                               "meta": {
                                 "sourceContainer": "list",
@@ -2503,13 +2517,13 @@
           }
         },
         "range": {
-          "from": 1456,
-          "to": 1938
+          "from": 1586,
+          "to": 2068
         }
       }
     },
     {
-      "id": "ab835a4",
+      "id": "4cc41a69",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2521,8 +2535,8 @@
           "headingId": "3-2-react-renderer"
         },
         "range": {
-          "from": 1940,
-          "to": 1962
+          "from": 2070,
+          "to": 2092
         },
         "inline": [
           {
@@ -2533,7 +2547,7 @@
       }
     },
     {
-      "id": "694d64d6",
+      "id": "aa60e3d",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -2576,17 +2590,17 @@
             },
             "children": [
               {
-                "id": "694d64d6::item:0",
+                "id": "aa60e3d::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1964,
-                  "to": 2029
+                  "from": 2094,
+                  "to": 2159
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "694d64d6::item:0",
+                    "id": "aa60e3d::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2602,8 +2616,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1964,
-                        "to": 2029
+                        "from": 2094,
+                        "to": 2159
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2647,17 +2661,17 @@
                 "children": []
               },
               {
-                "id": "694d64d6::item:1",
+                "id": "aa60e3d::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 2030,
-                  "to": 2277
+                  "from": 2160,
+                  "to": 2407
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "694d64d6::item:1",
+                    "id": "aa60e3d::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2669,8 +2683,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2030,
-                        "to": 2277
+                        "from": 2160,
+                        "to": 2407
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2690,18 +2704,18 @@
                           },
                           "children": [
                             {
-                              "id": "694d64d6::item:1::bulletlist:1",
+                              "id": "aa60e3d::item:1::bulletlist:1",
                               "type": "list",
                               "props": {
                                 "block": {
-                                  "id": "694d64d6::item:1::bulletlist:1",
+                                  "id": "aa60e3d::item:1::bulletlist:1",
                                   "type": "list",
                                   "isFinalized": true,
                                   "payload": {
                                     "raw": "- Own the renderer store + patch scheduler.\n  - Attach/detach the selected transport and forward text/stream updates.\n  - Apply patches incrementally and render blocks with stable keys.\n  - Emit flush metrics via `onMetrics`.",
                                     "range": {
-                                      "from": 2052,
-                                      "to": 2277
+                                      "from": 2182,
+                                      "to": 2407
                                     },
                                     "meta": {
                                       "sourceContainer": "list",
@@ -2714,17 +2728,17 @@
                                         },
                                         "children": [
                                           {
-                                            "id": "694d64d6::item:1::bulletlist:1::item:0",
+                                            "id": "aa60e3d::item:1::bulletlist:1::item:0",
                                             "type": "list-item",
                                             "range": {
-                                              "from": 2052,
-                                              "to": 2095
+                                              "from": 2182,
+                                              "to": 2225
                                             },
                                             "props": {
                                               "ordered": false,
                                               "loose": false,
                                               "block": {
-                                                "id": "694d64d6::item:1::bulletlist:1::item:0",
+                                                "id": "aa60e3d::item:1::bulletlist:1::item:0",
                                                 "type": "list-item",
                                                 "isFinalized": true,
                                                 "payload": {
@@ -2736,8 +2750,8 @@
                                                     }
                                                   ],
                                                   "range": {
-                                                    "from": 2052,
-                                                    "to": 2095
+                                                    "from": 2182,
+                                                    "to": 2225
                                                   },
                                                   "meta": {
                                                     "sourceContainer": "list",
@@ -2773,17 +2787,17 @@
                                             "children": []
                                           },
                                           {
-                                            "id": "694d64d6::item:1::bulletlist:1::item:1",
+                                            "id": "aa60e3d::item:1::bulletlist:1::item:1",
                                             "type": "list-item",
                                             "range": {
-                                              "from": 2098,
-                                              "to": 2169
+                                              "from": 2228,
+                                              "to": 2299
                                             },
                                             "props": {
                                               "ordered": false,
                                               "loose": false,
                                               "block": {
-                                                "id": "694d64d6::item:1::bulletlist:1::item:1",
+                                                "id": "aa60e3d::item:1::bulletlist:1::item:1",
                                                 "type": "list-item",
                                                 "isFinalized": true,
                                                 "payload": {
@@ -2795,8 +2809,8 @@
                                                     }
                                                   ],
                                                   "range": {
-                                                    "from": 2098,
-                                                    "to": 2169
+                                                    "from": 2228,
+                                                    "to": 2299
                                                   },
                                                   "meta": {
                                                     "sourceContainer": "list",
@@ -2832,17 +2846,17 @@
                                             "children": []
                                           },
                                           {
-                                            "id": "694d64d6::item:1::bulletlist:1::item:2",
+                                            "id": "aa60e3d::item:1::bulletlist:1::item:2",
                                             "type": "list-item",
                                             "range": {
-                                              "from": 2172,
-                                              "to": 2237
+                                              "from": 2302,
+                                              "to": 2367
                                             },
                                             "props": {
                                               "ordered": false,
                                               "loose": false,
                                               "block": {
-                                                "id": "694d64d6::item:1::bulletlist:1::item:2",
+                                                "id": "aa60e3d::item:1::bulletlist:1::item:2",
                                                 "type": "list-item",
                                                 "isFinalized": true,
                                                 "payload": {
@@ -2854,8 +2868,8 @@
                                                     }
                                                   ],
                                                   "range": {
-                                                    "from": 2172,
-                                                    "to": 2237
+                                                    "from": 2302,
+                                                    "to": 2367
                                                   },
                                                   "meta": {
                                                     "sourceContainer": "list",
@@ -2891,17 +2905,17 @@
                                             "children": []
                                           },
                                           {
-                                            "id": "694d64d6::item:1::bulletlist:1::item:3",
+                                            "id": "aa60e3d::item:1::bulletlist:1::item:3",
                                             "type": "list-item",
                                             "range": {
-                                              "from": 2240,
-                                              "to": 2277
+                                              "from": 2370,
+                                              "to": 2407
                                             },
                                             "props": {
                                               "ordered": false,
                                               "loose": false,
                                               "block": {
-                                                "id": "694d64d6::item:1::bulletlist:1::item:3",
+                                                "id": "aa60e3d::item:1::bulletlist:1::item:3",
                                                 "type": "list-item",
                                                 "isFinalized": true,
                                                 "payload": {
@@ -2921,8 +2935,8 @@
                                                     }
                                                   ],
                                                   "range": {
-                                                    "from": 2240,
-                                                    "to": 2277
+                                                    "from": 2370,
+                                                    "to": 2407
                                                   },
                                                   "meta": {
                                                     "sourceContainer": "list",
@@ -2982,22 +2996,22 @@
                                 "loose": false
                               },
                               "range": {
-                                "from": 2052,
-                                "to": 2277
+                                "from": 2182,
+                                "to": 2407
                               },
                               "children": [
                                 {
-                                  "id": "694d64d6::item:1::bulletlist:1::item:0",
+                                  "id": "aa60e3d::item:1::bulletlist:1::item:0",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 2052,
-                                    "to": 2095
+                                    "from": 2182,
+                                    "to": 2225
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "694d64d6::item:1::bulletlist:1::item:0",
+                                      "id": "aa60e3d::item:1::bulletlist:1::item:0",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -3009,8 +3023,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 2052,
-                                          "to": 2095
+                                          "from": 2182,
+                                          "to": 2225
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -3046,17 +3060,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "694d64d6::item:1::bulletlist:1::item:1",
+                                  "id": "aa60e3d::item:1::bulletlist:1::item:1",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 2098,
-                                    "to": 2169
+                                    "from": 2228,
+                                    "to": 2299
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "694d64d6::item:1::bulletlist:1::item:1",
+                                      "id": "aa60e3d::item:1::bulletlist:1::item:1",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -3068,8 +3082,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 2098,
-                                          "to": 2169
+                                          "from": 2228,
+                                          "to": 2299
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -3105,17 +3119,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "694d64d6::item:1::bulletlist:1::item:2",
+                                  "id": "aa60e3d::item:1::bulletlist:1::item:2",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 2172,
-                                    "to": 2237
+                                    "from": 2302,
+                                    "to": 2367
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "694d64d6::item:1::bulletlist:1::item:2",
+                                      "id": "aa60e3d::item:1::bulletlist:1::item:2",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -3127,8 +3141,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 2172,
-                                          "to": 2237
+                                          "from": 2302,
+                                          "to": 2367
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -3164,17 +3178,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "694d64d6::item:1::bulletlist:1::item:3",
+                                  "id": "aa60e3d::item:1::bulletlist:1::item:3",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 2240,
-                                    "to": 2277
+                                    "from": 2370,
+                                    "to": 2407
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "694d64d6::item:1::bulletlist:1::item:3",
+                                      "id": "aa60e3d::item:1::bulletlist:1::item:3",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -3194,8 +3208,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 2240,
-                                          "to": 2277
+                                          "from": 2370,
+                                          "to": 2407
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -3265,18 +3279,18 @@
                 },
                 "children": [
                   {
-                    "id": "694d64d6::item:1::bulletlist:1",
+                    "id": "aa60e3d::item:1::bulletlist:1",
                     "type": "list",
                     "props": {
                       "block": {
-                        "id": "694d64d6::item:1::bulletlist:1",
+                        "id": "aa60e3d::item:1::bulletlist:1",
                         "type": "list",
                         "isFinalized": true,
                         "payload": {
                           "raw": "- Own the renderer store + patch scheduler.\n  - Attach/detach the selected transport and forward text/stream updates.\n  - Apply patches incrementally and render blocks with stable keys.\n  - Emit flush metrics via `onMetrics`.",
                           "range": {
-                            "from": 2052,
-                            "to": 2277
+                            "from": 2182,
+                            "to": 2407
                           },
                           "meta": {
                             "sourceContainer": "list",
@@ -3289,17 +3303,17 @@
                               },
                               "children": [
                                 {
-                                  "id": "694d64d6::item:1::bulletlist:1::item:0",
+                                  "id": "aa60e3d::item:1::bulletlist:1::item:0",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 2052,
-                                    "to": 2095
+                                    "from": 2182,
+                                    "to": 2225
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "694d64d6::item:1::bulletlist:1::item:0",
+                                      "id": "aa60e3d::item:1::bulletlist:1::item:0",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -3311,8 +3325,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 2052,
-                                          "to": 2095
+                                          "from": 2182,
+                                          "to": 2225
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -3348,17 +3362,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "694d64d6::item:1::bulletlist:1::item:1",
+                                  "id": "aa60e3d::item:1::bulletlist:1::item:1",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 2098,
-                                    "to": 2169
+                                    "from": 2228,
+                                    "to": 2299
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "694d64d6::item:1::bulletlist:1::item:1",
+                                      "id": "aa60e3d::item:1::bulletlist:1::item:1",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -3370,8 +3384,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 2098,
-                                          "to": 2169
+                                          "from": 2228,
+                                          "to": 2299
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -3407,17 +3421,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "694d64d6::item:1::bulletlist:1::item:2",
+                                  "id": "aa60e3d::item:1::bulletlist:1::item:2",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 2172,
-                                    "to": 2237
+                                    "from": 2302,
+                                    "to": 2367
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "694d64d6::item:1::bulletlist:1::item:2",
+                                      "id": "aa60e3d::item:1::bulletlist:1::item:2",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -3429,8 +3443,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 2172,
-                                          "to": 2237
+                                          "from": 2302,
+                                          "to": 2367
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -3466,17 +3480,17 @@
                                   "children": []
                                 },
                                 {
-                                  "id": "694d64d6::item:1::bulletlist:1::item:3",
+                                  "id": "aa60e3d::item:1::bulletlist:1::item:3",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 2240,
-                                    "to": 2277
+                                    "from": 2370,
+                                    "to": 2407
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "694d64d6::item:1::bulletlist:1::item:3",
+                                      "id": "aa60e3d::item:1::bulletlist:1::item:3",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -3496,8 +3510,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 2240,
-                                          "to": 2277
+                                          "from": 2370,
+                                          "to": 2407
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -3557,22 +3571,22 @@
                       "loose": false
                     },
                     "range": {
-                      "from": 2052,
-                      "to": 2277
+                      "from": 2182,
+                      "to": 2407
                     },
                     "children": [
                       {
-                        "id": "694d64d6::item:1::bulletlist:1::item:0",
+                        "id": "aa60e3d::item:1::bulletlist:1::item:0",
                         "type": "list-item",
                         "range": {
-                          "from": 2052,
-                          "to": 2095
+                          "from": 2182,
+                          "to": 2225
                         },
                         "props": {
                           "ordered": false,
                           "loose": false,
                           "block": {
-                            "id": "694d64d6::item:1::bulletlist:1::item:0",
+                            "id": "aa60e3d::item:1::bulletlist:1::item:0",
                             "type": "list-item",
                             "isFinalized": true,
                             "payload": {
@@ -3584,8 +3598,8 @@
                                 }
                               ],
                               "range": {
-                                "from": 2052,
-                                "to": 2095
+                                "from": 2182,
+                                "to": 2225
                               },
                               "meta": {
                                 "sourceContainer": "list",
@@ -3621,17 +3635,17 @@
                         "children": []
                       },
                       {
-                        "id": "694d64d6::item:1::bulletlist:1::item:1",
+                        "id": "aa60e3d::item:1::bulletlist:1::item:1",
                         "type": "list-item",
                         "range": {
-                          "from": 2098,
-                          "to": 2169
+                          "from": 2228,
+                          "to": 2299
                         },
                         "props": {
                           "ordered": false,
                           "loose": false,
                           "block": {
-                            "id": "694d64d6::item:1::bulletlist:1::item:1",
+                            "id": "aa60e3d::item:1::bulletlist:1::item:1",
                             "type": "list-item",
                             "isFinalized": true,
                             "payload": {
@@ -3643,8 +3657,8 @@
                                 }
                               ],
                               "range": {
-                                "from": 2098,
-                                "to": 2169
+                                "from": 2228,
+                                "to": 2299
                               },
                               "meta": {
                                 "sourceContainer": "list",
@@ -3680,17 +3694,17 @@
                         "children": []
                       },
                       {
-                        "id": "694d64d6::item:1::bulletlist:1::item:2",
+                        "id": "aa60e3d::item:1::bulletlist:1::item:2",
                         "type": "list-item",
                         "range": {
-                          "from": 2172,
-                          "to": 2237
+                          "from": 2302,
+                          "to": 2367
                         },
                         "props": {
                           "ordered": false,
                           "loose": false,
                           "block": {
-                            "id": "694d64d6::item:1::bulletlist:1::item:2",
+                            "id": "aa60e3d::item:1::bulletlist:1::item:2",
                             "type": "list-item",
                             "isFinalized": true,
                             "payload": {
@@ -3702,8 +3716,8 @@
                                 }
                               ],
                               "range": {
-                                "from": 2172,
-                                "to": 2237
+                                "from": 2302,
+                                "to": 2367
                               },
                               "meta": {
                                 "sourceContainer": "list",
@@ -3739,17 +3753,17 @@
                         "children": []
                       },
                       {
-                        "id": "694d64d6::item:1::bulletlist:1::item:3",
+                        "id": "aa60e3d::item:1::bulletlist:1::item:3",
                         "type": "list-item",
                         "range": {
-                          "from": 2240,
-                          "to": 2277
+                          "from": 2370,
+                          "to": 2407
                         },
                         "props": {
                           "ordered": false,
                           "loose": false,
                           "block": {
-                            "id": "694d64d6::item:1::bulletlist:1::item:3",
+                            "id": "aa60e3d::item:1::bulletlist:1::item:3",
                             "type": "list-item",
                             "isFinalized": true,
                             "payload": {
@@ -3769,8 +3783,8 @@
                                 }
                               ],
                               "range": {
-                                "from": 2240,
-                                "to": 2277
+                                "from": 2370,
+                                "to": 2407
                               },
                               "meta": {
                                 "sourceContainer": "list",
@@ -3829,13 +3843,13 @@
           }
         },
         "range": {
-          "from": 1964,
-          "to": 2277
+          "from": 2094,
+          "to": 2407
         }
       }
     },
     {
-      "id": "136d3222",
+      "id": "70cb8035",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3847,8 +3861,8 @@
           "headingId": "3-3-backpressure-and-scheduling"
         },
         "range": {
-          "from": 2279,
-          "to": 2314
+          "from": 2409,
+          "to": 2444
         },
         "inline": [
           {
@@ -3859,7 +3873,7 @@
       }
     },
     {
-      "id": "76cab06a",
+      "id": "7036d1c8",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -3958,17 +3972,17 @@
             },
             "children": [
               {
-                "id": "76cab06a::item:0",
+                "id": "7036d1c8::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 2316,
-                  "to": 2379
+                  "from": 2446,
+                  "to": 2509
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "76cab06a::item:0",
+                    "id": "7036d1c8::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3988,8 +4002,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2316,
-                        "to": 2379
+                        "from": 2446,
+                        "to": 2509
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4041,17 +4055,17 @@
                 "children": []
               },
               {
-                "id": "76cab06a::item:1",
+                "id": "7036d1c8::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 2380,
-                  "to": 2504
+                  "from": 2510,
+                  "to": 2634
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "76cab06a::item:1",
+                    "id": "7036d1c8::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4071,8 +4085,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2380,
-                        "to": 2504
+                        "from": 2510,
+                        "to": 2634
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4124,17 +4138,17 @@
                 "children": []
               },
               {
-                "id": "76cab06a::item:2",
+                "id": "7036d1c8::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 2505,
-                  "to": 2656
+                  "from": 2635,
+                  "to": 2786
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "76cab06a::item:2",
+                    "id": "7036d1c8::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4162,8 +4176,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2505,
-                        "to": 2656
+                        "from": 2635,
+                        "to": 2786
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4231,17 +4245,17 @@
                 "children": []
               },
               {
-                "id": "76cab06a::item:3",
+                "id": "7036d1c8::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 2657,
-                  "to": 2786
+                  "from": 2787,
+                  "to": 2916
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "76cab06a::item:3",
+                    "id": "7036d1c8::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4269,8 +4283,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2657,
-                        "to": 2786
+                        "from": 2787,
+                        "to": 2916
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4341,13 +4355,13 @@
           }
         },
         "range": {
-          "from": 2316,
-          "to": 2786
+          "from": 2446,
+          "to": 2916
         }
       }
     },
     {
-      "id": "7caad5d1",
+      "id": "79a3c91a",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -4356,13 +4370,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 2788,
-          "to": 2791
+          "from": 2918,
+          "to": 2921
         }
       }
     },
     {
-      "id": "6adcf81f",
+      "id": "195bba38",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -4374,8 +4388,8 @@
           "headingId": "4-mdx"
         },
         "range": {
-          "from": 2793,
-          "to": 2802
+          "from": 2923,
+          "to": 2932
         },
         "inline": [
           {
@@ -4386,475 +4400,209 @@
       }
     },
     {
-      "id": "5e1a084a",
+      "id": "63b1fee8",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "StreamMDX supports two MDX compilation modes:",
+        "raw": "`contentPolicy` defaults to `\"restricted\"` and does not evaluate authored expressions. Use `defineContentComponent`-backed `contentComponents` for fixed host components under that policy; validators and component callbacks stay on the host, with native children passed separately. The registry is not activated by `\"markdown\"` or `\"trusted-mdx\"`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 15,
+              "kind": "code-inline"
+            },
+            {
+              "from": 28,
+              "to": 42,
+              "kind": "code-inline"
+            },
+            {
+              "from": 91,
+              "to": 115,
+              "kind": "code-inline"
+            },
+            {
+              "from": 123,
+              "to": 142,
+              "kind": "code-inline"
+            },
+            {
+              "from": 314,
+              "to": 326,
+              "kind": "code-inline"
+            },
+            {
+              "from": 330,
+              "to": 345,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 2804,
-          "to": 2849
+          "from": 2934,
+          "to": 3280
         },
         "inline": [
           {
+            "kind": "code",
+            "text": "contentPolicy"
+          },
+          {
             "kind": "text",
-            "text": "StreamMDX supports two MDX compilation modes:"
+            "text": " defaults to "
+          },
+          {
+            "kind": "code",
+            "text": "\"restricted\""
+          },
+          {
+            "kind": "text",
+            "text": " and does not evaluate authored expressions. Use "
+          },
+          {
+            "kind": "code",
+            "text": "defineContentComponent"
+          },
+          {
+            "kind": "text",
+            "text": "-backed "
+          },
+          {
+            "kind": "code",
+            "text": "contentComponents"
+          },
+          {
+            "kind": "text",
+            "text": " for fixed host components under that policy; validators and component callbacks stay on the host, with native children passed separately. The registry is not activated by "
+          },
+          {
+            "kind": "code",
+            "text": "\"markdown\""
+          },
+          {
+            "kind": "text",
+            "text": " or "
+          },
+          {
+            "kind": "code",
+            "text": "\"trusted-mdx\""
+          },
+          {
+            "kind": "text",
+            "text": "."
           }
         ]
       }
     },
     {
-      "id": "5babe1da",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- `mdxCompileMode=\"worker\"`: compile in the worker.\n- `mdxCompileMode=\"server\"`: compile via an app-provided endpoint (default `/api/mdx-compile-v2`).",
-        "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "code",
-                "text": "mdxCompileMode=\"worker\""
-              },
-              {
-                "kind": "text",
-                "text": ": compile in the worker."
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "mdxCompileMode=\"server\""
-              },
-              {
-                "kind": "text",
-                "text": ": compile via an app-provided endpoint (default "
-              },
-              {
-                "kind": "code",
-                "text": "/api/mdx-compile-v2"
-              },
-              {
-                "kind": "text",
-                "text": ")."
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
-            },
-            "children": [
-              {
-                "id": "5babe1da::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 2851,
-                  "to": 2902
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "5babe1da::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `mdxCompileMode=\"worker\"`: compile in the worker.",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "mdxCompileMode=\"worker\""
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": compile in the worker."
-                        }
-                      ],
-                      "range": {
-                        "from": 2851,
-                        "to": 2902
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "mdxCompileMode=\"worker\""
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": compile in the worker."
-                              }
-                            ],
-                            "text": "mdxCompileMode=\"worker\": compile in the worker.",
-                            "raw": "- `mdxCompileMode=\"worker\"`: compile in the worker."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "mdxCompileMode=\"worker\""
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": compile in the worker."
-                    }
-                  ],
-                  "text": "mdxCompileMode=\"worker\": compile in the worker.",
-                  "raw": "- `mdxCompileMode=\"worker\"`: compile in the worker."
-                },
-                "children": []
-              },
-              {
-                "id": "5babe1da::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 2903,
-                  "to": 3001
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "5babe1da::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `mdxCompileMode=\"server\"`: compile via an app-provided endpoint (default `/api/mdx-compile-v2`).",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "mdxCompileMode=\"server\""
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": compile via an app-provided endpoint (default "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "/api/mdx-compile-v2"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ")."
-                        }
-                      ],
-                      "range": {
-                        "from": 2903,
-                        "to": 3001
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "mdxCompileMode=\"server\""
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": compile via an app-provided endpoint (default "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "/api/mdx-compile-v2"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ")."
-                              }
-                            ],
-                            "text": "mdxCompileMode=\"server\": compile via an app-provided endpoint (default /api/mdx-compile-v2).",
-                            "raw": "- `mdxCompileMode=\"server\"`: compile via an app-provided endpoint (default `/api/mdx-compile-v2`)."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "mdxCompileMode=\"server\""
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": compile via an app-provided endpoint (default "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "/api/mdx-compile-v2"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ")."
-                    }
-                  ],
-                  "text": "mdxCompileMode=\"server\": compile via an app-provided endpoint (default /api/mdx-compile-v2).",
-                  "raw": "- `mdxCompileMode=\"server\"`: compile via an app-provided endpoint (default `/api/mdx-compile-v2`)."
-                },
-                "children": []
-              }
-            ]
-          }
-        },
-        "range": {
-          "from": 2851,
-          "to": 3001
-        }
-      }
-    },
-    {
-      "id": "36faeb20",
+      "id": "43568fa7",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "To keep parity between both strategies, use:",
+        "raw": "Full MDX requires an explicit `createTrustedMdxEngine` from `@stream-mdx/react/trusted-mdx`, passed through `engines.mdx` with `contentPolicy=\"trusted-mdx\"`. The host import map resolves explicit bindings only and never fetches modules. Evaluation requires `unsafe-eval`, executes authored code in the host realm, and is not a sandbox. `FINALIZED` is native semantic completion, not trusted preparation or render readiness. See `docs/REACT_INTEGRATION_GUIDE.md` and `docs/SECURITY_MODEL.md`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 30,
+              "to": 54,
+              "kind": "code-inline"
+            },
+            {
+              "from": 60,
+              "to": 91,
+              "kind": "code-inline"
+            },
+            {
+              "from": 108,
+              "to": 121,
+              "kind": "code-inline"
+            },
+            {
+              "from": 127,
+              "to": 156,
+              "kind": "code-inline"
+            },
+            {
+              "from": 257,
+              "to": 270,
+              "kind": "code-inline"
+            },
+            {
+              "from": 336,
+              "to": 347,
+              "kind": "code-inline"
+            },
+            {
+              "from": 428,
+              "to": 461,
+              "kind": "code-inline"
+            },
+            {
+              "from": 466,
+              "to": 490,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 3003,
-          "to": 3047
+          "from": 3282,
+          "to": 3773
         },
         "inline": [
           {
             "kind": "text",
-            "text": "To keep parity between both strategies, use:"
-          }
-        ]
-      }
-    },
-    {
-      "id": "76588c66",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- `compileMdxContent` from `stream-mdx/worker/mdx-compile` (or `@stream-mdx/worker/mdx-compile`)",
-        "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
+            "text": "Full MDX requires an explicit "
           },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "code",
-                "text": "compileMdxContent"
-              },
-              {
-                "kind": "text",
-                "text": " from "
-              },
-              {
-                "kind": "code",
-                "text": "stream-mdx/worker/mdx-compile"
-              },
-              {
-                "kind": "text",
-                "text": " (or "
-              },
-              {
-                "kind": "code",
-                "text": "@stream-mdx/worker/mdx-compile"
-              },
-              {
-                "kind": "text",
-                "text": ")"
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
-            },
-            "children": [
-              {
-                "id": "76588c66::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 3049,
-                  "to": 3145
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "76588c66::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- `compileMdxContent` from `stream-mdx/worker/mdx-compile` (or `@stream-mdx/worker/mdx-compile`)",
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "compileMdxContent"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " from "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "stream-mdx/worker/mdx-compile"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " (or "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "@stream-mdx/worker/mdx-compile"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ")"
-                        }
-                      ],
-                      "range": {
-                        "from": 3049,
-                        "to": 3145
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "code",
-                                "text": "compileMdxContent"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " from "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "stream-mdx/worker/mdx-compile"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " (or "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "@stream-mdx/worker/mdx-compile"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ")"
-                              }
-                            ],
-                            "text": "compileMdxContent from stream-mdx/worker/mdx-compile (or @stream-mdx/worker/mdx-compile)",
-                            "raw": "- `compileMdxContent` from `stream-mdx/worker/mdx-compile` (or `@stream-mdx/worker/mdx-compile`)"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "code",
-                      "text": "compileMdxContent"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " from "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "stream-mdx/worker/mdx-compile"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " (or "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "@stream-mdx/worker/mdx-compile"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ")"
-                    }
-                  ],
-                  "text": "compileMdxContent from stream-mdx/worker/mdx-compile (or @stream-mdx/worker/mdx-compile)",
-                  "raw": "- `compileMdxContent` from `stream-mdx/worker/mdx-compile` (or `@stream-mdx/worker/mdx-compile`)"
-                },
-                "children": []
-              }
-            ]
-          }
-        },
-        "range": {
-          "from": 3049,
-          "to": 3145
-        }
-      }
-    },
-    {
-      "id": "6828addf",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "See `docs/REACT_INTEGRATION_GUIDE.md` for a working Next.js route example.",
-        "meta": {
-          "lezerNodeType": "Paragraph"
-        },
-        "range": {
-          "from": 3147,
-          "to": 3221
-        },
-        "inline": [
+          {
+            "kind": "code",
+            "text": "createTrustedMdxEngine"
+          },
           {
             "kind": "text",
-            "text": "See "
+            "text": " from "
+          },
+          {
+            "kind": "code",
+            "text": "@stream-mdx/react/trusted-mdx"
+          },
+          {
+            "kind": "text",
+            "text": ", passed through "
+          },
+          {
+            "kind": "code",
+            "text": "engines.mdx"
+          },
+          {
+            "kind": "text",
+            "text": " with "
+          },
+          {
+            "kind": "code",
+            "text": "contentPolicy=\"trusted-mdx\""
+          },
+          {
+            "kind": "text",
+            "text": ". The host import map resolves explicit bindings only and never fetches modules. Evaluation requires "
+          },
+          {
+            "kind": "code",
+            "text": "unsafe-eval"
+          },
+          {
+            "kind": "text",
+            "text": ", executes authored code in the host realm, and is not a sandbox. "
+          },
+          {
+            "kind": "code",
+            "text": "FINALIZED"
+          },
+          {
+            "kind": "text",
+            "text": " is native semantic completion, not trusted preparation or render readiness. See "
           },
           {
             "kind": "code",
@@ -4862,13 +4610,21 @@
           },
           {
             "kind": "text",
-            "text": " for a working Next.js route example."
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "docs/SECURITY_MODEL.md"
+          },
+          {
+            "kind": "text",
+            "text": "."
           }
         ]
       }
     },
     {
-      "id": "50a3a88c",
+      "id": "47d40f2e",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -4877,41 +4633,41 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 3223,
-          "to": 3226
+          "from": 3775,
+          "to": 3778
         }
       }
     },
     {
-      "id": "3e94cd1b",
+      "id": "3e8820a4",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "5) Security Model (HTML)",
+        "raw": "5) Security Model (HTML and MDX)",
         "meta": {
           "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
-          "headingText": "5) Security Model (HTML)",
-          "headingId": "5-security-model-html"
+          "headingText": "5) Security Model (HTML and MDX)",
+          "headingId": "5-security-model-html-and-mdx"
         },
         "range": {
-          "from": 3228,
-          "to": 3255
+          "from": 3780,
+          "to": 3815
         },
         "inline": [
           {
             "kind": "text",
-            "text": "5) Security Model (HTML)"
+            "text": "5) Security Model (HTML and MDX)"
           }
         ]
       }
     },
     {
-      "id": "7519a8a5",
+      "id": "26947791",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- Raw HTML is an XSS surface; StreamMDX sanitizes by default.\n- Prefer hosted workers + strict CSP in production.\n- If you extend HTML allowlists/schemas, do it only for trusted content.",
+        "raw": "- Raw HTML is an XSS surface; StreamMDX sanitizes by default.\n- Prefer hosted workers + strict CSP in production.\n- If you extend HTML allowlists/schemas, do it only for trusted content.\n- Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed.\n- `artifact` and `html-artifact` fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -4943,6 +4699,30 @@
                 "kind": "text",
                 "text": "If you extend HTML allowlists/schemas, do it only for trusted content."
               }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "artifact"
+              },
+              {
+                "kind": "text",
+                "text": " and "
+              },
+              {
+                "kind": "code",
+                "text": "html-artifact"
+              },
+              {
+                "kind": "text",
+                "text": " fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox."
+              }
             ]
           ],
           "preparedNested": {
@@ -4952,17 +4732,17 @@
             },
             "children": [
               {
-                "id": "7519a8a5::item:0",
+                "id": "26947791::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3257,
-                  "to": 3318
+                  "from": 3817,
+                  "to": 3878
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "7519a8a5::item:0",
+                    "id": "26947791::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4974,8 +4754,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3257,
-                        "to": 3318
+                        "from": 3817,
+                        "to": 3878
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5011,17 +4791,17 @@
                 "children": []
               },
               {
-                "id": "7519a8a5::item:1",
+                "id": "26947791::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 3319,
-                  "to": 3370
+                  "from": 3879,
+                  "to": 3930
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "7519a8a5::item:1",
+                    "id": "26947791::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5033,8 +4813,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3319,
-                        "to": 3370
+                        "from": 3879,
+                        "to": 3930
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5070,17 +4850,17 @@
                 "children": []
               },
               {
-                "id": "7519a8a5::item:2",
+                "id": "26947791::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 3371,
-                  "to": 3443
+                  "from": 3931,
+                  "to": 4003
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "7519a8a5::item:2",
+                    "id": "26947791::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5092,8 +4872,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3371,
-                        "to": 3443
+                        "from": 3931,
+                        "to": 4003
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5127,18 +4907,172 @@
                   "raw": "- If you extend HTML allowlists/schemas, do it only for trusted content."
                 },
                 "children": []
+              },
+              {
+                "id": "26947791::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 4004,
+                  "to": 4153
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "26947791::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed."
+                        }
+                      ],
+                      "range": {
+                        "from": 4004,
+                        "to": 4153
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed."
+                              }
+                            ],
+                            "text": "Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed.",
+                            "raw": "- Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed."
+                    }
+                  ],
+                  "text": "Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed.",
+                  "raw": "- Keep untrusted MDX under the default restricted policy. Full MDX requires an explicit trusted engine, runs in the host realm, and is not sandboxed."
+                },
+                "children": []
+              },
+              {
+                "id": "26947791::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 4154,
+                  "to": 4296
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "26947791::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `artifact` and `html-artifact` fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "artifact"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "html-artifact"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox."
+                        }
+                      ],
+                      "range": {
+                        "from": 4154,
+                        "to": 4296
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "artifact"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "html-artifact"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox."
+                              }
+                            ],
+                            "text": "artifact and html-artifact fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox.",
+                            "raw": "- `artifact` and `html-artifact` fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "artifact"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "html-artifact"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox."
+                    }
+                  ],
+                  "text": "artifact and html-artifact fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox.",
+                  "raw": "- `artifact` and `html-artifact` fences render as code unless the host supplies a custom renderer. StreamMDX has no built-in artifact sandbox."
+                },
+                "children": []
               }
             ]
           }
         },
         "range": {
-          "from": 3257,
-          "to": 3443
+          "from": 3817,
+          "to": 4296
         }
       }
     },
     {
-      "id": "4d1cdf8e",
+      "id": "1b5882e9",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -5147,13 +5081,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 3445,
-          "to": 3448
+          "from": 4298,
+          "to": 4301
         }
       }
     },
     {
-      "id": "25ed73bc",
+      "id": "6fe7823e",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -5165,8 +5099,8 @@
           "headingId": "6-repo-workflows"
         },
         "range": {
-          "from": 3450,
-          "to": 3470
+          "from": 4303,
+          "to": 4323
         },
         "inline": [
           {
@@ -5177,7 +5111,7 @@
       }
     },
     {
-      "id": "370933fc",
+      "id": "5ecbc1fe",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -5189,8 +5123,8 @@
           "headingId": "build-test"
         },
         "range": {
-          "from": 3472,
-          "to": 3488
+          "from": 4325,
+          "to": 4341
         },
         "inline": [
           {
@@ -5201,7 +5135,7 @@
       }
     },
     {
-      "id": "224fb1c4",
+      "id": "4b52557e",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -5258,17 +5192,17 @@
             },
             "children": [
               {
-                "id": "224fb1c4::item:0",
+                "id": "4b52557e::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3490,
-                  "to": 3514
+                  "from": 4343,
+                  "to": 4367
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "224fb1c4::item:0",
+                    "id": "4b52557e::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5284,8 +5218,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3490,
-                        "to": 3514
+                        "from": 4343,
+                        "to": 4367
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5329,17 +5263,17 @@
                 "children": []
               },
               {
-                "id": "224fb1c4::item:1",
+                "id": "4b52557e::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 3515,
-                  "to": 3557
+                  "from": 4368,
+                  "to": 4410
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "224fb1c4::item:1",
+                    "id": "4b52557e::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5355,8 +5289,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3515,
-                        "to": 3557
+                        "from": 4368,
+                        "to": 4410
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5400,17 +5334,17 @@
                 "children": []
               },
               {
-                "id": "224fb1c4::item:2",
+                "id": "4b52557e::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 3558,
-                  "to": 3581
+                  "from": 4411,
+                  "to": 4434
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "224fb1c4::item:2",
+                    "id": "4b52557e::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5426,8 +5360,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3558,
-                        "to": 3581
+                        "from": 4411,
+                        "to": 4434
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5474,13 +5408,13 @@
           }
         },
         "range": {
-          "from": 3490,
-          "to": 3581
+          "from": 4343,
+          "to": 4434
         }
       }
     },
     {
-      "id": "547bc6dd",
+      "id": "41592f1d",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -5492,8 +5426,8 @@
           "headingId": "build-hosted-worker-for-the-example-app"
         },
         "range": {
-          "from": 3583,
-          "to": 3626
+          "from": 4436,
+          "to": 4479
         },
         "inline": [
           {
@@ -5504,7 +5438,7 @@
       }
     },
     {
-      "id": "7292ce4d",
+      "id": "7c9d41dd",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -5537,17 +5471,17 @@
             },
             "children": [
               {
-                "id": "7292ce4d::item:0",
+                "id": "7c9d41dd::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3628,
-                  "to": 3652
+                  "from": 4481,
+                  "to": 4505
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "7292ce4d::item:0",
+                    "id": "7c9d41dd::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5559,8 +5493,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3628,
-                        "to": 3652
+                        "from": 4481,
+                        "to": 4505
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5599,13 +5533,13 @@
           }
         },
         "range": {
-          "from": 3628,
-          "to": 3652
+          "from": 4481,
+          "to": 4505
         }
       }
     },
     {
-      "id": "7696003e",
+      "id": "14faa048",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -5614,8 +5548,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3654,
-          "to": 3710
+          "from": 4507,
+          "to": 4563
         },
         "inline": [
           {
@@ -5626,7 +5560,7 @@
       }
     },
     {
-      "id": "49d4f069",
+      "id": "77b52904",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -5659,17 +5593,17 @@
             },
             "children": [
               {
-                "id": "49d4f069::item:0",
+                "id": "77b52904::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3712,
-                  "to": 3785
+                  "from": 4565,
+                  "to": 4638
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "49d4f069::item:0",
+                    "id": "77b52904::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5681,8 +5615,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3712,
-                        "to": 3785
+                        "from": 4565,
+                        "to": 4638
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5721,13 +5655,13 @@
           }
         },
         "range": {
-          "from": 3712,
-          "to": 3785
+          "from": 4565,
+          "to": 4638
         }
       }
     },
     {
-      "id": "30a9179d",
+      "id": "631f0d7e",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -5739,8 +5673,8 @@
           "headingId": "example-app"
         },
         "range": {
-          "from": 3787,
-          "to": 3802
+          "from": 4640,
+          "to": 4655
         },
         "inline": [
           {
@@ -5751,7 +5685,7 @@
       }
     },
     {
-      "id": "13704d8d",
+      "id": "41508628",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -5788,17 +5722,17 @@
             },
             "children": [
               {
-                "id": "13704d8d::item:0",
+                "id": "41508628::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3804,
-                  "to": 3894
+                  "from": 4657,
+                  "to": 4747
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "13704d8d::item:0",
+                    "id": "41508628::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5814,8 +5748,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3804,
-                        "to": 3894
+                        "from": 4657,
+                        "to": 4747
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5862,13 +5796,13 @@
           }
         },
         "range": {
-          "from": 3804,
-          "to": 3894
+          "from": 4657,
+          "to": 4747
         }
       }
     },
     {
-      "id": "3bbf62be",
+      "id": "2e6ba748",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -5880,8 +5814,8 @@
           "headingId": "perf-baselines-local"
         },
         "range": {
-          "from": 3896,
-          "to": 3922
+          "from": 4749,
+          "to": 4775
         },
         "inline": [
           {
@@ -5892,7 +5826,7 @@
       }
     },
     {
-      "id": "41c2aa2c",
+      "id": "6fa2e2c7",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -5953,17 +5887,17 @@
             },
             "children": [
               {
-                "id": "41c2aa2c::item:0",
+                "id": "6fa2e2c7::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3924,
-                  "to": 4021
+                  "from": 4777,
+                  "to": 4874
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "41c2aa2c::item:0",
+                    "id": "6fa2e2c7::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5983,8 +5917,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3924,
-                        "to": 4021
+                        "from": 4777,
+                        "to": 4874
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -6036,17 +5970,17 @@
                 "children": []
               },
               {
-                "id": "41c2aa2c::item:1",
+                "id": "6fa2e2c7::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 4022,
-                  "to": 4105
+                  "from": 4875,
+                  "to": 4958
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "41c2aa2c::item:1",
+                    "id": "6fa2e2c7::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -6066,8 +6000,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4022,
-                        "to": 4105
+                        "from": 4875,
+                        "to": 4958
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -6119,17 +6053,17 @@
                 "children": []
               },
               {
-                "id": "41c2aa2c::item:2",
+                "id": "6fa2e2c7::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 4106,
-                  "to": 4200
+                  "from": 4959,
+                  "to": 5053
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "41c2aa2c::item:2",
+                    "id": "6fa2e2c7::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -6141,8 +6075,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4106,
-                        "to": 4200
+                        "from": 4959,
+                        "to": 5053
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -6162,18 +6096,18 @@
                           },
                           "children": [
                             {
-                              "id": "41c2aa2c::item:2::bulletlist:1",
+                              "id": "6fa2e2c7::item:2::bulletlist:1",
                               "type": "list",
                               "props": {
                                 "block": {
-                                  "id": "41c2aa2c::item:2::bulletlist:1",
+                                  "id": "6fa2e2c7::item:2::bulletlist:1",
                                   "type": "list",
                                   "isFinalized": true,
                                   "payload": {
                                     "raw": "- `npm run perf:compare -- --base <base> --candidate <candidate>`",
                                     "range": {
-                                      "from": 4135,
-                                      "to": 4200
+                                      "from": 4988,
+                                      "to": 5053
                                     },
                                     "meta": {
                                       "sourceContainer": "list",
@@ -6186,17 +6120,17 @@
                                         },
                                         "children": [
                                           {
-                                            "id": "41c2aa2c::item:2::bulletlist:1::item:0",
+                                            "id": "6fa2e2c7::item:2::bulletlist:1::item:0",
                                             "type": "list-item",
                                             "range": {
-                                              "from": 4135,
-                                              "to": 4200
+                                              "from": 4988,
+                                              "to": 5053
                                             },
                                             "props": {
                                               "ordered": false,
                                               "loose": false,
                                               "block": {
-                                                "id": "41c2aa2c::item:2::bulletlist:1::item:0",
+                                                "id": "6fa2e2c7::item:2::bulletlist:1::item:0",
                                                 "type": "list-item",
                                                 "isFinalized": true,
                                                 "payload": {
@@ -6208,8 +6142,8 @@
                                                     }
                                                   ],
                                                   "range": {
-                                                    "from": 4135,
-                                                    "to": 4200
+                                                    "from": 4988,
+                                                    "to": 5053
                                                   },
                                                   "meta": {
                                                     "sourceContainer": "list",
@@ -6253,22 +6187,22 @@
                                 "loose": false
                               },
                               "range": {
-                                "from": 4135,
-                                "to": 4200
+                                "from": 4988,
+                                "to": 5053
                               },
                               "children": [
                                 {
-                                  "id": "41c2aa2c::item:2::bulletlist:1::item:0",
+                                  "id": "6fa2e2c7::item:2::bulletlist:1::item:0",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 4135,
-                                    "to": 4200
+                                    "from": 4988,
+                                    "to": 5053
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "41c2aa2c::item:2::bulletlist:1::item:0",
+                                      "id": "6fa2e2c7::item:2::bulletlist:1::item:0",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -6280,8 +6214,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 4135,
-                                          "to": 4200
+                                          "from": 4988,
+                                          "to": 5053
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -6335,18 +6269,18 @@
                 },
                 "children": [
                   {
-                    "id": "41c2aa2c::item:2::bulletlist:1",
+                    "id": "6fa2e2c7::item:2::bulletlist:1",
                     "type": "list",
                     "props": {
                       "block": {
-                        "id": "41c2aa2c::item:2::bulletlist:1",
+                        "id": "6fa2e2c7::item:2::bulletlist:1",
                         "type": "list",
                         "isFinalized": true,
                         "payload": {
                           "raw": "- `npm run perf:compare -- --base <base> --candidate <candidate>`",
                           "range": {
-                            "from": 4135,
-                            "to": 4200
+                            "from": 4988,
+                            "to": 5053
                           },
                           "meta": {
                             "sourceContainer": "list",
@@ -6359,17 +6293,17 @@
                               },
                               "children": [
                                 {
-                                  "id": "41c2aa2c::item:2::bulletlist:1::item:0",
+                                  "id": "6fa2e2c7::item:2::bulletlist:1::item:0",
                                   "type": "list-item",
                                   "range": {
-                                    "from": 4135,
-                                    "to": 4200
+                                    "from": 4988,
+                                    "to": 5053
                                   },
                                   "props": {
                                     "ordered": false,
                                     "loose": false,
                                     "block": {
-                                      "id": "41c2aa2c::item:2::bulletlist:1::item:0",
+                                      "id": "6fa2e2c7::item:2::bulletlist:1::item:0",
                                       "type": "list-item",
                                       "isFinalized": true,
                                       "payload": {
@@ -6381,8 +6315,8 @@
                                           }
                                         ],
                                         "range": {
-                                          "from": 4135,
-                                          "to": 4200
+                                          "from": 4988,
+                                          "to": 5053
                                         },
                                         "meta": {
                                           "sourceContainer": "list",
@@ -6426,22 +6360,22 @@
                       "loose": false
                     },
                     "range": {
-                      "from": 4135,
-                      "to": 4200
+                      "from": 4988,
+                      "to": 5053
                     },
                     "children": [
                       {
-                        "id": "41c2aa2c::item:2::bulletlist:1::item:0",
+                        "id": "6fa2e2c7::item:2::bulletlist:1::item:0",
                         "type": "list-item",
                         "range": {
-                          "from": 4135,
-                          "to": 4200
+                          "from": 4988,
+                          "to": 5053
                         },
                         "props": {
                           "ordered": false,
                           "loose": false,
                           "block": {
-                            "id": "41c2aa2c::item:2::bulletlist:1::item:0",
+                            "id": "6fa2e2c7::item:2::bulletlist:1::item:0",
                             "type": "list-item",
                             "isFinalized": true,
                             "payload": {
@@ -6453,8 +6387,8 @@
                                 }
                               ],
                               "range": {
-                                "from": 4135,
-                                "to": 4200
+                                "from": 4988,
+                                "to": 5053
                               },
                               "meta": {
                                 "sourceContainer": "list",
@@ -6497,13 +6431,13 @@
           }
         },
         "range": {
-          "from": 3924,
-          "to": 4200
+          "from": 4777,
+          "to": 5053
         }
       }
     },
     {
-      "id": "1bda10ac",
+      "id": "15ea4bf9",
       "type": "hr",
       "isFinalized": true,
       "payload": {
@@ -6512,13 +6446,13 @@
           "lezerNodeType": "HorizontalRule"
         },
         "range": {
-          "from": 4202,
-          "to": 4205
+          "from": 5055,
+          "to": 5058
         }
       }
     },
     {
-      "id": "4c458705",
+      "id": "29f89b6b",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -6530,8 +6464,8 @@
           "headingId": "7-engine-v2-delivery-evidence"
         },
         "range": {
-          "from": 4207,
-          "to": 4240
+          "from": 5060,
+          "to": 5093
         },
         "inline": [
           {
@@ -6542,11 +6476,11 @@
       }
     },
     {
-      "id": "1e43b000",
+      "id": "4c23e89b",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- Node 20 integrated suites: 21 core, 52 worker, 48 React, one unified, and one Mermaid test file passed.\n- Review-phase additions, all default off so default output is unchanged: opt-in code/table/Mermaid `controls` (rendered beside `<pre>`, never inside it), `animated` streaming text, render-time element filters (`allowedElements`/`disallowedElements`/`allowElement`/`unwrapDisallowed`/`disableAutolinkProtocols`), `codeRenderers` `aliases`, configurable Shiki themes, and a render-time `urlTransform`. Render-time props re-render mounted blocks without restarting the stream.\n- CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare `<pre><code>` with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance.\n- Final production HTML regressions: 109/109 scenarios passed in a non-update run against the production docs build.\n- Fresh packed ESM/CJS consumers and production Next/Vite builds passed on Node 20. Real main-thread browser consumers rendered remark/rehype output and Mermaid SVGs.\n- Physical browser workers exercised native Lezer grammar/inline extensions, document plugins, and serialized syntax rules. Finalized table virtualization retained the last row through streaming replacement and rendered every row when disabled.\n- Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.",
+        "raw": "- Node 20 integrated suites: 21 core, 52 worker, 48 React, one unified, and one Mermaid test file passed.\n- Review-phase additions, all default off so default output is unchanged: opt-in code/table/Mermaid `controls` (rendered beside `<pre>`, never inside it), `animated` streaming text, render-time element filters (`allowedElements`/`disallowedElements`/`allowElement`/`unwrapDisallowed`/`disableAutolinkProtocols`), `codeRenderers` `aliases`, configurable Shiki themes, and a render-time `urlTransform`. Render-time props re-render mounted blocks without restarting the stream.\n- CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare `<pre><code>` with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance.\n- Final production HTML regressions: 109/109 scenarios passed in a non-update run against the production docs build.\n- Fresh packed ESM/CJS consumers and production Next/Vite builds passed on Node 20. Real main-thread browser consumers rendered remark/rehype output and Mermaid SVGs.\n- Physical browser workers exercised native Lezer grammar/inline extensions, document plugins, and serialized syntax rules. Finalized table virtualization retained the last row through streaming replacement and rendered every row when disabled.\n- Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -6696,7 +6630,7 @@
             [
               {
                 "kind": "text",
-                "text": "Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in "
+                "text": "Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in "
               },
               {
                 "kind": "code",
@@ -6723,17 +6657,17 @@
             },
             "children": [
               {
-                "id": "1e43b000::item:0",
+                "id": "4c23e89b::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 4242,
-                  "to": 4347
+                  "from": 5095,
+                  "to": 5200
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "1e43b000::item:0",
+                    "id": "4c23e89b::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -6745,8 +6679,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4242,
-                        "to": 4347
+                        "from": 5095,
+                        "to": 5200
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -6782,17 +6716,17 @@
                 "children": []
               },
               {
-                "id": "1e43b000::item:1",
+                "id": "4c23e89b::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 4348,
-                  "to": 4822
+                  "from": 5201,
+                  "to": 5675
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "1e43b000::item:1",
+                    "id": "4c23e89b::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -6892,8 +6826,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4348,
-                        "to": 4822
+                        "from": 5201,
+                        "to": 5675
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -7105,17 +7039,17 @@
                 "children": []
               },
               {
-                "id": "1e43b000::item:2",
+                "id": "4c23e89b::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 4823,
-                  "to": 5484
+                  "from": 5676,
+                  "to": 6337
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "1e43b000::item:2",
+                    "id": "4c23e89b::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -7135,8 +7069,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4823,
-                        "to": 5484
+                        "from": 5676,
+                        "to": 6337
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -7188,17 +7122,17 @@
                 "children": []
               },
               {
-                "id": "1e43b000::item:3",
+                "id": "4c23e89b::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 5485,
-                  "to": 5601
+                  "from": 6338,
+                  "to": 6454
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "1e43b000::item:3",
+                    "id": "4c23e89b::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -7210,8 +7144,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5485,
-                        "to": 5601
+                        "from": 6338,
+                        "to": 6454
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -7247,17 +7181,17 @@
                 "children": []
               },
               {
-                "id": "1e43b000::item:4",
+                "id": "4c23e89b::item:4",
                 "type": "list-item",
                 "range": {
-                  "from": 5602,
-                  "to": 5768
+                  "from": 6455,
+                  "to": 6621
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "1e43b000::item:4",
+                    "id": "4c23e89b::item:4",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -7269,8 +7203,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5602,
-                        "to": 5768
+                        "from": 6455,
+                        "to": 6621
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -7306,17 +7240,17 @@
                 "children": []
               },
               {
-                "id": "1e43b000::item:5",
+                "id": "4c23e89b::item:5",
                 "type": "list-item",
                 "range": {
-                  "from": 5769,
-                  "to": 6013
+                  "from": 6622,
+                  "to": 6866
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "1e43b000::item:5",
+                    "id": "4c23e89b::item:5",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -7328,8 +7262,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5769,
-                        "to": 6013
+                        "from": 6622,
+                        "to": 6866
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -7365,25 +7299,25 @@
                 "children": []
               },
               {
-                "id": "1e43b000::item:6",
+                "id": "4c23e89b::item:6",
                 "type": "list-item",
                 "range": {
-                  "from": 6014,
-                  "to": 6188
+                  "from": 6867,
+                  "to": 7053
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "1e43b000::item:6",
+                    "id": "4c23e89b::item:6",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.",
+                      "raw": "- Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.",
                       "inline": [
                         {
                           "kind": "text",
-                          "text": "Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in "
+                          "text": "Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in "
                         },
                         {
                           "kind": "code",
@@ -7403,8 +7337,8 @@
                         }
                       ],
                       "range": {
-                        "from": 6014,
-                        "to": 6188
+                        "from": 6867,
+                        "to": 7053
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -7416,7 +7350,7 @@
                             "inline": [
                               {
                                 "kind": "text",
-                                "text": "Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in "
+                                "text": "Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in "
                               },
                               {
                                 "kind": "code",
@@ -7435,8 +7369,8 @@
                                 "text": "."
                               }
                             ],
-                            "text": "Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in docs/PUBLIC_API.md and docs/REACT_INTEGRATION_GUIDE.md.",
-                            "raw": "- Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`."
+                            "text": "Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in docs/PUBLIC_API.md and docs/REACT_INTEGRATION_GUIDE.md.",
+                            "raw": "- Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`."
                           },
                           "children": []
                         }
@@ -7447,7 +7381,7 @@
                   "inline": [
                     {
                       "kind": "text",
-                      "text": "Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in "
+                      "text": "Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in "
                     },
                     {
                       "kind": "code",
@@ -7466,8 +7400,8 @@
                       "text": "."
                     }
                   ],
-                  "text": "Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in docs/PUBLIC_API.md and docs/REACT_INTEGRATION_GUIDE.md.",
-                  "raw": "- Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`."
+                  "text": "Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in docs/PUBLIC_API.md and docs/REACT_INTEGRATION_GUIDE.md.",
+                  "raw": "- Consumer API, renderer replacements, custom code renderers, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`."
                 },
                 "children": []
               }
@@ -7475,23 +7409,30 @@
           }
         },
         "range": {
-          "from": 4242,
-          "to": 6188
+          "from": 5095,
+          "to": 7053
         }
       }
     },
     {
-      "id": "51a80692",
+      "id": "eb3b1f9",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Performance results require completed measurements and equivalent rendered semantics. Do not infer a speed claim from correctness scores or invalid comparisons; see `docs/STREAMDOWN_COMPARISON.md`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 165,
+              "to": 196,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 6190,
-          "to": 6387
+          "from": 7055,
+          "to": 7252
         },
         "inline": [
           {
@@ -7531,73 +7472,73 @@
     },
     {
       "id": "3-pipeline-overview",
-      "blockId": "2aba8f87",
+      "blockId": "63846a5b",
       "level": 2,
       "text": "3) Pipeline Overview"
     },
     {
       "id": "3-1-worker",
-      "blockId": "2240b7df",
+      "blockId": "6bfe4203",
       "level": 3,
       "text": "3.1 Worker"
     },
     {
       "id": "3-2-react-renderer",
-      "blockId": "ab835a4",
+      "blockId": "4cc41a69",
       "level": 3,
       "text": "3.2 React renderer"
     },
     {
       "id": "3-3-backpressure-and-scheduling",
-      "blockId": "136d3222",
+      "blockId": "70cb8035",
       "level": 3,
       "text": "3.3 Backpressure and scheduling"
     },
     {
       "id": "4-mdx",
-      "blockId": "6adcf81f",
+      "blockId": "195bba38",
       "level": 2,
       "text": "4) MDX"
     },
     {
-      "id": "5-security-model-html",
-      "blockId": "3e94cd1b",
+      "id": "5-security-model-html-and-mdx",
+      "blockId": "3e8820a4",
       "level": 2,
-      "text": "5) Security Model (HTML)"
+      "text": "5) Security Model (HTML and MDX)"
     },
     {
       "id": "6-repo-workflows",
-      "blockId": "25ed73bc",
+      "blockId": "6fe7823e",
       "level": 2,
       "text": "6) Repo Workflows"
     },
     {
       "id": "build-test",
-      "blockId": "370933fc",
+      "blockId": "5ecbc1fe",
       "level": 3,
       "text": "Build + test"
     },
     {
       "id": "build-hosted-worker-for-the-example-app",
-      "blockId": "547bc6dd",
+      "blockId": "41592f1d",
       "level": 3,
       "text": "Build hosted worker for the example app"
     },
     {
       "id": "example-app",
-      "blockId": "30a9179d",
+      "blockId": "631f0d7e",
       "level": 3,
       "text": "Example app"
     },
     {
       "id": "perf-baselines-local",
-      "blockId": "3bbf62be",
+      "blockId": "2e6ba748",
       "level": 3,
       "text": "Perf baselines (local)"
     },
     {
       "id": "7-engine-v2-delivery-evidence",
-      "blockId": "4c458705",
+      "blockId": "29f89b6b",
       "level": 2,
       "text": "7) Engine-v2 delivery evidence"
     }
@@ -7610,9 +7551,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

@@ -1,12 +1,6 @@
 # Mermaid Diagrams
 
-Mermaid is available as an optional addon so teams can opt in only when diagram rendering is needed.
-
-## Why Mermaid is optional
-
-- Keeps default bundle size lower.
-- Avoids extra parsing/rendering cost in apps that do not use diagrams.
-- Lets teams feature-flag diagram support by route or audience.
+Mermaid is an optional addon. Register its engine only in apps that need diagram fences.
 
 ## Install
 
@@ -14,27 +8,25 @@ Mermaid is available as an optional addon so teams can opt in only when diagram 
 npm install @stream-mdx/mermaid
 ```
 
-## Register the component
+## Register the engine
 
-Mermaid rendering is provided via a code fence renderer mapped to `mermaid` code fences.
+`createMermaidEngine()` routes `mermaid` fences through the native code owner. It does not require a code wrapper or a read of the full `Block`.
 
 ```tsx
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "stream-mdx";
-import { MermaidBlock } from "@stream-mdx/mermaid";
 
-<StreamingMarkdown
-  text={content}
-  worker="/workers/markdown-worker.js"
-  codeRenderers={{
-    mermaid: MermaidBlock,
-  }}
-  features={{
-    html: true,
-    tables: true,
-    math: true,
-    mdx: true,
-  }}
-/>;
+const mermaidEngine = createMermaidEngine();
+
+export function Article({ content }: { content: string }) {
+  return (
+    <StreamingMarkdown
+      text={content}
+      worker="/workers/markdown-worker.js"
+      engines={{ mermaid: mermaidEngine }}
+    />
+  );
+}
 ```
 
 ## Authoring example
@@ -57,66 +49,40 @@ graph TD
   C --> D[Renderer]
 ```
 
-## UX details
+## Default view and configuration
 
-The Mermaid block renderer includes a code/diagram toggle by default.
-
-Use `defaultView` to control first render mode:
+The engine includes a code/diagram toggle. Choose its initial view and Mermaid configuration when creating the engine:
 
 ```tsx
-codeRenderers={{
-  mermaid: (props) => <MermaidBlock {...props} defaultView="diagram" />,
-}}
-```
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 
-### Custom configuration and error handling
-
-Use `createMermaidBlock` to configure global Mermaid options, default views, debounce intervals, a custom/pinned Mermaid module or async loader, or a custom error component with retry capability:
-
-```tsx
-import { createMermaidBlock } from "@stream-mdx/mermaid";
-import { StreamingMarkdown } from "stream-mdx";
-
-const CustomMermaidBlock = createMermaidBlock({
+const mermaidEngine = createMermaidEngine({
   config: { theme: "neutral" },
   defaultView: "diagram",
   debounceMs: 150,
-  mermaid: () => import("mermaid"), // optional custom instance or custom loader
+  mermaid: () => import("mermaid"),
   errorComponent: ({ error, retry }) => (
-    <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm">
-      <p className="font-medium text-red-700 dark:text-red-300">Diagram rendering failed: {error}</p>
-      <button type="button" onClick={retry} className="mt-2 text-xs underline">
-        Retry diagram
-      </button>
+    <div role="alert">
+      <p>Diagram rendering failed: {error}</p>
+      <button type="button" onClick={retry}>Retry diagram</button>
     </div>
   ),
 });
-
-<StreamingMarkdown
-  text={content}
-  codeRenderers={{
-    mermaid: CustomMermaidBlock,
-  }}
-/>;
 ```
 
-Recommendations:
-
-- Keep source code view available for debugging and copy/paste.
-- Use overflow-safe wrappers on narrow screens.
-- Prefer diagram view only for docs pages where the diagram is primary content.
+The factory also accepts a pinned Mermaid module or async loader. Failed or incomplete diagrams report an error inside their own block; valid later source replaces that error. `deferHeavyBlocks` on `StreamingMarkdown` can opt Mermaid rendering into viewport deferral.
 
 ## Performance and safety notes
 
-- Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps.
+- Keep Mermaid rendering opt-in and behind a feature toggle in user-facing apps.
 - Keep sanitization enabled for surrounding HTML content.
-- Include one regression snapshot for a representative Mermaid page.
+- Include a regression snapshot for a representative Mermaid page.
 
 ## Troubleshooting
 
-- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={{ mermaid: MermaidBlock }}`.
-- **Hydration mismatch**: ensure wrappers/components around Mermaid are deterministic.
-- **Layout overflow**: add responsive container styles around the diagram block.
+- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and `engines.mermaid` receives `createMermaidEngine()`.
+- **Hydration mismatch**: keep server-rendered surrounding components deterministic.
+- **Layout overflow**: add responsive container styles around the diagram.
 
 ## Next steps
 

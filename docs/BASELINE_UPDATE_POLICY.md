@@ -42,11 +42,19 @@ Refreshing snapshots without adding the missing guard is not sufficient.
 
 HTML baselines lock the complete final HTML bytes, root-child hashes, and final structural signatures. Provisional checkpoint captures are diagnostic evidence, not count/order/HTML/structure equality assertions. Do not refresh snapshots to re-pin incidental partial classes, event timing, or older invalid KaTeX states.
 
+Comparisons canonicalize inline `style` values through Chromium's `CSSStyleDeclaration.cssText` before comparing HTML or hashing root children. Declaration order, values, priorities, custom-property values, and every non-style HTML byte remain strict.
+
 Removing a provisional byte assertion does not remove a behavior lock. Keep streaming security/math error bans, code-prefix and table/list guards, MDX state expectations, required rendered text/selectors, and explicit split-boundary assertions. The display-checkpoint fixture must render its formula at the ordinary S5 marker and converge to the complete formula and prose.
 
 Seeded replay must actually vary marker-stripped chunks using the existing seed options. Split-marker seeded S2 requests use the ordinary S5 final oracle; unseeded S5 still tests the authored critical boundary. Same-build seed and scheduler final comparisons stay exact. Zero executed requested cases are failures, not coverage.
 
 Missing entries in the ordinary scenario matrix must be recorded from reviewed, repaired behavior. Do not narrow eligibility, copy another scenario's snapshot, normalize final HTML broadly, or promote semantic rendering failures. Repair source behavior first, inspect final DOM/text/topology and styles, then selectively record accepted or missing baselines. Existing byte-identical finals need no re-pin just because their diagnostic checkpoints changed.
+
+### Harness completion checkpoints
+
+`appendAndFlush` waits for the captured worker's complete UTF-16 source frontier through its existing `DEBUG_STATE` reply, then flushes and drains the renderer and allows its DOM commit frame. The first `PATCH` or `METRICS` event is not a complete-append checkpoint: one append may span several worker parse slices. The source checkpoint does not replace semantic queue drain, `FINALIZED`, or separate decoration readiness. A DOM commit frame is not proof of compositor paint.
+
+`restart` remounts even an empty renderer, so readiness cannot reuse the discarded worker. A restart may coalesce a pending configuration remount: `setConfig` completes against the current mounted renderer, while `waitForReady` still waits for that worker's initialization. The `complete-append-frontier` S5 fixture exercises that overlap and reads paragraph text immediately after each awaited append in the same page callback.
 
 Before updating HTML snapshots, the following must be green against the intended serving model:
 

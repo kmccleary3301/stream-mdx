@@ -10,6 +10,7 @@
     "maxSize": 1048576,
     "ignore": [
       ".worktrees/**",
+      ".codex-optimization/**",
       "**/dist/**",
       "**/build/**",
       "**/.next/**",
@@ -21,6 +22,7 @@
       "apps/docs/public/workers/**",
       "examples/**/public/workers/**",
       "tests/regression/artifacts/**",
+      "scripts/perf/diagnostic-dist/**",
       "tests/regression/snapshots/**",
       "tmp/**",
       "docs_tmp/**"

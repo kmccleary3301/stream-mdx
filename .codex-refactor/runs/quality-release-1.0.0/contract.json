@@ -1,0 +1,45 @@
+{
+  "target_version": "1.0.0",
+  "baseline": {
+    "engine_source": "97d86262a95a8b961f233e69349d4fe929d8f0f6",
+    "engine_review_fixed_point": "6f0d03c2732f654063d91e1029db66ba37bd33a8",
+    "npm_source_provenance_limit": "0.5.0 has no gitHead or attestation; fixed point is its same-day release-preparation commit with matching manifest.",
+    "consumer_source": "cf3ab5b1f211afe1b878bcc913ba2c6c6d5ddbd5",
+    "consumer_review_fixed_point": "8403a397fe0a4b4df5c2ddedf7cdcf49a857eee5"
+  },
+  "approved_changes": [
+    "Enforce declared lookahead bounds with conservative raw provisional output on exhaustion.",
+    "Remove accidental parser implementation root exports without external package callers, retaining deliberate public contracts.",
+    "Separate inline/mixed grammar policy from orchestration.",
+    "Separate worker lifetime ownership and iterator pumping from React rendering orchestration.",
+    "Separate code-block rendering owner from universal block routing.",
+    "Use canonical consumer inspector blocks rather than visibility-gated duplicate state.",
+    "Restore real server-rendered article bodies via public snapshot compilation/rendering."
+  ],
+  "guardrails": [
+    "Preserve all other public APIs, mode semantics, stream identity, callbacks, native DOM/filter/security and final authored content.",
+    "Borrowed workers are never terminated; factory-created workers are owned and terminate exactly once, including managed sessions.",
+    "No blanket snapshot promotion, shims, mock fallbacks or performance claims.",
+    "Original user working copies remain untouched."
+  ],
+  "baseline_proof": {
+    "canonical_engine_build_and_docs_export": "PASS Node22",
+    "lookahead_orchestrator_trace_support_tests": "PASS",
+    "react_stream_session_and_server_snapshot_tests": "PASS",
+    "disabled_math_violation": "Compiled pre-cleanup createBlockSnapshot with mathEnabled=false produced math-inline tex=x.",
+    "scan_budget_violation": "Compiled pre-cleanup 607-character provisional tail exceeded maxScanChars512 yet appended strong closer.",
+    "owned_worker_leak": "Real public-component JSDOM factory worker managed=true unmount produced termination0, expected1.",
+    "article_ssr_violation": "Actual Next production route with JavaScript disabled had bodyTextLength0 and paragraphs0.",
+    "seeded_ci_limit": "Recorded Linux seed2 empty DOM remains unclassified. Instrumented Darwin two-seed worker trace passes; final CI guard must pass, no root-cause fix claim."
+  },
+  "verification": {
+    "unit_suite": "PASS, including real hosted-worker replacement and ownership coverage.",
+    "conformance": "675/675 normalized and strict; streaming and SSR 675 each; zero divergences.",
+    "installed_packages": "All ten 1.0.0 tarballs: Node ESM/CJS, protocol/TUI replay, default physical hosted-worker snapshots; Next/Vite production bundles pass.",
+    "consumer_ssr": "Production article: 3440 authored body characters, 17 paragraphs with JavaScript disabled. MDX Showcase and real YouTube iframe hydrate under CSP without unsafe-eval, with zero page errors or CSP violations. This proof predates final engine pin and inspector rebuild.",
+    "gate_log_transport": "Blocked-parent smoke reproduces pipe stall and verifies direct-file-descriptor logging completes.",
+    "coalescing_guard": "Canonical browser analyzer fails unchanged 10-percent guards: code-huge 204/2682 (7.606 percent), delimiter-boundary 1/68 (1.471 percent). No waiver or threshold change.",
+    "native_baseline_comparison": "Identical baseline/current operation counts, batch shapes and authored content before and after FINALIZE; full public replay stores match after every batch. Direct code-huge reduction is 172/2409 (7.140 percent), delimiter-boundary 1/68 (1.471 percent). Awaited direct transport is not browser timing/backpressure or rendered conformance proof.",
+    "publication": "Not published. npm authentication is unavailable; the new unified package cannot rely on an existing package-level trusted publisher. Main auto-publishes; merge is held to avoid a partial package family."
+  }
+}

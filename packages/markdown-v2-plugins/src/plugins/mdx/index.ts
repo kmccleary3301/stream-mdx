@@ -15,8 +15,21 @@ export const MDXDetectionPlugin: DocumentPlugin = {
       // The engine has already assigned these paragraphs to their inline/HTML projection.
       // Retagging them here would discard surrounding prose or compile pending JSX fragments.
       const meta = block.payload.meta;
-      if (block.type === "paragraph" && (meta?.inlineComponentSource || meta?.htmlParagraphTree || meta?.mixedSegments)) continue;
+      if (block.type === "paragraph" && (
+        meta?.inlineComponentSource ||
+        meta?.htmlParagraphTree ||
+        meta?.mixedSegments
+      )) continue;
       const raw = block.payload.raw;
+      if (block.type === "paragraph" && meta?.trustedMdxNativeChildren && raw.trim().endsWith("/>")) continue;
+      if (block.type === "paragraph") {
+        const trimmed = raw.trim();
+        const isWholeMdxBlock =
+          (trimmed.startsWith("<") && trimmed.endsWith(">")) ||
+          (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+          /^(?:import|export)\s/.test(trimmed);
+        if (!isWholeMdxBlock) continue;
+      }
       const blockRange = block.payload.range;
       const baseOffset = typeof blockRange?.from === "number" ? blockRange.from : null;
       let protectedBase = baseOffset ?? 0;

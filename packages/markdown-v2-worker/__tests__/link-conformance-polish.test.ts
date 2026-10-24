@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { InlineNode, Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore, type RendererStore } from "@stream-mdx/react/renderer/store";
@@ -41,7 +43,7 @@ function compileDirect(text: string): Promise<RendererStore> {
   worker.onmessage = (event: MessageEvent<WorkerOut>) => {
     const msg = event.data;
     if (msg.type === "INITIALIZED") {
-      store.reset(msg.blocks);
+      store.resetSnapshot(msg.snapshot);
     } else if (msg.type === "PATCH") {
       store.applyPatches(msg.patches as Patch[]);
     } else if (msg.type === "FINALIZED") {
@@ -53,12 +55,9 @@ function compileDirect(text: string): Promise<RendererStore> {
     }
   };
 
-  worker.postMessage({
-    type: "INIT",
-    initialContent: text,
-    prewarmLangs: [],
-    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true },
-  } as WorkerIn);
+  worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: text,
+  prewarmLangs: [],
+  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true }, } as WorkerIn);
 
   worker.postMessage({ type: "FINALIZE" } as WorkerIn);
   return promise;
@@ -72,7 +71,7 @@ function compileStreamed(text: string, chunkSize = 5): Promise<RendererStore> {
   worker.onmessage = (event: MessageEvent<WorkerOut>) => {
     const msg = event.data;
     if (msg.type === "INITIALIZED") {
-      store.reset(msg.blocks);
+      store.resetSnapshot(msg.snapshot);
     } else if (msg.type === "PATCH") {
       store.applyPatches(msg.patches as Patch[]);
     } else if (msg.type === "FINALIZED") {
@@ -84,12 +83,9 @@ function compileStreamed(text: string, chunkSize = 5): Promise<RendererStore> {
     }
   };
 
-  worker.postMessage({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true },
-  } as WorkerIn);
+  worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true }, } as WorkerIn);
 
   for (let i = 0; i < text.length; i += chunkSize) {
     worker.postMessage({ type: "APPEND", text: text.slice(i, i + chunkSize) } as WorkerIn);

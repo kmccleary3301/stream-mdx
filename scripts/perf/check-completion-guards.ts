@@ -17,14 +17,14 @@ const streamdown = collect('<h2>Title</h2><div data-streamdown="code-block" data
 assert.deepEqual(native, streamdown, "wrapper and rendered line boundaries must canonicalize identically");
 assert.equal(native.codeBlocks[0].code, "  first\n\n  last", "code indentation and blank lines must survive");
 assert.notDeepEqual(native, collect('<h2>Title</h2><pre><code class="language-js">  first\n  last</code></pre><p>Done</p>'), "missing code lines must change records");
-const generatedNativeFrame = '<pre data-code-block="true" data-block-id="fence" data-code-total-lines="3"><div class="markdown-code-block"><pre data-language="text"><code><span>  first</span>\n<span></span>\n<span>  last</span></code></pre></div></pre>';
+const generatedNativeFrame = '<div data-code-block="true" data-block-id="fence" data-code-total-lines="3"><div class="markdown-code-block"><pre data-language="text"><code><span>  first</span>\n<span></span>\n<span>  last</span></code></pre></div></div>';
 const generatedStreamdownFrame = '<div data-streamdown="code-block"><pre><code><span>  first</span><span>\n</span><span>  last</span></code></pre></div>';
-assert.deepEqual(collect(generatedNativeFrame), collect(generatedStreamdownFrame), "the public native outer PRE frame is one generated fence, not authored preformatted content");
+assert.deepEqual(collect(generatedNativeFrame), collect(generatedStreamdownFrame), "the public native outer DIV frame is one generated fence, not authored preformatted content");
 assert.equal(collect(generatedNativeFrame).preformatted.length, 0);
 assert.equal(collect(generatedNativeFrame).codeBlocks.length, 1);
 assert.equal(collect(generatedNativeFrame).text, "  first\n\n  last");
-assert.notDeepEqual(collect(generatedNativeFrame), collect(generatedNativeFrame.replace("</div></pre>", "</div>authored</pre>")), "outer PRE sibling text must disqualify generated ownership");
-assert.notDeepEqual(collect(generatedNativeFrame.replace("</div></pre>", "</div>A</pre>")), collect(generatedNativeFrame.replace("</div></pre>", "</div>B</pre>")), "authored outer PRE text remains verbatim content");
+assert.notDeepEqual(collect(generatedNativeFrame), collect(generatedNativeFrame.replace("</div></div>", "</div>authored</div>")), "outer DIV sibling text must disqualify generated ownership");
+assert.notDeepEqual(collect(generatedNativeFrame.replace("</div></div>", "</div>A</div>")), collect(generatedNativeFrame.replace("</div></div>", "</div>B</div>")), "authored outer DIV text remains verbatim content");
 assert.notDeepEqual(collect(generatedNativeFrame.replace("</code>", "</code>A")), collect(generatedNativeFrame.replace("</code>", "</code>B")), "inner PRE text siblings disqualify ownership and preserve A/B");
 assert.notDeepEqual(collect(generatedNativeFrame.replace('<div class="markdown-code-block">', '<div class="markdown-code-block">A')), collect(generatedNativeFrame.replace('<div class="markdown-code-block">', '<div class="markdown-code-block">B')), "renderer-looking DIV text siblings remain authored content");
 assert.notDeepEqual(collect(generatedNativeFrame), collect(generatedNativeFrame.replace("</code>", "</code> ")), "authored inner PRE whitespace is significant");

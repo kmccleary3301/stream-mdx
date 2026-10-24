@@ -1,16 +1,22 @@
 import { EventEmitter } from "node:events";
 import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type { Block, HtmlTreeNode, InlineNode, NodeSnapshot } from "@stream-mdx/core";
 
 class FakeWorkerGlobal extends EventEmitter {
   onmessage: ((event: MessageEvent<WorkerIn>) => void | Promise<void>) | null = null;
+  /** Messages tied to this scope's in-flight dispatch; late emissions outside a dispatch are dropped. */
+  activeQueue: WorkerOut[] | null = null;
+
+  // The worker transport posts through its own scope, so an earlier harness's late emissions never
+  // reach a later harness's queue.
+  postMessage(message: WorkerOut): void {
+    this.activeQueue?.push(message);
+  }
 
   async dispatch(event: WorkerIn): Promise<void> {
     await this.onmessage?.({ data: event } as MessageEvent<WorkerIn>);
   }
 }
-
-let workerScope: FakeWorkerGlobal | null = null;
-let activeQueue: WorkerOut[] | null = null;
 
 async function waitForAsyncWorkerMessages(queue: WorkerOut[], maxWaitMs = 50): Promise<void> {
   const deadline = Date.now() + maxWaitMs;
@@ -31,15 +37,8 @@ async function waitForAsyncWorkerMessages(queue: WorkerOut[], maxWaitMs = 50): P
 }
 
 async function ensureWorkerLoaded(): Promise<FakeWorkerGlobal> {
-  workerScope = new FakeWorkerGlobal();
+  const workerScope = new FakeWorkerGlobal();
   (globalThis as any).self = workerScope;
-  (globalThis as any).postMessage = (msg: WorkerOut) => {
-    if (activeQueue) {
-      activeQueue.push(msg);
-      return;
-    }
-    // Tests only care about messages tied to the active dispatch; drop late emissions.
-  };
 
   // Force a fresh worker module instance so each test file can own its worker scope.
   await import(`../src/worker?testHarness=${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -59,16 +58,87 @@ export async function createWorkerHarness(): Promise<WorkerHarness> {
       // per sanitize) keeps every sanitized document alive until the job ends.
       await new Promise<void>((resolve) => setImmediate(resolve));
       const queue: WorkerOut[] = [];
-      activeQueue = queue;
+      scope.activeQueue = queue;
       try {
         await scope.dispatch(message);
         if (message.type === "TOKENIZE_RANGE") {
           await waitForAsyncWorkerMessages(queue);
         }
       } finally {
-        activeQueue = null;
+        scope.activeQueue = null;
       }
       return queue;
     },
   };
+}
+
+function mergeAdjacentText(nodes: readonly InlineNode[]): unknown[] {
+  const merged: Array<Record<string, unknown>> = [];
+  for (const node of nodes) {
+    const projected: Record<string, unknown> = { ...node };
+    if ("children" in node && Array.isArray(node.children)) {
+      projected.children = mergeAdjacentText(node.children);
+    }
+    const previous = merged.at(-1);
+    if (node.kind === "text" && previous?.kind === "text") {
+      previous.text = `${String(previous.text)}${node.text}`;
+      const previousRange = previous.sourceRange as { from: number; to: number } | undefined;
+      const nextRange = node.sourceRange;
+      if (previousRange && nextRange) previous.sourceRange = { from: previousRange.from, to: nextRange.to };
+      else delete previous.sourceRange;
+    } else {
+      merged.push(projected);
+    }
+  }
+  return merged;
+}
+
+/** Stable authored fields exposed by the cold RendererStore export. */
+export function projectConsumerBlocks(blocks: readonly Block[]): unknown[] {
+  function projectBlock(block: Block): unknown {
+    const meta = block.payload.meta;
+    const children: unknown[] = [];
+    const prepared = meta?.preparedNested as { children?: readonly NodeSnapshot[] } | undefined;
+    if (prepared?.children) children.push(...prepared.children.flatMap(projectNode));
+    for (const key of ["htmlTree", "htmlParagraphTree"]) {
+      const tree = meta?.[key] as HtmlTreeNode[] | undefined;
+      if (Array.isArray(tree)) children.push(...tree.flatMap(projectHtmlTreeNode));
+    }
+    return {
+      type: block.type,
+      raw: block.payload.raw,
+      range: block.payload.range,
+      isFinalized: block.isFinalized,
+      inline: mergeAdjacentText(block.payload.inline ?? []),
+      children,
+    };
+  }
+
+  function projectNode(node: NodeSnapshot): unknown[] {
+    // A nested list or quote level is rendered structure; whether its snapshot also carries a `block` is patch history.
+    if (node.type === "list" || node.type === "blockquote") {
+      return [{ type: node.type, range: node.range, children: node.children.flatMap(projectNode) }];
+    }
+    const block = node.props?.block as Block | undefined;
+    if (block) return [projectBlock(block)];
+    return node.children.flatMap(projectNode);
+  }
+
+  function projectHtmlTreeNode(node: HtmlTreeNode): unknown[] {
+    if (node.kind === "block") return [projectBlock(node.block)];
+    return node.kind === "element" || node.kind === "component" ? node.children.flatMap(projectHtmlTreeNode) : [];
+  }
+
+  return blocks.map(projectBlock);
+}
+
+/** Root-only variant for failures owned by the nested cold exporter. */
+export function projectConsumerRoots(blocks: readonly Block[]): unknown[] {
+  return blocks.map((block) => ({
+    type: block.type,
+    raw: block.payload.raw,
+    range: block.payload.range,
+    isFinalized: block.isFinalized,
+    inline: mergeAdjacentText(block.payload.inline ?? []),
+  }));
 }

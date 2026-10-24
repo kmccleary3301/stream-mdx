@@ -29,17 +29,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.199999988079071,
+        "lastDurationMs": 1.199999988079071,
         "meta": {
           "fixtureId": "html-sanitization",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -48,8 +49,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -58,12 +57,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Nor</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\" id=\"html-sanitization\" data-heading-id=\"html-sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph markdown-paragraph\">Nor</p></div>",
       "textSample": "HTML SanitizationNor",
       "structure": {
         "topLevelTags": [
@@ -74,15 +71,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -95,17 +89,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.199999988079071,
+        "lastDurationMs": 1.199999988079071,
         "meta": {
           "fixtureId": "html-sanitization",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -114,8 +109,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -124,12 +117,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Nor</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\" id=\"html-sanitization\" data-heading-id=\"html-sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph markdown-paragraph\">Nor</p></div>",
       "textSample": "HTML SanitizationNor",
       "structure": {
         "topLevelTags": [
@@ -140,15 +131,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -161,17 +149,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 4,
+        "lastPatchToDomMs": 1.399999976158142,
+        "lastDurationMs": 0.5,
         "meta": {
           "fixtureId": "html-sanitization",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -180,8 +169,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -190,12 +177,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should r</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\" id=\"html-sanitization\" data-heading-id=\"html-sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph markdown-paragraph\">Normal inline HTML should r</p></div>",
       "textSample": "HTML SanitizationNormal inline HTML should r",
       "structure": {
         "topLevelTags": [
@@ -206,15 +191,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -227,17 +209,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 4,
-        "lastPatchToDomMs": 14.699999995529652,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 8,
+        "lastPatchToDomMs": 2.299999952316284,
+        "lastDurationMs": 0.699999988079071,
         "meta": {
           "fixtureId": "html-sanitization",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -246,8 +229,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -256,12 +237,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallow</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\" id=\"html-sanitization\" data-heading-id=\"html-sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph markdown-paragraph\">Disallow</p></div>",
       "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallow",
       "structure": {
         "topLevelTags": [
@@ -272,15 +251,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -293,17 +269,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 8,
-        "lastPatchToDomMs": 16.100000001490116,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 16,
+        "lastPatchToDomMs": 0.40000003576278687,
         "lastDurationMs": 0,
         "meta": {
           "fixtureId": "html-sanitization",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -312,8 +289,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -322,12 +297,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\">&lt;img src=\"data:image/gif;b</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\" id=\"html-sanitization\" data-heading-id=\"html-sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph markdown-paragraph\">&lt;img src=\"data:image/gif;b</p></div>",
       "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:<img src=\"data:image/gif;b",
       "structure": {
         "topLevelTags": [
@@ -338,15 +311,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -359,17 +329,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 12,
-        "lastPatchToDomMs": 15.300000004470348,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 24,
+        "lastPatchToDomMs": 0.699999988079071,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "html-sanitization",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -378,8 +349,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -388,12 +357,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph\">&lt;a href=\"https://example.</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\" id=\"html-sanitization\" data-heading-id=\"html-sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph markdown-paragraph\">&lt;a href=\"https://example.</p></div>",
       "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:\n<a href=\"https://example.",
       "structure": {
         "topLevelTags": [
@@ -404,15 +371,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -425,17 +389,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 14,
-        "lastPatchToDomMs": 16.399999998509884,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 28,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "html-sanitization",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -444,8 +409,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -454,12 +417,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph\"><a href=\"https://example.com\">safe link</a></p>\n</div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\" id=\"html-sanitization\" data-heading-id=\"html-sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph markdown-paragraph\"><a href=\"https://example.com\">safe link</a></p>\n</div>",
       "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:\nsafe link\n",
       "structure": {
         "topLevelTags": [
@@ -470,15 +431,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -491,17 +449,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 16,
-        "lastPatchToDomMs": 16.600000001490116,
-        "lastDurationMs": 0.10000000149011612,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 32,
+        "lastPatchToDomMs": 0.800000011920929,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "html-sanitization",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -510,8 +469,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -520,12 +477,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph\"><a href=\"https://example.com\">safe link</a></p>\n<div>Styled div</div></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\" id=\"html-sanitization\" data-heading-id=\"html-sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph markdown-paragraph\"><a href=\"https://example.com\">safe link</a></p>\n<div>Styled div</div></div>",
       "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:\nsafe link\nStyled div",
       "structure": {
         "topLevelTags": [
@@ -536,15 +491,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -557,28 +509,27 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph\"><a href=\"https://example.com\">safe link</a></p>\n<div>Styled div</div></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\" id=\"html-sanitization\" data-heading-id=\"html-sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph markdown-paragraph\"><a href=\"https://example.com\">safe link</a></p>\n<div>Styled div</div></div>",
     "runtimeState": {
-      "rendererVersion": 21,
+      "rendererVersion": 20,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 18,
-      "lastPatchToDomMs": 12.200000002980232,
-      "lastDurationMs": 0.10000000149011612,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
+      "lastTx": 33,
+      "lastPatchToDomMs": 9.900000035762787,
+      "lastDurationMs": 0.30000001192092896,
       "meta": {
         "fixtureId": "html-sanitization",
-        "scenarioId": "S3_fast_reasonable",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S3_fast_reasonable"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -592,8 +543,6 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       }
@@ -602,13 +551,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "d42b97ab7aa3ba92f0411ba146d5ca122f183a343a6386c4f0cfacc1e962858e",
+        "hash": "3185b2225aecb004bef1c05475205459aa0283637cd5d525d28f50cd0522902d",
         "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:\nsafe link\nStyle"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

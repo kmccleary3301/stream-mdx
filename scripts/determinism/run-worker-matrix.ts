@@ -2,11 +2,16 @@
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
 
 import { chromium } from "@playwright/test";
 
 import { compileMarkdownSnapshot } from "../../packages/markdown-v2-worker/src/node/index";
-import type { Block, TocHeading, WorkerIn, WorkerOut } from "../../packages/markdown-v2-core/src/types";
+import { applyPatchBatch, createInitialSnapshot } from "../../packages/markdown-v2-core/src/block-snapshot";
+import { STREAM_MDX_SCHEMA_VERSION, type Block, type TocHeading, type WorkerIn, type WorkerOut } from "../../packages/markdown-v2-core/src/types";
+
+type InitializedMessage = Extract<WorkerOut, { type: "INITIALIZED" }>;
+type PatchMessage = Extract<WorkerOut, { type: "PATCH" }>;
 
 type InitConfig = Extract<WorkerIn, { type: "INIT" }>["docPlugins"];
 
@@ -39,8 +44,9 @@ function normalizeBlocks(blocks: ReadonlyArray<Block>): unknown {
   }));
 }
 
+// Property insertion order is not part of the artifact; patch batching can legitimately change it.
 function deepEqualJson(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return isDeepStrictEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 }
 
 function normalizeToc(headings: ReadonlyArray<TocHeading>): unknown {
@@ -84,12 +90,18 @@ async function runBrowserWorkerOnPage(
   markdown: string,
   docPlugins: InitConfig,
 ): Promise<{ blocks: Block[]; tocHeadings: TocHeading[] }> {
+  // The browser worker's consumer artifact is its protocol stream; replay it exactly as the Node compile does.
   const result = await page.evaluate(
-      async ({ bundleText, markdown, docPlugins }) => {
+      async ({ bundleText, markdown, docPlugins, schemaVersion }) => {
         const blob = new Blob([bundleText], { type: "text/javascript" });
         const url = URL.createObjectURL(blob);
 
         const worker = new Worker(url);
+        const stream: Array<InitializedMessage | PatchMessage> = [];
+        worker.addEventListener("message", (e: MessageEvent) => {
+          const msg = e.data as WorkerOut;
+          if (msg?.type === "INITIALIZED" || msg?.type === "PATCH") stream.push(msg);
+        });
 
         const waitFor = <T extends WorkerOut["type"]>(type: T) =>
           new Promise<Extract<WorkerOut, { type: T }>>((resolve, reject) => {
@@ -114,6 +126,7 @@ async function runBrowserWorkerOnPage(
 
         worker.postMessage({
           type: "INIT",
+          schemaVersion,
           initialContent: markdown,
           prewarmLangs: [],
           docPlugins,
@@ -131,12 +144,19 @@ async function runBrowserWorkerOnPage(
         worker.terminate();
         URL.revokeObjectURL(url);
 
-        return { blocks: dump.blocks, tocHeadings: dump.tocHeadings ?? [] };
+        return { stream, tocHeadings: dump.tocHeadings ?? [] };
       },
-      { bundleText, markdown, docPlugins },
+      { bundleText, markdown, docPlugins, schemaVersion: STREAM_MDX_SCHEMA_VERSION },
     );
 
-  return result;
+  const [initialized, ...patches] = result.stream;
+  if (initialized?.type !== "INITIALIZED") throw new Error("browser worker stream must start with INITIALIZED");
+  const snapshot = createInitialSnapshot(initialized.snapshot);
+  for (const message of patches) {
+    if (message.type !== "PATCH") throw new Error("browser worker re-initialized during the matrix run");
+    applyPatchBatch(snapshot, message.patches);
+  }
+  return { blocks: snapshot.getBlocks(), tocHeadings: result.tocHeadings };
 }
 
 async function main(): Promise<void> {

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, UIEvent } from "react";
+import type { KeyboardEvent, ReactNode, UIEvent } from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export type BottomStickMode = "STICKY_INSTANT" | "DETACHED" | "RETURNING_SMOOTH";
@@ -70,6 +70,36 @@ function measure(viewport: HTMLDivElement) {
   return { scrollTop, scrollHeight, clientHeight, maxScrollTop, distanceToBottom, isOverflowing };
 }
 
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false;
+  if (target.closest("input, textarea, select, [role='textbox']")) return true;
+
+  const contentEditable = target.closest("[contenteditable]");
+  return contentEditable !== null && contentEditable.getAttribute("contenteditable")?.toLowerCase() !== "false";
+}
+
+function isScrollKeyIntent(event: KeyboardEvent<HTMLDivElement>) {
+  if (event.defaultPrevented || isEditableTarget(event.target)) return false;
+
+  switch (event.key) {
+    case "ArrowDown":
+    case "ArrowUp":
+    case "PageDown":
+    case "PageUp":
+    case "Home":
+    case "End":
+      return true;
+    case " ":
+    case "Spacebar":
+      if (!(event.target instanceof Element)) return true;
+      return event.target.closest(
+        "button, input, summary, [role='button'], [role='checkbox'], [role='switch'], [role='radio'], [role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio']",
+      ) === null;
+    default:
+      return false;
+  }
+}
+
 function DefaultJumpButton({ canJump, jumpToBottom }: { canJump: boolean; jumpToBottom: () => void }) {
   return (
     <button
@@ -114,6 +144,8 @@ export function BottomStickScrollArea({
   const [mode, setMode] = useState<BottomStickMode>("STICKY_INSTANT");
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [distanceToBottom, setDistanceToBottom] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const prefersReducedMotionRef = useRef(false);
 
   const prevScrollTopRef = useRef(0);
   const lastProgrammaticWriteRef = useRef<{ at: number; top: number } | null>(null);
@@ -191,6 +223,47 @@ export function BottomStickScrollArea({
     returnAnimRef.current = null;
   }, []);
 
+  const handleReducedMotionChange = useCallback(
+    (matches: boolean) => {
+      if (prefersReducedMotionRef.current !== matches) {
+        prefersReducedMotionRef.current = matches;
+        setPrefersReducedMotion(matches);
+      }
+
+      if (!matches || modeRef.current !== "RETURNING_SMOOTH") return;
+
+      cancelPendingStick();
+      cancelReturn();
+      setModeBoth("STICKY_INSTANT");
+
+      const viewport = viewportRef.current;
+      if (viewport) {
+        writeScrollTop(measure(viewport).maxScrollTop);
+        prevScrollTopRef.current = viewport.scrollTop;
+      }
+      updateDebug();
+    },
+    [cancelPendingStick, cancelReturn, setModeBoth, updateDebug, writeScrollTop],
+  );
+  const reducedMotionChangeHandlerRef = useRef(handleReducedMotionChange);
+  reducedMotionChangeHandlerRef.current = handleReducedMotionChange;
+
+  const interruptReturnForUserIntent = useCallback(() => {
+    if (modeRef.current !== "RETURNING_SMOOTH") return;
+
+    cancelPendingStick();
+    cancelReturn();
+    setModeBoth("DETACHED");
+    updateDebug();
+  }, [cancelPendingStick, cancelReturn, setModeBoth, updateDebug]);
+
+  const onViewportKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (isScrollKeyIntent(event)) interruptReturnForUserIntent();
+    },
+    [interruptReturnForUserIntent],
+  );
+
   const stickToBottomInstant = useCallback(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -214,6 +287,15 @@ export function BottomStickScrollArea({
     const viewport = viewportRef.current;
     if (!viewport) return;
 
+    if (prefersReducedMotionRef.current) {
+      cancelPendingStick();
+      cancelReturn();
+      setModeBoth("STICKY_INSTANT");
+      writeScrollTop(measure(viewport).maxScrollTop);
+      prevScrollTopRef.current = viewport.scrollTop;
+      updateDebug();
+      return;
+    }
     cancelPendingStick();
     cancelReturn();
 
@@ -352,6 +434,22 @@ export function BottomStickScrollArea({
     updateDebug();
   }, [setModeBoth, updateDebug, writeScrollTop]);
 
+  useLayoutEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = () => reducedMotionChangeHandlerRef.current(mediaQuery.matches);
+    onChange();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", onChange);
+      return () => mediaQuery.removeEventListener("change", onChange);
+    }
+
+    mediaQuery.addListener(onChange);
+    return () => mediaQuery.removeListener(onChange);
+  }, []);
+
   useEffect(() => {
     return () => {
       cancelPendingStick();
@@ -378,8 +476,8 @@ export function BottomStickScrollArea({
     display: "flex",
     justifyContent: "center",
     opacity: canJump ? 1 : 0,
-    transform: canJump ? "translateY(0px)" : "translateY(4px)",
-    transition: "opacity 150ms ease, transform 150ms ease",
+    transform: prefersReducedMotion ? "none" : canJump ? "translateY(0px)" : "translateY(4px)",
+    transition: prefersReducedMotion ? "none" : "opacity 150ms ease, transform 150ms ease",
     pointerEvents: "none" as const,
   };
 
@@ -389,6 +487,9 @@ export function BottomStickScrollArea({
         ref={viewportRef}
         className={joinClasses("h-full w-full overflow-auto", viewportClassName)}
         onScroll={onViewportScroll}
+        onWheel={interruptReturnForUserIntent}
+        onTouchStart={interruptReturnForUserIntent}
+        onKeyDown={onViewportKeyDown}
         data-testid="sticky-scroll-viewport"
       >
         <div ref={contentRef} className={joinClasses("flex min-h-full w-full flex-col", contentClassName)}>

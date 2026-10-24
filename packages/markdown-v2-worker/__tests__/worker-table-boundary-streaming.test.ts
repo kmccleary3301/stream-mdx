@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { InlineNode, Patch, WorkerOut } from "@stream-mdx/core";
@@ -47,24 +49,21 @@ async function runWorkerTableBoundaryStreamingTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: false,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: true,
-      liveCodeHighlighting: false,
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: false,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+    formatAnticipation: true,
+    liveCodeHighlighting: false,
+  }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const doc = [
     "| key | value | notes |",
@@ -109,5 +108,28 @@ async function runWorkerTableBoundaryStreamingTest(): Promise<void> {
   );
 }
 
+// The first chunk ends inside the delimiter row, so the paragraph admitted first must still see the header line
+// when the next chunk completes the row.
+async function runSplitDelimiterRowTest(): Promise<void> {
+  ensureDom();
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", prewarmLangs: [], docPlugins: { tables: true } });
+  const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
+  assert.ok(init, "worker failed to emit INITIALIZED");
+  store.resetSnapshot(init.snapshot);
+  for (const text of ["| a | b |\n| ---", " | --- |\n| x | y |\n"]) {
+    applyPatchMessages(store, await harness.send({ type: "APPEND", text }));
+  }
+  applyPatchMessages(store, await harness.send({ type: "FINALIZE" }));
+
+  const blocks = store.getBlocks();
+  assert.deepStrictEqual(blocks.map((block) => block.type), ["table"], "split delimiter row must produce a table");
+  const meta = (blocks[0]?.payload.meta ?? {}) as { header?: InlineNode[][]; rows?: InlineNode[][][] };
+  assert.deepStrictEqual(meta.header?.map((cell) => inlineToPlainText(cell)), ["a", "b"], "split delimiter header");
+  assert.deepStrictEqual(meta.rows?.map((row) => row.map((cell) => inlineToPlainText(cell))), [["x", "y"]], "split delimiter rows");
+}
+
 await runWorkerTableBoundaryStreamingTest();
+await runSplitDelimiterRowTest();
 console.log("worker table boundary streaming test passed");

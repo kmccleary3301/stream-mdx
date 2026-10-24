@@ -3,12 +3,9 @@ import type { Block, DiffBlock } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import {
-  ArtifactFrame,
-  buildArtifactSrcDoc,
-  ComponentRegistry,
-  type CodeFenceRendererProps,
-} from "../src/components";
+import { MarkdownRenderer } from "../src/renderer";
+import { ComponentRegistry } from "../src/components";
+import type { InlineNodeViewProps } from "../src/types";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createRendererStore } from "../src/renderer/store";
@@ -42,70 +39,6 @@ async function setupDom() {
   return window;
 }
 
-// Test 1: codeRenderers precedence and normalization
-async function testCodeRenderersNormalizationAndPrecedence(): Promise<void> {
-  const window = await setupDom();
-  let capturedProps: CodeFenceRendererProps | null = null;
-
-  const CustomPython = (props: CodeFenceRendererProps) => {
-    capturedProps = props;
-    return React.createElement("div", { id: "custom-python", "data-finalized": String(props.isFinalized) }, props.code);
-  };
-
-  const registry = new ComponentRegistry();
-  // Register with mixed case
-  registry.setCodeRenderers({
-    PyThOn: CustomPython,
-  });
-
-  // Block with uppercase language
-  const block: Block = {
-    id: "block-py",
-    type: "code",
-    isFinalized: true,
-    payload: {
-      raw: "```PYTHON\nprint('hello')\n```",
-      meta: { lang: "PYTHON" },
-    },
-  };
-
-  const store = createRendererStore([block]);
-  const container = window.document.getElementById("root");
-  assert.ok(container, "root container missing");
-  const root = createRoot(container);
-  root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-  await sleep(30);
-
-  const customEl = container.querySelector("#custom-python");
-  assert.ok(customEl, "custom renderer should be matched case-insensitively");
-  assert.strictEqual(capturedProps?.isFinalized, true, "isFinalized flag must be passed to code renderer");
-  assert.strictEqual(capturedProps?.code.trim(), "print('hello')", "code must be stripped of fence markers");
-  assert.strictEqual(capturedProps?.language, "PYTHON", "original language string preserved");
-
-  root.unmount();
-
-  // Unknown language falls back to code view
-  const window2 = await setupDom();
-  const unknownBlock: Block = {
-    id: "block-unknown",
-    type: "code",
-    isFinalized: false,
-    payload: {
-      raw: "```rust\nfn main() {}\n```",
-      meta: { lang: "rust" },
-    },
-  };
-  const store2 = createRendererStore([unknownBlock]);
-  const container2 = window2.document.getElementById("root");
-  assert.ok(container2);
-  const root2 = createRoot(container2);
-  root2.render(React.createElement(BlockNodeRenderer, { store: store2, blockId: unknownBlock.id, registry }));
-  await sleep(30);
-
-  assert.strictEqual(container2.querySelector("#custom-python"), null);
-  assert.ok(container2.querySelector("pre"), "unknown language must fall back to standard code view");
-  root2.unmount();
-}
 
 // Test 2: Structured diff renderer rows, line numbers, and token colors
 async function testDiffRendererRowsAndTokens(): Promise<void> {
@@ -215,133 +148,9 @@ async function testDiffRendererRowsAndTokens(): Promise<void> {
   root.unmount();
 }
 
-// Test 3: ArtifactFrame sandbox, CSP, finalize, and foreign-source size guard
-async function testArtifactFrameLifecycleAndSecurity(): Promise<void> {
-  const window = await setupDom();
-  const container = window.document.getElementById("root");
-  assert.ok(container);
 
-  // Phase A: Not finalized -> code view only, no iframe mounted
-  const root = createRoot(container);
-  root.render(
-    React.createElement(ArtifactFrame, {
-      code: "<h1>Hello Artifact</h1>",
-      language: "html-artifact",
-      isFinalized: false,
-      renderCode: React.createElement("pre", { id: "streaming-code" }, "<h1>Hello Artifact</h1>"),
-    }),
-  );
-  await sleep(20);
-
-  assert.ok(container.querySelector("#streaming-code"), "while not finalized, must render fallback code view");
-  assert.strictEqual(container.querySelector("iframe"), null, "iframe MUST NOT be mounted before finalize");
-
-  // Phase B: Finalized -> iframe mounted with exact sandbox and CSP meta
-  root.render(
-    React.createElement(ArtifactFrame, {
-      code: "<h1>Hello Artifact</h1>",
-      language: "html-artifact",
-      isFinalized: true,
-      csp: {
-        scriptSrc: ["https://cdn.example.com"],
-        connectSrc: ["https://api.example.com"],
-      },
-      renderCode: React.createElement("pre", { id: "streaming-code" }, "<h1>Hello Artifact</h1>"),
-    }),
-  );
-  await sleep(30);
-
-  const iframe = container.querySelector("iframe");
-  assert.ok(iframe, "iframe must be mounted when isFinalized is true");
-
-  // Verify sandbox attribute is exactly "allow-scripts" (no allow-same-origin)
-  const sandbox = iframe.getAttribute("sandbox");
-  assert.strictEqual(sandbox, "allow-scripts", "sandbox attribute must be exactly allow-scripts");
-  assert.ok(!sandbox.includes("allow-same-origin"), "sandbox MUST NOT contain allow-same-origin");
-
-  // Verify srcDoc contains CSP meta
-  const srcDoc = iframe.getAttribute("srcdoc") || "";
-  assert.ok(srcDoc.includes('<meta http-equiv="Content-Security-Policy"'), "srcdoc must contain CSP meta tag");
-  assert.ok(srcDoc.includes("default-src 'none'"), "CSP must include default-src 'none'");
-  assert.ok(srcDoc.includes("connect-src https://api.example.com"), "CSP connect-src must reflect configured allowlist");
-  assert.ok(srcDoc.includes("https://cdn.example.com"), "CSP script-src must reflect configured allowlist");
-
-  // Verify default connect-src 'none' when not specified
-  const defaultSrcDoc = buildArtifactSrcDoc({ html: "<p>test</p>" });
-  assert.ok(defaultSrcDoc.includes("connect-src 'none'"), "default CSP must have connect-src 'none'");
-
-  // A full document whose own <head> starts with a script must still get the CSP first.
-  const fullDoc = buildArtifactSrcDoc({ html: "<!doctype html><script>fetch('https://evil.test')</script><html><head></head><body>x</body></html>" });
-  assert.ok(
-    fullDoc.indexOf("Content-Security-Policy") < fullDoc.indexOf("evil.test"),
-    "CSP must precede every byte of artifact markup",
-  );
-
-  // Phase C: Accept the iframe's resize, reject foreign messages, and clamp small heights.
-  const source = iframe.contentWindow;
-  assert.ok(source, "iframe window available for resize messages");
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: 420 },
-    source,
-  }));
-  await waitFor(container, () => iframe.style.height === "420px", "valid iframe resize did not update its height");
-  assert.strictEqual(iframe.style.height, "420px");
-
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: 999 },
-    source: window,
-  }));
-  await sleep(20);
-  assert.strictEqual(iframe.style.height, "420px", "foreign-source size messages must preserve the accepted height");
-
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: 1 },
-    source,
-  }));
-  await waitFor(container, () => iframe.style.height === "50px", "valid small resize must clamp to the minimum height");
-  assert.strictEqual(iframe.style.height, "50px");
-
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: Number.NaN },
-    source,
-  }));
-  await sleep(20);
-  assert.strictEqual(iframe.style.height, "50px", "NaN height must be ignored");
-
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: Number.POSITIVE_INFINITY },
-    source,
-  }));
-  await sleep(20);
-  assert.strictEqual(iframe.style.height, "50px", "Infinity height must be ignored");
-
-  // Phase D: link messages from the frame route through openLink; non-http(s)/mailto URLs are dropped.
-  const opened: string[] = [];
-  root.render(
-    React.createElement(ArtifactFrame, {
-      code: "<a href='https://example.com'>x</a>",
-      language: "html-artifact",
-      isFinalized: true,
-      openLink: (url: string) => {
-        opened.push(url);
-      },
-      renderCode: null,
-    }),
-  );
-  await sleep(30);
-  const frameWindow = container.querySelector("iframe")?.contentWindow;
-  assert.ok(frameWindow, "iframe window available");
-  for (const href of ["javascript:alert(1)", "data:text/html,x", "https://example.com/next"]) {
-    window.dispatchEvent(new window.MessageEvent("message", { data: { type: "stream-mdx:artifact-link", href }, source: frameWindow }));
-  }
-  await sleep(20);
-  assert.deepStrictEqual(opened, ["https://example.com/next"], "only http(s)/mailto links leave the sandbox, via openLink");
-
-  root.unmount();
-}
-
-// Test 4: KaTeX math rendering and custom mathRenderer override
-async function testKaTeXMathAndOverride(): Promise<void> {
+// Test 3: KaTeX math rendering and node presentations
+async function testKaTeXMathPresentations(): Promise<void> {
   const window = await setupDom();
   const container = window.document.getElementById("root");
   assert.ok(container);
@@ -370,73 +179,197 @@ async function testKaTeXMathAndOverride(): Promise<void> {
     assert.strictEqual(container.querySelector(".math-inline")?.getAttribute("data-tex"), "E = mc^2");
     assert.strictEqual(container.querySelector(".math-display")?.getAttribute("data-tex"), "\\int x dx");
     assert.ok(container.querySelector(".math-inline .katex .katex-mathml"), "inline math must contain KaTeX MathML");
-    assert.ok(container.querySelector(".math-display .katex .katex-mathml"), "display math must contain KaTeX MathML");
-
-    const registry = new ComponentRegistry();
-    registry.setMathRenderer({
-      inline: ({ tex }) => React.createElement("span", { id: "mathjax-inline" }, `[MathJax: ${tex}]`),
-      display: ({ tex }) => React.createElement("div", { id: "mathjax-display" }, `[MathJax Display: ${tex}]`),
+    const presentationRegistry = new ComponentRegistry();
+    presentationRegistry.setNodePresentations({
+      "inline:math": {
+        wrapper: ({ children, metadata }) => React.createElement(
+          "span",
+          { className: "presented-math", "data-node-type": metadata.type, "data-finalized": String(metadata.isFinalized) },
+          children,
+        ),
+      },
     });
-    renderMath(registry);
+    renderMath(presentationRegistry);
     await waitFor(
       container,
-      () => Boolean(container.querySelector("#mathjax-inline") && container.querySelector("#mathjax-display")),
-      "compiled math must use both registry overrides through the store-backed renderer",
+      () => Boolean(container.querySelector(".presented-math .math-inline .katex") && container.querySelector(".presented-math .math-display .katex")),
+      "math presentation wrappers must preserve KaTeX rendering for inline and display expressions",
     );
-    assert.strictEqual(container.querySelector("#mathjax-inline")?.textContent, "[MathJax: E = mc^2]");
-    assert.strictEqual(container.querySelector("#mathjax-display")?.textContent, "[MathJax Display: \\int x dx]");
-    assert.strictEqual(container.querySelector(".katex"), null, "custom math renderers must replace the defaults");
+    assert.strictEqual(container.querySelectorAll(".presented-math").length, 2);
+    assert.strictEqual(container.querySelector(".presented-math")?.getAttribute("data-node-type"), "inline:math");
+    assert.strictEqual(container.querySelector(".presented-math")?.getAttribute("data-finalized"), "true");
+
+    const HeadlessMathView = ({ node, children, metadata }: InlineNodeViewProps) =>
+      React.createElement("span", {
+        className: "headless-math",
+        "data-node-kind": node.kind,
+        "data-finalized": String(metadata.isFinalized),
+      }, children);
+    const headlessRegistry = new ComponentRegistry();
+    headlessRegistry.setNodePresentations({
+      "inline:math": {
+        view: HeadlessMathView,
+      },
+    });
+    renderMath(headlessRegistry);
+    await waitFor(
+      container,
+      () => Boolean(container.querySelector(".headless-math .math-inline .katex") && container.querySelector(".headless-math .math-display .katex")),
+      "headless math views must receive the prepared engine output",
+    );
+    assert.strictEqual(container.querySelectorAll(".headless-math").length, 2);
+    assert.ok(container.querySelector('.headless-math[data-node-kind="math-inline"]'));
+    assert.ok(container.querySelector('.headless-math[data-node-kind="math-display"]'));
+    assert.strictEqual(container.querySelector('.headless-math[data-node-kind="math-inline"]')?.getAttribute("data-finalized"), "true");
+
+    assert.ok(container.querySelector(".math-display .katex .katex-mathml"), "display math must contain KaTeX MathML");
+
   } finally {
     root.unmount();
   }
 }
-async function testHtmlArtifactAndMetricRoutingFromCompile(): Promise<void> {
+
+async function testMathEngineReplacement(): Promise<void> {
   const window = await setupDom();
   const container = window.document.getElementById("root");
   assert.ok(container);
+  const result = await compileMarkdownSnapshotDirect({
+    text: "Energy $E = mc^2$.\n\n$$\\int x dx$$",
+  });
+  const store = createRendererStore(result.blocks);
   const root = createRoot(container);
+  const calls: Array<{ tex: string; displayMode: boolean }> = [];
+  const customMathEngine = {
+    id: "mathjax-test",
+    render: (tex: string, options: { displayMode: boolean }) => {
+      calls.push({ tex, displayMode: options.displayMode });
+      return React.createElement(
+        "span",
+        { className: options.displayMode ? "mathjax-display" : "mathjax-inline" },
+        `[MathJax: ${tex}]`,
+      );
+    },
+  };
+  const mathWrapper = ({ children }: { children?: React.ReactNode }) =>
+    React.createElement("span", { className: "math-engine-presentation" }, children);
+  const mathComponents = { "inline:math": { wrapper: mathWrapper } };
+  const renderer = new MarkdownRenderer({
+    engines: { math: customMathEngine },
+    components: mathComponents,
+  });
+  const renderWithRenderer = (currentRenderer: MarkdownRenderer) => {
+    root.render(
+      React.createElement(
+        React.Fragment,
+        null,
+        result.blocks.map((block) =>
+          React.createElement(BlockNodeRenderer, {
+            key: block.id,
+            store,
+            blockId: block.id,
+            registry: currentRenderer.getComponentRegistry(),
+          }),
+        ),
+      ),
+    );
+  };
 
-  const markdown = "```html-artifact\n<div class=\"viz\">Artifact View</div>\n```\n\n```metric\n42\n```";
+  try {
+    renderWithRenderer(renderer);
+    await waitFor(
+      container,
+      () => Boolean(container.querySelector(".mathjax-inline") && container.querySelector(".mathjax-display")),
+      "custom math engine must render inline and display expressions",
+    );
+    assert.ok(container.querySelector(".math-engine-presentation .mathjax-inline"));
+    assert.ok(container.querySelector(".math-engine-presentation .mathjax-display"));
+    assert.strictEqual(container.querySelector(".katex"), null, "custom math engine must replace KaTeX");
+    assert.strictEqual(container.querySelector(".mathjax-inline")?.textContent, "[MathJax: E = mc^2]");
+    assert.strictEqual(container.querySelector(".mathjax-display")?.textContent, "[MathJax: \\int x dx]");
+    assert.ok(calls.some((call) => call.tex === "E = mc^2" && !call.displayMode));
+    assert.ok(calls.some((call) => call.tex === "\\int x dx" && call.displayMode));
+
+    const callsBeforeReplacement = calls.length;
+    const replacementRenderer = new MarkdownRenderer({
+      engines: {
+        math: {
+          id: "mathjax-replacement",
+          render: (tex, { displayMode }) =>
+            React.createElement(
+              "span",
+              { className: displayMode ? "mathjax-replacement-display" : "mathjax-replacement-inline" },
+              `[MathJax replacement: ${tex}]`,
+            ),
+        },
+      },
+      components: mathComponents,
+    });
+    renderWithRenderer(replacementRenderer);
+    await waitFor(
+      container,
+      () => Boolean(
+        container.querySelector(".mathjax-replacement-inline") &&
+          container.querySelector(".mathjax-replacement-display"),
+      ),
+      "changing the math engine must replace cached output for the same source",
+    );
+    assert.strictEqual(container.querySelector(".mathjax-inline"), null);
+    assert.strictEqual(container.querySelector(".katex"), null);
+    assert.strictEqual(calls.length, callsBeforeReplacement, "replacing the engine must not rerender with the old engine");
+    assert.strictEqual(container.querySelector(".mathjax-replacement-inline")?.textContent, "[MathJax replacement: E = mc^2]");
+    assert.strictEqual(container.querySelector(".mathjax-replacement-display")?.textContent, "[MathJax replacement: \\int x dx]");
+
+  } finally {
+    root.unmount();
+  }
+}
+
+
+async function testArtifactFencesRemainInertByDefault(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+
+  const artifactSource = '<script>globalThis.__streamMdxArtifactExecuted = true</script>';
+  const htmlArtifactSource = '<iframe srcdoc="<script>globalThis.__streamMdxArtifactExecuted = true</script>"></iframe>';
+  const markdown = [
+    "```artifact",
+    artifactSource,
+    "```",
+    "",
+    "```html-artifact",
+    htmlArtifactSource,
+    "```",
+  ].join("\n");
   const result = await compileMarkdownSnapshotDirect({ text: markdown });
 
   assert.strictEqual(result.blocks.length, 2);
-  assert.strictEqual(result.blocks[0].payload.meta?.lang, "html-artifact");
-  assert.strictEqual(result.blocks[1].payload.meta?.lang, "metric");
+  assert.deepStrictEqual(result.blocks.map((block) => block.payload.meta?.lang), ["artifact", "html-artifact"]);
 
   const registry = new ComponentRegistry();
-  registry.setCodeRenderers({
-    "html-artifact": (props: CodeFenceRendererProps) => {
-      return React.createElement("div", { id: "custom-artifact-frame" }, props.code.trim());
-    },
-    metric: (props: CodeFenceRendererProps) => {
-      return React.createElement("div", { id: "custom-metric-badge" }, `Metric: ${props.code.trim()}`);
-    },
-  });
-
   const store = createRendererStore(result.blocks);
-  root.render(
-    React.createElement(
-      React.Fragment,
-      null,
-      result.blocks.map((block) => React.createElement(BlockNodeRenderer, { key: block.id, store, blockId: block.id, registry })),
-    ),
-  );
-  await sleep(30);
+  const root = createRoot(container);
+  try {
+    root.render(
+      React.createElement(
+        React.Fragment,
+        null,
+        result.blocks.map((block) => React.createElement(BlockNodeRenderer, { key: block.id, store, blockId: block.id, registry })),
+      ),
+    );
+    await waitFor(container, () => container.querySelectorAll("pre code").length === 2, "artifact fences did not render as code");
 
-  const artifactEl = container.querySelector("#custom-artifact-frame");
-  assert.ok(artifactEl, "custom html-artifact codeRenderer must be matched");
-  assert.strictEqual(artifactEl.textContent, '<div class="viz">Artifact View</div>');
-
-  const metricEl = container.querySelector("#custom-metric-badge");
-  assert.ok(metricEl, "custom metric codeRenderer must be matched");
-  assert.strictEqual(metricEl.textContent, "Metric: 42");
-
-  root.unmount();
+    const codeViews = container.querySelectorAll("pre code");
+    assert.strictEqual(codeViews[0].textContent?.trim(), artifactSource);
+    assert.strictEqual(codeViews[1].textContent?.trim(), htmlArtifactSource);
+    assert.strictEqual(container.querySelector("script, iframe"), null, "artifact fence source must remain inert code");
+  } finally {
+    root.unmount();
+  }
 }
 
-await testCodeRenderersNormalizationAndPrecedence();
 await testDiffRendererRowsAndTokens();
-await testArtifactFrameLifecycleAndSecurity();
-await testKaTeXMathAndOverride();
-await testHtmlArtifactAndMetricRoutingFromCompile();
-console.log("All codeRenderers, diff, artifact, and math tests passed successfully.");
+await testKaTeXMathPresentations();
+await testArtifactFencesRemainInertByDefault();
+await testMathEngineReplacement();
+console.log("Code renderers, diff, custom fence, and math tests passed successfully.");

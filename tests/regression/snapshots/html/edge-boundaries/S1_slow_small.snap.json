@@ -45,8 +45,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -86,8 +84,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -127,8 +123,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -168,8 +162,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -209,8 +201,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 1,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -250,8 +240,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -291,8 +279,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -332,8 +318,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -373,8 +357,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -414,8 +396,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -445,8 +425,6 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 3,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       }

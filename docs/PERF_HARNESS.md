@@ -35,11 +35,10 @@ npm run docs:dev
 npm run perf:harness -- --fixture naive-bayes --scenario S2_typical --scheduling aggressive --runs 3 --warmup 1
 ```
 
-If you want to compare syntax highlighting modes, add `features.codeHighlighting` to the streaming config
-in the demo/harness (default is `"incremental"`). A typical workflow is:
+If you want to compare syntax highlighting modes, pass `--codeHighlighting` to the harness CLI (default is `"incremental"`). A typical workflow is:
 
-1. Run a baseline with `codeHighlighting: "final"`.
-2. Run a candidate with `codeHighlighting: "incremental"` or `"live"`.
+1. Run a baseline with `--codeHighlighting final`.
+2. Run a candidate with `--codeHighlighting incremental` or `--codeHighlighting live`.
 3. Compare summaries with `perf:compare`.
 
 Outputs land in:
@@ -210,6 +209,74 @@ tmp/perf-baselines/S2_typical
 tmp/perf-baselines/S3_fast_reasonable
 tmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)
 ```
+
+## Private Node replay, work counters, and physical functional observer
+
+Private tooling under `scripts/perf/` provides deterministic invariant verification and functional progress observation separate from production browser benchmark runs.
+
+### Node replay oracle and work counters
+
+The aggregate replay oracle runs in-process under Node (>=20) and verifies parser, tokenization, store, and view behavior against full authored-source MDAST and independent Shiki tokens, with no invented closing-fence sentinel or carriage-return (CR) trimming:
+
+1. Build the counter-instrumented diagnostic bundle:
+   ```bash
+   npx tsx scripts/perf/build-diagnostic-bundle.ts
+   ```
+   This compiles `scripts/perf/diagnostic-dist/index.mjs` counter-enabled (`__STREAM_MDX_COUNTERS__ = true`). In contrast, standard package and hosted worker builds MUST define `__STREAM_MDX_COUNTERS__ = false` with dead-code syntax folding.
+
+2. Run the aggregate replay oracle:
+   ```bash
+   npx tsx scripts/perf/replay-oracle.ts --section all --json <owned-result.json>
+   ```
+   The aggregate command includes the dense semantic/Shiki proof and all source-aware scaling families. Optional selectors are `--section engine-fixture|mounted-code|code-scaling|table-scaling`; `--fixture <id>`, `--seed <number>`, and `--bail` are also supported. Focused scaling sections select a workload only; they do not change its measurement mode.
+
+Oracle execution and invariants:
+- The oracle exits `1` on measured invariant or product divergence, and exits `2` on fatal runtime errors. It MUST NOT be treated as a skipped-green baseline.
+- Verification mounts real JSDOM containers and native views (`MarkdownBlocksRenderer`, `ComponentRegistry`) to exercise real consumer work.
+- It verifies cold non-finalizing prefix equality at every actual patch publication frontier, final store equality, and independent CommonMark/GFM syntax expectations.
+- Attempts $N$ vs $4N$ bounded equal-size append windows with bounded line width across `paragraph`, `code-lines`, `table-rows`, `list-items`, and `list-primary-paragraph`, using the existing 20/80 setup prefixes and ten equal-size appends per workload. The aggregate chooses each workload's current source-aware measurement mode; focused code/table sections restrict only which workload runs.
+- Measurement excludes `FINALIZE` and enumerated backward invalidation by resetting counters after prefix setup to isolate append-window work.
+- Work counters are grouped across `engine`, `snapshot`, `patch`, `store`, and `view`. Per-family observed lists include the shared lexer/snapshot/patch/store counters plus source reads/materialization, directory copies, and explicit record slots; code also counts prepared code-source units.
+- Paragraph measurements include actual source-to-span lookup probes, projection/view-record visits, and explicit view slots. Emitted span/source records remain semantic evidence.
+- Table evidence retains source-reader work, semantic patch row slots, exact owned source suffix, cold semantic parity, retained completed boundary rows, and native DOM row/cell counts.
+- The $1.25\times$ gate compares observed counter counts per append-window unit at $4N$ versus $N$, with source-counter requirements and per-stage ratios preserved. It is not literal CPU cost and excludes V8 backing-store growth, `Array#splice` relocation, `Set` internals, React Fiber reconciliation, and browser DOM/layout internals.
+- The aggregate reports divergences from the current P2 paths it exercises; focused sections are subsets and do not replace the aggregate proof.
+
+### Physical functional progress observer
+
+The separate functional progress observer measures streaming delivery against a live browser export:
+
+1. Build the standalone progress observation assets:
+   ```bash
+   npx tsx scripts/perf/build-progress-observation.ts
+   ```
+   This creates only `apps/docs/out/stream-mdx-progress-observation` (`worker.js`, `browser.js`, `index.html`).
+
+2. Run the driver against an active export server:
+   ```bash
+   npx tsx scripts/perf/run-progress-observation.ts
+   ```
+   The driver targets the existing loopback export server at `http://127.0.0.1:3012/stream-mdx-progress-observation/` and writes structured evidence to `tmp/stream-mdx-progress-observation-20261015.json`.
+
+Driver requirements and constraints:
+- Diagnostic-only functional observation; results are NOT comparable production timing.
+- Requires a physical Worker (`new Worker("./worker.js", { type: "module" })`), public `handle.append`, and public `handle.onFlush`.
+- Validates original semantic patch ordinals, requires actual `INITIALIZED` and `FINALIZED` lifecycle messages, and verifies semantic patch drain completion.
+- Fixed workload: `code-262k` with 263 chunks dispatched on 20ms ticks (50,000 cps, $\le 1000$ chars/chunk).
+- Strict driver deadlines from driver start: readiness within 30s (`READY_TIMEOUT_MS = 30_000`), total observation within 60s (`OBSERVATION_TIMEOUT_MS = 60_000`).
+- Exact runtime environment: Chromium `153.0.8010.12` with Playwright `1.58.2`. NEVER infer the runtime from cache directory revisions; the script currently expects those exact identities and has no generalized flags.
+
+### Truthful limits and missing metrics
+
+- The frozen six production observations (`code-262k`, `table-250`, `list-500`, `finalize-253k`, `finalize-1000k`, `short-code`) have no complete engine/commit/visible mapping.
+- The functional observer proves final accounted frontiers and visible prefix ranges only.
+- Missing metrics are explicit and MUST NOT be assumed:
+  - No per-commit latency timeline.
+  - No whole-source consumer equality derived from counter values.
+  - No offscreen/tail-visible or paint guarantee.
+  - No worker CPU, heap, or capacity guarantees.
+- Do NOT paste campaign numeric timing results.
+- Do not carry a prior worktree's inherited-red or pass/fail status into this one; aggregate output is evidence only for the current measurements and proof paths it actually exercised.
 
 ## Notes
 

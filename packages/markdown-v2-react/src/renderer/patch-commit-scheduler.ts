@@ -22,6 +22,7 @@ export interface AdaptiveBudgetState {
 
 export interface PatchBatchMeta {
   tx?: number;
+  generation?: number;
   metrics?: PatchMetrics;
   receivedAt?: number;
   priority?: "high" | "low";
@@ -90,6 +91,7 @@ interface PatchBatchInternal {
   receivedAt: number;
   priority: "high" | "low";
   kind: PatchKind;
+  hasNonInputSourcePatch: boolean;
 }
 
 const DEFAULT_TIMEOUT_MS = 16;
@@ -100,8 +102,64 @@ const RETAIN_TOUCHED_IN_HISTORY =
   typeof process !== "undefined" && process.env ? process.env.NODE_ENV !== "production" : true;
 const EMPTY_TOUCHED_SET = new Set<string>();
 
+function semanticEnvelopeKeyForPatch(patch: Patch): string | undefined {
+  if (getPatchKind(patch) !== "semantic") return undefined;
+  const meta = patch.op === "setHTML" ? patch.patchMeta : patch.meta;
+  const streamSeq = meta?.streamSeq;
+  const parseEpoch = meta?.parseEpoch;
+  const tx = meta?.tx;
+  if (
+    typeof streamSeq !== "number" || !Number.isFinite(streamSeq) || streamSeq < 0 ||
+    typeof parseEpoch !== "number" || !Number.isFinite(parseEpoch) || parseEpoch < 0 ||
+    typeof tx !== "number" || !Number.isFinite(tx) || tx < 0
+  ) {
+    return undefined;
+  }
+  return `${streamSeq}/${parseEpoch}/${tx}`;
+}
+
 function shouldSkipCoalescing(patches: Patch[]): boolean {
-  return patches.length <= 1;
+  if (patches.length <= 1) return true;
+
+  let firstEnvelopeKey: string | undefined;
+  let hasEnvelopeKey = false;
+  let hasMultipleEnvelopes = false;
+  let hasUnsequencedSemantic = false;
+  let hasEnrichment = false;
+  const observePatch = (patch: Patch) => {
+    if (getPatchKind(patch) === "enrichment") {
+      hasEnrichment = true;
+      return;
+    }
+    const key = semanticEnvelopeKeyForPatch(patch);
+    if (key === undefined) {
+      hasUnsequencedSemantic = true;
+      return;
+    }
+    if (hasEnvelopeKey && firstEnvelopeKey !== key) hasMultipleEnvelopes = true;
+    if (!hasEnvelopeKey) {
+      firstEnvelopeKey = key;
+      hasEnvelopeKey = true;
+    }
+  };
+
+  for (const patch of patches) {
+    if (patch.op === "setPropsBatch") {
+      for (const entry of patch.entries ?? []) {
+        if (!entry || !entry.at) continue;
+        observePatch({
+          op: "setProps",
+          at: entry.at,
+          props: entry.props,
+          meta: { ...(patch.meta ?? {}), ...(entry.meta ?? {}) },
+        });
+      }
+    } else {
+      observePatch(patch);
+    }
+  }
+
+  return hasEnvelopeKey && (hasMultipleEnvelopes || hasUnsequencedSemantic || hasEnrichment);
 }
 
 function getDefaultNow(): NowFn {
@@ -133,7 +191,8 @@ function getDefaultCancelRaf(): typeof cancelAnimationFrame | null {
 
 export class PatchCommitScheduler {
   private readonly store: RendererStore;
-  private readonly onFlush: (result: PatchFlushResult) => void;
+  private readonly onFlush: (result: PatchFlushResult, hasNonInputSourcePatch: boolean) => void;
+  private readonly isGenerationCurrent?: (generation: number) => boolean;
   private frameBudgetMs: number;
   private maxBatchesPerFlush?: number;
   private readonly now: NowFn;
@@ -169,12 +228,14 @@ export class PatchCommitScheduler {
 
   constructor(params: {
     store: RendererStore;
-    onFlush: (result: PatchFlushResult) => void;
+    onFlush: (result: PatchFlushResult, hasNonInputSourcePatch: boolean) => void;
+    isGenerationCurrent?: (generation: number) => boolean;
     options?: PatchCommitSchedulerOptions;
   }) {
     this.store = params.store;
     this.onFlush = params.onFlush;
-    this.frameBudgetMs = Math.max(1, params.options?.frameBudgetMs ?? 10);
+    this.isGenerationCurrent = params.isGenerationCurrent;
+    this.frameBudgetMs = Math.max(1, params.options?.frameBudgetMs ?? 4);
     this.maxBatchesPerFlush = params.options?.maxBatchesPerFlush ?? 12;
     this.now = params.options?.now ?? getDefaultNow();
     this.raf = params.options?.raf ?? getDefaultRaf();
@@ -197,7 +258,7 @@ export class PatchCommitScheduler {
     } else if (requestedBatch === "rAF") {
       this.batchStrategy = this.raf ? "rAF" : "timeout";
     } else {
-      this.batchStrategy = "microtask";
+      this.batchStrategy = this.raf ? "rAF" : "timeout";
     }
     if (this.batchStrategy === "microtask" && typeof queueMicrotask !== "function") {
       this.batchStrategy = this.raf ? "rAF" : "timeout";
@@ -208,20 +269,35 @@ export class PatchCommitScheduler {
     if (!input || !input.patches || input.patches.length === 0) {
       return;
     }
-    if (!this.paused && !this.flushing && this.getPendingCount() >= this.urgentQueueThreshold) {
+    if (
+      this.batchStrategy !== "rAF" &&
+      !this.paused &&
+      !this.flushing &&
+      this.getPendingCount() >= this.urgentQueueThreshold
+    ) {
       this.runFlush(this.frameBudgetMs, false);
+    }
+    const explicitKind = input.meta?.kind;
+    const hasExplicitKind = explicitKind === "semantic" || explicitKind === "enrichment";
+    let hasSemanticPatch = false;
+    let hasNonInputSourcePatch = false;
+    for (const patch of input.patches) {
+      if (patch.op !== "appendInputSource") hasNonInputSourcePatch = true;
+      if (!hasExplicitKind && !hasSemanticPatch && getPatchKind(patch) === "semantic") {
+        hasSemanticPatch = true;
+      }
     }
     const batch: PatchBatchInternal = {
       seq: ++this.sequence,
       patches: input.patches,
       meta: input.meta ?? {},
       receivedAt: input.meta?.receivedAt ?? this.now(),
-      kind:
-        input.meta?.kind === "semantic" || input.meta?.kind === "enrichment"
-          ? input.meta.kind
-          : input.patches.some((patch) => getPatchKind(patch) === "semantic")
-            ? "semantic"
-            : "enrichment",
+      kind: explicitKind === "semantic" || explicitKind === "enrichment"
+        ? explicitKind
+        : hasSemanticPatch
+          ? "semantic"
+          : "enrichment",
+      hasNonInputSourcePatch,
       priority: input.meta?.priority === "low" ? "low" : "high",
     };
     if (batch.kind === "semantic") {
@@ -359,13 +435,14 @@ export class PatchCommitScheduler {
 
     this.flushing = true;
     const startedAt = this.now();
+    let elapsed = 0;
     const initialSemanticQueueSize = this.semanticQueue.length;
     const initialEnrichmentQueueSize = this.enrichmentHighQueue.length + this.enrichmentLowQueue.length;
     const initialQueueSize = initialSemanticQueueSize + initialEnrichmentQueueSize;
     const batches: PatchFlushBatchResult[] = [];
     let totalInputPatches = 0;
     let totalAppliedPatches = 0;
-    let elapsed = 0;
+    let hasNonInputSourcePatch = false;
 
     const processQueue = (queue: PatchBatchInternal[], maxBatches?: number, budgetLimit?: number) => {
       const effectiveBudget = manual ? Number.POSITIVE_INFINITY : Math.max(0, budgetLimit ?? budgetMs);
@@ -375,6 +452,12 @@ export class PatchCommitScheduler {
         const next = queue[consumed];
         if (!next) break;
         consumed += 1;
+        if (
+          next.meta.generation !== undefined &&
+          this.isGenerationCurrent &&
+          !this.isGenerationCurrent(next.meta.generation)
+        ) continue;
+        hasNonInputSourcePatch ||= next.hasNonInputSourcePatch;
         const applyStart = this.now();
         const queueDelayMs = Math.max(0, applyStart - next.receivedAt);
         let coalesced: Patch[];
@@ -425,32 +508,34 @@ export class PatchCommitScheduler {
       }
     };
 
-    processQueue(this.semanticQueue, undefined, Number.POSITIVE_INFINITY);
+    processQueue(this.semanticQueue, undefined, budgetMs);
 
-    const initialHighQueueSize = this.enrichmentHighQueue.length;
-    const configuredHighLimit =
-      manual || !this.maxBatchesPerFlush ? undefined : initialHighQueueSize > this.maxBatchesPerFlush ? undefined : this.maxBatchesPerFlush;
-    const highBatchLimit = this.adaptiveBudgeting ? (this.adaptiveHighBatchCap ?? configuredHighLimit) : configuredHighLimit;
+    if (this.semanticQueue.length === 0) {
+      const initialHighQueueSize = this.enrichmentHighQueue.length;
+      const configuredHighLimit =
+        manual || !this.maxBatchesPerFlush ? undefined : initialHighQueueSize > this.maxBatchesPerFlush ? undefined : this.maxBatchesPerFlush;
+      const highBatchLimit = this.adaptiveBudgeting ? (this.adaptiveHighBatchCap ?? configuredHighLimit) : configuredHighLimit;
 
-    processQueue(this.enrichmentHighQueue, highBatchLimit, budgetMs);
+      processQueue(this.enrichmentHighQueue, highBatchLimit, budgetMs);
 
-    if (manual) {
-      processQueue(this.enrichmentLowQueue, undefined, Number.POSITIVE_INFINITY);
-    } else if (this.enrichmentLowQueue.length > 0) {
-      elapsed = this.now() - startedAt;
-      const budgetForLow = Math.max(0, this.lowPriorityFrameBudgetMs - elapsed);
-      const processedHigherPriorityWork = batches.length > 0;
-      if (budgetForLow > 0 || !processedHigherPriorityWork) {
-        const initialLowQueueSize = this.enrichmentLowQueue.length;
-        const configuredLowLimit =
-          manual || !this.maxLowPriorityBatchesPerFlush
-            ? undefined
-            : initialLowQueueSize > this.maxLowPriorityBatchesPerFlush
+      if (manual) {
+        processQueue(this.enrichmentLowQueue, undefined, Number.POSITIVE_INFINITY);
+      } else if (this.enrichmentLowQueue.length > 0) {
+        elapsed = this.now() - startedAt;
+        const budgetForLow = Math.max(0, this.lowPriorityFrameBudgetMs - elapsed);
+        const processedHigherPriorityWork = batches.length > 0;
+        if (budgetForLow > 0 || !processedHigherPriorityWork) {
+          const initialLowQueueSize = this.enrichmentLowQueue.length;
+          const configuredLowLimit =
+            !this.maxLowPriorityBatchesPerFlush
               ? undefined
-              : this.maxLowPriorityBatchesPerFlush;
-        const lowBatchLimit = this.adaptiveBudgeting ? (this.adaptiveLowBatchCap ?? configuredLowLimit) : configuredLowLimit;
+              : initialLowQueueSize > this.maxLowPriorityBatchesPerFlush
+                ? undefined
+                : this.maxLowPriorityBatchesPerFlush;
+          const lowBatchLimit = this.adaptiveBudgeting ? (this.adaptiveLowBatchCap ?? configuredLowLimit) : configuredLowLimit;
 
-        processQueue(this.enrichmentLowQueue, lowBatchLimit, budgetForLow);
+          processQueue(this.enrichmentLowQueue, lowBatchLimit, budgetForLow);
+        }
       }
     }
 
@@ -477,7 +562,7 @@ export class PatchCommitScheduler {
           enrichmentQueueDepthBefore: initialEnrichmentQueueSize,
           flushStartedAt: startedAt,
           flushCompletedAt: completedAt,
-        });
+        }, hasNonInputSourcePatch);
       } catch (error) {
         console.error("[patch-scheduler] onFlush callback failed", error);
       }

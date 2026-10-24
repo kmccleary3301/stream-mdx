@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import { PATCH_ROOT_ID, type Block, type Patch } from "@stream-mdx/core";
+import { createBlockSnapshot, PATCH_ROOT_ID, type Block, type Patch } from "@stream-mdx/core";
 
 import { createRendererStore } from "../src/renderer/store";
 
@@ -110,6 +110,55 @@ async function main() {
   const updatedCode = codeStore.getNode("code-block");
   assert.ok(updatedCode, "expected code block after semantic line update");
   assert.ok(updatedCode.blockEpoch > initialCodeEpoch, "semantic code-line update should advance owning block epoch");
+  const canonicalCodeStore = createRendererStore();
+  const canonicalCodeRaw = "alpha";
+  const canonicalCodeGeneration = 29;
+  canonicalCodeStore.resetSnapshot({
+    id: PATCH_ROOT_ID,
+    type: "__root__",
+    inputSource: { generation: canonicalCodeGeneration, raw: canonicalCodeRaw },
+    children: [createBlockSnapshot({
+      id: "canonical-code",
+      type: "code",
+      isFinalized: false,
+      payload: { raw: canonicalCodeRaw, meta: { lang: "ts" } },
+    })],
+  });
+  const canonicalCode = canonicalCodeStore.getNode("canonical-code");
+  assert.ok(canonicalCode);
+  const canonicalLineId = canonicalCode.children[0];
+  assert.ok(canonicalLineId);
+  const capturedCanonicalBlock = canonicalCodeStore.getBlocks()[0];
+  assert.ok(capturedCanonicalBlock);
+  const updatedCanonicalRaw = "alpha(updated)";
+  canonicalCodeStore.applyPatches([
+    {
+      op: "appendInputSource",
+      at: { blockId: PATCH_ROOT_ID },
+      generation: canonicalCodeGeneration,
+      from: canonicalCodeRaw.length,
+      text: "(updated)",
+    },
+    {
+      op: "setProps",
+      at: { blockId: "canonical-code", nodeId: canonicalLineId },
+      props: { index: 0, text: updatedCanonicalRaw },
+      meta: {
+        kind: "semantic",
+        blockEpoch: canonicalCode.blockEpoch,
+        parseEpoch: canonicalCode.blockEpoch + 1,
+        tx: 201,
+      },
+    },
+  ]);
+  assert.equal(canonicalCodeStore.getCodeLines("canonical-code", 0, 1)[0]?.text, updatedCanonicalRaw, "legacy nested line updates can validate against appended canonical input");
+  assert.deepStrictEqual(
+    canonicalCodeStore.getCodeBlock("canonical-code")?.source.sourceRange,
+    { from: 0, to: updatedCanonicalRaw.length },
+    "the updated legacy source window remains bounded to its canonical range",
+  );
+  assert.equal(capturedCanonicalBlock.payload.raw, canonicalCodeRaw, "captured canonical legacy windows remain immutable");
+  assert.equal(canonicalCodeStore.getBlocks()[0]?.payload.raw, updatedCanonicalRaw, "the current legacy export reflects the validated canonical window");
 
   store.applyPatches([
     {
@@ -199,6 +248,219 @@ async function main() {
     rejectionCount + 1,
     "replaying an old setHTML patch must increment the stale rejection counter",
   );
+  const inheritedStore = createRendererStore();
+  inheritedStore.resetSnapshot({
+    id: PATCH_ROOT_ID,
+    type: "__root__",
+    children: [
+      {
+        id: "epoch-parent",
+        type: "container",
+        props: {},
+        meta: { blockEpoch: 7 },
+        children: [{ id: "epoch-child", type: "leaf", props: {} }],
+      },
+    ],
+  });
+  const initialChild = inheritedStore.getNode("epoch-child");
+  assert.ok(initialChild);
+  const initialEpoch = initialChild.blockEpoch;
+  const publishedParent = inheritedStore.getNodeWithVersion("epoch-parent");
+  assert.strictEqual(publishedParent.node?.blockEpoch, initialEpoch);
+  const publishedChild = inheritedStore.getNodeWithVersion("epoch-child");
+  assert.strictEqual(publishedChild.node?.blockEpoch, initialEpoch);
+  inheritedStore.applyPatches([
+    {
+      op: "setProps",
+      at: { blockId: "epoch-parent", nodeId: "epoch-parent" },
+      props: { layoutRevision: 1 },
+      meta: { kind: "semantic" },
+    } satisfies Patch,
+  ]);
+  const currentChild = inheritedStore.getNode("epoch-child");
+  const currentChildSnapshot = inheritedStore.getNodeWithVersion("epoch-child");
+  const currentParentSnapshot = inheritedStore.getNodeWithVersion("epoch-parent");
+  assert.ok(currentChild);
+  assert.ok(currentChild.blockEpoch > initialEpoch, "child reads expose the current inherited block epoch");
+  const currentParent = currentParentSnapshot.node;
+  assert.ok(currentParent && currentParent.blockEpoch > initialEpoch);
+  assert.strictEqual(
+    publishedChild.node?.blockEpoch,
+    initialEpoch,
+    "previously published node snapshots retain their epoch value",
+  );
+  assert.strictEqual(
+    publishedParent.node?.blockEpoch,
+    initialEpoch,
+    "previously published direct-owner reads retain their epoch value",
+  );
+  assert.strictEqual(currentChildSnapshot.node?.blockEpoch, currentChild.blockEpoch);
+  inheritedStore.applyPatches([
+    {
+      op: "setProps",
+      at: { blockId: "epoch-parent", nodeId: "epoch-child" },
+      props: { staleMarker: true },
+      meta: { kind: "semantic", blockEpoch: initialEpoch },
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(inheritedStore.getNode("epoch-child")?.props.staleMarker, undefined);
+  assert.ok(
+    inheritedStore.getInvariantViolations().some((message) =>
+      message.includes(`stale epoch rejected:setProps:epoch-parent:expected=${initialEpoch}:actual=${currentChild.blockEpoch}`),
+    ),
+    "epoch guards compare patches against the same inherited epoch exposed by node reads",
+  );
+  inheritedStore.applyPatches([
+    {
+      op: "setProps",
+      at: { blockId: "epoch-parent", nodeId: "epoch-child" },
+      props: { currentMarker: true },
+      meta: { kind: "semantic", blockEpoch: currentChild.blockEpoch },
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(inheritedStore.getNode("epoch-child")?.props.currentMarker, true);
+  const publishedChildren = inheritedStore.getChildrenWithVersion("epoch-parent");
+  inheritedStore.applyPatches([
+    {
+      op: "insertChild",
+      at: { blockId: "epoch-parent" },
+      index: 1,
+      node: { id: "epoch-appended-child", type: "leaf", props: {}, children: [] },
+    } satisfies Patch,
+  ]);
+  assert.deepStrictEqual(publishedChildren.children, ["epoch-child"]);
+  assert.deepStrictEqual(
+    inheritedStore.getChildrenWithVersion("epoch-parent").children,
+    ["epoch-child", "epoch-appended-child"],
+  );
+
+  // The worker records a finalize as the block's emitted epoch, so the next patch to that block expects it.
+  const finalizeStore = createRendererStore([createParagraphBlock("alpha")]);
+  const openEpoch = finalizeStore.getNode("paragraph-block")?.blockEpoch ?? 0;
+  const finalizeEpoch = openEpoch + 5;
+  finalizeStore.applyPatches([
+    {
+      op: "finalize",
+      at: { blockId: "paragraph-block" },
+      meta: { kind: "semantic", blockEpoch: openEpoch, parseEpoch: finalizeEpoch, tx: 301 },
+    } satisfies Patch,
+  ]);
+  finalizeStore.applyPatches([
+    {
+      op: "setProps",
+      at: { blockId: "paragraph-block" },
+      props: { afterFinalize: true },
+      meta: { kind: "semantic", blockEpoch: finalizeEpoch, parseEpoch: finalizeEpoch + 1, tx: 302 },
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(finalizeStore.getNode("paragraph-block")?.block?.isFinalized, true);
+  assert.strictEqual(finalizeStore.getNode("paragraph-block")?.props.afterFinalize, true, "a patch after finalize must not be stale");
+  assert.strictEqual(finalizeStore.getDebugCounters().staleEpochRejected, 0);
+
+  // Patches of one transaction all carry the epoch from before it; a root replace after the block's finalize
+  // belongs to the same transaction and must still apply.
+  const sameTxStore = createRendererStore([createParagraphBlock("alpha")]);
+  const beforeTxEpoch = sameTxStore.getNode("paragraph-block")?.blockEpoch ?? 0;
+  const txMeta = { kind: "semantic", blockEpoch: beforeTxEpoch, parseEpoch: beforeTxEpoch + 5, tx: 401 } as const;
+  sameTxStore.applyPatches([
+    { op: "finalize", at: { blockId: "paragraph-block" }, meta: txMeta } satisfies Patch,
+    {
+      op: "replaceChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index: 0,
+      node: createBlockSnapshot({ ...createParagraphBlock("omega"), isFinalized: true }),
+      meta: txMeta,
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(sameTxStore.getNode("paragraph-block")?.block?.payload.raw, "omega", "the same transaction's replace applies");
+  assert.strictEqual(sameTxStore.getDebugCounters().staleEpochRejected, 0);
+
+  const replayStore = createRendererStore([createParagraphBlock("initial paragraph")]);
+  const replayInitial = replayStore.getNode("paragraph-block");
+  assert.ok(replayInitial, "expected the paragraph before semantic envelope replay");
+  const matchingEpoch = replayInitial.blockEpoch;
+  const olderEnvelopeMeta = {
+    kind: "semantic",
+    streamSeq: 401,
+    parseEpoch: matchingEpoch,
+    tx: 401,
+    blockEpoch: matchingEpoch,
+  } as const;
+  const olderEnvelope: Patch[] = [
+    {
+      op: "finalize",
+      at: { blockId: "paragraph-block" },
+      meta: olderEnvelopeMeta,
+    },
+    {
+      op: "replaceChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index: 0,
+      node: createBlockSnapshot({ ...createParagraphBlock("older paragraph value"), isFinalized: true }),
+      meta: olderEnvelopeMeta,
+    },
+  ];
+  replayStore.applyPatches(olderEnvelope);
+  assert.strictEqual(
+    replayStore.getBlocks()[0]?.payload.raw,
+    "older paragraph value",
+    "both same-tuple patches in one semantic envelope should apply",
+  );
+
+  replayStore.applyPatches([
+    {
+      op: "replaceChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index: 0,
+      node: createBlockSnapshot({ ...createParagraphBlock("newest paragraph value"), isFinalized: true }),
+      meta: {
+        kind: "semantic",
+        streamSeq: 402,
+        parseEpoch: matchingEpoch,
+        tx: 402,
+        blockEpoch: matchingEpoch,
+      },
+    } satisfies Patch,
+  ]);
+  assert.strictEqual(
+    replayStore.getBlocks()[0]?.payload.raw,
+    "newest paragraph value",
+    "the newer semantic envelope should become the observed content",
+  );
+
+  replayStore.applyPatches(olderEnvelope);
+  assert.strictEqual(
+    replayStore.getBlocks()[0]?.payload.raw,
+    "newest paragraph value",
+    "replaying an older semantic envelope must not revert the newest paragraph value",
+  );
+  const cycleStore = createRendererStore([createParagraphBlock("cycle-safe paragraph")]);
+  const cycleParent = cycleStore.getNode("paragraph-block");
+  assert.ok(cycleParent, "expected parent before attempting a cyclic child insertion");
+  cycleStore.applyPatches([
+    {
+      op: "insertChild",
+      at: { blockId: "paragraph-block", nodeId: "paragraph-block" },
+      index: 0,
+      node: {
+        id: "paragraph-block",
+        type: "paragraph-text",
+        props: { text: "must not replace its own parent" },
+        children: [],
+      },
+      meta: { kind: "semantic", blockEpoch: cycleParent.blockEpoch, parseEpoch: cycleParent.blockEpoch + 1, tx: 501 },
+    } satisfies Patch,
+  ]);
+  const afterCycleRejection = cycleStore.getNode("paragraph-block");
+  assert.equal(afterCycleRejection?.type, "paragraph", "a self-parenting child patch must not replace its parent");
+  assert.deepEqual(afterCycleRejection?.children, [], "a self-parenting child patch must not add a child");
+  assert.ok(
+    cycleStore.getInvariantViolations().some((message) =>
+      message.includes("parent cycle rejected:insertChild:paragraph-block"),
+    ),
+    "a self-parenting child patch must be rejected and reported",
+  );
+
 }
 
 await main();

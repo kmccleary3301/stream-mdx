@@ -1,83 +1,35 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { JSDOM } from "jsdom";
 
-import { PATCH_ROOT_ID, type InlineNode, type Patch, type WorkerOut } from "@stream-mdx/core";
+import type { Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
+import type { RendererStore } from "@stream-mdx/react/renderer/store";
 
+import { projectConsumerBlocks } from "./consumer-block-projection";
 import { createWorkerHarness } from "./worker-test-harness";
 
-function ensureDom(): void {
-  if (typeof (globalThis as { window?: unknown }).window !== "undefined") {
-    return;
-  }
-  const dom = new JSDOM("<!doctype html><html><body></body></html>");
-  (globalThis as any).window = dom.window;
-    // React DOM reads the bare global navigator once a window exists (Node 20 has no global navigator).
-    Object.defineProperty(globalThis, "navigator", { configurable: true, writable: true, value: dom.window.navigator });
-  (globalThis as any).document = dom.window.document;
-  (globalThis as any).HTMLElement = dom.window.HTMLElement;
-  (globalThis as any).Node = dom.window.Node;
-}
-
-function flattenInline(nodes: InlineNode[], kinds: Set<string>, texts: string[]): void {
-  for (const node of nodes) {
-    if (node.kind === "text") {
-      texts.push(node.text);
-      continue;
-    }
-    kinds.add(node.kind);
-    if ("children" in node && Array.isArray((node as { children?: InlineNode[] }).children)) {
-      flattenInline(((node as { children?: InlineNode[] }).children ?? []) as InlineNode[], kinds, texts);
-    }
+function applyPatchMessages(store: RendererStore, messages: WorkerOut[]): void {
+  for (const message of messages) {
+    if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
   }
 }
 
-function applyPatchMessages(store: ReturnType<typeof createRendererStore>, messages: WorkerOut[]): void {
-  for (const msg of messages) {
-    if (msg.type !== "PATCH") continue;
-    store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
-  }
-}
-
-function findListItemInlineByText(store: ReturnType<typeof createRendererStore>, needle: string): InlineNode[] {
-  const stack: string[] = [PATCH_ROOT_ID];
-  const seen = new Set<string>();
-
-  while (stack.length > 0) {
-    const current = stack.pop();
-    if (!current || seen.has(current)) continue;
-    seen.add(current);
-
-    const children = store.getChildren(current);
-    for (const childId of children) {
-      const child = store.getNode(childId);
-      if (!child) continue;
-      stack.push(childId);
-
-      if (child.type !== "list-item") {
-        continue;
-      }
-
-      const inline = Array.isArray(child.props?.inline) ? ((child.props?.inline ?? []) as InlineNode[]) : [];
-      const texts: string[] = [];
-      flattenInline(inline, new Set<string>(), texts);
-      if (texts.join(" ").includes(needle)) {
-        return inline;
-      }
-    }
-  }
-
-  return [];
+function listMarkup(store: RendererStore, needle: string): string {
+  const projection = projectConsumerBlocks(store.getBlocks()).find(
+    (block) => block.type === "list" && block.raw?.includes(needle),
+  );
+  assert.ok(projection, `expected a cold list export containing ${JSON.stringify(needle)}`);
+  return projection.markup;
 }
 
 async function runListAnticipationTest(): Promise<void> {
-  ensureDom();
-
   const harness = await createWorkerHarness();
   const store = createRendererStore();
-
   const initMessages = await harness.send({
     type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     initialContent: "",
     prewarmLangs: [],
     docPlugins: {
@@ -90,49 +42,31 @@ async function runListAnticipationTest(): Promise<void> {
       formatAnticipation: true,
     },
   });
-  const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
+  const init = initMessages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED");
   assert.ok(init, "worker did not emit INITIALIZED");
-  store.reset(init.blocks);
-
-  const partialNestedList = ["1. Root item", "   - **Handling missing values in nested list emphasis"].join("\n");
-  const appendMessages = await harness.send({ type: "APPEND", text: partialNestedList });
-  applyPatchMessages(store, appendMessages);
-
-  const blocks = [...store.getBlocks()];
-  const listBlock = blocks.find((block) => block.type === "list");
-  assert.ok(listBlock, "expected streamed list block");
+  store.resetSnapshot(init.snapshot);
 
   const targetText = "Handling missing values in nested list emphasis";
-  let inline: InlineNode[] = [];
+  const partialNestedList = ["1. Root item", `   - **${targetText}`].join("\n");
+  applyPatchMessages(store, await harness.send({ type: "APPEND", text: partialNestedList }));
+
+  let markup = listMarkup(store, targetText);
+  let hasStrong = false;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    inline = findListItemInlineByText(store, targetText);
-    const attemptKinds = new Set<string>();
-    const attemptTexts: string[] = [];
-    flattenInline(inline, attemptKinds, attemptTexts);
-    if (attemptKinds.has("strong")) {
-      break;
-    }
-    const flushMessages = await harness.send({ type: "SET_CREDITS", credits: 1 });
-    applyPatchMessages(store, flushMessages);
+    const document = new JSDOM(markup).window.document;
+    hasStrong = [...document.querySelectorAll("strong")].some((element) => element.textContent?.includes(targetText));
+    if (hasStrong || attempt === 2) break;
+    applyPatchMessages(store, await harness.send({ type: "SET_CREDITS", credits: 1 }));
+    markup = listMarkup(store, targetText);
   }
 
-  assert.ok(inline.length > 0, `expected nested list-item inline content containing \"${targetText}\"`);
-
-  const kinds = new Set<string>();
-  const texts: string[] = [];
-  flattenInline(inline, kinds, texts);
-
-  const hasStrong = kinds.has("strong");
-  const hasRawDelimiters = texts.some((text) => text.includes("**"));
-  assert(
-    hasStrong || hasRawDelimiters,
-    `expected nested list-item emphasis markers to be preserved or anticipated, got: ${texts.join(" | ")}`,
+  const text = new JSDOM(markup).window.document.body.textContent ?? "";
+  assert.ok(
+    hasStrong || text.includes(`**${targetText}`),
+    `nested list emphasis must be rendered or its authored delimiters preserved, got: ${text}`,
   );
   if (hasStrong) {
-    assert(
-      texts.every((text) => !text.includes("**")),
-      `expected no raw '**' delimiters when anticipation emits strong nodes, got: ${texts.join(" | ")}`,
-    );
+    assert.ok(!text.includes("**"), `rendered strong content must not expose raw delimiters, got: ${text}`);
   }
 }
 

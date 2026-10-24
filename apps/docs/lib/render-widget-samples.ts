@@ -194,7 +194,7 @@ Patch envelopes are deterministic and replayable:
   "protocol": "streammdx",
   "event": "patch",
   "tx": 42,
-  "patches": [{ "op": "appendLines", "at": ["__root__", 3] }]
+  "patches": [{ "op": "setProps", "at": { "blockId": "heading-1" }, "props": { "depth": 2 } }]
 }
 \`\`\`
 
@@ -317,8 +317,8 @@ One page showing end-to-end patterns:
 Map HTML tags into your design system wrappers.
 
 \`\`\`tsx
-const htmlElements = {
-  blockquote: ({ children, ...props }) => <blockquote className="border-l-2 pl-3" {...props}>{children}</blockquote>,
+const components = {
+  "html:blockquote": { props: { className: "border-l-2 pl-3" } },
 };
 \`\`\`
 `,

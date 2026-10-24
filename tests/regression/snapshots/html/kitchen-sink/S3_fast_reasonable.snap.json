@@ -28,17 +28,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 1.0999999940395355,
-        "lastDurationMs": 0.9000000059604645,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.300000011920929,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -47,8 +48,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -57,12 +56,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragr</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragr</p></div>",
       "textSample": "Kitchen SinkA paragr",
       "structure": {
         "topLevelTags": [
@@ -73,15 +70,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -94,17 +88,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0.19999998807907104,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 4,
+        "lastPatchToDomMs": 1.800000011920929,
+        "lastDurationMs": 0.5,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -113,8 +108,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -123,12 +116,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>s</strong></p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>s</strong></p></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, s",
       "structure": {
         "topLevelTags": [
@@ -139,15 +130,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -160,17 +148,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 4,
-        "lastPatchToDomMs": 14.400000005960464,
-        "lastDurationMs": 0.09999999403953552,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 8,
+        "lastPatchToDomMs": 0.9000000357627869,
+        "lastDurationMs": 0.20000004768371582,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -179,8 +168,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -189,12 +176,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to [example](</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to [example](</p></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to [example](",
       "structure": {
         "topLevelTags": [
@@ -205,15 +190,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -226,17 +208,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 5,
-        "lastPatchToDomMs": 12.5,
-        "lastDurationMs": 0.20000001788139343,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 10,
+        "lastPatchToDomMs": 3.199999988079071,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -245,8 +228,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -255,12 +236,10 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"></blockquote></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"></blockquote></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.",
       "structure": {
         "topLevelTags": [
@@ -271,15 +250,12 @@
           "pre": 0,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -292,17 +268,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 9,
-        "lastPatchToDomMs": 13.399999976158142,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 18,
+        "lastPatchToDomMs": 1.100000023841858,
         "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -311,8 +288,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -321,12 +296,10 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second</li></ol></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second</li></ol></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond",
       "structure": {
         "topLevelTags": [
@@ -337,15 +310,80 @@
           "pre": 0,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasTable",
+      "appendedChars": 360,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 18,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 30,
+        "lastPatchToDomMs": 2.399999976158142,
+        "lastDurationMs": 0.5999999642372131,
+        "meta": {
+          "fixtureId": "kitchen-sink",
+          "scenarioId": "S3_fast_reasonable"
+        },
+        "storeCounters": {
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": true,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 1,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\" id=\"table\" data-heading-id=\"table\">Table</h2><div data-table-block-root=\"4f21ecc6\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"4f21ecc6\" data-table-virtualized=\"false\" data-table-total-rows=\"1\" data-table-mounted-rows=\"1\" data-table-start-index=\"0\" data-table-end-index=\"1\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Name</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Value</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"4f21ecc6::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Al</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"></td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"></td></tr></tbody></table></div></div></div></div>",
+      "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond ordered item with emphasisNested bulletAno",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 1,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3
+            ],
+            "emptyBodyCellCount": 2
+          }
+        ],
         "codeBlocks": []
       }
     },
@@ -358,83 +396,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 18,
-        "lastPatchToDomMs": 14.400000005960464,
-        "lastDurationMs": 0.19999998807907104,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 36,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": true,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 1,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\">Table</h2><p class=\"markdown-paragraph\">| Name | Value | Notes |\n| --- | ---: | --- |\n| Alpha | 10 | Inline <code class=\"inline-code\">code</code> |\n| Beta | 20 | <strong>Bold</strong> text |\n| Gamma | 30 | </p></div>",
-      "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond ordered item with emphasisNested bulletAno",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 1,
-          "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasTable",
-      "appendedChars": 480,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 23,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 20,
-        "lastPatchToDomMs": 15.099999994039536,
-        "lastDurationMs": 0.800000011920929,
-        "meta": {
-          "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -443,8 +416,6 @@
         "hasTable": true,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -453,12 +424,10 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\">Table</h2><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Name</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Value</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">10</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Inline <code class=\"inline-code\">code</code></td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">20</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"><strong>Bold</strong> text</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">30</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"C\">C</h2></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\" id=\"table\" data-heading-id=\"table\">Table</h2><div data-table-block-root=\"4f21ecc6\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"4f21ecc6\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Name</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Value</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"4f21ecc6::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">10</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Inline <code class=\"inline-code\">code</code></td></tr><tr data-row-id=\"4f21ecc6::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">20</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"><strong>Bold</strong> text</td></tr><tr data-row-id=\"4f21ecc6::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">30</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"></td></tr></tbody></table></div></div></div></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond ordered item with emphasisNested bulletAno",
       "structure": {
         "topLevelTags": [
@@ -469,8 +438,6 @@
           "pre": 0,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -484,10 +451,9 @@
               3,
               3
             ],
-            "emptyBodyCellCount": 0
+            "emptyBodyCellCount": 1
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -500,17 +466,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 21,
-        "lastPatchToDomMs": 12.299999982118607,
-        "lastDurationMs": 0.29999998211860657,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 42,
+        "lastPatchToDomMs": 5,
+        "lastDurationMs": 2.800000011920929,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -519,8 +486,6 @@
         "hasTable": true,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -529,12 +494,10 @@
         "pre": 1,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\">Table</h2><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Name</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Value</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">10</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Inline <code class=\"inline-code\">code</code></td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">20</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"><strong>Bold</strong> text</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">30</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const h</span></code></pre></div></div></div></div></div></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\" id=\"table\" data-heading-id=\"table\">Table</h2><div data-table-block-root=\"4f21ecc6\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"4f21ecc6\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Name</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Value</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"4f21ecc6::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">10</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Inline <code class=\"inline-code\">code</code></td></tr><tr data-row-id=\"4f21ecc6::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">20</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"><strong>Bold</strong> text</td></tr><tr data-row-id=\"4f21ecc6::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">30</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\" id=\"code-block\" data-heading-id=\"code-block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"137f66b8\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" data-language=\"ts\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"ts\" class=\"language-ts\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\" data-provisional=\"true\">const h</span></code></pre></div></div></div></div></div></div></div></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond ordered item with emphasisNested bulletAno",
       "structure": {
         "topLevelTags": [
@@ -545,8 +508,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -563,7 +524,6 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": [
           {
             "text": "const h",
@@ -577,21 +537,22 @@
       "appendedChars": 648,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 30,
+        "rendererVersion": 34,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 27,
-        "lastPatchToDomMs": 14.600000023841858,
-        "lastDurationMs": 0.10000002384185791,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 58,
+        "lastPatchToDomMs": 1.100000023841858,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -600,8 +561,6 @@
         "hasTable": true,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -610,12 +569,10 @@
         "pre": 1,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\">Table</h2><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Name</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Value</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">10</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Inline <code class=\"inline-code\">code</code></td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">20</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"><strong>Bold</strong> text</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">30</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> hello</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"world\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(hello);</span></span></code></pre></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\">Inline HTML</h2><p class=\"markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2&lt;/s</sup></p>\n</div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\" id=\"table\" data-heading-id=\"table\">Table</h2><div data-table-block-root=\"4f21ecc6\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"4f21ecc6\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Name</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Value</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"4f21ecc6::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">10</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Inline <code class=\"inline-code\">code</code></td></tr><tr data-row-id=\"4f21ecc6::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">20</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"><strong>Bold</strong> text</td></tr><tr data-row-id=\"4f21ecc6::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">30</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\" id=\"code-block\" data-heading-id=\"code-block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"137f66b8\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"ts\" class=\"language-ts language-ts\" style=\"\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">const</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">hello</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">=</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"world\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">console.</span><span style=\"--shiki-dark: #B392F0; --shiki-light: #6F42C1;\">log</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">(hello);</span></span>\n</code></pre></div></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\" id=\"inline-html\" data-heading-id=\"inline-html\">Inline HTML</h2><p class=\"markdown-paragraph markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2&lt;/s</sup></p>\n</div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond ordered item with emphasisNested bulletAno",
       "structure": {
         "topLevelTags": [
@@ -626,8 +583,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -644,11 +599,10 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": [
           {
-            "text": "const hello = \"world\";\nconsole.log(hello);",
-            "lineCount": 2
+            "text": "const hello = \"world\";\nconsole.log(hello);\n",
+            "lineCount": 3
           }
         ]
       }
@@ -658,21 +612,22 @@
       "appendedChars": 696,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 32,
+        "rendererVersion": 36,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 29,
-        "lastPatchToDomMs": 14.5,
-        "lastDurationMs": 0.20000001788139343,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 62,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -681,8 +636,6 @@
         "hasTable": true,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": true
       },
@@ -691,12 +644,10 @@
         "pre": 1,
         "blockquote": 1,
         "katex": 2,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\">Table</h2><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Name</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Value</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">10</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Inline <code class=\"inline-code\">code</code></td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">20</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"><strong>Bold</strong> text</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">30</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> hello</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"world\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(hello);</span></span></code></pre></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\">Inline HTML</h2><p class=\"markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\">Math</h2><p class=\"markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">f(x)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span></span></span></span></span></p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\" id=\"table\" data-heading-id=\"table\">Table</h2><div data-table-block-root=\"4f21ecc6\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"4f21ecc6\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Name</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Value</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"4f21ecc6::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">10</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Inline <code class=\"inline-code\">code</code></td></tr><tr data-row-id=\"4f21ecc6::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">20</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"><strong>Bold</strong> text</td></tr><tr data-row-id=\"4f21ecc6::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">30</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\" id=\"code-block\" data-heading-id=\"code-block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"137f66b8\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"ts\" class=\"language-ts language-ts\" style=\"\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">const</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">hello</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">=</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"world\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">console.</span><span style=\"--shiki-dark: #B392F0; --shiki-light: #6F42C1;\">log</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">(hello);</span></span>\n</code></pre></div></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\" id=\"inline-html\" data-heading-id=\"inline-html\">Inline HTML</h2><p class=\"markdown-paragraph markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\" id=\"math\" data-heading-id=\"math\">Math</h2><p class=\"markdown-paragraph markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">f(x)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span></span></span></span></span></p></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond ordered item with emphasisNested bulletAno",
       "structure": {
         "topLevelTags": [
@@ -707,8 +658,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 2,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -725,11 +674,10 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": [
           {
-            "text": "const hello = \"world\";\nconsole.log(hello);",
-            "lineCount": 2
+            "text": "const hello = \"world\";\nconsole.log(hello);\n",
+            "lineCount": 3
           }
         ]
       }
@@ -739,21 +687,22 @@
       "appendedChars": 792,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 36,
+        "rendererVersion": 40,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 33,
-        "lastPatchToDomMs": 14.100000023841858,
-        "lastDurationMs": 0.10000002384185791,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 70,
+        "lastPatchToDomMs": 0.6000000238418579,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -762,8 +711,6 @@
         "hasTable": true,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": true
       },
@@ -772,12 +719,10 @@
         "pre": 1,
         "blockquote": 1,
         "katex": 3,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\">Table</h2><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Name</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Value</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">10</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Inline <code class=\"inline-code\">code</code></td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">20</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"><strong>Bold</strong> text</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">30</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> hello</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"world\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(hello);</span></span></code></pre></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\">Inline HTML</h2><p class=\"markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\">Math</h2><p class=\"markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph\">Display math:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi mathvariant=\"bold\">J</mi><mi>f</mi></msub><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mi mathvariant=\"normal\">∇</mi><mi>f</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0361em;vertical-align:-0.2861em;\"></span><span class=\"mord\"><span class=\"mord mathbf\">J</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3361em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\" style=\"margin-right:0.1076em;\">f</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2861em;\"><span></span></span></span></span></span></span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">∇</span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span></span></span></span></span></span></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Footnotes\">Footnotes</h2><p class=\"markdown-paragraph\">A </p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\" id=\"table\" data-heading-id=\"table\">Table</h2><div data-table-block-root=\"4f21ecc6\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"4f21ecc6\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Name</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Value</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"4f21ecc6::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">10</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Inline <code class=\"inline-code\">code</code></td></tr><tr data-row-id=\"4f21ecc6::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">20</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"><strong>Bold</strong> text</td></tr><tr data-row-id=\"4f21ecc6::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">30</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\" id=\"code-block\" data-heading-id=\"code-block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"137f66b8\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"ts\" class=\"language-ts language-ts\" style=\"\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">const</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">hello</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">=</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"world\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">console.</span><span style=\"--shiki-dark: #B392F0; --shiki-light: #6F42C1;\">log</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">(hello);</span></span>\n</code></pre></div></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\" id=\"inline-html\" data-heading-id=\"inline-html\">Inline HTML</h2><p class=\"markdown-paragraph markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\" id=\"math\" data-heading-id=\"math\">Math</h2><p class=\"markdown-paragraph markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph markdown-paragraph\">Display math:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi mathvariant=\"bold\">J</mi><mi>f</mi></msub><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mi mathvariant=\"normal\">∇</mi><mi>f</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0361em;vertical-align:-0.2861em;\"></span><span class=\"mord\"><span class=\"mord mathbf\">J</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3361em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\" style=\"margin-right:0.1076em;\">f</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2861em;\"><span></span></span></span></span></span></span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">∇</span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span></span></span></span></span></span></div></div></div></div></div></p><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h2><p class=\"markdown-paragraph markdown-paragraph\">A </p></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond ordered item with emphasisNested bulletAno",
       "structure": {
         "topLevelTags": [
@@ -788,8 +733,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -806,11 +749,10 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": [
           {
-            "text": "const hello = \"world\";\nconsole.log(hello);",
-            "lineCount": 2
+            "text": "const hello = \"world\";\nconsole.log(hello);\n",
+            "lineCount": 3
           }
         ]
       }
@@ -820,21 +762,22 @@
       "appendedChars": 863,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 39,
+        "rendererVersion": 43,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 36,
-        "lastPatchToDomMs": 13.899999976158142,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 76,
+        "lastPatchToDomMs": 0.699999988079071,
         "lastDurationMs": 0,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -843,8 +786,6 @@
         "hasTable": true,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": true
       },
@@ -853,12 +794,10 @@
         "pre": 1,
         "blockquote": 1,
         "katex": 3,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\">Table</h2><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Name</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Value</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">10</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Inline <code class=\"inline-code\">code</code></td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">20</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"><strong>Bold</strong> text</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">30</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> hello</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"world\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(hello);</span></span></code></pre></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\">Inline HTML</h2><p class=\"markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\">Math</h2><p class=\"markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph\">Display math:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi mathvariant=\"bold\">J</mi><mi>f</mi></msub><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mi mathvariant=\"normal\">∇</mi><mi>f</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0361em;vertical-align:-0.2861em;\"></span><span class=\"mord\"><span class=\"mord mathbf\">J</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3361em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\" style=\"margin-right:0.1076em;\">f</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2861em;\"><span></span></span></span></span></span></span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">∇</span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span></span></span></span></span></span></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Footnotes\">Footnotes</h2><p class=\"markdown-paragraph\">A statement with a footnote.[^note]</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\" id=\"table\" data-heading-id=\"table\">Table</h2><div data-table-block-root=\"4f21ecc6\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"4f21ecc6\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Name</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Value</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"4f21ecc6::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">10</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Inline <code class=\"inline-code\">code</code></td></tr><tr data-row-id=\"4f21ecc6::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">20</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"><strong>Bold</strong> text</td></tr><tr data-row-id=\"4f21ecc6::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">30</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\" id=\"code-block\" data-heading-id=\"code-block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"137f66b8\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"ts\" class=\"language-ts language-ts\" style=\"\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">const</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">hello</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">=</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"world\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">console.</span><span style=\"--shiki-dark: #B392F0; --shiki-light: #6F42C1;\">log</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">(hello);</span></span>\n</code></pre></div></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\" id=\"inline-html\" data-heading-id=\"inline-html\">Inline HTML</h2><p class=\"markdown-paragraph markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\" id=\"math\" data-heading-id=\"math\">Math</h2><p class=\"markdown-paragraph markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph markdown-paragraph\">Display math:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi mathvariant=\"bold\">J</mi><mi>f</mi></msub><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mi mathvariant=\"normal\">∇</mi><mi>f</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0361em;vertical-align:-0.2861em;\"></span><span class=\"mord\"><span class=\"mord mathbf\">J</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3361em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\" style=\"margin-right:0.1076em;\">f</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2861em;\"><span></span></span></span></span></span></span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">∇</span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span></span></span></span></span></span></div></div></div></div></div></p><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h2><p class=\"markdown-paragraph markdown-paragraph\">A statement with a footnote.[^note]</p></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond ordered item with emphasisNested bulletAno",
       "structure": {
         "topLevelTags": [
@@ -869,8 +808,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -887,11 +824,10 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": [
           {
-            "text": "const hello = \"world\";\nconsole.log(hello);",
-            "lineCount": 2
+            "text": "const hello = \"world\";\nconsole.log(hello);\n",
+            "lineCount": 3
           }
         ]
       }
@@ -901,21 +837,22 @@
       "appendedChars": 863,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 41,
+        "rendererVersion": 44,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 38,
-        "lastPatchToDomMs": 9.5,
-        "lastDurationMs": 0.8999999761581421,
+        "workerInitialized": true,
+        "workerFinalized": true,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 77,
+        "lastPatchToDomMs": 8.399999976158142,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "kitchen-sink",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S3_fast_reasonable"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -924,8 +861,6 @@
         "hasTable": true,
         "hasPre": true,
         "hasFootnotes": true,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": true
       },
@@ -934,12 +869,10 @@
         "pre": 1,
         "blockquote": 1,
         "katex": 3,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 1,
         "hr": 1
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\">Table</h2><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Name</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Value</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">10</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Inline <code class=\"inline-code\">code</code></td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">20</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"><strong>Bold</strong> text</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">30</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> hello</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"world\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(hello);</span></span></code></pre></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\">Inline HTML</h2><p class=\"markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\">Math</h2><p class=\"markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph\">Display math:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi mathvariant=\"bold\">J</mi><mi>f</mi></msub><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mi mathvariant=\"normal\">∇</mi><mi>f</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0361em;vertical-align:-0.2861em;\"></span><span class=\"mord\"><span class=\"mord mathbf\">J</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3361em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\" style=\"margin-right:0.1076em;\">f</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2861em;\"><span></span></span></span></span></span></span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">∇</span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span></span></span></span></span></span></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Footnotes\">Footnotes</h2><p class=\"markdown-paragraph\">A statement with a footnote.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"note\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">This is the footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\" id=\"table\" data-heading-id=\"table\">Table</h2><div data-table-block-root=\"4f21ecc6\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"4f21ecc6\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Name</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Value</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"4f21ecc6::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">10</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Inline <code class=\"inline-code\">code</code></td></tr><tr data-row-id=\"4f21ecc6::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">20</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"><strong>Bold</strong> text</td></tr><tr data-row-id=\"4f21ecc6::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">30</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\" id=\"code-block\" data-heading-id=\"code-block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"137f66b8\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"ts\" class=\"language-ts language-ts\" style=\"\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">const</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">hello</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">=</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"world\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">console.</span><span style=\"--shiki-dark: #B392F0; --shiki-light: #6F42C1;\">log</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">(hello);</span></span>\n</code></pre></div></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\" id=\"inline-html\" data-heading-id=\"inline-html\">Inline HTML</h2><p class=\"markdown-paragraph markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\" id=\"math\" data-heading-id=\"math\">Math</h2><p class=\"markdown-paragraph markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph markdown-paragraph\">Display math:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi mathvariant=\"bold\">J</mi><mi>f</mi></msub><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mi mathvariant=\"normal\">∇</mi><mi>f</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0361em;vertical-align:-0.2861em;\"></span><span class=\"mord\"><span class=\"mord mathbf\">J</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3361em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\" style=\"margin-right:0.1076em;\">f</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2861em;\"><span></span></span></span></span></span></span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">∇</span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span></span></span></span></span></span></div></div></div></div></div></p><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h2><p class=\"markdown-paragraph markdown-paragraph\">A statement with a footnote.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"note\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">This is the footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
       "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and strong text.ListsFirst ordered itemSecond ordered item with emphasisNested bulletAno",
       "structure": {
         "topLevelTags": [
@@ -950,8 +883,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 1,
           "hr": 1
         }
@@ -968,11 +899,10 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [],
         "codeBlocks": [
           {
-            "text": "const hello = \"world\";\nconsole.log(hello);",
-            "lineCount": 2
+            "text": "const hello = \"world\";\nconsole.log(hello);\n",
+            "lineCount": 3
           }
         ]
       }
@@ -986,28 +916,27 @@
       "hasTable": true,
       "hasPre": true,
       "hasFootnotes": true,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": true,
       "hasMath": true
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\">Kitchen Sink</h1><p class=\"markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\">Table</h2><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Name</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">Value</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">10</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Inline <code class=\"inline-code\">code</code></td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">20</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"><strong>Bold</strong> text</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\" style=\"text-align: right;\">30</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> hello</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"world\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(hello);</span></span></code></pre></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\">Inline HTML</h2><p class=\"markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\">Math</h2><p class=\"markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph\">Display math:</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi mathvariant=\"bold\">J</mi><mi>f</mi></msub><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mi mathvariant=\"normal\">∇</mi><mi>f</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0361em;vertical-align:-0.2861em;\"></span><span class=\"mord\"><span class=\"mord mathbf\">J</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3361em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\" style=\"margin-right:0.1076em;\">f</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2861em;\"><span></span></span></span></span></span></span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">∇</span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span></span></span></span></span></span></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Footnotes\">Footnotes</h2><p class=\"markdown-paragraph\">A statement with a footnote.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"note\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">This is the footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Kitchen Sink\" id=\"kitchen-sink\" data-heading-id=\"kitchen-sink\">Kitchen Sink</h1><p class=\"markdown-paragraph markdown-paragraph\">A paragraph with <em>emphasis</em>, <strong>strong</strong>, <code class=\"inline-code\">inline code</code>, and a link to <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">example</a>.</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">A blockquote with <code class=\"inline-code\">inline code</code> and <strong>strong</strong> text.</p></blockquote><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Lists\" id=\"lists\" data-heading-id=\"lists\">Lists</h2><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First ordered item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second ordered item with <em>emphasis</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Another bullet</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li></ol><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Table\" id=\"table\" data-heading-id=\"table\">Table</h2><div data-table-block-root=\"4f21ecc6\" style=\"display: contents;\"><div class=\"relative overflow-auto my-6 w-full rounded border border-border\" style=\"overflow: auto;\"><div class=\"min-w-max\"><table class=\"markdown-table w-full caption-bottom text-base\" data-table-block=\"true\" data-block-id=\"4f21ecc6\" data-table-virtualized=\"false\" data-table-total-rows=\"3\" data-table-mounted-rows=\"3\" data-table-start-index=\"0\" data-table-end-index=\"3\"><thead><tr class=\"border-b transition-colors hover:bg-muted/50\"><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Name</th><th align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Value</th><th class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Notes</th></tr></thead><tbody><tr data-row-id=\"4f21ecc6::row:0\" data-row-index=\"0\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Alpha</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">10</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Inline <code class=\"inline-code\">code</code></td></tr><tr data-row-id=\"4f21ecc6::row:1\" data-row-index=\"1\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Beta</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">20</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\"><strong>Bold</strong> text</td></tr><tr data-row-id=\"4f21ecc6::row:2\" data-row-index=\"2\" class=\"border-b transition-colors hover:bg-muted/50\"><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">Gamma</td><td align=\"right\" class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">30</td><td class=\"align-middle [&amp;:is(td)]:p-4 [&amp;:is(th)]:h-12 [&amp;:is(th)]:px-4 [&amp;:is(th)]:text-left [&amp;:is(th)]:font-medium [&amp;:is(th)]:text-muted-foreground\">A link: <a href=\"https://example.com/docs\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">docs</a></td></tr></tbody></table></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Code Block\" id=\"code-block\" data-heading-id=\"code-block\">Code Block</h2><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"137f66b8\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-ts\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-ts\" style=\"--shiki-dark-bg: #24292e; --shiki-light-bg: #fff; --shiki-dark: #e1e4e8; --shiki-light: #24292e;\"><code data-language=\"ts\" class=\"language-ts language-ts\" style=\"\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">const</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #79B8FF; --shiki-light: #005CC5;\">hello</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #F97583; --shiki-light: #D73A49;\">=</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\"> </span><span style=\"--shiki-dark: #9ECBFF; --shiki-light: #032F62;\">\"world\"</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">console.</span><span style=\"--shiki-dark: #B392F0; --shiki-light: #6F42C1;\">log</span><span style=\"--shiki-dark: #E1E4E8; --shiki-light: #24292E;\">(hello);</span></span>\n</code></pre></div></div></div></div></div></div></div><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Inline HTML\" id=\"inline-html\" data-heading-id=\"inline-html\">Inline HTML</h2><p class=\"markdown-paragraph markdown-paragraph\">Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to search. H2O is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>\n<h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Math\" id=\"math\" data-heading-id=\"math\">Math</h2><p class=\"markdown-paragraph markdown-paragraph\">Inline math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">f(x) = x^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph markdown-paragraph\">Display math:</p><p class=\"markdown-paragraph markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi mathvariant=\"bold\">J</mi><mi>f</mi></msub><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mi mathvariant=\"normal\">∇</mi><mi>f</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"bold\">x</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0361em;vertical-align:-0.2861em;\"></span><span class=\"mord\"><span class=\"mord mathbf\">J</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3361em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\" style=\"margin-right:0.1076em;\">f</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2861em;\"><span></span></span></span></span></span></span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">∇</span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mopen\">(</span><span class=\"mord mathbf\">x</span><span class=\"mclose\">)</span></span></span></span></span></span></div></div></div></div></div></p><h2 class=\"markdown-heading markdown-h2\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h2><p class=\"markdown-paragraph markdown-paragraph\">A statement with a footnote.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"note\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">This is the footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
     "runtimeState": {
-      "rendererVersion": 41,
+      "rendererVersion": 44,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 38,
-      "lastPatchToDomMs": 9.5,
-      "lastDurationMs": 0.8999999761581421,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
+      "lastTx": 77,
+      "lastPatchToDomMs": 8.399999976158142,
+      "lastDurationMs": 0.19999998807907104,
       "meta": {
         "fixtureId": "kitchen-sink",
-        "scenarioId": "S3_fast_reasonable",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S3_fast_reasonable"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -1021,8 +950,6 @@
         "pre": 1,
         "blockquote": 1,
         "katex": 3,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 1,
         "hr": 1
       }
@@ -1031,7 +958,7 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "cfa792c1f57d6917448354b39fb7768b10d7b35d5ba014c92b27dc99a021813c",
+        "hash": "c591c899eccb66dc0eac639de631891088e089e07c7e95e8ed11a151fd295f30",
         "textSample": "Kitchen SinkA paragraph with emphasis, strong, inline code, and a link to example.A blockquote with inline code and stro"
       }
     ],
@@ -1047,11 +974,10 @@
           "emptyBodyCellCount": 0
         }
       ],
-      "mdxBlocks": [],
       "codeBlocks": [
         {
-          "text": "const hello = \"world\";\nconsole.log(hello);",
-          "lineCount": 2
+          "text": "const hello = \"world\";\nconsole.log(hello);\n",
+          "lineCount": 3
         }
       ]
     }

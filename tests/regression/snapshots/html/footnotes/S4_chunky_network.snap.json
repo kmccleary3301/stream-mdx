@@ -28,17 +28,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.300000011920929,
         "meta": {
           "fixtureId": "footnotes",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -47,8 +48,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -57,12 +56,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.[^1]Another sentence with a second reference.[^second]",
       "structure": {
         "topLevelTags": [
@@ -73,15 +70,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -94,17 +88,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.300000011920929,
         "meta": {
           "fixtureId": "footnotes",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -113,8 +108,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -123,12 +116,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.[^1]Another sentence with a second reference.[^second]",
       "structure": {
         "topLevelTags": [
@@ -139,15 +130,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -160,17 +148,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.300000011920929,
         "meta": {
           "fixtureId": "footnotes",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -179,8 +168,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -189,12 +176,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.[^1]Another sentence with a second reference.[^second]",
       "structure": {
         "topLevelTags": [
@@ -205,15 +190,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -226,17 +208,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.300000011920929,
         "meta": {
           "fixtureId": "footnotes",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -245,8 +228,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -255,12 +236,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.[^1]Another sentence with a second reference.[^second]",
       "structure": {
         "topLevelTags": [
@@ -271,15 +250,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -292,17 +268,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.300000011920929,
         "meta": {
           "fixtureId": "footnotes",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -311,8 +288,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -321,12 +296,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.[^1]Another sentence with a second reference.[^second]",
       "structure": {
         "topLevelTags": [
@@ -337,15 +310,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -358,17 +328,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.300000011920929,
         "meta": {
           "fixtureId": "footnotes",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -377,8 +348,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -387,12 +356,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.[^1]Another sentence with a second reference.[^second]",
       "structure": {
         "topLevelTags": [
@@ -403,15 +370,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -424,17 +388,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.300000011920929,
         "meta": {
           "fixtureId": "footnotes",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -443,8 +408,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -453,12 +416,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.[^1]Another sentence with a second reference.[^second]",
       "structure": {
         "topLevelTags": [
@@ -469,15 +430,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -490,17 +448,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1.300000011920929,
         "meta": {
           "fixtureId": "footnotes",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -509,8 +468,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -519,12 +476,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.[^1]</p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.[^second]</p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.[^1]Another sentence with a second reference.[^second]",
       "structure": {
         "topLevelTags": [
@@ -535,15 +490,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -552,21 +504,22 @@
       "appendedChars": 182,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 6,
+        "rendererVersion": 5,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
+        "workerInitialized": true,
+        "workerFinalized": true,
+        "workerErrors": [],
+        "harnessErrors": [],
         "lastTx": 3,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.10000000894069672,
+        "lastPatchToDomMs": 16.899999976158142,
+        "lastDurationMs": 0.7999999523162842,
         "meta": {
           "fixtureId": "footnotes",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -575,8 +528,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": true,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -585,12 +536,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 1,
         "hr": 1
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li><li id=\"fn:2\">Second footnote with <strong>bold</strong> text. <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li><li id=\"fn:2\">Second footnote with <strong>bold</strong> text. <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
       "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2First footnote text. ↩Second footnote with bold text. ↩",
       "structure": {
         "topLevelTags": [
@@ -601,15 +550,12 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 1,
           "hr": 1
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -622,28 +568,27 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": true,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li><li id=\"fn:2\">Second footnote with <strong>bold</strong> text. <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\" id=\"footnotes\" data-heading-id=\"footnotes\">Footnotes</h1><p class=\"markdown-paragraph markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li><li id=\"fn:2\">Second footnote with <strong>bold</strong> text. <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
     "runtimeState": {
-      "rendererVersion": 6,
+      "rendererVersion": 5,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
       "lastTx": 3,
-      "lastPatchToDomMs": 0.5,
-      "lastDurationMs": 0.10000000894069672,
+      "lastPatchToDomMs": 16.899999976158142,
+      "lastDurationMs": 0.7999999523162842,
       "meta": {
         "fixtureId": "footnotes",
-        "scenarioId": "S4_chunky_network",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S4_chunky_network"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -657,8 +602,6 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 1,
         "hr": 1
       }
@@ -667,13 +610,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "6c6221a3c194b5c2edef0b042da1842a7cf5ea6d4ee7655b0765b73b36eace48",
+        "hash": "38ce9757d0331f49c270e4464e22a33349950e1b98d5be3cb457e187b7450e2a",
         "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2First footnote text. ↩Second fo"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

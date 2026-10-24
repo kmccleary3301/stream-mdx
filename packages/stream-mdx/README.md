@@ -59,8 +59,7 @@ export function Demo({ text }: { text: string }) {
     <StreamingMarkdown
       text={text}
       worker="/workers/markdown-worker.js"
-      features={{ tables: true, html: true, math: true, mdx: true, footnotes: true }}
-      mdxCompileMode="worker"
+      features={{ tables: true, html: true, math: true, footnotes: true }}
       prewarmLangs={["tsx", "bash", "json"]}
     />
   );
@@ -70,16 +69,22 @@ export function Demo({ text }: { text: string }) {
 ### 3. Optional addon registration
 
 ```tsx
-import { MermaidBlock } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "stream-mdx";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 
-<StreamingMarkdown text={content} worker="/workers/markdown-worker.js" codeRenderers={{ mermaid: MermaidBlock }} />;
+const mermaidEngine = createMermaidEngine();
+
+<StreamingMarkdown
+  text={content}
+  worker="/workers/markdown-worker.js"
+  engines={{ mermaid: mermaidEngine }}
+/>;
 ```
 
 > [!NOTE]
 > `StreamingMarkdown` is a client component. In Next.js App Router, keep the import behind a `"use client"` boundary.
 
-`engine` defaults to `"auto"` and falls back to a dynamically imported in-process engine only when browser Worker creation is unavailable or fails. `"worker"` requires a Worker; `"main-thread"` runs parsing on the browser thread and ignores `worker`. These modes do not compile during SSR. Use snapshot compilation for server markup. See the [execution modes](../../docs/PUBLIC_API.md#execution-modes-and-ssr).
+`engine` defaults to `"auto"`, which bootstraps up to 4,096 accepted UTF-16 source units with the inline engine before atomically switching to a worker. `"worker"` requires a Worker; `"main"` runs parsing on the browser thread and ignores `worker`. These modes do not compile during SSR. Use snapshot compilation for server markup. See the [execution modes](../../docs/PUBLIC_API.md#execution-modes-and-ssr).
 
 ## Package-Specific Guidance
 
@@ -113,8 +118,7 @@ import { compileMarkdownSnapshot } from "stream-mdx/worker/node";
 const { blocks } = await compileMarkdownSnapshot({
   text: "# Precompiled page\n\nThis was rendered from a snapshot.",
   init: {
-    docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-    mdx: { compileMode: "server" },
+    docPlugins: { tables: true, html: true, math: true, footnotes: true },
   },
 });
 

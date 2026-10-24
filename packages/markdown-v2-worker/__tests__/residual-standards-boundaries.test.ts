@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -15,7 +17,6 @@ Object.assign(globalThis, { window, document: window.document, DOMParser: window
 Object.defineProperty(globalThis, "navigator", { configurable: true, writable: true, value: window.navigator });
 const init = {
   docPlugins: { html: true, tables: true, footnotes: true, math: true, callouts: true, mdx: false },
-  mdx: { compileMode: "server" as const },
   prewarmLangs: [],
 };
 const code = "<pre><code>chunk1\n  \n  chunk2\n</code></pre>";
@@ -69,14 +70,14 @@ try {
         };
         const onError = (error: Error) => finish(error);
         const onMessage = (message: WorkerOut) => {
-          if (message.type === "INITIALIZED") store.reset(message.blocks);
+          if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
           else if (message.type === "PATCH") store.applyPatches(message.patches);
           else if (message.type === "ERROR") finish(new Error(message.error.message));
           else if (message.type === "FINALIZED") finish();
         };
         worker.on("message", onMessage);
         worker.on("error", onError);
-        worker.postMessage({ type: "INIT", initialContent: "", ...init });
+        worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", ...init });
         for (let index = 0; index < fixture.markdown.length; index += chunkSize) {
           worker.postMessage({ type: "APPEND", text: fixture.markdown.slice(index, index + chunkSize) });
         }

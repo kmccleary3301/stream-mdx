@@ -1,6 +1,7 @@
 import { MarkdownEngine } from "./engine";
 import {
   PATCH_ROOT_ID,
+  STREAM_MDX_SCHEMA_VERSION,
   applyPatchBatch,
   createInitialSnapshot,
   type Block,
@@ -24,7 +25,8 @@ export interface SnapshotArtifactV1 {
   tocHeadings?: TocHeading[];
   init?: {
     docPlugins?: WorkerInitMessage["docPlugins"];
-    mdx?: WorkerInitMessage["mdx"];
+    contentPolicy?: WorkerInitMessage["contentPolicy"];
+    contentComponents?: WorkerInitMessage["contentComponents"];
     prewarmLangs?: string[];
     themes?: WorkerInitMessage["themes"];
     syntax?: WorkerInitMessage["syntax"];
@@ -34,7 +36,7 @@ export interface SnapshotArtifactV1 {
 
 export interface CompileMarkdownSnapshotDirectOptions {
   text: string;
-  init?: Omit<WorkerInitMessage, "type" | "initialContent">;
+  init?: Omit<WorkerInitMessage, "type" | "initialContent" | "schemaVersion">;
   hashSalt?: string;
   cache?: {
     dir: string;
@@ -175,8 +177,11 @@ function firstWorkerError(messages: WorkerOut[]): string | null {
   return `Worker error (${errorMessage.phase}): ${errorMessage.error.message}`;
 }
 
-function extractPatches(messages: WorkerOut[]): Extract<WorkerOut, { type: "PATCH" }>[] {
-  return messages.filter((message): message is Extract<WorkerOut, { type: "PATCH" }> => message.type === "PATCH");
+function extractPatches(messages: WorkerOut[], generation: number): Extract<WorkerOut, { type: "PATCH" }>[] {
+  return messages.filter(
+    (message): message is Extract<WorkerOut, { type: "PATCH" }> =>
+      message.type === "PATCH" && message.generation === generation,
+  );
 }
 
 function stableStringify(value: unknown): string {
@@ -215,13 +220,15 @@ async function sha256Hex(input: string): Promise<string> {
   }
 }
 
-async function buildHashes(text: string, init: Omit<WorkerInitMessage, "type" | "initialContent"> | undefined, hashSalt: string | undefined) {
+async function buildHashes(text: string, init: CompileMarkdownSnapshotDirectOptions["init"], hashSalt: string | undefined) {
   const hashPayload = stableStringify({
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     text,
     init: init ?? null,
     salt: hashSalt ?? null,
   });
   const configPayload = stableStringify({
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     init: init ?? null,
     salt: hashSalt ?? null,
   });
@@ -311,7 +318,7 @@ export async function compileMarkdownSnapshotDirect(
       if (cached) {
         const snapshot = createInitialSnapshot(cached.blocks);
         return {
-          blocks: snapshot.blocks,
+          blocks: snapshot.getBlocks(),
           snapshot,
           artifact: cached,
           fromCache: true,
@@ -324,13 +331,15 @@ export async function compileMarkdownSnapshotDirect(
       scope,
       {
         type: "INIT",
+        schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent: text,
-        prewarmLangs: init?.prewarmLangs,
-        docPlugins: init?.docPlugins,
-        mdx: init?.mdx,
-        themes: init?.themes,
-        syntax: init?.syntax,
-        html: init?.html,
+        ...(init?.prewarmLangs === undefined ? {} : { prewarmLangs: init.prewarmLangs }),
+        ...(init?.docPlugins === undefined ? {} : { docPlugins: init.docPlugins }),
+        ...(init?.contentPolicy === undefined ? {} : { contentPolicy: init.contentPolicy }),
+        ...(init?.contentComponents === undefined ? {} : { contentComponents: init.contentComponents }),
+        ...(init?.themes === undefined ? {} : { themes: init.themes }),
+        ...(init?.syntax === undefined ? {} : { syntax: init.syntax }),
+        ...(init?.html === undefined ? {} : { html: init.html }),
       },
       timeoutMs,
     );
@@ -344,9 +353,18 @@ export async function compileMarkdownSnapshotDirect(
       throw new Error("[stream-mdx] direct compile failed: worker did not emit INITIALIZED.");
     }
 
-    const snapshot = createInitialSnapshot(initialized.blocks);
-    for (const patch of extractPatches(initMessages)) {
-      snapshot.blocks = applyPatchBatch(snapshot, patch.patches);
+    if (
+      initialized.schemaVersion !== STREAM_MDX_SCHEMA_VERSION ||
+      !Number.isSafeInteger(initialized.generation) ||
+      initialized.generation < 0 ||
+      initialized.snapshot.inputSource?.generation !== initialized.generation ||
+      typeof initialized.snapshot.inputSource?.raw !== "string"
+    ) {
+      throw new Error("Incompatible worker initialization: canonical input baseline is missing or invalid");
+    }
+    const snapshot = createInitialSnapshot(initialized.snapshot);
+    for (const patch of extractPatches(initMessages, initialized.generation)) {
+      applyPatchBatch(snapshot, patch.patches);
     }
 
     if (finalize) {
@@ -355,8 +373,15 @@ export async function compileMarkdownSnapshotDirect(
       if (finalizeError) {
         throw new Error(finalizeError);
       }
-      for (const patch of extractPatches(finalizeMessages)) {
-        snapshot.blocks = applyPatchBatch(snapshot, patch.patches);
+      if (
+        !finalizeMessages.some(
+          (message) => message.type === "FINALIZED" && message.generation === initialized.generation,
+        )
+      ) {
+        throw new Error("The direct compile worker did not finalize the initialized document generation.");
+      }
+      for (const patch of extractPatches(finalizeMessages, initialized.generation)) {
+        applyPatchBatch(snapshot, patch.patches);
       }
     } else {
       await new Promise((resolve) => setTimeout(resolve, settleMs));
@@ -370,7 +395,7 @@ export async function compileMarkdownSnapshotDirect(
       contentHash,
       configHash,
       hashSalt: hashSalt ?? undefined,
-      blocks: snapshot.blocks,
+      blocks: snapshot.getBlocks(),
       tocHeadings: (() => {
         const root = snapshot.nodes.get(PATCH_ROOT_ID);
         const maybe = root?.props?.tocHeadings;
@@ -378,12 +403,13 @@ export async function compileMarkdownSnapshotDirect(
       })(),
       init: init
         ? {
-            docPlugins: init.docPlugins,
-            mdx: init.mdx,
-            prewarmLangs: init.prewarmLangs,
-            themes: init.themes,
-            syntax: init.syntax,
-            html: init.html,
+            ...(init.docPlugins === undefined ? {} : { docPlugins: init.docPlugins }),
+            ...(init.contentPolicy === undefined ? {} : { contentPolicy: init.contentPolicy }),
+            ...(init.contentComponents === undefined ? {} : { contentComponents: init.contentComponents }),
+            ...(init.prewarmLangs === undefined ? {} : { prewarmLangs: init.prewarmLangs }),
+            ...(init.themes === undefined ? {} : { themes: init.themes }),
+            ...(init.syntax === undefined ? {} : { syntax: init.syntax }),
+            ...(init.html === undefined ? {} : { html: init.html }),
           }
         : undefined,
     };
@@ -393,7 +419,7 @@ export async function compileMarkdownSnapshotDirect(
     }
 
     return {
-      blocks: snapshot.blocks,
+      blocks: snapshot.getBlocks(),
       snapshot,
       artifact,
       fromCache: false,

@@ -105,9 +105,9 @@ function rewriteNextPackageJson(options: {
 function rewriteNextDemoComponent(demoPath: string) {
   const content = `"use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { StreamingMarkdown, type RendererMetrics, type StreamingMarkdownHandle } from "stream-mdx";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { createUnifiedRenderer } from "@stream-mdx/unified";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
@@ -119,18 +119,13 @@ const unifiedRenderer = createUnifiedRenderer({
   rehypePlugins: [rehypeSlug],
   blockTypes: ["heading", "paragraph", "table"],
 });
+const engines = { mermaid: createMermaidEngine() };
+
 
 export default function StreamingDemo() {
   const streamingRef = useRef<StreamingMarkdownHandle>(null);
   const [text, setText] = useState(ARTICLE);
   const [lastMetrics, setLastMetrics] = useState<RendererMetrics | null>(null);
-
-  const codeRenderers = useMemo(
-    () => ({
-      mermaid: MermaidBlock,
-    }),
-    [],
-  );
 
   return (
     <section className="space-y-4">
@@ -144,9 +139,9 @@ export default function StreamingDemo() {
         <StreamingMarkdown
           ref={streamingRef}
           text={text}
-          engine="main-thread"
-          codeRenderers={codeRenderers}
-          blockRenderer={unifiedRenderer}
+          engine="main"
+          components={unifiedRenderer}
+          engines={engines}
           features={{ math: true, mdx: true, tables: true, html: true }}
           prewarmLangs={["tsx", "python"]}
           onMetrics={(metric) => {
@@ -271,25 +266,28 @@ export default defineConfig({
 import ReactDOM from "react-dom/client";
 import "@stream-mdx/theme-tailwind/theme.css";
 import { StreamingMarkdown } from "stream-mdx";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { createUnifiedRenderer } from "@stream-mdx/unified";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 
-const blockRenderer = createUnifiedRenderer({
+const unifiedRenderer = createUnifiedRenderer({
   gfm: false,
   remarkPlugins: [remarkGfm],
   rehypePlugins: [rehypeSlug],
   blockTypes: ["heading", "paragraph", "table"],
 });
+const engines = { mermaid: createMermaidEngine() };
+
+
 
 function App() {
   return (
     <div style={{ padding: 24 }}>
       <StreamingMarkdown
-        engine="main-thread"
-        codeRenderers={{ mermaid: MermaidBlock }}
-        blockRenderer={blockRenderer}
+        engine="main"
+        components={unifiedRenderer}
+        engines={engines}
         text={${JSON.stringify(smokeMarkdown)}}
       />
     </div>
@@ -311,6 +309,7 @@ function verifyInstalledNodeSandbox(options: {
   scopedTarballs: Record<string, string>;
   optionalTarballs: Record<string, string>;
   themeTarball: string;
+  nodeTarballs: Record<string, string>;
 }) {
   fs.mkdirSync(options.sandboxDir, { recursive: true });
 
@@ -323,6 +322,9 @@ function verifyInstalledNodeSandbox(options: {
       Object.entries(options.optionalTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
     ),
     "@stream-mdx/theme-tailwind": `file:${options.themeTarball}`,
+    ...Object.fromEntries(
+      Object.entries(options.nodeTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+    ),
   };
 
   writeJson(path.join(options.sandboxDir, "package.json"), {
@@ -336,6 +338,10 @@ function verifyInstalledNodeSandbox(options: {
       ...smokePlugins,
       ...Object.fromEntries(
         Object.entries(options.scopedTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+      ),
+      "@stream-mdx/theme-tailwind": `file:${options.themeTarball}`,
+      ...Object.fromEntries(
+        Object.entries(options.nodeTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
       ),
     },
     optionalDependencies: {
@@ -363,6 +369,7 @@ module.exports = async function verify(load, format) {
     "stream-mdx", "@stream-mdx/core", "@stream-mdx/plugins",
     "@stream-mdx/worker", "@stream-mdx/react",
     "@stream-mdx/mermaid", "@stream-mdx/unified",
+    "@stream-mdx/protocol", "@stream-mdx/tui", "@stream-mdx/theme-tailwind",
   ];
   for (const name of packages) {
     const packageDir = path.resolve("node_modules", name);
@@ -405,35 +412,82 @@ module.exports = async function verify(load, format) {
   const { default: remarkGfm } = await import("remark-gfm");
   const { default: rehypeSlug } = await import("rehype-slug");
   const { createUnifiedRenderer } = await load("@stream-mdx/unified");
+  const { MarkdownBlocksRenderer } = await load("@stream-mdx/react/server");
   const renderer = createUnifiedRenderer({
     gfm: false, remarkPlugins: [remarkGfm], rehypePlugins: [rehypeSlug],
   });
-  const renderBlock = (id, type, raw) => renderToStaticMarkup(renderer({
-    block: { id, type, isFinalized: true, payload: { raw } },
-    element: React.createElement("p", null, "default fallback"),
+  const renderBlock = (id, type, raw) => renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, {
+    blocks: [{ id, type, isFinalized: true, payload: { raw } }],
+    components: renderer,
   }));
-  assert.equal(renderBlock("heading", "heading", "# Pack Smoke"),
-    '<h1 id="pack-smoke">Pack Smoke</h1>');
-  assert.equal(renderBlock("paragraph", "paragraph", "~~Plugin text~~"),
-    "<p><del>Plugin text</del></p>");
+  const headingHtml = renderBlock("heading", "heading", "# Pack Smoke");
+  assert.ok(headingHtml.includes('<h1 id="pack-smoke">Pack Smoke</h1>'), headingHtml);
+  const paragraphHtml = renderBlock("paragraph", "paragraph", "~~Plugin text~~");
+  assert.ok(paragraphHtml.includes("<p><del>Plugin text</del></p>"), paragraphHtml);
   renderer.clearCache();
   console.log("[pack-smoke:" + format + "] Unified remark-gfm and rehype-slug transformed rendered HTML");
 
+  const { STREAM_MDX_PROTOCOL_ID, STREAM_MDX_SCHEMA_VERSION } = await load("@stream-mdx/protocol");
+  assert.equal(STREAM_MDX_PROTOCOL_ID, "streammdx");
+  assert.equal(STREAM_MDX_SCHEMA_VERSION, "2.0");
+  const { createSnapshotStore, encodeNdjsonEvent, encodeNdjsonEvents, decodeNdjson, NdjsonDecoder } =
+    await load("@stream-mdx/tui");
+  const envelope = {
+    protocol: STREAM_MDX_PROTOCOL_ID, schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    streamId: "pack-smoke-" + format,
+  };
+  const expectedSourceRange = (source, raw) => {
+    const from = source.indexOf(raw);
+    assert.notEqual(from, -1, "Expected authored block source in its supplied Markdown");
+    return { from, to: from + raw.length };
+  };
+  const assertAuthoredBlock = (block, source, raw) => {
+    const range = expectedSourceRange(source, raw);
+    assert.deepEqual(block.payload.range, range);
+    assert.equal(block.payload.raw, source.slice(range.from, range.to));
+    assert.equal(block.payload.raw, raw);
+  };
+
+  const { compileMarkdownSnapshot } = await load("@stream-mdx/worker/node");
+  // Default worker ownership exercises the installed hosted bundle and thread asset,
+  // and lets the public compiler clean up its own physical worker.
+  const physicalMarkdown = "# Hosted asset smoke\\n\\nPhysical worker body.\\n";
+  const physicalResult = await compileMarkdownSnapshot({ text: physicalMarkdown });
+  assert.equal(physicalResult.fromCache, false);
+  assert.equal(physicalResult.blocks.length, 2);
+  assert.equal(physicalResult.blocks[0].type, "heading");
+  assertAuthoredBlock(physicalResult.blocks[0], physicalMarkdown, "# Hosted asset smoke");
+  assert.equal(physicalResult.blocks[0].payload.meta.headingText, "Hosted asset smoke");
+  assert.equal(physicalResult.blocks[1].type, "paragraph");
+  assertAuthoredBlock(physicalResult.blocks[1], physicalMarkdown, "Physical worker body.");
+  assert(physicalResult.blocks.every((block) => block.isFinalized),
+    "The installed physical worker must finalize every compiled block");
+  assert.deepEqual(physicalResult.snapshot.getBlocks(), physicalResult.blocks);
+  assert.deepEqual(physicalResult.artifact.blocks, physicalResult.blocks);
+  console.log("[pack-smoke:" + format + "] Installed physical worker compiled finalized snapshot");
+
   const { createRendererStore } = await load("@stream-mdx/react/renderer/store");
-  const init = { type: "INIT", initialContent: "", prewarmLangs: [], docPlugins: {} };
+  const init = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", prewarmLangs: [], docPlugins: {} };
   const append = { type: "APPEND", text: "# Installed engine\\n\\nEngine body.\\n" };
+  let generation = null;
   const apply = (store, message) => {
     if (message.type === "ERROR") throw new Error(message.error.message);
-    if (message.type === "INITIALIZED") store.reset(message.blocks);
-    if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
+    if (message.type === "INITIALIZED") {
+      generation = message.generation;
+      store.resetSnapshot(message.snapshot);
+    }
+    if (message.type === "PATCH" && message.generation === generation) {
+      store.applyPatches(message.patches, { captureMetrics: false });
+    }
   };
-  const assertBlocks = (store) => {
+  const assertBlocks = (store, source) => {
     const blocks = store.getBlocks();
     assert.equal(blocks.length, 2, "Engine must parse heading and paragraph");
     assert.equal(blocks[0].type, "heading");
-    assert.equal(blocks[0].payload.raw.trim(), "Installed engine");
+    assertAuthoredBlock(blocks[0], source, "# Installed engine");
+    assert.equal(blocks[0].payload.meta.headingText, "Installed engine");
     assert.equal(blocks[1].type, "paragraph");
-    assert.match(blocks[1].payload.raw, /Engine body/);
+    assertAuthoredBlock(blocks[1], source, "Engine body.");
     assert(blocks.every((block) => block.isFinalized), "Engine must finalize every block");
   };
 
@@ -441,12 +495,163 @@ module.exports = async function verify(load, format) {
     const { MarkdownEngine, createInlineEngineWorker, serveMarkdownWorker } = await load(specifier);
     assert.equal(typeof serveMarkdownWorker, "function");
     const store = createRendererStore();
-    const engine = new MarkdownEngine({ post: (message) => apply(store, message) });
+    const events = [];
+    let generation = null;
+    let finalizedGeneration = null;
+    const engine = new MarkdownEngine({ post: (message) => {
+      apply(store, message);
+      if (message.type === "INITIALIZED") {
+        const nativeGeneration = message.snapshot.inputSource?.generation;
+        if (
+          !Number.isSafeInteger(message.generation) ||
+          message.generation < 0 ||
+          nativeGeneration !== message.generation
+        ) throw new Error("Engine root is missing its validated native generation");
+        generation = message.generation;
+        const initEvent = {
+          ...envelope,
+          event: "init",
+          generation,
+        };
+        const snapshotEvent = {
+          ...envelope,
+          event: "snapshot",
+          generation,
+          snapshot: message.snapshot,
+        };
+        events.push(initEvent, structuredClone(snapshotEvent));
+      }
+      if (message.type === "PATCH") {
+        if (generation === null || message.generation !== generation) {
+          throw new Error("Engine patch does not belong to the admitted native generation");
+        }
+        // Serialize at emission time so later engine mutations cannot alter the replay.
+        const patchEvent = {
+          ...envelope,
+          event: "patch",
+          generation: message.generation,
+          tx: message.tx,
+          patches: message.patches,
+        };
+        events.push(structuredClone(patchEvent));
+      }
+      if (message.type === "FINALIZED") {
+        if (generation === null || message.generation !== generation) {
+          throw new Error("Engine finalization does not belong to the admitted native generation");
+        }
+        finalizedGeneration = message.generation;
+      }
+    } });
     try {
       await engine.handle(init);
+      assert.equal(events[1]?.event, "snapshot");
+      const initialSnapshotEvent = events.find(
+        (event) => event.event === "snapshot",
+      );
+      if (!initialSnapshotEvent) throw new Error("Engine did not publish its initial native snapshot");
+      assert.deepEqual(initialSnapshotEvent.snapshot.children, []);
       await engine.handle(append);
       await engine.handle({ type: "FINALIZE" });
-      assertBlocks(store);
+      assertBlocks(store, append.text);
+      let replacementSnapshot;
+      let replacementGeneration = null;
+      const replacementPatches = [];
+      const replacementEngine = new MarkdownEngine({ post: (message) => {
+        if (message.type === "INITIALIZED") {
+          const nativeGeneration = message.snapshot.inputSource?.generation;
+          if (
+            !Number.isSafeInteger(message.generation) ||
+            message.generation < 0 ||
+            nativeGeneration !== message.generation
+          ) throw new Error("Replacement root is missing its validated native generation");
+          replacementSnapshot = structuredClone(message.snapshot);
+          replacementGeneration = message.generation;
+        }
+        if (message.type === "PATCH") {
+          if (message.generation !== replacementGeneration) {
+            throw new Error("Replacement patch does not belong to its admitted native generation");
+          }
+          replacementPatches.push(structuredClone({
+            ...envelope,
+            event: "patch",
+            generation: message.generation,
+            tx: message.tx,
+            patches: message.patches,
+          }));
+        }
+        if (message.type === "ERROR") throw new Error(message.error.message);
+      } });
+      try {
+        await replacementEngine.handle({ ...init, initialContent: append.text });
+        await replacementEngine.handle({ type: "FINALIZE" });
+      } finally {
+        replacementEngine.dispose();
+      }
+      assert.ok(replacementSnapshot, "engine must publish a root snapshot for replacement");
+      if (!replacementSnapshot || replacementGeneration === null) {
+        throw new Error("Engine did not publish a generation-matched replacement root");
+      }
+      assert.equal(replacementSnapshot.children.length, 2);
+      assert.deepEqual(replacementSnapshot.children[0].range, expectedSourceRange(append.text, "# Installed engine"));
+      assert.equal(replacementSnapshot.children[0].meta?.headingText, "Installed engine");
+      assert.deepEqual(replacementSnapshot.children[1].range, expectedSourceRange(append.text, "Engine body."));
+      const patches = events.filter((event) => event.event === "patch");
+      assert(patches.length > 0, "TUI replay must consume actual engine patches");
+      const finalTx = patches[patches.length - 1].tx;
+      if (generation === null || finalizedGeneration === null) {
+        throw new Error("Engine did not finalize its admitted native generation");
+      }
+      assert.equal(finalizedGeneration, generation, "Engine finalized the admitted native generation");
+      const doneEvent = {
+        ...envelope,
+        event: "done",
+        generation: finalizedGeneration,
+        finalTx,
+        status: "ok",
+      };
+      events.push(doneEvent);
+      const ndjson = encodeNdjsonEvent(events[0]) + encodeNdjsonEvents(events.slice(1));
+      const decoder = new NdjsonDecoder();
+      const tuiStore = createSnapshotStore();
+      assert.deepEqual(tuiStore.getBlocks(), []);
+      const firstLine = ndjson.indexOf("\\n") + 1;
+      assert.deepEqual(decoder.push(ndjson.slice(0, firstLine - 1)), [],
+        "NDJSON must buffer an incomplete event");
+      tuiStore.applyEvents(decoder.push(ndjson.slice(firstLine - 1, firstLine)));
+      assert.equal(tuiStore.getMeta().init.protocol, STREAM_MDX_PROTOCOL_ID);
+      assert.equal(tuiStore.getMeta().init.schemaVersion, STREAM_MDX_SCHEMA_VERSION);
+      // Leave the done event unterminated to exercise flush as well as chunk ingestion.
+      const bytes = new TextEncoder().encode(ndjson.slice(firstLine, -1));
+      for (let offset = 0; offset < bytes.length; offset += 17) {
+        tuiStore.applyEvents(decoder.push(bytes.subarray(offset, offset + 17)));
+      }
+      assert.equal(tuiStore.getMeta().done, undefined);
+      tuiStore.applyEvents(decoder.flush());
+      assertBlocks(tuiStore, append.text);
+      assert.equal(tuiStore.getMeta().lastTx, finalTx);
+      assert.deepEqual(tuiStore.getMeta().done, events[events.length - 1]);
+      assert.deepEqual(tuiStore.getBlocks(), store.getBlocks(),
+        "NDJSON replay must materialize the same blocks as the installed engine");
+      const replayStore = createSnapshotStore();
+      replayStore.applyEvents(decodeNdjson(ndjson));
+      assert.deepEqual(replayStore.getBlocks(), tuiStore.getBlocks());
+      tuiStore.applyEvent({
+        ...envelope,
+        event: "snapshot",
+        generation: initialSnapshotEvent.generation,
+        snapshot: initialSnapshotEvent.snapshot,
+      });
+      assert.deepEqual(tuiStore.getBlocks(), [], "A snapshot must replace previous engine state");
+      tuiStore.applyEvent({
+        ...envelope,
+        event: "snapshot",
+        generation: replacementGeneration,
+        snapshot: replacementSnapshot,
+      });
+      tuiStore.applyEvents(replacementPatches);
+      assertBlocks(tuiStore, append.text);
+      console.log("[pack-smoke:" + format + "] " + specifier +
+        " protocol envelope and TUI chunked NDJSON patch replay/snapshot replacement passed");
     } finally {
       engine.dispose();
     }
@@ -463,7 +668,7 @@ module.exports = async function verify(load, format) {
             apply(inlineStore, data);
             const blocks = inlineStore.getBlocks();
             if (blocks.length === 2 && blocks.every((block) => block.isFinalized)) {
-              assertBlocks(inlineStore);
+              assertBlocks(inlineStore, append.text);
               clearTimeout(timeout);
               resolve();
             }
@@ -522,12 +727,14 @@ function main() {
   console.log(`[pack-smoke] tmp: ${tmpRoot}`);
 
   run("npm", ["-w", "@stream-mdx/core", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
+  run("npm", ["-w", "@stream-mdx/protocol", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/plugins", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/worker", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/react", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/mermaid", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/unified", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/theme-tailwind", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
+  run("npm", ["-w", "@stream-mdx/tui", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "stream-mdx", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
 
   const tarStream = findSinglePack(packsDir, (name) => /^stream-mdx-\d/.test(name));
@@ -538,12 +745,15 @@ function main() {
   const tarMermaid = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-mermaid-"));
   const tarUnified = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-unified-"));
   const tarTheme = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-theme-tailwind-"));
+  const tarProtocol = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-protocol-"));
+  const tarTui = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-tui-"));
 
   const scopedTarballs: Record<string, string> = {
     "@stream-mdx/core": tarCore,
     "@stream-mdx/plugins": tarPlugins,
     "@stream-mdx/worker": tarWorker,
     "@stream-mdx/react": tarReact,
+    "@stream-mdx/protocol": tarProtocol,
   };
 
   const optionalTarballs: Record<string, string> = {
@@ -560,6 +770,9 @@ function main() {
         scopedTarballs,
         optionalTarballs,
         themeTarball: tarTheme,
+        nodeTarballs: {
+          "@stream-mdx/tui": tarTui,
+        },
       });
     } catch (error) {
       console.error("[pack-smoke:node] Failed", error);

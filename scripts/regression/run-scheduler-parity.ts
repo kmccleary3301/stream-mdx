@@ -12,6 +12,7 @@ import {
   readFixtureFile,
   splitMarkers,
 } from "./utils";
+import type { RegressionFixture } from "../../tests/regression/fixtures";
 
 type SchedulerMode = "microtask" | "smooth" | "timeout";
 
@@ -93,20 +94,21 @@ function getSchedulerPreset(mode: SchedulerMode): Record<string, unknown> {
   }
 }
 
-async function preparePage(page: Page, fixtureId: string, scenarioId: string, seed: string, mode: SchedulerMode): Promise<void> {
+async function preparePage(page: Page, fixtureId: string, scenarioId: string, seed: string, mode: SchedulerMode, contentPolicy: NonNullable<RegressionFixture["contentPolicy"]>): Promise<void> {
   await page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "networkidle" });
   await page.waitForFunction(() => Boolean(window.__streammdxRegression));
   await page.evaluate(
-    async ({ fixtureId: nextFixtureId, scenarioId: nextScenarioId, nextSeed, nextMode, preset }) => {
+    async ({ fixtureId: nextFixtureId, scenarioId: nextScenarioId, nextSeed, nextMode, preset, contentPolicy }) => {
       window.__streammdxRegression?.setMeta?.({
         fixtureId: nextFixtureId,
         scenarioId: nextScenarioId,
         seed: nextSeed,
         schedulerMode: nextMode,
       });
-      if (preset) {
-        await window.__streammdxRegression?.setConfig?.(preset as Record<string, unknown>);
-      }
+      await window.__streammdxRegression?.setConfig?.({
+        ...(preset as Record<string, unknown>),
+        contentPolicy,
+      });
       await window.__streammdxRegression?.waitForReady?.();
     },
     {
@@ -114,6 +116,7 @@ async function preparePage(page: Page, fixtureId: string, scenarioId: string, se
       scenarioId,
       nextSeed: seed,
       nextMode: mode,
+      contentPolicy,
       preset: getSchedulerPreset(mode),
     },
   );
@@ -137,7 +140,7 @@ async function captureFinalHtml(
 
   const page = await browser.newPage();
   try {
-    await preparePage(page, fixture.id, scenario.id, seed, mode);
+    await preparePage(page, fixture.id, scenario.id, seed, mode, fixture.contentPolicy ?? "markdown");
     for (const chunk of chunks) {
       await page.evaluate(async (value) => {
         await window.__streammdxRegression?.appendAndFlush?.(value);

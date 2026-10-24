@@ -46,36 +46,30 @@ This avoids needing to allow `blob:` in `worker-src`/`script-src`.
 
 ### MDX evaluation and `script-src` (`unsafe-eval`)
 
-StreamMDX's core markdown and plugin pipeline does not require `unsafe-eval`. However, **client-side MDX evaluation** compiles and evaluates component code in the browser via `new Function(...)` (`mdx-client.ts`), which **requires `unsafe-eval`** in your host application's Content Security Policy (`script-src 'self' 'unsafe-eval'`).
+The default `contentPolicy` is `"restricted"`. Markdown and restricted parsing do not evaluate authored code. Under restricted policy, use the `defineContentComponent` factory to register source names; raw constructors are not registrations. A type-predicate `validateProps` is required when narrowing the source JSON props, while the broad JSON-props overload may omit it. The worker receives only serializable `name` and `renderWhen` descriptors; validators and components stay on the host. Native projected `children` are supplied separately as host React nodes, not taken from source JSON. This registry is active only under `"restricted"` policy, not `"markdown"` or `"trusted-mdx"`.
 
-If your application operates under a strict CSP that forbids `unsafe-eval`:
-- Disable MDX features (`features={{ mdx: false }}`), or
-- Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client.
+Quoted attributes preserve literal backslashes and decode HTML entities; only brace-delimited strict JSON decodes backslash escapes. The complete validated opening fixes the source props. Admitted JSON is recursively frozen again after worker transport, before host validation, and the React props envelope is frozen in production as well. Native React children are not recursively frozen with source data.
 
-## Artifact Sandbox Model (P4)
+`renderWhen: "closed"` suppresses only a component whose native status is open. A finalized incomplete body that passes validation remains rendered with its diagnostic; an incomplete opening header remains literal and does not invoke a host callback.
 
-StreamMDX provides built-in sandboxing for interactive HTML artifacts (languages `artifact`, `html-artifact`, and opt-in `html` via `artifactHtml: true`):
+Registered components retain native Markdown owners in paragraphs, headings, quotes, lists and sanitized HTML. Emphasis and visible link text may contain components without splitting the surrounding inline grammar. Tag spellings inside code, link destinations or titles, image alt text, comments and HTML attributes remain native data, never component registrations. Entity-encoded text cannot forge an admission marker.
 
-### 1. Hardened iframe isolation
-- **No `allow-same-origin`**: Finalized artifacts mount inside an `<iframe sandbox="allow-scripts" srcdoc="...">`. Because `allow-same-origin` is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, `localStorage`, `sessionStorage`, or auth tokens.
-- **Streaming safety**: During streaming while the block is dirty (`isFinalized === false`), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized.
+Whole-list inline admission retains one native inline scope across component leaves and uses the configured HTML tag and attribute policy. Native inline renderers and element filters receive the actual recursive parent tag; component ownership does not reactivate disabled autolink protocols. Each prepared owner publishes one active HTML tree, so formatting and footnote numbering read the same meaning rather than a stale fallback copy.
 
-### 2. In-frame Content Security Policy (CSP)
-Every artifact `srcdoc` includes a strict `<meta http-equiv="Content-Security-Policy">`:
-- `default-src 'none'`
-- `connect-src 'none'` by default blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; allowlists can be configured via `csp.connectSrc`.
-- `script-src 'unsafe-inline'` + configured allowlist
-- `style-src 'unsafe-inline'` + configured allowlist
-- `img-src data: blob:` + configured allowlist
-- `font-src data:` + configured allowlist
-- `base-uri 'none'`, `form-action 'none'`
+The public React host handle's `finalize()` synchronously seals APPEND admission for every `contentPolicy`. Source accepted before the host seal drains; later host `append()` calls fail with `StreamSessionError` reason `"sealed"`. Repeated calls in one host generation return the same promise. The promise resolves to `FinalizeResult` with the host generation and accepted/committed source-unit counts; reset or replacement opens the next host generation. This does not change raw `MarkdownEngine`, `MarkdownWorkerClient`, or worker-protocol controls; those lower-level APIs do not use the host admission ledger or finalization promise. Automatically owned worker restarts may queue host appends and finalization before readiness for the matching fresh generation; a later restart invalidates requests for an earlier host generation. A managed worker's host remains responsible for its initialization.
 
-The policy, theme styles, and bootstrap script are written before any artifact markup, so a full artifact document (with its own `<!doctype>`, `<html>`, `<head>`) cannot run script ahead of the policy.
+Full MDX evaluation is available only through an explicit `createTrustedMdxEngine` from `@stream-mdx/react/trusted-mdx`, passed with `contentPolicy="trusted-mdx"` and `engines.mdx`. It evaluates a complete authored document revision in the host realm with `AsyncFunction`, which requires `unsafe-eval` in the host application's `script-src`. Its `imports` map is an explicit host capability map from authored module specifiers to supplied bindings; unresolved imports fail, and modules are never fetched automatically. This is not a sandbox. Use it only for trusted, reviewed content.
 
-The sandbox provides host DOM/origin isolation, and the default CSP restricts connections and resource loads. These controls do not guarantee total network isolation or prevent iframe self-navigation. Use self-contained artifact content. The link handler below covers intercepted anchor clicks, not every navigation a script can initiate.
+The host `finalize()` promise resolves only after the matching native `FINALIZED` acknowledgement covers accepted session units and semantic patches have flushed into the renderer store. This is a native semantic-store barrier, not a React DOM-commit or optional-enrichment barrier: it does not await trusted compilation or projection, code highlighting/tokenization, or optional decoration. The trusted document snapshot distinguishes the requested revision, projected candidate revision, and revision actually rendered. A candidate is committed only after the host confirms its render. Lease, request, and engine-generation checks reject stale async compilation results and run immediately before authored module evaluation; newer revisions, `clear`/cache invalidation, or disposal invalidate old work. Disposal is terminal. A render failure can restore the last actually committed UI, but cannot roll back side effects already caused by trusted authored code.
+For a controlled replacement, the renderer captures one immutable prepared native store once after each successful complete-module host commit. If the next revision is pending or fails to render, the old frame stays labelled with its source generation and document revision; its code decorations remain at commit-time freshness while later enrichment updates only the live store. The retained frame does not send code jobs to the current worker and is released on reset, engine/cache invalidation or disposal, lease or policy change, or a later successful commit. A retained React render error shows the captured source and error, but cannot undo arbitrary trusted host effects.
 
-### 3. Secure host communication
-- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (`stream-mdx:artifact-size`) strictly validate `Number.isFinite(data.height)` and clamp accepted values between 50px and 10,000px, ignoring `NaN`, `Infinity`, or negative dimensions.
+JSX/MDX source-span discovery in the native worker is parse-only; it does not import the trusted compiler or evaluate a module. In a successfully compiled trusted revision, compiler-authored module ranges suppress the entire contained native declaration block, not only embedded expression leaves. Ordinary restricted Markdown keeps its literal source behavior.
+
+If your CSP forbids `unsafe-eval`, keep full MDX disabled. Use the restricted content policy and native `contentComponents`, or publish pre-rendered static output.
+
+## Artifact-like code fences
+
+Fences labeled `artifact` or `html-artifact` render as ordinary code unless `components.code.wrapper` explicitly routes them elsewhere. StreamMDX no longer provides a default artifact frame or iframe sandbox. A custom presentation that activates source content is application code; the host must define and review that boundary.
 
 ## Reporting security issues
 

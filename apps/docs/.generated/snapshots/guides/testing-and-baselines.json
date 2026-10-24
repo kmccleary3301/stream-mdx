@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:48.451Z",
-  "hash": "8de888a816e9734b0955d266efc8d4868c4638a65adcf6c5cf95e947c8ed6cc7",
+  "createdAt": "2026-10-21T20:39:38.255Z",
+  "hash": "4f40cc59f8765ec7b9fe6fa37427ec10896ee4da36bb749ce4d5e6cb9186fa29",
   "contentHash": "76920229f2ecd40a57239a680bfc4fc31a36fe9f9608eeabcd5808f585a1ce5a",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "configHash": "d64d46ce02762d98863946deda7988b7bcd8ea1dc64e6560ca32dea58f9aee58",
+  "hashSalt": "docs-snapshots-v3:a1af5d4ffe8abd279e6137ad50c87f390f5afe18b69fff05e82bf96e33ef3700",
   "blocks": [
     {
       "id": "db082c0",
@@ -312,7 +312,14 @@
       "payload": {
         "raw": "Artifacts for failures are emitted to `tests/regression/artifacts/`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 38,
+              "to": 67,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 783,
@@ -2585,9 +2592,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

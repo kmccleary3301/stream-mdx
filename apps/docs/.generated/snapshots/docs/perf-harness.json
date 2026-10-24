@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:44.177Z",
-  "hash": "8c114b3384348c503089cab85f7be8f5306281a0daa1af917b6c0e32ce7b4eaf",
-  "contentHash": "c88ab208fdeaf4922c3e705c05494885a59b2ef3ac9c3fa5a0f4d0cdfa005770",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "createdAt": "2026-10-21T20:39:33.464Z",
+  "hash": "d68f02c3a31a43a0f1446f7721e80ec99239e4984ffdfe99474828696bf6fd49",
+  "contentHash": "227898a9fba9734e8cee383cf32e432910b09edec8f7c4a5140da3c91baadf1a",
+  "configHash": "d64d46ce02762d98863946deda7988b7bcd8ea1dc64e6560ca32dea58f9aee58",
+  "hashSalt": "docs-snapshots-v3:a1af5d4ffe8abd279e6137ad50c87f390f5afe18b69fff05e82bf96e33ef3700",
   "blocks": [
     {
       "id": "db082c0",
@@ -38,7 +38,14 @@
       "payload": {
         "raw": "This harness streams a fixture through the real `StreamingMarkdown` renderer in the docs app and collects:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 48,
+              "to": 67,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 26,
@@ -1091,7 +1098,19 @@
       "payload": {
         "raw": "If you want to compare syntax highlighting modes, add `features.codeHighlighting` to the streaming config\nin the demo/harness (default is `\"incremental\"`). A typical workflow is:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 54,
+              "to": 81,
+              "kind": "code-inline"
+            },
+            {
+              "from": 138,
+              "to": 153,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 1220,
@@ -1854,7 +1873,34 @@
       "payload": {
         "raw": "The harness accepts `--scheduling` (`default`, `smooth`, `aggressive`) and optional overrides. If omitted, it defaults to `aggressive`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 20,
+              "to": 34,
+              "kind": "code-inline"
+            },
+            {
+              "from": 36,
+              "to": 45,
+              "kind": "code-inline"
+            },
+            {
+              "from": 47,
+              "to": 55,
+              "kind": "code-inline"
+            },
+            {
+              "from": 57,
+              "to": 69,
+              "kind": "code-inline"
+            },
+            {
+              "from": 122,
+              "to": 134,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 2092,
@@ -2134,7 +2180,19 @@
       "payload": {
         "raw": "Raw preset names such as `smooth` or `aggressive` are implementation details; they are not public benchmark categories on their own.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 25,
+              "to": 33,
+              "kind": "code-inline"
+            },
+            {
+              "from": 37,
+              "to": 49,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 2490,
@@ -2211,7 +2269,19 @@
       "payload": {
         "raw": "These map to `StreamingSchedulerOptions` in `@stream-mdx/react`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 13,
+              "to": 40,
+              "kind": "code-inline"
+            },
+            {
+              "from": 44,
+              "to": 63,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 2952,
@@ -3060,7 +3130,14 @@
       "payload": {
         "raw": "Capture React commit durations for the `StreamingMarkdown` subtree:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 39,
+              "to": 58,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 3968,
@@ -3108,7 +3185,14 @@
       "payload": {
         "raw": "This adds `profiler actual/base` stats to the summary output.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 10,
+              "to": 32,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 4057,
@@ -3135,6 +3219,250 @@
       "type": "heading",
       "isFinalized": true,
       "payload": {
+        "raw": "Optional renderer patch profiling",
+        "meta": {
+          "lezerNodeType": "ATXHeading2",
+          "headingLevel": 2,
+          "headingText": "Optional renderer patch profiling",
+          "headingId": "optional-renderer-patch-profiling"
+        },
+        "range": {
+          "from": 4120,
+          "to": 4156
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Optional renderer patch profiling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "164b73e0",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Enable renderer patch timing only for diagnostic runs:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 4158,
+          "to": 4212
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Enable renderer patch timing only for diagnostic runs:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4019cca7",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```\nnpm run perf:harness -- --fixture naive-bayes --scenario S2_typical --patchPerf\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:harness -- --fixture naive-bayes --scenario S2_typical --patchPerf",
+          "info": "",
+          "highlightLang": "text"
+        },
+        "range": {
+          "from": 4214,
+          "to": 4301
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:harness -- --fixture naive-bayes --scenario S2_typical --patchPerf</span></span></code></pre>"
+      }
+    },
+    {
+      "id": "1b9e37be",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The equivalent environment variable is `STREAM_MDX_PERF_PATCH_PERF=1`; direct visits to\n`/perf/harness/` accept `?patchPerf=1`. Patch profiling is off by default.\nLeaving the harness restores the prior `patchPerf` property if the effect still owns the\ndebug object; captured reports and patch metrics remain available.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 39,
+              "to": 69,
+              "kind": "code-inline"
+            },
+            {
+              "from": 88,
+              "to": 104,
+              "kind": "code-inline"
+            },
+            {
+              "from": 112,
+              "to": 126,
+              "kind": "code-inline"
+            },
+            {
+              "from": 202,
+              "to": 213,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 4303,
+          "to": 4621
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The equivalent environment variable is "
+          },
+          {
+            "kind": "code",
+            "text": "STREAM_MDX_PERF_PATCH_PERF=1"
+          },
+          {
+            "kind": "text",
+            "text": "; direct visits to\n"
+          },
+          {
+            "kind": "code",
+            "text": "/perf/harness/"
+          },
+          {
+            "kind": "text",
+            "text": " accept "
+          },
+          {
+            "kind": "code",
+            "text": "?patchPerf=1"
+          },
+          {
+            "kind": "text",
+            "text": ". Patch profiling is off by default.\nLeaving the harness restores the prior "
+          },
+          {
+            "kind": "code",
+            "text": "patchPerf"
+          },
+          {
+            "kind": "text",
+            "text": " property if the effect still owns the\ndebug object; captured reports and patch metrics remain available."
+          }
+        ]
+      }
+    },
+    {
+      "id": "40b1d97d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`run.json` includes `samples.patchPerf.totals` and `samples.patchPerf.last`, with operation,\nsetProps node-type, payload-size bucket, and stage counts and durations. Stages separate\nprop normalization and merging, block cloning, code metadata, and code-child normalization.\n`summary.json` and `summary.txt` report patch total/apply timings and the most expensive\noperation, setProps node type, and setProps stage.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 10,
+              "kind": "code-inline"
+            },
+            {
+              "from": 20,
+              "to": 46,
+              "kind": "code-inline"
+            },
+            {
+              "from": 51,
+              "to": 75,
+              "kind": "code-inline"
+            },
+            {
+              "from": 274,
+              "to": 288,
+              "kind": "code-inline"
+            },
+            {
+              "from": 293,
+              "to": 306,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 4623,
+          "to": 5036
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "run.json"
+          },
+          {
+            "kind": "text",
+            "text": " includes "
+          },
+          {
+            "kind": "code",
+            "text": "samples.patchPerf.totals"
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "samples.patchPerf.last"
+          },
+          {
+            "kind": "text",
+            "text": ", with operation,\nsetProps node-type, payload-size bucket, and stage counts and durations. Stages separate\nprop normalization and merging, block cloning, code metadata, and code-child normalization.\n"
+          },
+          {
+            "kind": "code",
+            "text": "summary.json"
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "summary.txt"
+          },
+          {
+            "kind": "text",
+            "text": " report patch total/apply timings and the most expensive\noperation, setProps node type, and setProps stage."
+          }
+        ]
+      }
+    },
+    {
+      "id": "5bd13c0",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The instrumentation adds timing and aggregation overhead. Keep it off for claim-grade\nbenchmarks and do not compare profiled runs against unprofiled baselines. These metrics\ncome from the StreamMDX renderer store, not Streamdown.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 5038,
+          "to": 5267
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The instrumentation adds timing and aggregation overhead. Keep it off for claim-grade\nbenchmarks and do not compare profiled runs against unprofiled baselines. These metrics\ncome from the StreamMDX renderer store, not Streamdown."
+          }
+        ]
+      }
+    },
+    {
+      "id": "3638b120",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
         "raw": "Optional CPU throttling",
         "meta": {
           "lezerNodeType": "ATXHeading2",
@@ -3143,8 +3471,8 @@
           "headingId": "optional-cpu-throttling"
         },
         "range": {
-          "from": 4120,
-          "to": 4146
+          "from": 5269,
+          "to": 5295
         },
         "inline": [
           {
@@ -3155,7 +3483,7 @@
       }
     },
     {
-      "id": "e99ce81",
+      "id": "708e26bb",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -3164,8 +3492,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4148,
-          "to": 4216
+          "from": 5297,
+          "to": 5365
         },
         "inline": [
           {
@@ -3176,7 +3504,7 @@
       }
     },
     {
-      "id": "39466a2b",
+      "id": "36567ea5",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -3188,14 +3516,14 @@
           "highlightLang": "text"
         },
         "range": {
-          "from": 4218,
-          "to": 4241
+          "from": 5367,
+          "to": 5390
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>--cpuThrottle 4</span></span></code></pre>"
       }
     },
     {
-      "id": "14a5573d",
+      "id": "7699af77",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -3204,8 +3532,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4243,
-          "to": 4276
+          "from": 5392,
+          "to": 5425
         },
         "inline": [
           {
@@ -3216,7 +3544,7 @@
       }
     },
     {
-      "id": "7173f221",
+      "id": "66537424",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3228,8 +3556,8 @@
           "headingId": "compare-gate-perf-runs"
         },
         "range": {
-          "from": 4278,
-          "to": 4305
+          "from": 5427,
+          "to": 5454
         },
         "inline": [
           {
@@ -3240,7 +3568,7 @@
       }
     },
     {
-      "id": "800512c",
+      "id": "51065a6",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -3252,24 +3580,31 @@
           "highlightLang": "text"
         },
         "range": {
-          "from": 4307,
-          "to": 4425
+          "from": 5456,
+          "to": 5574
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:compare -- --base tmp/perf-runs/&#x3C;base>/summary.json --candidate tmp/perf-runs/&#x3C;cand>/summary.json</span></span></code></pre>"
       }
     },
     {
-      "id": "35dae485",
+      "id": "6830c341",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Add `--gate` to fail on regressions. Defaults are conservative; override per metric:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 4,
+              "to": 12,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 4427,
-          "to": 4511
+          "from": 5576,
+          "to": 5660
         },
         "inline": [
           {
@@ -3288,7 +3623,7 @@
       }
     },
     {
-      "id": "a2b1ea9",
+      "id": "73b3323",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -3300,14 +3635,14 @@
           "highlightLang": "text"
         },
         "range": {
-          "from": 4513,
-          "to": 4641
+          "from": 5662,
+          "to": 5790
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>--durationP95MaxPct 0.1</span></span>\n<span class=\"line\" data-line=\"2\"><span>--firstFlushP95MaxPct 0.1</span></span>\n<span class=\"line\" data-line=\"3\"><span>--longTaskP95MaxPct 0.25</span></span>\n<span class=\"line\" data-line=\"4\"><span>--rafP95MaxPct 0.2</span></span>\n<span class=\"line\" data-line=\"5\"><span>--memoryPeakP95MaxPct 0.15</span></span></code></pre>"
       }
     },
     {
-      "id": "1fec5a81",
+      "id": "125286c5",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3319,8 +3654,8 @@
           "headingId": "gate-both-baselines-in-one-command"
         },
         "range": {
-          "from": 4643,
-          "to": 4681
+          "from": 5792,
+          "to": 5830
         },
         "inline": [
           {
@@ -3331,7 +3666,7 @@
       }
     },
     {
-      "id": "2ffe5303",
+      "id": "29d474d8",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -3343,14 +3678,14 @@
           "highlightLang": "text"
         },
         "range": {
-          "from": 4683,
-          "to": 4792
+          "from": 5832,
+          "to": 5941
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:gate -- --candidateS2 tmp/perf-runs/&#x3C;s2-run> --candidateS3 tmp/perf-runs/&#x3C;s3-run> --gate</span></span></code></pre>"
       }
     },
     {
-      "id": "e84b1de",
+      "id": "19b3e7dd",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3362,8 +3697,8 @@
           "headingId": "optional-edge-like-long-run-gate"
         },
         "range": {
-          "from": 4794,
-          "to": 4830
+          "from": 5943,
+          "to": 5979
         },
         "inline": [
           {
@@ -3374,17 +3709,29 @@
       }
     },
     {
-      "id": "f212623",
+      "id": "71157e5d",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "To include an edge-like stress scenario in the same gate command, pass `--candidateEdge`\n(alias: `--candidateS6`) and provide a matching baseline path:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 71,
+              "to": 88,
+              "kind": "code-inline"
+            },
+            {
+              "from": 97,
+              "to": 112,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 4832,
-          "to": 4983
+          "from": 5981,
+          "to": 6132
         },
         "inline": [
           {
@@ -3411,7 +3758,7 @@
       }
     },
     {
-      "id": "b0ee4d8",
+      "id": "15a5a502",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -3423,24 +3770,31 @@
           "highlightLang": "text"
         },
         "range": {
-          "from": 4985,
-          "to": 5216
+          "from": 6134,
+          "to": 6365
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:gate -- \\</span></span>\n<span class=\"line\" data-line=\"2\"><span>  --candidateS2 tmp/perf-runs/&#x3C;s2-run> \\</span></span>\n<span class=\"line\" data-line=\"3\"><span>  --candidateS3 tmp/perf-runs/&#x3C;s3-run> \\</span></span>\n<span class=\"line\" data-line=\"4\"><span>  --candidateEdge tmp/perf-runs/&#x3C;table-large-s6-run> \\</span></span>\n<span class=\"line\" data-line=\"5\"><span>  --baseEdge tmp/perf-baselines/S6_extreme_edge_like \\</span></span>\n<span class=\"line\" data-line=\"6\"><span>  --gate</span></span></code></pre>"
       }
     },
     {
-      "id": "381a517c",
+      "id": "29da06be",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If `candidateEdge` is omitted, the edge-like gate is skipped.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 3,
+              "to": 18,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 5218,
-          "to": 5279
+          "from": 6367,
+          "to": 6428
         },
         "inline": [
           {
@@ -3459,7 +3813,7 @@
       }
     },
     {
-      "id": "7ca81b56",
+      "id": "546f819b",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3471,8 +3825,8 @@
           "headingId": "baselines"
         },
         "range": {
-          "from": 5281,
-          "to": 5293
+          "from": 6430,
+          "to": 6442
         },
         "inline": [
           {
@@ -3483,7 +3837,7 @@
       }
     },
     {
-      "id": "46c4c139",
+      "id": "4a4baa3e",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -3492,8 +3846,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 5295,
-          "to": 5326
+          "from": 6444,
+          "to": 6475
         },
         "inline": [
           {
@@ -3504,7 +3858,7 @@
       }
     },
     {
-      "id": "83a930a",
+      "id": "54aa784",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -3516,14 +3870,14 @@
           "highlightLang": "text"
         },
         "range": {
-          "from": 5328,
-          "to": 5480
+          "from": 6477,
+          "to": 6629
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>tmp/perf-baselines/S2_typical</span></span>\n<span class=\"line\" data-line=\"2\"><span>tmp/perf-baselines/S3_fast_reasonable</span></span>\n<span class=\"line\" data-line=\"3\"><span>tmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)</span></span></code></pre>"
       }
     },
     {
-      "id": "3ab5efd9",
+      "id": "127d561e",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3535,8 +3889,8 @@
           "headingId": "notes"
         },
         "range": {
-          "from": 5482,
-          "to": 5490
+          "from": 6631,
+          "to": 6639
         },
         "inline": [
           {
@@ -3547,7 +3901,7 @@
       }
     },
     {
-      "id": "4e424104",
+      "id": "57eaf721",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -3654,17 +4008,17 @@
             },
             "children": [
               {
-                "id": "4e424104::item:0",
+                "id": "57eaf721::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 5492,
-                  "to": 5563
+                  "from": 6641,
+                  "to": 6712
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4e424104::item:0",
+                    "id": "57eaf721::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3684,8 +4038,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5492,
-                        "to": 5563
+                        "from": 6641,
+                        "to": 6712
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3737,17 +4091,17 @@
                 "children": []
               },
               {
-                "id": "4e424104::item:1",
+                "id": "57eaf721::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 5564,
-                  "to": 5674
+                  "from": 6713,
+                  "to": 6823
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4e424104::item:1",
+                    "id": "57eaf721::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3775,8 +4129,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5564,
-                        "to": 5674
+                        "from": 6713,
+                        "to": 6823
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3844,17 +4198,17 @@
                 "children": []
               },
               {
-                "id": "4e424104::item:2",
+                "id": "57eaf721::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 5675,
-                  "to": 5761
+                  "from": 6824,
+                  "to": 6910
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4e424104::item:2",
+                    "id": "57eaf721::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3874,8 +4228,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5675,
-                        "to": 5761
+                        "from": 6824,
+                        "to": 6910
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3927,17 +4281,17 @@
                 "children": []
               },
               {
-                "id": "4e424104::item:3",
+                "id": "57eaf721::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 5762,
-                  "to": 5835
+                  "from": 6911,
+                  "to": 6984
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4e424104::item:3",
+                    "id": "57eaf721::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3961,8 +4315,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5762,
-                        "to": 5835
+                        "from": 6911,
+                        "to": 6984
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4022,17 +4376,17 @@
                 "children": []
               },
               {
-                "id": "4e424104::item:4",
+                "id": "57eaf721::item:4",
                 "type": "list-item",
                 "range": {
-                  "from": 5836,
-                  "to": 5954
+                  "from": 6985,
+                  "to": 7103
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4e424104::item:4",
+                    "id": "57eaf721::item:4",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4044,8 +4398,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5836,
-                        "to": 5954
+                        "from": 6985,
+                        "to": 7103
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4081,17 +4435,17 @@
                 "children": []
               },
               {
-                "id": "4e424104::item:5",
+                "id": "57eaf721::item:5",
                 "type": "list-item",
                 "range": {
-                  "from": 5955,
-                  "to": 6108
+                  "from": 7104,
+                  "to": 7257
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4e424104::item:5",
+                    "id": "57eaf721::item:5",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4103,8 +4457,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5955,
-                        "to": 6108
+                        "from": 7104,
+                        "to": 7257
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4143,8 +4497,8 @@
           }
         },
         "range": {
-          "from": 5492,
-          "to": 6108
+          "from": 6641,
+          "to": 7257
         }
       }
     }
@@ -4193,38 +4547,44 @@
       "text": "Optional React profiler"
     },
     {
-      "id": "optional-cpu-throttling",
+      "id": "optional-renderer-patch-profiling",
       "blockId": "6deb5285",
+      "level": 2,
+      "text": "Optional renderer patch profiling"
+    },
+    {
+      "id": "optional-cpu-throttling",
+      "blockId": "3638b120",
       "level": 2,
       "text": "Optional CPU throttling"
     },
     {
       "id": "compare-gate-perf-runs",
-      "blockId": "7173f221",
+      "blockId": "66537424",
       "level": 2,
       "text": "Compare / gate perf runs"
     },
     {
       "id": "gate-both-baselines-in-one-command",
-      "blockId": "1fec5a81",
+      "blockId": "125286c5",
       "level": 3,
       "text": "Gate both baselines in one command"
     },
     {
       "id": "optional-edge-like-long-run-gate",
-      "blockId": "e84b1de",
+      "blockId": "19b3e7dd",
       "level": 3,
       "text": "Optional edge-like long-run gate"
     },
     {
       "id": "baselines",
-      "blockId": "7ca81b56",
+      "blockId": "546f819b",
       "level": 2,
       "text": "Baselines"
     },
     {
       "id": "notes",
-      "blockId": "3ab5efd9",
+      "blockId": "127d561e",
       "level": 2,
       "text": "Notes"
     }
@@ -4237,9 +4597,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

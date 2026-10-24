@@ -15,6 +15,7 @@ From the repo root:
 ```bash
 npm install
 npm run build:packages
+npm run worker:build
 npm run example:tui-minimal
 ```
 

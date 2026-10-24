@@ -9,9 +9,9 @@ export type ShowcaseItem = {
 export const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
     slug: "assistant-stream",
-    title: "Streaming Assistant & Sandboxed Artifacts",
+    title: "Streaming Assistant & Safe Code Fences",
     file: "assistant-stream.md",
-    description: "Executable chat thread demonstrating dual-engine streaming, math, Mermaid, link safety, and sandboxed ArtifactFrame visualizations.",
+    description: "Executable chat thread demonstrating dual-engine streaming, math, Mermaid, link safety, custom code fences, and inert HTML examples.",
     tags: ["rendering", "safety", "extensibility"],
   },
   {
@@ -46,7 +46,7 @@ export const SHOWCASE_ITEMS: ShowcaseItem[] = [
     slug: "mdx-components",
     title: "Custom MDX Components",
     file: "mdx-components.md",
-    description: "Notes on MDX compilation modes and runtime components.",
+    description: "Restricted source component registration and explicit trusted MDX engine integration.",
     tags: ["mdx", "rendering", "components"],
   },
   {

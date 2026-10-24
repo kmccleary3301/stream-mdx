@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
@@ -63,7 +65,7 @@ function runWorkerStream(
     worker.onMessage((msg) => {
       messages.push(msg);
       if (msg.type === "INITIALIZED") {
-        store.reset(msg.blocks);
+        store.resetSnapshot(msg.snapshot);
       } else if (msg.type === "PATCH") {
         store.applyPatches(msg.patches, { captureMetrics: false });
       } else if (msg.type === "FINALIZED") {
@@ -73,12 +75,9 @@ function runWorkerStream(
       }
     });
 
-    const initMsg: WorkerIn = {
-      type: "INIT",
-      initialContent: "",
-      prewarmLangs: ["ts", "typescript"],
-      docPlugins,
-    };
+    const initMsg: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+    prewarmLangs: ["ts", "typescript"],
+    docPlugins, };
     worker.postMessage(initMsg);
 
     for (let i = 0; i < fixture.length; i += chunkSize) {
@@ -182,7 +181,7 @@ async function runParitySession(enabled: boolean): Promise<void> {
     const threadInit = threadResult.messages.find((m) => m.type === "INITIALIZED");
     assert.ok(inlineInit, "inline worker missing INITIALIZED message");
     assert.ok(threadInit, "thread worker missing INITIALIZED message");
-    assert.deepStrictEqual(inlineInit.blocks, threadInit.blocks, "initial blocks must match");
+    assert.deepStrictEqual(inlineInit.snapshot, threadInit.snapshot, "initial root snapshots must match");
 
     // Verify neither worker produced errors
     assert.strictEqual(

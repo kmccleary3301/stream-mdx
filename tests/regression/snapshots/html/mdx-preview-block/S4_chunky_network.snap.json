@@ -28,17 +28,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 4.199999988079071,
+        "lastDurationMs": 4.199999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -47,58 +48,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 2,
-        "blockquote": 1,
+        "pre": 4,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nText that is not a quote\n\n&gt; Text that is a quote\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview Block<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrollin",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
-          "blockquote": 1,
+          "pre": 4,
+          "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "text": "Text that is not a quote\n> Text that is a quote\n",
             "lineCount": 3
+          },
+          {
+            "text": "<Preview>\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n</Preview>",
+            "lineCount": 5
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -112,17 +105,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 4.199999988079071,
+        "lastDurationMs": 4.199999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -131,58 +125,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 2,
-        "blockquote": 1,
+        "pre": 4,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nText that is not a quote\n\n&gt; Text that is a quote\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview Block<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrollin",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
-          "blockquote": 1,
+          "pre": 4,
+          "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "text": "Text that is not a quote\n> Text that is a quote\n",
             "lineCount": 3
+          },
+          {
+            "text": "<Preview>\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n</Preview>",
+            "lineCount": 5
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -196,17 +182,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 4.199999988079071,
+        "lastDurationMs": 4.199999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -215,58 +202,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 2,
-        "blockquote": 1,
+        "pre": 4,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nText that is not a quote\n\n&gt; Text that is a quote\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview Block<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrollin",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
-          "blockquote": 1,
+          "pre": 4,
+          "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "text": "Text that is not a quote\n> Text that is a quote\n",
             "lineCount": 3
+          },
+          {
+            "text": "<Preview>\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n</Preview>",
+            "lineCount": 5
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -280,17 +259,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 4.199999988079071,
+        "lastDurationMs": 4.199999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -299,58 +279,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 2,
-        "blockquote": 1,
+        "pre": 4,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nText that is not a quote\n\n&gt; Text that is a quote\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview Block<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrollin",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
-          "blockquote": 1,
+          "pre": 4,
+          "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "text": "Text that is not a quote\n> Text that is a quote\n",
             "lineCount": 3
+          },
+          {
+            "text": "<Preview>\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n</Preview>",
+            "lineCount": 5
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -364,17 +336,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 4.199999988079071,
+        "lastDurationMs": 4.199999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -383,58 +356,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 2,
-        "blockquote": 1,
+        "pre": 4,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nText that is not a quote\n\n&gt; Text that is a quote\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview Block<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrollin",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
-          "blockquote": 1,
+          "pre": 4,
+          "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "text": "Text that is not a quote\n> Text that is a quote\n",
             "lineCount": 3
+          },
+          {
+            "text": "<Preview>\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n</Preview>",
+            "lineCount": 5
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -448,17 +413,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 4.199999988079071,
+        "lastDurationMs": 4.199999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -467,58 +433,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 2,
-        "blockquote": 1,
+        "pre": 4,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nText that is not a quote\n\n&gt; Text that is a quote\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview Block<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrollin",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
-          "blockquote": 1,
+          "pre": 4,
+          "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "text": "Text that is not a quote\n> Text that is a quote\n",
             "lineCount": 3
+          },
+          {
+            "text": "<Preview>\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n</Preview>",
+            "lineCount": 5
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -532,17 +490,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 4.199999988079071,
+        "lastDurationMs": 4.199999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -551,58 +510,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 2,
-        "blockquote": 1,
+        "pre": 4,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nText that is not a quote\n\n&gt; Text that is a quote\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview Block<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrollin",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
-          "blockquote": 1,
+          "pre": 4,
+          "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "text": "Text that is not a quote\n> Text that is a quote\n",
             "lineCount": 3
+          },
+          {
+            "text": "<Preview>\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n</Preview>",
+            "lineCount": 5
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -616,17 +567,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 4.199999988079071,
+        "lastDurationMs": 4.199999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -635,58 +587,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 2,
-        "blockquote": 1,
+        "pre": 4,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nText that is not a quote\n\n&gt; Text that is a quote\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview Block<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrollin",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
-          "blockquote": 1,
+          "pre": 4,
+          "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "text": "Text that is not a quote\n> Text that is a quote\n",
             "lineCount": 3
+          },
+          {
+            "text": "<Preview>\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n</Preview>",
+            "lineCount": 5
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -700,17 +644,18 @@
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": false,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 2,
+        "lastPatchToDomMs": 4.199999988079071,
+        "lastDurationMs": 4.199999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -719,142 +664,50 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 2,
-        "blockquote": 1,
+        "pre": 4,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nText that is not a quote\n\n&gt; Text that is a quote\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent;\"><code data-theme=\"github-dark github-light\" data-language=\"text\" class=\"language-text\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview Block<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrollin",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
-          "blockquote": 1,
+          "pre": 4,
+          "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview codeblock>\nText that is not a quote\n\n> Text that is a quote\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "text": "Text that is not a quote\n> Text that is a quote\n",
             "lineCount": 3
-          }
-        ]
-      }
-    },
-    {
-      "id": "event-hasMdxCompiled",
-      "appendedChars": 305,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 4,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
-        "meta": {
-          "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": true,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 2,
-        "blockquote": 1,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 2,
-          "blockquote": 1,
-          "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
           },
           {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
-        "codeBlocks": [
-          {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "<Preview>\n1. James Madison\n2. James Monroe\n3. John Quincy Adams\n</Preview>",
+            "lineCount": 5
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
-            "lineCount": 3
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -864,21 +717,22 @@
       "appendedChars": 305,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 4,
+        "rendererVersion": 5,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 1,
-        "lastPatchToDomMs": 0.6999999955296516,
-        "lastDurationMs": 0.6000000014901161,
+        "workerInitialized": true,
+        "workerFinalized": true,
+        "workerErrors": [],
+        "harnessErrors": [],
+        "lastTx": 3,
+        "lastPatchToDomMs": 0.800000011920929,
+        "lastDurationMs": 0.699999988079071,
         "meta": {
           "fixtureId": "mdx-preview-block",
-          "scenarioId": "S4_chunky_network",
-          "seed": null,
-          "schedulerMode": null
+          "scenarioId": "S4_chunky_network"
         },
         "storeCounters": {
-          "appendLineGuardRejected": 0,
           "staleEpochRejected": 0,
           "storeInvariantViolationCount": 0
         }
@@ -887,8 +741,6 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -897,13 +749,11 @@
         "pre": 2,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">1. James Madison</span>\n<span class=\"line\">2. James Monroe</span>\n<span class=\"line\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-",
+      "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"markdown-paragraph markdown-paragraph\">Text that is not a quote</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Text that is a quote</p></blockquote></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">James Madison</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">James Monroe</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">John Quincy Adams</li></ol></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\"><span>3. John Quincy Adams</span></span>\n</code></pre></div></div></div></div></div></div></div></div>",
+      "textSample": "MDX Preview BlockText that is not a quoteText that is a quote[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-vi",
       "structure": {
         "topLevelTags": [
           "div"
@@ -913,32 +763,20 @@
           "pre": 2,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Text that is not a quote\nText that is a quote\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Text that is not a quote\n> Text that is a quote",
-            "lineCount": 2
+            "text": "Text that is not a quote\n> Text that is a quote\n",
+            "lineCount": 3
           },
           {
-            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
-            "lineCount": 3
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+            "lineCount": 4
           }
         ]
       }
@@ -952,28 +790,27 @@
       "hasTable": false,
       "hasPre": true,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": true,
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:5cebbb37\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Text that is not a quote</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Text that is a quote</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\"><span>3. John Quincy Adams</span></span></code></pre></div></div></div></div></div></div></div>",
+    "html": "<div data-stream-mdx=\"\" class=\"markdown-v2-output markdown-v2-output not-prose\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\" id=\"mdx-preview-block\" data-heading-id=\"mdx-preview-block\">MDX Preview Block</h1><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"markdown-paragraph markdown-paragraph\">Text that is not a quote</p><blockquote class=\"markdown-blockquote markdown-blockquote\"><p class=\"markdown-paragraph markdown-paragraph\">Text that is a quote</p></blockquote></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n</code></pre></div></div></div></div></div></div></div><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">James Madison</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">James Monroe</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">John Quincy Adams</li></ol></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"markdown-code-block language-text\"><pre class=\"shiki shiki-themes github-dark github-light markdown-code-block language-text\" style=\"--shiki-dark: #e1e4e8; --shiki-light: #24292e; --shiki-dark-bg: #24292e; --shiki-light-bg: #fff;\"><code class=\"language-text language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\"><span>3. John Quincy Adams</span></span>\n</code></pre></div></div></div></div></div></div></div></div>",
     "runtimeState": {
-      "rendererVersion": 6,
+      "rendererVersion": 5,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
+      "workerInitialized": true,
+      "workerFinalized": true,
+      "workerErrors": [],
+      "harnessErrors": [],
       "lastTx": 3,
-      "lastPatchToDomMs": 0.6000000014901161,
-      "lastDurationMs": 0.29999999701976776,
+      "lastPatchToDomMs": 0.800000011920929,
+      "lastDurationMs": 0.699999988079071,
       "meta": {
         "fixtureId": "mdx-preview-block",
-        "scenarioId": "S4_chunky_network",
-        "seed": null,
-        "schedulerMode": null
+        "scenarioId": "S4_chunky_network"
       },
       "storeCounters": {
-        "appendLineGuardRejected": 0,
         "staleEpochRejected": 0,
         "storeInvariantViolationCount": 0
       }
@@ -987,8 +824,6 @@
         "pre": 2,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       }
@@ -997,30 +832,20 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "f9189ffda8de374a8462f73bbff6c46a36b546687c8380bc0a53e6c96c08904c",
-        "textSample": "MDX Preview BlockText that is not a quote\nText that is a quote\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-m"
+        "hash": "74f19470f132f7ab404a4f1f75fd57a8ad3cfc8cab04174f629c39e9c2c5551e",
+        "textSample": "MDX Preview BlockText that is not a quoteText that is a quote[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [
-        {
-          "status": "compiled",
-          "textSample": "Text that is not a quote\nText that is a quote\n"
-        },
-        {
-          "status": "compiled",
-          "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
-        }
-      ],
       "codeBlocks": [
         {
-          "text": "Text that is not a quote\n> Text that is a quote",
-          "lineCount": 2
+          "text": "Text that is not a quote\n> Text that is a quote\n",
+          "lineCount": 3
         },
         {
-          "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
-          "lineCount": 3
+          "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams\n",
+          "lineCount": 4
         }
       ]
     }

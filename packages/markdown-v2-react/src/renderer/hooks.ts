@@ -18,16 +18,27 @@ export function useRendererBlocks(store: RendererStore): ReadonlyArray<Block> {
   );
 }
 
-export function useRendererNode(store: RendererStore, id: string): NodeRecord | undefined {
+/** Lifecycle-only subscription; never materializes authored blocks or code lines. */
+export function useRendererHasProvisionalBlocks(store: RendererStore): boolean {
+  return useSyncExternalStore(store.subscribe, store.hasProvisionalBlocks, store.hasProvisionalBlocks);
+}
+
+export function useRendererNodeSnapshot(
+  store: RendererStore,
+  id: string,
+): { version: number; node?: NodeRecord } {
   useContext(RenderConfigVersionContext);
   const subscribe = useCallback((listener: () => void) => subscribeRendererNode(store, id, listener), [store, id]);
   const selector = useMemo(() => {
     return () => store.getNodeWithVersion(id);
   }, [store, id]);
-
-  const snapshot = useSyncExternalStore(subscribe, selector, selector);
-  return snapshot.node;
+  return useSyncExternalStore(subscribe, selector, selector);
 }
+
+export function useRendererNode(store: RendererStore, id: string): NodeRecord | undefined {
+  return useRendererNodeSnapshot(store, id).node;
+}
+
 
 export function useRendererChildren(store: RendererStore, id: string): ReadonlyArray<string> {
   useContext(RenderConfigVersionContext);

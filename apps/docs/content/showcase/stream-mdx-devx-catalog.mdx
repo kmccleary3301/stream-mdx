@@ -71,23 +71,15 @@ For advanced behavior, configure document plugins in the worker bootstrap.
 
 ## Rendering and Theming
 
-Map default nodes onto your design system components:
+Map Markdown and raw HTML nodes onto design-system presentations:
 
 ```tsx
-const htmlElements = {
-  table: ({ className, ...props }) => (
-    <table className={`w-full text-sm ${className ?? ""}`.trim()} {...props} />
-  ),
-  blockquote: ({ className, ...props }) => (
-    <blockquote className={`border-l-2 pl-4 italic ${className ?? ""}`.trim()} {...props} />
-  ),
+const components = {
+  "html:table": { props: { className: "w-full text-sm" } },
+  "html:blockquote": { props: { className: "border-l-2 pl-4 italic" } },
 };
 
-<StreamingMarkdown
-  text={text}
-  htmlElements={htmlElements}
-  worker="/workers/markdown-worker.js"
-/>
+<StreamingMarkdown text={text} components={components} worker="/workers/markdown-worker.js" />
 ```
 
 - Styling guide: `/docs/guides/rendering-and-styling`
@@ -95,23 +87,30 @@ const htmlElements = {
 
 ## MDX and Component Embeds
 
-Use custom components in streamed markdown safely:
+Use `contentComponents` for fixed host components in restricted source. For trusted, reviewed full MDX, supply an explicit `TrustedMdxEngine` and host import map:
 
 ```tsx
 import { StreamingMarkdown } from "stream-mdx";
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
 import { YouTube } from "./YouTube";
 import { Preview } from "./Preview";
 
-const mdxComponents = { YouTube, Preview };
+const hostWidgets = { YouTube, Preview };
+const trustedMdxEngine = createTrustedMdxEngine({
+  components: hostWidgets,
+  imports: { "host:embeds": hostWidgets },
+});
 
 <StreamingMarkdown
   text={text}
   worker="/workers/markdown-worker.js"
-  mdxComponents={mdxComponents}
   features={{ mdx: true }}
-  mdxCompileMode="worker"
+  contentPolicy="trusted-mdx"
+  engines={{ mdx: trustedMdxEngine }}
 />
 ```
+
+The default policy is `"restricted"` and does not evaluate authored MDX. The trusted import map resolves only explicit host bindings and does not fetch modules. Evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox. Worker `FINALIZED` reports native semantic completion, not trusted preparation or React commit readiness.
 
 - Guide: `/docs/guides/mdx-and-html`
 - Showcase: `/showcase/mdx-components`
@@ -121,13 +120,28 @@ const mdxComponents = { YouTube, Preview };
 Math and Mermaid are opt-in to keep the baseline bundle lean.
 
 ```tsx
+import { StreamingMarkdown, type NodeViewProps } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
+
+function MermaidPresentation({ block, children, metadata, actions }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "mermaid") return children;
+  const code = block?.payload.meta?.code;
+  return (
+    <MermaidBlock
+      code={typeof code === "string" ? code : ""}
+      renderCode={children}
+      language={metadata.language ?? "mermaid"}
+      blockId={metadata.id}
+      controls={{ copy: true }}
+      copy={actions.copy}
+    />
+  );
+}
 
 <StreamingMarkdown
   text={text}
-  worker="/workers/markdown-worker.js"
   features={{ math: true }}
-  codeRenderers={{ mermaid: MermaidBlock }}
+  components={{ code: { wrapper: MermaidPresentation } }}
 />
 ```
 

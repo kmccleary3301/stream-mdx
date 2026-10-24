@@ -1,5 +1,8 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+export { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import type {
-  Block,
+  NodeSnapshot,
   DiffBlock,
   DiffKind,
   DiffLine,
@@ -14,7 +17,7 @@ import type {
 } from "@stream-mdx/core";
 
 export const STREAM_MDX_PROTOCOL_ID = "streammdx";
-export const STREAM_MDX_SCHEMA_VERSION = "1.0";
+// Wire identity is shared with physical/direct worker startup.
 
 export type StreamMdxEventType = "init" | "snapshot" | "patch" | "metrics" | "error" | "done";
 
@@ -41,11 +44,12 @@ export type StreamMdxEventBase = {
   protocol: typeof STREAM_MDX_PROTOCOL_ID;
   schemaVersion: typeof STREAM_MDX_SCHEMA_VERSION;
   streamId: string;
+  generation: number;
   event: StreamMdxEventType;
   tx?: number;
 };
 
-export type StreamMdxInitEventV1 = StreamMdxEventBase & {
+export type StreamMdxInitEvent = StreamMdxEventBase & {
   event: "init";
   createdAt?: number;
   capabilities?: StreamMdxCapabilities;
@@ -53,42 +57,44 @@ export type StreamMdxInitEventV1 = StreamMdxEventBase & {
   shikiVersion?: string;
 };
 
-export type StreamMdxSnapshotEventV1 = StreamMdxEventBase & {
+export type StreamMdxSnapshotEvent = StreamMdxEventBase & {
   event: "snapshot";
-  blocks: Block[];
+  snapshot: NodeSnapshot;
 };
 
-export type StreamMdxPatchEventV1 = StreamMdxEventBase & {
+export type StreamMdxPatchEvent = StreamMdxEventBase & {
   event: "patch";
   tx: number;
   patches: Patch[];
   metrics?: PatchMetrics | null;
 };
 
-export type StreamMdxMetricsEventV1 = StreamMdxEventBase & {
+export type StreamMdxMetricsEvent = StreamMdxEventBase & {
   event: "metrics";
   tx?: number;
   metrics: PatchMetrics;
 };
 
-export type StreamMdxErrorEventV1 = StreamMdxEventBase & {
+export type StreamMdxErrorEvent = StreamMdxEventBase & {
   event: "error";
   message: string;
   stack?: string;
 };
 
-export type StreamMdxDoneEventV1 = StreamMdxEventBase & {
+export type StreamMdxDoneEvent = StreamMdxEventBase & {
   event: "done";
   finalTx?: number;
   status: "ok" | "error";
 };
 
-export type StreamMdxEventV1 =
-  | StreamMdxInitEventV1
-  | StreamMdxSnapshotEventV1
-  | StreamMdxPatchEventV1
-  | StreamMdxMetricsEventV1
-  | StreamMdxErrorEventV1
-  | StreamMdxDoneEventV1;
+export type StreamMdxEvent =
+  | StreamMdxInitEvent
+  | StreamMdxSnapshotEvent
+  | StreamMdxPatchEvent
+  | StreamMdxMetricsEvent
+  | StreamMdxErrorEvent
+  | StreamMdxDoneEvent;
 
 export type { DiffBlock, DiffKind, DiffLine, DiffLineKind, ThemedLine, ThemedToken, TokenLineV1, TokenSpan, TokenStyle };
+export { SourceCapacityError, StreamSessionError } from "./stream-admission";
+export type { AppendResult, FinalizeResult, StreamSessionErrorReason, WaitForCapacityOptions } from "./stream-admission";

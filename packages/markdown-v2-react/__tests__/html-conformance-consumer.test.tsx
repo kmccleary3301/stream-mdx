@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import React, { act } from "react";
@@ -7,7 +9,8 @@ import { JSDOM } from "jsdom";
 import type { Block, HtmlOptions, SyntaxRuleSpec, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
-import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore, type RendererStore } from "../src/server";
+import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore } from "../src/server";
+import type { RendererStore } from "../src/renderer/store";
 import { normalizeHtmlSemantics } from "../../../tests/conformance/normalizer.mts";
 
 const globalDescriptors = new Map(["window", "document", "DOMParser", "Node", "Element", "HTMLElement", "IS_REACT_ACT_ENVIRONMENT"]
@@ -34,13 +37,13 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
   return { promise, resolve, reject };
 }
 
-async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "INIT" }>, "html" | "syntax" | "docPlugins" | "mdxCompileMode"> = {}): Promise<RendererStore> {
+async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "INIT" }>, "html" | "syntax" | "docPlugins"> = {}): Promise<RendererStore> {
   const worker = createInlineEngineWorker();
   const store = createRendererStore();
   const { promise, resolve, reject } = deferred<RendererStore>();
   worker.onmessage = (event: MessageEvent<WorkerOut>) => {
     const message = event.data;
-    if (message.type === "INITIALIZED") store.reset(message.blocks);
+    if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
     else if (message.type === "PATCH") store.applyPatches(message.patches);
     else if (message.type === "FINALIZED") {
       worker.terminate();
@@ -50,7 +53,7 @@ async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "IN
       reject(new Error(message.error.message));
     }
   };
-  worker.postMessage({ type: "INIT", initialContent: "", ...init, ...config });
+  worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", ...init, ...config });
   for (const char of text) worker.postMessage({ type: "APPEND", text: char });
   worker.postMessage({ type: "FINALIZE" });
   return promise;
@@ -64,9 +67,13 @@ for (const number of assigned) {
   const example = examples.find((value) => value.number === number)!;
   const text = example.markdown.replace(/→/g, "\t");
   const expected = normalizeHtmlSemantics(example.html.replace(/→/g, "\t"));
-  const compiled = await compileMarkdownSnapshotDirect({ text, init });
+  const compiled = await compileMarkdownSnapshotDirect({ text, init }).catch((error: unknown) => {
+    throw new Error(`cm_${number} static compilation failed for ${JSON.stringify(text)}`, { cause: error });
+  });
   const staticHtml = normalizeHtmlSemantics(render(compiled.blocks));
-  const store = await streamed(text);
+  const store = await streamed(text).catch((error: unknown) => {
+    throw new Error(`cm_${number} streaming failed for ${JSON.stringify(text)}`, { cause: error });
+  });
   const streamingHtml = normalizeHtmlSemantics(render([], undefined, store));
   if (staticHtml !== expected || streamingHtml !== expected) {
     failures.push(`cm_${number}: expected ${expected}\nstatic ${staticHtml}\nstreaming ${streamingHtml}`);
@@ -76,14 +83,23 @@ console.log(`HTML consumer observed passing IDs: ${passing.map((number) => `cm_$
 assert.deepEqual(failures, [], failures.join("\n"));
 
 // Actual parsed markdown leaves must survive an HTML owner, rather than becoming raw HTML text.
-const syntax: SyntaxRuleSpec[] = [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }];
+const syntax = {
+  contractVersion: 1 as const,
+  inline: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }] as readonly SyntaxRuleSpec[],
+};
 const html: HtmlOptions = { allowedTags: { del: [], span: ["data-safe"], kbd: [] }, literalTagContent: ["kbd"] };
 const text = '<del>\n\n**#ABC-123** and <span data-safe="yes" onclick="alert(1)">*nested*</span> <kbd>**literal**</kbd>\n\n</del>\n';
 const store = await streamed(text, { html, syntax });
-const registry = new ComponentRegistry({}, {
-  ticket: ({ attrs }: { attrs: Record<string, string> }) => <mark data-ticket={attrs.id}>{attrs.id}</mark>,
+const registry = new ComponentRegistry({
+  components: {
+    "extension:ticket": {
+      view: ({ node }) => node.kind === "plugin" ? <mark data-ticket={String(node.attrs?.id ?? "")}>{String(node.attrs?.id ?? "")}</mark> : null,
+    },
+    "html:del": {
+      view: ({ properties, children }) => React.createElement("del", { ...properties, "data-mapped": "yes" } as React.HTMLAttributes<HTMLElement>, children),
+    },
+  },
 });
-registry.setHtmlElements({ del: (props: React.HTMLAttributes<HTMLElement>) => <del {...props} data-mapped="yes" /> });
 const document = new JSDOM(render([], registry, store)).window.document;
 assert.equal(document.querySelector('del[data-mapped="yes"] p strong mark')?.textContent, "ABC-123");
 assert.equal(document.querySelector('del p span[data-safe="yes"] em')?.textContent, "nested");
@@ -119,18 +135,27 @@ assert.equal(forgedDocument.querySelector("span")?.textContent, "forged");
 assert.equal(forgedDocument.querySelectorAll("strong").length, 1);
 
 const paragraphStore = await streamed("A <span>B</span>");
-const paragraphRegistry = new ComponentRegistry({
-  paragraph: ({ children }) => <p data-paragraph="configured">{children}</p>,
+const paragraphRegistry = new ComponentRegistry();
+paragraphRegistry.setNodePresentations({
+  paragraph: { wrapper: ({ children }) => <div data-paragraph="configured">{children}</div> },
 });
 const paragraphDocument = new JSDOM(render([], paragraphRegistry, paragraphStore)).window.document;
-assert.equal(paragraphDocument.querySelector('p[data-paragraph="configured"]')?.textContent, "A B");
+assert.equal(paragraphDocument.querySelector('div[data-paragraph="configured"]')?.textContent?.trim(), "A B");
+assert.equal(paragraphDocument.querySelector('div[data-paragraph="configured"] p')?.textContent?.trim(), "A B");
 assert.equal(paragraphDocument.querySelectorAll("p").length, 1, "normalized paragraph must use its configured component exactly once");
 
 const captureStore = await streamed('start [[<a href="/outer">[inner](/inner) trailing]] end', {
-  syntax: [{ name: "capture", pattern: { source: "\\[\\[([\\s\\S]*?)\\]\\]" }, content: 1 }],
+  syntax: {
+    contractVersion: 1,
+    inline: [{ name: "capture", pattern: { source: "\\[\\[([\\s\\S]*?)\\]\\]" }, content: 1 }],
+  },
 });
-const captureRegistry = new ComponentRegistry({}, {
-  capture: ({ children }: { children?: React.ReactNode }) => <mark data-capture="configured">{children}</mark>,
+const captureRegistry = new ComponentRegistry({
+  components: {
+    "extension:capture": {
+      view: ({ children }) => <mark data-capture="configured">{children}</mark>,
+    },
+  },
 });
 const captureDocument = new JSDOM(render([], captureRegistry, captureStore)).window.document;
 assert.ok(captureDocument.querySelector('mark[data-capture="configured"]'));
@@ -142,7 +167,7 @@ actEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
 const captureMounted = window.document.createElement("div");
 const captureRoot = createRoot(captureMounted);
 await act(async () => {
-  captureRoot.render(<MarkdownBlocksRenderer store={captureStore} componentRegistry={captureRegistry} />);
+  captureRoot.render(<MarkdownBlocksRenderer blocks={captureStore.getBlocks()} store={captureStore} componentRegistry={captureRegistry} />);
 });
 assert.equal(captureMounted.querySelector("mark a a"), null, "captured plugins must mount the reconstructed children, not invalid original anchors");
 assert.equal(captureMounted.querySelector("mark")?.textContent, "inner trailing");
@@ -172,6 +197,37 @@ for (const [source, expected] of [
   await act(async () => { hydrationRoot.unmount(); });
 }
 
+const legacyHtmlBlock: Block = {
+  id: "legacy-html",
+  type: "html",
+  isFinalized: true,
+  payload: {
+    raw: "<div>",
+    meta: {
+      htmlTree: [{
+        kind: "element",
+        tagName: "div",
+        attributes: {},
+        children: [{
+          kind: "block",
+          block: {
+            id: "legacy-html-code",
+            type: "code",
+            isFinalized: true,
+            payload: { raw: "const coldSnapshot = true;", meta: { code: "const coldSnapshot = true;", lang: "js" } },
+          },
+        }],
+      }],
+    },
+  },
+};
+const legacyHtmlMarkup = renderToStaticMarkup(<MarkdownBlocksRenderer blocks={[legacyHtmlBlock]} />);
+assert.equal(
+  new JSDOM(legacyHtmlMarkup).window.document.querySelector("pre")?.textContent,
+  "const coldSnapshot = true;",
+  "a static HTML tree must render its actual embedded Block slot",
+);
+
 // The authored HTML fixture contains braces owned by native code, not MDX.
 const inlineHtmlFixture = await fs.readFile(new URL("../../../tests/regression/fixtures/inline-html.md", import.meta.url), "utf8");
 const codeParagraph = "Inline code with language hint: `{:js}{:js}`.";
@@ -196,29 +252,29 @@ const codeSource = [
   "| `{:js}{:js}` |",
   "",
 ].join("\n");
-const codeInit = { ...init, docPlugins: { ...init.docPlugins, mdx: true }, mdxCompileMode: "server" as const };
+const codeInit = { ...init, contentPolicy: "trusted-mdx" as const, docPlugins: { ...init.docPlugins, mdx: true } };
 const codeCompiled = await compileMarkdownSnapshotDirect({ text: codeSource, init: codeInit });
 const codeSerialized = JSON.parse(JSON.stringify(codeCompiled.blocks)) as Block[];
 const codeStore = await streamed(codeSource, codeInit);
-const customCodeRegistry = new ComponentRegistry({
-  paragraph: ({ children }) => <p data-paragraph="configured">{children}</p>,
-});
-customCodeRegistry.setInlineComponents({
-  code: ({ text }) => <code className="inline-code" data-code="configured">{text}</code>,
+const customCodeRegistry = new ComponentRegistry();
+customCodeRegistry.setNodePresentations({
+  paragraph: { wrapper: ({ children }) => <div data-paragraph="configured">{children}</div> },
+  "inline:code": {
+    view: ({ node }) => node.kind === "code" ? <code className="inline-code" data-code="configured">{node.text}</code> : null,
+  },
 });
 for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
   for (const element of [
     <MarkdownBlocksRenderer blocks={codeCompiled.blocks} componentRegistry={registry} />,
     <MarkdownBlocksRenderer blocks={codeSerialized} componentRegistry={registry} />,
-    <MarkdownBlocksRenderer store={codeStore} componentRegistry={registry} />,
+    <MarkdownBlocksRenderer blocks={codeCompiled.blocks} store={codeStore} componentRegistry={registry} />,
   ]) {
     const assertCodeOwnership = (root: ParentNode) => {
-      const codes = Array.from(root.querySelectorAll("code.inline-code"));
+      const codes = Array.from(root.querySelectorAll("code"));
       assert.deepEqual(codes.map((code) => code.textContent), [
         "{:js}{:js}", "{:js}{:js}", "{:js}{:js}", "{:js}{:js}", "{:js}{:js}",
         "{:js} `literal` {:js}", "{:js}{:js}",
       ], "root, nested paragraphs/list items, double ticks and table cells must retain native inline-code ownership");
-      assert.equal(root.querySelector(".markdown-mdx-inline, .markdown-mdx-error, [data-mdx-status]"), null);
       assert.equal(codes[0].closest("p")?.textContent, expectedParagraph, "the fixture's whole paragraph prose must survive");
       assert.equal(codes[1].closest("blockquote p")?.textContent, expectedParagraph);
       assert.equal(codes[2].closest("li")?.textContent, expectedParagraph);
@@ -227,7 +283,7 @@ for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
       assert.equal(codes[6].closest("td")?.textContent, "{:js}{:js}");
       if (registry === customCodeRegistry) {
         assert.equal(root.querySelectorAll('code[data-code="configured"]').length, codes.length);
-        assert.ok(codes[0].closest('p[data-paragraph="configured"]'));
+        assert.ok(codes[0].closest('div[data-paragraph="configured"]'));
       }
     };
     assertCodeOwnership(new JSDOM(renderToStaticMarkup(element)).window.document);
@@ -250,10 +306,8 @@ for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
     render([], registry, outsideCodeStore),
   ]) {
     const document = new JSDOM(markup).window.document;
-    assert.equal(document.querySelector("code.inline-code")?.textContent, "{:js}{:js}");
+    assert.equal(document.querySelector("code")?.textContent, "{:js}{:js}");
     assert.equal(document.querySelector("em")?.textContent, "HTML");
-    assert.deepEqual(Array.from(document.querySelectorAll(".markdown-mdx-inline")).map((span) => span.textContent), ["{outside}", "<InlineChip />"]);
-    assert.equal(document.querySelector('[data-mdx-status="error"]'), null);
     assert.equal(document.querySelector('a[href="/safe"]')?.textContent, "link");
     assert.equal(document.querySelector("p")?.textContent, "Code {:js}{:js} with HTML and {outside} <InlineChip /> link tail.");
   }

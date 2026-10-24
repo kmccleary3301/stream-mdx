@@ -16,25 +16,24 @@ npm install @stream-mdx/tui @stream-mdx/protocol @stream-mdx/core
 | Snapshot store | Apply patch streams and recover block state |
 | Non-React usage | Useful in TUIs, CLIs, log viewers, and replay tools |
 
-## NDJSON Example
+## NDJSON Snapshot Store
 
 ```ts
-import { NdjsonDecoder, encodeNdjsonEvent } from "@stream-mdx/tui";
+import { NdjsonDecoder, createSnapshotStore } from "@stream-mdx/tui";
+import type { StreamMdxEvent } from "@stream-mdx/protocol";
 
-const decoder = new NdjsonDecoder();
-const chunk = encodeNdjsonEvent({ event: "done" } as any);
-const events = decoder.push(chunk);
-```
-
-## Snapshot Store Example
-
-```ts
-import { createSnapshotStore } from "@stream-mdx/tui";
-
+const decoder = new NdjsonDecoder<StreamMdxEvent>();
 const store = createSnapshotStore();
-store.applyEvents(events);
-const blocks = store.getBlocks();
+
+export function receiveChunk(chunk: string | Uint8Array) {
+  store.applyEvents(decoder.push(chunk));
+  return store.getBlocks();
+}
 ```
+
+Every schema-2 event carries the producer's native document `generation`. Publish `init` and the matching `INITIALIZED` snapshot before patches; the snapshot's canonical input generation must match its event envelope. Do not infer a baseline from the first patch. The store rejects stale or foreign-stream events, clears generation-local transaction/status metadata on replacement, and accepts `done` only for the bound generation.
+
+`setSnapshot(Block[])` is a cold replacement: it retires the previous native transport generation without inventing a new one. A later validated, newer baseline can resume live events. Direct `applyPatches()` remains caller-owned and does not infer transport ownership.
 
 ## Notes
 
