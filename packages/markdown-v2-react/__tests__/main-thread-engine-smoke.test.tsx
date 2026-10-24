@@ -495,13 +495,15 @@ async function runAutoWorkerTakeoverCapacityWaiter(): Promise<void> {
   let pulledChunks = 0;
   let finished = false;
   const errors: Error[] = [];
+  // Keep this fixture cheap to parse so it isolates admission and takeover timing.
+  const chunk = "\n".repeat(65_536);
   async function* input(): AsyncGenerator<string> {
     pulledChunks++;
-    yield "a".repeat(65_536);
+    yield chunk;
     pulledChunks++;
-    yield "b".repeat(65_536);
+    yield chunk;
     pulledChunks++;
-    yield "c".repeat(65_536);
+    yield chunk;
     finished = true;
   }
   try {

@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -10,6 +13,14 @@ import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore } from "
 import type { RendererStore } from "@stream-mdx/react/server";
 
 import { normalizeHtmlSemantics } from "../../../tests/conformance/normalizer.mts";
+
+const hostedBundle = new URL("../../markdown-v2-worker/dist/hosted/markdown-worker.js", import.meta.url);
+if (!existsSync(hostedBundle)) {
+  execSync("npm run build:hosted", {
+    cwd: fileURLToPath(new URL("../../markdown-v2-worker", import.meta.url)),
+    stdio: "inherit",
+  });
+}
 
 type CommonMarkExample = { number: number; markdown: string; html: string };
 const examples = JSON.parse(
