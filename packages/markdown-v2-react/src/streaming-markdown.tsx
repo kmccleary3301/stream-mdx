@@ -21,7 +21,8 @@ import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
-import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type CodeNodePresentation, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import { DocumentMathMacroScope, DocumentMathMacroScopeContext } from "./components/katex-math";
+import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type CodeNodePresentation, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathOptions, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
   resolve(): void;
@@ -58,6 +59,7 @@ interface StreamingMarkdownConfigSignature {
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
   themes?: { light: string; dark: string };
+  mathOptions?: MathOptions;
 }
 
 export interface StreamingSchedulerOptions {
@@ -179,6 +181,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   linkSafety?: LinkSafetyConfig;
   codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
+  mathOptions?: MathOptions;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
   blockRenderer?: BlockRendererOverride;
   syntax?: SyntaxRuleSpec[];
@@ -280,6 +283,7 @@ function StreamingMarkdownComponent(
     unwrapDisallowed,
     disableAutolinkProtocols,
     mathRenderer,
+    mathOptions,
     deferHeavyBlocks,
     blockRenderer,
     syntax,
@@ -322,8 +326,9 @@ function StreamingMarkdownComponent(
         syntax,
         html,
         themes: effectiveThemes,
+        mathOptions,
       }),
-    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes],
+    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes, mathOptions],
   );
   // Stable indirection lets renderers use the current linkSafety handler.
   const linkHandlerRef = useRef<(url: string) => Promise<void>>();
@@ -336,6 +341,11 @@ function StreamingMarkdownComponent(
   const sessionRef = useRef(session);
   if (session > sessionRef.current) sessionRef.current = session;
   const rendererKey = `${configSignature}:${session}`;
+  const mathMacroScope = useMemo(
+    () => mathOptions?.macroScope === "document" ? new DocumentMathMacroScope() : null,
+    [rendererKey, text, stream, mathOptions?.macroScope],
+  );
+  useEffect(() => () => mathMacroScope?.dispose(), [mathMacroScope]);
   const onErrorRef = useRef(onError);
   useEffect(() => {
     onErrorRef.current = onError;
@@ -1015,6 +1025,7 @@ function StreamingMarkdownComponent(
   );
 
   return (
+    <DocumentMathMacroScopeContext.Provider value={mathMacroScope}>
     <DeferredRenderContext.Provider value={deferredConfig}>
       <CodeHighlightRequestContext.Provider value={highlightRequester}>
       <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
@@ -1030,6 +1041,7 @@ function StreamingMarkdownComponent(
       </CodeHighlightRequestContext.Provider>
       {linkModal}
     </DeferredRenderContext.Provider>
+    </DocumentMathMacroScopeContext.Provider>
   );
 }
 

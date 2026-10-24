@@ -35,6 +35,7 @@ export type {
   InlineHtmlRendererMap,
   MathRenderer,
   MathRendererProps,
+  MathOptions,
   RendererConfig,
   TableElements,
   UrlTransform,
