@@ -40,6 +40,15 @@ function waitForMutation(container: HTMLElement, predicate: () => boolean): Prom
     observer.observe(container, { childList: true, subtree: true, characterData: true });
   });
 }
+
+async function waitForCondition(predicate: () => boolean, message: string): Promise<void> {
+  const deadline = Date.now() + 3000;
+  while (!predicate()) {
+    assert.ok(Date.now() < deadline, message);
+    await delay(10);
+  }
+}
+
 function rejectsRetiredEngineMode(): void {
   assert.throws(
     () => renderToStaticMarkup(
@@ -101,6 +110,82 @@ async function runMainThreadEngineSmokeTest(): Promise<void> {
 }
 
 await runMainThreadEngineSmokeTest();
+async function runAutoBootstrapBeforeWorkerReadiness(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const root = createRoot(container);
+  const previousWorker = Object.getOwnPropertyDescriptor(globalThis, "Worker");
+  Object.defineProperty(globalThis, "Worker", {
+    configurable: true,
+    writable: true,
+    value: class {},
+  });
+  let workerFactoryCalls = 0;
+  class NeverReadyWorker extends EventTarget implements Worker {
+    onmessage: Worker["onmessage"] = null;
+    onmessageerror: Worker["onmessageerror"] = null;
+    onerror: Worker["onerror"] = null;
+    postMessage: Worker["postMessage"] = () => {};
+    terminate(): void {}
+  }
+  try {
+    root.render(
+      <StreamingMarkdown
+        text="Short authored paragraph."
+        worker={() => {
+          workerFactoryCalls++;
+          return new NeverReadyWorker();
+        }}
+        prewarmLangs={["python"]}
+      />,
+    );
+    await waitForCondition(
+      () => container.querySelector("p")?.textContent === "Short authored paragraph.",
+      "auto must publish native paragraph DOM without waiting for a worker factory or language prewarm",
+    );
+    assert.equal(workerFactoryCalls, 0, "short auto messages do not start a worker");
+  } finally {
+    root.unmount();
+    container.remove();
+    if (previousWorker) Object.defineProperty(globalThis, "Worker", previousWorker);
+    else Reflect.deleteProperty(globalThis, "Worker");
+    window.close();
+  }
+}
+
+await runAutoBootstrapBeforeWorkerReadiness();
+
+async function runAutoBootstrapUnitLimit(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const root = createRoot(container);
+  const handle = createRef<StreamingMarkdownHandle>();
+  try {
+    root.render(<StreamingMarkdown ref={handle} />);
+    await waitForCondition(
+      () => handle.current?.getState().workerReady === true,
+      "auto inline owner did not become ready",
+    );
+    const prefix = "😀".repeat(2048);
+    const result = handle.current!.append(`${prefix}x`);
+    assert.equal(result.acceptedSourceUnits, 4097);
+    await waitForCondition(
+      () => container.querySelector("p")?.textContent?.length === 4096,
+      "auto main-thread owner did not publish its 4096-unit prefix",
+    );
+    await delay(30);
+    assert.equal(container.querySelector("p")?.textContent, prefix, "the inline owner must refuse units beyond 4096");
+  } finally {
+    root.unmount();
+    container.remove();
+    window.close();
+  }
+}
+
+await runAutoBootstrapUnitLimit();
+
 
 async function runCallbackUpdateDuringStream(): Promise<void> {
   const window = await setupDom();

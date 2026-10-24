@@ -18,6 +18,7 @@ import { attachTrustedRevisionFeed, type TrustedRevisionFeed } from "./trusted-r
 import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./source-admission-limits";
 import { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
 
+const MAX_AUTO_BOOTSTRAP_UNITS = 4096;
 export { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
 
 const WORKER_DEBUG_ENABLED =
@@ -174,6 +175,7 @@ type SourceCapacityWaiter = {
  */
 export class MarkdownRenderer implements Renderer {
   private worker: Worker | null = null;
+  private bootstrapMode = false;
   private blocks: Block[] = [];
   private skipWorkerInit = false;
   private managedInitializationPending = false;
@@ -200,6 +202,8 @@ export class MarkdownRenderer implements Renderer {
   private trustedFinalizedVersion: number | null = null;
   private inputSealed = false;
   private acceptedSourceUnits = 0;
+  private bootstrapOwnerSourceUnits = 0;
+  private bootstrapDeferredSource = "";
   private workerAdmittedSourceUnits = 0;
   private workerAdmissionBaselineSourceUnits = 0;
   private workerAdmissionGeneration: number | null = null;
@@ -264,6 +268,7 @@ export class MarkdownRenderer implements Renderer {
    */
   attachWorker(worker: Worker, options?: {
     skipInit?: boolean;
+    bootstrap?: boolean;
     onInitialized?: () => void;
     onInitializationError?: (error: Error) => void;
   }): void {
@@ -279,6 +284,7 @@ export class MarkdownRenderer implements Renderer {
     this.resetSourceAdmission();
     this.inputSealed = false;
     this.worker = worker;
+    this.bootstrapMode = options?.bootstrap ?? false;
     this.skipWorkerInit = options?.skipInit ?? false;
     this.managedInitializationPending = this.skipWorkerInit;
     this.managedInitializationCallback = this.skipWorkerInit ? options?.onInitialized : undefined;
@@ -351,7 +357,8 @@ export class MarkdownRenderer implements Renderer {
         type: "INIT",
         schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent,
-        prewarmLangs: this.config.highlight?.langs || [],
+        prewarmLangs: this.bootstrapMode ? [] : this.config.highlight?.langs || [],
+        ...(this.bootstrapMode ? { bootstrap: true } : {}),
         docPlugins,
         contentPolicy: this.config.contentPolicy ?? "restricted",
         ...(contentComponents ? { contentComponents } : {}),
@@ -482,6 +489,8 @@ export class MarkdownRenderer implements Renderer {
     this.rejectCapacityWaiters(new StreamSessionError("stale-generation", "Source capacity wait belongs to an ended generation"));
     this.admissionSession += 1;
     this.acceptedSourceUnits = 0;
+    this.bootstrapOwnerSourceUnits = 0;
+    this.bootstrapDeferredSource = "";
     this.workerAdmissionBaselineSourceUnits = nextBaselineSourceUnits;
     this.workerAdmittedSourceUnits = nextBaselineSourceUnits;
     this.workerAdmissionGeneration = workerAdmissionGeneration;
@@ -667,9 +676,17 @@ export class MarkdownRenderer implements Renderer {
       throw new SourceCapacityError(text.length, pendingSourceUnits, SOURCE_ADMISSION_HARD_LIMIT);
     }
 
-    // PATCH handling stays closed until the worker's validated root, so queue source commands behind it.
-    if (this.workerSchemaReady) this.worker.postMessage({ type: "APPEND", text } as WorkerIn);
-    else this.pendingStreamCommands.push({ type: "APPEND", text });
+    const ownerText = this.bootstrapMode
+      ? text.slice(0, Math.max(0, MAX_AUTO_BOOTSTRAP_UNITS - this.bootstrapOwnerSourceUnits))
+      : text;
+    if (this.bootstrapMode) {
+      this.bootstrapOwnerSourceUnits += ownerText.length;
+      this.bootstrapDeferredSource += text.slice(ownerText.length);
+    }
+    if (ownerText.length > 0) {
+      if (this.workerSchemaReady) this.worker.postMessage({ type: "APPEND", text: ownerText } as WorkerIn);
+      else this.pendingStreamCommands.push({ type: "APPEND", text: ownerText });
+    }
     this.acceptedSourceUnits += text.length;
     this.workerHasContent ||= text.length > 0;
     this.trustedRevisionFeed?.append(text);
@@ -701,7 +718,13 @@ export class MarkdownRenderer implements Renderer {
       this.store.reset([]);
       this.blocks = [];
       if (this.updateCallbacks.length > 0) this.notifyUpdateCallbacks();
-      this.initializeWorker(text, { resolve, reject });
+      const initialContent = this.bootstrapMode ? text.slice(0, MAX_AUTO_BOOTSTRAP_UNITS) : text;
+      this.initializeWorker(initialContent, { resolve, reject });
+      if (this.bootstrapMode) {
+        this.bootstrapOwnerSourceUnits = initialContent.length;
+        this.bootstrapDeferredSource = text.slice(initialContent.length);
+        this.acceptedSourceUnits = this.bootstrapDeferredSource.length;
+      }
     });
   }
 

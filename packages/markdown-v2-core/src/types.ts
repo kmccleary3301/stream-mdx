@@ -241,6 +241,7 @@ export type WorkerIn =
       schemaVersion: typeof STREAM_MDX_SCHEMA_VERSION;
       initialContent?: string;
       prewarmLangs?: string[];
+      bootstrap?: boolean;
       themes?: CodeHighlightThemes;
       docPlugins?: {
         footnotes?: boolean;

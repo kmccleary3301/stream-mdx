@@ -1797,6 +1797,7 @@ export class MarkdownEngine {
           msg.themes ?? msg.docPlugins?.themes,
           msg.contentPolicy,
           msg.contentComponents,
+          msg.bootstrap ?? false,
         );
         return;
       case "APPEND":
@@ -2044,6 +2045,7 @@ export class MarkdownEngine {
     themes?: CodeHighlightThemes,
     contentPolicy?: ContentPolicy,
     contentComponents?: readonly RestrictedComponentDescriptor[],
+    bootstrap = false,
   ): Promise<void> {
     this.contentPolicy = contentPolicy ?? "restricted";
     this.contentComponents = new Map();
@@ -2186,19 +2188,24 @@ export class MarkdownEngine {
       }
     }
 
-    this.performanceTimer.mark("highlighter-init");
-    this.highlighter = await getSharedHighlighter(prewarmLangs);
-    this.performanceTimer.measure("highlighter-init");
+    if (bootstrap) {
+      this.highlighter = null;
+      this.codeThemes = DEFAULT_CODE_HIGHLIGHT_THEMES;
+    } else {
+      this.performanceTimer.mark("highlighter-init");
+      this.highlighter = await getSharedHighlighter(prewarmLangs);
+      this.performanceTimer.measure("highlighter-init");
 
-    const requestedThemes = themes ?? docPlugins?.themes;
-    const { themes: resolvedThemes, errors: themeErrors } = await resolveHighlightThemes(
-      this.highlighter,
-      requestedThemes,
-    );
-    for (const error of themeErrors) {
-      this.reportError(error, "INIT", { theme: requestedThemes });
+      const requestedThemes = themes ?? docPlugins?.themes;
+      const { themes: resolvedThemes, errors: themeErrors } = await resolveHighlightThemes(
+        this.highlighter,
+        requestedThemes,
+      );
+      for (const error of themeErrors) {
+        this.reportError(error, "INIT", { theme: requestedThemes });
+      }
+      this.codeThemes = resolvedThemes;
     }
-    this.codeThemes = resolvedThemes;
     if (initialContent) {
       this.sourceDocument.append(initialContent);
       const result = await this.parseAll(initialContent, {

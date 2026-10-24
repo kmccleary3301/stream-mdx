@@ -89,15 +89,15 @@ export function resolveWorkerSetup(
     throw new Error("managedWorker requires a caller-initialized Worker instance or worker factory and cannot use engine='main', a worker URL, or the default worker");
   }
   let lease: WorkerLease | null = null;
-  if (engine !== "main") {
+  const inlineBootstrap = engine === "auto" && !managedWorker;
+  if (engine !== "main" && !inlineBootstrap) {
     if (engine === "worker" && !factories.available()) {
       throw new Error("Worker is not supported in this environment");
     }
     if (engine === "auto") {
       try {
         lease = instantiateWorker(source, factories);
-      } catch {
-        // Only auto mode permits inline fallback when worker creation fails.
+        // Managed auto cannot fall back; unmanaged auto uses the bootstrap path above.
       }
     } else {
       lease = instantiateWorker(source, factories);
@@ -176,6 +176,7 @@ export function useWorkerSession({
       readyRendererRef.current = renderer;
       renderer.attachWorker(lease.worker, {
         skipInit: managedWorker,
+        bootstrap: engine === "auto" && !managedWorker,
         onInitialized: () => {
           if (cancelled || readyRendererRef.current !== renderer) return;
           inputReadyRef.current = true;
