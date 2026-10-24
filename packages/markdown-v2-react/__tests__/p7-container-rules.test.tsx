@@ -146,6 +146,25 @@ async function nestedContainerRetainsChildParagraphs(): Promise<void> {
   });
 }
 
+async function listItemCloserDoesNotCloseOuterContainer(): Promise<void> {
+  await withMarkdown(async (container, handle) => {
+    await appendAndIdle(
+      handle,
+      [":::outer", "- item", "  :::", "After the list.", ":::", ""].join("\n"),
+    );
+    await waitFor(
+      () => container.querySelector("aside") !== null,
+      "the outer container renders",
+    );
+    const outer = container.querySelector<HTMLElement>("aside");
+    assert.ok(outer, "the outer container renders");
+    assert.equal(outer.getAttribute("data-component-status"), "closed");
+    assert.match(outer.textContent ?? "", /After the list\./);
+    assert.match(outer.textContent ?? "", /:::/, "the nested closer remains list content");
+    assert.doesNotMatch(container.textContent ?? "", /:::\s*$/, "the final outer closer is not rendered literally");
+  });
+}
+
 async function differentLengthNestedContainersCloseIndependently(): Promise<void> {
   await withMarkdown(async (container, handle) => {
     await appendAndIdle(
@@ -300,6 +319,7 @@ await containerHeaderNeedsParagraphSeparation();
 await finalizingOpenContainerKeepsChildrenAndDiagnostic();
 await partialOpeningLineWaitsForNewlineWithoutCommittedLiteral();
 await nestedContainerRetainsChildParagraphs();
+await listItemCloserDoesNotCloseOuterContainer();
 await differentLengthNestedContainersCloseIndependently();
 await longerCloserDoesNotCloseShorterContainer();
 console.log("p7 container rules test passed");

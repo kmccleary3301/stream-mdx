@@ -315,6 +315,7 @@ type RestrictedAdmissionOptions = {
   protectedRanges?: readonly SourceRange[];
   htmlOptions?: HtmlOptions;
   trailingLineTerminator?: boolean;
+  registeredContainerListRanges?: readonly SourceRange[];
 };
 
 export type RegisteredContainerDelimiterEvent =
@@ -332,6 +333,8 @@ export function scanRegisteredContainerSource(
     readonly literalTagContent?: readonly string[];
     readonly openStack?: RegisteredContainerOpening[];
     readonly trailingLineTerminator?: boolean;
+    readonly listItemRanges?: readonly SourceRange[];
+    readonly insideListItem?: boolean;
   },
 ): RegisteredContainerDelimiterEvent[] {
   const inlineElements = parser?.parseInline(source, 0);
@@ -341,13 +344,17 @@ export function scanRegisteredContainerSource(
       : []),
     ...(options?.protectedRanges ?? []),
   ]);
+  const listItemRanges = mergeProtectedRanges(options?.listItemRanges ?? []);
   const blockStarts = new Set(options?.blockStartOffsets ?? []);
   const openStack = options?.openStack ?? [];
   const events: RegisteredContainerDelimiterEvent[] = [];
   let rangeIndex = 0;
+  let listRangeIndex = 0;
   let lineStart = 0;
   let previousLineBlank = false;
   let previousWasFence = false;
+  const listIndentStack: { markerIndent: number; contentIndent: number }[] = [];
+  let sawListMarker = false;
 
   while (lineStart <= source.length) {
     const newline = source.indexOf("\n", lineStart);
@@ -359,6 +366,40 @@ export function scanRegisteredContainerSource(
     while (rangeIndex < protectedRanges.length && protectedRanges[rangeIndex]!.to <= lineStart) rangeIndex++;
     const protectedRange = protectedRanges[rangeIndex];
     const isProtected = protectedRange !== undefined && protectedRange.from < protectedTo && protectedRange.to > lineStart;
+    let lineIndent = 0;
+    while (lineIndent < line.length && line[lineIndent] === " ") lineIndent++;
+    const listMarker = /^( *)([-+*]|\d+[.)])([ \t]+)/.exec(line);
+    if (listMarker) {
+      sawListMarker = true;
+      const markerIndent = listMarker[1]!.length;
+      while (
+        listIndentStack.length > 0 &&
+        markerIndent < listIndentStack[listIndentStack.length - 1]!.contentIndent
+      ) {
+        listIndentStack.pop();
+      }
+      const contentIndent = markerIndent + listMarker[2]!.length + listMarker[3]!.length;
+      const current = listIndentStack[listIndentStack.length - 1];
+      if (current && markerIndent === current.markerIndent) {
+        listIndentStack[listIndentStack.length - 1] = { markerIndent, contentIndent };
+      } else {
+        listIndentStack.push({ markerIndent, contentIndent });
+      }
+    } else if (line.trim().length > 0) {
+      while (
+        listIndentStack.length > 0 &&
+        lineIndent < listIndentStack[listIndentStack.length - 1]!.contentIndent
+      ) {
+        listIndentStack.pop();
+      }
+    }
+    const listItemRange = listItemRanges[listRangeIndex];
+    const isListScope = options?.insideListItem === true ||
+      (listItemRange !== undefined && listItemRange.from < protectedTo && listItemRange.to > lineStart) ||
+      listIndentStack.length > 0;
+    const listDepth = isListScope
+      ? sawListMarker ? listIndentStack.length : 1
+      : 0;
 
     let wasFence = false;
     if (!isProtected) {
@@ -368,6 +409,7 @@ export function scanRegisteredContainerSource(
         contentComponents,
         lineStart === 0 || blockStarts.has(lineStart) || previousLineBlank || previousWasFence,
         hasLineTerminator,
+        listDepth,
       );
       if (opening) {
         openStack.push(opening);
@@ -375,7 +417,7 @@ export function scanRegisteredContainerSource(
         wasFence = true;
       } else {
         const top = openStack[openStack.length - 1];
-        if (top && matchRegisteredContainerCloser(line, top.fenceLength)) {
+        if (top && (top.listDepth ?? 0) === listDepth && matchRegisteredContainerCloser(line, top.fenceLength)) {
           openStack.pop();
           events.push({ kind: "close", from: lineStart, to: contentEnd, opening: top });
           wasFence = true;
@@ -1101,12 +1143,19 @@ export function buildRegisteredContainerTree(
     }
     return undefined;
   });
+  const listItemRanges = mergeProtectedRanges([
+    ...(options?.registeredContainerListRanges ?? []),
+    ...childRanges.flatMap((range, index) =>
+      range && childBlocks[index]?.type === "list" ? [{ from: range.from, to: range.to }] : [],
+    ),
+  ]);
   const protectedCodeRanges = childRanges.flatMap((range, index) =>
     range && childBlocks[index]?.type === "code" ? [{ from: range.from, to: range.to }] : [],
   );
   const delimiters = scanRegisteredContainerSource(rawSource, extensions, contentComponents, options?.parser, {
     literalTagContent: options?.literalTagContent,
     protectedRanges: [...(options?.protectedRanges ?? []), ...protectedCodeRanges],
+    listItemRanges,
     trailingLineTerminator: options?.trailingLineTerminator,
   });
   const openingEvent = delimiters.find(
@@ -1178,6 +1227,13 @@ export function buildRegisteredContainerTree(
             parseInline: options?.parseInline,
             parser: options?.parser,
             literalTagContent: options?.literalTagContent,
+            registeredContainerListRanges: listItemRanges.flatMap((range) => {
+              const from = Math.max(range.from, nestedOpening.from);
+              const to = Math.min(range.to, nestedEnd);
+              return from < to
+                ? [{ from: from - nestedOpening.from, to: to - nestedOpening.from }]
+                : [];
+            }),
             htmlOptions: options?.htmlOptions,
           },
         );

@@ -555,6 +555,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         openStack: containerStack,
         trailingLineTerminator: hasSourceLineTerminatorAfterBlock(block, content, sourceOffset),
         literalTagContent: options?.literalTagContent,
+        insideListItem: block.type === "list",
       });
     }
     if (block.type !== "code") {

@@ -13,6 +13,7 @@ export interface RegisteredContainerOpening {
   readonly component: string;
   readonly fenceLength: number;
   readonly props: Readonly<Record<string, unknown>>;
+  readonly listDepth?: number;
 }
 
 export function validateSyntaxExtensionDescriptor(
@@ -52,6 +53,7 @@ export function matchRegisteredContainerOpening(
   contentComponents: ReadonlyMap<string, RestrictedComponentDescriptor>,
   atBlockStart: boolean,
   hasLineTerminator: boolean,
+  listDepth = 0,
 ): RegisteredContainerOpening | null {
   if (!atBlockStart || !hasLineTerminator) return null;
   const match = /^( {0,3})(:{3,})([A-Za-z0-9_-]+)(.*)$/.exec(line);
@@ -82,6 +84,7 @@ export function matchRegisteredContainerOpening(
     name,
     component: extension.component,
     fenceLength: match[2].length,
+    listDepth,
     props: parsedTag.props,
   };
 }
