@@ -22,6 +22,7 @@ import type { RendererStore } from "./store";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
 import { StreamingActivityContext } from "./streaming-activity-context";
 import { useVirtualizedTable, type IndexedTableRows } from "./virtualized-table";
+import { mergeNodePresentationProps } from "./node-presentations";
 
 type ReactTableViewCounterSink = {
   recordStoreRecordsTouched?(count: number, stage: "view"): void;
@@ -109,6 +110,16 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
     "data-table-start-index": String(isVirtualized ? virtualWindow.startIndex : 0),
     "data-table-end-index": String(isVirtualized ? virtualWindow.endIndex : rowCount),
   };
+  const tablePresentationProps = mergeNodePresentationProps(
+    {
+      className: "markdown-table w-full caption-bottom text-base",
+      style: isVirtualized && naturalLayout?.columnWidths.length
+        ? { tableLayout: "fixed", width: naturalLayout.tableWidth }
+        : undefined,
+      ...(!isEligible ? tableAttrs : {}),
+    },
+    registry.getNodePresentation("table")?.props,
+  ) as React.TableHTMLAttributes<HTMLTableElement>;
 
   let rowRanges: React.ReactNode;
   if (!isVirtualized && !registry.hasElementFilters()) {
@@ -199,13 +210,7 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
   );
 
   const tableElement = (
-    <tableElements.Table
-      className="markdown-table w-full caption-bottom text-base"
-      style={isVirtualized && naturalLayout?.columnWidths.length
-        ? { tableLayout: "fixed", width: naturalLayout.tableWidth }
-        : undefined}
-      {...(!isEligible ? tableAttrs : {})}
-    >
+    <tableElements.Table {...tablePresentationProps}>
       {isVirtualized && naturalLayout?.columnWidths.length ? (
         <colgroup>
           {naturalLayout.columnWidths.map((width, index) => <col key={index} style={{ width }} />)}
@@ -271,6 +276,10 @@ export const ManagedTableBlockView: React.FC<{ store: RendererStore; blockId: st
     };
   }, [blockId, generation, store]);
   if (!node || filteredTable === null || filteredTable === undefined) return null;
+  const actionsSlot = registry.getNodePresentation("table")?.slots?.actions;
+  if (actionsSlot !== undefined) {
+    return <div className="stream-mdx-table-wrapper relative">{actionsSlot}{renderedContent}</div>;
+  }
   if (!resolvedTableControls.enabled || !tableState) return renderedContent;
 
   const tableControlsElement = ControlsComponent ? (

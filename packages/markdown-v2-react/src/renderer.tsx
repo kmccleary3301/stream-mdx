@@ -234,6 +234,7 @@ export class MarkdownRenderer implements Renderer {
         unwrapDisallowed: this.config.unwrapDisallowed,
         disableAutolinkProtocols: this.config.disableAutolinkProtocols,
         contentComponents: this.config.contentComponents,
+        components: this.config.components,
       },
     );
     if (this.config.html?.literalTagContent) {

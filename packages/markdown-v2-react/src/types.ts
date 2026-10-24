@@ -207,18 +207,6 @@ export interface BlockComponents {
   table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;
   [k: string]: GenericComponent;
 }
-
-/** Props supplied to a headless native code view. */
-export interface CodeNodeViewProps {
-  readonly handle: CodeNodeHandle;
-}
-
-/** Explicit headless code presentation; it replaces, rather than wraps, the native code view. */
-export interface CodeNodePresentation {
-  readonly view: React.ComponentType<CodeNodeViewProps>;
-  readonly wrapper?: never;
-}
-
 export type InlineComponents = Record<string, GenericComponent> & {
   text: React.FC<{ text: string }>;
   strong: React.FC<{ children: React.ReactNode }>;
@@ -229,6 +217,117 @@ export type InlineComponents = Record<string, GenericComponent> & {
   image: React.FC<{ src?: string; alt?: string; title?: string }>;
   br: React.FC<Record<string, never>>;
 };
+
+export type NativeNodeKey =
+  | "paragraph"
+  | "heading"
+  | "code"
+  | "blockquote"
+  | "list"
+  | "list-item"
+  | "list-item-ordered"
+  | "list-item-unordered"
+  | "table"
+  | "table-row"
+  | "table-cell"
+  | "html"
+  | "mdx"
+  | "hr"
+  | "footnotes"
+  | "footnote-def"
+  | "callout";
+
+export type NodePresentationKey =
+  | NativeNodeKey
+  | `inline:${string}`
+  | `html:${string}`
+  | `component:${string}`
+  | `extension:${string}`;
+
+export interface NodeChildRange {
+  readonly from: number;
+  readonly to: number;
+}
+
+export interface NodeHandleMetadata {
+  readonly id: string;
+  readonly type: string;
+  readonly generation: number;
+  readonly revision: number;
+  readonly childCount: number;
+  readonly isFinalized: boolean;
+}
+
+/** Opaque read-only identity and subscriptions for one node in one document generation. */
+export interface NodeHandle {
+  readonly id: string;
+  readonly type: string;
+  readonly generation: number;
+  readonly readMetadata: () => NodeHandleMetadata;
+  readonly readChildren: (range: NodeChildRange) => readonly NodeHandle[];
+  readonly subscribeMetadata: (listener: () => void) => () => void;
+  readonly subscribeChildren: (range: NodeChildRange, listener: () => void) => () => void;
+}
+
+export interface NodeViewMetadata {
+  readonly id: string;
+  readonly type: string;
+  readonly isFinalized: boolean;
+  readonly language?: string;
+  readonly lineCount?: number;
+  readonly rowCount?: number;
+  readonly columnCount?: number;
+  readonly align?: ReadonlyArray<"left" | "center" | "right" | null>;
+}
+
+export interface NodeViewActions {
+  readonly copy: () => Promise<boolean>;
+  readonly download: () => void;
+}
+
+/** An L1 wrapper receives the already-prepared native view as its children. */
+export interface NodeViewProps {
+  readonly children: React.ReactNode;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
+export type HeadlessNodeViewProps<K extends NodePresentationKey = NodePresentationKey> =
+  K extends "code"
+    ? { readonly handle: CodeNodeHandle }
+    : { readonly handle: NodeHandle };
+
+export interface PresentationProps {
+  readonly className?: string;
+  readonly style?: React.CSSProperties;
+  readonly title?: string;
+  readonly [name: `data-${string}`]: string | number | boolean | undefined;
+  readonly [name: `aria-${string}`]: string | number | boolean | undefined;
+}
+
+export interface NativeActionSlot {
+  readonly actions?: React.ReactNode;
+}
+
+type NodePresentationSlots<K extends NodePresentationKey> =
+  K extends "code" | "table" ? NativeActionSlot : never;
+
+export type NodePresentation<K extends NodePresentationKey = NodePresentationKey> =
+  Readonly<{
+    props?: PresentationProps;
+    slots?: NodePresentationSlots<K>;
+  }> &
+  (
+    | { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
+    | { readonly view: React.ComponentType<HeadlessNodeViewProps<K>>; readonly wrapper?: never }
+  );
+
+export type NodePresentations = Partial<{
+  [K in NodePresentationKey]: NodePresentation<K>;
+}>;
+
+/** Retained only until existing code consumers are migrated to HeadlessNodeViewProps<\"code\">. */
+export type CodeNodeViewProps = HeadlessNodeViewProps<"code">;
 
 export interface FinalizedBlockRenderProps {
   block: Block;
@@ -249,6 +348,7 @@ export interface RendererConfig extends ElementFilterOptions {
   };
   contentPolicy?: ContentPolicy;
   contentComponents?: ContentComponentsMap;
+  components?: NodePresentations;
   engines?: {
     mdx?: TrustedMdxEngine;
   };

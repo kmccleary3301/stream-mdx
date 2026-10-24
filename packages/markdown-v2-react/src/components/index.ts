@@ -37,7 +37,6 @@ import type {
   CodeFenceRenderer,
   CodeFenceRendererConfig,
   CodeFenceRendererProps,
-  CodeNodePresentation,
   CodeNodeViewProps,
   ControlsComponentProps,
   ControlsConfig,
@@ -48,8 +47,10 @@ import type {
   InlineComponents,
   InlineHtmlRendererMap,
   MathRenderer,
+  NodePresentations,
   TableElements,
 } from "../types";
+import { resolveNodePresentation, validateNodePresentations } from "../renderer/node-presentations";
 export type { CodeFenceRendererConfig, CodeFenceRendererProps };
 import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext, type ResolvedAnimatedOptions } from "../animation";
 import { DefaultDiffRenderer } from "./diff-renderer";
@@ -758,7 +759,7 @@ export const defaultBlockComponents: BlockComponents = {
  */
 export class ComponentRegistry {
   private blockComponents: BlockComponents;
-  private codeNodeView?: React.ComponentType<CodeNodeViewProps>;
+  private nodePresentations: NodePresentations = {};
   private inlineComponents: InlineComponents;
   private htmlElements: HtmlElements;
   private tableElements: TableElements;
@@ -797,6 +798,7 @@ export class ComponentRegistry {
       controlsComponent?: React.ComponentType<ControlsComponentProps>;
       animated?: AnimatedProp;
       contentComponents?: ContentComponentsMap;
+      components?: NodePresentations;
     } & ElementFilterOptions,
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
@@ -813,6 +815,7 @@ export class ComponentRegistry {
         renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue, this.urlTransform);
     }
     this.tableElements = getDefaultTableElements();
+    this.setNodePresentations(options?.components);
     if (codeRenderers) {
       this.setCodeRenderers(codeRenderers);
     }
@@ -1061,12 +1064,16 @@ export class ComponentRegistry {
    */
   setBlockComponents(components: Partial<BlockComponents>): void {
     this.blockComponents = { ...this.blockComponents, ...components } as BlockComponents;
-    if (components.code !== undefined) this.codeNodeView = undefined;
     this.blockComponentMapCache = null;
   }
 
-  setCodeNodePresentation(presentation?: CodeNodePresentation): void {
-    this.codeNodeView = presentation?.view;
+  setNodePresentations(presentations?: NodePresentations): void {
+    validateNodePresentations(presentations);
+    this.nodePresentations = presentations ?? {};
+  }
+
+  getNodePresentation<K extends keyof NodePresentations & string>(key: K): NodePresentations[K] | undefined {
+    return resolveNodePresentation(this.nodePresentations, key);
   }
 
   /**
@@ -1154,7 +1161,8 @@ export class ComponentRegistry {
     return this.blockComponents[type] || this.blockComponents.paragraph;
   }
   getCodeNodeView(): React.ComponentType<CodeNodeViewProps> | undefined {
-    return this.codeNodeView;
+    const presentation = this.getNodePresentation("code");
+    return presentation && "view" in presentation ? presentation.view : undefined;
   }
 
   /**

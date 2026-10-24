@@ -3,7 +3,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 import { normalizeBlockquoteText, PATCH_ROOT_ID, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { CodeNodeHandle } from "@stream-mdx/core";
-import type { CodeNodeViewProps, InlineComponents, TableElements } from "../types";
+import type { CodeNodeViewProps, InlineComponents, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
 import {
   TableControlsBar,
   copyToClipboard,
@@ -42,6 +42,7 @@ import {
 import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 import { getStoreResetVersion } from "./store-reset-version";
 import { NativeCodeViewContext } from "./code-highlight-context";
+import { mergeNodePresentationProps } from "./node-presentations";
 
 const HeadlessNativeCodeView: React.FC<{
   blockId: string;
@@ -55,6 +56,57 @@ const HeadlessNativeCodeView: React.FC<{
     </NativeCodeViewContext.Provider>
   );
 };
+function renderNodePresentation(
+  block: Block | undefined,
+  nativeView: React.ReactNode,
+  store: RendererStore,
+  registry: ComponentRegistry,
+  nodeId?: string,
+): React.ReactNode {
+  const type = (block?.type ?? "code") as NodePresentationKey;
+  const id = block?.id ?? nodeId;
+  if (id === undefined) return nativeView;
+  const presentation = registry.getNodePresentation(type);
+  let children = nativeView;
+  if (presentation?.props && React.isValidElement(nativeView) && typeof nativeView.type === "string") {
+    children = React.cloneElement(
+      nativeView,
+      mergeNodePresentationProps(nativeView.props as Record<string, unknown>, presentation.props),
+    );
+  }
+  if (!presentation || !("wrapper" in presentation) || !presentation.wrapper) return children;
+
+  const codeHandle = type === "code" ? store.getCodeNodeHandle(id) : undefined;
+  const tableState = type === "table" ? store.getTableBlock(id) : undefined;
+  const codeMetadata = codeHandle?.readMetadata();
+  const blockLanguage = block?.payload.meta?.lang;
+  const language = codeMetadata?.language ??
+    (typeof blockLanguage === "string" ? blockLanguage : undefined);
+  const metadata: NodeViewMetadata = Object.freeze({
+    id,
+    type,
+    isFinalized: block?.isFinalized ?? (codeMetadata !== undefined && codeMetadata.state !== "open"),
+    ...(language === undefined ? {} : { language }),
+    ...(codeMetadata === undefined ? {} : { lineCount: codeMetadata.lineCount }),
+    ...(tableState === undefined ? {} : {
+      rowCount: tableState.source.rowCount,
+      columnCount: tableState.header.cells.length,
+      align: tableState.header.align,
+    }),
+  });
+  const readSource = () => {
+    if (codeHandle) return codeHandle.readSource();
+    if (tableState) return store.getTableBlock(id)?.sourceSnapshot.materialize() ?? block?.payload.raw ?? "";
+    const raw = block?.payload.raw;
+    return typeof raw === "string" ? raw : "";
+  };
+  const actions: NodeViewActions = Object.freeze({
+    copy: () => copyToClipboard(readSource()),
+    download: () => downloadFile(readSource(), `${type}.txt`),
+  });
+  return React.createElement(presentation.wrapper, { children, metadata, actions });
+}
+
 
 const CustomCodeBlockView: React.FC<{
   store: RendererStore;
@@ -322,12 +374,18 @@ export const BlockNodeRenderer: React.FC<{
     const rendererBlock = registry.hasBlockRenderer() && ownerState?.source.state !== "open"
       ? store.getParagraphColdBlock(blockId) ?? block
       : block;
-    return <>{registry.renderFinalizedBlock(rendererBlock, element)}</>;
+    return <>{registry.renderFinalizedBlock(rendererBlock, renderNodePresentation(rendererBlock, element, store, registry) as React.ReactElement)}</>;
   }
 
   const block = node.block;
   if (!block && node.type === "code" && store.getCodeBlock(blockId)) {
-    return <CodeBlockView store={store} blockId={blockId} registry={registry} />;
+    return renderNodePresentation(
+      undefined,
+      <CodeBlockView store={store} blockId={blockId} registry={registry} />,
+      store,
+      registry,
+      blockId,
+    );
   }
   if (!block) {
     const parentTagName = node.type.startsWith("list-item-") ? "li" : node.type.startsWith("blockquote-") ? "blockquote" : "p";
@@ -354,7 +412,7 @@ export const BlockNodeRenderer: React.FC<{
     }
     // Native table rows live in the table owner; custom renderers consume the materialized header/rows/align meta.
     const customBlock = block.type === "table" ? (store.getTableColdBlock(block.id) ?? block) : block;
-    return <>{registry.renderFinalizedBlock(customBlock, registry.renderBlock(customBlock))}</>;
+    return <>{registry.renderFinalizedBlock(customBlock, renderNodePresentation(customBlock, registry.renderBlock(customBlock), store, registry) as React.ReactElement)}</>;
   }
 
   let element: React.ReactElement | null;
@@ -388,7 +446,7 @@ export const BlockNodeRenderer: React.FC<{
   }
 
   if (element === null) return null;
-  return <>{registry.renderFinalizedBlock(block, element)}</>;
+  return <>{registry.renderFinalizedBlock(block, renderNodePresentation(block, element, store, registry) as React.ReactElement)}</>;
 };
 
 const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {

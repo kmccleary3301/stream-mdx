@@ -22,6 +22,7 @@ import type { RendererStore } from "./store";
 import { getStoreResetVersion } from "./store-reset-version";
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, useVirtualizedCode } from "./virtualized-code";
+import { mergeNodePresentationProps } from "./node-presentations";
 
 type CodeBlockViewCounters = {
   recordRecordSlotsAllocated?(count: number, stage: "view"): void;
@@ -229,6 +230,10 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
     "data-code-mounted-lines": String(shouldVirtualize ? virtualization.window.mountedLines : effectiveLineCount),
     "data-code-window-size": String(virtualization.config.windowSize),
   };
+  const codeFrameProps = mergeNodePresentationProps(
+    { className: codeFrameClass, ...codeMetricsAttrs },
+    registry.getNodePresentation("code")?.props,
+  ) as React.HTMLAttributes<HTMLDivElement>;
 
   const useIncrementalRanges =
     !shouldVirtualize &&
@@ -293,7 +298,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
       const spacerTop = window.startIndex * lineHeight;
       const spacerBottom = (window.totalLines - window.endIndex) * lineHeight;
       return (
-        <div className={codeFrameClass} {...codeMetricsAttrs}>
+        <div {...codeFrameProps}>
           <div
             ref={containerRef}
             className="markdown-code-block-container relative"
@@ -308,12 +313,14 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
       );
     })()
   ) : (
-    <div className={codeFrameClass} {...codeMetricsAttrs}>
+    <div {...codeFrameProps}>
       {rendered}
     </div>
   );
 
   const renderControls = (): React.ReactNode => {
+    const actionsSlot = registry.getNodePresentation("code")?.slots?.actions;
+    if (actionsSlot !== undefined) return actionsSlot;
     if (!resolvedCodeControls.enabled) return null;
     if (ControlsComponent) {
       const code = readCurrentCodeSource() ?? "";
