@@ -49,6 +49,8 @@ export interface NativeContainerCodeOpening {
   readonly openingLineFrom: number;
   readonly openingTextFrom: number;
   readonly openingLineTo: number;
+  /** Physical source start of a closing fence needed when rebuilding a bounded code window. */
+  readonly closingLineFrom?: number;
   /** Exact source context; a fenced opener still in its active physical line stays empty. */
   readonly openingContextText: string;
 }

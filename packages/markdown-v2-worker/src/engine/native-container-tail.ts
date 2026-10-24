@@ -470,8 +470,9 @@ function deriveActivePath(
     const selected = nodes[index + 1];
     const parentRange = window.mapping.mapRange(node.from, node.to);
     const priorCandidate = previousFrames[frames.length];
+    // A bounded window can reparse a continuation as EmptyListItem before its first block is available.
     const prior = priorCandidate
-      && priorCandidate.typeName === node.type.name
+      && (priorCandidate.typeName === node.type.name || (kind === "item" && priorCandidate.kind === "item"))
       && priorCandidate.parentFrom === parentRange.from
       ? priorCandidate
       : undefined;
@@ -722,6 +723,7 @@ function boundedTailStart(
   counters?: NativeContainerTailDiagnosticCounters,
 ): number {
   if ((leaf.type.name === "FencedCode" || leaf.type.name === "CodeBlock") && codeContext) {
+    if (codeContext.closingLineFrom !== undefined) return codeContext.closingLineFrom;
     if (codeContext.openingContextText === "") return codeContext.openingLineFrom;
     return lastPhysicalLineStart(source, codeContext.openingLineTo, fallbackTo);
   }
@@ -791,8 +793,13 @@ function codeOpening(
   appendedText = "",
 ): NativeContainerCodeOpening | undefined {
   if (leaf.type.name === "FencedCode") {
-    const marker = leaf.getChild("CodeMark");
+    const markers = leaf.getChildren("CodeMark");
+    const marker = markers[0];
     if (!marker) return undefined;
+    const closingMarker = markers.length >= 2 ? markers[markers.length - 1] : undefined;
+    const closingLineFrom = closingMarker
+      ? lineStartAt(source, mapping.mapRange(closingMarker.from, closingMarker.to).from)
+      : undefined;
     const range = mapping.mapRange(marker.from, marker.to);
     const openingLineFrom = lineStartAt(source, range.from);
     const previousFenced = previous?.kind === "fenced" && previous.openingLineFrom === openingLineFrom
@@ -823,6 +830,7 @@ function codeOpening(
       openingLineFrom,
       openingTextFrom: openingLineFrom,
       openingLineTo,
+      ...(closingLineFrom !== undefined ? { closingLineFrom } : {}),
       openingContextText,
     });
   }
