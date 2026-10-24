@@ -20,7 +20,6 @@ import { subscribeRendererNode } from "./node-subscriptions";
 import type { RendererStore } from "./store";
 import { getStoreResetVersion, type PrivateRendererStore } from "./store-reset-version";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
-import { StreamingActivityContext } from "./streaming-activity-context";
 import { useVirtualizedTable, type IndexedTableRows, type TableVirtualizationRowRange } from "./virtualized-table";
 import { mergeNodePresentationProps } from "./node-presentations";
 

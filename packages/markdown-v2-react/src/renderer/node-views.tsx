@@ -3,7 +3,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 import { normalizeBlockquoteText, PATCH_ROOT_ID, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { CodeNodeHandle } from "@stream-mdx/core";
-import type { CodeNodeViewProps, InlineComponents, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
+import type { CodeNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, TableElements } from "../types";
 import {
   TableControlsBar,
   copyToClipboard,
@@ -56,25 +56,41 @@ const HeadlessNativeCodeView: React.FC<{
     </NativeCodeViewContext.Provider>
   );
 };
+const NodeViewRenderContext = React.createContext<{
+  readonly store: RendererStore;
+  readonly registry: ComponentRegistry;
+} | null>(null);
 function renderNodePresentation(
   block: Block | undefined,
   nativeView: React.ReactNode,
   store: RendererStore,
   registry: ComponentRegistry,
   nodeId?: string,
+  bypassPresentation = false,
 ): React.ReactNode {
   const type = (block?.type ?? "code") as NodePresentationKey;
   const id = block?.id ?? nodeId;
   if (id === undefined) return nativeView;
   const presentation = registry.getNodePresentation(type);
+  if (!presentation || bypassPresentation) return nativeView;
+  if (type !== "code" && "view" in presentation && presentation.view) {
+    const handle = store.getNodeHandle(id);
+    if (!handle) return null;
+    const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: NodeHandle }>;
+    return (
+      <NodeViewRenderContext.Provider value={{ store, registry }}>
+        <HeadlessView handle={handle} />
+      </NodeViewRenderContext.Provider>
+    );
+  }
   let children = nativeView;
-  if (presentation?.props && React.isValidElement(nativeView) && typeof nativeView.type === "string") {
+  if (presentation.props && React.isValidElement(nativeView) && typeof nativeView.type === "string") {
     children = React.cloneElement(
       nativeView,
       mergeNodePresentationProps(nativeView.props as Record<string, unknown>, presentation.props),
     );
   }
-  if (!presentation || !("wrapper" in presentation) || !presentation.wrapper) return children;
+  if (!("wrapper" in presentation) || !presentation.wrapper) return children;
 
   const codeHandle = type === "code" ? store.getCodeNodeHandle(id) : undefined;
   const tableState = type === "table" ? store.getTableBlock(id) : undefined;
@@ -318,7 +334,8 @@ export const BlockNodeRenderer: React.FC<{
   registry: ComponentRegistry;
   nativeFlowChild?: boolean;
   parentTagName?: string;
-}> = ({ store, blockId, registry, nativeFlowChild = false, parentTagName }) => {
+  bypassPresentationFor?: string;
+}> = ({ store, blockId, registry, nativeFlowChild = false, parentTagName, bypassPresentationFor }) => {
   const node = useRendererNode(store, blockId);
   const renderParagraphChild = React.useCallback(
     (nodeId: string) => (
@@ -347,7 +364,7 @@ export const BlockNodeRenderer: React.FC<{
   ) {
     return <MdxBlockView store={store} blockId={blockId} registry={registry} />;
   }
-  if (node.type === "code") {
+  if (node.type === "code" && bypassPresentationFor !== blockId) {
     const HeadlessCodeView = registry.getCodeNodeView();
     if (HeadlessCodeView) {
       const handle = store.getCodeNodeHandle(blockId);
@@ -374,7 +391,7 @@ export const BlockNodeRenderer: React.FC<{
     const rendererBlock = registry.hasBlockRenderer() && ownerState?.source.state !== "open"
       ? store.getParagraphColdBlock(blockId) ?? block
       : block;
-    return <>{registry.renderFinalizedBlock(rendererBlock, renderNodePresentation(rendererBlock, element, store, registry) as React.ReactElement)}</>;
+    return <>{registry.renderFinalizedBlock(rendererBlock, renderNodePresentation(rendererBlock, element, store, registry, undefined, bypassPresentationFor === blockId) as React.ReactElement)}</>;
   }
 
   const block = node.block;
@@ -385,6 +402,7 @@ export const BlockNodeRenderer: React.FC<{
       store,
       registry,
       blockId,
+      bypassPresentationFor === blockId,
     );
   }
   if (!block) {
@@ -412,7 +430,7 @@ export const BlockNodeRenderer: React.FC<{
     }
     // Native table rows live in the table owner; custom renderers consume the materialized header/rows/align meta.
     const customBlock = block.type === "table" ? (store.getTableColdBlock(block.id) ?? block) : block;
-    return <>{registry.renderFinalizedBlock(customBlock, renderNodePresentation(customBlock, registry.renderBlock(customBlock), store, registry) as React.ReactElement)}</>;
+    return <>{registry.renderFinalizedBlock(customBlock, renderNodePresentation(customBlock, registry.renderBlock(customBlock), store, registry, undefined, bypassPresentationFor === blockId) as React.ReactElement)}</>;
   }
 
   let element: React.ReactElement | null;
@@ -446,7 +464,22 @@ export const BlockNodeRenderer: React.FC<{
   }
 
   if (element === null) return null;
-  return <>{registry.renderFinalizedBlock(block, renderNodePresentation(block, element, store, registry) as React.ReactElement)}</>;
+  return <>{registry.renderFinalizedBlock(block, renderNodePresentation(block, element, store, registry, undefined, bypassPresentationFor === blockId) as React.ReactElement)}</>;
+};
+export const NativeNodeView: React.FC<{ readonly handle: NodeHandle }> = ({ handle }) => {
+  const context = React.useContext(NodeViewRenderContext);
+  if (!context) {
+    throw new Error("NativeNodeView must be rendered inside a headless node presentation view");
+  }
+  if (context.store.getNodeHandle(handle.id) !== handle) return null;
+  return (
+    <BlockNodeRenderer
+      store={context.store}
+      blockId={handle.id}
+      registry={context.registry}
+      bypassPresentationFor={handle.id}
+    />
+  );
 };
 
 const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {

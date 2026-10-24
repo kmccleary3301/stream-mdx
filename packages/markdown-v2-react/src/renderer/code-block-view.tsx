@@ -21,7 +21,7 @@ import { nativeCodeBlockHtml } from "./native-code-line";
 import type { RendererStore } from "./store";
 import { getStoreResetVersion } from "./store-reset-version";
 import { useDeferredRender } from "./use-deferred-render";
-import { DEFAULT_VIRTUALIZED_CODE_CONFIG, useVirtualizedCode } from "./virtualized-code";
+import { useVirtualizedCode } from "./virtualized-code";
 import { mergeNodePresentationProps } from "./node-presentations";
 
 type CodeBlockViewCounters = {

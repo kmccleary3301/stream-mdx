@@ -69,10 +69,11 @@ import {
   type StoredCodeBlockState,
 } from "./code-state";
 import { normalizeAllListDepths, normalizeListDepthsForIds } from "./list-utils";
-import { registerNodeSubscriptions } from "./node-subscriptions";
+import { registerNodeSubscriptions, subscribeRendererNode } from "./node-subscriptions";
 import { type CoalescingMetrics, DEFAULT_COALESCE_CONFIG, coalescePatchesWithMetrics } from "./patch-coalescing";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
 import type { PrivateRendererStore } from "./store-reset-version";
+import type { NodeChildRange, NodeHandle, NodeHandleMetadata } from "../types";
 export interface ParagraphSegmentPlanEvent {
   readonly id: string;
   readonly type: string;
@@ -124,6 +125,18 @@ export interface NodeRecord {
   blockEpoch: number;
   block?: Block;
 }
+function assertNodeChildRange(range: NodeChildRange): void {
+  if (
+    range === null ||
+    typeof range !== "object" ||
+    !Number.isSafeInteger(range.from) ||
+    !Number.isSafeInteger(range.to) ||
+    range.from < 0 ||
+    range.to < range.from
+  ) {
+    throw new RangeError("Node child range must be ordered non-negative safe integers");
+  }
+}
 const serializedBlockOwnership = Symbol("serializedBlockOwnership");
 type NodeRecordWithSerializedBlock = NodeRecord & { [serializedBlockOwnership]?: boolean };
 function hasSerializedBlock(record: NodeRecord): boolean {
@@ -166,6 +179,7 @@ export interface RendererStore {
   getNodeWithVersion(id: string): { version: number; node?: NodeRecord };
   getChildren(id: string): ReadonlyArray<string>;
   getChildrenWithVersion(id: string): { version: number; children: ReadonlyArray<string> };
+  getNodeHandle(id: string): NodeHandle | undefined;
   getInvariantViolations(): string[];
   getDebugCounters(): Readonly<Record<string, number>>;
   subscribe(listener: () => void): () => void;
@@ -3683,6 +3697,13 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     readonly handle: CodeNodeHandle;
     readonly activeRanges: Map<string, ActiveCodeLineRange>;
   }>();
+  const nodeHandlesByRecord = new WeakMap<NodeRecord, {
+    readonly nodes: NodeMap;
+    readonly resetVersion: number;
+    readonly document: object;
+    readonly type: string;
+    readonly handle: NodeHandle;
+  }>();
   let blocksCache: Block[] = [];
   let blocksDirty = true;
   const publicBlocks = new WeakMap<Block, Block>();
@@ -5634,6 +5655,114 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     },
     hasProvisionalBlocks() {
       return provisionalBlockCount > 0;
+    },
+    getNodeHandle(id: string) {
+      const record = nodes.get(id);
+      if (!record) return undefined;
+      const ownerNodes = nodes;
+      const ownerResetVersion = resetVersion;
+      const document = inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+      const type = record.type;
+      const cached = nodeHandlesByRecord.get(record);
+      if (
+        cached &&
+        cached.nodes === ownerNodes &&
+        cached.resetVersion === ownerResetVersion &&
+        cached.document === document &&
+        cached.type === type
+      ) {
+        return cached.handle;
+      }
+
+      const isCurrentRecord = (): NodeRecord | undefined => {
+        if (nodes !== ownerNodes || resetVersion !== ownerResetVersion) return undefined;
+        const current = nodes.get(id);
+        if (current !== record || current.type !== type) return undefined;
+        const currentDocument = inputSourceByNodeMap.get(ownerNodes)?.document ?? record;
+        return currentDocument === document ? current : undefined;
+      };
+      let metadataSnapshot: NodeHandleMetadata | undefined;
+      const childRangeSnapshots = new Map<string, readonly NodeHandle[]>();
+      const readChildren = (range: NodeChildRange): readonly NodeHandle[] => {
+        assertNodeChildRange(range);
+        const current = isCurrentRecord();
+        if (!current) throw new Error("Node handle no longer refers to the current document");
+        const key = `${range.from}:${range.to}`;
+        const from = Math.min(range.from, current.children.length);
+        const to = Math.min(range.to, current.children.length);
+        const next: NodeHandle[] = [];
+        for (let index = from; index < to; index++) {
+          const child = store.getNodeHandle(current.children[index]!);
+          if (child) next.push(child);
+        }
+        const previous = childRangeSnapshots.get(key);
+        if (previous && previous.length === next.length && next.every((child, index) => child === previous[index])) {
+          childRangeSnapshots.delete(key);
+          childRangeSnapshots.set(key, previous);
+          return previous;
+        }
+        const snapshot = Object.freeze(next);
+        childRangeSnapshots.set(key, snapshot);
+        if (childRangeSnapshots.size > 64) {
+          const oldest = childRangeSnapshots.keys().next().value;
+          if (oldest !== undefined) childRangeSnapshots.delete(oldest);
+        }
+        return snapshot;
+      };
+      const handle: NodeHandle = Object.freeze({
+        id,
+        type,
+        generation: ownerResetVersion,
+        readMetadata: () => {
+          const current = isCurrentRecord();
+          if (!current) throw new Error("Node handle no longer refers to the current document");
+          const revision = current.version;
+          const childCount = current.children.length;
+          const isFinalized = current.block?.isFinalized ?? true;
+          if (
+            metadataSnapshot &&
+            metadataSnapshot.revision === revision &&
+            metadataSnapshot.childCount === childCount &&
+            metadataSnapshot.isFinalized === isFinalized
+          ) {
+            return metadataSnapshot;
+          }
+          metadataSnapshot = Object.freeze({
+            id,
+            type,
+            generation: ownerResetVersion,
+            revision,
+            childCount,
+            isFinalized,
+          });
+          return metadataSnapshot;
+        },
+        readChildren,
+        subscribeMetadata: (listener: () => void) => subscribeRendererNode(store, id, listener),
+        subscribeChildren: (range: NodeChildRange, listener: () => void) => {
+          assertNodeChildRange(range);
+          let previous = readChildren(range);
+          return subscribeRendererNode(store, id, () => {
+            if (!isCurrentRecord()) {
+              listener();
+              return;
+            }
+            const next = readChildren(range);
+            if (next !== previous) {
+              previous = next;
+              listener();
+            }
+          });
+        },
+      });
+      nodeHandlesByRecord.set(record, {
+        nodes: ownerNodes,
+        resetVersion: ownerResetVersion,
+        document,
+        type,
+        handle,
+      });
+      return handle;
     },
     getCodeBlock(id: string) {
       const record = nodes.get(id);
