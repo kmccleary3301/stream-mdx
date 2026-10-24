@@ -1134,29 +1134,15 @@ export function buildRegisteredContainerTree(
   const tags = tokens.flatMap((token) => token.kind === "tag" ? [token.tag] : []);
   const children: HtmlTreeNode[] = [];
 
-  if (childBlocks.length > 0) {
-    const canMapChildren = childRanges.length === childBlocks.length &&
-      childRanges.every((range) =>
-        range !== undefined &&
-        range.from >= 0 &&
-        range.to >= range.from &&
-        range.to <= rawSource.length,
-      );
-    if (canMapChildren) {
-      let cursor = bodyStart;
-      for (let index = 0; index < childBlocks.length; index++) {
-        const range = childRanges[index];
-        if (!range) continue;
-        const childFrom = Math.max(cursor, range.from, bodyStart);
-        const childTo = Math.min(range.to, closeStart);
-        children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, cursor, childFrom, options));
-        if (childTo > childFrom) children.push({ kind: "block", block: childBlocks[index]! });
-        cursor = Math.max(cursor, childTo);
-      }
-      children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, cursor, closeStart, options));
-    } else {
-      for (const block of childBlocks) children.push({ kind: "block", block });
-    }
+  const canMapChildren = childRanges.length === childBlocks.length &&
+    childRanges.every((range) =>
+      range !== undefined &&
+      range.from >= 0 &&
+      range.to >= range.from &&
+      range.to <= rawSource.length,
+    );
+  if (childBlocks.length > 0 && !canMapChildren) {
+    for (const block of childBlocks) children.push({ kind: "block", block });
   } else {
     const nestedOpenings = delimiters.filter(
       (event): event is Extract<RegisteredContainerDelimiterEvent, { kind: "open" }> =>
@@ -1166,29 +1152,63 @@ export function buildRegisteredContainerTree(
         && event.from < closeStart,
     );
     let nestedCursor = bodyStart;
-    for (const nestedOpening of nestedOpenings) {
-      if (nestedOpening.from < nestedCursor) continue;
-      const nestedClosing = delimiters.find(
-        (event) => event.kind === "close" && event.opening === nestedOpening.opening,
-      );
-      if (nestedClosing && nestedClosing.to > closeStart) continue;
-      children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, nestedCursor, nestedOpening.from, options));
-      const nestedEnd = nestedClosing?.to ?? closeStart;
-      const nestedTree = buildRegisteredContainerTree(
-        rawSource.slice(nestedOpening.from, nestedEnd),
-        contentComponents,
-        extensions,
-        {
-          forceFinalize: options?.forceFinalize,
-          parseInline: options?.parseInline,
-          parser: options?.parser,
-          literalTagContent: options?.literalTagContent,
-          htmlOptions: options?.htmlOptions,
-        },
-      );
-      if (nestedTree) children.push(...nestedTree);
-      nestedCursor = nestedEnd;
-      if (!nestedClosing) break;
+    let nestedIndex = 0;
+    let childIndex = 0;
+    while (nestedIndex < nestedOpenings.length || childIndex < childBlocks.length) {
+      const nestedOpening = nestedOpenings[nestedIndex];
+      const range = childRanges[childIndex];
+      const childFrom = range ? Math.max(nestedCursor, range.from, bodyStart) : Number.POSITIVE_INFINITY;
+      const childTo = range ? Math.min(range.to, closeStart) : Number.POSITIVE_INFINITY;
+      if (nestedOpening && (!range || nestedOpening.from < childTo)) {
+        const nestedClosing = delimiters.find(
+          (event) => event.kind === "close" && event.opening === nestedOpening.opening,
+        );
+        if (nestedClosing && nestedClosing.to > closeStart) {
+          nestedIndex++;
+          continue;
+        }
+        children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, nestedCursor, nestedOpening.from, options));
+        const nestedEnd = nestedClosing?.to ?? closeStart;
+        const nestedTree = buildRegisteredContainerTree(
+          rawSource.slice(nestedOpening.from, nestedEnd),
+          contentComponents,
+          extensions,
+          {
+            forceFinalize: options?.forceFinalize,
+            parseInline: options?.parseInline,
+            parser: options?.parser,
+            literalTagContent: options?.literalTagContent,
+            htmlOptions: options?.htmlOptions,
+          },
+        );
+        if (nestedTree) children.push(...nestedTree);
+        nestedCursor = nestedEnd;
+        nestedIndex++;
+        while (childIndex < childBlocks.length) {
+          const nestedRange = childRanges[childIndex];
+          if (!nestedRange || nestedRange.to <= nestedEnd) {
+            childIndex++;
+            continue;
+          }
+          if (nestedRange.from < nestedEnd) {
+            const remainingTo = Math.min(nestedRange.to, closeStart);
+            children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, nestedCursor, remainingTo, options));
+            nestedCursor = Math.max(nestedCursor, remainingTo);
+            childIndex++;
+          }
+          break;
+        }
+        if (!nestedClosing) break;
+        continue;
+      }
+      if (!range) {
+        nestedIndex++;
+        continue;
+      }
+      children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, nestedCursor, childFrom, options));
+      if (childTo > childFrom) children.push({ kind: "block", block: childBlocks[childIndex]! });
+      nestedCursor = Math.max(nestedCursor, childTo);
+      childIndex++;
     }
     children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, nestedCursor, closeStart, options));
   }

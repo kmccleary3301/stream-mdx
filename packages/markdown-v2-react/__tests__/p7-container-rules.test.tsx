@@ -115,6 +115,37 @@ async function nestedContainersCloseInnermostFirst(): Promise<void> {
     assert.equal(inner.textContent, "Inner body.");
   });
 }
+async function nestedContainerRetainsChildParagraphs(): Promise<void> {
+  await withMarkdown(async (container, handle) => {
+    await appendAndIdle(
+      handle,
+      [
+        "::::outer",
+        "",
+        ":::inner",
+        "First paragraph.",
+        "",
+        "Second paragraph.",
+        ":::",
+        "",
+        "Outer after.",
+        "::::",
+      ].join("\n"),
+    );
+    await waitFor(
+      () => container.querySelector('aside[data-component-status="closed"]') !== null,
+      "the outer container closes",
+    );
+    const [outer, inner] = Array.from(container.querySelectorAll<HTMLElement>("aside"));
+    assert.ok(outer, "the outer container renders");
+    assert.ok(inner, "the inner container renders");
+    assert.equal(outer.contains(inner), true, "the inner container remains nested in the outer owner");
+    assert.equal(inner.textContent, "First paragraph.\n\nSecond paragraph.");
+    assert.match(outer.textContent ?? "", /Outer after\./);
+    assert.doesNotMatch(container.textContent ?? "", /:{3}/, "container delimiters do not leak as text");
+  });
+}
+
 async function differentLengthNestedContainersCloseIndependently(): Promise<void> {
   await withMarkdown(async (container, handle) => {
     await appendAndIdle(
@@ -268,7 +299,7 @@ await fencedContainerHeaderStaysCode();
 await containerHeaderNeedsParagraphSeparation();
 await finalizingOpenContainerKeepsChildrenAndDiagnostic();
 await partialOpeningLineWaitsForNewlineWithoutCommittedLiteral();
-await nestedContainersCloseInnermostFirst();
+await nestedContainerRetainsChildParagraphs();
 await differentLengthNestedContainersCloseIndependently();
 await longerCloserDoesNotCloseShorterContainer();
 console.log("p7 container rules test passed");
