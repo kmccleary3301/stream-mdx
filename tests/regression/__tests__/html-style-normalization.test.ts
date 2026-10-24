@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 
 import { chromium } from "@playwright/test";
 
-import { normalizeInlineStyleSerialization } from "../../../scripts/regression/html-style-normalization";
+import {
+  canonicalizeAttributeOrder,
+  normalizeInlineStyleSerialization,
+} from "../../../scripts/regression/html-style-normalization";
 
 async function main(): Promise<void> {
   const browser = await chromium.launch();
@@ -91,6 +94,44 @@ async function main(): Promise<void> {
       await normalizeInlineStyleSerialization(page, '<div class="after" style="contain: content;"></div>'),
       "non-style HTML differences remain strict",
     );
+
+    assert.equal(
+      await normalizeInlineStyleSerialization(page, '<pre style="--shiki-dark-bg:#24292e;--shiki-dark:#e1e4e8"></pre>'),
+      await normalizeInlineStyleSerialization(page, '<pre style="--shiki-dark:#e1e4e8;--shiki-dark-bg:#24292e"></pre>'),
+      "declaration order of distinct properties records style mutation history, not meaning",
+    );
+    assert.equal(
+      await normalizeInlineStyleSerialization(page, '<code class="language-text" style="">x</code>'),
+      await normalizeInlineStyleSerialization(page, '<code class="language-text">x</code>'),
+      "an empty inline style is equivalent to no inline style",
+    );
+    assert.equal(
+      await normalizeInlineStyleSerialization(page, '<code style="" class="language-text">x</code>'),
+      await normalizeInlineStyleSerialization(page, '<code class="language-text">x</code>'),
+      "removing a leading empty inline style leaves no stray whitespace",
+    );
+
+    const laterStyle = '<pre><code data-language="js" class="language-js" style="">x</code></pre>';
+    const earlierStyle = '<pre><code style="" data-language="js" class="language-js">x</code></pre>';
+    assert.equal(
+      canonicalizeAttributeOrder(laterStyle),
+      canonicalizeAttributeOrder(earlierStyle),
+      "attribute order reflects DOM mutation history, not rendered meaning",
+    );
+    assert.equal(
+      canonicalizeAttributeOrder(canonicalizeAttributeOrder(laterStyle)),
+      canonicalizeAttributeOrder(laterStyle),
+      "attribute ordering is idempotent",
+    );
+    assert.notEqual(
+      canonicalizeAttributeOrder('<code class="a" data-x="1"></code>'),
+      canonicalizeAttributeOrder('<code data-x="2" class="a"></code>'),
+      "attribute values remain strict after ordering",
+    );
+    const attributeLikeText = '<div>b="1" a="2"</div>';
+    assert.equal(canonicalizeAttributeOrder(attributeLikeText), attributeLikeText, "text content is byte-identical");
+    const malformed = '<div b="1" a="2" a="3"></div>';
+    assert.equal(canonicalizeAttributeOrder(malformed), malformed, "malformed HTML falls back to strict comparison");
   } finally {
     await page.close();
     await browser.close();

@@ -21,6 +21,7 @@ import {
 } from "./utils";
 import type { RegressionScenario } from "./utils";
 import {
+  canonicalizeAttributeOrder,
   extractTopLevelElementHtml,
   normalizeInlineStyleSerialization,
 } from "./html-style-normalization";
@@ -311,9 +312,9 @@ function compareNormalizedFinalSnapshots(expected: HtmlSnapshot, received: HtmlS
 
   return { ok: true };
 }
-// Persisted hashes describe raw HTML; derive comparison hashes only after style normalization.
+// Persisted hashes describe raw HTML; derive comparison hashes only after attribute-order and style normalization.
 async function normalizeSnapshotForComparison(page: Page, snapshot: HtmlSnapshot): Promise<HtmlSnapshot> {
-  const html = await normalizeInlineStyleSerialization(page, snapshot.final.html);
+  const html = await normalizeInlineStyleSerialization(page, canonicalizeAttributeOrder(snapshot.final.html));
   const childHtml = extractTopLevelElementHtml(html);
   const children = snapshot.final.children?.map((child, index) => {
     const normalizedChild = childHtml[index];
