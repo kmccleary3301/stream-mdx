@@ -13,7 +13,8 @@ jobs:
   release:
     environment: npm-publish
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # release:gates alone takes ~14 min locally (818.8 s on 2026-10-24); the full job must finish before publish.
+    timeout-minutes: 75
     env:
       NPM_CONFIG_PROVENANCE: "true"
     steps:
