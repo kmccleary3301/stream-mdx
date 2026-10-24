@@ -630,6 +630,8 @@ export function StreamingMarkdownDemoV2({
   const paintRef = useRef<number[]>([]);
   const queueDepthRef = useRef<number[]>([]);
   const flushBatchLogRef = useRef<FlushBatchSample[]>([]);
+  // Kept apart from the flush batch log, where singleton enrichment batches can evict every coalescing sample.
+  const coalescingDurationLogRef = useRef<number[]>([]);
   const schedulerBudgetRef = useRef<{ active: boolean; p95: number | null; sampleCount: number }>({
     active: false,
     p95: null,
@@ -807,6 +809,7 @@ export function StreamingMarkdownDemoV2({
       durationMs: 0,
     };
     flushBatchLogRef.current = [];
+    coalescingDurationLogRef.current = [];
     setCoalescingVersion((value) => value + 1);
   }, []);
 
@@ -1198,6 +1201,7 @@ export function StreamingMarkdownDemoV2({
         if (flushBatchLogRef.current.length > METRIC_SAMPLE_LIMIT) {
           flushBatchLogRef.current.splice(0, flushBatchLogRef.current.length - METRIC_SAMPLE_LIMIT);
         }
+        if (batch.coalescing) recordSample(coalescingDurationLogRef.current, batch.coalescing.durationMs);
       }
       recordSample(queueDepthRef.current, effectiveQueueDepth);
       const nextCredits = calculateSmoothedCredit(effectiveQueueDepth, workerCreditsRef.current, DEFAULT_BACKPRESSURE_CONFIG);
@@ -2039,6 +2043,7 @@ export function StreamingMarkdownDemoV2({
         coalescingSampleCount: schedulerBudgetRef.current.sampleCount,
       },
       flushBatches: flushBatchLogRef.current.map((entry) => ({ ...entry })),
+      coalescingDurations: coalescingDurationLogRef.current.slice(),
     });
     api.getState = () => {
       const sourceStatus = sourceSessionStatusRef.current;

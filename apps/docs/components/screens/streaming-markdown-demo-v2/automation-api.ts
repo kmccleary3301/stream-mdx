@@ -214,6 +214,7 @@ export type StreamingDemoAutomationApiV2 = {
       coalescingSampleCount: number;
     } | null;
     flushBatches?: FlushBatchSample[];
+    coalescingDurations?: number[];
   };
   getCoalescingTotals?: () => {
     input: number;

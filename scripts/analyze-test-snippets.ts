@@ -332,6 +332,8 @@ type TelemetrySnapshot = {
     durationMs: number;
   } | null;
   flushBatches?: FlushBatchSample[] | null;
+  /** Every recent coalescing duration; the flush batch log can evict them all behind singleton enrichment batches. */
+  coalescingDurations: number[];
   coalescingBatchValidation: CoalescingBatchValidation;
 };
 
@@ -343,6 +345,7 @@ type RawTelemetrySnapshot = {
   patchTotals: TelemetrySnapshot["patchTotals"];
   coalescingTotals: TelemetrySnapshot["coalescingTotals"];
   flushBatches: unknown;
+  coalescingDurations: number[] | null;
 };
 
 type LookaheadTraceBlock = NonNullable<LookaheadTraceStep["blocks"]>[number];
@@ -733,15 +736,6 @@ function normalizeFlushBatches(
   return { batches, validation: { valid: true } };
 }
 
-function collectCoalescingDurations(batches?: FlushBatchSample[] | null): number[] {
-  if (!Array.isArray(batches)) return [];
-  const durations: number[] = [];
-  for (const batch of batches) {
-    if (batch.coalescing) durations.push(batch.coalescing.durationMs);
-  }
-  return durations;
-}
-
 function normalizeTelemetrySnapshot(raw: RawTelemetrySnapshot | null): TelemetrySnapshot | null {
   if (!raw) return null;
 
@@ -765,6 +759,7 @@ function normalizeTelemetrySnapshot(raw: RawTelemetrySnapshot | null): Telemetry
     patchTotals: raw.patchTotals ?? null,
     coalescingTotals: raw.coalescingTotals ?? null,
     flushBatches: normalizedBatches.batches,
+    coalescingDurations: ensureArray(raw.coalescingDurations),
     coalescingBatchValidation: normalizedBatches.validation,
   };
 }
@@ -942,7 +937,7 @@ function evaluateCoalescingGuardrails(snippetName: string, analysis: SnippetAnal
 
 
   if (MAX_COALESCING_DURATION_P95_MS > 0 && batchValidation?.valid !== false) {
-    const durations = collectCoalescingDurations(telemetry?.flushBatches ?? null);
+    const durations = telemetry?.coalescingDurations ?? [];
     if (durations.length === 0) {
       const noWork =
         totals?.input === 0 &&
@@ -1742,6 +1737,7 @@ async function renderSnippet(
       patchTotals: state?.patchStats?.totals ?? null,
       coalescingTotals: perf.coalescingTotals ?? null,
       flushBatches: perf.flushBatches ?? null,
+      coalescingDurations: perf.coalescingDurations ?? null,
     };
   });
   const telemetry = normalizeTelemetrySnapshot(rawTelemetry);
