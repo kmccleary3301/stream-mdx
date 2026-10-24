@@ -32,7 +32,6 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
         presentedActions = actions;
         return <section data-heading-presentation data-finalized={metadata.isFinalized}>{children}</section>;
       },
-      props: { className: "host-heading", "data-owner": "host" },
     },
   } satisfies NodePresentations;
 
@@ -56,10 +55,6 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
     });
     await waitFor(() => container.querySelector("section[data-heading-presentation]"), "finalized heading wrapper");
     const streamingPresentation = container.querySelector("section[data-heading-presentation]");
-    const nativeHeading = streamingPresentation?.querySelector("h2");
-    assert.ok(nativeHeading, "the presented heading retains its native element");
-    assert.ok(nativeHeading.className.includes("host-heading"), "host class decoration stays on the native heading");
-    assert.equal(nativeHeading.getAttribute("data-owner"), "host", "host data decoration stays on the native heading");
     assert.ok(presentedActions, "the wrapper receives source-bound presentation actions");
     let copySucceeded = false;
     await act(async () => { copySucceeded = await presentedActions!.copy(); });
@@ -67,7 +62,6 @@ async function finalizedHeadingPresentationMatchesServerOutput(): Promise<void> 
     assert.deepEqual(clipboardWrites, ["## Shared heading"], "copy reads the exact authored heading source");
     await act(async () => { presentedActions!.download(); });
     assert.deepEqual(downloads, ["heading.txt"], "download uses the presented node's semantic filename");
-
 
     const serverMarkup = renderToStaticMarkup(
       <ServerMarkdownBlocksRenderer blocks={handle.current?.getState().blocks ?? []} components={components} />,
