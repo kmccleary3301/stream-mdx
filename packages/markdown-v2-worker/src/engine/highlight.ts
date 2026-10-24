@@ -469,7 +469,16 @@ export function codeDiffStatus(
 ): CodeDiffStatus {
   const statusCursor = { ...cursor };
   let abandoned = rowsAbandoned;
-  if (provisionalTailText !== undefined && advanceDiffCursor(provisionalTailText, statusCursor)) {
+
+  const incompleteProvisionalHunkHeader = provisionalTailText !== undefined
+    && !sealed
+    && provisionalTailText.startsWith("@@")
+    && parseDiffHunkHeader(provisionalTailText) === null;
+  if (
+    provisionalTailText !== undefined
+    && !incompleteProvisionalHunkHeader
+    && advanceDiffCursor(provisionalTailText, statusCursor)
+  ) {
     abandoned = true;
   }
   const hasOwedRows = (statusCursor.oldRemaining ?? 0) > 0 || (statusCursor.newRemaining ?? 0) > 0;
@@ -823,8 +832,10 @@ export async function buildDiffTokenLines(
         oldGrammarState = undefined;
         newGrammarState = undefined;
         const filePath = extractDiffFilePath(info.raw);
-        const detectedLanguage = filePath ? guessLanguageFromPath(filePath) : null;
-        currentLanguage = await resolveHighlightLanguage(highlighter, detectedLanguage ?? language);
+        if (filePath) {
+          const detectedLanguage = guessLanguageFromPath(filePath);
+          currentLanguage = await resolveHighlightLanguage(highlighter, detectedLanguage ?? language);
+        }
       }
       tokenLines[i] = null;
       diffTokenLines[i] = { old: null, new: null };

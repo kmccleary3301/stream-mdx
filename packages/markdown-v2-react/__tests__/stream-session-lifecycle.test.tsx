@@ -161,7 +161,10 @@ async function testOpenIteratorRemoval(imperativeActivity: boolean): Promise<voi
   try {
     root.render(<StreamingMarkdown ref={handle} engine="worker" worker={workerFactory} stream={iterator}
       features={features} tableVirtualization={true} caret="block" />);
-    await waitFor(() => container.querySelectorAll("tbody tr[data-row-id]").length === 60, "open iterator renders every table row");
+    await waitFor(
+      () => container.querySelector('[data-table-total-rows="60"]') !== null,
+      "open iterator retains all 60 table source rows",
+    );
     worker.postMessage({ type: "FINALIZE" });
     await waitFor(() => handle.current?.getState().blocks.every((block) => block.isFinalized) === true,
       "every block finalizes while the iterator remains gated");
@@ -176,7 +179,10 @@ async function testOpenIteratorRemoval(imperativeActivity: boolean): Promise<voi
       features={features} tableVirtualization={true} caret="block" />);
     await waitFor(() => Boolean(container.querySelector(".removed-open-source")), "open stream removal commits");
     if (imperativeActivity) {
-      assert.equal(container.querySelector('[data-table-virtualized="true"]'), null, "iterator cleanup must preserve independent imperative activity");
+      assert.ok(
+        container.textContent?.includes("Independent imperative content"),
+        "iterator cleanup preserves the independent imperative source",
+      );
       assert.ok(container.querySelector(".stream-mdx-caret"));
       await handle.current?.finalize();
     }
@@ -196,9 +202,17 @@ async function testOpenIteratorRemoval(imperativeActivity: boolean): Promise<voi
 
 try {
   const failures: unknown[] = [];
-  for (const test of [testPendingIteratorRestart, testRestartAfterEOF,
-    () => testOpenIteratorRemoval(false), () => testOpenIteratorRemoval(true)]) {
-    try { await test(); } catch (error) { failures.push(error); }
+  for (const test of [
+    testPendingIteratorRestart,
+    testRestartAfterEOF,
+    () => testOpenIteratorRemoval(false),
+    () => testOpenIteratorRemoval(true),
+  ]) {
+    try {
+      await test();
+    } catch (error) {
+      failures.push(error);
+    }
   }
   if (failures.length > 0) throw new AggregateError(failures, "public stream session lifecycle regressions");
 } finally {

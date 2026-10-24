@@ -5,8 +5,15 @@ type NativeCodeTokenSpan = CodeTokenLine["spans"][number];
 type NativeShikiStyle = React.CSSProperties & { [property: `--shiki-${string}`]: string };
 type NativeTokenDeclaration = readonly [property: string, value: string];
 
-const NativeCodeLine = React.memo(function NativeCodeLine({ line }: { line: CodeLineRecord }): React.ReactElement {
-  const decoration = line.decoration;
+type NativeCodeLineProps = {
+  line: CodeLineRecord;
+  decoration: CodeLineRecord["decoration"];
+};
+
+const NativeCodeLine = React.memo(function NativeCodeLine({
+  line,
+  decoration,
+}: NativeCodeLineProps): React.ReactElement {
   const spans = decoration && decoration.exactness !== "unavailable" ? decoration.tokens.spans : undefined;
   const marker = nativeCodeLineMarker(line);
   const content = spans !== undefined
@@ -125,11 +132,62 @@ export function nativeCodeBlockHtml(
   return `<pre${codeWrapperAttributes(preAttrs)}><code${codeWrapperAttributes(codeAttrs)}>${lines.map(nativeCodeLineHtml).join("")}</code></pre>`;
 }
 
-export const NativeCodeLineGroup = React.memo(function NativeCodeLineGroup({ line }: { line: CodeLineRecord }): React.ReactElement {
+type NativeCodeLineGroupProps = {
+  line: CodeLineRecord;
+  generation: number;
+  selectedForNativeSelection: boolean;
+};
+
+type CommittedCodeLinePresentation = {
+  id: string;
+  sourceRevision: number;
+  generation: number;
+  text: string;
+  decoration: CodeLineRecord["decoration"];
+};
+
+export const NativeCodeLineGroup = React.memo(function NativeCodeLineGroup({
+  line,
+  generation,
+  selectedForNativeSelection,
+}: NativeCodeLineGroupProps): React.ReactElement {
+  const committedPresentationRef = React.useRef<CommittedCodeLinePresentation | null>(null);
+  const committedPresentation = committedPresentationRef.current;
+  const preserveCommittedDecoration =
+    selectedForNativeSelection &&
+    committedPresentation !== null &&
+    committedPresentation.id === line.id &&
+    committedPresentation.sourceRevision === line.sourceRevision &&
+    committedPresentation.generation === generation &&
+    committedPresentation.text === line.text;
+  const decoration = preserveCommittedDecoration
+    ? committedPresentation.decoration
+    : line.decoration;
+
+  React.useLayoutEffect(() => {
+    if (preserveCommittedDecoration) return;
+    const committed = committedPresentationRef.current;
+    if (committed) {
+      committed.id = line.id;
+      committed.sourceRevision = line.sourceRevision;
+      committed.generation = generation;
+      committed.text = line.text;
+      committed.decoration = decoration;
+    } else {
+      committedPresentationRef.current = {
+        id: line.id,
+        sourceRevision: line.sourceRevision,
+        generation,
+        text: line.text,
+        decoration,
+      };
+    }
+  }, [decoration, generation, line.id, line.sourceRevision, line.text, preserveCommittedDecoration]);
+
   return React.createElement(
     React.Fragment,
     null,
-    React.createElement(NativeCodeLine, { line }),
+    React.createElement(NativeCodeLine, { line, decoration }),
     line.ending ? "\n" : null,
   );
 });

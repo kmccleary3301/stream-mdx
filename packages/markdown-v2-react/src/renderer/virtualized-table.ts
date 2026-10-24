@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 export interface TableVirtualizationConfig {
   /** Enables opt-in table row virtualization. */
@@ -45,11 +46,15 @@ export function resolveTableVirtualizationConfig(options?: TableVirtualizationOp
   };
 }
 
+export interface TableVirtualizationRowRange {
+  readonly startIndex: number;
+  readonly endIndex: number;
+  readonly spacerBeforeHeight: number;
+}
+
 export interface TableVirtualizationProps {
   isVirtualized: boolean;
-  startIndex: number;
-  endIndex: number;
-  topSpacerHeight: number;
+  rowRanges: ReadonlyArray<TableVirtualizationRowRange>;
   bottomSpacerHeight: number;
   columnCount: number;
   headerBackgroundColor: string;
@@ -134,6 +139,20 @@ interface TableViewportAnchor {
   identity: object;
 }
 
+interface TablePrintSnapshot {
+  identity: object;
+  owner: number;
+  scrollTop: number;
+  atBottom: boolean;
+  anchor: TableViewportAnchor | null;
+}
+interface RetainedTableRows {
+  focusedRowIndex: number | null;
+  selectionAnchorRowIndex: number | null;
+  selectionFocusRowIndex: number | null;
+  identity: object;
+  owner: number;
+}
 /** Measurements follow stable renderer row IDs, not positions in the current window. */
 export function useVirtualizedTable(
   rowIds: TableRows,
@@ -150,6 +169,8 @@ export function useVirtualizedTable(
   const [headerHeight, setHeaderHeight] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
   const measuredWidth = useRef(0);
+  const [retainedRows, setRetainedRows] = useState<RetainedTableRows | null>(null);
+  const focusOwnerGeneration = useRef(0);
   const measuredHeights = useRef(new Map<string, number>());
   const indexedHeights = useRef(new Map<number, number>());
   const indexedOffsets = useRef(new Map<number, number>());
@@ -160,12 +181,110 @@ export function useVirtualizedTable(
   const [headerBackgroundColor, setHeaderBackgroundColor] = useState("Canvas");
   const atBottom = useRef(false);
   const viewportAnchor = useRef<TableViewportAnchor | null>(null);
+  const printOwnerGeneration = useRef(0);
+  const [printOwner, setPrintOwner] = useState<{ identity: object; generation: number } | null>(null);
+  const [printGeometryOwner, setPrintGeometryOwner] = useState<number | null>(null);
+  const isPrintingRef = useRef(false);
+  const printGeometrySuspendedRef = useRef(false);
+  const restoringPrintScrollRef = useRef(false);
+  const printSnapshot = useRef<TablePrintSnapshot | null>(null);
   const rowCount = rowIds.length;
   const hasIndexedRows = indexedRows(rowIds);
   const rowIdentity = hasIndexedRows ? rowIds.identity : rowIds;
+  const isPrinting = printOwner !== null && printOwner.identity === rowIdentity &&
+    printOwner.generation === printOwnerGeneration.current;
+  const isPrintGeometrySuspended = printGeometryOwner === printOwnerGeneration.current;
   const isEligible = enabledCondition && config.enabled && rowCount >= config.minRows;
   const isVirtualized = isEligible && domTargets !== null && naturalLayout?.table === domTargets.table &&
     naturalLayout.rowIdentity === rowIdentity && naturalLayout.viewportWidth === containerWidth;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!isEligible || !container) return;
+    const ownerWindow = container.ownerDocument.defaultView;
+    if (!ownerWindow) return;
+    const owner = ++printOwnerGeneration.current;
+    const isCurrentOwner = () => printOwnerGeneration.current === owner && containerRef.current === container;
+    const onBeforePrint = () => {
+      if (!isCurrentOwner() || !container.isConnected || isPrintingRef.current) return;
+      isPrintingRef.current = true;
+      printGeometrySuspendedRef.current = true;
+      printSnapshot.current = {
+        identity: rowIdentity,
+        owner,
+        scrollTop: container.scrollTop,
+        atBottom: atBottom.current,
+        anchor: viewportAnchor.current,
+      };
+      measurementGeneration.current++;
+      flushSync(() => {
+        setPrintOwner({ identity: rowIdentity, generation: owner });
+        setPrintGeometryOwner(owner);
+      });
+    };
+    const onAfterPrint = () => {
+      if (!isCurrentOwner() || !isPrintingRef.current) return;
+      const snapshot = printSnapshot.current;
+      if (!snapshot || snapshot.owner !== owner) return;
+      measurementGeneration.current++;
+      isPrintingRef.current = false;
+      printSnapshot.current = null;
+      flushSync(() => setPrintOwner(null));
+      const restoreReader = snapshot.identity === rowIdentity && container.isConnected;
+      if (restoreReader) {
+        restoringPrintScrollRef.current = true;
+        container.scrollTop = snapshot.scrollTop;
+        atBottom.current = snapshot.atBottom;
+        viewportAnchor.current = snapshot.anchor;
+        flushSync(() => setScrollTop(container.scrollTop));
+      }
+      ownerWindow.requestAnimationFrame(() => {
+        if (!isCurrentOwner() || isPrintingRef.current) return;
+        if (restoreReader) restoringPrintScrollRef.current = false;
+        printGeometrySuspendedRef.current = false;
+        setPrintGeometryOwner((current) => current === owner ? null : current);
+      });
+    };
+    ownerWindow.addEventListener("beforeprint", onBeforePrint);
+    ownerWindow.addEventListener("afterprint", onAfterPrint);
+    return () => {
+      ownerWindow.removeEventListener("beforeprint", onBeforePrint);
+      ownerWindow.removeEventListener("afterprint", onAfterPrint);
+      if (printOwnerGeneration.current !== owner) return;
+      printOwnerGeneration.current++;
+      restoringPrintScrollRef.current = false;
+      printGeometrySuspendedRef.current = false;
+      if (printSnapshot.current?.owner !== owner) return;
+      measurementGeneration.current++;
+      isPrintingRef.current = false;
+      printSnapshot.current = null;
+    };
+  }, [isEligible, rowIdentity]);
+  const retainedRowIndices = useMemo(() => {
+    if (!isVirtualized || !retainedRows || retainedRows.identity !== rowIdentity ||
+      retainedRows.owner !== focusOwnerGeneration.current) return [];
+    const indices: number[] = [];
+    const focusIndex = retainedRows.focusedRowIndex;
+    if (focusIndex !== null && Number.isSafeInteger(focusIndex) && focusIndex >= 0 &&
+      focusIndex < rowCount) indices.push(focusIndex);
+    const anchorIndex = retainedRows.selectionAnchorRowIndex;
+    if (anchorIndex !== null && Number.isSafeInteger(anchorIndex) && anchorIndex >= 0 &&
+      anchorIndex < rowCount && !indices.includes(anchorIndex)) indices.push(anchorIndex);
+    const selectionFocusIndex = retainedRows.selectionFocusRowIndex;
+    if (selectionFocusIndex !== null && Number.isSafeInteger(selectionFocusIndex) &&
+      selectionFocusIndex >= 0 && selectionFocusIndex < rowCount && !indices.includes(selectionFocusIndex)) {
+      indices.push(selectionFocusIndex);
+    }
+    for (let index = 1; index < indices.length; index++) {
+      const current = indices[index];
+      let insertAt = index;
+      while (insertAt > 0 && indices[insertAt - 1] > current) {
+        indices[insertAt] = indices[insertAt - 1];
+        insertAt--;
+      }
+      indices[insertAt] = current;
+    }
+    return indices;
+  }, [isVirtualized, retainedRows, rowIdentity, rowCount]);
 
   const offsets = useMemo(() => {
     void measureVersion;
@@ -213,7 +332,7 @@ export function useVirtualizedTable(
   }, [hasIndexedRows, rowIdentity, rowCount]);
   const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     const target = event.currentTarget;
-    if (target !== containerRef.current) return;
+    if (target !== containerRef.current || isPrintingRef.current || restoringPrintScrollRef.current) return;
     atBottom.current = target.scrollTop > 0 && target.scrollHeight - target.clientHeight - target.scrollTop <= 1;
     viewportAnchor.current = null;
     const targets = targetsRef.current;
@@ -237,7 +356,13 @@ export function useVirtualizedTable(
 
   const window = useMemo(() => {
     if (!isVirtualized || rowCount === 0) {
-      return { startIndex: 0, endIndex: rowCount, topSpacerHeight: 0, bottomSpacerHeight: 0, mountedRows: rowCount };
+      return {
+        startIndex: 0,
+        endIndex: rowCount,
+        rowRanges: [] as TableVirtualizationRowRange[],
+        bottomSpacerHeight: 0,
+        mountedRows: rowCount,
+      };
     }
     const fallbackHeight = typeof config.maxHeight === "number" ? config.maxHeight : 600;
     const viewportHeight = Math.max(1, (containerHeight || fallbackHeight) - headerHeight);
@@ -259,15 +384,58 @@ export function useVirtualizedTable(
       else high = mid;
     }
     const endIndex = Math.min(rowCount, low + config.overscan);
+    const intervals: Array<{ startIndex: number; endIndex: number; spacerBeforeHeight: number }> = [
+      { startIndex, endIndex, spacerBeforeHeight: 0 },
+    ];
+    for (const index of retainedRowIndices) {
+      if (index < startIndex || index >= endIndex) {
+        intervals.push({ startIndex: index, endIndex: index + 1, spacerBeforeHeight: 0 });
+      }
+    }
+    for (let index = 1; index < intervals.length; index++) {
+      const current = intervals[index];
+      let insertAt = index;
+      while (insertAt > 0 && intervals[insertAt - 1].startIndex > current.startIndex) {
+        intervals[insertAt] = intervals[insertAt - 1];
+        insertAt--;
+      }
+      intervals[insertAt] = current;
+    }
+    let intervalCount = 0;
+    for (const interval of intervals) {
+      const previous = intervals[intervalCount - 1];
+      if (previous && interval.startIndex <= previous.endIndex) {
+        previous.endIndex = Math.max(previous.endIndex, interval.endIndex);
+      } else {
+        intervals[intervalCount++] = interval;
+      }
+    }
+    intervals.length = intervalCount;
+    let previousEnd = 0;
+    let mountedRows = 0;
+    for (const range of intervals) {
+      range.spacerBeforeHeight = Math.max(0, offsetAt(range.startIndex) - offsetAt(previousEnd));
+      previousEnd = range.endIndex;
+      mountedRows += range.endIndex - range.startIndex;
+    }
     return {
       startIndex,
       endIndex,
-      topSpacerHeight: offsetAt(startIndex),
-      bottomSpacerHeight: totalHeight - offsetAt(endIndex),
-      mountedRows: endIndex - startIndex,
+      rowRanges: intervals,
+      bottomSpacerHeight: Math.max(0, totalHeight - offsetAt(previousEnd)),
+      mountedRows,
     };
-  }, [isVirtualized, rowCount, offsetAt, scrollTop, containerHeight, headerHeight, config.maxHeight, config.overscan]);
-
+  }, [
+    isVirtualized,
+    rowCount,
+    offsetAt,
+    scrollTop,
+    containerHeight,
+    headerHeight,
+    config.maxHeight,
+    config.overscan,
+    retainedRowIndices,
+  ]);
 
   const invalidateMeasurements = useCallback(() => {
     measurementGeneration.current++;
@@ -280,6 +448,13 @@ export function useVirtualizedTable(
     setNaturalLayout(null);
     setMeasureVersion((version) => version + 1);
   }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container && container.scrollTop !== 0) container.scrollTop = 0;
+    setScrollTop(0);
+    invalidateMeasurements();
+  }, [rowIdentity, invalidateMeasurements]);
 
   // Track actual DOM replacements, including adapters which replace their own native nodes.
   useEffect(() => {
@@ -320,16 +495,83 @@ export function useVirtualizedTable(
       invalidateMeasurements();
     };
   }, [isEligible, invalidateMeasurements]);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!isEligible || !domTargets || !container || container.querySelector("table") !== domTargets.table) return;
+    const owner = ++focusOwnerGeneration.current;
+    const updateOwnedRows = (update: (current: RetainedTableRows) => RetainedTableRows) => {
+      setRetainedRows((current) => {
+        if (focusOwnerGeneration.current !== owner) return current;
+        const owned = current?.owner === owner && current.identity === rowIdentity
+          ? current
+          : {
+            focusedRowIndex: null,
+            selectionAnchorRowIndex: null,
+            selectionFocusRowIndex: null,
+            identity: rowIdentity,
+            owner,
+          };
+        const next = update(owned);
+        return next.focusedRowIndex === null &&
+          next.selectionAnchorRowIndex === null && next.selectionFocusRowIndex === null
+          ? null
+          : next;
+      });
+    };
+    const rowIndexForNode = (node: Node | null) => {
+      const element = node?.nodeType === 1 ? node as Element : node?.parentElement;
+      const row = element?.closest<HTMLTableRowElement>("tr[data-row-index]") ?? null;
+      const index = row && container.contains(row) ? Number(row.dataset.rowIndex) : Number.NaN;
+      return Number.isSafeInteger(index) && index >= 0 ? index : null;
+    };
+    const onFocusIn = (event: FocusEvent) => {
+      if (focusOwnerGeneration.current !== owner) return;
+      const focusedRowIndex = rowIndexForNode(event.target as Node | null);
+      updateOwnedRows((current) => current.focusedRowIndex === focusedRowIndex
+        ? current
+        : { ...current, focusedRowIndex });
+    };
+    const onFocusOut = (event: FocusEvent) => {
+      if (focusOwnerGeneration.current !== owner) return;
+      const nextTarget = event.relatedTarget;
+      if (nextTarget && "nodeType" in nextTarget && container.contains(nextTarget as Node)) return;
+      updateOwnedRows((current) => current.focusedRowIndex === null
+        ? current
+        : { ...current, focusedRowIndex: null });
+    };
+    const onSelectionChange = () => {
+      if (focusOwnerGeneration.current !== owner) return;
+      const selection = container.ownerDocument.getSelection();
+      const selectionAnchorRowIndex = rowIndexForNode(selection?.anchorNode ?? null);
+      const selectionFocusRowIndex = rowIndexForNode(selection?.focusNode ?? null);
+      updateOwnedRows((current) =>
+        current.selectionAnchorRowIndex === selectionAnchorRowIndex &&
+        current.selectionFocusRowIndex === selectionFocusRowIndex
+          ? current
+          : { ...current, selectionAnchorRowIndex, selectionFocusRowIndex });
+    };
+    container.addEventListener("focusin", onFocusIn);
+    container.addEventListener("focusout", onFocusOut);
+    container.ownerDocument.addEventListener("selectionchange", onSelectionChange);
+    return () => {
+      container.removeEventListener("focusin", onFocusIn);
+      container.removeEventListener("focusout", onFocusOut);
+      container.ownerDocument.removeEventListener("selectionchange", onSelectionChange);
+      if (focusOwnerGeneration.current !== owner) return;
+      focusOwnerGeneration.current++;
+      setRetainedRows((current) => current?.owner === owner ? null : current);
+    };
+  }, [isEligible, domTargets?.table, rowIdentity]);
 
   useEffect(() => {
-    if (!isEligible || !domTargets) return;
+    if (!isEligible || !domTargets || isPrintGeometrySuspended || printGeometrySuspendedRef.current || isPrintingRef.current) return;
     const container = containerRef.current;
     if (!container) return;
     const { header } = domTargets;
     const generation = measurementGeneration.current;
     let active = true;
     const measureContainer = () => {
-      if (!active || measurementGeneration.current !== generation) return;
+      if (!active || measurementGeneration.current !== generation || isPrintGeometrySuspended || printGeometrySuspendedRef.current || isPrintingRef.current) return;
       if (container.querySelector("table") !== domTargets.table) return;
       setScrollTop(container.scrollTop);
       setContainerHeight(container.clientHeight);
@@ -353,7 +595,7 @@ export function useVirtualizedTable(
       active = false;
       observer.disconnect();
     };
-  }, [isEligible, domTargets?.table, domTargets?.header, config.maxHeight]);
+  }, [isEligible, domTargets?.table, domTargets?.header, config.maxHeight, isPrinting, isPrintGeometrySuspended]);
 
   useEffect(() => {
     if (!isEligible || !domTargets) return;
@@ -363,9 +605,9 @@ export function useVirtualizedTable(
     return normalizeTableScrollAncestors(table, container);
   }, [isEligible, domTargets?.table]);
 
-  // The complete auto-layout table is committed before each initial/width-change window.
+  // Commit the header and first bounded row chunk before each initial or width-change measurement.
   useEffect(() => {
-    if (!isEligible || isVirtualized || !domTargets) return;
+    if (!isEligible || isVirtualized || !domTargets || isPrintGeometrySuspended || printGeometrySuspendedRef.current || isPrintingRef.current) return;
     const container = containerRef.current;
     const table = domTargets.table;
     if (!container || !table) return;
@@ -379,7 +621,7 @@ export function useVirtualizedTable(
       tableWidth: table.getBoundingClientRect().width,
       columnWidths: columnWidths.every((width) => width > 0) ? columnWidths : [],
     });
-  }, [isEligible, isVirtualized, domTargets?.table, rowIdentity, containerWidth]);
+  }, [isEligible, isVirtualized, domTargets?.table, rowIdentity, containerWidth, isPrinting, isPrintGeometrySuspended]);
 
   useEffect(() => {
     if (!isEligible) return;
@@ -409,14 +651,14 @@ export function useVirtualizedTable(
   }, [isEligible]);
 
   useEffect(() => {
-    if (!isVirtualized || !domTargets) return;
+    if (!isVirtualized || !domTargets || isPrintGeometrySuspended || printGeometrySuspendedRef.current || isPrintingRef.current) return;
     const container = containerRef.current;
     if (!container) return;
     const { rows } = domTargets;
     const generation = measurementGeneration.current;
     let active = true;
     const measureRows = () => {
-      if (!active || measurementGeneration.current !== generation) return;
+      if (!active || measurementGeneration.current !== generation || isPrintGeometrySuspended || printGeometrySuspendedRef.current || isPrintingRef.current) return;
       if (container.querySelector("table") !== domTargets.table || naturalLayout?.viewportWidth !== container.clientWidth) return;
       const top = container.getBoundingClientRect().top + container.clientTop;
       const anchor = viewportAnchor.current;
@@ -471,15 +713,15 @@ export function useVirtualizedTable(
       active = false;
       observer.disconnect();
     };
-  }, [isVirtualized, domTargets?.rows, rowIds, rowCount, rowIdentity, hasIndexedRows, window.startIndex, window.endIndex, containerWidth, config.estimatedRowHeight]);
+  }, [isVirtualized, domTargets?.rows, rowIds, rowCount, rowIdentity, hasIndexedRows, window.startIndex, window.endIndex, containerWidth, config.estimatedRowHeight, isPrinting, isPrintGeometrySuspended]);
 
   // Newly measured tail rows may move the scroll boundary. Keep a bottom scroll at the bottom.
   useEffect(() => {
     const container = containerRef.current;
-    if (!isVirtualized || !container || !atBottom.current) return;
+    if (!isVirtualized || !container || !atBottom.current || isPrintGeometrySuspended || printGeometrySuspendedRef.current || isPrintingRef.current) return;
     container.scrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
     setScrollTop(container.scrollTop);
-  }, [isVirtualized, offsetAt]);
+  }, [isVirtualized, offsetAt, isPrinting, isPrintGeometrySuspended]);
 
-  return { containerRef, window, handleScroll, config, isEligible, isVirtualized, naturalLayout, headerBackgroundColor };
+  return { containerRef, window, handleScroll, config, isEligible, isVirtualized, isPrinting, naturalLayout, headerBackgroundColor };
 }

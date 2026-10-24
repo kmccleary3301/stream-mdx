@@ -1027,6 +1027,68 @@ async function runUnknownDiffFileLanguageFallsBackToBaseTest(): Promise<void> {
     }
   }
 }
+async function runDiffNullPathKeepsRecognizedLanguageTest(): Promise<void> {
+  const diffLines = [
+    "--- a/removed.py",
+    "+++ /dev/null",
+    "@@ -1 +0,0 @@",
+    "-def removed_function():",
+    "--- /dev/null",
+    "+++ b/added.py",
+    "@@ -0,0 +1 @@",
+    "+def added_function():",
+  ];
+  const themes = { dark: "github-dark", light: "github-light" } as const;
+  let disposeDocument: (() => void) | undefined;
+  let disposeOracle: (() => void) | undefined;
+
+  try {
+    const document = createCodeDocument({
+      language: "typescript",
+      diff: true,
+      initialContent: `${diffLines.join("\n")}\n`,
+      themes,
+    });
+    disposeDocument = () => document.dispose();
+    const oracle = await createHighlighter({
+      engine: createJavaScriptRegexEngine(),
+      langs: ["python"],
+      themes: [themes.dark, themes.light],
+    });
+    disposeOracle = () => oracle.dispose();
+
+    const result = await document.highlight({ mode: "range", range: { from: 0, to: diffLines.length } });
+    assert.strictEqual(result.exactness, "exact");
+    assert.ok(result.diffTokens);
+    const removed = result.diffTokens[diffLines.indexOf("-def removed_function():")]!.old!;
+    const added = result.diffTokens[diffLines.indexOf("+def added_function():")]!.new!;
+    const expectedRemoved = normalizeShikiLine(oracle.codeToTokensWithThemes("def removed_function():", {
+      lang: "python",
+      themes,
+    })[0] ?? []);
+    const expectedAdded = normalizeShikiLine(oracle.codeToTokensWithThemes("def added_function():", {
+      lang: "python",
+      themes,
+    })[0] ?? []);
+
+    assert.deepStrictEqual(
+      normalizePublicLine(removed),
+      expectedRemoved,
+      "a /dev/null new path must preserve the recognized old-side language",
+    );
+    assert.deepStrictEqual(
+      normalizePublicLine(added),
+      expectedAdded,
+      "a /dev/null old path must not override the recognized new-side language",
+    );
+  } finally {
+    try {
+      disposeDocument?.();
+    } finally {
+      disposeOracle?.();
+    }
+  }
+}
 async function runMultiFileDiffUsesIndependentPerFileShikiTest(): Promise<void> {
   const diffSource = [
     "diff --git a/open.ts b/open.ts",
@@ -1151,6 +1213,28 @@ async function runHeaderLikeDiffContentUsesHunkCountsTest(): Promise<void> {
     );
   } finally {
     disposeDocument?.();
+  }
+}
+
+async function runSplitHunkHeaderKeepsProvisionalStatusTest(): Promise<void> {
+  const document = createCodeDocument({ language: "typescript", diff: true, initialContent: "" });
+
+  try {
+    document.append("@@ -1");
+    assert.notStrictEqual(
+      document.handle.readMetadata().diffStatus,
+      "malformed",
+      "an uncommitted partial hunk header must not be classified as malformed",
+    );
+
+    document.append(" +1 @@\n-a\n+a\n");
+    assert.strictEqual(
+      document.handle.readMetadata().diffStatus,
+      "complete",
+      "a completed streamed hunk header and its rows produce a complete diff",
+    );
+  } finally {
+    document.dispose();
   }
 }
 
@@ -1385,12 +1469,14 @@ async function runFinalizedNewFileWithoutTerminalNewlineTest(): Promise<void> {
 await runDiffFileContextAvailabilityResetsTest();
 
 await runUnknownDiffFileLanguageFallsBackToBaseTest();
+await runDiffNullPathKeepsRecognizedLanguageTest();
 await runMultiFileDiffUsesIndependentPerFileShikiTest();
 
 await runHeaderLikeDiffContentUsesHunkCountsTest();
 await runDeletedFileHeaderLikeBodyRangePropertyTest();
 await runFinalizedNewFileWithoutTerminalNewlineTest();
 await runDeclaredHunkCountsReportDiffStatusTest();
+await runSplitHunkHeaderKeepsProvisionalStatusTest();
 
 await runStandaloneCodeDocumentTest();
 await runFinalizedCodeDocumentIsSealedTest();
