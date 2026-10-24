@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import { StreamingMarkdown, type NodePresentations, type NodeViewProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { NativeNodeView, StreamingMarkdown, type NodePresentations, type NodeViewProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
 import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { MarkdownBlocksRenderer as ServerMarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-native-fixture";
@@ -173,6 +173,98 @@ async function nativeBlockDecorationsReachTheirElements(): Promise<void> {
   }
 }
 
+async function nonTableHeadlessPresentationRendersTheNativeHeading(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const components = {
+    heading: {
+      view: ({ handle: nodeHandle }) => <NativeNodeView handle={nodeHandle} />,
+    },
+  } satisfies NodePresentations;
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready for native heading view");
+    await act(async () => {
+      handle.current?.append("## Headless heading");
+      await handle.current?.finalize();
+    });
+
+    await waitFor(() => container.querySelector("h2"), "native heading from headless presentation");
+    assert.equal(container.querySelector("h2")?.textContent, "Headless heading");
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
+async function codeWrapperReceivesMetadataAndSourceAction(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  let codeSource: string | undefined;
+  let presentation: NodeViewProps | undefined;
+  const components = {
+    code: {
+      wrapper: (props: NodeViewProps) => {
+        presentation = props;
+        if (codeSource === undefined) codeSource = props.actions.readSource();
+        return <section data-code-presentation>{props.children}</section>;
+      },
+    },
+  } satisfies NodePresentations;
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready for code wrapper");
+    await act(async () => {
+      handle.current?.append("```typescript\nconst first = 1;\nconst second = 2;\n");
+    });
+
+    await waitFor(() => container.querySelector("section[data-code-presentation]"), "code presentation wrapper");
+    assert.ok(presentation, "the code wrapper receives presentation props");
+    assert.equal(presentation.metadata.language, "typescript");
+    assert.equal(presentation.metadata.lineCount, 2);
+    assert.equal(
+      codeSource,
+      "```typescript\nconst first = 1;\nconst second = 2;\n",
+      "the code wrapper reads its authored code through the code handle",
+    );
+
+    await act(async () => { await handle.current?.finalize(); });
+
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
 
 async function finalizedParagraphPresentationKeepsColdSourceBehindActions(): Promise<void> {
   const restore = installTrustedNativeTestDom();
@@ -381,6 +473,8 @@ runNodePresentationsTest();
 
 await finalizedHeadingPresentationMatchesServerOutput();
 await nativeBlockDecorationsReachTheirElements();
+await nonTableHeadlessPresentationRendersTheNativeHeading();
+await codeWrapperReceivesMetadataAndSourceAction();
 await finalizedParagraphPresentationKeepsColdSourceBehindActions();
 await mermaidEngineUsesTheNativeCodeOwner();
 await mermaidWithoutEngineStaysNativeCode();
