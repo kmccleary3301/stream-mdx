@@ -104,7 +104,7 @@ const inlineComponents = {
 async function testOwnedHtmlParser() {
   await renderHtml({
     text: "<div><span>**#ABC-1** $x$</span></div>",
-    syntax: [ticket],
+    syntax: { contractVersion: 1, inline: [ticket] },
     html: { literalTagContent: [] },
     inlineComponents,
     features: { math: false },
@@ -166,7 +166,10 @@ async function testPartialCloser(open: string, close: string, pattern: string) {
       ref={handle}
       engine="main-thread"
       stream={stream()}
-      syntax={[{ name: "delimited", pattern: { source: pattern }, attrs: { value: 1 }, anticipation: { open, close } }]}
+      syntax={{
+        contractVersion: 1,
+        inline: [{ name: "delimited", pattern: { source: pattern }, attrs: { value: 1 }, anticipation: { open, close } }],
+      }}
       inlineComponents={{ delimited: ({ value }: { value?: string }) => <mark className="delimited">{value}</mark> }}
     />);
     await waitUntil(() => Boolean(container.querySelector(".delimited")));

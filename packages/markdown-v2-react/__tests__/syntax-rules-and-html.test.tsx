@@ -84,12 +84,19 @@ async function testInvalidRegexYieldsErrorMessage(): Promise<void> {
     },
   });
 
-  await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, syntax: [
-    {
-      name: "invalidRule",
-      pattern: { source: "[unclosed-bracket(" },
+  await engine.handle({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    syntax: {
+      contractVersion: 1,
+      inline: [
+        {
+          name: "invalidRule",
+          pattern: { source: "[unclosed-bracket(" },
+        },
+      ],
     },
-  ], });
+  });
 
   assert.ok(errors.length > 0, "expected an ERROR message for invalid regex pattern");
   const firstError = errors[0];
@@ -121,7 +128,7 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
     <StreamingMarkdown
       engine="main-thread"
       text="See issue #ABC-123 for details."
-      syntax={[ticketRule]}
+      syntax={{ contractVersion: 1, inline: [ticketRule] }}
       inlineComponents={{ ticket: TicketComponent }}
     />,
   );
@@ -152,7 +159,7 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
     <StreamingMarkdown
       engine="main-thread"
       stream={generateOneCharChunks()}
-      syntax={[ticketRule]}
+      syntax={{ contractVersion: 1, inline: [ticketRule] }}
       inlineComponents={{ ticket: TicketComponent }}
     />,
   );
@@ -195,7 +202,7 @@ async function testSyntaxRuleNestedInBold(): Promise<void> {
     <StreamingMarkdown
       engine="main-thread"
       text="This is **bold #ABC-1** text."
-      syntax={[ticketRule]}
+      syntax={{ contractVersion: 1, inline: [ticketRule] }}
       inlineComponents={{ ticket: TicketComponent }}
     />,
   );
@@ -254,18 +261,21 @@ async function testNestedSyntaxRuleWithCaptureAndCursorOffset(): Promise<void> {
   const container = window.document.getElementById("root");
   assert.ok(container, "missing render root");
 
-  const syntax: SyntaxRuleSpec[] = [
-    {
-      name: "containerBox",
-      pattern: { source: "\\[\\[([\\s\\S]*?)\\]\\]" },
-      content: 1,
-    },
-    {
-      name: "ticket",
-      pattern: { source: "#([A-Z]+-\\d+)" },
-      attrs: { id: 1 },
-    },
-  ];
+  const syntax = {
+    contractVersion: 1 as const,
+    inline: [
+      {
+        name: "containerBox",
+        pattern: { source: "\\[\\[([\\s\\S]*?)\\]\\]" },
+        content: 1,
+      },
+      {
+        name: "ticket",
+        pattern: { source: "#([A-Z]+-\\d+)" },
+        attrs: { id: 1 },
+      },
+    ] as readonly SyntaxRuleSpec[],
+  };
 
   const ContainerComp = ({ children }: { children?: React.ReactNode }) => (
     <span className="custom-container">{children}</span>
@@ -310,13 +320,16 @@ async function testHeadingRendersPluginNodes(): Promise<void> {
   const container = window.document.getElementById("root");
   assert.ok(container, "missing render root");
 
-  const syntax: SyntaxRuleSpec[] = [
-    {
-      name: "ticket",
-      pattern: { source: "#([A-Z]+-\\d+)" },
-      attrs: { id: 1 },
-    },
-  ];
+  const syntax = {
+    contractVersion: 1 as const,
+    inline: [
+      {
+        name: "ticket",
+        pattern: { source: "#([A-Z]+-\\d+)" },
+        attrs: { id: 1 },
+      },
+    ] as readonly SyntaxRuleSpec[],
+  };
 
   const TicketComp = ({ attrs }: { attrs?: Record<string, string | number> }) => (
     <span className="custom-ticket" data-ticket-id={String(attrs?.id ?? "")}>
@@ -473,13 +486,20 @@ async function testAnticipationOverlapAndStreamingStatus(): Promise<void> {
     },
   });
 
-  await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, syntax: [
-    {
-      name: "wiki",
-      pattern: { source: "\\[\\[([^\\]]+)\\]\\]" },
-      anticipation: { open: "[[", close: "]]" },
+  await engine.handle({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    syntax: {
+      contractVersion: 1,
+      inline: [
+        {
+          name: "wiki",
+          pattern: { source: "\\[\\[([^\\]]+)\\]\\]" },
+          anticipation: { open: "[[", close: "]]" },
+        },
+      ],
     },
-  ], });
+  });
 
   // Stream unclosed anticipation open
   await engine.handle({
@@ -526,13 +546,16 @@ async function testDynamicPropUpdatesReInits(): Promise<void> {
   assert.strictEqual(container!.querySelector(".dynamic-ticket"), null, "should not have ticket component initially");
 
   // Update with syntax rules
-  const syntax: SyntaxRuleSpec[] = [
-    {
-      name: "ticket",
-      pattern: { source: "#([A-Z]+-\\d+)" },
-      attrs: { id: 1 },
-    },
-  ];
+  const syntax = {
+    contractVersion: 1 as const,
+    inline: [
+      {
+        name: "ticket",
+        pattern: { source: "#([A-Z]+-\\d+)" },
+        attrs: { id: 1 },
+      },
+    ] as readonly SyntaxRuleSpec[],
+  };
 
   root.render(
     <StreamingMarkdown
@@ -569,17 +592,24 @@ async function testInvalidRegexRecoveryWithValidRule(): Promise<void> {
     },
   });
 
-  await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, syntax: [
-    {
-      name: "badRule",
-      pattern: { source: "[invalid(regex" },
+  await engine.handle({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    syntax: {
+      contractVersion: 1,
+      inline: [
+        {
+          name: "badRule",
+          pattern: { source: "[invalid(regex" },
+        },
+        {
+          name: "ticket",
+          pattern: { source: "#([A-Z]+-\\d+)" },
+          attrs: { id: 1 },
+        },
+      ],
     },
-    {
-      name: "ticket",
-      pattern: { source: "#([A-Z]+-\\d+)" },
-      attrs: { id: 1 },
-    },
-  ], });
+  });
 
   assert.ok(errors.length > 0, "should report error for badRule");
 

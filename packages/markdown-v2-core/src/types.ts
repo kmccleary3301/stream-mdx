@@ -179,6 +179,16 @@ export interface SyntaxRuleSpec {
   content?: number /* capture group parsed as inline children */;
   anticipation?: { open: string; close: string };
 }
+export interface ContainerExtensionSpec {
+  readonly name: string;
+  readonly component: string;
+}
+
+export interface SyntaxExtensionDescriptor {
+  readonly contractVersion: 1;
+  readonly inline?: readonly SyntaxRuleSpec[];
+  readonly containers?: readonly ContainerExtensionSpec[];
+}
 
 export interface HtmlOptions {
   allowedTags?: Record<string, string[]>;
@@ -264,7 +274,7 @@ export type WorkerIn =
       };
       contentPolicy?: ContentPolicy;
       contentComponents?: readonly RestrictedComponentDescriptor[];
-      syntax?: SyntaxRuleSpec[];
+      syntax?: SyntaxExtensionDescriptor;
       html?: HtmlOptions;
     }
   | { type: "APPEND"; text: string }

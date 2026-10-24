@@ -42,7 +42,10 @@ async function runLegacyCacheCompatibilityTest(): Promise<void> {
       contentComponents: [{ name: "Badge", renderWhen: "closed" }],
       prewarmLangs: [],
       themes: { light: "min-light", dark: "nord" },
-      syntax: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
+      syntax: {
+        contractVersion: 1 as const,
+        inline: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
+      },
       html: { allowRaw: true, allowedTags: { kbd: [] }, literalTagContent: ["kbd"] },
     } satisfies NonNullable<CompileMarkdownSnapshotOptions["init"]>;
     const hashSalt = "legacy-cache-compat";

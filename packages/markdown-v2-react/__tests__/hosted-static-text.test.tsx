@@ -426,7 +426,10 @@ try {
     assert.equal(hosted.input.slice(beforeRapid).filter((message) => message.type === "FINALIZE").length, 1, "stale static generation cannot finalize replacement");
     assert.equal(container.textContent?.includes("Obsolete in-flight consumer document"), false);
 
-    const syntax: SyntaxRuleSpec[] = [{ name: "invalid", pattern: { source: "[unclosed(" } }, { name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }];
+    const syntax = {
+      contractVersion: 1 as const,
+      inline: [{ name: "invalid", pattern: { source: "[unclosed(" } }, { name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }] as readonly SyntaxRuleSpec[],
+    };
     root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={`# Recoverable rules\n\n#ABC-123\n\n${replacement}`}
       features={features} syntax={syntax} inlineComponents={{ ticket: ({ id }: { id?: string }) => <span data-ticket={id}>{id}</span> }} tableVirtualization={true} caret={false} />);
     await waitFor(() => Boolean(container.querySelector('[data-ticket="ABC-123"]')) && Boolean(container.querySelector('[data-table-virtualized="true"]')),

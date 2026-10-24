@@ -83,7 +83,10 @@ console.log(`HTML consumer observed passing IDs: ${passing.map((number) => `cm_$
 assert.deepEqual(failures, [], failures.join("\n"));
 
 // Actual parsed markdown leaves must survive an HTML owner, rather than becoming raw HTML text.
-const syntax: SyntaxRuleSpec[] = [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }];
+const syntax = {
+  contractVersion: 1 as const,
+  inline: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }] as readonly SyntaxRuleSpec[],
+};
 const html: HtmlOptions = { allowedTags: { del: [], span: ["data-safe"], kbd: [] }, literalTagContent: ["kbd"] };
 const text = '<del>\n\n**#ABC-123** and <span data-safe="yes" onclick="alert(1)">*nested*</span> <kbd>**literal**</kbd>\n\n</del>\n';
 const store = await streamed(text, { html, syntax });
@@ -134,7 +137,10 @@ assert.equal(paragraphDocument.querySelector('p[data-paragraph="configured"]')?.
 assert.equal(paragraphDocument.querySelectorAll("p").length, 1, "normalized paragraph must use its configured component exactly once");
 
 const captureStore = await streamed('start [[<a href="/outer">[inner](/inner) trailing]] end', {
-  syntax: [{ name: "capture", pattern: { source: "\\[\\[([\\s\\S]*?)\\]\\]" }, content: 1 }],
+  syntax: {
+    contractVersion: 1,
+    inline: [{ name: "capture", pattern: { source: "\\[\\[([\\s\\S]*?)\\]\\]" }, content: 1 }],
+  },
 });
 const captureRegistry = new ComponentRegistry({}, {
   capture: ({ children }: { children?: React.ReactNode }) => <mark data-capture="configured">{children}</mark>,

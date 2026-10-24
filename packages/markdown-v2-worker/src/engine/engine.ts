@@ -52,7 +52,9 @@ import type {
   InlineNode,
   InlineStreamingInlineStatus,
   InlineLookaheadPrepareResult,
+  ContainerExtensionSpec,
   SyntaxRuleSpec,
+  SyntaxExtensionDescriptor,
   NormalizedFormatAnticipation,
   LinkReferenceDefinition,
   Patch,
@@ -79,6 +81,7 @@ import type {
   ContentPolicy,
   RestrictedComponentDescriptor,
 } from "@stream-mdx/core";
+import { validateSyntaxExtensionDescriptor } from "./registered-component-owner";
 import {
   AppendSourceDocument,
   STREAM_MDX_SCHEMA_VERSION,
@@ -1180,6 +1183,7 @@ export class MarkdownEngine {
   private readonly documentPluginState: DocumentState = {};
   private inlineParser!: InlineParser;
   private syntaxRules: SyntaxRuleSpec[] = [];
+  private syntaxContainers: readonly ContainerExtensionSpec[] = [];
   private htmlConfig?: HtmlOptions;
   private mixedHtmlConfig: HtmlOptions = { literalTagContent: [] };
   private performanceTimer = new PerformanceTimer();
@@ -1324,7 +1328,7 @@ export class MarkdownEngine {
       }
     }
     if (this.extensions?.syntax) {
-      this.syntaxRules.push(...this.extensions.syntax);
+      this.syntaxRules.push(...(this.extensions.syntax.inline ?? []));
     }
 
     this.buildInlineParser();
@@ -2039,7 +2043,7 @@ export class MarkdownEngine {
       lazyTokenization?: { enabled?: boolean; thresholdLines?: number };
       themes?: CodeHighlightThemes;
     },
-    syntax?: SyntaxRuleSpec[],
+    syntax?: SyntaxExtensionDescriptor,
     html?: HtmlOptions,
     themes?: CodeHighlightThemes,
     contentPolicy?: ContentPolicy,
@@ -2102,10 +2106,30 @@ export class MarkdownEngine {
 
     this.syntaxRules = [];
     if (this.extensions?.syntax) {
-      this.syntaxRules.push(...this.extensions.syntax);
+      this.syntaxRules.push(...(this.extensions.syntax.inline ?? []));
     }
-    if (syntax && Array.isArray(syntax)) {
-      for (const rule of syntax) {
+    const syntaxDescriptors = [this.extensions?.syntax, syntax].filter(
+      (descriptor): descriptor is SyntaxExtensionDescriptor => descriptor !== undefined,
+    );
+    const containerSpecs: ContainerExtensionSpec[] = [];
+    for (const descriptor of syntaxDescriptors) {
+      try {
+        containerSpecs.push(...validateSyntaxExtensionDescriptor(descriptor, this.contentComponents));
+      } catch (err) {
+        this.reportError(err, "INIT");
+      }
+    }
+    try {
+      this.syntaxContainers = validateSyntaxExtensionDescriptor(
+        { contractVersion: 1, containers: containerSpecs },
+        this.contentComponents,
+      );
+    } catch (err) {
+      this.reportError(err, "INIT");
+      this.syntaxContainers = [];
+    }
+    if (syntax?.inline && Array.isArray(syntax.inline)) {
+      for (const rule of syntax.inline) {
         try {
           const cleanedFlags = (rule.pattern?.flags || "").replace(/[gy]/g, "");
           new RegExp(rule.pattern?.source ?? "", `${cleanedFlags}y`);
@@ -2682,7 +2706,7 @@ export class MarkdownEngine {
     if (sourceStart === undefined) return undefined;
     const block = this.rootBlockAtSourceStart(sourceStart);
     return block?.id === containerId
-      && (block.type === "list" || block.type === "blockquote")
+      && ((block.type === "list" || block.type === "blockquote") || this.hasRegisteredContainerOwnership(block))
       ? block
       : undefined;
   }
@@ -4699,10 +4723,22 @@ export class MarkdownEngine {
     return projected;
   }
 
+  private createBlockSnapshotWithNativeCodeOwners(
+    block: Block,
+    onNodeCreated?: (node: NodeSnapshot) => void,
+  ): NodeSnapshot {
+    return createBlockSnapshot(block, onNodeCreated, (nestedBlock) => {
+      const owner = this.nestedCodeOwners.get(nestedBlock.id);
+      return owner
+        ? mutableNativeOwnerSnapshot(owner.snapshot(this.rootCodeConfigurationRevision), owner.getMetadata().sourceRange)
+        : undefined;
+    });
+  }
+
   private createRootSnapshot(blocks: readonly Block[]): NodeSnapshot {
     const children: Array<{ from: number; node: NodeSnapshot }> = [];
     for (const block of blocks) {
-      const node = createBlockSnapshot(this.projectNativeContainerBlockForExport(block));
+      const node = this.createBlockSnapshotWithNativeCodeOwners(this.projectNativeContainerBlockForExport(block));
       children.push({ from: block.payload.range?.from ?? Number.POSITIVE_INFINITY, node });
     }
     const source = this.sourceDocument.snapshot();
@@ -5242,6 +5278,11 @@ export class MarkdownEngine {
       const sourceOffset = options.sourceOffset ?? 0;
       if (!options.continueHeadingIds) this.headingIdCounts = new Map<string, number>();
       const extracted: Block[] = [];
+      const nativeCodeNodes = new Map<string, {
+        readonly node: SyntaxNode;
+        readonly sourceOffset: number;
+        readonly range: { readonly from: number; readonly to: number };
+      }>();
       const cursor = tree.cursor();
       const footnotesEnabled = this.documentPluginRegistry.getAll().some((plugin) => plugin.name === "footnotes");
       let hasRecognizedNodes = false;
@@ -5321,6 +5362,13 @@ export class MarkdownEngine {
           }
 
           if (block) {
+            if (block.type === "code") {
+              nativeCodeNodes.set(block.id, {
+                node: cursor.node,
+                sourceOffset,
+                range: { from: globalFrom, to: globalTo },
+              });
+            }
             extracted.push(block);
             continue;
           }
@@ -5345,6 +5393,13 @@ export class MarkdownEngine {
             throw error;
           }
           if (block) extracted.push(block);
+          if (block?.type === "code") {
+            nativeCodeNodes.set(block.id, {
+              node: cursor.node,
+              sourceOffset,
+              range: { from: globalFrom, to: globalTo },
+            });
+          }
         } while (cursor.nextSibling());
       }
 
@@ -5352,17 +5407,175 @@ export class MarkdownEngine {
         return await this.extractBlocksSimple(content, options);
       }
 
-      return groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, sourceOffset, (text) => this.inlineParser.parse(text), {
-        forceFinalize: options.forceFinalize,
-        mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
-        contentPolicy: this.contentPolicy,
-        contentComponents: this.getActiveContentComponents(),
-      });
+      const grouped = groupHtmlOwnership(
+        extracted,
+        this.mdParser,
+        content,
+        this.htmlConfig,
+        sourceOffset,
+        (text) => this.inlineParser.parse(text),
+        {
+          forceFinalize: options.forceFinalize,
+          mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
+          contentPolicy: this.contentPolicy,
+          contentComponents: this.getActiveContentComponents(),
+          syntaxContainers: this.syntaxContainers,
+        },
+      );
+      await this.prepareRegisteredContainerCodeOwners(grouped, nativeCodeNodes, options);
+      return grouped;
     } catch (error) {
       if (nativeContainerPreparationFailed) throw error;
       console.warn("Lezer parsing failed, falling back to simple parsing:", error);
       return await this.extractBlocksSimple(content, options);
     }
+  }
+
+  private async prepareRegisteredContainerCodeOwners(
+    blocks: readonly Block[],
+    syntaxNodes: ReadonlyMap<string, {
+      readonly node: SyntaxNode;
+      readonly sourceOffset: number;
+      readonly range: { readonly from: number; readonly to: number };
+    }>,
+    options: ParseOptions,
+  ): Promise<void> {
+    const candidates: Array<{ readonly container: Block; readonly code: Block }> = [];
+    const seenCodes = new Set<string>();
+    for (const container of blocks) {
+      const tree = container.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
+      if (!Array.isArray(tree)) continue;
+      const pending = tree.map((node) => ({ node, registered: false }));
+      while (pending.length > 0) {
+        const current = pending.pop();
+        if (!current) continue;
+        const { node, registered } = current;
+        if (node.kind === "element" || node.kind === "component") {
+          const isRegistered = registered
+            || (node.kind === "component" && node.rawSource?.trimStart().startsWith(":::") === true);
+          pending.push(...node.children.map((child) => ({ node: child, registered: isRegistered })));
+        } else if (node.kind === "block") {
+          if (registered && node.block.type === "code" && !seenCodes.has(node.block.id)) {
+            seenCodes.add(node.block.id);
+            candidates.push({ container, code: node.block });
+          }
+          const nested = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
+          if (Array.isArray(nested)) {
+            pending.push(...nested.map((child) => ({ node: child, registered })));
+          }
+        }
+      }
+    }
+
+    if (candidates.length === 0) return;
+    const source = this.sourceDocument.snapshot();
+    const ownersToDecorate = new Set<NativeNestedCodeSourceOwner>();
+    const existedBeforeUpdate = new Set<NativeNestedCodeSourceOwner>();
+    for (const { container, code } of candidates) {
+      const native = syntaxNodes.get(code.id);
+      if (!native) throw new Error(`Registered container code block ${code.id} has no native parser node`);
+      const sourceOffset = native.sourceOffset;
+      const mapping: NativeNestedCodeSourceMapping = {
+        input: new SourceRangeInput(source, sourceOffset),
+        source,
+        mapOffset: (offset) => sourceOffset + offset,
+        mapRange: (from, to) => ({ from: sourceOffset + from, to: sourceOffset + to }),
+      };
+      const range = code.payload.range ?? native.range;
+      const closure = options.forceFinalize ? "finalized" : code.isFinalized ? "closed" : "open";
+      let owner = this.nestedCodeOwners.get(code.id);
+      if (owner && owner.containerId !== container.id) {
+        this.retireNestedCodeOwner(owner.containerId, code.id, owner);
+        owner = undefined;
+      } else if (owner) {
+        existedBeforeUpdate.add(owner);
+      }
+
+      if (owner?.state === "open") {
+        const previousRange = owner.getMetadata().sourceRange;
+        const ownedNodes: SyntaxNode[] = [];
+        for (let child = native.node.firstChild; child; child = child.nextSibling) {
+          if (child.type.name === "CodeText" || child.type.name === "CodeMark") ownedNodes.push(child);
+        }
+        const update = owner.acceptNativeTail({
+          nodes: ownedNodes,
+          mapping,
+          inputGeneration: this.documentGeneration,
+          sourceDocument: this.sourceDocument,
+          closure,
+          sourceRange: { from: previousRange.from, to: Math.max(previousRange.to, range.to) },
+        });
+        this.syncNestedCodeOwnerLedger(owner);
+        if (update.revision !== update.expectedRevision || update.sourceAppend.length > 0) {
+          this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(update));
+        }
+      } else if (owner?.state === "closed" && closure === "finalized") {
+        const update = owner.finalize(mapping);
+        this.syncNestedCodeOwnerLedger(owner);
+        if (update.revision !== update.expectedRevision) this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(update));
+      } else if (!owner) {
+        owner = NativeNestedCodeSourceOwner.admit({
+          id: code.id,
+          containerId: container.id,
+          generation: ++this.nestedLeaseGeneration,
+          inputGeneration: this.documentGeneration,
+          source: this.sourceDocument,
+          node: native.node,
+          mapping,
+          closure,
+          range,
+        });
+        this.nestedCodeOwners.set(code.id, owner);
+        addNativeOwnerIdToContainer(this.nestedCodeOwnerIdsByContainer, code.id, container.id);
+        this.syncNestedCodeOwnerLedger(owner);
+      }
+
+      if (!owner) continue;
+      this.nativeContainerSourceStarts.set(container.id, container.payload.range?.from ?? range.from);
+      if (owner.state === "open") this.activeNestedCodeByContainer.set(container.id, owner.id);
+      else if (this.activeNestedCodeByContainer.get(container.id) === owner.id) this.activeNestedCodeByContainer.delete(container.id);
+      owner.setPresentation(code);
+      if (!this.shouldDeferNativeNestedCodeHighlight(owner)) ownersToDecorate.add(owner);
+    }
+
+    for (const owner of ownersToDecorate) {
+      const decorations = owner.isDiff && owner.state !== "open" && this.highlightOutputMode !== "html"
+        ? await this.rootCodeHighlighter.tokenizeRange(
+            owner,
+            0,
+            owner.getLines().length,
+            this.rootCodeHighlightConfiguration(true),
+            () => !this.disposed,
+            "range",
+          )
+        : await this.rootCodeHighlighter.decorateAvailable(
+            owner,
+            this.rootCodeHighlightConfiguration(owner.state !== "open"),
+            () => !this.disposed,
+          );
+      if (decorations.length === 0) continue;
+      if (existedBeforeUpdate.has(owner)) {
+        const patch = owner.decoratePatch(this.rootCodeConfigurationRevision, decorations);
+        if (patch) this.pendingNativeNestedOwnerPatches.push(patch);
+      }
+    }
+  }
+
+  private hasRegisteredContainerOwnership(block: Block): boolean {
+    const tree = block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
+    if (!Array.isArray(tree)) return false;
+    const pending = [...tree];
+    while (pending.length > 0) {
+      const node = pending.pop();
+      if (!node) continue;
+      if (node.kind === "component") {
+        if (node.rawSource?.trimStart().startsWith(":::")) return true;
+        pending.push(...node.children);
+      } else if (node.kind === "element") {
+        pending.push(...node.children);
+      }
+    }
+    return false;
   }
 
   private async extractBlocksSimple(content: SourceText, options: ParseOptions = {}): Promise<Block[]> {
@@ -7749,6 +7962,7 @@ export class MarkdownEngine {
           mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
           contentPolicy: this.contentPolicy,
           contentComponents,
+          syntaxContainers: this.syntaxContainers,
         });
         const retained = new Set<Block>(owned);
         // Markdown leaves absorbed into an owner keep their consumer metadata (code highlighting,
@@ -9380,12 +9594,12 @@ export class MarkdownEngine {
         ? this.projectNativeContainerBlockForExport(sourceBlock)
         : sourceBlock;
       if ((typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters) {
-        return (createBlockSnapshot as (value: Block, callback?: (node: NodeSnapshot) => void) => NodeSnapshot)(
+        return this.createBlockSnapshotWithNativeCodeOwners(
           block,
           () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
         );
       }
-      return createBlockSnapshot(block);
+      return this.createBlockSnapshotWithNativeCodeOwners(block);
     };
 
     let prefix = 0;
@@ -9815,17 +10029,17 @@ export class MarkdownEngine {
       }
 
       const prevSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
-        ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+        ? this.createBlockSnapshotWithNativeCodeOwners(
             prevBlock,
             () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
           )
-        : createBlockSnapshot(prevBlock);
+        : this.createBlockSnapshotWithNativeCodeOwners(prevBlock);
       const nextSnapshot = (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) && this.campaignCounters
-        ? (createBlockSnapshot as (b: Block, cb?: (n: NodeSnapshot) => void) => NodeSnapshot)(
+        ? this.createBlockSnapshotWithNativeCodeOwners(
             nextBlock,
             () => this.campaignCounters?.recordSnapshotNodes(1, "snapshot"),
           )
-        : createBlockSnapshot(nextBlock);
+        : this.createBlockSnapshotWithNativeCodeOwners(nextBlock);
 
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters) {
         diffNodeSnapshot(nextBlock.id, prevSnapshot, nextSnapshot, patches, metrics, this.campaignCounters);
@@ -9948,9 +10162,15 @@ export class MarkdownEngine {
     });
   }
 
-  private async finalizeClosedNestedCodeOwner(owner: NativeNestedCodeSourceOwner): Promise<void> {
-    if (this.nestedCodeOwners.get(owner.id) !== owner || owner.state !== "closed") return;
-    const change = owner.finalizeClosed();
+  private async finalizeNestedCodeOwner(
+    owner: NativeNestedCodeSourceOwner,
+    mapping?: NativeNestedCodeSourceMapping,
+  ): Promise<void> {
+    if (this.nestedCodeOwners.get(owner.id) !== owner) return;
+    const change = owner.state === "closed"
+      ? owner.finalizeClosed()
+      : owner.state === "open" && mapping ? owner.finalize(mapping) : undefined;
+    if (!change) return;
     this.syncNestedCodeOwnerLedger(owner);
     if (change.revision !== change.expectedRevision) {
       this.pendingNativeNestedOwnerPatches.push(owner.appendPatch(change));
@@ -9997,12 +10217,14 @@ export class MarkdownEngine {
     const source = this.sourceDocument.snapshot();
     const containersToFinalize = new Set(this.nativeContainerTails.keys());
     const closedParagraphOwners: Array<{ readonly owner: RootParagraphSourceOwner; readonly blockId: string }> = [];
+    const registeredOpenCodeOwners: NativeNestedCodeSourceOwner[] = [];
     const closedCodeOwners: NativeNestedCodeSourceOwner[] = [];
     for (const containerId of this.activeNestedParagraphByContainer.keys()) {
       containersToFinalize.add(containerId);
     }
     for (const containerId of this.activeNestedCodeByContainer.keys()) {
-      containersToFinalize.add(containerId);
+      const container = this.nativeContainerBlockAtSourceStart(containerId);
+      if (!container || !this.hasRegisteredContainerOwnership(container)) containersToFinalize.add(containerId);
     }
     for (const containerId of this.activeNestedTableByContainer.keys()) {
       containersToFinalize.add(containerId);
@@ -10029,11 +10251,14 @@ export class MarkdownEngine {
         this.syncNestedCodeOwnerLedger(owner);
         continue;
       }
-      if (!this.nativeContainerBlockAtSourceStart(owner.containerId)) {
-        throw new Error(`Native code owner ${owner.id} is missing from the current container tree`);
+      const container = this.nativeContainerBlockAtSourceStart(owner.containerId);
+      if (!container) throw new Error(`Native code owner ${owner.id} is missing from the current container tree`);
+      if (owner.state === "open") {
+        if (this.hasRegisteredContainerOwnership(container)) registeredOpenCodeOwners.push(owner);
+        else containersToFinalize.add(owner.containerId);
+      } else {
+        closedCodeOwners.push(owner);
       }
-      if (owner.state === "open") containersToFinalize.add(owner.containerId);
-      else closedCodeOwners.push(owner);
     }
     for (const ownerId of this.unfinishedNestedTableOwnerIds) {
       const owner = this.nestedTableOwners.get(ownerId);
@@ -10128,6 +10353,17 @@ export class MarkdownEngine {
         await this.prepareNativeNestedChildren(block, { forceFinalize: true, sourceOffset: native.sourceOffset }, [], native.node);
       }
     }
+    if (registeredOpenCodeOwners.length > 0) {
+      const mapping: NativeNestedCodeSourceMapping = {
+        input: new SourceRangeInput(source, 0),
+        source,
+        mapOffset: (offset) => offset,
+        mapRange: (from, to) => ({ from, to }),
+      };
+      for (const owner of registeredOpenCodeOwners) {
+        await this.finalizeNestedCodeOwner(owner, mapping);
+      }
+    }
 
     // Closed leaves only need lifecycle patches; completed containers stay out of the parse path.
     for (const { owner, blockId } of closedParagraphOwners) {
@@ -10137,7 +10373,7 @@ export class MarkdownEngine {
       }
     }
     for (const owner of closedCodeOwners) {
-      if (!containersToFinalize.has(owner.containerId)) await this.finalizeClosedNestedCodeOwner(owner);
+      if (!containersToFinalize.has(owner.containerId)) await this.finalizeNestedCodeOwner(owner);
     }
 
     const finalizePatches: Patch[] = [];

@@ -21,7 +21,7 @@ import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
-import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type CodeNodePresentation, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type CodeNodePresentation, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxExtensionDescriptor, type TableElements, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
   resolve(): void;
@@ -55,7 +55,7 @@ interface StreamingMarkdownConfigSignature {
   scheduling: StreamingSchedulerOptions | undefined;
   contentPolicy?: ContentPolicy;
   contentComponentKeys: string[];
-  syntax?: SyntaxRuleSpec[];
+  syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   themes?: { light: string; dark: string };
 }
@@ -181,7 +181,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   mathRenderer?: MathRenderer;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
   blockRenderer?: BlockRendererOverride;
-  syntax?: SyntaxRuleSpec[];
+  syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   tableVirtualization?: TableVirtualizationOptions;
   codeVirtualization?: Partial<VirtualizedCodeConfig>;

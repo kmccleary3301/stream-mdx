@@ -44,7 +44,10 @@ async function runDirectCompileParityTest(): Promise<void> {
     },
     prewarmLangs: ["typescript"],
     themes: { light: "min-light", dark: "nord" },
-    syntax: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
+    syntax: {
+      contractVersion: 1 as const,
+      inline: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
+    },
     html: { allowRaw: true, allowedTags: { kbd: [] }, literalTagContent: ["kbd"] },
   };
 

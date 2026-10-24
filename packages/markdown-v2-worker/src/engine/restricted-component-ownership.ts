@@ -4,6 +4,7 @@ import {
   parseRestrictedTag,
   sanitizeHtmlTreeInWorker,
   type Block,
+  type ContainerExtensionSpec,
   type HtmlOptions,
   type HtmlTreeNode,
   type InlineNode,
@@ -11,6 +12,11 @@ import {
   type RestrictedTagParseResult,
 } from "@stream-mdx/core";
 import { normalizeNativeInlineParagraph } from "./native-inline-normalization";
+import {
+  matchRegisteredContainerCloser,
+  matchRegisteredContainerOpening,
+  type RegisteredContainerOpening,
+} from "./registered-component-owner";
 
 type SourceRange = { readonly from: number; readonly to: number };
 
@@ -309,6 +315,79 @@ type RestrictedAdmissionOptions = {
   protectedRanges?: readonly SourceRange[];
   htmlOptions?: HtmlOptions;
 };
+
+export type RegisteredContainerDelimiterEvent =
+  | { readonly kind: "open"; readonly from: number; readonly to: number; readonly opening: RegisteredContainerOpening }
+  | { readonly kind: "close"; readonly from: number; readonly to: number; readonly opening: RegisteredContainerOpening };
+
+export function scanRegisteredContainerSource(
+  source: string,
+  extensions: readonly ContainerExtensionSpec[],
+  contentComponents: ReadonlyMap<string, RestrictedComponentDescriptor>,
+  parser?: MarkdownParser,
+  options?: {
+    readonly protectedRanges?: readonly SourceRange[];
+    readonly blockStartOffsets?: readonly number[];
+    readonly literalTagContent?: readonly string[];
+    readonly openStack?: RegisteredContainerOpening[];
+  },
+): RegisteredContainerDelimiterEvent[] {
+  const inlineElements = parser?.parseInline(source, 0);
+  const protectedRanges = mergeProtectedRanges([
+    ...(parser && inlineElements
+      ? collectProtectedRanges(source, parser, inlineElements, options?.literalTagContent ?? [])
+      : []),
+    ...(options?.protectedRanges ?? []),
+  ]);
+  const blockStarts = new Set(options?.blockStartOffsets ?? []);
+  const openStack = options?.openStack ?? [];
+  const events: RegisteredContainerDelimiterEvent[] = [];
+  let rangeIndex = 0;
+  let lineStart = 0;
+  let previousLineBlank = false;
+  let previousWasFence = false;
+
+  while (lineStart <= source.length) {
+    const newline = source.indexOf("\n", lineStart);
+    const hasLineTerminator = newline >= 0;
+    const lineEnd = hasLineTerminator ? newline : source.length;
+    const contentEnd = lineEnd > lineStart && source[lineEnd - 1] === "\r" ? lineEnd - 1 : lineEnd;
+    const line = source.slice(lineStart, contentEnd);
+    const protectedTo = hasLineTerminator ? newline + 1 : lineEnd;
+    while (rangeIndex < protectedRanges.length && protectedRanges[rangeIndex]!.to <= lineStart) rangeIndex++;
+    const protectedRange = protectedRanges[rangeIndex];
+    const isProtected = protectedRange !== undefined && protectedRange.from < protectedTo && protectedRange.to > lineStart;
+
+    let wasFence = false;
+    if (!isProtected) {
+      const opening = matchRegisteredContainerOpening(
+        line,
+        extensions,
+        contentComponents,
+        lineStart === 0 || blockStarts.has(lineStart) || previousLineBlank || previousWasFence,
+        hasLineTerminator,
+      );
+      if (opening) {
+        openStack.push(opening);
+        events.push({ kind: "open", from: lineStart, to: contentEnd, opening });
+        wasFence = true;
+      } else {
+        const top = openStack[openStack.length - 1];
+        if (top && matchRegisteredContainerCloser(line, top.fenceLength)) {
+          openStack.pop();
+          events.push({ kind: "close", from: lineStart, to: contentEnd, opening: top });
+          wasFence = true;
+        }
+      }
+    }
+
+    previousLineBlank = line.trim().length === 0;
+    previousWasFence = wasFence;
+    if (!hasLineTerminator) break;
+    lineStart = newline + 1;
+  }
+  return events;
+}
 
 
 type RestrictedComponentTreeNode = Extract<HtmlTreeNode, { kind: "component" }> & {
@@ -968,6 +1047,128 @@ export function buildRestrictedComponentTree(
     rawSource: rawSource.slice(firstNonWhitespace, rootEnd),
     logicalSourceRange: { from: opening.from, to: rootEnd },
     diagnostic: !isClosed && options?.forceFinalize ? `Unclosed component tag <${componentName}>` : undefined,
+  };
+  const tree: HtmlTreeNode[] = [];
+  tree.push(...buildInlineRange(rawSource, tokens, tags, 0, firstNonWhitespace, options));
+  tree.push(component);
+  tree.push(...buildInlineRange(rawSource, tokens, tags, rootEnd, rawSource.length, options));
+  return tree;
+}
+function buildRegisteredContainerParagraphRange(
+  source: string,
+  tokens: readonly RestrictedComponentSourceToken[],
+  tags: readonly RestrictedComponentTag[],
+  from: number,
+  to: number,
+  options?: RestrictedAdmissionOptions,
+): HtmlTreeNode[] {
+  let paragraphFrom = from;
+  let paragraphTo = to;
+  while (paragraphFrom < paragraphTo && /\s/.test(source[paragraphFrom]!)) paragraphFrom++;
+  while (paragraphTo > paragraphFrom && /\s/.test(source[paragraphTo - 1]!)) paragraphTo--;
+  if (paragraphFrom === paragraphTo) return [];
+  const children = buildInlineRange(source, tokens, tags, paragraphFrom, paragraphTo, options);
+  if (children.length === 0) return [];
+  return [{
+    kind: "element",
+    tagName: "p",
+    attributes: {},
+    children,
+    paragraphRoot: true,
+  }];
+}
+
+export function buildRegisteredContainerTree(
+  rawSource: string,
+  contentComponents: ReadonlyMap<string, RestrictedComponentDescriptor>,
+  extensions: readonly ContainerExtensionSpec[],
+  options?: RestrictedAdmissionOptions & {
+    readonly childrenBlocks?: readonly Block[];
+    readonly childBlockRanges?: readonly { readonly block: Block; readonly from: number; readonly to: number }[];
+    readonly sourceOffset?: number;
+  },
+): HtmlTreeNode[] | null {
+  if (extensions.length === 0) return null;
+  const childBlocks = options?.childrenBlocks ?? [];
+  const childRanges = childBlocks.map((block, index) => {
+    const supplied = options?.childBlockRanges?.[index];
+    if (supplied?.block === block) return supplied;
+    const range = block.payload.range;
+    if (range && options?.sourceOffset !== undefined) {
+      return { block, from: range.from - options.sourceOffset, to: range.to - options.sourceOffset };
+    }
+    return undefined;
+  });
+  const protectedCodeRanges = childRanges.flatMap((range, index) =>
+    range && childBlocks[index]?.type === "code" ? [{ from: range.from, to: range.to }] : [],
+  );
+  const delimiters = scanRegisteredContainerSource(rawSource, extensions, contentComponents, options?.parser, {
+    literalTagContent: options?.literalTagContent,
+    protectedRanges: [...(options?.protectedRanges ?? []), ...protectedCodeRanges],
+    blockStartOffsets: childRanges.flatMap((range) => range ? [range.from] : []),
+  });
+  const openingEvent = delimiters.find(
+    (event) => event.kind === "open" && rawSource.slice(0, event.from).trim().length === 0,
+  );
+  if (!openingEvent || openingEvent.kind !== "open") return null;
+  const opening = openingEvent.opening;
+  const closingEvent = delimiters.find(
+    (event) => event.kind === "close" && event.opening === opening,
+  );
+  const isClosed = closingEvent !== undefined;
+  const closeLineStart = closingEvent?.from ?? rawSource.length;
+  const closeStart = closingEvent
+    ? closeLineStart - (rawSource[closeLineStart - 1] === "\n" ? rawSource[closeLineStart - 2] === "\r" ? 2 : 1 : 0)
+    : rawSource.length;
+  const rootEnd = closingEvent?.to ?? rawSource.length;
+  let bodyStart = openingEvent.to;
+  if (rawSource[bodyStart] === "\r") bodyStart++;
+  if (rawSource[bodyStart] === "\n") bodyStart++;
+
+  const tokens = scanRestrictedComponentSource(rawSource, contentComponents, options?.parser, {
+    literalTagContent: options?.literalTagContent,
+    protectedRanges: [...(options?.protectedRanges ?? []), ...protectedCodeRanges],
+  });
+  const tags = tokens.flatMap((token) => token.kind === "tag" ? [token.tag] : []);
+  const children: HtmlTreeNode[] = [];
+
+  if (childBlocks.length > 0) {
+    const canMapChildren = childRanges.length === childBlocks.length &&
+      childRanges.every((range) =>
+        range !== undefined &&
+        range.from >= 0 &&
+        range.to >= range.from &&
+        range.to <= rawSource.length,
+      );
+    if (canMapChildren) {
+      let cursor = bodyStart;
+      for (let index = 0; index < childBlocks.length; index++) {
+        const range = childRanges[index];
+        if (!range) continue;
+        const childFrom = Math.max(cursor, range.from, bodyStart);
+        const childTo = Math.min(range.to, closeStart);
+        children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, cursor, childFrom, options));
+        if (childTo > childFrom) children.push({ kind: "block", block: childBlocks[index]! });
+        cursor = Math.max(cursor, childTo);
+      }
+      children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, cursor, closeStart, options));
+    } else {
+      for (const block of childBlocks) children.push({ kind: "block", block });
+    }
+  } else {
+    children.push(...buildRegisteredContainerParagraphRange(rawSource, tokens, tags, bodyStart, closeStart, options));
+  }
+
+  const firstNonWhitespace = rawSource.search(/\S/);
+  const component: RestrictedComponentTreeNode = {
+    kind: "component",
+    name: opening.component,
+    props: opening.props,
+    status: isClosed ? "closed" : options?.forceFinalize ? "incomplete" : "open",
+    children,
+    rawSource: rawSource.slice(firstNonWhitespace, rootEnd),
+    logicalSourceRange: { from: openingEvent.from, to: rootEnd },
+    diagnostic: !isClosed && options?.forceFinalize ? `Unclosed container :::${opening.name}` : undefined,
   };
   const tree: HtmlTreeNode[] = [];
   tree.push(...buildInlineRange(rawSource, tokens, tags, 0, firstNonWhitespace, options));
