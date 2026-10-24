@@ -14,7 +14,75 @@ import { createRoot } from "react-dom/client";
 import { MarkdownBlocksRenderer as SourceMarkdownBlocksRenderer } from "../src/renderer/blocks-renderer";
 import { StreamingActivityContext } from "../src/renderer/streaming-activity-context";
 import { renderToStaticMarkup } from "react-dom/server";
+import { DEFAULT_TABLE_VIRTUALIZATION_CONFIG, resolveTableVirtualizationConfig } from "../src/renderer/virtualized-table";
 
+function testTableVirtualizationConfig(): void {
+  const defaults = {
+    enabled: true,
+    minRows: 40,
+    virtualizeThreshold: 40,
+    estimatedRowHeight: 40,
+    overscan: 8,
+    maxHeight: "600px",
+  };
+  assert.equal(resolveTableVirtualizationConfig(), DEFAULT_TABLE_VIRTUALIZATION_CONFIG);
+  assert.equal(resolveTableVirtualizationConfig(false), DEFAULT_TABLE_VIRTUALIZATION_CONFIG);
+  assert.deepEqual(resolveTableVirtualizationConfig(true), { ...defaults });
+  assert.deepEqual(resolveTableVirtualizationConfig({}), { ...defaults });
+  assert.deepEqual(
+    resolveTableVirtualizationConfig({
+      enabled: false,
+      minRows: 3.9,
+      virtualizeThreshold: 9,
+      overscan: 2.9,
+      estimatedRowHeight: 24,
+      maxHeight: 320,
+    }),
+    {
+      enabled: false,
+      minRows: 3,
+      virtualizeThreshold: 3,
+      overscan: 2,
+      estimatedRowHeight: 24,
+      maxHeight: 320,
+    },
+  );
+  assert.deepEqual(
+    resolveTableVirtualizationConfig({
+      virtualizeThreshold: 5.7,
+      overscan: 100,
+      estimatedRowHeight: 0,
+      maxHeight: undefined,
+    }),
+    {
+      enabled: true,
+      minRows: 5,
+      virtualizeThreshold: 5,
+      estimatedRowHeight: 40,
+      overscan: 50,
+      maxHeight: "600px",
+    },
+  );
+  assert.deepEqual(
+    resolveTableVirtualizationConfig({
+      minRows: Number.NaN,
+      virtualizeThreshold: Number.POSITIVE_INFINITY,
+      overscan: Number.NaN,
+      estimatedRowHeight: Number.POSITIVE_INFINITY,
+    }),
+    { ...defaults },
+  );
+  assert.deepEqual(
+    resolveTableVirtualizationConfig({
+      minRows: 0,
+      overscan: -1,
+      estimatedRowHeight: -1,
+    }),
+    { ...defaults, minRows: 1, virtualizeThreshold: 1, overscan: 1 },
+  );
+}
+
+testTableVirtualizationConfig();
 const text = (value: string): InlineNode => ({ kind: "text", text: value });
 const block: Block = {
   id: "consumer-table",
@@ -203,12 +271,14 @@ try {
   assert.equal(scrollContainer(), null, "virtualization is opt-in");
   const firstId = rows()[0].dataset.rowId;
 
-  render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 });
+  render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: "240px" });
   await waitFor(() => Boolean(scrollContainer()), "config changes enable virtualization without new text");
   const viewport = scrollContainer();
   assert.ok(viewport);
   assert.equal(viewport.style.maxHeight, "240px");
   assert.ok(rows().length < 120);
+  assert.ok(rows().length >= 10,
+    "string maxHeight keeps an initial finite row window before ResizeObserver reports geometry");
   assert.equal(rows()[0].dataset.rowId, firstId, "row IDs survive full-to-windowed rendering");
   for (const tag of ["table", "thead", "tbody", "tr", "th", "td"]) {
     assert.ok(container.querySelector(`${tag}[data-custom="${tag}"]`), `custom ${tag} renders`);
@@ -503,10 +573,25 @@ try {
     assert.ok(focusedRow, "the initially bounded viewport renders the row with a native Markdown link");
     const earlyPinnedRowId = focusedRow.dataset.rowId;
     assert.ok(earlyPinnedRowId, "the focused native row has a stable public row identity");
+    const initialTableExtent = largeViewport.scrollHeight;
+    const nonPowerOfTwoRow = Array.from(
+      largeViewport.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]"),
+    ).find((row) => row.textContent === "Row-2Description-2");
+    assert.ok(nonPowerOfTwoRow);
+    const nonPowerOfTwoRowId = nonPowerOfTwoRow.dataset.rowId;
+    assert.ok(nonPowerOfTwoRowId);
+    act(() => {
+      rowHeightById.set(nonPowerOfTwoRowId, 80);
+      TestResizeObserver.notify();
+    });
+    assert.equal(largeViewport.scrollHeight, initialTableExtent + 40,
+      "a non-power-of-two measured row updates the indexed table extent");
     act(() => {
       rowHeightById.set(earlyPinnedRowId, 20);
       TestResizeObserver.notify();
     });
+    assert.equal(largeViewport.scrollHeight, initialTableExtent + 20,
+      "the focused row's measured height updates the same indexed extent");
     const focusedLink = focusedRow.querySelector<HTMLAnchorElement>('a[href="#table-focus-retention"]');
     assert.ok(focusedLink, "the fixture row contains a real rendered Markdown link");
     focusedLink.focus();
@@ -518,6 +603,40 @@ try {
       largeViewport.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]"),
     ).some((row) => row.textContent === "Row-9999Description-9999"),
     "the tail of the authored 10,000-row source remains reachable through the viewport");
+    const measuredTailRow = Array.from(
+      largeViewport.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]"),
+    ).find((row) => row.textContent === "Row-9999Description-9999");
+    assert.ok(measuredTailRow);
+    const measuredTailRowId = measuredTailRow.dataset.rowId;
+    assert.ok(measuredTailRowId);
+    const extentBeforeTailMeasurement = largeViewport.scrollHeight;
+    act(() => {
+      rowHeightById.set(measuredTailRowId, 80);
+      TestResizeObserver.notify();
+    });
+    assert.equal(largeViewport.scrollHeight, extentBeforeTailMeasurement + 40,
+      "the final indexed row measurement expands the public scroll extent");
+    largeViewport.scrollTop = 0;
+    largeViewport.dispatchEvent(new dom.window.Event("scroll"));
+    await waitFor(() => !measuredTailRow.isConnected,
+      "the measured final row unmounts after scrolling back to the viewport start");
+    assert.equal(largeViewport.scrollHeight, extentBeforeTailMeasurement + 40,
+      "the measured final row remains included in the scroll extent after unmounting");
+    largeViewport.scrollTop = 4_020;
+    largeViewport.dispatchEvent(new dom.window.Event("scroll"));
+    await waitFor(() => Array.from(
+      largeViewport.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]"),
+    ).some((row) => row.textContent === "Row-98Description-98"),
+    "an exact row-height boundary selects the expected overscanned start");
+    assert.equal(Array.from(
+      largeViewport.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]"),
+    ).some((row) => row.textContent === "Row-97Description-97"), false,
+    "an exact row-height boundary does not include the previous overscan row");
+    assert.equal(
+      largeViewport.getAttribute("data-table-mounted-rows"),
+      String(largeViewport.querySelectorAll("tbody tr[data-row-id]").length),
+      "the public mounted-row count agrees with rendered source rows",
+    );
     assert.ok(focusedRow.isConnected, "the focused row remains connected after scrolling to the tail");
     assert.ok(focusedLink.isConnected, "the same focused Markdown link remains connected");
     assert.equal(dom.window.document.activeElement, focusedLink, "tail scrolling preserves focus on the same link");
@@ -785,6 +904,54 @@ try {
     assert.equal(selectionStart.parentElement?.closest("tr[data-row-id]") === selectedStartRow, true);
     assert.equal(selectionEnd.parentElement?.closest("tr[data-row-id]") === selectedEndRow, true);
     usePhysicalRowFlow = false;
+    largeViewport.scrollTop = 4_000;
+    largeViewport.dispatchEvent(new dom.window.Event("scroll"));
+    await waitFor(() => Array.from(largeBodyRows()).some((row) => row.dataset.rowIndex === "100"),
+      "row 100 mounts before selecting its text");
+    const boundaryRow = Array.from(largeBodyRows()).find((row) => row.dataset.rowIndex === "100");
+    assert.ok(boundaryRow);
+    const boundaryText = boundaryRow.cells.item(0)?.firstChild;
+    assert.ok(boundaryText && boundaryText.nodeType === dom.window.Node.TEXT_NODE);
+    const boundarySelection = dom.window.getSelection();
+    assert.ok(boundarySelection);
+    const boundaryRange = dom.window.document.createRange();
+    boundaryRange.setStart(boundaryText, 0);
+    boundaryRange.setEnd(boundaryText, boundaryText.textContent?.length ?? 0);
+    act(() => {
+      boundarySelection.removeAllRanges();
+      boundarySelection.addRange(boundaryRange);
+      dom.window.document.dispatchEvent(new dom.window.Event("selectionchange"));
+    });
+
+    // Rows 2 and 3 each have an extra 40px; with the 200px body viewport,
+    // top=3,800 makes row 100 the first index after the window's exclusive end.
+    largeViewport.scrollTop = 3_800;
+    largeViewport.dispatchEvent(new dom.window.Event("scroll"));
+    await waitFor(() => largeViewport.getAttribute("data-table-end-index") === "100" &&
+      boundaryRow.isConnected,
+    "a selected row exactly at the exclusive window boundary remains mounted");
+    assert.equal(boundarySelection.anchorNode, boundaryText);
+    assert.equal(boundarySelection.focusNode, boundaryText);
+    assert.ok(largeBodyRows().length <= 66, "retaining a row after the visible window stays bounded");
+    act(() => {
+      boundarySelection.removeAllRanges();
+      dom.window.document.dispatchEvent(new dom.window.Event("selectionchange"));
+    });
+    largeViewport.scrollTop = 0;
+    largeViewport.dispatchEvent(new dom.window.Event("scroll"));
+    await waitFor(() => !boundaryRow.isConnected, "clearing native selection releases the retained boundary row");
+    largeViewport.scrollTop = Number.MAX_SAFE_INTEGER;
+    largeViewport.dispatchEvent(new dom.window.Event("scroll"));
+    await waitFor(() => Array.from(largeBodyRows()).some((row) => row.textContent === "Row-9999Description-9999"),
+      "an out-of-range host scroll offset still pins the table window to its tail");
+    const clampedTailStart = largeViewport.getAttribute("data-table-start-index");
+    const clampedTailScrollTop = largeViewport.scrollTop;
+    largeScrollTop = Number.MAX_SAFE_INTEGER;
+    largeViewport.dispatchEvent(new dom.window.Event("scroll"));
+    await waitFor(() => largeViewport.getAttribute("data-table-start-index") === clampedTailStart,
+      "viewport math clamps an overscrolled host offset to the same tail window");
+    largeScrollTop = clampedTailScrollTop;
+    largeViewport.dispatchEvent(new dom.window.Event("scroll"));
   } finally {
     releaseLargeStream();
     bodyMutationObserver.disconnect();

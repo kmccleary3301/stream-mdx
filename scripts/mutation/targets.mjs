@@ -46,12 +46,12 @@ export const targets = {
       "src/renderer/viewport-height-index.ts",
       "src/renderer/virtualized-table.ts:31-47",
       "src/renderer/virtualized-table.ts:82-95",
-      "src/renderer/virtualized-table.ts:299-331",
       "src/renderer/virtualized-table.ts:367-427",
     ],
     redirects: {
       "@stream-mdx/react": "src/index.ts",
-      "@stream-mdx/react/server": "src/server.tsx",
+      "@stream-mdx/react/server": "../../dist/server.mjs",
+      "@stream-mdx/react/_internal/trusted-mdx-native-children": "../../dist/trusted-mdx/native-children-slot.mjs",
     },
     tests: [
       "__tests__/virtualized-code-metadata.test.ts",

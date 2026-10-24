@@ -5,6 +5,7 @@ import { JSDOM } from "jsdom";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { StreamingMarkdown, type StreamingMarkdownHandle } from "../src/index";
+import { ViewportHeightIndex } from "../src/renderer/viewport-height-index";
 import { workerFactory as createNativeWorker } from "./trusted-native-fixture";
 
 class ResizeObserverStub implements ResizeObserver {
@@ -100,7 +101,99 @@ async function waitForCodeViewportState(predicate: () => boolean, message: strin
   assert.ok(predicate(), message);
 }
 
+function testViewportHeightIndex(): void {
+  const index = new ViewportHeightIndex();
+  assert.equal(index.indexAt(10), 0);
+  index.reset(5, 10);
+  assert.equal(index.offsetAt(0), 0);
+  assert.equal(index.offsetAt(5), 50);
+  assert.equal(index.offsetAt(2.9), 20);
+  assert.equal(index.offsetAt(-1), 0);
+  assert.equal(index.offsetAt(50), 50);
+  assert.equal(index.offsetAt(Number.NaN), 0);
+  assert.equal(index.offsetAt(Number.POSITIVE_INFINITY), 0);
+  assert.equal(index.indexAt(Number.NaN), 0);
+  assert.equal(index.indexAt(-1), 0);
+  assert.equal(index.indexAt(10), 1);
+  assert.equal(index.indexAt(50), 5);
+  assert.equal(index.indexAt(Number.POSITIVE_INFINITY), 5);
+
+  assert.equal(index.setHeight(-1, 12), false);
+  assert.equal(index.setHeight(0.5, 12), false);
+  assert.equal(index.setHeight(Number.MAX_SAFE_INTEGER + 1, 12), false);
+  assert.equal(index.setHeight(5, 12), false);
+  assert.equal(index.setHeight(0, 0), false);
+  assert.equal(index.setHeight(0, -1), false);
+  assert.equal(index.setHeight(0, Number.NaN), false);
+  assert.equal(index.setHeight(0, Number.POSITIVE_INFINITY), false);
+  assert.equal(index.setHeight(0, 10.5), false);
+  assert.equal(index.setHeight(0, 10.6), true);
+  assert.equal(index.offsetAt(1), 10.6);
+  assert.equal(index.setHeight(0, 10.2), false);
+  assert.equal(index.setHeight(0, 10), true);
+  assert.equal(index.offsetAt(1), 10);
+
+  assert.equal(index.setHeight(3, 25), true);
+  assert.equal(index.setHeight(4, 5), true);
+  assert.equal(index.offsetAt(3), 30);
+  assert.equal(index.offsetAt(4), 55);
+  assert.equal(index.offsetAt(5), 60);
+  assert.equal(index.indexAt(29), 2);
+  assert.equal(index.indexAt(30), 3);
+  assert.equal(index.indexAt(54), 3);
+  assert.equal(index.indexAt(55), 4);
+  assert.equal(index.indexAt(60), 5);
+  assert.equal(index.setHeight(3, 10), true);
+  assert.equal(index.offsetAt(5), 45);
+  assert.equal(index.indexAt(45), 5);
+  index.resize(5);
+  index.resize(8);
+  assert.equal(index.offsetAt(8), 75);
+  assert.equal(index.indexAt(74), 7);
+  assert.equal(index.indexAt(75), 8);
+  index.resize(3);
+  assert.equal(index.offsetAt(3), 30);
+  index.resize(5);
+  assert.equal(index.offsetAt(5), 50);
+
+  const shrinkIndex = new ViewportHeightIndex();
+  shrinkIndex.reset(5, 10);
+  assert.equal(shrinkIndex.setHeight(4, 5), true);
+  shrinkIndex.resize(3);
+  shrinkIndex.resize(5);
+  assert.equal(shrinkIndex.offsetAt(5), 50);
+
+  const growingIndex = new ViewportHeightIndex();
+  growingIndex.reset(5, 10);
+  assert.equal(growingIndex.setHeight(1, 15), true);
+  assert.equal(growingIndex.setHeight(3, 20), true);
+  growingIndex.resize(8);
+  assert.equal(growingIndex.offsetAt(8), 95);
+
+  const nonPowerOfTwoIndex = new ViewportHeightIndex();
+  nonPowerOfTwoIndex.reset(8, 10);
+  assert.equal(nonPowerOfTwoIndex.setHeight(2, 15), true);
+  assert.equal(nonPowerOfTwoIndex.offsetAt(8), 85);
+
+  index.reset(3.8, 8);
+  assert.equal(index.offsetAt(3), 24);
+  assert.equal(index.setHeight(1, 12), true);
+  assert.equal(index.offsetAt(3), 28);
+  index.reset(2, 0);
+  assert.equal(index.offsetAt(2), 40);
+  assert.equal(index.indexAt(20), 1);
+  index.resize(Number.POSITIVE_INFINITY);
+  assert.equal(index.offsetAt(1), 0);
+  assert.equal(index.indexAt(20), 0);
+  assert.equal(index.setHeight(0, 20), false);
+  index.reset(-1, 10);
+  assert.equal(index.offsetAt(1), 0);
+  index.reset(Number.NaN, 10);
+  assert.equal(index.indexAt(1), 0);
+}
+
 async function runStreamingCodeViewportTest(): Promise<void> {
+  testViewportHeightIndex();
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
   const { window } = dom;
   const globals = {
