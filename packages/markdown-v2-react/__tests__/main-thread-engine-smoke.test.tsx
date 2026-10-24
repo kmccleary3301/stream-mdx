@@ -645,4 +645,89 @@ async function runCallbackUpdateDuringStream(): Promise<void> {
 }
 
 await runCallbackUpdateDuringStream();
+async function runAutoCodeHighlightTakeover(): Promise<void> {
+  const window = await setupDom();
+  const autoContainer = window.document.getElementById("root");
+  assert.ok(autoContainer);
+  const workerContainer = window.document.createElement("div");
+  window.document.body.append(workerContainer);
+  const autoRoot = createRoot(autoContainer);
+  const workerRoot = createRoot(workerContainer);
+  const autoHandle = createRef<StreamingMarkdownHandle>();
+  const workerHandle = createRef<StreamingMarkdownHandle>();
+  const previousWorker = Object.getOwnPropertyDescriptor(globalThis, "Worker");
+  Object.defineProperty(globalThis, "Worker", {
+    configurable: true,
+    writable: true,
+    value: class {},
+  });
+  const codeSource = "```ts\nconst answer: number = 42;\n```";
+  let autoFactoryCalls = 0;
+  let autoRecorder: RecordingWorker | null = null;
+  let workerRecorder: RecordingWorker | null = null;
+  try {
+    autoRoot.render(
+      <StreamingMarkdown
+        ref={autoHandle}
+        engine="auto"
+        worker={() => {
+          autoFactoryCalls++;
+          autoRecorder = createRecordingWorker(0);
+          return autoRecorder.worker;
+        }}
+        stream={(async function* () { yield codeSource; })()}
+      />,
+    );
+    await waitForCondition(
+      () => autoContainer.querySelector("pre code")?.textContent?.includes("const answer") ?? false,
+      "auto bootstrap did not render the short fenced TypeScript block",
+    );
+    await waitForCondition(
+      () => autoRecorder !== null,
+      "demanded code highlighting did not start automatic worker takeover",
+    );
+    assert.equal(autoFactoryCalls, 1);
+    await autoHandle.current!.finalize();
+    await waitForCondition(
+      () => autoContainer.querySelector("pre code span[style]") !== null,
+      "automatic takeover did not commit syntax-highlighted code",
+    );
+
+    workerRoot.render(
+      <StreamingMarkdown
+        ref={workerHandle}
+        engine="worker"
+        worker={() => {
+          workerRecorder = createRecordingWorker(0);
+          return workerRecorder.worker;
+        }}
+        stream={(async function* () { yield codeSource; })()}
+      />,
+    );
+    await waitForCondition(
+      () => workerContainer.querySelector("pre code")?.textContent?.includes("const answer") ?? false,
+      "worker-only mode did not render the short fenced TypeScript block",
+    );
+    await workerHandle.current!.finalize();
+
+    const autoCode = autoContainer.querySelector("pre code");
+    const workerCode = workerContainer.querySelector("pre code");
+    assert.ok(autoCode && workerCode);
+    assert.ok(workerCode.querySelectorAll("span[style]").length > 0,
+      "worker-only finalization emits syntax highlight spans");
+    assert.equal(autoCode.innerHTML, workerCode.innerHTML,
+      "automatic mode finalizes to the worker-only highlighted output");
+  } finally {
+    autoRoot.unmount();
+    workerRoot.unmount();
+    autoContainer.remove();
+    workerContainer.remove();
+    if (previousWorker) Object.defineProperty(globalThis, "Worker", previousWorker);
+    else Reflect.deleteProperty(globalThis, "Worker");
+    window.close();
+  }
+}
+
+await runAutoCodeHighlightTakeover();
+
 console.log("main-thread engine smoke test passed");

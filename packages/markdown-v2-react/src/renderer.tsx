@@ -608,8 +608,12 @@ export class MarkdownRenderer implements Renderer {
     }
   }
 
-  private requestBootstrapTakeover(): void {
-    if (!this.bootstrapMode || this.bootstrapDeferredSource.length === 0 || this.bootstrapTakeoverRequested) return;
+  private requestBootstrapTakeover(force = false): void {
+    if (
+      !this.bootstrapMode ||
+      (!force && this.bootstrapDeferredSource.length === 0) ||
+      this.bootstrapTakeoverRequested
+    ) return;
     this.bootstrapTakeoverRequested = true;
     const request = {};
     this.bootstrapTakeoverRequest = request;
@@ -1456,6 +1460,10 @@ export class MarkdownRenderer implements Renderer {
   }
 
   requestCodeHighlightRange(request: CodeHighlightRangeRequest): void {
+    if (this.bootstrapMode) {
+      this.requestBootstrapTakeover(true);
+      return;
+    }
     const worker = this.worker;
     if (!worker) return;
     if (this.pendingCodeHighlightWorker !== worker) {
