@@ -132,7 +132,7 @@ Type aliases:
 
 - `"worker"` requires browser `Worker` support and uses `worker` or the default worker strategy. It does not fall back to the main thread.
 - `"main"` dynamically imports `@stream-mdx/worker/engine` and creates an in-process Worker adapter. It ignores `worker` and runs parsing on the browser thread.
-- `"auto"` bootstraps up to 4,096 accepted UTF-16 source units with the existing inline engine on the main thread, without waiting for worker readiness or grammar prewarm. Further source is deferred beyond that limit.
+- `"auto"` bootstraps up to 4,096 accepted UTF-16 source units with the existing inline engine on the main thread, without waiting for worker readiness or grammar prewarm. Further source is deferred beyond that limit. When auto hands off to the worker, the worker rebuilds the projection from the same canonical source. Node IDs, the stream generation, and accepted-source order do not change. Node, code and table handles are issued again once: views receive the new handles, and handles or saved presentation actions retained from before the handoff reject as stale.
 
 Engine creation runs in a React effect, not during SSR. Selecting `"main"` does not compile server markup. For SSR/SSG, compile a snapshot with the Node/direct helper and render it with `@stream-mdx/react/server`. The default React import does not eagerly import the engine implementation. Applications still need a client boundary for `<StreamingMarkdown />`.
 The retired `"main-thread"` value is a type error and throws a migration error at runtime; use `"main"`.
