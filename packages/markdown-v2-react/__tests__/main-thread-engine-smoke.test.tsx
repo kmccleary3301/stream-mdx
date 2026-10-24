@@ -4,8 +4,15 @@ import { JSDOM } from "jsdom";
 import { createRef } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 import { StreamingMarkdown } from "../src/streaming-markdown";
-import type { StreamingMarkdownHandle } from "../src/streaming-markdown";
+import type { StreamingMarkdownHandle, StreamingMarkdownProps } from "../src/streaming-markdown";
+const validEngineMode: StreamingMarkdownProps["engine"] = "main";
+// @ts-expect-error The removed engine mode must remain a public type error.
+const retiredEngineMode: StreamingMarkdownProps["engine"] = "main-thread";
+void validEngineMode;
+void retiredEngineMode;
+
 
 async function setupDom(): Promise<Window & typeof globalThis> {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
@@ -33,6 +40,17 @@ function waitForMutation(container: HTMLElement, predicate: () => boolean): Prom
     observer.observe(container, { childList: true, subtree: true, characterData: true });
   });
 }
+function rejectsRetiredEngineMode(): void {
+  assert.throws(
+    () => renderToStaticMarkup(
+      <StreamingMarkdown engine={"main-thread" as unknown as StreamingMarkdownProps["engine"]} />,
+    ),
+    /engine="main-thread" has been removed; use engine="main" instead/,
+  );
+}
+
+rejectsRetiredEngineMode();
+
 
 async function runMainThreadEngineSmokeTest(): Promise<void> {
   const window = await setupDom();
@@ -44,7 +62,7 @@ async function runMainThreadEngineSmokeTest(): Promise<void> {
   // Step 1: Initial streaming render with provisional paragraph
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text={"# Main Thread Engine Heading\n\nInitial provisional paragraph."}
     />,
   );
@@ -63,7 +81,7 @@ async function runMainThreadEngineSmokeTest(): Promise<void> {
   // Step 2: Replace the document through the public text prop.
   root.render(
     <StreamingMarkdown
-      engine="main-thread"
+      engine="main"
       text={"# Replacement engine heading\n\nReplacement paragraph reaching the DOM."}
     />,
   );
@@ -92,7 +110,7 @@ async function runCallbackUpdateDuringStream(): Promise<void> {
   const handle = createRef<StreamingMarkdownHandle>();
   try {
     flushSync(() => {
-      root.render(<StreamingMarkdown ref={handle} engine="main-thread" onError={() => {}} />);
+      root.render(<StreamingMarkdown ref={handle} engine="main" onError={() => {}} />);
     });
     const deadline = Date.now() + 10000;
     while (!handle.current?.getState().workerReady) {
@@ -102,7 +120,7 @@ async function runCallbackUpdateDuringStream(): Promise<void> {
     handle.current.append("# Retained heading\n\nBefore callback update.\n\n");
     await waitForMutation(container, () => container.textContent?.includes("Before callback update.") ?? false);
     flushSync(() => {
-      root.render(<StreamingMarkdown ref={handle} engine="main-thread" onError={() => {}} />);
+      root.render(<StreamingMarkdown ref={handle} engine="main" onError={() => {}} />);
     });
     await delay(30);
     handle.current?.append("After callback update.");

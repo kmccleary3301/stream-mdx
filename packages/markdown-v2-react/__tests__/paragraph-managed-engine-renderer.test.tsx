@@ -497,7 +497,7 @@ async function runPublicDefaultParagraphAppendColdReadRegression(): Promise<void
   let coldParagraphBlockReads = 0;
   try {
     await act(async () => {
-      root.render(createElement(StreamingMarkdown, { ref: handle, engine: "main-thread" }));
+      root.render(createElement(StreamingMarkdown, { ref: handle, engine: "main" }));
     });
     await waitForDom(() => Boolean(handle.current?.getState().workerReady), "main-thread engine readiness");
     const store = handle.current!.getState().store;

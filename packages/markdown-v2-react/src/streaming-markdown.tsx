@@ -150,7 +150,7 @@ export type LinkSafetyConfig = {
   renderModal?: (props: LinkSafetyModalProps) => React.ReactNode;
 };
 
-export type MarkdownEngineMode = "worker" | "main-thread" | "auto";
+export type MarkdownEngineMode = "auto" | "main" | "worker";
 
 export interface StreamingMarkdownProps extends ElementFilterOptions {
   text?: string;
@@ -294,6 +294,9 @@ function StreamingMarkdownComponent(
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
+  if ((engine as string) === "main-thread") {
+    throw new Error('engine="main-thread" has been removed; use engine="main" instead.');
+  }
   if (text !== undefined && stream !== undefined) {
     throw new Error("StreamingMarkdown expects either `text` or `stream`, not both.");
   }

@@ -40,7 +40,7 @@ Then point the React surface at it:
 
 This is the preferred deployment path for explicit CSP control and predictable static hosting.
 
-`<StreamingMarkdown engine="auto" />` defaults to a browser Worker, then dynamically imports an in-process engine if Worker construction is unavailable or fails. `engine="worker"` requires a Worker; `engine="main-thread"` skips it and runs parsing on the browser thread. These modes initialize in a React effect, not during SSR. They do not recover from later worker script loading or runtime errors.
+`<StreamingMarkdown engine="auto" />` defaults to a browser Worker, then dynamically imports an in-process engine if Worker construction is unavailable or fails. `engine="worker"` requires a Worker; `engine="main"` skips it and runs parsing on the browser thread. These modes initialize in a React effect, not during SSR. They do not recover from later worker script loading or runtime errors.
 
 ## Isolated engine and custom entries
 

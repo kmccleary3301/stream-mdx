@@ -82,7 +82,7 @@ try {
   root.render(
     <StreamingMarkdown
       ref={handle}
-      engine="main-thread"
+      engine="main"
       stream={stream()}
       caret="block"
       onError={(error) => {

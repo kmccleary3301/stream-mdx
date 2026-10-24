@@ -85,11 +85,11 @@ export function resolveWorkerSetup(
   factories: WorkerFactories = workerFactories,
   managedWorker = false,
 ): WorkerLease | null | Promise<WorkerLease | null> {
-  if (managedWorker && (engine === "main-thread" || !source || source instanceof URL || typeof source === "string")) {
-    throw new Error("managedWorker requires a caller-initialized Worker instance or worker factory and cannot use engine='main-thread', a worker URL, or the default worker");
+  if (managedWorker && (engine === "main" || !source || source instanceof URL || typeof source === "string")) {
+    throw new Error("managedWorker requires a caller-initialized Worker instance or worker factory and cannot use engine='main', a worker URL, or the default worker");
   }
   let lease: WorkerLease | null = null;
-  if (engine !== "main-thread") {
+  if (engine !== "main") {
     if (engine === "worker" && !factories.available()) {
       throw new Error("Worker is not supported in this environment");
     }

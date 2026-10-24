@@ -41,7 +41,7 @@ async function renderHtml(props: StreamingMarkdownProps, check: (container: HTML
   const root = createRoot(container);
   const handle = React.createRef<StreamingMarkdownHandle>();
   try {
-    root.render(<StreamingMarkdown ref={handle} engine="main-thread" {...props} />);
+    root.render(<StreamingMarkdown ref={handle} engine="main" {...props} />);
     await waitUntil(() => Boolean(handle.current?.getState().workerReady && container.querySelector("span")));
     await handle.current?.waitForIdle();
     check(container);
@@ -164,7 +164,7 @@ async function testPartialCloser(open: string, close: string, pattern: string) {
   try {
     root.render(<StreamingMarkdown
       ref={handle}
-      engine="main-thread"
+      engine="main"
       stream={stream()}
       syntax={[{ name: "delimited", pattern: { source: pattern }, attrs: { value: 1 }, anticipation: { open, close } }]}
       inlineComponents={{ delimited: ({ value }: { value?: string }) => <mark className="delimited">{value}</mark> }}

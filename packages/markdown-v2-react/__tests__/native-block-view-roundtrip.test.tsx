@@ -114,7 +114,7 @@ async function runRoundTripTest(): Promise<void> {
       root.render(
         createElement(StreamingMarkdown, {
           ref: handleRef,
-          engine: "main-thread",
+          engine: "main",
           text: fixture,
           className: "markdown-v2-output",
           components: registry.getBlockComponentMap(),

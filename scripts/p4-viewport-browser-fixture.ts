@@ -29,7 +29,7 @@ if (!container) throw new Error("missing public React root");
 createRoot(container).render(
   React.createElement(StreamingMarkdown, {
     text: markdown,
-    engine: "main-thread",
+    engine: "main",
     features: { tables: true, html: false, mdx: false, math: false },
     tableVirtualization: { minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 },
     codeVirtualization: { enabled: true, windowSize: 20, bufferSize: 8, virtualizeThreshold: 100 },
