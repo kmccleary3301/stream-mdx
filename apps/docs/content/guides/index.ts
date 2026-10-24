@@ -7,6 +7,12 @@ export type GuideItem = {
 
 export const GUIDE_ITEMS: GuideItem[] = [
   {
+    slug: "migration",
+    title: "Migrating from 0.5.x",
+    file: "migration.md",
+    description: "Breaking API, worker protocol, and theme changes when upgrading from 0.5.x.",
+  },
+  {
     slug: "streaming-fundamentals",
     title: "Streaming Fundamentals",
     file: "streaming-fundamentals.md",

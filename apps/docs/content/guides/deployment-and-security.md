@@ -72,56 +72,34 @@ Fences labeled `artifact` or `html-artifact` render as code by default. StreamMD
 
 ### Custom code presentations
 
-Use `components.code.wrapper` to route selected fence languages while preserving the native code renderer for other blocks. The wrapper receives the block, metadata, actions, and prepared native children:
+Use `components.code.wrapper` to inspect a fence's bounded metadata and decorate its prepared native children. A wrapper no longer receives the full `Block`; Mermaid rendering belongs in `engines.mermaid`.
 
 ```tsx
-import type { NodeViewProps } from "@stream-mdx/react";
-import { StreamingMarkdown } from "@stream-mdx/react";
-import { MermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown, type NodeViewProps } from "@stream-mdx/react";
+import { createMermaidEngine } from "@stream-mdx/mermaid";
 
-function CodePresentation({ block, children, metadata, actions }: NodeViewProps) {
-  const language = metadata.language?.toLowerCase();
-  const code = block?.payload.meta?.code;
-  if (language === "mermaid") {
-    return (
-      <MermaidBlock
-        code={typeof code === "string" ? code : ""}
-        renderCode={children}
-        language={metadata.language ?? "mermaid"}
-        blockId={metadata.id}
-        controls={{ copy: true }}
-        copy={actions.copy}
-      />
-    );
-  }
-  if (language === "metric") {
-    try {
-      const data = JSON.parse(typeof code === "string" ? code : "");
-      return <pre>{JSON.stringify(data, null, 2)}</pre>;
-    } catch {
-      return children;
-    }
-  }
-  return children;
+const mermaidEngine = createMermaidEngine();
+
+function CodePresentation({ children, metadata }: NodeViewProps) {
+  if (metadata.language?.toLowerCase() !== "metric") return children;
+  return <section data-code-language={metadata.language}>{children}</section>;
 }
 
 export function AgentChatStream({ text }: { text: string }) {
   return (
     <StreamingMarkdown
       text={text}
-      engine="worker" // or "main"
+      engine="worker"
       features={{ mdx: false, html: false, tables: true, math: true }}
       linkSafety={{ enabled: true }}
+      engines={{ mermaid: mermaidEngine }}
       components={{ code: { wrapper: CodePresentation } }}
     />
   );
 }
 ```
 
-Use only reviewed, trusted code presentations for untrusted fences. A presentation that activates source content needs a host-owned security boundary.
-```
-
-See the runnable chat-thread demonstration at [`/showcase/assistant-stream`](/showcase/assistant-stream).
+This leaves Mermaid source and ordinary code on the native code-owner path. If a custom presentation needs authored source, use its source-bound action deliberately; do not retain a full block or reparse Markdown in the wrapper. Only use presentations that activate source content for reviewed, trusted fences, and provide a host-owned security boundary.
 
 ## Release hardening checklist
 
