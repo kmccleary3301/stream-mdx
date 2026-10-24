@@ -93,7 +93,7 @@ hydrateRoot(
   hydrationRoot,
   React.createElement(MarkdownBlocksRenderer, {
     blocks: ssrBlocks,
-    codeRenderers: configured.codeRenderers,
+    engines: configured.engines,
   }),
   { onRecoverableError: (error) => hook.hydrationErrors.push(String(error)) },
 );
@@ -109,7 +109,7 @@ streamRoot.render(
     ref: streamingHandle,
     engine: "worker",
     worker: "/workers/markdown-worker.js",
-    codeRenderers: configured.codeRenderers,
+    engines: configured.engines,
     features: { html: false, mdx: false, tables: false, math: false },
     caret: false,
   }),

@@ -101,7 +101,7 @@ async function main(): Promise<void> {
     const ssrMarkup = renderToString(
       React.createElement(MarkdownBlocksRenderer, {
         blocks,
-        codeRenderers: serverRenderers.codeRenderers,
+        engines: serverRenderers.engines,
       }),
     );
     assert.ok(ssrMarkup.includes("stream-mdx-mermaid-placeholder"), "the server renderer emits inert Mermaid fallback markup");

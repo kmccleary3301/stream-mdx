@@ -1,5 +1,6 @@
 import React from "react";
-import { createMermaidBlock } from "@stream-mdx/mermaid";
+import { createMermaidBlock, createMermaidEngine } from "@stream-mdx/mermaid";
+import type { MermaidEngine } from "@stream-mdx/react";
 import type { MermaidModuleLoader } from "@stream-mdx/mermaid";
 
 export const WARM_MARKDOWN = [
@@ -37,12 +38,16 @@ const coolConfig = {
 export function createMermaidSmokeRenderers(mermaid?: MermaidModuleLoader) {
   const warm = createMermaidBlock({ config: warmConfig, debounceMs: 0, mermaid });
   const cool = createMermaidBlock({ config: coolConfig, debounceMs: 0, mermaid });
-  const renderMermaid = (props: React.ComponentProps<typeof warm>) =>
-    React.createElement(props.code.includes("WarmStart") ? warm : cool, props);
+  const warmEngine = createMermaidEngine({ config: warmConfig, debounceMs: 0, mermaid });
+  const coolEngine = createMermaidEngine({ config: coolConfig, debounceMs: 0, mermaid });
+  const engine: MermaidEngine = {
+    id: "p8-smoke-themed",
+    view: (props) => React.createElement(props.source.includes("WarmStart") ? warmEngine.view : coolEngine.view, props),
+  };
 
   return {
     warm,
     cool,
-    codeRenderers: { mermaid: renderMermaid },
+    engines: { mermaid: engine },
   };
 }
