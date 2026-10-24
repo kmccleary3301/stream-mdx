@@ -19,6 +19,7 @@ import { CODE_LINE_RANGE_SIZE } from "./code-state";
 import type { RendererStore } from "./store";
 import { getStoreResetVersion } from "./store-reset-version";
 import { useDeferredRender } from "./use-deferred-render";
+import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 import { useVirtualizedCode } from "./virtualized-code";
 import { mergeNodePresentationProps } from "./node-presentations";
 import type { NodeViewActions, NodeViewMetadata } from "../types";
@@ -235,6 +236,16 @@ export const CodeBlockView: React.FC<{
   const blockMeta = (node?.block?.payload.meta as Record<string, unknown> | undefined) ?? undefined;
   const blockIsFinalized = codeBlock?.source.state !== "open";
   const canVirtualize = Boolean(codeBlock);
+  useLazyCodeHighlightRequest({
+    store,
+    blockId,
+    resetVersion,
+    blockEpoch: node?.blockEpoch ?? 0,
+    blockIsFinalized: node?.block?.isFinalized === true,
+    lazyEnabled: blockMeta?.lazyTokenization === true,
+    lazyTokenizedUntil: typeof blockMeta?.lazyTokenizedUntil === "number" ? blockMeta.lazyTokenizedUntil : 0,
+    totalLazyLineCount: lineCount,
+  });
   const subscribeCodeVirtualization = React.useCallback(
     (listener: () => void) => registry.subscribeCodeVirtualization(listener),
     [registry],

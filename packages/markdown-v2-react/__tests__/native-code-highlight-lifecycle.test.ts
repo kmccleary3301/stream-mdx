@@ -394,6 +394,84 @@ async function testVisibleRangesPrecedePrefetch(): Promise<void> {
   }
 }
 
+async function testVirtualizedLazyBlockCompletesInBackground(): Promise<void> {
+  const lineCount = 260;
+  const markdown = `\`\`\`ts\n${Array.from({ length: lineCount }, (_, index) => `const row${index} = ${index};`).join("\n")}\n\`\`\``;
+  const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { pretendToBeVisual: true });
+  const { window } = dom;
+  const globalKeys = ["window", "document", "HTMLElement", "Node", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver"] as const;
+  const previousGlobals = Object.fromEntries(
+    globalKeys.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
+  ) as Record<(typeof globalKeys)[number], PropertyDescriptor | undefined>;
+  Object.assign(globalThis, {
+    window,
+    document: window.document,
+    HTMLElement: window.HTMLElement,
+    Node: window.Node,
+    requestAnimationFrame: window.requestAnimationFrame.bind(window),
+    cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
+    ResizeObserver: ResizeObserverStub,
+  });
+  const renderer = new MarkdownRenderer();
+  const store = renderer.getStore();
+  const worker = createInlineEngineWorker();
+  const observation = observeWorker(worker);
+  const requests: CodeHighlightRequest[] = [];
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const root = createRoot(container);
+  try {
+    root.render(
+      React.createElement(
+        CodeHighlightRequestContext.Provider,
+        {
+          value: (request: CodeHighlightRequest) => {
+            requests.push(request);
+            renderer.requestCodeHighlightRange(request);
+          },
+        },
+        React.createElement(MarkdownBlocksRenderer, { blocks: [], componentRegistry: renderer.getComponentRegistry(), store }),
+      ),
+    );
+    renderer.attachWorker(worker, { skipInit: true });
+    worker.postMessage(createLazyInitMessage(""));
+    await waitFor(() => observation.initialized || observation.error !== null, "worker initializes for virtualized lazy test");
+    assert.equal(observation.error, null);
+    await renderer.whenInitialized();
+    renderer.append(markdown);
+    await renderer.finalize();
+    const lazyProgress = () => {
+      const code = store.getBlocks().find((block) => block.type === "code");
+      return code?.payload.meta?.lazyTokenizedUntil;
+    };
+    await waitFor(
+      () => lazyProgress() === lineCount || observation.error !== null,
+      "a virtualized lazy block must finish background tokenization after finalize",
+    );
+    assert.equal(observation.error, null);
+    assert.ok(
+      container.querySelector('[data-code-virtualized="true"]'),
+      "the fixture must exercise the virtualized code view",
+    );
+    assert.ok(
+      requests.some((request) => request.priority === "prefetch" && request.startLine === 0 && request.endLine === lineCount),
+      "the full block is requested as background work, behind visible demand",
+    );
+  } finally {
+    root.unmount();
+    renderer.detachWorker();
+    worker.terminate();
+    window.close();
+    for (const key of globalKeys) {
+      const descriptor = previousGlobals[key];
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    }
+  }
+}
+
+
 await testVisibleRangesPrecedePrefetch();
 await testInlineWorkerNativeCodeHighlighting();
+await testVirtualizedLazyBlockCompletesInBackground();
 console.log("native-code-highlight-lifecycle test passed");
