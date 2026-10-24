@@ -13,6 +13,7 @@ import type {
   RendererStore,
 } from "./store";
 
+import { captureNodeSourceGuard } from "./store-reset-version";
 type ParagraphSourceRange = { readonly from: number; readonly to: number };
 
 function recordViewRecords(store: RendererStore, count: number): void {
@@ -158,7 +159,7 @@ function renderPlainParagraphRange(
           registry.getUrlTransform(),
           registry,
           parentTagName,
-          registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`),
+          registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`, captureNodeSourceGuard(store, blockId)),
         )}
         </MathExpressionCompletenessContext.Provider>
       </React.Fragment>,
@@ -227,7 +228,7 @@ const ParagraphSpanRangeView: React.FC<{
           urlTransform,
           registry,
           parentTagName,
-          registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`),
+          registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`, captureNodeSourceGuard(store, blockId)),
         )}
         </MathExpressionCompletenessContext.Provider>
       </React.Fragment>,

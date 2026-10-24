@@ -84,6 +84,11 @@ function presentationText(node: React.ReactNode): string {
   return "";
 }
 
+type InlinePresentationContext = RenderInlineAnimationContext & {
+  readonly sourceGuard?: () => void;
+};
+
+
 /**
  * Render inline nodes to React elements
  */
@@ -93,7 +98,7 @@ export function renderInlineNodes(
   urlTransform?: UrlTransform,
   registry?: ComponentRegistry,
   parentTagName?: string,
-  animationContext?: RenderInlineAnimationContext,
+  animationContext?: InlinePresentationContext,
 ): React.ReactNode {
   return nodes.map((node, index) => {
     const key = `${node.kind}-${index}`;
@@ -370,6 +375,7 @@ export function renderInlineNodes(
                     presentationKey,
                     animationContext?.nodeKeyPrefix,
                     animationContext?.isFinalized,
+                  animationContext?.sourceGuard,
                   )
               : undefined,
             (tagName, properties, htmlChildren, presentationKey) =>
@@ -401,6 +407,7 @@ export function renderInlineNodes(
                   presentationKey,
                   animationContext?.nodeKeyPrefix,
                   animationContext?.isFinalized,
+                  animationContext?.sourceGuard,
                 )
             : undefined,
         );
@@ -923,6 +930,7 @@ export class ComponentRegistry {
   private disableAutolinkProtocols?: ReadonlySet<string>;
   private hasFilterConfig = false;
 
+
   constructor(options?: {
     tableVirtualization?: TableVirtualizationOptions;
     codeVirtualization?: Partial<VirtualizedCodeConfig>;
@@ -1091,22 +1099,27 @@ export class ComponentRegistry {
     return this.animationTimeline;
   }
 
-  getRenderInlineContext(isFinalized?: boolean, blockId?: string): RenderInlineAnimationContext | undefined {
+  getRenderInlineContext(
+    isFinalized?: boolean,
+    blockId?: string,
+    sourceGuard?: () => void,
+  ): InlinePresentationContext | undefined {
+    let context: RenderInlineAnimationContext | undefined;
     if (isFinalized) {
       if (blockId && this.animationTimeline) {
         this.animationTimeline.releasePrefix(blockId);
       }
-      return { isFinalized: true, nodeKeyPrefix: blockId };
+      context = blockId ? { isFinalized: true, nodeKeyPrefix: blockId } : undefined;
+    } else if (this.animatedOptions && this.animationTimeline) {
+      context = {
+        isFinalized: false,
+        animated: this.animatedOptions,
+        timeline: this.animationTimeline,
+        nodeKeyPrefix: blockId,
+      };
     }
-    if (!this.animatedOptions || !this.animationTimeline) {
-      return undefined;
-    }
-    return {
-      isFinalized: false,
-      animated: this.animatedOptions,
-      timeline: this.animationTimeline,
-      nodeKeyPrefix: blockId,
-    };
+    if (!sourceGuard) return context;
+    return { ...(context ?? { isFinalized: isFinalized ?? false }), sourceGuard };
   }
 
   resetAnimationTimeline(): void {
@@ -1143,7 +1156,7 @@ export class ComponentRegistry {
     node: InlineNode,
     nativeView: React.ReactNode,
     key: React.Key,
-    context?: RenderInlineAnimationContext,
+    context?: InlinePresentationContext,
     renderedChildren?: React.ReactNode,
   ): React.ReactNode {
     const keyName = (
@@ -1180,7 +1193,10 @@ export class ComponentRegistry {
       type: keyName,
       isFinalized: context?.isFinalized ?? false,
     });
-    const source = () => inlineToPlainText([node]);
+    const source = () => {
+      context?.sourceGuard?.();
+      return inlineToPlainText([node]);
+    };
     const actions: NodeViewActions = Object.freeze({
       readSource: source,
       copy: () => copyToClipboard(source()),
@@ -1207,6 +1223,7 @@ export class ComponentRegistry {
     key: React.Key,
     ownerId?: string,
     isFinalized = false,
+    sourceGuard?: () => void,
   ): React.ReactNode {
     const keyName = `html:${tagName.toLowerCase()}` as `html:${string}`;
     const presentation = this.getNodePresentation(keyName);
@@ -1217,7 +1234,10 @@ export class ComponentRegistry {
         viewProperties[property] = value;
       }
     }
-    const source = () => presentationText(children);
+    const source = () => {
+      sourceGuard?.();
+      return presentationText(children);
+    };
     const metadata: NodeViewMetadata = Object.freeze({
       id: `${ownerId ?? "html"}:${String(key)}`,
       type: keyName,
@@ -1243,12 +1263,16 @@ export class ComponentRegistry {
     status: "open" | "closed" | "incomplete",
     rawSource?: string,
     ownerId?: string,
+    sourceGuard?: () => void,
   ): React.ReactNode {
     const keyName = `component:${name}` as const;
     const presentation = this.getNodePresentation(keyName);
     if (!presentation || !("wrapper" in presentation) || !presentation.wrapper) return nativeView;
 
-    const source = () => rawSource ?? presentationText(children);
+    const source = () => {
+      sourceGuard?.();
+      return rawSource ?? presentationText(children);
+    };
     const metadata: NodeViewMetadata = Object.freeze({
       id: `${ownerId ?? "component"}:${String(key)}`,
       type: keyName,
@@ -1342,10 +1366,11 @@ export class ComponentRegistry {
     paragraph?: Block,
     parentTagName?: string,
     renderParagraphPresentation?: (nativeView: React.ReactNode) => React.ReactNode,
+    sourceGuard?: () => void,
   ): React.ReactNode {
     return renderOwnedHtmlTree(
       tree,
-      this.ownedHtmlRenderContext(renderBlock, paragraph, parentTagName, undefined, renderParagraphPresentation),
+      this.ownedHtmlRenderContext(renderBlock, paragraph, parentTagName, undefined, renderParagraphPresentation, sourceGuard),
     );
   }
 
@@ -1353,11 +1378,12 @@ export class ComponentRegistry {
     renderBlock: (block: Block, parentTagName?: string) => React.ReactNode = (block) => this.renderBlock(block),
     paragraph?: Block,
     parentTagName?: string,
-    inlineContext?: RenderInlineAnimationContext,
+    inlineContext?: InlinePresentationContext,
     renderParagraphPresentation?: (nativeView: React.ReactNode) => React.ReactNode,
+    sourceGuard?: () => void,
   ): OwnedHtmlRenderContext {
     const renderContext = inlineContext ?? (paragraph
-      ? this.getRenderInlineContext(paragraph.isFinalized, paragraph.id)
+      ? this.getRenderInlineContext(paragraph.isFinalized, paragraph.id, sourceGuard)
       : undefined);
     return {
       elements: this.htmlElements,
@@ -1375,6 +1401,7 @@ export class ComponentRegistry {
           key,
           renderContext?.nodeKeyPrefix ?? String(paragraph?.id ?? parentTagName ?? "html"),
           renderContext?.isFinalized ?? paragraph?.isFinalized ?? false,
+          renderContext?.sourceGuard,
         ),
       renderComponentPresentation: (name, nativeView, children, key, status, rawSource) =>
         this.renderComponentPresentation(
@@ -1385,6 +1412,7 @@ export class ComponentRegistry {
           status,
           rawSource,
           renderContext?.nodeKeyPrefix ?? String(paragraph?.id ?? parentTagName ?? "html"),
+          renderContext?.sourceGuard,
         ),
       inlineComponents: this.inlineComponents,
       urlTransform: this.urlTransform,
@@ -1396,7 +1424,7 @@ export class ComponentRegistry {
       contentComponents: this.contentComponents,
       renderParagraph: paragraph ? (children) => {
         const nativeView = React.createElement(this.getBlockComponent("paragraph"), {
-          ...this.getBlockProps(paragraph), children,
+          ...this.getBlockProps(paragraph, sourceGuard), children,
         });
         return renderParagraphPresentation ? renderParagraphPresentation(nativeView) : nativeView;
       } : undefined,
@@ -1451,6 +1479,7 @@ export class ComponentRegistry {
   renderBlock(
     block: Block,
     renderPresentation?: (nativeView: React.ReactNode) => React.ReactNode,
+    sourceGuard?: () => void,
   ): React.ReactElement {
     const meta = block.payload.meta;
     const sourceOwnedHtmlTree = meta?.htmlOwnership === true && Array.isArray(meta.htmlTree) ? meta.htmlTree : undefined;
@@ -1458,18 +1487,18 @@ export class ComponentRegistry {
       return React.createElement(
         React.Fragment,
         {},
-        this.renderHtmlTree(sourceOwnedHtmlTree, undefined, block, undefined, renderPresentation),
+        this.renderHtmlTree(sourceOwnedHtmlTree, undefined, block, undefined, renderPresentation, sourceGuard),
       );
     }
     if (block.type === "paragraph" && meta?.htmlParagraphTree) {
       return React.createElement(
         React.Fragment,
         {},
-        this.renderHtmlTree(meta.htmlParagraphTree, undefined, block, undefined, renderPresentation),
+        this.renderHtmlTree(meta.htmlParagraphTree, undefined, block, undefined, renderPresentation, sourceGuard),
       );
     }
     const Component = this.getBlockComponent(block.type);
-    const props = this.getBlockProps(block);
+    const props = this.getBlockProps(block, sourceGuard);
     const paragraphGroups = block.type === "paragraph" &&
       Array.isArray(block.payload.meta?.mixedSegments) && Array.isArray(props.children)
       ? props.children as React.ReactNode[]
@@ -1643,8 +1672,8 @@ export class ComponentRegistry {
   /**
    * Get props for a block based on its type
    */
-  private getBlockProps(block: Block): Record<string, unknown> {
-    const animCtx = this.getRenderInlineContext(block.isFinalized, block.id);
+  private getBlockProps(block: Block, sourceGuard?: () => void): Record<string, unknown> {
+    const animCtx = this.getRenderInlineContext(block.isFinalized, block.id, sourceGuard);
     switch (block.type) {
       case "heading": {
         const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
