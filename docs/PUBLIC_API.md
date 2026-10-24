@@ -140,7 +140,7 @@ interface CodeEngine {
 }
 ```
 
-The initial `state` is `null`; return the next state to pass to the next call for that code block. Return one token line per requested source line. Keep `id` stable for the same tokenizer: changing it invalidates prepared tokens and re-tokenizes affected lines.
+The initial `state` is `null`; return the next state to pass to the next call for that code block. Return one token line per requested source line. Keep `id` stable for the same tokenizer. Changing it is a configuration change, like changing `themes` or `features`: the component starts a new renderer session with the new tokenizer. Source appended through the imperative handle is not carried into that session, so append it again.
 
 `engines.code` runs in the main realm and is accepted only with `engine="main"`. Using it with `"auto"` or `"worker"` throws `EngineCompatibilityError`. For worker-realm tokenization, register the adapter in a custom worker with `serveMarkdownWorker({ extensions: { code } })`; worker functions are not passed through `engines.code`.
 Notes:
