@@ -390,6 +390,39 @@ interface CodeFenceRendererProps {
 
 With `features.emitDiffBlocks: true`, fences with diff metadata use `DefaultDiffRenderer`, including line numbers and token colors. Without diff metadata it returns `renderCode`. A custom language renderer overrides that view.
 
+
+### Headless diff code views
+
+A headless code presentation can read diff state and prepared rows without reparsing Markdown:
+
+```tsx
+import type { CodeNodeHandle } from "@stream-mdx/core";
+import { StreamingMarkdown, useCodeDiff } from "@stream-mdx/react";
+
+function DiffView({ handle }: { handle: CodeNodeHandle }) {
+  const { diffStatus, lines } = useCodeDiff(handle, { from: 0, to: 100 });
+  return (
+    <section data-diff-status={diffStatus}>
+      {lines.map((line) => (
+        <div
+          key={line.id}
+          data-kind={line.diffKind}
+          data-old-no={line.oldNo}
+          data-new-no={line.newNo}
+          data-exactness={line.decoration?.exactness}
+        >
+          {line.text}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+<StreamingMarkdown components={{ code: { view: DiffView } }} />;
+```
+
+The `{ from, to }` range is half-open and zero-based; choose the rows the view needs rather than reading the whole code block. `diffStatus` is `complete`, `incomplete`, or `malformed` for diff fences, and each `CodeLineRecord` retains its `diffKind`, `oldNo`, `newNo`, and current token-decoration exactness.
+
 ### Artifact-like code fences
 
 Fences labeled `artifact` or `html-artifact` render as ordinary code unless the host supplies a `codeRenderers` entry. StreamMDX does not ship a default artifact iframe or sandbox. A custom renderer is application code; if it turns source into active content, the host owns its isolation and security policy.
