@@ -106,13 +106,14 @@ publish_if_needed() {
   fi
 
   echo "[stream-mdx] Publish from: $pkg_dir"
-  echo "[stream-mdx] Command: npm publish ${publish_args[*]}"
+  echo "[stream-mdx] Command: npm publish ${publish_args[*]-}"
   if [ "$AUTO_YES" != "1" ]; then
     echo "Press Enter to continue, or Ctrl-C to abort."
     read -r _
   fi
 
-  (cd "$ROOT_DIR/$pkg_dir" && npm publish "${publish_args[@]}")
+  # macOS bash 3.2 treats an empty array expansion as unbound under `set -u`.
+  (cd "$ROOT_DIR/$pkg_dir" && npm publish ${publish_args[@]+"${publish_args[@]}"})
 }
 
 assert_all_local_versions_match
