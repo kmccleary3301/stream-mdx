@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
-import { createRef } from "react";
-import type { StreamingMarkdownHandle } from "../src";
+import { act, createRef } from "react";
+import type { AppendResult, StreamingMarkdownHandle } from "../src";
 import { createRoot } from "react-dom/client";
 import { StreamingMarkdown } from "../src/streaming-markdown";
 
@@ -74,23 +74,35 @@ async function waitFor(predicate: () => boolean, message: string): Promise<void>
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
   }
 }
+async function runInAct(callback: () => void): Promise<void> {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { configurable: true, value: true });
+  try {
+    await act(callback);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", previous);
+    else Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+}
 
 const container = dom.window.document.getElementById("root");
 assert.ok(container, "missing render root");
 const root = createRoot(container);
 try {
-  root.render(
-    <StreamingMarkdown
-      ref={handle}
-      engine="main"
-      stream={stream()}
-      caret="block"
-      onError={(error) => {
-        errors.push(error);
-        resolveError();
-      }}
-    />,
-  );
+  await runInAct(() => {
+    root.render(
+      <StreamingMarkdown
+        ref={handle}
+        engine="main"
+        stream={stream()}
+        caret="block"
+        onError={(error) => {
+          errors.push(error);
+          resolveError();
+        }}
+      />,
+    );
+  });
 
   const outcome = await waitForRenderOutcome(container, () => {
     const paragraph = container.querySelector("p");
@@ -119,9 +131,13 @@ try {
 
   const currentHandle = handle.current;
   assert.ok(currentHandle, "the real StreamingMarkdown handle is mounted");
-  currentHandle.restart();
-  const appendResult = currentHandle.append(expectedRestartSource);
-  const capacityWait = currentHandle.waitForCapacity({ units: 0 });
+  let appendResult!: AppendResult;
+  let capacityWait!: Promise<void>;
+  await runInAct(() => {
+    currentHandle.restart();
+    appendResult = currentHandle.append(expectedRestartSource);
+    capacityWait = currentHandle.waitForCapacity({ units: 0 });
+  });
 
   assert.equal(appendResult.acceptedSourceUnits, expectedRestartSource.length);
   assert.equal(appendResult.pendingSourceUnits, expectedRestartSource.length);
@@ -148,7 +164,7 @@ try {
   assert.deepEqual(errors, [], "restart admission and capacity waiting do not report an error");
 
 } finally {
-  root.unmount();
+  await runInAct(() => root.unmount());
   for (const [key, descriptor] of previousGlobals) {
     if (descriptor) Object.defineProperty(globalThis, key, descriptor);
     else Reflect.deleteProperty(globalThis, key);
