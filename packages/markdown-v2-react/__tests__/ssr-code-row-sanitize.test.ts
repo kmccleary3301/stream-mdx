@@ -71,11 +71,18 @@ async function createHighlightedNativeCodeStore(
       });
     });
 
+    const captureDecoration = (patches: readonly Patch[]): void => {
+      const decoration = patches.find(
+        (patch): patch is Extract<Patch, { op: "decorateCode" }> => patch.op === "decorateCode",
+      );
+      if (decoration) decorationPatch = decoration;
+    };
     await new Promise<void>((resolve, reject) => {
       worker.onmessage = (event: MessageEvent<WorkerOut>) => {
         const message = event.data;
         if (message.type === "PATCH") {
           store.applyPatches(message.patches);
+          captureDecoration(message.patches);
         } else if (message.type === "FINALIZED") {
           resolve();
         } else if (message.type === "ERROR") {
@@ -93,30 +100,29 @@ async function createHighlightedNativeCodeStore(
     const lines = store.getCodeLines(blockId, 0, codeBlock.source.lineCount);
     assert.equal(lines.map((line) => line.text).join("\n"), source);
 
-    await new Promise<void>((resolve, reject) => {
-      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
-        const message = event.data;
-        if (message.type === "PATCH") {
-          store.applyPatches(message.patches);
-          const decoration = message.patches.find(
-            (patch): patch is Extract<Patch, { op: "decorateCode" }> => patch.op === "decorateCode",
-          );
-          if (decoration) {
-            decorationPatch = decoration;
-            resolve();
+    const allLinesDecorated = (): boolean =>
+      store.getCodeLines(blockId, 0, codeBlock.source.lineCount).every((line) => line.decoration?.exactness === "exact");
+    if (!allLinesDecorated()) {
+      await new Promise<void>((resolve, reject) => {
+        worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+          const message = event.data;
+          if (message.type === "PATCH") {
+            store.applyPatches(message.patches);
+            captureDecoration(message.patches);
+            if (allLinesDecorated()) resolve();
+          } else if (message.type === "ERROR") {
+            reject(new Error(message.error.message));
           }
-        } else if (message.type === "ERROR") {
-          reject(new Error(message.error.message));
-        }
-      };
-      worker.postMessage({
-        type: "TOKENIZE_RANGE",
-        blockId,
-        startLine: 0,
-        endLine: codeBlock.source.lineCount,
-        priority: "visible",
+        };
+        worker.postMessage({
+          type: "TOKENIZE_RANGE",
+          blockId,
+          startLine: 0,
+          endLine: codeBlock.source.lineCount,
+          priority: "visible",
+        });
       });
-    });
+    }
     const actualDecorationPatch = readDecorationPatch();
     assert.ok(actualDecorationPatch, "syntax highlighting should arrive through a real owned-code decoration");
     assert.ok(

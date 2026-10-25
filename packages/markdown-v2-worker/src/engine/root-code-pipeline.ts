@@ -513,7 +513,12 @@ export class RootCodeHighlighter {
     toLine: number,
     config: RootCodeHighlightConfiguration,
     isCurrent: () => boolean,
-    requestMode: "isolated" | "range" = "range",
+    /**
+     * `demand` is a viewer request: like `range`, but resolved at queue time against the
+     * owner's current rows, so lines another queued pass already decorated exactly are not
+     * tokenized again.
+     */
+    requestMode: "isolated" | "range" | "demand" = "range",
   ): Promise<readonly HtmlCodeLineDecoration[]> {
     const state = this.state(owner);
     return this.enqueue(state, async () => {
@@ -523,9 +528,18 @@ export class RootCodeHighlighter {
       const from = Math.max(0, Math.min(index.length, Math.floor(fromLine)));
       const to = Math.max(from, Math.min(index.length, Math.floor(toLine)));
       const rows = index.readRange(from, to);
-      const useSourceContext = requestMode === "range";
+      const useSourceContext = requestMode !== "isolated";
       const exactness = requestMode === "isolated" ? "isolated" : "exact";
       if (rows.length === 0) return [];
+      if (
+        requestMode === "demand"
+        && rows.every((row) =>
+          row.decoration?.exactness === "exact"
+          && row.decoration.sourceRevision === row.sourceRevision
+          && row.decoration.configurationRevision === config.configurationRevision)
+      ) {
+        return [];
+      }
       const language = await this.resolveLanguage(owner, config, state);
       if (!isCurrent()) return [];
       try {

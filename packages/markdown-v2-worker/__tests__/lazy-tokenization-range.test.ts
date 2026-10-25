@@ -90,6 +90,21 @@ async function main() {
   const tokenizedUntil = (updatedBlock?.payload.meta as Record<string, unknown> | undefined)?.lazyTokenizedUntil as number | undefined;
   assert.ok(typeof tokenizedUntil === "number" && tokenizedUntil >= 20, "lazyTokenizedUntil should advance after tokenization");
 
+  // A viewer demand that arrives after the range is already decorated (for example, queued
+  // behind another highlighting pass) must not tokenize those lines again.
+  const repeatedMessages = await harness.send({
+    type: "TOKENIZE_RANGE",
+    blockId: codeBlock.id,
+    startLine: 0,
+    endLine: 20,
+    priority: "visible",
+  });
+  const repeatedDecorations = repeatedMessages
+    .filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH")
+    .flatMap((msg) => msg.patches as Patch[])
+    .filter((patch) => patch.op === "decorateCode");
+  assert.deepStrictEqual(repeatedDecorations, [], "an already-decorated demanded range must not be re-tokenized");
+
   console.log("lazy tokenization range test passed");
 }
 

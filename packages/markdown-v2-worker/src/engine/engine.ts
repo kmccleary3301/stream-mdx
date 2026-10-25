@@ -1955,7 +1955,7 @@ export class MarkdownEngine {
               && generation === this.documentGeneration
               && configurationRevision === this.rootCodeConfigurationRevision
               && this.isCurrentRootCodeOwner(rootOwner),
-            "range",
+            "demand",
           );
           if (!this.isCurrentRootCodeOwner(rootOwner)) return;
           const patch = rootCodeDecoratePatch(rootOwner, configurationRevision, decorations);
@@ -1999,7 +1999,7 @@ export class MarkdownEngine {
               && nestedOwner.inputGeneration === generation
               && configurationRevision === this.rootCodeConfigurationRevision
               && this.nestedCodeOwners.get(nestedOwner.id) === nestedOwner,
-            "range",
+            "demand",
           );
           const patches: Patch[] = [];
           const block = decorations.length > 0 ? this.refreshNativeNestedCodePresentation(nestedOwner) : undefined;
