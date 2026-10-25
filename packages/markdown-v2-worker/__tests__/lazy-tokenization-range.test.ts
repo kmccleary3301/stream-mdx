@@ -90,7 +90,84 @@ async function main() {
   const tokenizedUntil = (updatedBlock?.payload.meta as Record<string, unknown> | undefined)?.lazyTokenizedUntil as number | undefined;
   assert.ok(typeof tokenizedUntil === "number" && tokenizedUntil >= 20, "lazyTokenizedUntil should advance after tokenization");
 
+  // A viewer demand that arrives after the range is already decorated (for example, queued
+  // behind another highlighting pass) must not tokenize those lines again.
+  const repeatedMessages = await harness.send({
+    type: "TOKENIZE_RANGE",
+    blockId: codeBlock.id,
+    startLine: 0,
+    endLine: 20,
+    priority: "visible",
+  });
+  const repeatedDecorations = repeatedMessages
+    .filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH")
+    .flatMap((msg) => msg.patches as Patch[])
+    .filter((patch) => patch.op === "decorateCode");
+  assert.deepStrictEqual(repeatedDecorations, [], "an already-decorated demanded range must not be re-tokenized");
+
   console.log("lazy tokenization range test passed");
 }
 
+// Incremental highlighting can decorate every row while the block streams; the block only
+// becomes lazy at finalization, with lazyTokenizedUntil still 0. A viewer demand that needs no
+// new tokens must still publish the real progress, or lazy completion never converges.
+async function liveDecoratedLazyProgressTest() {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const apply = (messages: WorkerOut[]) =>
+    messages
+      .filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH")
+      .forEach((msg) => store.applyPatches(msg.patches as Patch[], { captureMetrics: false }));
+
+  const initMessages = await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: {
+      html: true,
+      mdx: false,
+      math: false,
+      tables: false,
+      callouts: false,
+      codeHighlighting: "incremental",
+      lazyTokenization: { enabled: true, thresholdLines: 50 },
+    },
+  });
+  const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
+  assert.ok(init, "worker did not initialize");
+  store.resetSnapshot(init.snapshot);
+
+  const lineCount = 120;
+  const snippet = buildSnippet(lineCount);
+  for (let offset = 0; offset < snippet.length; offset += 40) {
+    apply(await harness.send({ type: "APPEND", text: snippet.slice(offset, offset + 40) }));
+  }
+  apply(await harness.send({ type: "FINALIZE" }));
+
+  const codeBlock = store.getBlocks().find((block) => block.type === "code");
+  assert.ok(codeBlock, "expected code block");
+  assert.strictEqual(codeBlock.payload.meta?.lazyTokenization, true, "the finalized block must be lazy");
+  assert.ok(
+    store.getCodeLines(codeBlock.id, 0, lineCount).every((line) => line.decoration?.exactness === "exact"),
+    "incremental highlighting must have decorated every streamed line",
+  );
+
+  apply(await harness.send({
+    type: "TOKENIZE_RANGE",
+    blockId: codeBlock.id,
+    startLine: 0,
+    endLine: lineCount,
+    priority: "visible",
+  }));
+  const progressed = store.getBlocks().find((block) => block.id === codeBlock.id);
+  assert.strictEqual(
+    progressed?.payload.meta?.lazyTokenizedUntil,
+    lineCount,
+    "a demand over already-decorated lines must publish the real lazy progress",
+  );
+  console.log("live-decorated lazy progress test passed");
+}
+
 await main();
+await liveDecoratedLazyProgressTest();

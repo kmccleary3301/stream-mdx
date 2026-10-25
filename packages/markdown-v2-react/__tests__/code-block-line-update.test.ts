@@ -130,11 +130,20 @@ async function runNativeCodeLineUpdateTest(): Promise<void> {
       "native code row should render the initial authored source",
     );
 
+    let highlightPatch: Extract<Patch, { op: "decorateCode" }> | null = null;
+    const readHighlightPatch = (): Extract<Patch, { op: "decorateCode" }> | null => highlightPatch;
+    const applyWorkerPatches = (patches: readonly Patch[]): void => {
+      act(() => store.applyPatches(patches));
+      const decoration = patches.find(
+        (patch): patch is Extract<Patch, { op: "decorateCode" }> => patch.op === "decorateCode",
+      );
+      if (decoration) highlightPatch = decoration;
+    };
     await new Promise<void>((resolve, reject) => {
       worker.onmessage = (event: MessageEvent<WorkerOut>) => {
         const message = event.data;
         if (message.type === "PATCH") {
-          act(() => store.applyPatches(message.patches));
+          applyWorkerPatches(message.patches);
         } else if (message.type === "FINALIZED") {
           resolve();
         } else if (message.type === "ERROR") {
@@ -155,32 +164,28 @@ async function runNativeCodeLineUpdateTest(): Promise<void> {
     assert.equal(lines[0]?.ending, "\n", "native source should retain the newline between authored lines");
     assertMountedCodeLineOrder(container, "const before = 1;", "const after = 2;");
 
-    let highlightPatch: Extract<Patch, { op: "decorateCode" }> | null = null;
-    const readHighlightPatch = (): Extract<Patch, { op: "decorateCode" }> | null => highlightPatch;
-    await new Promise<void>((resolve, reject) => {
-      worker.onmessage = (event: MessageEvent<WorkerOut>) => {
-        const message = event.data;
-        if (message.type === "PATCH") {
-          act(() => store.applyPatches(message.patches));
-          const decoration = message.patches.find(
-            (patch): patch is Extract<Patch, { op: "decorateCode" }> => patch.op === "decorateCode",
-          );
-          if (decoration) {
-            highlightPatch = decoration;
-            resolve();
+    const allLinesDecorated = (): boolean =>
+      store.getCodeLines(blockId, 0, lines.length).every((line) => line.decoration?.exactness === "exact");
+    if (!allLinesDecorated()) {
+      await new Promise<void>((resolve, reject) => {
+        worker.onmessage = (event: MessageEvent<WorkerOut>) => {
+          const message = event.data;
+          if (message.type === "PATCH") {
+            applyWorkerPatches(message.patches);
+            if (allLinesDecorated()) resolve();
+          } else if (message.type === "ERROR") {
+            reject(new Error(message.error.message));
           }
-        } else if (message.type === "ERROR") {
-          reject(new Error(message.error.message));
-        }
-      };
-      worker.postMessage({
-        type: "TOKENIZE_RANGE",
-        blockId,
-        startLine: 0,
-        endLine: lines.length,
-        priority: "visible",
+        };
+        worker.postMessage({
+          type: "TOKENIZE_RANGE",
+          blockId,
+          startLine: 0,
+          endLine: lines.length,
+          priority: "visible",
+        });
       });
-    });
+    }
     await flushRendererFrame();
     const actualDecorationPatch = readHighlightPatch();
     assert.ok(actualDecorationPatch, "worker should supply a decoration with its real owner and source revisions");
@@ -191,13 +196,16 @@ async function runNativeCodeLineUpdateTest(): Promise<void> {
 
     const clearDecorationPatch: Extract<Patch, { op: "decorateCode" }> = {
       ...actualDecorationPatch,
-      decorations: actualDecorationPatch.decorations.map((decoration) => ({
-        index: decoration.index,
-        lineId: decoration.lineId,
-        sourceRevision: decoration.sourceRevision,
-        configurationRevision: decoration.configurationRevision,
-        tokens: null,
-      })),
+      decorations: store.getCodeLines(blockId, 0, lines.length).map((line) => {
+        assert.ok(line.decoration, "every authored line should be decorated before the clear");
+        return {
+          index: line.index,
+          lineId: line.id,
+          sourceRevision: line.sourceRevision,
+          configurationRevision: line.decoration.configurationRevision,
+          tokens: null,
+        };
+      }),
     };
     act(() => store.applyPatches([clearDecorationPatch], { captureMetrics: false }));
     await flushRendererFrame();

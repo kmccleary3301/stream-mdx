@@ -4899,6 +4899,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 meta: { ...(currentMeta ?? {}), lazyTokenizedUntil },
               },
             };
+            // Managed code blocks are cached per view; a progress-only update leaves the view unchanged.
+            const progressCodeState = codeStateByRecord.get(target);
+            if (progressCodeState) coldCodeBlocksByView.delete(progressCodeState.view);
             blockChanged = true;
             mutatedBlocks = true;
             blocksDirty = true;

@@ -1955,13 +1955,15 @@ export class MarkdownEngine {
               && generation === this.documentGeneration
               && configurationRevision === this.rootCodeConfigurationRevision
               && this.isCurrentRootCodeOwner(rootOwner),
-            "range",
+            "demand",
           );
           if (!this.isCurrentRootCodeOwner(rootOwner)) return;
           const patch = rootCodeDecoratePatch(rootOwner, configurationRevision, decorations);
           const patches: Patch[] = [];
           const presentationMeta = rootOwner.getPresentation()?.meta;
-          if (presentationMeta?.lazyTokenization === true && decorations.length > 0) {
+          // Reconcile lazy progress even when the demand did no work: another pass may have
+          // decorated these rows without advancing the presentation's lazyTokenizedUntil.
+          if (presentationMeta?.lazyTokenization === true) {
             const lines = rootOwner.getLines();
             let tokenizedUntil = 0;
             while (tokenizedUntil < lines.length) {
@@ -1999,7 +2001,7 @@ export class MarkdownEngine {
               && nestedOwner.inputGeneration === generation
               && configurationRevision === this.rootCodeConfigurationRevision
               && this.nestedCodeOwners.get(nestedOwner.id) === nestedOwner,
-            "range",
+            "demand",
           );
           const patches: Patch[] = [];
           const block = decorations.length > 0 ? this.refreshNativeNestedCodePresentation(nestedOwner) : undefined;
