@@ -65,6 +65,9 @@ jobs:
           # Per-scenario hang guard, not a perf budget. S1_slow_small paces 2272 sequential
           # append round trips (~35 s locally); Playwright tracing on hosted runners exceeded 60 s.
           STREAM_MDX_REGRESSION_TIMEOUT: "180000"
+          # Style baselines are macOS-captured layout metrics; Ubuntu fonts and scrollbars differ.
+          # The local release:gates run enforces them.
+          STREAM_MDX_GATES_SKIP_STYLE_SNAPSHOTS: "1"
         run: npm run release:gates
 
       - name: Create release PR or publish
