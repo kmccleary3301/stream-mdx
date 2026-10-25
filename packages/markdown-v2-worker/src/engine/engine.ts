@@ -1961,7 +1961,9 @@ export class MarkdownEngine {
           const patch = rootCodeDecoratePatch(rootOwner, configurationRevision, decorations);
           const patches: Patch[] = [];
           const presentationMeta = rootOwner.getPresentation()?.meta;
-          if (presentationMeta?.lazyTokenization === true && decorations.length > 0) {
+          // Reconcile lazy progress even when the demand did no work: another pass may have
+          // decorated these rows without advancing the presentation's lazyTokenizedUntil.
+          if (presentationMeta?.lazyTokenization === true) {
             const lines = rootOwner.getLines();
             let tokenizedUntil = 0;
             while (tokenizedUntil < lines.length) {

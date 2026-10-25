@@ -531,20 +531,22 @@ export class RootCodeHighlighter {
       const useSourceContext = requestMode !== "isolated";
       const exactness = requestMode === "isolated" ? "isolated" : "exact";
       if (rows.length === 0) return [];
-      if (
-        requestMode === "demand"
-        && rows.every((row) =>
-          row.decoration?.exactness === "exact"
-          && row.decoration.sourceRevision === row.sourceRevision
-          && row.decoration.configurationRevision === config.configurationRevision)
-      ) {
-        return [];
-      }
       const language = await this.resolveLanguage(owner, config, state);
       if (!isCurrent()) return [];
       try {
         const source = preparedCodeSourceOf(owner);
         const diffInfo = preparedCodeDiffInfo(source);
+        if (
+          requestMode === "demand"
+          && rows.every((row) =>
+            row.decoration?.exactness === "exact"
+            && row.decoration.sourceRevision === row.sourceRevision
+            && row.decoration.configurationRevision === config.configurationRevision
+            // decorateAvailable marks raw diff rows exact without paired diff tracks.
+            && (!diffInfo.isDiff || row.decoration.diffTokens !== undefined))
+        ) {
+          return [];
+        }
         if (
           diffInfo.isDiff
           && useSourceContext
