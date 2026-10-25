@@ -5,6 +5,12 @@ import { fileURLToPath } from "node:url";
 
 import { createContainerSignature, prepareInlineStreamingLookahead, prepareSurfaceLookahead } from "../src/streaming/inline-streaming";
 
+// These tests pin trace shape and decisions, not the 5 ms provider time budget. A cold call
+// on a loaded CI runner can exceed that budget and degrade to `raw`, so freeze the clock here.
+// lookahead-budget-boundaries.test.ts covers the time budget itself (maxProviderMs: 0).
+const frozenNow = performance.now();
+performance.now = () => frozenNow;
+
 const FIXTURES_DIR = fileURLToPath(new URL("../../../tests/regression/fixtures", import.meta.url));
 
 const baseContext = {
