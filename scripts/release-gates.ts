@@ -98,7 +98,11 @@ async function main(): Promise<void> {
       },
     });
 
-    run("npm", ["run", "test:regression"], {
+    // Style baselines hold macOS layout metrics (font widths, scrollbars). Linux CI sets this
+    // flag and keeps only the HTML snapshots; the local release:gates run enforces styles.
+    const skipStyleSnapshots = process.env.STREAM_MDX_GATES_SKIP_STYLE_SNAPSHOTS === "1";
+    if (skipStyleSnapshots) console.log("[release-gates] skipping style snapshots (STREAM_MDX_GATES_SKIP_STYLE_SNAPSHOTS=1)");
+    run("npm", ["run", skipStyleSnapshots ? "test:regression:html" : "test:regression"], {
       env: {
         STREAM_MDX_REGRESSION_BASE_URL: BASE_URL,
       },

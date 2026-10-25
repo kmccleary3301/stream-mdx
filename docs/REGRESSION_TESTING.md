@@ -96,6 +96,8 @@ Local and merge-time checks still include:
 - `npm run test:regression:style-invariants`
 - `npm run docs:quality:audit`
 
+Style snapshots record macOS layout metrics, such as font-dependent marker widths and container widths that are probably scrollbar-dependent. On Ubuntu runners they differ by up to about 10 px. The `release.yml` gates therefore set `STREAM_MDX_GATES_SKIP_STYLE_SNAPSHOTS=1`, which makes `release:gates` run `test:regression:html` instead of `test:regression`. Run `npm run release:gates` on macOS to enforce the style baselines.
+
 ## Recommended local workflow
 
 ### 1. Build the exported docs site
