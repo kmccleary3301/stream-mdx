@@ -531,8 +531,8 @@ async function measureDeepDiffRangeTokenizedLines(prefixLines: number): Promise<
     consumeMessages();
     await engine.handle({ type: "APPEND", text: source });
     consumeMessages();
-    await engine.handle({ type: "FINALIZE" });
-    consumeMessages();
+    // No FINALIZE: finalization decorates the whole diff, and a viewer demand for already
+    // decorated lines does no work. The measured request must target an undecorated line.
 
     await engine.handle({ type: "DUMP_BLOCKS" });
     const dump = emitted.splice(0).find((message) => message.type === "DUMP_BLOCKS");
