@@ -222,6 +222,18 @@ Changesets is the canonical release path for the coordinated `1.0.0` cut.
 
 5. `.github/workflows/publish.yml` is a manually approved recovery path. Dispatch it only for the same reviewed, versioned commit after determining whether the normal release job already published any packages. It also uses Changesets and Trusted Publishing; authorize its workflow identity in npm before relying on it.
 
+   **How 1.0.0 actually shipped.** Trusted Publishing was not configured, and no `release.yml` run had ever published. `1.0.0` was published by the maintainer from a clean checkout of the reviewed commit, before the release PR merged into `main`, so the workflow's `changeset:publish` then had nothing to publish:
+
+   ```bash
+   STREAM_MDX_EXPECT_VERSION=1.0.0 bash scripts/publish-release.sh --check-versions
+   npm run build:packages && npm run worker:build
+   npm login --auth-type=web
+   STREAM_MDX_EXPECT_VERSION=1.0.0 bash scripts/publish-release.sh --yes
+   npm logout
+   ```
+
+   Packages published this way carry no provenance attestation. Until Trusted Publishing is configured for all ten packages, later versions follow the same order: publish from the reviewed head of the Changesets version PR, then merge it, so the post-merge `release.yml` run finds nothing to publish.
+
 6. After CI publication, confirm `1.0.0` and the intended dist-tag for every package, plus the matching GitHub release/tags:
 
    - `@stream-mdx/core`
