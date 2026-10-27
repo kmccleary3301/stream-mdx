@@ -16,6 +16,7 @@ type NativeNestedBlockSnapshotMapping = NativeSourceMapping & {
   readonly presentationInput?: Input;
   readonly presentationPrefix?: string;
   readonly recoveryRootRange?: { readonly from: number; readonly to: number };
+  readonly markListIndentationRecoveryContent?: boolean;
 };
 
 function readSourceRange(source: SourceText, from: number, to: number): string {
@@ -425,7 +426,9 @@ function lowerNestedBlockSnapshot(
     const range = sourceRange(mapping, node.from, node.to);
     const baseMeta: Record<string, unknown> = {
       sourceContainer: container,
-      ...(mapping.presentationInput ? { listIndentationRecoveryContent: true } : {}),
+      ...(mapping.presentationInput && mapping.markListIndentationRecoveryContent !== false
+        ? { listIndentationRecoveryContent: true }
+        : {}),
     };
     if (name === "Paragraph" || name === "Task") {
       const owned = nativeLeafFactory?.(node, id, "paragraph", range);
@@ -438,9 +441,23 @@ function lowerNestedBlockSnapshot(
       const start = ordered && mark ? Number.parseInt(input.read(mark.from, mark.to), 10) : undefined;
       const props = { ordered, loose, start: start === 1 ? undefined : start };
       const items = childrenOf(node).filter((child) => child.type.name === "ListItem" || child.type.name === "EmptyListItem");
-      const children = items.map((item, semanticChildIndex): NodeSnapshot => {
+      const children = items.flatMap((item, semanticChildIndex): NodeSnapshot[] => {
         const itemIdentity = childIdentity(id, node, item, semanticChildIndex, "item");
         const itemId = itemIdentity.id;
+        const recoveredItems = block.payload.meta?.listIndentationRecovery === true && ordered
+          ? recoverOrderedListContinuation(
+              item,
+              node,
+              id,
+              itemIdentity,
+              block,
+              mapping,
+              inlineParser,
+              parser,
+              streamingInline,
+            )
+          : undefined;
+        if (recoveredItems) return recoveredItems;
         const content = childrenOf(item).filter((child) => !["ListMark", "QuoteMark", "LinkReference"].includes(child.type.name));
         const first = content[0];
         const candidate = first && (first.type.name === "Paragraph" || first.type.name === "Task") ? first : undefined;
@@ -554,7 +571,7 @@ function lowerNestedBlockSnapshot(
           },
         };
         const itemChildren = primaryChild ? [primaryChild, ...segmentChildren] : segmentChildren;
-        return {
+        return [{
           id: itemId,
           type: "list-item",
           range: itemRange,
@@ -572,7 +589,7 @@ function lowerNestedBlockSnapshot(
             checked: isTask ? taskValue?.[1]?.toLowerCase() === "x" : undefined,
           },
           children: itemChildren,
-        };
+        }];
       });
       const nested: Block = {
         id,
@@ -907,6 +924,206 @@ export function extractLezerCode(
   mapping?: NativeSourceMapping,
 ): { code: string; info: string } {
   return extractLezerCodeDetailed(node, source, mapping, false);
+}
+
+interface OrderedListRecoveryEdit {
+  readonly from: number;
+  readonly to: number;
+  readonly replacement: string;
+}
+
+function indentationColumn(prefix: string, start = 0): number {
+  let column = start;
+  for (const character of prefix) {
+    column += character === "\t" ? 4 - (column % 4) : 1;
+  }
+  return column;
+}
+
+/** Reparse lazy ordered-list continuation text and map the corrected syntax to authored offsets. */
+function recoverOrderedListContinuation(
+  item: SyntaxNode,
+  parentList: SyntaxNode,
+  parentListId: string,
+  itemIdentity: Readonly<{ id: string; semanticChildIndex: number }>,
+  sourceBlock: Block,
+  mapping: NativeNestedBlockSnapshotMapping,
+  inlineParser: InlineParser,
+  parser: MarkdownParser,
+  streamingInline: ((text: string) => InlineNode[]) | undefined,
+): NodeSnapshot[] | undefined {
+  if (parentList.type.name !== "OrderedList") return undefined;
+  const marker = item.getChild("ListMark");
+  if (!marker) return undefined;
+
+  const lineStart = lineStartAt(mapping.input, marker.from);
+  if (!/^[\t ]*$/.test(readSourceRange(mapping.input, lineStart, marker.from))) return undefined;
+  const inputRange = sourceRange(mapping, lineStart, item.to);
+  const raw = readSourceRange(mapping.input, lineStart, item.to);
+  if (!raw) return undefined;
+
+  const sourceText = raw.replace(/\r\n?/g, "\n");
+  const firstLineEnd = sourceText.indexOf("\n");
+  const firstLine = sourceText.slice(0, firstLineEnd < 0 ? sourceText.length : firstLineEnd);
+  const parentMarker = /^([ \t]*)(\d{1,9})([.)])(?=[ \t]+|$)([ \t]*)/.exec(firstLine);
+  if (!parentMarker) return undefined;
+
+  const parentMarkerColumn = indentationColumn(parentMarker[1]!);
+  const markerEndColumn = parentMarkerColumn + parentMarker[2]!.length + parentMarker[3]!.length;
+  const markerPadding = indentationColumn(parentMarker[4] ?? "", markerEndColumn) - markerEndColumn;
+  const contentColumn = markerEndColumn + (markerPadding >= 1 && markerPadding <= 4 ? markerPadding : 1);
+  const edits: OrderedListRecoveryEdit[] = [];
+  let lineFrom = firstLineEnd < 0 ? sourceText.length : firstLineEnd + 1;
+  while (lineFrom < sourceText.length) {
+    const lineEnd = sourceText.indexOf("\n", lineFrom);
+    const lineTo = lineEnd < 0 ? sourceText.length : lineEnd;
+    const line = sourceText.slice(lineFrom, lineTo);
+    const bullet = /^([ \t]*)([-+*])(?=[ \t]+|$)/.exec(line);
+    if (bullet) {
+      const bulletColumn = indentationColumn(bullet[1]!);
+      if (bulletColumn > parentMarkerColumn && bulletColumn < contentColumn) {
+        const markerFrom = lineFrom + bullet[1]!.length;
+        edits.push({
+          from: markerFrom,
+          to: markerFrom,
+          replacement: " ".repeat(contentColumn - bulletColumn),
+        });
+      }
+    } else {
+      const sibling = /^([ \t]*)(\d{1,9})([.)])(?=[ \t]+|$)/.exec(line);
+      if (
+        sibling &&
+        sibling[3] === parentMarker[3] &&
+        indentationColumn(sibling[1]!) === parentMarkerColumn &&
+        Number.parseInt(sibling[2]!, 10) > 1
+      ) {
+        const markerFrom = lineFrom + sibling[1]!.length;
+        edits.push({
+          from: markerFrom,
+          to: markerFrom + sibling[2]!.length,
+          replacement: "1",
+        });
+      }
+    }
+    if (lineEnd < 0) break;
+    lineFrom = lineEnd + 1;
+  }
+  if (edits.length === 0) return undefined;
+
+  const originalInput = new StringSourceInput(sourceText);
+  const protectedRanges: Array<{ readonly from: number; readonly to: number }> = [];
+  const collectProtectedRanges = (node: SyntaxNode): void => {
+    if (/(?:code|html)/i.test(node.type.name)) protectedRanges.push({ from: node.from, to: node.to });
+    for (let child = node.firstChild; child; child = child.nextSibling) collectProtectedRanges(child);
+  };
+  collectProtectedRanges(parser.parse(originalInput).topNode);
+  const safeEdits = edits.filter((edit) =>
+    !protectedRanges.some((range) => range.from <= edit.from && edit.from < range.to),
+  );
+  if (safeEdits.length === 0) return undefined;
+  const normalizedPositions: number[] = [];
+  for (let offset = 0; offset < raw.length; offset += 1) {
+    normalizedPositions.push(sourceRange(mapping, lineStart + offset, lineStart + offset + 1).from);
+    if (raw[offset] === "\r" && raw[offset + 1] === "\n") offset += 1;
+  }
+
+  const transformedCharacters: string[] = [];
+  const transformedPositions: number[] = [];
+  const appendOriginal = (from: number, to: number): void => {
+    transformedCharacters.push(sourceText.slice(from, to));
+    for (let offset = from; offset < to; offset += 1) transformedPositions.push(normalizedPositions[offset]!);
+  };
+  const appendReplacement = (replacement: string, sourceOffset: number): void => {
+    transformedCharacters.push(replacement);
+    const mappedOffset = normalizedPositions[sourceOffset] ?? inputRange.from;
+    for (let offset = 0; offset < replacement.length; offset += 1) transformedPositions.push(mappedOffset);
+  };
+  let cursor = 0;
+  for (const edit of safeEdits) {
+    appendOriginal(cursor, edit.from);
+    appendReplacement(edit.replacement, edit.from);
+    cursor = edit.to;
+  }
+  appendOriginal(cursor, sourceText.length);
+  const transformedText = transformedCharacters.join("");
+  if (transformedText === sourceText) return undefined;
+
+  const input = new StringSourceInput(transformedText);
+  const mapOffset = (offset: number): number => {
+    if (offset <= 0) return transformedPositions[0] ?? inputRange.from;
+    if (offset >= transformedPositions.length) return inputRange.to;
+    return transformedPositions[offset]!;
+  };
+  const recoveredMapping: NativeNestedBlockSnapshotMapping = {
+    ...mapping,
+    input,
+    mapOffset,
+    mapRange: (from, to) => ({ from: mapOffset(from), to: mapOffset(to) }),
+    knownListLoosenessForNode: undefined,
+    presentationInput: input,
+    recoveryRootRange: inputRange,
+    markListIndentationRecoveryContent: false,
+  };
+  const parsed = parser.parse(input);
+  const recoveredList = parsed.topNode.firstChild;
+  if (
+    !recoveredList ||
+    recoveredList.type.name !== "OrderedList" ||
+    recoveredList.nextSibling
+  ) {
+    return undefined;
+  }
+
+  const sourceMeta = sourceBlock.payload.meta as {
+    formatAnticipation?: FormatAnticipationConfig;
+    mathEnabled?: boolean;
+    trustedMdxSource?: boolean;
+  } | undefined;
+  const recoveredBlock: Block = {
+    id: `${parentListId}::list-indentation-recovery:${itemIdentity.semanticChildIndex}`,
+    type: "list",
+    isFinalized: sourceBlock.isFinalized,
+    payload: {
+      raw: mapping.source.read(inputRange.from, inputRange.to),
+      range: inputRange,
+      meta: {
+        listIndentationRecovery: true,
+        ...(sourceMeta?.formatAnticipation !== undefined ? { formatAnticipation: sourceMeta.formatAnticipation } : {}),
+        ...(sourceMeta?.mathEnabled !== undefined ? { mathEnabled: sourceMeta.mathEnabled } : {}),
+        ...(sourceMeta?.trustedMdxSource === true ? { trustedMdxSource: true } : {}),
+      },
+    },
+  };
+  const identityForRecoveredChild: NativeNestedChildIdentityFactory = (
+    _recoveredParentId,
+    recoveredParent,
+    _child,
+    childIndex,
+    role,
+    defaultId,
+  ) => {
+    if (recoveredParent === recoveredList && role === "item") {
+      const semanticChildIndex = itemIdentity.semanticChildIndex + childIndex;
+      return {
+        id: childIndex === 0 ? itemIdentity.id : `${parentListId}::item:${semanticChildIndex}`,
+        semanticChildIndex,
+      };
+    }
+    return { id: defaultId, semanticChildIndex: childIndex };
+  };
+  // Native leaf owners are bound to the original parser tree, so lower this remapped tree generically.
+  const prepared = lowerNestedBlockSnapshot(
+    recoveredBlock,
+    parsed.topNode,
+    recoveredMapping,
+    inlineParser,
+    parser,
+    streamingInline,
+    undefined,
+    identityForRecoveredChild,
+    false,
+  );
+  return prepared.children[0]?.type === "list" ? prepared.children[0].children ?? [] : undefined;
 }
 
 const LIST_INDENTATION_INLINE_PARSE_PREFIX = "t3-markdown-inline-prefix:";
