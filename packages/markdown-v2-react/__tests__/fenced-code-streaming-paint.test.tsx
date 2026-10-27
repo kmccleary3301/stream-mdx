@@ -12,9 +12,12 @@ import { createRendererStore } from "../src/renderer/store";
 import { useVirtualizedCode } from "../src/renderer/virtualized-code";
 
 async function flushRendererFrame(): Promise<void> {
-  const { promise, resolve } = Promise.withResolvers<void>();
+  let resolve!: () => void;
+  const promise = new Promise<void>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
   await act(async () => {
-    requestAnimationFrame(resolve);
+    requestAnimationFrame(() => resolve());
     await promise;
   });
 }
@@ -125,7 +128,12 @@ async function runFencedCodeStreamingPaintTest(): Promise<void> {
   assert.ok(container, "missing test root container");
 
   const sendUntil = (input: WorkerIn, done: () => boolean): Promise<void> => {
-    const { promise, resolve, reject } = Promise.withResolvers<void>();
+    let resolve!: () => void;
+    let reject!: (reason: unknown) => void;
+    const promise = new Promise<void>((resolvePromise, rejectPromise) => {
+      resolve = resolvePromise;
+      reject = rejectPromise;
+    });
     worker.onmessage = (event: MessageEvent<WorkerOut>) => {
       const message = event.data;
       if (message.type === "INITIALIZED") {
