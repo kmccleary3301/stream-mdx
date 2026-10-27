@@ -12,6 +12,8 @@ export interface ParagraphSourceRange {
 export interface ParagraphSourceText {
   readonly sourceRange: ParagraphSourceRange;
   readonly text: string;
+  /** Exact physical ranges omitted from logical text; syntax belongs to the left logical range. */
+  readonly omittedRanges?: readonly ParagraphSourceRange[];
   /** Adjacent logical ranges meet at one physical boundary; omitted syntax belongs to the left range. */
   rangeFor(from: number, to: number): ParagraphSourceRange;
   slice(from: number, to: number): ParagraphSourceText;
@@ -106,6 +108,7 @@ function sourceTextFromRuns(
   text: string,
   sourceRange: ParagraphSourceRange,
   runs: readonly SourceRun[],
+  omittedRanges?: readonly ParagraphSourceRange[],
 ): ParagraphSourceText {
   let logicalCursor = 0;
   let previousSourceEnd = sourceRange.from;
@@ -123,6 +126,18 @@ function sourceTextFromRuns(
   }
   if (logicalCursor !== text.length && (text.length !== 0 || runs.length !== 0)) {
     throw new RangeError("Paragraph source mapping does not cover every logical UTF-16 unit");
+  }
+  let ownedOmittedRanges: readonly ParagraphSourceRange[] | undefined;
+  if (omittedRanges?.length) {
+    let previousOmittedTo = sourceRange.from;
+    ownedOmittedRanges = Object.freeze(omittedRanges.map((range) => {
+      if (!Number.isSafeInteger(range.from) || !Number.isSafeInteger(range.to)
+        || range.from < previousOmittedTo || range.to <= range.from || range.to > sourceRange.to) {
+        throw new RangeError("Paragraph source omission ranges must be ordered within the authored extent");
+      }
+      previousOmittedTo = range.to;
+      return Object.freeze({ from: range.from, to: range.to });
+    }));
   }
 
   const sourceAtBoundary = (offset: number): number => {
@@ -142,12 +157,23 @@ function sourceTextFromRuns(
   const slice = (from: number, to: number): ParagraphSourceText => {
     assertLogicalRange(from, to, text.length);
     const nextRange = rangeFor(from, to);
-    return sourceTextFromRuns(text.slice(from, to), nextRange, sliceRuns(runs, from, to));
+    let slicedOmittedRanges: ParagraphSourceRange[] | undefined;
+    if (ownedOmittedRanges) {
+      for (const range of ownedOmittedRanges) {
+        if (range.from >= nextRange.from && range.to <= nextRange.to) {
+          (slicedOmittedRanges ??= []).push(range);
+        } else if (range.from < nextRange.to && range.to > nextRange.from) {
+          throw new RangeError("Paragraph source slice cuts through an omitted source range");
+        }
+      }
+    }
+    return sourceTextFromRuns(text.slice(from, to), nextRange, sliceRuns(runs, from, to), slicedOmittedRanges);
   };
 
   return Object.freeze({
     sourceRange: Object.freeze({ from: sourceRange.from, to: sourceRange.to }),
     text,
+    ...(ownedOmittedRanges === undefined ? {} : { omittedRanges: ownedOmittedRanges }),
     rangeFor,
     slice,
   });
@@ -404,6 +430,7 @@ export function nativeParagraphSourceTextFromInput(
   const parts: string[] = [];
   const runs: SourceRun[] = [];
   let logicalLength = 0;
+  let omittedRanges: ParagraphSourceRange[] | undefined;
   let omissionIndex = 0;
   let lineFrom = contentFrom;
 
@@ -432,6 +459,7 @@ export function nativeParagraphSourceTextFromInput(
           cursor += 1;
         }
       }
+      (omittedRanges ??= []).push({ from: omission.range.from, to: cursor });
       omissionIndex += 1;
     }
     logicalLength = appendMappedInputRange(input, sourceRange, cursor, lineTo, parts, runs, logicalLength);
@@ -442,7 +470,7 @@ export function nativeParagraphSourceTextFromInput(
 
   let text = parts.length === 0 ? "" : parts.length === 1 ? parts[0]! : parts.join("");
   if (text.length !== logicalLength) throw new RangeError("Native paragraph logical text lost UTF-16 units");
-  return sourceTextFromRuns(text, sourceRange, runs);
+  return sourceTextFromRuns(text, sourceRange, runs, omittedRanges);
 }
 
 /** Exact ASCII space/tab container-indent ranges from only the current native input window. */

@@ -13,6 +13,8 @@ export interface ParagraphBlockSourceMetadata {
   readonly completeSpanCount: number;
   readonly spanCount: number;
   readonly sourceRange: { readonly from: number; readonly to: number };
+  /** Exact physical source ranges omitted from the paragraph's logical text. */
+  readonly omittedRanges?: readonly { readonly from: number; readonly to: number }[];
   readonly linkReferences?: readonly BlockResolvedLinkReference[];
 }
 

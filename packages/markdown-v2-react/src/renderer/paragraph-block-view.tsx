@@ -104,6 +104,21 @@ function readParagraphSource(state: ManagedParagraphViewState, from: number, to:
   return state.sourceSnapshot.read(from - base, to - base);
 }
 
+function appendSourceFragment(
+  nodes: React.ReactNode[],
+  state: ManagedParagraphViewState,
+  segmentKey: string,
+  from: number,
+  to: number,
+  store: RendererStore,
+): void {
+  if (to <= from) return;
+  const source = readParagraphSource(state, from, to);
+  if (!source) return;
+  nodes.push(<React.Fragment key={`${segmentKey}:source:${from}:${to}`}>{source}</React.Fragment>);
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewSlots(store, 1);
+}
+
 function appendSourceGap(
   nodes: React.ReactNode[],
   state: ManagedParagraphViewState,
@@ -114,11 +129,33 @@ function appendSourceGap(
 ): void {
   if (to < from) throw new RangeError("Paragraph source spans overlap or regress");
   if (to === from) return;
-  const source = readParagraphSource(state, from, to);
-  if (source) {
-    nodes.push(<React.Fragment key={`${segmentKey}:source:${from}:${to}`}>{source}</React.Fragment>);
-    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) recordViewSlots(store, 1);
+  const omitted = state.source.omittedRanges;
+  if (!omitted?.length) {
+    appendSourceFragment(nodes, state, segmentKey, from, to, store);
+    return;
   }
+  let low = 0;
+  let high = omitted.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (omitted[middle]!.to <= from) low = middle + 1;
+    else high = middle;
+  }
+  if (low >= omitted.length || omitted[low]!.from >= to) {
+    appendSourceFragment(nodes, state, segmentKey, from, to, store);
+    return;
+  }
+  let cursor = from;
+  for (let index = low; index < omitted.length; index += 1) {
+    const range = omitted[index]!;
+    if (range.from >= to) break;
+    const omittedFrom = Math.max(from, range.from);
+    const omittedTo = Math.min(to, range.to);
+    appendSourceFragment(nodes, state, segmentKey, cursor, omittedFrom, store);
+    cursor = Math.max(cursor, omittedTo);
+    if (cursor >= to) break;
+  }
+  appendSourceFragment(nodes, state, segmentKey, cursor, to, store);
 }
 function renderPlainParagraphRange(
   state: ManagedParagraphViewState,
