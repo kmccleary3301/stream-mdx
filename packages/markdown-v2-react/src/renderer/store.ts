@@ -5829,6 +5829,47 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           ) {
             return metadataSnapshot;
           }
+          const metadata = current.block?.payload.meta ?? current.meta;
+          const sourceRange = current.block?.payload.range ?? current.range;
+          const rawHeading = current.block?.payload.raw ?? current.props.raw;
+          const atxHeading = typeof rawHeading === "string" ? /^ {0,3}(#{1,6})(?:[ \t]|$)/.exec(rawHeading) : null;
+          const setextHeading = typeof rawHeading === "string" ? /(?:^|\r?\n)[ \t]*(=+|-+)[ \t]*$/.exec(rawHeading) : null;
+          const inferredHeadingLevel = atxHeading
+            ? atxHeading[1]!.length
+            : setextHeading
+              ? setextHeading[1]![0] === "=" ? 1 : 2
+              : undefined;
+          const rawHeadingLevel = metadata?.headingLevel ?? current.props.headingLevel ?? inferredHeadingLevel;
+          const headingLevel = typeof rawHeadingLevel === "number" && Number.isInteger(rawHeadingLevel)
+            && rawHeadingLevel >= 1 && rawHeadingLevel <= 6
+            ? rawHeadingLevel as 1 | 2 | 3 | 4 | 5 | 6
+            : current.type === "heading" ? 1 : undefined;
+          const rawOrdered = metadata?.ordered ?? current.props.ordered;
+          const ordered = typeof rawOrdered === "boolean" ? rawOrdered : undefined;
+          const rawStart = metadata?.start ?? current.props.start;
+          const start = ordered
+            ? typeof rawStart === "number" && Number.isSafeInteger(rawStart) ? rawStart : 1
+            : undefined;
+          let itemCount: number | undefined;
+          if (current.type === "list") {
+            if (typeof metadata?.itemCount === "number" && Number.isSafeInteger(metadata.itemCount)) {
+              itemCount = metadata.itemCount;
+            } else {
+              itemCount = 0;
+              for (const childId of current.children) {
+                if (nodes.get(childId)?.type === "list-item") itemCount += 1;
+              }
+            }
+          }
+          const rawTaskMarkerOffset = metadata?.taskMarkerOffset ?? current.props.taskMarkerOffset;
+          const taskMarkerOffset = typeof rawTaskMarkerOffset === "number" && Number.isSafeInteger(rawTaskMarkerOffset)
+            ? rawTaskMarkerOffset
+            : undefined;
+          const rawCalloutKind = metadata?.calloutKind;
+          const calloutKind = rawCalloutKind === "note" || rawCalloutKind === "tip"
+            || rawCalloutKind === "important" || rawCalloutKind === "warning" || rawCalloutKind === "caution"
+            ? rawCalloutKind
+            : undefined;
           metadataSnapshot = Object.freeze({
             id,
             type,
@@ -5836,6 +5877,13 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             revision,
             childCount,
             isFinalized,
+            ...(sourceRange ? { sourceRange: Object.freeze({ ...sourceRange }) } : {}),
+            ...(headingLevel === undefined ? {} : { headingLevel }),
+            ...(ordered === undefined ? {} : { ordered }),
+            ...(start === undefined ? {} : { start }),
+            ...(itemCount === undefined ? {} : { itemCount }),
+            ...(taskMarkerOffset === undefined ? {} : { taskMarkerOffset }),
+            ...(calloutKind === undefined ? {} : { calloutKind }),
           });
           return metadataSnapshot;
         },

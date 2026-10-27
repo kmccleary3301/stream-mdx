@@ -2,7 +2,7 @@ declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import { type InlineNode, type TableCellRecord, type TableHeaderRecord, type TableRowRecord } from "@stream-mdx/core";
 import React from "react";
-import type { NodeViewActions, TableElements } from "../types";
+import type { NodeViewActions, NodeViewMetadata, TableElements } from "../types";
 import {
   TableControlsBar,
   copyToClipboard,
@@ -21,7 +21,12 @@ import type { RendererStore } from "./store";
 import { captureNodeSourceGuard, getStoreResetVersion, type PrivateRendererStore } from "./store-reset-version";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
 import { useVirtualizedTable, type IndexedTableRows, type TableVirtualizationRowRange } from "./virtualized-table";
-import { mergeNodePresentationProps, renderTablePartPresentation, type NativeTablePartPresentationKey } from "./node-presentations";
+import {
+  mergeNodePresentationProps,
+  renderTablePartPresentation,
+  resolveNodePresentationProps,
+  type NativeTablePartPresentationKey,
+} from "./node-presentations";
 
 function renderManagedTablePart<K extends NativeTablePartPresentationKey>(
   key: K,
@@ -216,6 +221,19 @@ export const ManagedTableBlockView: React.FC<{
     "data-table-start-index": String(startIndex),
     "data-table-end-index": String(endIndex),
   };
+  const tablePresentation = registry.getNodePresentation("table");
+  const tablePresentationMetadata: NodeViewMetadata = Object.freeze({
+    id: blockId,
+    type: "table",
+    isFinalized: committed,
+    rowCount,
+    columnCount,
+    ...(header === undefined ? {} : { align: header.align }),
+    ...(node?.block?.payload.range === undefined ? {} : { sourceRange: node.block.payload.range }),
+  });
+  const resolvedTablePresentationProps = tablePresentation
+    ? resolveNodePresentationProps(tablePresentation, tablePresentationMetadata)
+    : undefined;
   const tablePresentationProps = mergeNodePresentationProps(
     {
       className: "markdown-table w-full caption-bottom text-base",
@@ -224,7 +242,7 @@ export const ManagedTableBlockView: React.FC<{
         : undefined,
       ...(!isEligible ? tableAttrs : {}),
     },
-    registry.getNodePresentation("table")?.props,
+    resolvedTablePresentationProps,
   ) as React.TableHTMLAttributes<HTMLTableElement>;
 
   const hasElementFilters = registry.hasElementFilters();

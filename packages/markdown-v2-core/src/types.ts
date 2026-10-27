@@ -18,6 +18,13 @@ export interface BlockResolvedLinkReference {
   title?: string;
 }
 
+export type CalloutKind = "note" | "tip" | "important" | "warning" | "caution";
+
+export interface BlockPresentationMeta {
+  readonly name: string;
+  readonly attrs: Readonly<Record<string, string>>;
+}
+
 export interface BlockMeta {
   /**
    * Link reference definitions resolved and referenced by this block's inline content.
@@ -29,6 +36,15 @@ export interface BlockMeta {
   htmlParagraphTree?: HtmlTreeNode[];
   /** Engine-prepared Markdown owners for compiler-authored trusted MDX flow children. */
   trustedMdxNativeChildren?: HtmlTreeNode[];
+  /** Bounded block semantics exposed to native handles and presentations. */
+  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
+  ordered?: boolean;
+  start?: number;
+  itemCount?: number;
+  taskMarkerOffset?: number;
+  calloutKind?: CalloutKind;
+  /** Claim for a registered `block-extension:<name>` presentation. */
+  presentation?: BlockPresentationMeta;
   [key: string]: unknown;
 }
 
@@ -277,7 +293,7 @@ export type WorkerIn =
         html?: boolean;
         mdx?: boolean;
         tables?: boolean;
-        callouts?: boolean;
+        callouts?: boolean | "github-alerts";
         math?: boolean;
         softBreaks?: SoftBreakMode;
         formatAnticipation?: FormatAnticipationConfig;

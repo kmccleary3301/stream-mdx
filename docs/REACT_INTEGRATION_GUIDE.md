@@ -221,7 +221,7 @@ Native function extensions can be passed as `engineExtensions` with a caller-cho
 | `text` | `string` | Static markdown content. Changing it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Streaming markdown chunks. Use for live updates. |
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. Recommended: `"/workers/markdown-worker.js"`. |
-| `features` | `StreamingFeatureFlags` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, softBreaks?: "preserve" | "hard", formatAnticipation?, codeHighlighting?, listIndentation? }`. Soft breaks default to preserving newlines; `"hard"` converts prose soft line endings to `<br>` without changing code, math, or raw HTML. `listIndentation` is opt-in recovery for excess same-line spaces after list markers; fenced and below-marker code remain code. |
+| `features` | `StreamingFeatureFlags` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, softBreaks?: "preserve" | "hard", formatAnticipation?, codeHighlighting?, outputMode?: "html" | "tokens" | "both", listIndentation? }`. Soft breaks default to preserving newlines; `"hard"` converts prose soft line endings to `<br>` without changing code, math, or raw HTML. `callouts` accepts `boolean | "github-alerts"`; `listIndentation` is opt-in recovery for excess same-line spaces after list markers; fenced and below-marker code remain code.
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for recognized restricted source components, separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator supplied when `contentPolicy="trusted-mdx"`. |
@@ -536,6 +536,28 @@ export function CustomStyledMarkdown({ text }: { text: string }) {
 }
 ```
 
+### Semantic Metadata, Task Items, and Block Extensions
+
+Presentation prop callbacks receive `NodeViewMetadata`, including `sourceRange`, bounded `headingLevel`, and list `ordered`, `start`, and `itemCount`. Use the heading level to set accessible semantics without inspecting private React children:
+
+```tsx
+const components = {
+  heading: {
+    props: (metadata) => ({
+      "aria-level": Math.min((metadata.headingLevel ?? 1) + 3, 6),
+    }),
+  },
+};
+```
+
+List items dispatch `list-item-ordered` and `list-item-unordered`, with `list-item` as the generic fallback. The opt-in `task-checkbox` headless view receives `{ checked, markerOffset, sourceRange, metadata, actions }`; offsets are absolute UTF-16 positions in the original source. Without a custom view, task checkboxes remain disabled and read-only. Hosts that implement task updates can use `markerOffset` rather than searching for repeated task text.
+
+For a validated native leaf block, set `BlockMeta.presentation` to `{ name, attrs }` in a `DocumentPlugin` or markdown extension. Register `components["block-extension:<name>"]` as a headless view; it receives typed `name`, `attrs`, prepared `children`, bounded `metadata`, and source-bound `actions`.
+
+Enable GitHub quote alerts with `features.callouts: "github-alerts"`. It recognizes case-insensitive own-line `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, and `[!CAUTION]` markers, removes the marker line, and exposes `metadata.calloutKind` to the callout presentation. Same-line text and unknown markers stay ordinary blockquotes.
+
+For host-controlled word animation, pass `animated={{ scope: "last-block", className: "stream-word", animateWhitespace: false }}`. The last open block receives spans only around non-whitespace prose; rendered text remains unchanged, and code, preformatted content, SVG, math, and images are not word-wrapped.
+
 ### Mermaid Diagrams (Optional)
 
 StreamMDX treats fenced ` ```mermaid ` code blocks as normal code blocks by default.
@@ -814,7 +836,7 @@ The `features` prop on `<StreamingMarkdown />` controls built‑in domains:
     mdx: true,
     html: true,
     tables: true,
-    callouts: true,
+    callouts: "github-alerts",
     footnotes: true,
     formatAnticipation: false,
     codeHighlighting: "incremental",
@@ -825,6 +847,7 @@ The `features` prop on `<StreamingMarkdown />` controls built‑in domains:
 - Set `math: false` to disable math detection/rendering and treat math as plain text.
 - Set `mdx: false` to skip MDX syntax recognition and admission.
 - Set `html: false` to avoid inline/block HTML plugins beyond the core sanitization path.
+- Set `callouts: "github-alerts"` to recognize case-insensitive own-line GitHub alert markers in blockquotes; `true` retains the generic callout mode. Same-line text and unknown markers remain ordinary quotes.
 - Set `formatAnticipation: true` to withhold formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`).
 - Set `codeHighlighting: "final" | "incremental" | "live"` to control Shiki behavior:
   - `"final"` (default): highlight only after a code block finalizes.

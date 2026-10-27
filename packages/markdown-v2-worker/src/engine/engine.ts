@@ -2088,7 +2088,7 @@ export class MarkdownEngine {
       html?: boolean;
       mdx?: boolean;
       tables?: boolean;
-      callouts?: boolean;
+      callouts?: boolean | "github-alerts";
       math?: boolean;
       softBreaks?: SoftBreakMode;
       formatAnticipation?: FormatAnticipationConfig;
@@ -2224,6 +2224,7 @@ export class MarkdownEngine {
       emitDiffBlocks: docPlugins?.emitDiffBlocks ?? false,
       listIndentation: docPlugins?.listIndentation ?? false,
     };
+    this.documentPluginState.callouts = enable.callouts;
     this.buildMarkdownParser(enable.tables, enable.footnotes);
 
     this.mdxEnabled = enable.mdx;
@@ -6466,13 +6467,15 @@ export class MarkdownEngine {
             headingLevel = 1;
           }
         }
-        headingLevel = Math.min(Math.max(headingLevel, 1), 6);
+        const boundedHeadingLevel = Number.isInteger(headingLevel)
+          ? Math.min(Math.max(headingLevel, 1), 6) as 1 | 2 | 3 | 4 | 5 | 6
+          : 1;
         const baseSlug = slugifyHeading(normalizedHeading) || "heading";
         const nextCount = this.nextHeadingIdCount(baseSlug);
         const headingId = nextCount > 1 ? `${baseSlug}-${nextCount}` : baseSlug;
         block.payload.meta = {
           ...(block.payload.meta ?? {}),
-          headingLevel,
+          headingLevel: boundedHeadingLevel,
           headingText: normalizedHeading,
           headingId,
           ...(inlineSourceText !== undefined && hasContiguousInlineSource ? { inlineSourceText, inlineSourceRange } : {}),

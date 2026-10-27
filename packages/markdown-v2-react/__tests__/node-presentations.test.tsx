@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { NativeNodeView, StreamingMarkdown, type NodePresentations, type NodeViewProps, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import type { Block } from "@stream-mdx/core";
 import { createMermaidEngine } from "@stream-mdx/mermaid";
 import { MarkdownBlocksRenderer as ServerMarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { installTrustedNativeTestDom, waitFor, workerFactory } from "./trusted-native-fixture";
@@ -430,6 +431,258 @@ async function mermaidWithoutEngineStaysNativeCode(): Promise<void> {
 }
 
 
+function splitStreamChunks(source: string): string[] {
+  const chunkSizes = [1, 1, 1, 4, 3, 13, 21] as const;
+  const chunks: string[] = [];
+  let offset = 0;
+  let sizeIndex = 0;
+  while (offset < source.length) {
+    const end = Math.min(source.length, offset + chunkSizes[sizeIndex % chunkSizes.length]!);
+    chunks.push(source.slice(offset, end));
+    offset = end;
+    sizeIndex += 1;
+  }
+  return chunks;
+}
+
+async function semanticMetadataAndTaskCheckboxPresentation(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const taskProps: Array<{
+    checked: boolean;
+    markerOffset?: number;
+    sourceRange?: { from: number; to: number };
+  }> = [];
+  const listMetadata: Array<{ ordered?: boolean; start?: number; itemCount?: number }> = [];
+  let headingLevel: number | undefined;
+  const components = {
+    heading: {
+      props: (metadata) => {
+        headingLevel = metadata.headingLevel;
+        return { "aria-level": Math.min((metadata.headingLevel ?? 1) + 3, 6) };
+      },
+    },
+    list: {
+      props: (metadata) => {
+        listMetadata.push(metadata);
+        return { "data-list-items": metadata.itemCount, "data-list-start": metadata.start };
+      },
+    },
+    "list-item-unordered": {
+      props: (metadata) => ({ "data-item-ordered": metadata.ordered }),
+    },
+    "list-item-ordered": {
+      props: (metadata) => ({ "data-item-ordered": metadata.ordered }),
+    },
+    "task-checkbox": {
+      view: ({ checked, markerOffset, sourceRange }) => {
+        taskProps.push({ checked, markerOffset, sourceRange });
+        return (
+          <input
+            type="checkbox"
+            checked={checked}
+            readOnly
+            data-task-marker={markerOffset}
+            data-source-start={sourceRange?.from}
+          />
+        );
+      },
+    },
+  } satisfies NodePresentations;
+  const source = "😀\r\n- [x] same\r\n- [ ] same\r\n\r\n### Heading\r\n\r\n3. First\r\n4. Second";
+  const worker = () => workerFactory();
+  const features = { html: false, mdx: false, tables: false, math: false };
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={worker}
+          contentPolicy="markdown"
+          features={features}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready for semantic metadata");
+    await act(async () => {
+      for (const chunk of splitStreamChunks(source)) handle.current?.append(chunk);
+      await handle.current?.finalize();
+    });
+    await waitFor(() => container.querySelectorAll("input[data-task-marker]").length === 2, "task checkbox presentations");
+
+    assert.deepEqual(
+      [...container.querySelectorAll<HTMLInputElement>("input[data-task-marker]")].map((input) => [
+        Number(input.dataset.taskMarker),
+        Number(input.dataset.sourceStart),
+        input.checked,
+      ]),
+      [[6, 4, true], [18, 16, false]],
+    );
+    const latestByOffset = new Map(taskProps.filter((props) => props.markerOffset !== undefined).map((props) => [props.markerOffset, props]));
+    assert.equal(latestByOffset.get(6)?.sourceRange?.from, 4);
+    assert.equal(latestByOffset.get(18)?.sourceRange?.from, 16);
+    assert.equal(container.querySelector("h3")?.getAttribute("aria-level"), "6");
+    assert.equal(headingLevel, 3, "dynamic props receive the bounded semantic heading level");
+    assert.ok(listMetadata.some((metadata) => metadata.ordered === false && metadata.itemCount === 2));
+    assert.ok(listMetadata.some((metadata) => metadata.ordered === true && metadata.start === 3 && metadata.itemCount === 2));
+    assert.equal(container.querySelectorAll("li[data-item-ordered='false']").length, 2);
+    assert.equal(container.querySelectorAll("li[data-item-ordered='true']").length, 2);
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={worker}
+          contentPolicy="markdown"
+          features={features}
+          caret={false}
+        />,
+      );
+    });
+    const nativeTaskInputs = [...container.querySelectorAll<HTMLInputElement>(".markdown-task-checkbox")];
+    assert.equal(nativeTaskInputs.length, 2);
+    assert.ok(nativeTaskInputs.every((input) => input.disabled && input.readOnly), "default task controls remain read-only");
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
+async function githubAlertModeExposesTypedCalloutsAndOrdinaryQuotes(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const calloutKinds: Array<string | undefined> = [];
+  const components = {
+    callout: {
+      wrapper: ({ children, metadata }: NodeViewProps) => {
+        calloutKinds.push(metadata.calloutKind);
+        return <aside data-callout-kind={metadata.calloutKind}>{children}</aside>;
+      },
+    },
+  } satisfies NodePresentations;
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false, callouts: "github-alerts" }}
+          caret={false}
+          components={components}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready for GitHub alerts");
+    await act(async () => {
+      handle.current?.append("> [!nOtE]\n> Alert **body**.\n\n> [!NOTE] aside\n> Same-line text.\n\n> [!OTHER]\n> Unknown marker.");
+      await handle.current?.finalize();
+    });
+    await waitFor(() => Boolean(container.querySelector("aside[data-callout-kind='note']")), "typed note callout");
+
+    const alert = container.querySelector("aside[data-callout-kind='note']");
+    assert.ok(alert?.textContent?.includes("Alert body."));
+    assert.equal(alert?.textContent?.includes("[!"), false);
+    assert.deepEqual(calloutKinds.filter((kind) => kind !== undefined), ["note"]);
+    const ordinaryQuotes = [...container.querySelectorAll("blockquote")];
+    assert.equal(ordinaryQuotes.length, 2);
+    assert.ok(ordinaryQuotes[0]?.textContent?.includes("[!NOTE] aside"));
+    assert.ok(ordinaryQuotes[1]?.textContent?.includes("[!OTHER]"));
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
+async function lastBlockAnimationPreservesTextAndLeavesWhitespaceUnwrapped(): Promise<void> {
+  const restore = installTrustedNativeTestDom();
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const source = "Earlier block.\n\nLast `code`.";
+
+  try {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          worker={() => workerFactory()}
+          contentPolicy="markdown"
+          features={{ html: false, mdx: false, tables: false, math: false }}
+          caret={false}
+          animated={{ scope: "last-block", className: "stream-word", animateWhitespace: false }}
+        />,
+      );
+    });
+    await waitFor(() => handle.current?.getState().workerReady === true, "worker ready for animated text");
+    await act(async () => { handle.current?.append(source); });
+    await waitFor(() => container.querySelectorAll("p").length === 2, "open streaming paragraphs");
+
+    const paragraphs = [...container.querySelectorAll("p")];
+    assert.equal(container.textContent, "Earlier block.Last code.");
+    assert.equal(paragraphs[0]?.querySelector(".stream-word"), null, "only the last open root block animates");
+    assert.equal(paragraphs[1]?.textContent, "Last code.");
+    assert.deepEqual(
+      [...(paragraphs[1]?.querySelectorAll<HTMLElement>(".stream-word") ?? [])].map((span) => span.textContent),
+      ["Last", "."],
+    );
+    assert.equal(paragraphs[1]?.querySelector<HTMLElement>(".stream-word")?.style.animationName, "", "host class keyframes are not overridden inline");
+    assert.equal(paragraphs[1]?.querySelector("code.stream-word"), null, "inline code is not animated");
+    await act(async () => { await handle.current?.finalize(); });
+    assert.equal(container.textContent, "Earlier block.Last code.");
+    const finalizedRaw = handle.current?.getState().blocks.map((block) => block.payload.raw).join("");
+    assert.equal(finalizedRaw, "Earlier block.Last `code`.");
+  } finally {
+    await act(async () => root.unmount());
+    restore();
+  }
+}
+
+function blockExtensionPresentationReceivesAttrsAndPreparedChildren(): void {
+  const block: Block = {
+    id: "artifact-template",
+    type: "paragraph",
+    isFinalized: true,
+    payload: {
+      raw: "Artifact",
+      inline: [{ kind: "text", text: "Artifact" }],
+      range: { from: 0, to: 8 },
+      meta: {
+        presentation: { name: "artifact-template", attrs: { templateId: "template-1" } },
+      },
+    },
+  };
+  const components = {
+    "block-extension:artifact-template": {
+      view: ({ name, attrs, children, metadata, actions }) => (
+        <section
+          data-extension={name}
+          data-template-id={attrs.templateId}
+          data-source-range={metadata.sourceRange?.from}
+          data-source={actions.readSource()}
+        >
+          {children}
+        </section>
+      ),
+    },
+  } satisfies NodePresentations;
+  const markup = renderToStaticMarkup(<ServerMarkdownBlocksRenderer blocks={[block]} components={components} />);
+  assert.match(markup, /data-extension="artifact-template"/);
+  assert.match(markup, /data-template-id="template-1"/);
+  assert.match(markup, /data-source-range="0"/);
+  assert.match(markup, /data-source="Artifact"/);
+  assert.match(markup, /<p[^>]*>Artifact<\/p>/);
+}
 function runNodePresentationsTest(): void {
   const components = {
     paragraph: { wrapper: Chrome, props: { className: "host-paragraph", "data-owner": "host" } },
@@ -482,4 +735,8 @@ await codeWrapperReceivesMetadataAndSourceAction();
 await finalizedParagraphPresentationKeepsColdSourceBehindActions();
 await mermaidEngineUsesTheNativeCodeOwner();
 await mermaidWithoutEngineStaysNativeCode();
+await semanticMetadataAndTaskCheckboxPresentation();
+await githubAlertModeExposesTypedCalloutsAndOrdinaryQuotes();
+await lastBlockAnimationPreservesTextAndLeavesWhitespaceUnwrapped();
+blockExtensionPresentationReceivesAttrsAndPreparedChildren();
 console.log("Unified node presentation registry checks passed");

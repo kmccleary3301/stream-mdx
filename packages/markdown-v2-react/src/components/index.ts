@@ -50,7 +50,13 @@ import type {
   PresentationProps,
   TableElements,
 } from "../types";
-import { mergeNodePresentationProps, renderPresentedNode, resolveNodePresentation, validateNodePresentations } from "../renderer/node-presentations";
+import {
+  mergeNodePresentationProps,
+  renderPresentedNode,
+  resolveNodePresentation,
+  resolveNodePresentationProps,
+  validateNodePresentations,
+} from "../renderer/node-presentations";
 import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext, type ResolvedAnimatedOptions } from "../animation";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
@@ -87,6 +93,28 @@ function presentationText(node: React.ReactNode): string {
 type InlinePresentationContext = RenderInlineAnimationContext & {
   readonly sourceGuard?: () => void;
 };
+function splitAnimationTextSegments(
+  text: string,
+  sep: "word" | "char",
+  animateWhitespace: boolean,
+): string[] {
+  if (animateWhitespace || sep === "char") return splitTextSegments(text, sep);
+  const segments: string[] = [];
+  let current = "";
+  let currentIsWhitespace: boolean | undefined;
+  for (const character of text) {
+    const isWhitespace = /\s/u.test(character);
+    if (current && isWhitespace !== currentIsWhitespace) {
+      segments.push(current);
+      current = "";
+    }
+    current += character;
+    currentIsWhitespace = isWhitespace;
+  }
+  if (current) segments.push(current);
+  return segments;
+}
+
 
 
 /**
@@ -124,21 +152,28 @@ export function renderInlineNodes(
         if (animationContext?.animated && !animationContext.isFinalized && animationContext.timeline) {
           const { animated, timeline, nodeKeyPrefix } = animationContext;
           const nodeKey = nodeKeyPrefix ? `${nodeKeyPrefix}:${key}` : key;
-          const segments = splitTextSegments(node.text, animated.sep);
+          const segments = splitAnimationTextSegments(node.text, animated.sep, animated.animateWhitespace);
+          const animatedSegmentCount = segments.reduce(
+            (count, segment) => count + (animated.animateWhitespace || !/^\s+$/u.test(segment) ? 1 : 0),
+            0,
+          );
           const state = timeline.getNodeState(nodeKey);
-          if (segments.length > state.count) {
-            const newCount = segments.length - state.count;
+          if (animatedSegmentCount > state.count) {
+            const newCount = animatedSegmentCount - state.count;
             const newDelays = timeline.schedule(newCount, animated.stagger);
             state.delays.push(...newDelays);
-            state.count = segments.length;
-          } else if (segments.length < state.count) {
-            state.count = segments.length;
-            state.delays.length = segments.length;
+            state.count = animatedSegmentCount;
+          } else if (animatedSegmentCount < state.count) {
+            state.count = animatedSegmentCount;
+            state.delays.length = animatedSegmentCount;
           }
           const animName = animated.animationName;
           const durationStr = animated.durationStr;
+          let animationIndex = 0;
           const spans = segments.map((segment, segmentIndex) => {
-            const delay = state.delays[segmentIndex] ?? 0;
+            if (!animated.animateWhitespace && /^\s+$/u.test(segment)) return segment;
+            const delay = state.delays[animationIndex] ?? 0;
+            animationIndex += 1;
             const animStyle: React.CSSProperties & Record<string, string | number> = {
               "--sm-anim-duration": durationStr,
               "--sm-anim-easing": animated.easing,
@@ -152,7 +187,7 @@ export function renderInlineNodes(
               "span",
               {
                 key: segmentIndex,
-                className: "stream-mdx-anim",
+                className: animated.className,
                 style: animStyle,
               },
               segment,
@@ -923,6 +958,7 @@ export class ComponentRegistry {
   private animated?: AnimatedProp;
   private animatedOptions: ResolvedAnimatedOptions | null = null;
   private animationTimeline: AnimationTimeline | null = null;
+  private animationScopeBlockId?: string;
   private allowedElements?: ReadonlySet<string>;
   private disallowedElements?: ReadonlySet<string>;
   private allowElement?: AllowElementFn;
@@ -1098,19 +1134,29 @@ export class ComponentRegistry {
   getAnimationTimeline(): AnimationTimeline | null {
     return this.animationTimeline;
   }
+  setAnimationScopeBlockId(blockId?: string): void {
+    this.animationScopeBlockId = blockId;
+  }
 
   getRenderInlineContext(
     isFinalized?: boolean,
     blockId?: string,
     sourceGuard?: () => void,
   ): InlinePresentationContext | undefined {
+    const inAnimationScope = this.animatedOptions?.scope !== "last-block"
+      || Boolean(
+        blockId
+        && this.animationScopeBlockId
+        && (blockId === this.animationScopeBlockId || blockId.startsWith(`${this.animationScopeBlockId}:`)),
+      );
+    const activeLastBlockScope = this.animatedOptions?.scope === "last-block" && inAnimationScope;
     let context: RenderInlineAnimationContext | undefined;
-    if (isFinalized) {
+    if (isFinalized && !activeLastBlockScope) {
       if (blockId && this.animationTimeline) {
         this.animationTimeline.releasePrefix(blockId);
       }
       context = blockId ? { isFinalized: true, nodeKeyPrefix: blockId } : undefined;
-    } else if (this.animatedOptions && this.animationTimeline) {
+    } else if (this.animatedOptions && this.animationTimeline && inAnimationScope) {
       context = {
         isFinalized: false,
         animated: this.animatedOptions,
@@ -1271,10 +1317,16 @@ export class ComponentRegistry {
     if ("view" in presentation && presentation.view) {
       throw new TypeError(`node presentation for ${keyName}: headless views are not supported for restricted content components`);
     }
-    const preparedNativeView = presentation.props
+    const metadata: NodeViewMetadata = Object.freeze({
+      id: `${ownerId ?? "component"}:${String(key)}`,
+      type: keyName,
+      isFinalized: status === "closed",
+    });
+    const presentationProps = resolveNodePresentationProps(presentation, metadata);
+    const preparedNativeView = presentationProps
       ? React.cloneElement(
           nativeView,
-          mergeNodePresentationProps(nativeView.props as Record<string, unknown>, presentation.props),
+          mergeNodePresentationProps(nativeView.props as Record<string, unknown>, presentationProps),
         )
       : nativeView;
     if (!("wrapper" in presentation) || !presentation.wrapper) return preparedNativeView;
@@ -1283,11 +1335,6 @@ export class ComponentRegistry {
       sourceGuard?.();
       return rawSource ?? presentationText(children);
     };
-    const metadata: NodeViewMetadata = Object.freeze({
-      id: `${ownerId ?? "component"}:${String(key)}`,
-      type: keyName,
-      isFinalized: status === "closed",
-    });
     const actions: NodeViewActions = Object.freeze({
       readSource: source,
       copy: () => copyToClipboard(source()),

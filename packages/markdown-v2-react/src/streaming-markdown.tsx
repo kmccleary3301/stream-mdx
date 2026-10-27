@@ -89,7 +89,7 @@ export interface StreamingFeatureFlags {
   html?: boolean;
   mdx?: boolean;
   tables?: boolean;
-  callouts?: boolean;
+  callouts?: boolean | "github-alerts";
   math?: boolean;
   softBreaks?: SoftBreakMode;
   formatAnticipation?: FormatAnticipationConfig;
