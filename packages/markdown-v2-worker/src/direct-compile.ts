@@ -351,6 +351,8 @@ async function compileMarkdownSnapshotWithDispatch(
         ...(init?.themes === undefined ? {} : { themes: init.themes }),
         ...(init?.syntax === undefined ? {} : { syntax: init.syntax }),
         ...(init?.html === undefined ? {} : { html: init.html }),
+        ...(init?.mathOptions === undefined ? {} : { mathOptions: init.mathOptions }),
+        ...(init?.linkDestinations === undefined ? {} : { linkDestinations: init.linkDestinations }),
         ...(init?.highlightEngine === undefined ? {} : { highlightEngine: init.highlightEngine }),
         ...(init?.extensionId === undefined ? {} : { extensionId: init.extensionId }),
       },
