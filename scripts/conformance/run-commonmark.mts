@@ -9,9 +9,9 @@ import { micromark } from "micromark";
 import { gfm, gfmHtml } from "micromark-extension-gfm";
 
 import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore, type RendererStore } from "@stream-mdx/react/server";
-import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
+import { compileMarkdownSnapshotDirect, createMarkdownSnapshotCompiler } from "@stream-mdx/worker/direct";
 import { createWorkerThread } from "@stream-mdx/worker/node";
-import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type Block, type InlineNode } from "@stream-mdx/core";
 
 import { normalizeHtmlSemantics, type NormalizerOptions } from "../../tests/conformance/normalizer.mts";
 type SpecExample = {
@@ -157,6 +157,152 @@ async function loadExamples(): Promise<ConformanceExample[]> {
   }
   return list;
 }
+type ParagraphInline = {
+  readonly source: string;
+  readonly inline: InlineNode[];
+};
+
+function flattenInline(nodes: readonly InlineNode[], flattened: InlineNode[] = []): InlineNode[] {
+  for (const node of nodes) {
+    flattened.push(node);
+    if ("children" in node) flattenInline(node.children, flattened);
+  }
+  return flattened;
+}
+
+function collectParagraphInline(blocks: readonly Block[]): ParagraphInline[] {
+  const paragraphs: ParagraphInline[] = [];
+  const visited = new WeakSet<object>();
+  const seenKeys = new Set<string>();
+  const visit = (value: unknown): void => {
+    if (typeof value !== "object" || value === null || visited.has(value)) return;
+    visited.add(value);
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
+    }
+
+    const record = value as Record<string, unknown>;
+    const payloadValue = record.payload;
+    const payload = typeof payloadValue === "object" && payloadValue !== null && !Array.isArray(payloadValue)
+      ? payloadValue as Record<string, unknown>
+      : undefined;
+    const propsValue = record.props;
+    const props = typeof propsValue === "object" && propsValue !== null && !Array.isArray(propsValue)
+      ? propsValue as Record<string, unknown>
+      : undefined;
+    if (record.type === "paragraph") {
+      const source = typeof payload?.raw === "string"
+        ? payload.raw
+        : typeof props?.raw === "string"
+          ? props.raw
+          : typeof props?.text === "string"
+            ? props.text
+            : undefined;
+      const inline = Array.isArray(payload?.inline)
+        ? payload.inline as InlineNode[]
+        : Array.isArray(props?.inline)
+          ? props.inline as InlineNode[]
+          : undefined;
+      if (source !== undefined && inline !== undefined) {
+        const payloadRangeValue = payload?.range;
+        const payloadRange = typeof payloadRangeValue === "object"
+          && payloadRangeValue !== null
+          && !Array.isArray(payloadRangeValue)
+          ? payloadRangeValue as Record<string, unknown>
+          : undefined;
+        const recordRangeValue = record.range;
+        const recordRange = typeof recordRangeValue === "object"
+          && recordRangeValue !== null
+          && !Array.isArray(recordRangeValue)
+          ? recordRangeValue as Record<string, unknown>
+          : undefined;
+        const range = payloadRange ?? recordRange;
+        const rangeKey = typeof range?.from === "number" && typeof range.to === "number"
+          ? `${range.from}:${range.to}`
+          : "?";
+        const key = `${rangeKey}:${source}`;
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          paragraphs.push({ source, inline });
+        }
+      }
+    }
+
+    for (const child of Object.values(record)) visit(child);
+  };
+  visit(blocks);
+  return paragraphs;
+}
+
+const TRIPLE_EMPHASIS_PAIR = /\*{3}[^*\n]+\*{3}/;
+const STRONG_PAIR = /(^|[^*])\*\*(?!\*)[^*\n]+\*\*(?!\*)/;
+const INLINE_CODE_PAIR = /`[^`\n]+`/;
+
+function assertNoInlineExtensionLoss(
+  defaultBlocks: readonly Block[],
+  extensionBlocks: readonly Block[],
+  exampleId: string,
+): void {
+  const defaultParagraphs = collectParagraphInline(defaultBlocks);
+  const extensionParagraphs = collectParagraphInline(extensionBlocks);
+  const candidates = new Map<string, ParagraphInline[]>();
+  for (const paragraph of extensionParagraphs) {
+    const entries = candidates.get(paragraph.source) ?? [];
+    entries.push(paragraph);
+    candidates.set(paragraph.source, entries);
+  }
+  const matched = new Set<ParagraphInline>();
+
+  for (const expected of defaultParagraphs) {
+    const source = expected.source;
+    const defaultKinds = new Set(flattenInline(expected.inline).map((node) => node.kind));
+    const requiredKinds = new Set<InlineNode["kind"]>();
+    const hasTriplePair = TRIPLE_EMPHASIS_PAIR.test(source);
+    const hasStrongPair = STRONG_PAIR.test(source);
+    const hasCodePair = INLINE_CODE_PAIR.test(source);
+    if (hasTriplePair && defaultKinds.has("em") && defaultKinds.has("strong")) {
+      requiredKinds.add("em");
+      requiredKinds.add("strong");
+    }
+    if (hasStrongPair && defaultKinds.has("strong")) requiredKinds.add("strong");
+    if (hasCodePair && defaultKinds.has("code")) requiredKinds.add("code");
+    if (requiredKinds.size === 0) continue;
+
+    const actual = candidates.get(source)?.find((paragraph) => !matched.has(paragraph));
+    if (!actual) {
+      throw new Error(`${exampleId}: extension path dropped formatted paragraph ${JSON.stringify(source)}`);
+    }
+    matched.add(actual);
+    const actualNodes = flattenInline(actual.inline);
+    const actualKinds = new Set(actualNodes.map((node) => node.kind));
+    for (const kind of requiredKinds) {
+      if (!actualKinds.has(kind)) {
+        throw new Error(`${exampleId}: extension path lost ${kind} parsing in paragraph ${JSON.stringify(source)}`);
+      }
+    }
+    const textNodes = actualNodes
+      .filter((node): node is Extract<InlineNode, { kind: "text" }> => node.kind === "text")
+      .map((node) => node.text)
+      .join("");
+    if (
+      (hasTriplePair && requiredKinds.has("em") && TRIPLE_EMPHASIS_PAIR.test(textNodes))
+      || (hasStrongPair && requiredKinds.has("strong") && STRONG_PAIR.test(textNodes))
+      || (hasCodePair && requiredKinds.has("code") && INLINE_CODE_PAIR.test(textNodes))
+    ) {
+      throw new Error(`${exampleId}: extension path left inline delimiters unparsed in ${JSON.stringify(source)}`);
+    }
+  }
+}
+
+function shouldCompareExtensionHtml(markdown: string): boolean {
+  const hasHtml = markdown.includes("<");
+  const hasAlert = /^\s*>\s*\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/im.test(markdown);
+  const hasOrderedList = /(?:^|\n)\s*\d+[.)][ \t]/.test(markdown);
+  const hasFence = /(?:^|\n) {0,3}(?:`{3,}|~{3,})/.test(markdown);
+  const hasTabs = markdown.includes("\t");
+  return !hasHtml && !hasAlert && !hasOrderedList && !hasFence && !hasTabs;
+}
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -189,6 +335,24 @@ async function main(): Promise<void> {
     docPlugins: { html: true, tables: true, footnotes: true, math: true, callouts: true, mdx: false },
     mdx: { compileMode: "server" as const },
     prewarmLangs: [],
+  };
+  const extensionParityCompiler = createMarkdownSnapshotCompiler({
+    extensionId: "commonmark-no-op-extension-parity-v1",
+    extensions: {
+      inline: [{ name: "no-op-inline", lezer: {}, toInline: () => undefined }],
+      documentPlugins: [{ name: "no-op", process: () => undefined }],
+    },
+  });
+  const extensionParityInitConfig = {
+    ...initConfig,
+    docPlugins: {
+      ...initConfig.docPlugins,
+      callouts: "github-alerts" as const,
+      listIndentation: true,
+      softBreaks: "preserve" as const,
+      codeHighlighting: "incremental" as const,
+    },
+    html: { mode: "literal" as const },
   };
 
   /** Production client path: StreamingMarkdown renders node views from a patch-driven RendererStore. */
@@ -245,6 +409,8 @@ async function main(): Promise<void> {
   });
   const sectionStats: Record<string, EngineStats> = {};
   const strictSectionStats: Record<string, EngineStats> = {};
+  let extensionHtmlParityCompared = 0;
+  let extensionHtmlParitySkipped = 0;
   for (const ex of examples) {
     if (!sectionStats[ex.section]) {
       sectionOrder.push(ex.section);
@@ -280,6 +446,20 @@ async function main(): Promise<void> {
     });
     const staticStore = createRendererStore(staticCompiled.blocks);
     const streamMdxStaticNormalized = renderStore(staticStore);
+    const extensionCompiled = await extensionParityCompiler.compile({
+      text: ex.markdown,
+      init: extensionParityInitConfig,
+    });
+    assertNoInlineExtensionLoss(staticCompiled.blocks, extensionCompiled.blocks, ex.id);
+    if (shouldCompareExtensionHtml(ex.markdown)) {
+      const extensionHtml = renderStore(createRendererStore(extensionCompiled.blocks));
+      if (extensionHtml !== streamMdxStaticNormalized) {
+        throw new Error(`${ex.id}: no-op extension + listIndentation HTML diverged from the default path`);
+      }
+      extensionHtmlParityCompared += 1;
+    } else {
+      extensionHtmlParitySkipped += 1;
+    }
     const strictStreamMdxStaticNormalized = renderStore(staticStore, { strict: true });
     const streamMdxStaticPass = streamMdxStaticNormalized === oracleNormalized;
     const strictStreamMdxStaticPass = strictStreamMdxStaticNormalized === strictOracleNormalized;
@@ -399,6 +579,9 @@ async function main(): Promise<void> {
       strictStreamingDiverged,
     });
   }
+  console.log(
+    `Extension-path parity: HTML matched ${extensionHtmlParityCompared} feature-neutral fixtures; inline delimiter parity checked across all ${examples.length} conformance fixtures (${extensionHtmlParitySkipped} feature-specific HTML comparisons skipped).`,
+  );
   streamingWorker.terminate();
   restoreConsole();
 

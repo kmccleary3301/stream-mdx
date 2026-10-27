@@ -10917,6 +10917,10 @@ export class MarkdownEngine {
       if (!containersToFinalize.has(owner.containerId)) await this.finalizeNestedCodeOwner(owner);
     }
 
+    for (const block of this.blocks) {
+      if (block.type !== "paragraph" || block.isFinalized) continue;
+      await this.enrichBlock(block, { forceFinalize: true });
+    }
     const finalizePatches: Patch[] = [];
     this.forEachUnfinishedRootBlock((block) => {
       block.isFinalized = true;
