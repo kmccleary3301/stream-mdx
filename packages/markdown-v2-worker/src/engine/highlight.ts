@@ -239,7 +239,7 @@ export async function getSharedHighlighter(
       const highlighter: SharedHighlighter = {
         ...created,
         codeToTokensWithThemes: (code, options) =>
-          created.codeToTokensWithThemes(code, { ...options, tokenizeTimeLimit: 0 } as typeof options),
+          created.codeToTokensWithThemes(code, { ...options, tokenizeTimeLimit: 0 }),
         codeToHtml: (code, options) => created.codeToHtml(code, { ...options, tokenizeTimeLimit: 0 }),
       };
       return highlighter;
@@ -815,7 +815,7 @@ export async function tokenizeDiffRun(
   };
   const rawTokens = highlighter.codeToTokensWithThemes(
     text,
-    options as Parameters<typeof highlighter.codeToTokensWithThemes>[1],
+    options,
   );
   const nextGrammarState = highlighter.getLastGrammarState(rawTokens);
   return {
