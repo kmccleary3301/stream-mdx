@@ -198,6 +198,8 @@ Changesets is the canonical release path for the coordinated `1.0.0` cut.
 
    This release's version mutation consumes all pending changesets. Do not apply the major changeset again to an already-versioned `1.0.0` branch. Commit the resulting manifests, generated changelogs, deleted changesets, and lockfile together.
 
+   `.changeset/config.json` sets `onlyUpdatePeerDependentsWhenOutOfRange`. Without it, a minor bump of core or React rewrites `@stream-mdx/unified`'s `^1.x` peer ranges and bumps unified a full major (for example `1.0.0` to `2.0.0`), even though unified itself has no changes. With the setting, unified is bumped only when a new core or React version falls outside its declared peer range.
+
 3. Check the release invariants before merging:
 
    - All ten public package `version` fields are `1.0.0`.
