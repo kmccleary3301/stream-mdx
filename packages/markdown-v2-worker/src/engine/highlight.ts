@@ -1,5 +1,6 @@
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
-import { type BundledLanguage, type BundledTheme, type Highlighter, type SpecialLanguage, bundledLanguages, bundledThemes, createHighlighter } from "shiki";
+import { createOnigurumaEngine } from "@shikijs/engine-oniguruma";
+import { type BundledLanguage, type BundledTheme, type Highlighter, type SpecialLanguage, type ThemeRegistration, bundledLanguages, bundledThemes, createHighlighter } from "shiki";
 import type {
   CodeDiffStatus,
   CodeDiffTokenLine,
@@ -13,6 +14,8 @@ import type {
   TokenLineV1,
   TokenSpan,
   TokenStyle,
+  CodeHighlightEngine,
+  CodeHighlightThemes,
 } from "@stream-mdx/core";
 import type {
   DiffCursorState,
@@ -21,7 +24,7 @@ import type {
   ShikiTokenStyle,
 } from "./types";
 
-export type CodeThemePair = { dark: BundledTheme; light: BundledTheme };
+export type CodeThemePair = CodeHighlightThemes;
 export const DEFAULT_CODE_HIGHLIGHT_THEMES: CodeThemePair = {
   dark: "github-dark",
   light: "github-light",
@@ -32,15 +35,58 @@ export function isBundledTheme(theme: string): theme is BundledTheme {
   return Object.prototype.hasOwnProperty.call(bundledThemes, theme);
 }
 
+function themeIdentity(theme: CodeThemePair[keyof CodeThemePair]): string {
+  if (typeof theme === "string") return theme;
+  return JSON.stringify(theme) ?? "invalid-theme-registration";
+}
+
+function themeName(theme: CodeThemePair[keyof CodeThemePair]): string | null {
+  if (typeof theme === "string") return theme;
+  return theme && typeof theme === "object" && "name" in theme && typeof theme.name === "string"
+    ? theme.name
+    : null;
+}
+
+export function getHighlightThemeNames(themes: CodeThemePair): { light: string; dark: string } {
+  return {
+    dark: themeName(themes.dark) ?? "github-dark",
+    light: themeName(themes.light) ?? "github-light",
+  };
+}
+
+function validateThemeRegistration(theme: object, variant: "light" | "dark"): ThemeRegistration {
+  const candidate = theme as { name?: unknown; type?: unknown };
+  if (typeof candidate.name !== "string" || candidate.name.length === 0) {
+    throw new TypeError(`Custom ${variant} theme registration must have a non-empty name`);
+  }
+  if (candidate.type !== undefined && candidate.type !== variant) {
+    throw new TypeError(`Custom ${variant} theme '${candidate.name}' must declare type '${variant}'`);
+  }
+  try {
+    if (typeof structuredClone === "function") structuredClone(theme);
+    const serialized = JSON.stringify(theme);
+    if (serialized === undefined) throw new TypeError("Theme registration is not JSON serializable");
+  } catch (error) {
+    throw error instanceof Error ? error : new TypeError("Theme registration is not serializable");
+  }
+  return theme as ThemeRegistration;
+}
+
 export async function ensureThemeLoaded(
   highlighter: SharedHighlighter,
-  theme: string,
+  theme: CodeThemePair[keyof CodeThemePair],
+  variant: "light" | "dark" = "light",
 ): Promise<void> {
-  if (!isBundledTheme(theme)) return;
+  const name = themeName(theme);
+  if (!name) throw new TypeError(`Custom ${variant} theme registration must have a non-empty name`);
   const loaded = highlighter.getLoadedThemes();
-  if (!loaded.includes(theme)) {
+  if (loaded.includes(name)) return;
+  if (typeof theme === "string") {
+    if (!isBundledTheme(theme)) throw new Error(`Unknown code theme '${theme}' for variant '${variant}'`);
     await highlighter.loadTheme(theme);
+    return;
   }
+  await highlighter.loadTheme(validateThemeRegistration(theme, variant));
 }
 
 export interface ResolvedHighlightThemesResult {
@@ -50,52 +96,37 @@ export interface ResolvedHighlightThemesResult {
 
 export async function resolveHighlightThemes(
   highlighter: SharedHighlighter | null,
-  requestedThemes?: { light?: string; dark?: string } | null,
+  requestedThemes?: CodeThemePair | null,
 ): Promise<ResolvedHighlightThemesResult> {
   const errors: Error[] = [];
-  let light: BundledTheme = DEFAULT_CODE_HIGHLIGHT_THEMES.light;
-  let dark: BundledTheme = DEFAULT_CODE_HIGHLIGHT_THEMES.dark;
-
-  if (requestedThemes && typeof requestedThemes === "object") {
-    if (requestedThemes.light !== undefined) {
-      if (typeof requestedThemes.light === "string" && isBundledTheme(requestedThemes.light)) {
-        light = requestedThemes.light;
+  const resolveVariant = async (
+    requested: CodeThemePair[keyof CodeThemePair] | undefined,
+    variant: "light" | "dark",
+  ): Promise<CodeThemePair[keyof CodeThemePair]> => {
+    const fallbackTheme = DEFAULT_CODE_HIGHLIGHT_THEMES[variant];
+    if (requested === undefined) {
+      if (highlighter) await ensureThemeLoaded(highlighter, fallbackTheme, variant);
+      return fallbackTheme;
+    }
+    try {
+      if (typeof requested === "string") {
+        if (!isBundledTheme(requested)) {
+          throw new Error(`Unknown code theme '${requested}' for variant '${variant}'`);
+        }
       } else {
-        errors.push(new Error(`Unknown code theme '${requestedThemes.light}' for variant 'light'`));
+        validateThemeRegistration(requested, variant);
       }
+      if (highlighter) await ensureThemeLoaded(highlighter, requested, variant);
+      return requested;
+    } catch (error) {
+      errors.push(error instanceof Error ? error : new Error(String(error)));
+      if (highlighter) await ensureThemeLoaded(highlighter, fallbackTheme, variant);
+      return fallbackTheme;
     }
-    if (requestedThemes.dark !== undefined) {
-      if (typeof requestedThemes.dark === "string" && isBundledTheme(requestedThemes.dark)) {
-        dark = requestedThemes.dark;
-      } else {
-        errors.push(new Error(`Unknown code theme '${requestedThemes.dark}' for variant 'dark'`));
-      }
-    }
-  }
-
-  if (highlighter) {
-    if (light !== DEFAULT_CODE_HIGHLIGHT_THEMES.light) {
-      try {
-        await ensureThemeLoaded(highlighter, light);
-      } catch (err) {
-        errors.push(err instanceof Error ? err : new Error(String(err)));
-        light = DEFAULT_CODE_HIGHLIGHT_THEMES.light;
-      }
-    }
-    if (dark !== DEFAULT_CODE_HIGHLIGHT_THEMES.dark) {
-      try {
-        await ensureThemeLoaded(highlighter, dark);
-      } catch (err) {
-        errors.push(err instanceof Error ? err : new Error(String(err)));
-        dark = DEFAULT_CODE_HIGHLIGHT_THEMES.dark;
-      }
-    }
-  }
-
-  return {
-    themes: { dark, light },
-    errors,
   };
+  const light = await resolveVariant(requestedThemes?.light, "light");
+  const dark = await resolveVariant(requestedThemes?.dark, "dark");
+  return { themes: { light, dark }, errors };
 }
 
 export interface CachedHighlight {
@@ -109,32 +140,33 @@ const sharedHighlightCache = new Map<string, CachedHighlight>();
 
 export function getSharedHighlightCacheKey(
   lang: string,
-  themes: { light: string; dark: string },
+  themes: CodeThemePair,
   code: string,
+  engine: CodeHighlightEngine = "javascript",
 ): string {
-  return `${themes.light}::${themes.dark}::${lang}::${code}`;
+  return `${engine}::${themeIdentity(themes.light)}::${themeIdentity(themes.dark)}::${lang}::${code}`;
 }
 
 export function getCachedHighlight(
   lang: string,
-  themes: { light: string; dark: string },
+  themes: CodeThemePair,
   code: string,
+  engine: CodeHighlightEngine = "javascript",
 ): CachedHighlight | undefined {
-  return sharedHighlightCache.get(getSharedHighlightCacheKey(lang, themes, code));
+  return sharedHighlightCache.get(getSharedHighlightCacheKey(lang, themes, code, engine));
 }
 
 export function setCachedHighlight(
   lang: string,
-  themes: { light: string; dark: string },
+  themes: CodeThemePair,
   code: string,
   entry: CachedHighlight,
+  engine: CodeHighlightEngine = "javascript",
 ): void {
-  const key = getSharedHighlightCacheKey(lang, themes, code);
+  const key = getSharedHighlightCacheKey(lang, themes, code, engine);
   if (sharedHighlightCache.size >= MAX_SHARED_HIGHLIGHT_CACHE_ENTRIES) {
     const first = sharedHighlightCache.keys().next().value;
-    if (typeof first === "string") {
-      sharedHighlightCache.delete(first);
-    }
+    if (typeof first === "string") sharedHighlightCache.delete(first);
   }
   sharedHighlightCache.set(key, entry);
 }
@@ -150,52 +182,84 @@ export const FONT_STYLE_STRIKETHROUGH = 8;
 
 export type SharedHighlighter = Highlighter;
 
-let sharedHighlighterPromise: Promise<SharedHighlighter> | null = null;
-let sharedHighlighter: SharedHighlighter | null = null;
+const sharedHighlighterPromises = new Map<string, Promise<SharedHighlighter>>();
 
 function isSupportedLanguage(language: string): language is BundledLanguage | SpecialLanguage {
   return language === "text" || language === "plaintext" || language === "txt" || language === "ansi"
     || Object.prototype.hasOwnProperty.call(bundledLanguages, language);
 }
-export async function getSharedHighlighter(prewarmLangs: string[] = []): Promise<SharedHighlighter> {
-  if (!sharedHighlighterPromise) {
+
+export async function getSharedHighlighter(
+  prewarmLangs: string[] = [],
+  engine: CodeHighlightEngine = "javascript",
+  themes?: CodeThemePair,
+): Promise<SharedHighlighter> {
+  const registrations: ThemeRegistration[] = [];
+  if (themes) {
+    const requests: Array<readonly [CodeThemePair[keyof CodeThemePair], "light" | "dark"]> = [
+      [themes.light, "light"],
+      [themes.dark, "dark"],
+    ];
+    for (const [theme, variant] of requests) {
+      if (typeof theme === "string") continue;
+      try {
+        registrations.push(validateThemeRegistration(theme, variant));
+      } catch {
+        // resolveHighlightThemes reports invalid registrations through INIT and selects the fallback.
+      }
+    }
+  }
+  const initialThemes: Array<BundledTheme | ThemeRegistration> = ["github-dark", "github-light"];
+  if (themes) {
+    for (const theme of [themes.light, themes.dark]) {
+      if (typeof theme === "string" && isBundledTheme(theme) && !initialThemes.includes(theme)) {
+        initialThemes.push(theme);
+      }
+    }
+  }
+  for (const registration of registrations) {
+    const existingIndex = initialThemes.findIndex((theme) => themeName(theme) === registration.name);
+    if (existingIndex < 0) initialThemes.push(registration);
+    else initialThemes[existingIndex] = registration;
+  }
+  const key = `${engine}::${registrations.map(themeIdentity).join("::")}`;
+  let promise = sharedHighlighterPromises.get(key);
+  if (!promise) {
     const coreLangs = ["javascript", "typescript", "json", "text", "markdown", "diff"];
     const initialLangs = Array.from(new Set([...coreLangs, ...prewarmLangs]));
-    sharedHighlighterPromise = createHighlighter({
-      engine: createJavaScriptRegexEngine(),
+    promise = createHighlighter({
+      engine: engine === "oniguruma"
+        ? createOnigurumaEngine(import("shiki/wasm"))
+        : createJavaScriptRegexEngine(),
       langs: initialLangs,
-      themes: ["github-dark", "github-light"],
-    }).then(
-      (created) => {
-        // Shiki stops a line after 500 ms by default and emits its rest as one token, so a cold or loaded
-        // thread would change colors. Highlighting through the shared highlighter is never time-limited.
-        const h: SharedHighlighter = {
-          ...created,
-          codeToTokensWithThemes: (code, options) => {
-            // Shiki 1.29 forwards tokenizer options to each theme pass; its multi-theme declaration omits them.
-            const unbounded = { ...options, tokenizeTimeLimit: 0 };
-            return created.codeToTokensWithThemes(code, unbounded);
-          },
-          codeToHtml: (code, options) => created.codeToHtml(code, { ...options, tokenizeTimeLimit: 0 }),
-        };
-        sharedHighlighter = h;
-        return h;
-      },
-      (error: unknown) => {
-        sharedHighlighterPromise = null;
-        throw error;
-      },
-    );
+      themes: initialThemes,
+    }).then((created) => {
+      // Shiki stops a line after 500 ms by default and emits its rest as one token, so a cold or loaded
+      // thread would change colors. Highlighting through the shared highlighter is never time-limited.
+      const highlighter: SharedHighlighter = {
+        ...created,
+        codeToTokensWithThemes: (code, options) =>
+          created.codeToTokensWithThemes(code, { ...options, tokenizeTimeLimit: 0 }),
+        codeToHtml: (code, options) => created.codeToHtml(code, { ...options, tokenizeTimeLimit: 0 }),
+      };
+      return highlighter;
+    }).catch((error: unknown) => {
+      sharedHighlighterPromises.delete(key);
+      throw error;
+    });
+    sharedHighlighterPromises.set(key, promise);
   }
-  const highlighter = await sharedHighlighterPromise;
+  const highlighter = await promise;
   if (prewarmLangs.length > 0) {
     const loaded = new Set(highlighter.getLoadedLanguages());
-    const toLoad = prewarmLangs.filter((l) => !loaded.has(l));
+    const toLoad = prewarmLangs.filter((language) => !loaded.has(language));
     if (toLoad.length > 0) {
       await Promise.all(
-        toLoad.map((l) =>
-          (isSupportedLanguage(l) ? highlighter.loadLanguage(l) : Promise.reject(new Error(`Unsupported language ${l}`))).catch((err) => {
-            console.warn(`Failed to prewarm language ${l}:`, err);
+        toLoad.map((language) =>
+          (isSupportedLanguage(language)
+            ? highlighter.loadLanguage(language)
+            : Promise.reject(new Error(`Unsupported language ${language}`))).catch((error) => {
+            console.warn(`Failed to prewarm language ${language}:`, error);
           }),
         ),
       );

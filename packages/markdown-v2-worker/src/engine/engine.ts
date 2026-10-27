@@ -45,6 +45,9 @@ import type {
   BlockResolvedLinkReference,
   CodeHighlightOutputMode,
   CodeHighlightThemes,
+  CodeHighlightEngine,
+  LinkDestinationOptions,
+  MathParseOptions,
   DiffLineKind,
   FormatAnticipationConfig,
   HtmlOptions,
@@ -80,6 +83,7 @@ import type {
   TableCellRecord,
   ContentPolicy,
   RestrictedComponentDescriptor,
+  SoftBreakMode,
 } from "@stream-mdx/core";
 import { validateSyntaxExtensionDescriptor } from "./registered-component-owner";
 import {
@@ -156,6 +160,7 @@ import {
   detectDiffLanguage,
   enhanceHighlightedHtml,
   getCachedHighlight,
+  getHighlightThemeNames,
   getSharedHighlighter,
   guessLanguageFromDiffLines,
   looksLikeUnifiedDiff,
@@ -168,6 +173,7 @@ import {
   type SharedHighlighter,
   toDiffLineKind,
 } from "./highlight";
+import { rootCodeDecorationPlan } from "./root-code-decoration-policy";
 import {
   DEFAULT_LAZY_TOKENIZATION_THRESHOLD,
   MAX_LAZY_TOKENIZATION_THRESHOLD,
@@ -1184,6 +1190,7 @@ const MAX_LAZY_TOKENIZATION_SLICE_LINES = 128;
 export class MarkdownEngine {
   private readonly postFn: (message: WorkerOut) => void;
   public readonly extensions?: EngineExtensions;
+  private readonly extensionId?: string;
   private mdParser!: typeof mdParser;
   private rootParagraphWindowAttestation?: NativeParagraphWindowAttestation;
 
@@ -1262,7 +1269,8 @@ export class MarkdownEngine {
   private patchStreamSeq = 0;
   private emittedBlockEpochs = new Map<string, number>();
 
-  private readonly workerGrammarEngine: "js" | "wasm" = "js";
+  private workerGrammarEngine: "js" | "wasm" = "js";
+  private highlightEngine: CodeHighlightEngine = "javascript";
   private workerCredits = 1;
   private deferredPatchQueue: Patch[] = [];
   private codeThemes: CodeThemePair = {
@@ -1311,6 +1319,9 @@ export class MarkdownEngine {
   private lastWorkerInvariantSignature = { value: "" };
   private contentPolicy: ContentPolicy = "restricted";
   private contentComponents: Map<string, RestrictedComponentDescriptor> = new Map();
+  private softBreaks: SoftBreakMode = "preserve";
+  private mathOptions?: MathParseOptions;
+  private linkDestinations?: LinkDestinationOptions;
   private messageQueue: Promise<void> = Promise.resolve();
   private inputPolicy: ContentPolicy = "restricted";
   private inputSealed = false;
@@ -1323,6 +1334,7 @@ export class MarkdownEngine {
   constructor(options: MarkdownEngineOptions) {
     this.postFn = options.post;
     this.extensions = options.extensions;
+    this.extensionId = options.extensionId;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       this.campaignCounters = (options as MarkdownEngineOptions & { campaignCounters?: CampaignCounterSink }).campaignCounters;
     }
@@ -1635,6 +1647,9 @@ export class MarkdownEngine {
     this.inlineParser = new InlineParser({
       enableMath: this.enableMath,
       html: this.htmlConfig,
+      softBreaks: this.softBreaks,
+      mathOptions: this.mathOptions,
+      linkDestinations: this.linkDestinations,
       ...(inlineExt ? { extensions: inlineExt } : {}),
       ...(this.syntaxRules.length > 0 ? { syntax: this.syntaxRules } : {}),
     });
@@ -1805,15 +1820,26 @@ export class MarkdownEngine {
           );
           return;
         }
+        if (msg.extensionId !== this.extensionId) {
+          this.reportError(
+            new Error(`Worker extensionId mismatch: expected '${this.extensionId ?? ""}', received '${msg.extensionId ?? ""}'`),
+            "INIT",
+            { expectedExtensionId: this.extensionId, receivedExtensionId: msg.extensionId },
+          );
+          return;
+        }
         await this.initialize(
           msg.initialContent,
           msg.prewarmLangs ?? [],
           msg.docPlugins,
           msg.syntax,
           msg.html,
+          msg.linkDestinations,
+          msg.mathOptions,
           msg.themes ?? msg.docPlugins?.themes,
           msg.contentPolicy,
           msg.contentComponents,
+          msg.highlightEngine ?? "javascript",
           msg.bootstrap ?? false,
         );
         return;
@@ -2050,6 +2076,7 @@ export class MarkdownEngine {
       tables?: boolean;
       callouts?: boolean;
       math?: boolean;
+      softBreaks?: SoftBreakMode;
       formatAnticipation?: FormatAnticipationConfig;
       codeHighlighting?: CodeHighlightingMode;
       outputMode?: CodeHighlightOutputMode;
@@ -2062,13 +2089,18 @@ export class MarkdownEngine {
     },
     syntax?: SyntaxExtensionDescriptor,
     html?: HtmlOptions,
+    linkDestinations?: LinkDestinationOptions,
+    mathOptions?: MathParseOptions,
     themes?: CodeHighlightThemes,
     contentPolicy?: ContentPolicy,
     contentComponents?: readonly RestrictedComponentDescriptor[],
+    highlightEngine: CodeHighlightEngine = "javascript",
     bootstrap = false,
   ): Promise<void> {
     this.initialized = false;
     this.contentPolicy = contentPolicy ?? "restricted";
+    this.highlightEngine = highlightEngine;
+    this.workerGrammarEngine = highlightEngine === "oniguruma" ? "wasm" : "js";
     this.contentComponents = new Map();
     if (contentComponents && Array.isArray(contentComponents)) {
       for (const comp of contentComponents) {
@@ -2168,6 +2200,7 @@ export class MarkdownEngine {
       tables: docPlugins?.tables ?? true,
       callouts: docPlugins?.callouts ?? false,
       math: docPlugins?.math ?? true,
+      softBreaks: docPlugins?.softBreaks ?? "preserve",
       formatAnticipation: docPlugins?.formatAnticipation ?? false,
       codeHighlighting: docPlugins?.codeHighlighting,
       liveCodeHighlighting: docPlugins?.liveCodeHighlighting ?? false,
@@ -2179,6 +2212,9 @@ export class MarkdownEngine {
 
     this.mdxEnabled = enable.mdx;
     this.enableMath = enable.math;
+    this.softBreaks = enable.softBreaks;
+    this.mathOptions = mathOptions;
+    this.linkDestinations = linkDestinations;
     this.formatAnticipationConfig = normalizeFormatAnticipation(enable.formatAnticipation);
     if (enable.codeHighlighting === "incremental" || enable.codeHighlighting === "live" || enable.codeHighlighting === "final") {
       this.codeHighlightingMode = enable.codeHighlighting;
@@ -2217,15 +2253,15 @@ export class MarkdownEngine {
       }
     }
 
+    const requestedThemes = themes ?? docPlugins?.themes;
     if (bootstrap) {
       this.highlighter = null;
       this.codeThemes = DEFAULT_CODE_HIGHLIGHT_THEMES;
     } else {
       this.performanceTimer.mark("highlighter-init");
-      this.highlighter = await getSharedHighlighter(prewarmLangs);
+      this.highlighter = await getSharedHighlighter(prewarmLangs, this.highlightEngine, requestedThemes);
       this.performanceTimer.measure("highlighter-init");
 
-      const requestedThemes = themes ?? docPlugins?.themes;
       const { themes: resolvedThemes, errors: themeErrors } = await resolveHighlightThemes(
         this.highlighter,
         requestedThemes,
@@ -3515,7 +3551,7 @@ export class MarkdownEngine {
     if (!this.isCurrentRootCodeOwner(owner)) return null;
     const isFinalized = owner.getMetadata().state !== "open";
     const block = isFinalized ? owner.materializeBlock() : undefined;
-    const info = typeof block?.payload.meta?.info === "string" ? block.payload.meta.info : "";
+    const info = owner.info;
     const { lang, meta } = parseCodeFenceInfo(info);
     const diffInfo = detectDiffLanguage(lang, meta);
     const isDiff = diffInfo.isDiff;
@@ -3526,8 +3562,7 @@ export class MarkdownEngine {
       Boolean(this.highlighter || this.extensions?.code),
       owner.getLines().materialize().trim().length > 0,
     );
-    const tokenizeFinalizedDiff = isFinalized && isDiff && this.highlightOutputMode !== "html";
-    const skipRootTokenization = isLazy || (isDiff && this.highlightOutputMode !== "html" && !isFinalized);
+    const { tokenizeFinalizedDiff, skipRootTokenization } = rootCodeDecorationPlan(isFinalized, isDiff, isLazy);
     const decorations = skipRootTokenization
       ? []
       : tokenizeFinalizedDiff
@@ -4282,7 +4317,7 @@ export class MarkdownEngine {
       ? createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset, this.campaignCounters, htmlDependentStarts, this.rootCodeOwnersByStart)
       : createRootCodeOwners(tree, this.sourceDocument, this.rootNativeOwnerGeneration, tailOffset, undefined, htmlDependentStarts, this.rootCodeOwnersByStart);
 
-    const tailReferences = collectLinkReferences(tree, sourceInput);
+    const tailReferences = collectLinkReferences(tree, sourceInput, this.linkDestinations);
     const tailReferenceStarts = collectLinkReferenceStarts(tree, sourceInput, tailOffset, tailReferences);
     const combinedReferences = new Map(this.currentLinkReferences);
     const combinedReferenceStarts = new Map(this.currentLinkReferenceStarts);
@@ -4877,7 +4912,7 @@ export class MarkdownEngine {
     const input = new NativeMarkdownInput(rawInput);
     const tree = input.parse(this.mdParser);
     this.treeFragments = TreeFragment.addTree(tree);
-    this.currentLinkReferences = collectLinkReferences(tree, rawInput);
+    this.currentLinkReferences = collectLinkReferences(tree, rawInput, this.linkDestinations);
     this.currentLinkReferenceStarts = collectLinkReferenceStarts(tree, rawInput, 0, this.currentLinkReferences);
     this.inlineParser.setReferences(this.currentLinkReferences);
     const previousRootParagraphOwners = this.rootParagraphOwners.slice();
@@ -5074,7 +5109,7 @@ export class MarkdownEngine {
         : createRootCodeOwners(newTree, this.sourceDocument, this.rootNativeOwnerGeneration, 0, undefined, htmlDependentStarts, this.rootCodeOwnersByStart, fragmentRestartFrom)
       : [];
     this.treeFragments = TreeFragment.addTree(newTree, updatedFragments);
-    const newReferences = collectLinkReferences(newTree, source);
+    const newReferences = collectLinkReferences(newTree, source, this.linkDestinations);
     const changedLabels = diffLinkReferences(this.currentLinkReferences, newReferences);
     this.currentLinkReferences = newReferences;
     this.currentLinkReferenceStarts = collectLinkReferenceStarts(newTree, source, 0, newReferences);
@@ -5183,7 +5218,7 @@ export class MarkdownEngine {
       const fullInput = new NativeMarkdownInput(source);
       const fullTree = fullInput.parse(this.mdParser);
       this.treeFragments = TreeFragment.addTree(fullTree);
-      const fullRefs = collectLinkReferences(fullTree, source);
+      const fullRefs = collectLinkReferences(fullTree, source, this.linkDestinations);
       const fullChangedLabels = diffLinkReferences(this.currentLinkReferences, fullRefs);
       for (const label of fullChangedLabels) changedLabels.add(label);
       this.currentLinkReferences = fullRefs;
@@ -8349,7 +8384,7 @@ export class MarkdownEngine {
                 }
                 const tokens = this.highlighter?.codeToTokensWithThemes(tokenInput, {
                   lang: sharedLanguage as never,
-                  themes: this.codeThemes,
+                  themes: getHighlightThemeNames(this.codeThemes),
                   grammarState: state.grammarState as never,
                 } as never) as ShikiThemedToken[][];
                 if (wantsHtml) {
@@ -8535,14 +8570,14 @@ export class MarkdownEngine {
 
     if (wantsHtml && hasHighlighter && hasHighlightableContent) {
       // The shared cache holds raw Shiki HTML; the language class depends on the authored info string.
-      const cached = getCachedHighlight(resolvedLanguage, this.codeThemes, codeBody);
+      const cached = getCachedHighlight(resolvedLanguage, this.codeThemes, codeBody, this.highlightEngine);
       if (cached?.html) {
         block.payload.highlightedHtml = enhanceHighlightedHtml(cached.html, requestedLanguage);
       } else {
         try {
           const highlighted = this.highlighter!.codeToHtml(codeBody, {
             lang: resolvedLanguage as never,
-            themes: this.codeThemes,
+            themes: getHighlightThemeNames(this.codeThemes),
             defaultColor: false,
           });
           block.payload.highlightedHtml = enhanceHighlightedHtml(highlighted, requestedLanguage);
@@ -8550,7 +8585,7 @@ export class MarkdownEngine {
             ...cached,
             html: highlighted,
             lang: resolvedLanguage,
-          });
+          }, this.highlightEngine);
         } catch (error) {
           console.warn("Shiki codeToHtml failed:", error);
         }
@@ -8612,7 +8647,7 @@ export class MarkdownEngine {
       } else if (!hasHighlighter || !hasHighlightableContent) {
         tokenLines = codeLines.map((line) => (line.length > 0 ? { spans: [{ t: line }] } : { spans: [] }));
       } else {
-        const cached = getCachedHighlight(resolvedTokenLanguage, this.codeThemes, codeBody);
+        const cached = getCachedHighlight(resolvedTokenLanguage, this.codeThemes, codeBody, this.highlightEngine);
         if (cached?.tokenLines) {
           tokenLines = cached.tokenLines;
         } else {
@@ -8622,14 +8657,14 @@ export class MarkdownEngine {
             }
             const tokens = this.highlighter!.codeToTokensWithThemes(codeBody, {
               lang: resolvedTokenLanguage as never,
-              themes: this.codeThemes,
+              themes: getHighlightThemeNames(this.codeThemes) as never,
             }) as ShikiThemedToken[][];
             tokenLines = renderTokenLines(tokens);
             setCachedHighlight(resolvedTokenLanguage, this.codeThemes, codeBody, {
               ...cached,
               tokenLines,
               lang: resolvedTokenLanguage,
-            });
+            }, this.highlightEngine);
           } catch (error) {
             console.warn("Shiki codeToTokens failed:", error);
             tokenLines = new Array(codeLines.length).fill(null);
@@ -11115,7 +11150,7 @@ export class MarkdownEngine {
           }
           const tokens = highlighter!.codeToTokensWithThemes(segmentText, {
             lang: sharedLanguage as never,
-            themes: this.codeThemes,
+            themes: getHighlightThemeNames(this.codeThemes),
             grammarState: nextGrammarState as never,
           } as never) as ShikiThemedToken[][];
           if (wantsHtml) highlightedSegment = renderShikiLines(tokens);

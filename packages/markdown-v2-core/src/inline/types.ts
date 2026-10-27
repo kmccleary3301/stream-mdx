@@ -1,5 +1,5 @@
 import type { MarkdownConfig } from "@lezer/markdown";
-import type { HtmlOptions, InlineNode, SyntaxRuleSpec } from "../types";
+import type { HtmlOptions, InlineNode, LinkDestinationOptions, MathParseOptions, SoftBreakMode, SyntaxRuleSpec } from "../types";
 
 export interface MarkdownElement {
   readonly type: number;
@@ -56,6 +56,15 @@ export interface InlineParserOptions {
    * Declarative syntax rules.
    */
   syntax?: SyntaxRuleSpec[];
+
+  /** Convert prose soft line endings to line-break nodes; defaults to preserving text. */
+  softBreaks?: SoftBreakMode;
+
+  /** Currency-safe single-dollar policy for parser-admitted math; defaults to permissive. */
+  mathOptions?: MathParseOptions;
+
+  /** Optional CommonMark-compatible preservation of authored absolute Windows destinations. */
+  linkDestinations?: LinkDestinationOptions;
 }
 
 export interface InlineParseOptions {

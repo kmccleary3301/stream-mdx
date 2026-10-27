@@ -93,8 +93,13 @@ export function Example() {
 | `engine` | `"auto" \| "main" \| "worker"` | Default `"auto"`. Selects automatic (`"auto"`; the default), inline (`"main"`), or dedicated-worker (`"worker"`) execution. See execution modes below. |
 | `managedWorker` | `boolean` | Requires a supplied Worker instance or caller-accessible factory. The caller sends `INIT` and document commands; automatic commands are disabled. URL/default workers and internally created main-thread engines are rejected. Factory workers remain component-owned; supplied instances remain caller-owned. |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
-| `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `outputMode`, and `lazyTokenization`. |
-| `themes` | `{ light: string; dark: string }` | Configures light and dark Shiki theme IDs (e.g. `{ light: "min-light", dark: "nord" }`). Changing themes re-initializes the engine. Unknown themes report an INIT error and fall back to GitHub light/dark. |
+| `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags: `softBreaks?: "preserve" | "hard"` (default `"preserve"`), `emitDiffBlocks`, `outputMode` (`"html"`, `"tokens"`, or `"both"`), and `lazyTokenization`. `"hard"` turns prose soft line endings into `<br>` nodes; code, math, and raw HTML are unchanged. |
+| `themes` | `{ light: string | ThemeRegistration; dark: string | ThemeRegistration }` | Configures light and dark Shiki themes by ID or serializable theme registration. Changing themes re-initializes the engine. Unknown theme IDs report an INIT error and fall back to GitHub light/dark. |
+| `highlightEngine` | `"javascript" | "oniguruma"` | Selects Shiki's JavaScript regex engine or the Oniguruma WASM engine. Defaults to `"javascript"`. |
+| `engineExtensions` | `EngineExtensions` | Supplies native extensions to the in-process engine used by `engine="main"` and the `"auto"` bootstrap. Requires `extensionId`; unavailable with `engine="worker"` because extension functions are not serializable. |
+| `extensionId` | `string` | Caller-supplied identity for the bundled extension set. Used for worker compatibility and snapshot cache identity; function source is never hashed. |
+| `mathOptions` | `MathOptions` | `singleDollar?: "permissive" | "currency-safe"` controls parser admission for single-dollar math; defaults to `"permissive"`. Display math is unaffected. |
+| `linkDestinations` | `LinkDestinationOptions` | `windowsDrivePaths?: "commonmark" | "preserve"` retains backslashes for absolute Windows drive and UNC link, image, and reference-definition destinations when set to `"preserve"`. Other destinations keep CommonMark escape decoding. |
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for restricted source components. Separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator required with `contentPolicy="trusted-mdx"`. |
@@ -121,6 +126,8 @@ export function Example() {
 | `onError` | `(error: Error) => void` | Render-time errors. Updating the callback does not restart the engine or discard streamed content. (Worker runtime errors surface via `error` events on the Worker.) |
 | `className`, `style` | React props forwarded to the root container. |
 
+
+Currency-safe math uses the same source-boundary rules before the parser admits a single-dollar span: opening/closing space, tab, or comma boundaries and a closing dollar immediately followed by a digit leave the span as text. A later unescaped `$` can close a skill-shaped token before any host skill-token presentation; for example, `$skillName$` is math when it satisfies those boundaries. Double-dollar display math always follows the math parser.
 Table-row and table-cell presentations accept only `wrapper` and `props`; headless table customization goes through `components.table.view` with `useTableRows`.
 
 `CodeEngine` has this contract:
@@ -284,7 +291,7 @@ matches its `INITIALIZED` source baseline. Reject mismatched messages before
 queueing or committing them; do not infer a generation when delayed messages
 arrive.
 
-The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, `syntax?: SyntaxExtensionDescriptor`, and `code?: CodeEngine`. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions })`, or create an adapter with `createInlineEngineWorker({ extensions })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
+The constructor accepts `{ post, extensions?, extensionId? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, `syntax?: SyntaxExtensionDescriptor`, and `code?: CodeEngine`. `extensionId` is caller-supplied and identifies the bundled extension set without hashing function source. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions, extensionId })`, or create an adapter with `createInlineEngineWorker({ extensions, extensionId })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
 
 
 ---
@@ -304,11 +311,13 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
   - `"final"` (default): highlight only after the block finalizes.
   - `"incremental"`: highlight completed lines as they arrive (fast enough for streaming).
   - `"live"`: re-highlight on every update (slowest, highest fidelity).
-- `themes`: optional `{ light: string; dark: string }` pair specifying Shiki bundled theme names.
+- `themes`: optional `{ light: string | ThemeRegistration; dark: string | ThemeRegistration }` pair. Each side accepts a bundled theme name or a serializable Shiki theme registration object.
   - Used across all highlight strategies (static, incremental, live, lazy, diff).
-  - Loaded on demand into the shared worker highlighter singleton.
-  - Shared highlighter caches are partitioned by theme pair to prevent cross-contamination between engines.
-  - Invalid/unknown theme IDs report an error through the worker error pipeline and fall back to default GitHub light/dark themes.
+  - Custom registrations are loaded into the worker's shared highlighter before resolving the selected pair.
+  - Shared highlight cache identity includes both theme registrations and the selected regex engine.
+  - Invalid or unknown themes report an INIT error and fall back to the default GitHub themes for the invalid side.
+- `highlightEngine`: optional `"javascript"` (default) or `"oniguruma"`. Oniguruma uses the WASM engine; select it when JavaScript regex execution is unsuitable.
+
 ### Context support table
 
 | Feature | Browser worker streaming | Node snapshot compile | Edge/no-worker compile |
@@ -502,7 +511,7 @@ Without a runtime, the slot wraps `children` in `data-stream-mdx-preview-slot` w
 Fences labeled `artifact` or `html-artifact` render as ordinary code unless a `components.code.wrapper` explicitly routes them elsewhere. StreamMDX does not ship a default artifact iframe or sandbox. A custom presentation is application code; if it turns source into active content, the host owns its isolation and security policy.
 
 
-Math uses KaTeX by default. To replace TeX rendering, provide `engines.math`, whose synchronous `render(tex, { displayMode })` method returns React output and has a stable `id`. Math presentations at `components["inline:math"]` only wrap or view that engine output; they do not perform a second TeX render. `features.math: false` disables math recognition, including inside opt-in HTML markdown.
+Math uses KaTeX by default. To replace TeX rendering, provide `engines.math`, whose synchronous `render(tex, { displayMode })` method returns React output and has a stable `id`. Both inline and display math use `components["inline:math"]` to wrap or view that engine output; this presentation does not perform a second TeX render. `features.math: false` disables math recognition, including inside opt-in HTML markdown.
 
 ### Syntax extensions and HTML
 
@@ -687,7 +696,7 @@ const mathEngine: MathEngine = {
 <StreamingMarkdown engines={{ math: mathEngine }} />;
 ```
 
-`MathEngine.render` runs synchronously on the main thread and must be safe during server rendering. A presentation configured at `components["inline:math"]` receives the engine output as its children; it owns only the view or wrapper and does not render TeX a second time. Omitting `engines.math` keeps KaTeX.
+`MathEngine.render` runs synchronously on the main thread and must be safe during server rendering. A presentation at `components["inline:math"]` receives engine output as its children for both inline and display math; it owns only the view or wrapper and does not render TeX a second time. Omitting `engines.math` keeps KaTeX.
 ## 3.5) Element Filtering and Autolink Protocols
 
 StreamMDX mirrors Streamdown / react-markdown element filtering semantics:
@@ -800,6 +809,23 @@ export default async function EdgeLikePage() {
 Notes:
 - Cache semantics match `compileMarkdownSnapshot()` when the runtime exposes Node filesystem APIs.
 - In edge isolates without filesystem access, direct compile still runs deterministically and skips cache IO.
+
+### Extension-aware snapshots and synchronous remounts
+
+`createMarkdownSnapshotCompiler({ extensions, extensionId })` compiles through the canonical parser in-process. For a host-bundled worker, pass that worker as `worker`; it must have been created with the same extension set and `extensionId`. Calls are serialized and `maxQueueSize` (default `32`) bounds active plus waiting compiles. The caller-supplied ID participates in snapshot cache identity; extension function source is never inspected or hashed.
+
+```tsx
+import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { createMarkdownSnapshotCompiler } from "stream-mdx/worker/direct";
+
+const compiler = createMarkdownSnapshotCompiler({ extensions, extensionId: "km-markdown-v3" });
+const { blocks } = await compiler.compile({ text: finalizedMarkdown });
+
+// Store this array alongside the finalized message, then pass it to a client row:
+<MarkdownBlocksRenderer blocks={blocks} components={presentations} />;
+```
+
+The same `MarkdownBlocksRenderer` and `components`/`NodePresentations` work in client rendering as well as SSR; the renderer does not need to compile or initialize a worker when mounting cached blocks.
 
 ---
 

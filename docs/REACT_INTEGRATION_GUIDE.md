@@ -154,7 +154,55 @@ Cache note:
 - In Node-like environments, direct compile reads/writes the same snapshot cache contract as `compileMarkdownSnapshot`.
 - In edge isolates without filesystem APIs, compile still works and skips cache IO.
 
+### Extension-aware snapshots for virtualized messages
+
+Use one compiler instance to serialize finalized-message compiles. It runs in-process when `worker` is omitted, or can send compile requests to a host-bundled worker configured with the same `extensions` and `extensionId`. `maxQueueSize` bounds active plus waiting requests (default `32`); no document multiplexing is added to the worker protocol.
+
+```tsx
+import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { createMarkdownSnapshotCompiler } from "stream-mdx/worker/direct";
+import type { Block } from "@stream-mdx/core";
+import type { NodePresentations } from "@stream-mdx/react";
+
+const compiler = createMarkdownSnapshotCompiler({
+  extensions,
+  extensionId: "chat-markdown-v3",
+  maxQueueSize: 32,
+});
+
+// Compile once when the finalized message arrives, then cache `blocks`.
+const { blocks } = await compiler.compile({ text: finalizedMarkdown });
+
+function VirtualizedMessage({ blocks, components }: {
+  blocks: Block[];
+  components: NodePresentations;
+}) {
+  // Remounting this row renders synchronously from cached blocks; it does not recompile.
+  return <MarkdownBlocksRenderer blocks={blocks} components={components} />;
+}
+```
+
+`MarkdownBlocksRenderer` is also usable in a client-rendered tree, not only during SSR. Its `components`/`NodePresentations` are the same presentation overrides used by `<StreamingMarkdown />`, including extension-node views.
+
+### Runtime Shiki themes and regex engine
+
+Pass serializable Shiki theme registrations as the `light` and `dark` values of `themes`. The worker registers custom themes before resolving the pair, and cache identity includes the registration contents. Changing the pair or `highlightEngine` reinitializes the renderer. Use `highlightEngine="oniguruma"` to select the WASM regex engine when JavaScript regex execution is unsuitable.
+
+Native function extensions can be passed as `engineExtensions` with a caller-chosen `extensionId` for `engine="main"` or the in-process `"auto"` bootstrap. For worker execution, bundle the same extensions into the worker entry using `serveMarkdownWorker({ extensions, extensionId })`; do not attempt to structured-clone extension functions.
+
+```tsx
+<StreamingMarkdown
+  engine="main"
+  engineExtensions={{ inline: chatInlineExtensions }}
+  extensionId="chat-markdown-v3"
+  themes={{ light: lightThemeRegistration, dark: darkThemeRegistration }}
+  highlightEngine="oniguruma"
+  text={markdown}
+/>
+```
+
 ---
+
 
 ## Core Concepts
 
@@ -173,12 +221,14 @@ Cache note:
 | `text` | `string` | Static markdown content. Changing it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Streaming markdown chunks. Use for live updates. |
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. Recommended: `"/workers/markdown-worker.js"`. |
-| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, formatAnticipation?, codeHighlighting? }` |
+| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, softBreaks?: "preserve" \| "hard", formatAnticipation?, codeHighlighting?, outputMode?: "html" \| "tokens" \| "both" }`. Soft breaks default to preserving newlines; `"hard"` converts prose soft line endings to `<br>` without changing code, math, or raw HTML. |
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for recognized restricted source components, separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator supplied when `contentPolicy="trusted-mdx"`. |
 | `components` | `NodePresentations` | Configure native block, inline (`inline:<kind>`), extension, and HTML (`html:<tag>`) presentations with wrappers, headless views, or native props. |
 | `engines.math` | `MathEngine` | Replace the default KaTeX TeX renderer without changing math parsing. |
+| `mathOptions` | `MathOptions` | Set `singleDollar?: "permissive" \| "currency-safe"` to reject currency-like single-dollar spans before math parsing; display math is unaffected. `$skillName$` is admitted as math when its boundaries pass this policy, before host skill-token presentation. |
+| `linkDestinations` | `LinkDestinationOptions` | Set `windowsDrivePaths: "preserve"` to preserve absolute Windows drive/UNC destination backslashes in links, images, and reference definitions; ordinary CommonMark escapes remain decoded. |
 | `prewarmLangs` | `string[]` | Shiki languages to load upfront. |
 | `scheduling` | `object` | Patch scheduler/backpressure knobs. |
 | `managedWorker` | `boolean` | Requires a caller-initialized supplied Worker or caller-accessible factory. Drive document commands yourself or through the ref handle. URL/default sources and `engine="main"` are rejected through `onError`, with no inline fallback. Factory workers terminate on detach; supplied instances remain caller-owned. |
@@ -595,7 +645,7 @@ export function MathJaxArticle({ content }: { content: string }) {
   );
 }
 ```
-`components["inline:math"]` remains a separate presentation layer for wrapping or replacing the view; its children are already the engine output.
+Both inline and display math use the `components["inline:math"]` presentation layer to wrap or replace the view; its children are already the engine output.
 
 ### Customize Inline Presentations
 

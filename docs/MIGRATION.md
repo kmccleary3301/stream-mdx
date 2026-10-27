@@ -70,7 +70,7 @@ const components: NodePresentations = {
 | `htmlElements` | `components["html:<tag>"]` after HTML admission and sanitization |
 | `tableElements` | `components.table` and table-part presentation keys |
 | `codeRenderers` | `components.code`; inspect `metadata.language` and return prepared `children` for languages you do not replace |
-| `mathRenderer` as a presentation override | `components["inline:math"]` or `components.math`; custom TeX rendering belongs in `engines.math` |
+| `mathRenderer` as a presentation override | `components["inline:math"]` for inline and display math; custom TeX rendering belongs in `engines.math` |
 | `mdxComponents` | `contentComponents` for registered restricted source components, or an explicit trusted MDX engine for full evaluation |
 
 ### Stop reading the full `Block` in wrappers

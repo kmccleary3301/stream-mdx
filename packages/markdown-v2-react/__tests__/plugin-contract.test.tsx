@@ -37,13 +37,17 @@ async function waitUntil(predicate: () => boolean): Promise<void> {
   }
 }
 
-async function renderHtml(props: StreamingMarkdownProps, check: (container: HTMLElement) => void) {
+async function renderHtml(
+  props: StreamingMarkdownProps,
+  check: (container: HTMLElement) => void,
+  engine: StreamingMarkdownProps["engine"] = props.engine ?? "main",
+) {
   const { dom, container } = setupDom();
   const root = createRoot(container);
   const handle = React.createRef<StreamingMarkdownHandle>();
   try {
-    root.render(<StreamingMarkdown ref={handle} engine="main" {...props} />);
-    await waitUntil(() => Boolean(handle.current?.getState().workerReady && container.querySelector("span")));
+    root.render(<StreamingMarkdown ref={handle} engine={engine} {...props} />);
+    await waitUntil(() => Boolean(handle.current?.getState().workerReady && container.querySelector("span,mark")));
     await handle.current?.waitForIdle();
     check(container);
     const registry = new ComponentRegistry({ components: props.components, contentComponents: props.contentComponents });
@@ -192,10 +196,25 @@ async function testPartialCloser(open: string, close: string, pattern: string) {
   }
 }
 
+async function testEngineExtensionsInMainAndAutoBootstrap() {
+  const extensions = { inline: [compileSyntaxRuleToExtension(ticket)] };
+  for (const engine of ["main", "auto"] as const) {
+    await renderHtml({
+      text: "User issue #ABC-7",
+      engineExtensions: extensions,
+      extensionId: "ticket-extension-v1",
+      components: consumerComponents,
+    }, (container) => {
+      assert.equal(container.querySelector(".mapped-ticket")?.textContent, "ABC-7", `${engine} must use supplied inline extensions`);
+    }, engine);
+  }
+}
+
 const failures: Error[] = [];
 for (const [name, test] of [
   ["HTML block literal opt-in", testBlockHtmlLiteralOptIn],
   ["owned HTML parser", testOwnedHtmlParser],
+  ["engine extensions in main and auto bootstrap", testEngineExtensionsInMainAndAutoBootstrap],
   ["identical closer overlap", () => testPartialCloser("::", "::", "::([^:]+)::")],
   ["different closer overlap", () => testPartialCloser("[[", "]]", "\\[\\[([^\\]]+)\\]\\]")],
 ] as const) {

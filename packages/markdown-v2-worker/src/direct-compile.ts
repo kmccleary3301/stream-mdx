@@ -1,3 +1,4 @@
+import type { EngineExtensions } from "./engine/types";
 import { MarkdownEngine } from "./engine";
 import {
   PATCH_ROOT_ID,
@@ -31,6 +32,10 @@ export interface SnapshotArtifactV1 {
     themes?: WorkerInitMessage["themes"];
     syntax?: WorkerInitMessage["syntax"];
     html?: WorkerInitMessage["html"];
+    mathOptions?: WorkerInitMessage["mathOptions"];
+    linkDestinations?: WorkerInitMessage["linkDestinations"];
+    extensionId?: WorkerInitMessage["extensionId"];
+    highlightEngine?: WorkerInitMessage["highlightEngine"];
   };
 }
 
@@ -75,7 +80,7 @@ type NodeCacheRuntime = {
   path: NodePathLike;
 };
 
-let runtimePromise: Promise<InlineWorkerScope> | null = null;
+const runtimePromises = new Map<string, Promise<InlineWorkerScope>>();
 let nodeCacheRuntimePromise: Promise<NodeCacheRuntime | null> | null = null;
 let activeQueue: WorkerOut[] | null = null;
 let compileChain: Promise<void> = Promise.resolve();
@@ -99,19 +104,27 @@ function withCompileLock<T>(fn: () => Promise<T>): Promise<T> {
     });
 }
 
-async function ensureWorkerRuntimeLoaded(): Promise<InlineWorkerScope> {
-  if (runtimePromise) return runtimePromise;
+async function ensureWorkerRuntimeLoaded(
+  extensions?: EngineExtensions,
+  extensionId?: string,
+): Promise<InlineWorkerScope> {
+  const key = extensionId ?? "";
+  const existing = runtimePromises.get(key);
+  if (existing) return existing;
   const engine = new MarkdownEngine({
     post(message) {
       activeQueue?.push(message);
     },
+    ...(extensions === undefined ? {} : { extensions }),
+    ...(extensionId === undefined ? {} : { extensionId }),
   });
-  runtimePromise = Promise.resolve({
+  const runtime = Promise.resolve({
     onmessage(event: MessageEvent<WorkerIn>) {
       return engine.handle(event.data);
     },
   });
-  return runtimePromise;
+  runtimePromises.set(key, runtime);
+  return runtime;
 }
 
 function isPromiseLike(value: unknown): value is Promise<unknown> {
@@ -305,8 +318,9 @@ function sanitizeCacheKey(value: string): string {
  * functions that disallow `worker_threads`) but still needs deterministic
  * `Block[]` snapshots from the canonical worker pipeline.
  */
-export async function compileMarkdownSnapshotDirect(
+async function compileMarkdownSnapshotWithDispatch(
   options: CompileMarkdownSnapshotDirectOptions,
+  dispatch: (message: WorkerIn, timeoutMs: number) => Promise<WorkerOut[]>,
 ): Promise<CompileMarkdownSnapshotDirectResult> {
   return await withCompileLock(async () => {
     const { text, init, hashSalt, cache, timeoutMs = 30_000, settleMs = 50, finalize = true } = options;
@@ -325,10 +339,7 @@ export async function compileMarkdownSnapshotDirect(
         };
       }
     }
-    const scope = await ensureWorkerRuntimeLoaded();
-
-    const initMessages = await dispatchWorkerMessage(
-      scope,
+    const initMessages = await dispatch(
       {
         type: "INIT",
         schemaVersion: STREAM_MDX_SCHEMA_VERSION,
@@ -340,6 +351,8 @@ export async function compileMarkdownSnapshotDirect(
         ...(init?.themes === undefined ? {} : { themes: init.themes }),
         ...(init?.syntax === undefined ? {} : { syntax: init.syntax }),
         ...(init?.html === undefined ? {} : { html: init.html }),
+        ...(init?.highlightEngine === undefined ? {} : { highlightEngine: init.highlightEngine }),
+        ...(init?.extensionId === undefined ? {} : { extensionId: init.extensionId }),
       },
       timeoutMs,
     );
@@ -368,7 +381,7 @@ export async function compileMarkdownSnapshotDirect(
     }
 
     if (finalize) {
-      const finalizeMessages = await dispatchWorkerMessage(scope, { type: "FINALIZE" }, timeoutMs);
+      const finalizeMessages = await dispatch({ type: "FINALIZE" }, timeoutMs);
       const finalizeError = firstWorkerError(finalizeMessages);
       if (finalizeError) {
         throw new Error(finalizeError);
@@ -410,6 +423,10 @@ export async function compileMarkdownSnapshotDirect(
             ...(init.themes === undefined ? {} : { themes: init.themes }),
             ...(init.syntax === undefined ? {} : { syntax: init.syntax }),
             ...(init.html === undefined ? {} : { html: init.html }),
+            ...(init.mathOptions === undefined ? {} : { mathOptions: init.mathOptions }),
+            ...(init.linkDestinations === undefined ? {} : { linkDestinations: init.linkDestinations }),
+            ...(init.highlightEngine === undefined ? {} : { highlightEngine: init.highlightEngine }),
+            ...(init.extensionId === undefined ? {} : { extensionId: init.extensionId }),
           }
         : undefined,
     };
@@ -425,4 +442,92 @@ export async function compileMarkdownSnapshotDirect(
       fromCache: false,
     };
   });
+}
+
+export async function compileMarkdownSnapshotDirect(
+  options: CompileMarkdownSnapshotDirectOptions,
+): Promise<CompileMarkdownSnapshotDirectResult> {
+  if (options.init?.extensionId !== undefined) {
+    throw new Error("compileMarkdownSnapshotDirect does not accept extension identities; use createMarkdownSnapshotCompiler.");
+  }
+  return compileMarkdownSnapshotWithDispatch(options, async (message, timeoutMs) => {
+    const scope = await ensureWorkerRuntimeLoaded();
+    return await dispatchWorkerMessage(scope, message, timeoutMs);
+  });
+}
+
+export interface CreateMarkdownSnapshotCompilerOptions {
+  extensions?: EngineExtensions;
+  extensionId: string;
+  worker?: Worker;
+  maxQueueSize?: number;
+}
+
+export interface MarkdownSnapshotCompiler {
+  compile(options: CompileMarkdownSnapshotDirectOptions): Promise<CompileMarkdownSnapshotDirectResult>;
+}
+
+export function createMarkdownSnapshotCompiler(
+  options: CreateMarkdownSnapshotCompilerOptions,
+): MarkdownSnapshotCompiler {
+  const { extensions, extensionId, worker, maxQueueSize = 32 } = options;
+  if (!extensionId.trim()) throw new TypeError("createMarkdownSnapshotCompiler requires a non-empty extensionId.");
+  if (!Number.isSafeInteger(maxQueueSize) || maxQueueSize < 1) {
+    throw new RangeError("maxQueueSize must be a positive safe integer.");
+  }
+  let pending = 0;
+  const dispatch = worker
+    ? (message: WorkerIn, timeoutMs: number) => dispatchHostWorkerMessage(worker, message, timeoutMs)
+    : async (message: WorkerIn, timeoutMs: number) => {
+        const scope = await ensureWorkerRuntimeLoaded(extensions, extensionId);
+        return await dispatchWorkerMessage(scope, message, timeoutMs);
+      };
+  return {
+    compile(compileOptions) {
+      if (pending >= maxQueueSize) {
+        return Promise.reject(new Error(`Markdown snapshot compiler queue is full (maxQueueSize=${maxQueueSize}).`));
+      }
+      pending += 1;
+      const init = { ...(compileOptions.init ?? {}), extensionId };
+      return compileMarkdownSnapshotWithDispatch({ ...compileOptions, init }, dispatch).finally(() => {
+        pending -= 1;
+      });
+    },
+  };
+}
+
+async function dispatchHostWorkerMessage(
+  worker: Worker,
+  message: WorkerIn,
+  timeoutMs: number,
+): Promise<WorkerOut[]> {
+  const queue: WorkerOut[] = [];
+  const expectedType = message.type === "INIT" ? "INITIALIZED" : "FINALIZED";
+  let resolveResponse!: () => void;
+  const response = new Promise<void>((resolve) => {
+    resolveResponse = resolve;
+  });
+  const onMessage = (event: MessageEvent<WorkerOut>) => {
+    queue.push(event.data);
+    if (event.data.type === "ERROR" || event.data.type === expectedType) resolveResponse();
+  };
+  const onError = (event: ErrorEvent) => {
+    queue.push({
+      type: "ERROR",
+      phase: message.type,
+      error: { name: "WorkerError", message: event.message || "Host markdown worker failed." },
+    } as WorkerOut);
+    resolveResponse();
+  };
+  worker.addEventListener("message", onMessage);
+  worker.addEventListener("error", onError);
+  try {
+    worker.postMessage(message);
+    await withTimeout(response, timeoutMs, `[stream-mdx] snapshot compile timed out during ${message.type}`);
+    await waitForQueueSettle(queue);
+    return queue;
+  } finally {
+    worker.removeEventListener("message", onMessage);
+    worker.removeEventListener("error", onError);
+  }
 }

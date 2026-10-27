@@ -1,4 +1,5 @@
 import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type { CodeHighlightThemes } from "@stream-mdx/core";
 import { createInitialSnapshot, STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 import { SourceCapacityError, StreamSessionError, type AppendResult, type FinalizeResult, type WaitForCapacityOptions } from "@stream-mdx/protocol";
 // Main V2 Markdown Renderer
@@ -19,6 +20,24 @@ import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./sour
 import { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
 
 const MAX_AUTO_BOOTSTRAP_UNITS = 4096;
+function themeName(
+  theme: CodeHighlightThemes["light"] | undefined,
+  fallback: string,
+): string {
+  if (typeof theme === "string") return theme;
+  if (theme && typeof theme === "object" && "name" in theme && typeof theme.name === "string") {
+    return theme.name;
+  }
+  return fallback;
+}
+
+function themeNames(themes?: CodeHighlightThemes): { light: string; dark: string } | undefined {
+  if (!themes) return undefined;
+  return {
+    light: themeName(themes.light, "github-light"),
+    dark: themeName(themes.dark, "github-dark"),
+  };
+}
 export { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
 
 const WORKER_DEBUG_ENABLED =
@@ -266,7 +285,7 @@ export class MarkdownRenderer implements Renderer {
     }
     this.config = config;
     this.trustedRevisionFeed = config.contentPolicy === "trusted-mdx" ? attachTrustedRevisionFeed(this) : null;
-    this.store = createRendererStore([], { themes: config.themes });
+    this.store = createRendererStore([], { themes: themeNames(config.themes) });
     this.componentRegistry = new ComponentRegistry({
       tableVirtualization: this.config.tableVirtualization,
       codeVirtualization: this.config.codeVirtualization,
@@ -407,7 +426,7 @@ export class MarkdownRenderer implements Renderer {
       this.resetSourceAdmission();
       this.inputSealed = false;
     }
-    this.store.setThemes(this.config.themes);
+    this.store.setThemes(themeNames(this.config.themes));
     const codeHighlighting = this.config.plugins?.codeHighlighting;
     const outputMode = this.config.plugins?.outputMode;
     const liveTokenization = this.config.plugins?.liveTokenization;
@@ -420,6 +439,7 @@ export class MarkdownRenderer implements Renderer {
       tables: this.config.plugins?.tables ?? true,
       callouts: this.config.plugins?.callouts ?? false,
       math: this.config.plugins?.math ?? true,
+      softBreaks: this.config.plugins?.softBreaks ?? "preserve",
       formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
       ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
       ...(outputMode !== undefined ? { outputMode } : {}),
@@ -451,8 +471,12 @@ export class MarkdownRenderer implements Renderer {
         contentPolicy: this.config.contentPolicy ?? "restricted",
         ...(contentComponents ? { contentComponents } : {}),
         ...(this.config.themes ? { themes: this.config.themes } : {}),
+        ...(this.config.highlightEngine ? { highlightEngine: this.config.highlightEngine } : {}),
+        ...(this.config.extensionId ? { extensionId: this.config.extensionId } : {}),
         ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
         ...(this.config.html ? { html: this.config.html } : {}),
+        ...(this.config.mathOptions ? { mathOptions: this.config.mathOptions } : {}),
+        ...(this.config.linkDestinations ? { linkDestinations: this.config.linkDestinations } : {}),
       } as WorkerIn);
       this.workerHasContent = initialContent.length > 0;
     } catch (error) {

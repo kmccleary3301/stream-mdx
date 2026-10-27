@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.build.json",
+  "files": ["__tests__/streaming-feature-flags.types.ts"]
+}
