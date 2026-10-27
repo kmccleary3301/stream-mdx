@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 import { flushSync } from "react-dom";
 import { JSDOM } from "jsdom";
 import type { InlineExtension, InlineNode } from "@stream-mdx/core";
@@ -117,6 +118,30 @@ async function hostWorkerSnapshotQueueIsSerializedAndBounded(): Promise<void> {
   }
 }
 
+async function nestedQuoteSnapshotUsesManagedParagraphView(): Promise<void> {
+  const text = "> **Yes, seriously consider it as a spike branch.**\n> **No, do not choose it as the current best mainline plan.";
+  const compiler = createMarkdownSnapshotCompiler({
+    extensions: {
+      inline: [nativeBadge("snapshot quote")],
+      documentPlugins: [{ name: "snapshot-quote-noop", process: () => undefined }],
+    },
+    extensionId: "snapshot-quote-extensions-v1",
+  });
+  const snapshot = await compiler.compile({ text });
+  const markup = renderToStaticMarkup(
+    React.createElement(MarkdownBlocksRenderer, { blocks: snapshot.blocks }),
+  );
+  const dom = new JSDOM(markup);
+  const paragraph = dom.window.document.querySelector("blockquote > p");
+  assert.equal(
+    paragraph?.textContent,
+    "Yes, seriously consider it as a spike branch.\n**No, do not choose it as the current best mainline plan.",
+  );
+  dom.window.close();
+}
+
 await extensionAwareSnapshotCompilesAndRendersOnClient();
 await hostWorkerSnapshotQueueIsSerializedAndBounded();
+await nestedQuoteSnapshotUsesManagedParagraphView();
+
 console.log("extension-aware client snapshots passed");

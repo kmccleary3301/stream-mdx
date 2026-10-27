@@ -1430,6 +1430,11 @@ export class MarkdownEngine {
       && this.syntaxRules.length === 0
       && !this.nativeOwnershipDeclinedByContentPolicy();
   }
+  private nestedParagraphOwnershipSupported(): boolean {
+    return Boolean(this.rootParagraphWindowAttestation)
+      && this.syntaxRules.length === 0
+      && !this.nativeOwnershipDeclinedByContentPolicy();
+  }
 
   private rootParagraphInlineSettlement(): ParagraphInlineSettlementMode {
     return (this.extensions?.inline?.length ?? 0) > 0 || this.syntaxRules.length > 0
@@ -1539,6 +1544,7 @@ export class MarkdownEngine {
     ownerId: string,
     ownerGeneration: number,
     spanIndex: number,
+    lookaheadContext?: LookaheadContainerContext,
   ): PreparedParagraphSpanContent | null {
     if (!content.includes("<") && !content.includes("{")) return null;
     const protectedRanges = collectCodeProtectedRanges(content);
@@ -1549,7 +1555,7 @@ export class MarkdownEngine {
       from: baseOffset + range.from,
       to: baseOffset + range.to,
     }));
-    const context = this.rootParagraphInlineContext("mixed-content");
+    const context = lookaheadContext ?? this.rootParagraphInlineContext("mixed-content");
     const attemptedReferences = new Set<string>();
     const onAttemptedReference = (label: string) => attemptedReferences.add(label);
     const matchedBareAnchorOffsets = this.matchedBareAnchorOffsetsForSource(content, baseOffset);
@@ -2467,7 +2473,7 @@ export class MarkdownEngine {
     readonly block: Block;
     readonly tail: NativeContainerTailParser;
   } | undefined {
-    if (!this.rootParagraphOwnershipSupported()) return undefined;
+    if (!this.nestedParagraphOwnershipSupported()) return undefined;
     const block = this.blocks[this.blocks.length - 1];
     if (!block || block.isFinalized || (block.type !== "list" && block.type !== "blockquote")) return undefined;
     const tail = this.nativeContainerTails.get(block.id);
@@ -7020,7 +7026,7 @@ export class MarkdownEngine {
       if (!tail) throw new Error(`Native container ${block.id} lost its active tail before applying the parsed window`);
       result = precomputedChange;
     } else if (!tail) {
-      const paragraphOwnerSupported = this.rootParagraphOwnershipSupported();
+      const paragraphOwnerSupported = this.nestedParagraphOwnershipSupported();
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
         tail = NativeContainerTailParser.admit(
           this.mdParser,
@@ -7096,7 +7102,11 @@ export class MarkdownEngine {
     const codeEvents = change
       ? nativeCodeEventsInTail(change.rootNode, change.window.prefixLength)
       : [];
-    const inlineContextFor = (id: string, range: { readonly from: number; readonly to: number }) => {
+    const inlineContextFor = (
+      id: string,
+      range: { readonly from: number; readonly to: number },
+      segmentOrigin: "direct-inline" | "mixed-content" = "direct-inline",
+    ) => {
       const paragraphBlock: Block = {
         id,
         type: "paragraph",
@@ -7107,7 +7117,7 @@ export class MarkdownEngine {
         ...ancestorTypes,
         ...frames.map((frame) => frame.kind === "list" ? "list" : frame.kind === "item" ? "list-item" : "blockquote"),
       ];
-      return this.inlineContext(paragraphBlock, nestedAncestors);
+      return this.inlineContext(paragraphBlock, nestedAncestors, segmentOrigin);
     };
     const activeInlineRange = mapping.mapRange?.(activeLeaf.from, activeLeaf.to)
       ?? { from: mapping.mapOffset(activeLeaf.from), to: mapping.mapOffset(activeLeaf.to) };
@@ -7377,7 +7387,7 @@ export class MarkdownEngine {
         if (isActive) this.nativeContainerActiveSnapshots.set(block.id, snapshot);
         return snapshot;
       }
-      if (!this.rootParagraphOwnershipSupported()) return undefined;
+      if (!this.nestedParagraphOwnershipSupported()) return undefined;
       let owner = this.nestedParagraphOwners.get(id);
       if (owner) {
         const previousContainerId = this.nestedParagraphOwnerContainers.get(id);
@@ -7539,7 +7549,15 @@ export class MarkdownEngine {
           false,
         ).inline,
         prepareSpanChildren: (text, baseOffset, provisional, ownerId, generation, spanIndex) =>
-          this.rootParagraphSpanChildren(text, baseOffset, provisional, ownerId, generation, spanIndex),
+          this.rootParagraphSpanChildren(
+            text,
+            baseOffset,
+            provisional,
+            ownerId,
+            generation,
+            spanIndex,
+            inlineContextFor(id, paragraphRange, "mixed-content"),
+          ),
         ...(typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters
           ? { counters: this.campaignCounters }
           : {}),
