@@ -420,6 +420,7 @@ export class MarkdownRenderer implements Renderer {
       tables: this.config.plugins?.tables ?? true,
       callouts: this.config.plugins?.callouts ?? false,
       math: this.config.plugins?.math ?? true,
+      softBreaks: this.config.plugins?.softBreaks ?? "preserve",
       formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
       ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
       ...(outputMode !== undefined ? { outputMode } : {}),
@@ -453,6 +454,8 @@ export class MarkdownRenderer implements Renderer {
         ...(this.config.themes ? { themes: this.config.themes } : {}),
         ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
         ...(this.config.html ? { html: this.config.html } : {}),
+        ...(this.config.mathOptions ? { mathOptions: this.config.mathOptions } : {}),
+        ...(this.config.linkDestinations ? { linkDestinations: this.config.linkDestinations } : {}),
       } as WorkerIn);
       this.workerHasContent = initialContent.length > 0;
     } catch (error) {

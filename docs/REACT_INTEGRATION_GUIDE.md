@@ -173,12 +173,14 @@ Cache note:
 | `text` | `string` | Static markdown content. Changing it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Streaming markdown chunks. Use for live updates. |
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. Recommended: `"/workers/markdown-worker.js"`. |
-| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, formatAnticipation?, codeHighlighting? }` |
+| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, softBreaks?: "preserve" \| "hard", formatAnticipation?, codeHighlighting?, outputMode?: "html" \| "tokens" \| "both" }`. Soft breaks default to preserving newlines; `"hard"` converts prose soft line endings to `<br>` without changing code, math, or raw HTML. |
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for recognized restricted source components, separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator supplied when `contentPolicy="trusted-mdx"`. |
 | `components` | `NodePresentations` | Configure native block, inline (`inline:<kind>`), extension, and HTML (`html:<tag>`) presentations with wrappers, headless views, or native props. |
 | `engines.math` | `MathEngine` | Replace the default KaTeX TeX renderer without changing math parsing. |
+| `mathOptions` | `MathOptions` | Set `singleDollar?: "permissive" \| "currency-safe"` to reject currency-like single-dollar spans before math parsing; display math is unaffected. `$skillName$` is admitted as math when its boundaries pass this policy, before host skill-token presentation. |
+| `linkDestinations` | `LinkDestinationOptions` | Set `windowsDrivePaths: "preserve"` to preserve absolute Windows drive/UNC destination backslashes in links, images, and reference definitions; ordinary CommonMark escapes remain decoded. |
 | `prewarmLangs` | `string[]` | Shiki languages to load upfront. |
 | `scheduling` | `object` | Patch scheduler/backpressure knobs. |
 | `managedWorker` | `boolean` | Requires a caller-initialized supplied Worker or caller-accessible factory. Drive document commands yourself or through the ref handle. URL/default sources and `engine="main"` are rejected through `onError`, with no inline fallback. Factory workers terminate on detach; supplied instances remain caller-owned. |

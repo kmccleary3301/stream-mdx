@@ -1,4 +1,5 @@
 import type { MarkdownConfig } from "@lezer/markdown";
+import type { SingleDollarMathMode } from "../types";
 import { reportUnfinishedNativeToken } from "./native-inline-state";
 
 /**
@@ -6,9 +7,9 @@ import { reportUnfinishedNativeToken } from "./native-inline-state";
  * Runs before Escape so backslashes inside math expressions (such as \\ line breaks)
  * are preserved verbatim.
  */
-export function createMathExtension(): MarkdownConfig {
+export function createMathExtension(singleDollar: SingleDollarMathMode = "permissive"): MarkdownConfig {
   return {
-    defineNodes: ["InlineMath", "DisplayMath"],
+    defineNodes: ["InlineMath", "DisplayMath", "RejectedInlineMath"],
     parseInline: [
       {
         name: "Math",
@@ -56,6 +57,18 @@ export function createMathExtension(): MarkdownConfig {
           }
 
           const end = close + delimLen;
+          if (!isDisplay && singleDollar === "currency-safe") {
+            const openingCharacter = cx.char(pos + 1);
+            const closingCharacter = cx.char(close - 1);
+            const openingWhitespace = openingCharacter === 32 || openingCharacter === 9 || openingCharacter === 44;
+            const closingWhitespace = closingCharacter === 32 || closingCharacter === 9 || closingCharacter === 44;
+            const followingCharacter = cx.char(end);
+            const closesBeforeAmount = followingCharacter >= 48 && followingCharacter <= 57;
+            if (openingWhitespace || openingWhitespace !== closingWhitespace || closesBeforeAmount) {
+              return cx.addElement(cx.elt("RejectedInlineMath", pos, end));
+            }
+          }
+
           const nodeName = isDisplay ? "DisplayMath" : "InlineMath";
           return cx.addElement(cx.elt(nodeName, pos, end));
         },

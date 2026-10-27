@@ -1,5 +1,6 @@
 import type { SyntaxNode, Tree } from "@lezer/common";
 import { cleanTitle, cleanUrl } from "./lezer-converter";
+import type { LinkDestinationOptions } from "../types";
 import type { LinkReferenceDefinition } from "./types";
 import type { SourceSnapshot } from "../source-document";
 
@@ -110,7 +111,11 @@ const REFERENCE_FREE_BLOCKS = new Set([
 /**
  * Collects all link reference definitions ([label]: url "title") recursively from a Lezer parse tree.
  */
-export function collectLinkReferences(tree: Tree, content: string | SourceSnapshot): Map<string, LinkReferenceDefinition> {
+export function collectLinkReferences(
+  tree: Tree,
+  content: string | SourceSnapshot,
+  linkDestinations?: LinkDestinationOptions,
+): Map<string, LinkReferenceDefinition> {
   const references = new Map<string, LinkReferenceDefinition>();
 
   tree.iterate({
@@ -139,7 +144,7 @@ export function collectLinkReferences(tree: Tree, content: string | SourceSnapsh
             lastChildTo = Math.max(lastChildTo, child.to);
           } else if (type === "URL") {
             const rawSlice = extractNodeText(child, content);
-            href = cleanUrl(rawSlice);
+            href = cleanUrl(rawSlice, linkDestinations);
             lastChildTo = Math.max(lastChildTo, child.to);
           } else if (type === "LinkTitle") {
             rawTitle = extractNodeText(child, content);

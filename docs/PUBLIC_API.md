@@ -93,8 +93,10 @@ export function Example() {
 | `engine` | `"auto" \| "main" \| "worker"` | Default `"auto"`. Selects automatic (`"auto"`; the default), inline (`"main"`), or dedicated-worker (`"worker"`) execution. See execution modes below. |
 | `managedWorker` | `boolean` | Requires a supplied Worker instance or caller-accessible factory. The caller sends `INIT` and document commands; automatic commands are disabled. URL/default workers and internally created main-thread engines are rejected. Factory workers remain component-owned; supplied instances remain caller-owned. |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
-| `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `lazyTokenization`, and `outputMode` (`"html"`, `"tokens"`, or `"both"`). |
+| `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `softBreaks?: "preserve" \| "hard"` (default `"preserve"`), `emitDiffBlocks`, `outputMode` (`"html"`, `"tokens"`, or `"both"`), and `lazyTokenization`. `"hard"` turns prose soft line endings into `<br>` nodes; code, math, and raw HTML are unchanged. |
 | `themes` | `{ light: string; dark: string }` | Configures light and dark Shiki theme IDs (e.g. `{ light: "min-light", dark: "nord" }`). Changing themes re-initializes the engine. Unknown themes report an INIT error and fall back to GitHub light/dark. |
+| `mathOptions` | `MathOptions` | `singleDollar?: "permissive" \| "currency-safe"` controls parser admission for single-dollar math; defaults to `"permissive"`. Display math is unaffected. |
+| `linkDestinations` | `LinkDestinationOptions` | `windowsDrivePaths?: "commonmark" \| "preserve"` retains backslashes for absolute Windows drive and UNC link, image, and reference-definition destinations when set to `"preserve"`. Other destinations keep CommonMark escape decoding. |
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for restricted source components. Separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator required with `contentPolicy="trusted-mdx"`. |
@@ -121,6 +123,8 @@ export function Example() {
 | `onError` | `(error: Error) => void` | Render-time errors. Updating the callback does not restart the engine or discard streamed content. (Worker runtime errors surface via `error` events on the Worker.) |
 | `className`, `style` | React props forwarded to the root container. |
 
+
+Currency-safe math uses the same source-boundary rules before the parser admits a single-dollar span: opening/closing space, tab, or comma boundaries and a closing dollar immediately followed by a digit leave the span as text. A later unescaped `$` can close a skill-shaped token before any host skill-token presentation; for example, `$skillName$` is math when it satisfies those boundaries. Double-dollar display math always follows the math parser.
 Table-row and table-cell presentations accept only `wrapper` and `props`; headless table customization goes through `components.table.view` with `useTableRows`.
 
 `CodeEngine` has this contract:

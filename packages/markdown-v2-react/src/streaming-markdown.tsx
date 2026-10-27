@@ -24,7 +24,7 @@ import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
 import { DocumentMathMacroScope, DocumentMathMacroScopeContext } from "./components/katex-math";
-import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type InlineComponents, type MathEngine, type MathOptions, type MermaidEngine, type NodePresentations, type RendererConfig, type SyntaxExtensionDescriptor, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type LinkDestinationOptions, type InlineComponents, type MathEngine, type MathOptions, type MermaidEngine, type NodePresentations, type RendererConfig, type SoftBreakMode, type SyntaxExtensionDescriptor, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
 import type { CodeEngine } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
@@ -61,6 +61,7 @@ interface StreamingMarkdownConfigSignature {
   contentComponentKeys: string[];
   syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
+  linkDestinations?: LinkDestinationOptions;
   themes?: { light: string; dark: string };
   mathOptions?: MathOptions;
   codeEngineId?: string;
@@ -88,6 +89,7 @@ export interface StreamingFeatureFlags {
   tables?: boolean;
   callouts?: boolean;
   math?: boolean;
+  softBreaks?: SoftBreakMode;
   formatAnticipation?: FormatAnticipationConfig;
   codeHighlighting?: CodeHighlightingMode;
   outputMode?: CodeHighlightOutputMode;
@@ -189,6 +191,7 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
   syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
+  linkDestinations?: LinkDestinationOptions;
   tableVirtualization?: TableVirtualizationOptions;
   codeVirtualization?: Partial<VirtualizedCodeConfig>;
   urlTransform?: UrlTransform;
@@ -280,6 +283,7 @@ function StreamingMarkdownComponent(
     deferHeavyBlocks,
     syntax,
     html,
+    linkDestinations,
     tableVirtualization,
     codeVirtualization,
     urlTransform,
@@ -323,11 +327,12 @@ function StreamingMarkdownComponent(
         contentComponentKeys: Object.keys(normalizedContentComponents).sort(),
         syntax,
         html,
+        linkDestinations,
         themes: effectiveThemes,
         mathOptions,
         codeEngineId: engines?.code?.id,
       }),
-    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes, mathOptions, engines?.code?.id],
+    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, linkDestinations, effectiveThemes, mathOptions, engines?.code?.id],
   );
   const rendererRef = useRef<{
     renderer: MarkdownRenderer;
@@ -397,6 +402,8 @@ function StreamingMarkdownComponent(
       },
       syntax,
       html,
+      mathOptions,
+      linkDestinations,
     };
     const nextRenderer = new MarkdownRenderer(rendererConfig);
     rendererRef.current = {
