@@ -266,6 +266,7 @@ export interface InlineNodeViewProps {
   readonly node: InlineNode;
   /** Prepared native children; math nodes expose their engine-rendered view here. */
   readonly children?: React.ReactNode;
+  readonly context?: { readonly isStandalone?: boolean };
   readonly metadata: NodeViewMetadata;
   readonly actions: NodeViewActions;
 }
@@ -275,6 +276,7 @@ export interface HtmlNodeViewProps {
   /** Sanitized, URL-transformed native attributes. */
   readonly properties: Readonly<Record<string, unknown>>;
   readonly children?: React.ReactNode;
+  readonly context?: { readonly isStandalone?: boolean };
   readonly metadata: NodeViewMetadata;
   readonly actions: NodeViewActions;
 }

@@ -349,6 +349,8 @@ function withHtmlOwnership(
   return nextMeta;
 }
 
+
+
 /** Own balanced HTML regions across native block boundaries, retaining pending MDX roots. */
 export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string | SourceSnapshot, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean; contentPolicy?: ContentPolicy; contentComponents?: ReadonlyMap<string, RestrictedComponentDescriptor>; syntaxContainers?: readonly ContainerExtensionSpec[] }): Block[] {
   const contentComponents = regionOptions?.contentPolicy === "markdown" || regionOptions?.contentPolicy === "trusted-mdx"
@@ -552,6 +554,34 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     let block = regionOptions?.joinLeafRaws || opensComponent(inputBlock, contentComponents, regionOptions?.mdxComponents === true)
       ? inputBlock
       : recoverHtmlPhysicalSourceRange(inputBlock, content, sourceOffset, options, parseInline);
+    const rawSvg = block.payload.raw ?? "";
+    const svgComplete = /<\/svg\s*>\s*$/i.test(rawSvg);
+    if (
+      options?.mode !== "literal" &&
+      options?.standaloneSvg === "code" &&
+      (block.type === "html" || block.type === "paragraph") &&
+      region.length === 0 &&
+      stack.length === 0 &&
+      containerStack.length === 0 &&
+      /^\s*<svg(?:\s|>)/i.test(rawSvg)
+    ) {
+      const meta: NonNullable<Block["payload"]["meta"]> = {
+        ...block.payload.meta,
+        code: rawSvg,
+        info: "svg",
+        lang: "svg",
+        sourceKind: "raw-svg",
+        sourceComplete: svgComplete,
+      };
+      delete meta.htmlTree;
+      delete meta.htmlOwnership;
+      delete meta.htmlParagraphTree;
+      delete meta.sanitized;
+      const payload = { ...block.payload, meta };
+      delete payload.sanitizedHtml;
+      result.push({ ...block, type: "code", payload });
+      continue;
+    }
     if (block.type !== "code" && contentComponents && syntaxContainers.length > 0) {
       scanRegisteredContainerSource(block.payload.raw, syntaxContainers, contentComponents, parser, {
         openStack: containerStack,
@@ -560,7 +590,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         insideListItem: block.type === "list",
       });
     }
-    if (block.type !== "code") {
+    if (block.type !== "code" && options?.mode !== "literal") {
       if (region.length > 0 || block.type === "html") {
         applyHtmlTagBalance(
           block.payload.raw,

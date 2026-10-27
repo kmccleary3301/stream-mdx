@@ -6,12 +6,14 @@ import React, { act } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
-import type { Block, HtmlOptions, SyntaxRuleSpec, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type { Block, CodeNodeHandle, HtmlOptions, SyntaxRuleSpec, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
+import { useCodeBlock } from "../src/renderer/code-handle-hooks";
 import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore } from "../src/server";
-import type { RendererStore } from "../src/renderer/store";
 import { normalizeHtmlSemantics } from "../../../tests/conformance/normalizer.mts";
+import type { HtmlNodeViewProps, InlineNodeViewProps } from "../src/types";
+import type { RendererStore } from "../src/renderer/store";
 
 const globalDescriptors = new Map(["window", "document", "DOMParser", "Node", "Element", "HTMLElement", "IS_REACT_ACT_ENVIRONMENT"]
   .map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const));
@@ -57,6 +59,18 @@ async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "IN
   for (const char of text) worker.postMessage({ type: "APPEND", text: char });
   worker.postMessage({ type: "FINALIZE" });
   return promise;
+}
+async function staticAndStreamDocuments(text: string, html: HtmlOptions): Promise<readonly [Document, Document]> {
+  const workerConfig = { ...init, html };
+  const compiled = await compileMarkdownSnapshotDirect({ text, init: workerConfig });
+  const store = await streamed(text, { html });
+  const staticMarkup = render(compiled.blocks);
+  const streamingMarkup = render([], undefined, store);
+  assert.equal(normalizeHtmlSemantics(streamingMarkup), normalizeHtmlSemantics(staticMarkup));
+  return [
+    new JSDOM(staticMarkup).window.document,
+    new JSDOM(streamingMarkup).window.document,
+  ];
 }
 
 const examples = JSON.parse(await fs.readFile(new URL("../../../tests/conformance/fixtures/commonmark-spec-0.31.2.json", import.meta.url), "utf8")) as Array<{ number: number; markdown: string; html: string }>;
@@ -312,6 +326,211 @@ for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
     assert.equal(document.querySelector("p")?.textContent, "Code {:js}{:js} with HTML and {outside} <InlineChip /> link tail.");
   }
 }
+const unmatchedAnchorHtml: HtmlOptions = {
+  unmatchedAnchors: "literal-bare",
+  allowedTags: { details: [], summary: [] },
+};
+for (const token of ["<A>", "<a>", "<a >", "<a/>", "<A/>", "<a />"]) {
+  const source = `- **"From ${token}"** appears in the header.\n\n- **Tests:** cover inheritance.\n\nThe deferred move continues on B.\n\nSee <a href="https://example.com">the link</a>.`;
+  for (const document of await staticAndStreamDocuments(source, unmatchedAnchorHtml)) {
+    assert.equal(document.querySelector("strong")?.textContent, `"From ${token}"`);
+    assert.deepEqual([...document.querySelectorAll("a")].map((link) => link.textContent), ["the link"]);
+    assert.equal(document.querySelectorAll("li").length, 2);
+    assert.ok([...document.querySelectorAll("p")].some((paragraph) => paragraph.textContent === "The deferred move continues on B."));
+  }
+}
+for (const closing of ["</a>  ", "<div>more</div>\n</a>"]) {
+  const source = `See <a>label\n\n${closing}\n\nfinish`;
+  for (const document of await staticAndStreamDocuments(source, unmatchedAnchorHtml)) {
+    assert.equal(document.querySelector("p")?.textContent, "See <a>label");
+    assert.equal(document.querySelectorAll("a").length, 0);
+  }
+}
+for (const document of await staticAndStreamDocuments(
+  "See <a>label<script><!-- </script> --></a>",
+  unmatchedAnchorHtml,
+)) {
+  assert.equal(document.querySelector("p")?.textContent, "See <a>label -->");
+}
+for (const html of ["<!-- </a> -->", '<div title="</a>">more</div>', '<script>"</a>"</script>']) {
+  for (const document of await staticAndStreamDocuments(`Before <A>.\n\n${html}\n\nAfter.`, unmatchedAnchorHtml)) {
+    assert.equal(document.querySelector("p")?.textContent, "Before <A>.");
+    assert.equal(document.querySelectorAll("a").length, 0);
+  }
+}
+const pairedAnchorSource = 'Bare <a>label</a>, <a id="section"></a>, `<A>`, and [docs](https://example.com).\n\n<details><summary>More</summary>Details</details>';
+for (const document of await staticAndStreamDocuments(pairedAnchorSource, unmatchedAnchorHtml)) {
+  assert.deepEqual([...document.querySelectorAll("a")].map((link) => link.textContent), ["label", "", "docs"]);
+  assert.equal(document.querySelector("code")?.textContent, "<A>");
+  assert.ok(document.querySelector("details")?.textContent?.includes("More"));
+}
+
+const literalHtml: HtmlOptions = { mode: "literal" };
+for (const { source, raw } of [
+  {
+    source: "before <custom-widget value='2'>**not bold**</custom-widget> after **bold**",
+    raw: "<custom-widget value='2'>**not bold**</custom-widget>",
+  },
+  {
+    source: "before <script>alert('x')</script> after **markdown**",
+    raw: "<script>alert('x')</script>",
+  },
+  { source: 'before <x-widget data-test="unfinished', raw: '<x-widget data-test="unfinished' },
+  { source: "<svg><circle /></svg>\n\n**outside svg**", raw: "<svg><circle /></svg>" },
+]) {
+  for (const document of await staticAndStreamDocuments(source, literalHtml)) {
+    assert.ok(document.body.textContent?.includes(raw), raw);
+    assert.equal(document.querySelector("script,svg,custom-widget"), null);
+  }
+}
+for (const document of await staticAndStreamDocuments(
+  "**before** <span>**literal**</span> and **after**.\n\n<div>**block literal**</div>\n\n**outside**",
+  literalHtml,
+)) {
+  assert.deepEqual([...document.querySelectorAll("strong")].map((node) => node.textContent), ["before", "after", "outside"]);
+  assert.ok(document.body.textContent?.includes("<span>**literal**</span>"));
+  assert.ok(document.body.textContent?.includes("<div>**block literal**</div>"));
+}
+
+const htmlProtocolPolicy: HtmlOptions = {
+  sanitization: {
+    tagNames: ["p", "a", "img"],
+    attributes: { "*": ["title"], a: ["href"], img: ["src", "alt", "title"] },
+    protocols: {
+      href: ["file", "t3-citation", "t3-context", "t3-thread", "https"],
+      src: ["file", "t3-context"],
+    },
+    stripAttributes: ["title"],
+  },
+};
+const protocolSource = '[file](file:///tmp/file) [citation](t3-citation://v1/item) [mail](mailto:user@example.com) ![context](t3-context://v1/image) <a href="t3-thread://v1/1">thread</a> <a href="javascript:bad()">unsafe</a> <img src="file:///tmp/raw.png" title="raw image">';
+const protocolCompiled = await compileMarkdownSnapshotDirect({ text: protocolSource, init: { ...init, html: htmlProtocolPolicy } });
+const protocolStore = await streamed(protocolSource, { html: htmlProtocolPolicy });
+const protocolRegistry = new ComponentRegistry({ html: htmlProtocolPolicy });
+for (const markup of [
+  render(protocolCompiled.blocks, protocolRegistry),
+  render([], protocolRegistry, protocolStore),
+]) {
+  const document = new JSDOM(markup).window.document;
+  assert.ok(document.querySelector('a[href="file:///tmp/file"]'));
+  assert.ok(document.querySelector('a[href="t3-citation://v1/item"]'));
+  assert.ok(document.querySelector('a[href="t3-thread://v1/1"]'));
+  assert.ok([...document.querySelectorAll("a")].some((link) => link.textContent === "mail" && !link.hasAttribute("href")));
+  assert.ok(document.querySelector('img[src="t3-context://v1/image"]'));
+  assert.ok(document.querySelector('img[src="file:///tmp/raw.png"][data-markdown-title="raw image"]'));
+  assert.equal(document.querySelector('a[href^="javascript:"]'), null);
+}
+
+function MarkdownImageView({ node, context }: InlineNodeViewProps): React.ReactElement | null {
+  if (node.kind !== "image") return null;
+  return <img data-image-presentation="markdown" data-standalone={String(context?.isStandalone)} data-src={node.src} alt={node.alt ?? ""} />;
+}
+
+function HtmlImageView({ properties, context }: HtmlNodeViewProps): React.ReactElement {
+  return (
+    <img
+      data-image-presentation="html"
+      data-standalone={String(context?.isStandalone)}
+      data-src={typeof properties.src === "string" ? properties.src : ""}
+      data-width={typeof properties.width === "string" ? properties.width : ""}
+      data-height={typeof properties.height === "string" ? properties.height : ""}
+      data-id={typeof properties.id === "string" ? properties.id : ""}
+      data-align={typeof properties.align === "string" ? properties.align : ""}
+      data-title={typeof properties["data-markdown-title"] === "string" ? properties["data-markdown-title"] : ""}
+    />
+  );
+}
+
+const standaloneHtml: HtmlOptions = {
+  sanitization: {
+    tagNames: ["div", "figure", "a", "strong", "em", "img"],
+    attributes: { "*": [], a: ["href"], img: ["src", "alt", "title", "width", "height", "id", "align"] },
+    protocols: { href: ["http", "https"], src: ["http", "https"] },
+    stripAttributes: ["title"],
+  },
+};
+const standaloneSource = [
+  "![paragraph](/paragraph)",
+  "",
+  "**![strong](/strong)**",
+  "",
+  "*![emphasis](/emphasis)*",
+  "",
+  "[![link](/link)](/target)",
+  "",
+  "- ![list](/list)",
+  "",
+  "> ![quote](/quote)",
+  "",
+  "| ![header](/header) |",
+  "| --- |",
+  "| ![cell](/cell) |",
+  "",
+  '<div><img src="/html-div" width="31" height="17" id="photo" align="center" title="div title"></div>',
+  "",
+  '<figure><a href="/wrapper"><strong><em><img src="/html-figure" width="41" height="27" title="figure title"></em></strong></a></figure>',
+  "",
+  "![sibling](/sibling) text",
+].join("\n");
+const standaloneCompiled = await compileMarkdownSnapshotDirect({ text: standaloneSource, init: { ...init, html: standaloneHtml } });
+const standaloneStore = await streamed(standaloneSource, { html: standaloneHtml });
+const standaloneRegistry = new ComponentRegistry({
+  html: standaloneHtml,
+  components: {
+    "inline:image": { view: MarkdownImageView },
+    "html:img": { view: HtmlImageView },
+  },
+});
+for (const markup of [
+  render(standaloneCompiled.blocks, standaloneRegistry),
+  render([], standaloneRegistry, standaloneStore),
+]) {
+  const document = new JSDOM(markup).window.document;
+  for (const path of ["/paragraph", "/strong", "/emphasis", "/link", "/list", "/quote", "/header", "/cell", "/html-div", "/html-figure"]) {
+    assert.equal(document.querySelector(`img[data-src="${path}"]`)?.getAttribute("data-standalone"), "true", path);
+  }
+  assert.equal(document.querySelector('img[data-src="/sibling"]')?.getAttribute("data-standalone"), "false");
+  assert.equal(document.querySelector('img[data-src="/html-div"]')?.getAttribute("data-width"), "31");
+  assert.equal(document.querySelector('img[data-src="/html-div"]')?.getAttribute("data-height"), "17");
+  assert.equal(document.querySelector('img[data-src="/html-div"]')?.getAttribute("data-title"), "div title");
+  assert.equal(document.querySelector('img[data-src="/html-div"]')?.getAttribute("data-id"), "user-content-photo");
+  assert.equal(document.querySelector('img[data-src="/html-div"]')?.getAttribute("data-align"), "center");
+  assert.equal(document.querySelector('img[data-src="/html-figure"]')?.getAttribute("data-title"), "figure title");
+}
+
+function RawSvgCodeView({ handle }: { readonly handle: CodeNodeHandle }): React.ReactElement {
+  const metadata = useCodeBlock(handle);
+  return (
+    <pre data-source-kind={metadata.sourceKind} data-source-complete={String(metadata.sourceComplete)}>
+      {handle.readSource()}
+    </pre>
+  );
+}
+
+const svgOptions: HtmlOptions = { standaloneSvg: "code" };
+const svgRegistry = new ComponentRegistry();
+svgRegistry.setNodePresentations({ code: { view: RawSvgCodeView } });
+for (const [svgSource, complete] of [
+  ['<svg onload="raw"><script>keep source</script><circle /></svg>', true],
+  ['<svg onload="raw"><circle />', false],
+] as const) {
+  const svgCompiled = await compileMarkdownSnapshotDirect({ text: svgSource, init: { ...init, html: svgOptions } });
+  const svgStore = await streamed(svgSource, { html: svgOptions });
+  const codeBlock = svgCompiled.blocks.find((block) => block.type === "code");
+  assert.equal(codeBlock?.payload.meta?.sourceKind, "raw-svg");
+  assert.equal(codeBlock?.payload.meta?.sourceComplete, complete);
+  for (const markup of [
+    render(svgCompiled.blocks, svgRegistry),
+    render([], svgRegistry, svgStore),
+  ]) {
+    const document = new JSDOM(markup).window.document;
+    const codeView = document.querySelector("pre[data-source-kind='raw-svg']");
+    assert.equal(codeView?.getAttribute("data-source-complete"), String(complete));
+    assert.equal(codeView?.textContent, svgSource);
+    assert.equal(document.querySelector("svg,script"), null);
+  }
+}
+
 for (const [key, descriptor] of globalDescriptors) {
   if (descriptor) Object.defineProperty(globalThis, key, descriptor);
   else Reflect.deleteProperty(globalThis, key);

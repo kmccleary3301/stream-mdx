@@ -6,8 +6,8 @@ import type { ContentComponentsMap } from "./content-components";
 
 export type OwnedHtmlRenderContext = {
   elements: HtmlElements;
-  renderBlock: (block: Block, parentTagName?: string) => React.ReactNode;
-  renderInline: (nodes: InlineNode[], parentTagName?: string) => React.ReactNode;
+  renderBlock: (block: Block, parentTagName?: string, isStandalone?: boolean) => React.ReactNode;
+  renderInline: (nodes: InlineNode[], parentTagName?: string, isStandalone?: boolean) => React.ReactNode;
   inlineComponents: InlineComponents;
   urlTransform?: UrlTransform;
   isAutolinkProtocolDisabled: (href?: string) => boolean;
@@ -18,6 +18,7 @@ export type OwnedHtmlRenderContext = {
     renderChildren?: () => React.ReactNode,
   ) => React.ReactNode;
   parentTagName?: string;
+  isStandalone?: boolean;
   contentComponents?: ContentComponentsMap;
   renderParagraph?: (children: React.ReactNode) => React.ReactNode;
   renderInlinePresentation?: (
@@ -25,6 +26,7 @@ export type OwnedHtmlRenderContext = {
     nativeView: React.ReactNode,
     key: React.Key,
     children?: React.ReactNode,
+    isStandalone?: boolean,
   ) => React.ReactNode;
   renderHtmlPresentation?: (
     tagName: string,
@@ -32,6 +34,7 @@ export type OwnedHtmlRenderContext = {
     nativeView: React.ReactNode,
     children: React.ReactNode,
     key: React.Key,
+    isStandalone?: boolean,
   ) => React.ReactNode;
   renderComponentPresentation?: RenderComponentPresentation;
 };
@@ -42,7 +45,7 @@ export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRend
     context.elements,
     context.renderBlock,
     context.renderInline,
-    (node, children, parentTagName, key) => {
+    (node, children, parentTagName, key, isStandalone) => {
       if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
         const component = context.inlineComponents[node.kind];
         const renderElement = () => {
@@ -65,7 +68,7 @@ export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRend
               : React.createElement(tag, { key }, children);
           }
           return context.renderInlinePresentation
-            ? context.renderInlinePresentation(node, direct, key)
+            ? context.renderInlinePresentation(node, direct, key, undefined, isStandalone)
             : direct;
         };
         if (!context.filterElement) return renderElement();
@@ -86,10 +89,10 @@ export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRend
           ? React.createElement(component, { ...node.attrs, key, name: node.name, attrs: node.attrs, raw: node.raw, children })
           : node.raw;
         return context.renderInlinePresentation
-          ? context.renderInlinePresentation(node, direct, key, children)
+          ? context.renderInlinePresentation(node, direct, key, children, isStandalone)
           : direct;
       }
-      return context.renderInline([node], parentTagName);
+      return context.renderInline([node], parentTagName, isStandalone);
     },
     context.renderParagraph,
     context.urlTransform,
@@ -99,5 +102,6 @@ export function renderOwnedHtmlTree(tree: HtmlTreeNode[], context: OwnedHtmlRend
     context.renderHtmlPresentation,
     undefined,
     context.renderComponentPresentation,
+    context.isStandalone,
   );
 }

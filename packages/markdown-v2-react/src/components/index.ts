@@ -14,8 +14,9 @@ export {
   type RenderInlineAnimationContext,
 } from "../animation";
 export { defaultUrlTransform, type UrlTransform, type UrlTransformContext } from "@stream-mdx/core";
-import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
-import type { UrlTransform } from "@stream-mdx/core";
+import { InlineParser, createProtocolPolicyUrlTransform, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
+import type { HtmlOptions, UrlTransform } from "@stream-mdx/core";
+import { containsSingleImage, isStandaloneImageContainer } from "./inline-image-context";
 import type { ContentComponentsMap } from "./content-components";
 import type {
   Block,
@@ -92,6 +93,7 @@ function presentationText(node: React.ReactNode): string {
 
 type InlinePresentationContext = RenderInlineAnimationContext & {
   readonly sourceGuard?: () => void;
+  readonly isStandalone?: boolean;
 };
 function splitAnimationTextSegments(
   text: string,
@@ -117,6 +119,7 @@ function splitAnimationTextSegments(
 
 
 
+
 /**
  * Render inline nodes to React elements
  */
@@ -128,14 +131,17 @@ export function renderInlineNodes(
   parentTagName?: string,
   animationContext?: InlinePresentationContext,
 ): React.ReactNode {
+  const standaloneContext = animationContext?.isStandalone ??
+    Boolean(isStandaloneImageContainer(parentTagName) && containsSingleImage(nodes));
+  const parentContext = standaloneContext ? { ...animationContext, isStandalone: true } : animationContext;
   return nodes.map((node, index) => {
     const key = `${node.kind}-${index}`;
-    const itemChildContext = animationContext?.animated && !animationContext.isFinalized
+    const itemChildContext = parentContext?.animated && !parentContext.isFinalized
       ? {
-          ...animationContext,
-          nodeKeyPrefix: animationContext.nodeKeyPrefix ? `${animationContext.nodeKeyPrefix}:${key}` : key,
+          ...parentContext,
+          nodeKeyPrefix: parentContext.nodeKeyPrefix ? `${parentContext.nodeKeyPrefix}:${key}` : key,
         }
-      : animationContext;
+      : parentContext;
     const presentInline = (nativeView: React.ReactNode, renderedChildren?: React.ReactNode) => {
       if (!registry) {
         return nativeView;
@@ -410,7 +416,8 @@ export function renderInlineNodes(
                     presentationKey,
                     animationContext?.nodeKeyPrefix,
                     animationContext?.isFinalized,
-                  animationContext?.sourceGuard,
+                    animationContext?.sourceGuard,
+                    itemChildContext?.isStandalone === true,
                   )
               : undefined,
             (tagName, properties, htmlChildren, presentationKey) =>
@@ -443,6 +450,7 @@ export function renderInlineNodes(
                   animationContext?.nodeKeyPrefix,
                   animationContext?.isFinalized,
                   animationContext?.sourceGuard,
+                  itemChildContext?.isStandalone === true,
                 )
             : undefined,
         );
@@ -483,24 +491,22 @@ export const defaultInlineComponents: InlineComponents = {
     ),
 
   link: ({ href, title, children }) => {
-    const safeHref = href == null ? undefined : defaultUrlTransform(href, "href", { source: "markdown" });
     return React.createElement(
       "a",
       {
-        ...(safeHref != null ? { href: safeHref } : {}),
+        ...(href != null ? { href } : {}),
         title,
         className: "markdown-link",
-        target: safeHref?.startsWith("http") ? "_blank" : undefined,
-        rel: safeHref?.startsWith("http") ? "noopener noreferrer" : undefined,
+        target: href?.startsWith("http") ? "_blank" : undefined,
+        rel: href?.startsWith("http") ? "noopener noreferrer" : undefined,
       },
       children,
     );
   },
 
   image: ({ src, alt, title }) => {
-    const safeSrc = defaultUrlTransform(src ?? "", "src", { source: "markdown" });
     return React.createElement("img", {
-      ...(safeSrc != null ? { src: safeSrc } : {}),
+      ...(src != null ? { src } : {}),
       alt,
       title,
       className: "markdown-image",
@@ -566,11 +572,11 @@ type DefaultBlockComponents = {
     children?: React.ReactNode;
   }>;
   blockquote: React.FC<{ inlines: InlineNode[]; renderedContent?: React.ReactNode }>;
-  list: React.FC<{ ordered: boolean; items: InlineNode[][] }>;
+  list: React.FC<{ ordered: boolean; items: InlineNode[][]; renderInline?: (nodes: InlineNode[], parentTagName: string) => React.ReactNode }>;
   html: React.FC<{ __trustedHtml: TrustedHTML | string; elements?: Record<string, GenericComponent>; isSanitized?: boolean; literalTagContent?: string[]; children?: React.ReactNode }>;
   mdx: React.FC<{ raw?: string; meta?: Record<string, unknown> }>;
   hr: React.FC<React.HTMLAttributes<HTMLHRElement>>;
-  table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;
+  table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements>; renderInline?: (nodes: InlineNode[], parentTagName: string) => React.ReactNode }>;
   footnotes: React.FC<{ items: FootnoteItem[] }>;
   "footnote-def": React.FC;
   callout: React.FC<{ kind?: string; inlines?: InlineNode[] }>;
@@ -775,7 +781,7 @@ const defaultBlockComponents: DefaultBlockComponents = {
     ),
   hr: (props: React.HTMLAttributes<HTMLHRElement>) => React.createElement("hr", props),
 
-  list: ({ ordered, items }) => {
+  list: ({ ordered, items, renderInline }) => {
     if (items.length === 0) {
       return null;
     }
@@ -794,7 +800,7 @@ const defaultBlockComponents: DefaultBlockComponents = {
           "data-counter-text": ordered ? `${index + 1}.` : undefined,
           "data-list-depth": 0,
         },
-        renderInlineNodes(item, defaultInlineComponents),
+        renderInline ? renderInline(item, "li") : renderInlineNodes(item, defaultInlineComponents, undefined, undefined, "li"),
       ),
     );
 
@@ -901,7 +907,14 @@ const defaultBlockComponents: DefaultBlockComponents = {
     rows,
     align,
     elements,
-  }: { header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }) => {
+    renderInline,
+  }: {
+    header?: InlineNode[][];
+    rows: InlineNode[][][];
+    align?: Array<"left" | "center" | "right" | null>;
+    elements?: Partial<TableElements>;
+    renderInline?: (nodes: InlineNode[], parentTagName: string) => React.ReactNode;
+  }) => {
     const El = getDefaultTableElements(elements);
     const renderCells = (cells: InlineNode[][], tag: "th" | "td", rowIdx: number) =>
       cells.map((cell, i) => {
@@ -915,7 +928,7 @@ const defaultBlockComponents: DefaultBlockComponents = {
             // Also pass align attribute so CSS selectors like [&[align=center]] can be used by consumers
             align: columnAlign ?? undefined,
           },
-          renderInlineNodes(cell, defaultInlineComponents),
+          renderInline ? renderInline(cell, tag) : renderInlineNodes(cell, defaultInlineComponents, undefined, undefined, tag),
         );
       });
 
@@ -977,14 +990,15 @@ export class ComponentRegistry {
     contentComponents?: ContentComponentsMap;
     components?: NodePresentations;
     engines?: { math?: MathEngine; mermaid?: MermaidEngine };
+    html?: HtmlOptions;
   } & ElementFilterOptions) {
     this.mathEngine = options?.engines?.math;
     this.mermaidEngine = options?.engines?.mermaid;
     this.inlineComponents = { ...defaultInlineComponents };
     this.htmlElements = getDefaultHtmlElements();
-    if (options?.urlTransform) {
-      this.urlTransform = options.urlTransform;
-    }
+    this.urlTransform = options?.html?.sanitization
+      ? createProtocolPolicyUrlTransform(options.html.sanitization.protocols, options.urlTransform)
+      : options?.urlTransform;
     if (options?.contentComponents) {
       this.contentComponents = options.contentComponents;
     }
@@ -1257,7 +1271,13 @@ export class ComponentRegistry {
       key,
       metadata,
       actions,
-      viewProps: { node: presentedNode, children, metadata, actions },
+      viewProps: {
+        node: presentedNode,
+        children,
+        metadata,
+        actions,
+        ...(node.kind === "image" ? { context: { isStandalone: context?.isStandalone ?? false } } : {}),
+      },
     });
   }
 
@@ -1270,6 +1290,7 @@ export class ComponentRegistry {
     ownerId?: string,
     isFinalized = false,
     sourceGuard?: () => void,
+    isStandalone = false,
   ): React.ReactNode {
     const keyName = `html:${tagName.toLowerCase()}` as `html:${string}`;
     const presentation = this.getNodePresentation(keyName);
@@ -1298,7 +1319,14 @@ export class ComponentRegistry {
       key,
       metadata,
       actions,
-      viewProps: { tagName: tagName.toLowerCase(), properties: viewProperties, children, metadata, actions },
+      viewProps: {
+        tagName: tagName.toLowerCase(),
+        properties: viewProperties,
+        children,
+        metadata,
+        actions,
+        context: { isStandalone },
+      },
     });
   }
   renderComponentPresentation(
@@ -1419,37 +1447,53 @@ export class ComponentRegistry {
 
   renderHtmlTree(
     tree: HtmlTreeNode[],
-    renderBlock: (block: Block, parentTagName?: string) => React.ReactNode = (block) => this.renderBlock(block),
+    renderBlock: (block: Block, parentTagName?: string, isStandalone?: boolean) => React.ReactNode = (block, _parentTagName, isStandalone) => this.renderBlock(block, undefined, undefined, isStandalone),
     paragraph?: Block,
     parentTagName?: string,
     renderParagraphPresentation?: (nativeView: React.ReactNode) => React.ReactNode,
     sourceGuard?: () => void,
+    isStandalone = false,
   ): React.ReactNode {
     return renderOwnedHtmlTree(
       tree,
-      this.ownedHtmlRenderContext(renderBlock, paragraph, parentTagName, undefined, renderParagraphPresentation, sourceGuard),
+      this.ownedHtmlRenderContext(renderBlock, paragraph, parentTagName, undefined, renderParagraphPresentation, sourceGuard, isStandalone),
     );
   }
 
   private ownedHtmlRenderContext(
-    renderBlock: (block: Block, parentTagName?: string) => React.ReactNode = (block) => this.renderBlock(block),
+    renderBlock: (block: Block, parentTagName?: string, isStandalone?: boolean) => React.ReactNode = (block, _parentTagName, isStandalone) => this.renderBlock(block, undefined, undefined, isStandalone),
     paragraph?: Block,
     parentTagName?: string,
     inlineContext?: InlinePresentationContext,
     renderParagraphPresentation?: (nativeView: React.ReactNode) => React.ReactNode,
     sourceGuard?: () => void,
+    isStandalone = false,
   ): OwnedHtmlRenderContext {
-    const renderContext = inlineContext ?? (paragraph
+    const inheritedContext = inlineContext ?? (paragraph
       ? this.getRenderInlineContext(paragraph.isFinalized, paragraph.id, sourceGuard)
       : undefined);
+    const renderContext = isStandalone ? { ...inheritedContext, isStandalone: true } : inheritedContext;
     return {
       elements: this.htmlElements,
       renderBlock,
-      renderInline: (nodes, parentTagName) =>
-        renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName, renderContext),
-      renderInlinePresentation: (node, nativeView, key, children) =>
-        this.renderInlinePresentation(node, nativeView, key, renderContext, children),
-      renderHtmlPresentation: (tagName, properties, nativeView, children, key) =>
+      renderInline: (nodes, parentTagName, isStandalone) =>
+        renderInlineNodes(
+          nodes,
+          this.inlineComponents,
+          this.urlTransform,
+          this,
+          parentTagName,
+          isStandalone ? { ...renderContext, isStandalone: true } : renderContext,
+        ),
+      renderInlinePresentation: (node, nativeView, key, children, isStandalone) =>
+        this.renderInlinePresentation(
+          node,
+          nativeView,
+          key,
+          isStandalone ? { ...renderContext, isStandalone: true } : renderContext,
+          children,
+        ),
+      renderHtmlPresentation: (tagName, properties, nativeView, children, key, isStandalone) =>
         this.renderHtmlPresentation(
           tagName,
           properties,
@@ -1459,6 +1503,7 @@ export class ComponentRegistry {
           renderContext?.nodeKeyPrefix ?? String(paragraph?.id ?? parentTagName ?? "html"),
           renderContext?.isFinalized ?? paragraph?.isFinalized ?? false,
           renderContext?.sourceGuard,
+          isStandalone,
         ),
       renderComponentPresentation: (name, nativeView, children, key, status, rawSource) =>
         this.renderComponentPresentation(
@@ -1479,6 +1524,7 @@ export class ComponentRegistry {
         : undefined,
       parentTagName,
       contentComponents: this.contentComponents,
+      isStandalone,
       renderParagraph: paragraph ? (children) => {
         const nativeView = React.createElement(this.getBlockComponent("paragraph"), {
           ...this.getBlockProps(paragraph, sourceGuard), children,
@@ -1537,6 +1583,7 @@ export class ComponentRegistry {
     block: Block,
     renderPresentation?: (nativeView: React.ReactNode) => React.ReactNode,
     sourceGuard?: () => void,
+    isStandalone = false,
   ): React.ReactElement {
     const meta = block.payload.meta;
     const sourceOwnedHtmlTree = meta?.htmlOwnership === true && Array.isArray(meta.htmlTree) ? meta.htmlTree : undefined;
@@ -1544,18 +1591,18 @@ export class ComponentRegistry {
       return React.createElement(
         React.Fragment,
         {},
-        this.renderHtmlTree(sourceOwnedHtmlTree, undefined, block, undefined, renderPresentation, sourceGuard),
+        this.renderHtmlTree(sourceOwnedHtmlTree, undefined, block, undefined, renderPresentation, sourceGuard, isStandalone),
       );
     }
     if (block.type === "paragraph" && meta?.htmlParagraphTree) {
       return React.createElement(
         React.Fragment,
         {},
-        this.renderHtmlTree(meta.htmlParagraphTree, undefined, block, undefined, renderPresentation, sourceGuard),
+        this.renderHtmlTree(meta.htmlParagraphTree, undefined, block, undefined, renderPresentation, sourceGuard, isStandalone),
       );
     }
     const Component = this.getBlockComponent(block.type);
-    const props = this.getBlockProps(block, sourceGuard);
+    const props = this.getBlockProps(block, sourceGuard, isStandalone);
     const paragraphGroups = block.type === "paragraph" &&
       Array.isArray(block.payload.meta?.mixedSegments) && Array.isArray(props.children)
       ? props.children as React.ReactNode[]
@@ -1729,8 +1776,9 @@ export class ComponentRegistry {
   /**
    * Get props for a block based on its type
    */
-  private getBlockProps(block: Block, sourceGuard?: () => void): Record<string, unknown> {
-    const animCtx = this.getRenderInlineContext(block.isFinalized, block.id, sourceGuard);
+  private getBlockProps(block: Block, sourceGuard?: () => void, isStandalone = false): Record<string, unknown> {
+    const baseAnimCtx = this.getRenderInlineContext(block.isFinalized, block.id, sourceGuard);
+    const animCtx = isStandalone ? { ...baseAnimCtx, isStandalone: true } : baseAnimCtx;
     switch (block.type) {
       case "heading": {
         const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
@@ -1797,6 +1845,8 @@ export class ComponentRegistry {
         return {
           ordered: Boolean(block.payload.meta?.ordered),
           items,
+          renderInline: (nodes: InlineNode[], parentTagName: string) =>
+            renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName, animCtx),
         };
       }
 
@@ -1833,6 +1883,8 @@ export class ComponentRegistry {
           rows,
           align,
           elements: this.tableElements,
+          renderInline: (nodes: InlineNode[], parentTagName: string) =>
+            renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName, animCtx),
         };
       }
 

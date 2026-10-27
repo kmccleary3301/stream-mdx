@@ -223,9 +223,28 @@ export interface SyntaxExtensionDescriptor {
   readonly containers?: readonly ContainerExtensionSpec[];
 }
 
+export interface HtmlSanitizePolicy {
+  /** Exact raw HTML tag allowlist; omitting it retains the built-in schema. */
+  tagNames?: string[];
+  /** Attribute allowlist keyed by tag name; "*" applies globally. */
+  attributes?: Record<string, string[]>;
+  /** Protocol allowlists for URL-valued attributes; each supplied list replaces that attribute's defaults. */
+  protocols?: { href?: string[]; src?: string[] };
+  /** Attribute names to remove from every sanitized element. */
+  stripAttributes?: string[];
+}
+
 export interface HtmlOptions {
+  /** Raw HTML is sanitized and rendered by default. Literal mode renders authored markup as text. */
+  mode?: "sanitize" | "literal";
   allowedTags?: Record<string, string[]>;
   literalTagContent?: string[];
+  /** Serializable worker-side sanitizer policy. */
+  sanitization?: HtmlSanitizePolicy;
+  /** Preserve unmatched bare anchor placeholders as literal text. */
+  unmatchedAnchors?: "native" | "literal-bare";
+  /** Route standalone SVG blocks to the code presentation instead of HTML. */
+  standaloneSvg?: "html" | "code";
 }
 
 export type TokenStyle = {
@@ -461,6 +480,8 @@ export interface CodeBlockSourceMetadata {
   readonly completeLineCount: number;
   readonly lineCount: number;
   readonly sourceRange: { readonly from: number; readonly to: number };
+  readonly sourceKind?: "raw-svg";
+  readonly sourceComplete?: boolean;
   readonly diffStatus?: CodeDiffStatus;
 }
 

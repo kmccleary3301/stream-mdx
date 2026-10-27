@@ -91,12 +91,54 @@ export type RenderComponentPresentation = (
   rawSource?: string,
 ) => React.ReactNode;
 
+const STANDALONE_HTML_CONTAINERS: Record<string, true> = {
+  p: true,
+  div: true,
+  li: true,
+  td: true,
+  th: true,
+  figure: true,
+  blockquote: true,
+};
+
+function inlineContainsSingleImage(nodes: readonly InlineNode[]): boolean {
+  let imageCount = 0;
+  let valid = true;
+  const visit = (items: readonly InlineNode[]) => {
+    for (const item of items) {
+      if (item.kind === "image") imageCount += 1;
+      else if (item.kind === "text" && item.text.trim() === "") continue;
+      else if (item.kind === "strong" || item.kind === "em" || item.kind === "link") visit(item.children);
+      else if (item.kind === "html" && ["a", "strong", "em"].includes(item.tagName?.toLowerCase() ?? "")) visit(item.children ?? []);
+      else valid = false;
+    }
+  };
+  visit(nodes);
+  return valid && imageCount === 1;
+}
+
+function treeContainsSingleImage(nodes: readonly HtmlTreeNode[]): boolean {
+  const content = nodes.filter((node) => node.kind !== "text" || node.inline !== undefined || node.text.trim() !== "");
+  if (content.length !== 1) return false;
+  const node = content[0];
+  if (node.kind === "element") {
+    const tag = node.tagName.toLowerCase();
+    return tag === "img" || (["a", "strong", "em"].includes(tag) && treeContainsSingleImage(node.children));
+  }
+  if (node.kind === "text") return node.inline !== undefined && inlineContainsSingleImage(node.inline);
+  if (node.kind === "block") {
+    return node.block.type === "paragraph" && node.block.payload.inline !== undefined &&
+      inlineContainsSingleImage(node.block.payload.inline);
+  }
+  return false;
+}
+
 export function renderHtmlOwnershipTree(
   nodes: HtmlTreeNode[],
   elements: HtmlElements,
-  renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"], parentTagName?: string) => React.ReactNode,
-  renderInline?: (nodes: InlineNode[], parentTagName?: string) => React.ReactNode,
-  renderInlineElement?: (node: InlineNode, children: React.ReactNode, parentTagName: string | undefined, key: React.Key) => React.ReactNode,
+  renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"], parentTagName?: string, isStandalone?: boolean) => React.ReactNode,
+  renderInline?: (nodes: InlineNode[], parentTagName?: string, isStandalone?: boolean) => React.ReactNode,
+  renderInlineElement?: (node: InlineNode, children: React.ReactNode, parentTagName: string | undefined, key: React.Key, isStandalone?: boolean) => React.ReactNode,
   renderParagraph?: (children: React.ReactNode) => React.ReactNode,
   urlTransform?: UrlTransform,
   filterElement?: (
@@ -113,14 +155,16 @@ export function renderHtmlOwnershipTree(
     nativeView: React.ReactNode,
     children: React.ReactNode,
     key: React.Key,
+    isStandalone?: boolean,
   ) => React.ReactNode,
   parentPath = "html",
   renderComponentPresentation?: RenderComponentPresentation,
+  isStandalone = false,
 ): React.ReactNode {
   return nodes.map((node, index) => {
     const nodeKey = `${parentPath}:${index}`;
-    if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline, parentTagName) : (node.rawSource ?? node.text);
-    if (node.kind === "block") return renderBlock(node.block, parentTagName);
+    if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline, parentTagName, isStandalone) : (node.rawSource ?? node.text);
+    if (node.kind === "block") return renderBlock(node.block, parentTagName, isStandalone);
     if (node.kind === "component") {
       const reg = contentComponents?.[node.name];
       if (!reg) {
@@ -145,6 +189,7 @@ export function renderHtmlOwnershipTree(
           renderPresentation,
           nodeKey,
           renderComponentPresentation,
+          isStandalone,
         ),
         status: node.status,
         diagnostic: node.diagnostic,
@@ -171,7 +216,8 @@ export function renderHtmlOwnershipTree(
     const tag = node.tagName.toLowerCase();
     const props = mapAttributesToProps(node.attributes, urlTransform);
     props.key = nodeKey;
-    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform, filterElement, tag, contentComponents, renderPresentation, nodeKey, renderComponentPresentation);
+    const childIsStandalone = isStandalone || Boolean(STANDALONE_HTML_CONTAINERS[tag] && treeContainsSingleImage(node.children));
+    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform, filterElement, tag, contentComponents, renderPresentation, nodeKey, renderComponentPresentation, childIsStandalone);
     if (node.paragraphRoot && renderParagraph) {
       const paragraph = filterElement
         ? filterElement(
@@ -184,7 +230,7 @@ export function renderHtmlOwnershipTree(
       return React.createElement(React.Fragment, { key: nodeKey }, paragraph);
     }
     if (node.inlineNode && renderInlineElement) {
-      return React.createElement(React.Fragment, { key: nodeKey }, renderInlineElement(node.inlineNode, children, parentTagName, nodeKey));
+      return React.createElement(React.Fragment, { key: nodeKey }, renderInlineElement(node.inlineNode, children, parentTagName, nodeKey, isStandalone));
     }
     const renderElement = () => {
       let nativeView: React.ReactNode;
@@ -198,7 +244,7 @@ export function renderHtmlOwnershipTree(
         nativeView = React.createElement(elements[tag] ?? tag, props, node.children.length ? content : undefined);
       }
       return renderPresentation
-        ? renderPresentation(tag, props, nativeView, children, nodeKey)
+        ? renderPresentation(tag, props, nativeView, children, nodeKey, tag === "img" && isStandalone)
         : nativeView;
     };
 

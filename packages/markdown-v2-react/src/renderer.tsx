@@ -297,6 +297,7 @@ export class MarkdownRenderer implements Renderer {
       allowElement: this.config.allowElement,
       unwrapDisallowed: this.config.unwrapDisallowed,
       disableAutolinkProtocols: this.config.disableAutolinkProtocols,
+      html: this.config.html,
       contentComponents: this.config.contentComponents,
       components: this.config.components,
       engines: { math: this.config.engines?.math, mermaid: this.config.engines?.mermaid },
