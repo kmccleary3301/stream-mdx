@@ -221,7 +221,7 @@ Native function extensions can be passed as `engineExtensions` with a caller-cho
 | `text` | `string` | Static markdown content. Changing it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Streaming markdown chunks. Use for live updates. |
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. Recommended: `"/workers/markdown-worker.js"`. |
-| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, softBreaks?: "preserve" \| "hard", formatAnticipation?, codeHighlighting?, outputMode?: "html" \| "tokens" \| "both" }`. Soft breaks default to preserving newlines; `"hard"` converts prose soft line endings to `<br>` without changing code, math, or raw HTML. |
+| `features` | `StreamingFeatureFlags` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, softBreaks?: "preserve" | "hard", formatAnticipation?, codeHighlighting?, listIndentation? }`. Soft breaks default to preserving newlines; `"hard"` converts prose soft line endings to `<br>` without changing code, math, or raw HTML. `listIndentation` is opt-in recovery for excess same-line spaces after list markers; fenced and below-marker code remain code. |
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for recognized restricted source components, separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator supplied when `contentPolicy="trusted-mdx"`. |

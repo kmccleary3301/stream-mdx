@@ -292,6 +292,7 @@ export type WorkerIn =
           thresholdLines?: number;
         };
         themes?: CodeHighlightThemes;
+        listIndentation?: boolean;
       };
       contentPolicy?: ContentPolicy;
       contentComponents?: readonly RestrictedComponentDescriptor[];

@@ -100,6 +100,8 @@ export interface StreamingFeatureFlags {
   emitHighlightTokens?: boolean;
   emitDiffBlocks?: boolean;
   themes?: CodeHighlightThemes;
+  /** Recover excess same-line list-marker indentation as paragraph content. */
+  listIndentation?: boolean;
 }
 
 /**
