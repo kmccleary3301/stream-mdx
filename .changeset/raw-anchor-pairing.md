@@ -3,4 +3,4 @@
 "@stream-mdx/worker": patch
 ---
 
-Preserve bare anchors paired across HTML blocks and ignore raw-text content when matching HTML scopes.
+Fix unmatched self-closing anchors in nested Markdown, match anchors across HTML blocks, and ignore raw-text bodies when finding HTML closes.
