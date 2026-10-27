@@ -57,6 +57,10 @@ async function runWorkerThemesTest(): Promise<void> {
 
     // Default uses github-light / github-dark
     assert.ok(defaultHtml.includes("github-light") && defaultHtml.includes("github-dark"), "default HTML must carry github theme names");
+    assert.ok(
+      defaultHtml.includes('class="shiki shiki-themes github-dark github-light'),
+      "default theme class ordering must remain byte-compatible with the original renderer",
+    );
     // Custom uses min-light / nord
     assert.ok(customHtml.includes("min-light") && customHtml.includes("nord"), "custom HTML must carry min-light and nord theme names");
 

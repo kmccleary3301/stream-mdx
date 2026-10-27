@@ -49,8 +49,8 @@ function themeName(theme: CodeThemePair[keyof CodeThemePair]): string | null {
 
 export function getHighlightThemeNames(themes: CodeThemePair): { light: string; dark: string } {
   return {
-    light: themeName(themes.light) ?? "github-light",
     dark: themeName(themes.dark) ?? "github-dark",
+    light: themeName(themes.light) ?? "github-light",
   };
 }
 
