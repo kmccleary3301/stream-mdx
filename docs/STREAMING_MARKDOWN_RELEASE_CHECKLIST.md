@@ -190,11 +190,10 @@ Changesets is the canonical release path for the coordinated `1.0.0` cut.
 
 1. Read every pending `.changeset/*.md` file and the [0.5-to-1.0 migration notes](../README.md#migrating-from-050-to-100). A single major changeset must include all ten public packages listed below.
 
-2. Apply versions and changelogs, then synchronize the lockfile without package lifecycle scripts:
+2. Apply versions and changelogs. The script also synchronizes the lockfile without package lifecycle scripts (`npm install --package-lock-only --ignore-scripts`), so the bumped workspace versions and internal dependency pins land in `package-lock.json`. `release.yml` uses the same script for its Version Packages PR.
 
    ```bash
    npm run changeset:version
-   npm install --package-lock-only --ignore-scripts --no-audit --no-fund
    ```
 
    This release's version mutation consumes all pending changesets. Do not apply the major changeset again to an already-versioned `1.0.0` branch. Commit the resulting manifests, generated changelogs, deleted changesets, and lockfile together.
@@ -233,6 +232,18 @@ Changesets is the canonical release path for the coordinated `1.0.0` cut.
    ```
 
    Packages published this way carry no provenance attestation. Until Trusted Publishing is configured for all ten packages, later versions follow the same order: publish from the reviewed head of the Changesets version PR, then merge it, so the post-merge `release.yml` run finds nothing to publish.
+
+   `publish-release.sh` requires all ten packages at one version, so it only fits coordinated cuts like `1.0.0`. A later patch or minor release bumps only the changed packages and their dependents, so the versions diverge. Publish those with Changesets, which skips versions already on npm and publishes dependencies before dependents:
+
+   ```bash
+   npm ci
+   npm run build:packages && npm run worker:build
+   npm login --auth-type=web
+   npm run changeset:publish
+   npm logout
+   ```
+
+   `changeset publish` creates a local git tag for each package it publishes (for example `@stream-mdx/worker@1.0.1`). Push those tags and create the matching GitHub releases from the package changelog sections, as was done for `1.0.0`.
 
 6. After CI publication, confirm `1.0.0` and the intended dist-tag for every package, plus the matching GitHub release/tags:
 
