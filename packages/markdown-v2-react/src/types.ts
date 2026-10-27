@@ -365,6 +365,8 @@ export interface RendererConfig extends ElementFilterOptions {
     liveTokenization?: boolean;
     emitHighlightTokens?: boolean;
     emitDiffBlocks?: boolean;
+    /** Recover excess same-line list-marker indentation as paragraph content. */
+    listIndentation?: boolean;
   };
   mathOptions?: MathOptions;
   linkDestinations?: LinkDestinationOptions;

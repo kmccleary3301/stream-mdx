@@ -8,11 +8,14 @@ import { normalizeFormatAnticipation, prepareInlineStreamingContent } from "./st
 import type { Block, FormatAnticipationConfig, InlineNode, NodeSnapshot, ProtectedRange } from "./types";
 import { parseCodeFenceInfo, removeHeadingMarkers } from "./utils";
 
-type SourceText = string | Input;
+type SourceText = string | Input | NativeSourceReader;
 type NativeNestedBlockSnapshotMapping = NativeSourceMapping & {
   readonly knownListLoosenessForNode?: (node: SyntaxNode) => boolean | undefined;
   readonly coldSourceOffset?: number;
   readonly coldLineEndings?: boolean;
+  readonly presentationInput?: Input;
+  readonly presentationPrefix?: string;
+  readonly recoveryRootRange?: { readonly from: number; readonly to: number };
 };
 
 function readSourceRange(source: SourceText, from: number, to: number): string {
@@ -279,6 +282,9 @@ function lowerNestedBlockSnapshot(
   // Finalized trusted-MDX sources keep authored inline ranges for compiler-owned native children.
   const trustedSource = meta?.trustedMdxSource === true && block.isFinalized;
   const parseInline = (text: string, positions?: readonly number[]): InlineNode[] => {
+    if (mapping.presentationInput && positions) {
+      return mapInlineSourceRanges(inlineParser.parse(text, { cache: false, sourceOffset: 0 }), positions);
+    }
     if (block.isFinalized) {
       return trustedSource && positions
         ? mapInlineSourceRanges(inlineParser.parse(text, { sourceOffset: 0 }), positions)
@@ -325,13 +331,23 @@ function lowerNestedBlockSnapshot(
     visit(node);
     marks.sort((left, right) => left.from - right.from);
     let result = "";
-    const positions = withPositions && trustedSource ? [] as number[] : undefined;
+    const positions = withPositions && (trustedSource || mapping.presentationInput) ? [] as number[] : undefined;
     const appendSource = (from: number, to: number): void => {
+      if (mapping.presentationInput) {
+        result += mapping.presentationInput.read(from, to);
+        if (positions) {
+          for (let position = from; position < to; position += 1) {
+            positions.push(sourceRange(mapping, position, position + 1).from);
+          }
+        }
+        return;
+      }
       const range = sourceRange(mapping, from, to);
       result += mapping.source.read(range.from, range.to);
       if (positions) for (let position = range.from; position < range.to; position += 1) positions.push(position);
     };
     const sourceCharAtInputOffset = (offset: number): string => {
+      if (mapping.presentationInput) return sourceCharAt(mapping.presentationInput, offset);
       const range = sourceRange(mapping, offset, offset);
       return range.from < mapping.source.length ? mapping.source.read(range.from, range.from + 1) : "";
     };
@@ -349,7 +365,15 @@ function lowerNestedBlockSnapshot(
         listIndent += listItemContentIndent(parent, input);
       }
     }
-    return stripListIndent(normalizeLeafLineEndings(positions ? { text: result, positions } : { text: result }), listIndent);
+    const leaf = stripListIndent(normalizeLeafLineEndings(positions ? { text: result, positions } : { text: result }), listIndent);
+    const prefix = mapping.presentationPrefix;
+    if (node.from === 0 && prefix && leaf.text.startsWith(prefix)) {
+      return {
+        text: leaf.text.slice(prefix.length),
+        ...(leaf.positions ? { positions: leaf.positions.slice(prefix.length) } : {}),
+      };
+    }
+    return leaf;
   };
   const looseList = (node: SyntaxNode): boolean => {
     const knownLooseness = mapping.knownListLoosenessForNode?.(node);
@@ -399,7 +423,10 @@ function lowerNestedBlockSnapshot(
     const name = node.type.name;
     if (OMITTED_NESTED_CHILDREN[name]) return null;
     const range = sourceRange(mapping, node.from, node.to);
-    const baseMeta: Record<string, unknown> = { sourceContainer: container };
+    const baseMeta: Record<string, unknown> = {
+      sourceContainer: container,
+      ...(mapping.presentationInput ? { listIndentationRecoveryContent: true } : {}),
+    };
     if (name === "Paragraph" || name === "Task") {
       const owned = nativeLeafFactory?.(node, id, "paragraph", range);
       if (owned) return owned;
@@ -443,6 +470,7 @@ function lowerNestedBlockSnapshot(
         let inline: InlineNode[] | undefined;
         let primarySourcePositions: readonly number[] | undefined;
         const segmentChildren: NodeSnapshot[] = [];
+        let recoveredListIndentation = false;
         if (primary && !primaryChild) {
           const leaf = leafText(primary, true);
           const taskPrefix = isTask ? leaf.text.match(/^\[([ xX])\][ \t]+/) : null;
@@ -482,6 +510,14 @@ function lowerNestedBlockSnapshot(
         content.forEach((child, semanticChildIndex) => {
           if (child === primary) return;
           const identity = childIdentity(itemId, item, child, semanticChildIndex, "block");
+          const recovered = block.payload.meta?.listIndentationRecovery === true
+            ? recoverListIndentationCode(child, item, identity.id, block, mapping, inlineParser, parser, streamingInline)
+            : undefined;
+          if (recovered) {
+            recoveredListIndentation = true;
+            segmentChildren.push(...recovered.children);
+            return;
+          }
           const childSnapshot = build(child, identity.id, "list");
           if (childSnapshot) segmentChildren.push(childSnapshot);
         });
@@ -512,6 +548,7 @@ function lowerNestedBlockSnapshot(
             meta: {
               sourceContainer: "list",
               ...(primarySourcePositions ? { inlineSourcePositions: primarySourcePositions } : {}),
+              ...(recoveredListIndentation ? { listIndentationRecovered: true } : {}),
             },
           },
         };
@@ -648,6 +685,34 @@ function lowerNestedBlockSnapshot(
     return snapshot;
   };
 
+  if (root.type.name === "Document") {
+    const children: NodeSnapshot[] = [];
+    const container = block.type === "list" ? "list" : "blockquote";
+    childrenOf(root).forEach((child, index) => {
+      const snapshot = build(child, `${block.id}::recovered:${index}`, container);
+      if (!snapshot) return;
+      if (index === 0 && mapping.recoveryRootRange) {
+        const range = mapping.recoveryRootRange;
+        snapshot.range = { ...range };
+        const recoveredBlock = snapshot.props?.block as Block | undefined;
+        if (recoveredBlock) {
+          snapshot.props = {
+            ...snapshot.props,
+            block: {
+              ...recoveredBlock,
+              payload: {
+                ...recoveredBlock.payload,
+                raw: mapping.source.read(range.from, range.to),
+                range: { ...range },
+              },
+            },
+          };
+        }
+      }
+      children.push(snapshot);
+    });
+    return { props: {}, children };
+  }
   const snapshot = build(root, block.id, block.type === "list" ? "list" : "blockquote");
   if (!snapshot) return { props: {}, children: [] };
   const { block: _block, ...props } = snapshot.props ?? {};
@@ -725,12 +790,18 @@ export function prepareNestedBlockSnapshot(
   );
 }
 
-/** CodeText ranges already exclude container indentation, unlike the enclosing raw block. */
-export function extractLezerCode(
+interface DetailedLezerCode {
+  readonly code: string;
+  readonly info: string;
+  readonly sourcePositions?: readonly number[];
+}
+
+function extractLezerCodeDetailed(
   node: SyntaxNode,
   source: SourceText,
-  mapping?: NativeSourceMapping,
-): { code: string; info: string } {
+  mapping: NativeSourceMapping | undefined,
+  captureSourcePositions: boolean,
+): DetailedLezerCode {
   const columnAt = (position: number): number => codeColumnAt(position, mapping, source);
   let baseIndent = 0;
   const parents: SyntaxNode[] = [];
@@ -753,10 +824,14 @@ export function extractLezerCode(
   const fenced = node.type.name === "FencedCode";
   const fenceIndent = fenced ? Math.max(0, columnAt(node.from) - baseIndent) : 0;
   let code = "";
+  let sourcePositions: number[] | undefined;
   let previousCodeEnd = node.from;
   for (let child = node.firstChild; child; child = child.nextSibling) {
     if (child.type.name !== "CodeText") continue;
     let text = readSourceRange(source, child.from, child.to);
+    const parts: Array<{ text: string; from?: number; generatedAt?: number }> | undefined =
+      captureSourcePositions ? [{ text, from: child.from }] : undefined;
+
     if (!fenced && sourceCharAt(source, child.from) === "\n") {
       const lineStart = lineStartAt(source, child.from);
       if (lineStart >= previousCodeEnd) {
@@ -769,19 +844,165 @@ export function extractLezerCode(
         }
         const remaining = readSourceRange(source, position, child.from);
         if (/^[ \t]*$/.test(remaining)) {
-          text = " ".repeat(Math.max(0, columns - requiredColumns)) + remaining + text;
+          const paddingCount = Math.max(0, columns - requiredColumns);
+          const padding = " ".repeat(paddingCount);
+          text = padding + remaining + text;
+          if (parts) {
+            if (remaining.length > 0) parts.unshift({ text: remaining, from: position });
+            if (padding.length > 0) parts.unshift({ text: padding, generatedAt: position - 1 });
+          }
         }
       }
     }
     if (!fenced && sourceCharAt(source, child.from) !== "\n" && sourceCharAt(source, child.from - 1) === "\t") {
-      text = " ".repeat(Math.max(0, columnAt(child.from) - baseIndent - 4)) + text;
+      const padding = " ".repeat(Math.max(0, columnAt(child.from) - baseIndent - 4));
+      text = padding + text;
+      if (parts && padding.length > 0) parts.unshift({ text: padding, generatedAt: child.from - 1 });
     }
     if (fenceIndent > 0) text = text.split("\n").map((line) => stripLeadingColumns(line, fenceIndent)).join("\n");
+    if (
+      captureSourcePositions &&
+      !fenced &&
+      fenceIndent === 0 &&
+      sourcePositions === undefined &&
+      code.length === 0 &&
+      /^[\t ]/.test(text)
+    ) {
+      sourcePositions = [];
+    }
+    if (sourcePositions && parts) {
+      for (const part of parts) {
+        if (part.generatedAt !== undefined) {
+          const range = mapping
+            ? sourceRange(mapping, part.generatedAt, part.generatedAt + 1)
+            : { from: part.generatedAt, to: part.generatedAt + 1 };
+          for (let index = 0; index < part.text.length; index += 1) sourcePositions.push(range.from);
+        } else if (part.from !== undefined) {
+          for (let offset = part.from; offset < part.from + part.text.length; offset += 1) {
+            const range = mapping ? sourceRange(mapping, offset, offset + 1) : { from: offset, to: offset + 1 };
+            sourcePositions.push(range.from);
+          }
+        }
+      }
+    }
     code += text;
     previousCodeEnd = child.to;
   }
-  // An unclosed fence's final line ending terminates its last line, as a closer would; it is not an empty line.
   if (fenced && node.getChildren("CodeMark").length < 2) code = code.replace(/(?:\r\n|\n|\r)$/, "");
   const infoNode = node.getChild("CodeInfo");
-  return { code, info: infoNode ? readSourceRange(source, infoNode.from, infoNode.to) : "" };
+  const info = infoNode ? readSourceRange(source, infoNode.from, infoNode.to) : "";
+  if (sourcePositions) {
+    const normalized = normalizeLeafLineEndings({ text: code, positions: sourcePositions });
+    return { code: normalized.text, info, sourcePositions: normalized.positions };
+  }
+  return { code, info };
+}
+
+/** CodeText ranges already exclude container indentation, unlike the enclosing raw block. */
+export function extractLezerCode(
+  node: SyntaxNode,
+  source: SourceText,
+  mapping?: NativeSourceMapping,
+): { code: string; info: string } {
+  return extractLezerCodeDetailed(node, source, mapping, false);
+}
+
+const LIST_INDENTATION_INLINE_PARSE_PREFIX = "t3-markdown-inline-prefix:";
+
+function recoverListIndentationCode(
+  node: SyntaxNode,
+  parent: SyntaxNode,
+  id: string,
+  sourceBlock: Block,
+  mapping: NativeNestedBlockSnapshotMapping,
+  inlineParser: InlineParser,
+  parser: MarkdownParser,
+  streamingInline: ((text: string) => InlineNode[]) | undefined,
+): PreparedNestedSnapshot | undefined {
+  if (
+    parent.type.name !== "ListItem" ||
+    (node.type.name !== "CodeBlock" && node.type.name !== "IndentedCode")
+  ) {
+    return undefined;
+  }
+  const range = sourceRange(mapping, node.from, node.to);
+  const parentStart = sourceRange(mapping, parent.from, parent.from).from;
+  if (lineStartAt(mapping.source, range.from) !== lineStartAt(mapping.source, parentStart)) return undefined;
+
+  const extracted = extractLezerCodeDetailed(node, mapping.input, mapping, true);
+  const positions = extracted.sourcePositions;
+  if (!positions || !/^[\t ]/.test(extracted.code)) return undefined;
+  const leading = extracted.code.length - extracted.code.trimStart().length;
+  const trailing = extracted.code.trimEnd().length;
+  const value = extracted.code.slice(leading, trailing);
+  if (!value) return undefined;
+  const valuePositions = positions.slice(leading, trailing);
+  const prefix = LIST_INDENTATION_INLINE_PARSE_PREFIX;
+  const input = new StringSourceInput(`${prefix}${value}`);
+  const valueStart = valuePositions[0] ?? range.from;
+  const mapOffset = (offset: number): number => {
+    if (offset <= prefix.length) return valueStart;
+    const valueOffset = offset - prefix.length;
+    return valueOffset < valuePositions.length ? valuePositions[valueOffset]! : range.to;
+  };
+  const recoveredMapping: NativeNestedBlockSnapshotMapping = {
+    ...mapping,
+    input,
+    mapOffset,
+    mapRange: (from, to) => ({ from: mapOffset(from), to: mapOffset(to) }),
+    knownListLoosenessForNode: undefined,
+    presentationInput: input,
+    presentationPrefix: prefix,
+    recoveryRootRange: range,
+  };
+  const sourceMeta = sourceBlock.payload.meta as {
+    formatAnticipation?: FormatAnticipationConfig;
+    mathEnabled?: boolean;
+    trustedMdxSource?: boolean;
+  } | undefined;
+  const recoveryMeta: NonNullable<Block["payload"]["meta"]> = {
+    listIndentationRecovery: true,
+    ...(sourceMeta?.formatAnticipation !== undefined ? { formatAnticipation: sourceMeta.formatAnticipation } : {}),
+    ...(sourceMeta?.mathEnabled !== undefined ? { mathEnabled: sourceMeta.mathEnabled } : {}),
+    ...(sourceMeta?.trustedMdxSource === true ? { trustedMdxSource: true } : {}),
+  };
+  const recoveredBlock: Block = {
+    id,
+    type: "list",
+    isFinalized: sourceBlock.isFinalized,
+    payload: {
+      raw: mapping.source.read(range.from, range.to),
+      range,
+      meta: recoveryMeta,
+    },
+  };
+  const recovered = lowerNestedBlockSnapshot(
+    recoveredBlock,
+    parser.parse(input).topNode,
+    recoveredMapping,
+    inlineParser,
+    parser,
+    streamingInline,
+    undefined,
+    undefined,
+    false,
+  );
+  const firstParagraph = recovered.children[0];
+  const firstParagraphBlock = firstParagraph?.props?.block as Block | undefined;
+  const firstParagraphText = firstParagraph?.props?.text;
+  const firstParagraphPositions = firstParagraphBlock?.payload.meta?.inlineSourcePositions;
+  if (
+    firstParagraph?.type === "paragraph" &&
+    firstParagraphBlock &&
+    typeof firstParagraphText === "string" &&
+    Array.isArray(firstParagraphPositions) &&
+    firstParagraphPositions.length === firstParagraphText.length
+  ) {
+    firstParagraphBlock.payload.meta = {
+      ...firstParagraphBlock.payload.meta,
+      listIndentationRecoveryContent: true,
+      inlineSourceText: firstParagraphText,
+    };
+  }
+  return recovered.children.length > 0 ? recovered : undefined;
 }

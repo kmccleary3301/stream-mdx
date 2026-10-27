@@ -93,7 +93,7 @@ export function Example() {
 | `engine` | `"auto" \| "main" \| "worker"` | Default `"auto"`. Selects automatic (`"auto"`; the default), inline (`"main"`), or dedicated-worker (`"worker"`) execution. See execution modes below. |
 | `managedWorker` | `boolean` | Requires a supplied Worker instance or caller-accessible factory. The caller sends `INIT` and document commands; automatic commands are disabled. URL/default workers and internally created main-thread engines are rejected. Factory workers remain component-owned; supplied instances remain caller-owned. |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
-| `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags: `softBreaks?: "preserve" | "hard"` (default `"preserve"`), `emitDiffBlocks`, `outputMode` (`"html"`, `"tokens"`, or `"both"`), and `lazyTokenization`. `"hard"` turns prose soft line endings into `<br>` nodes; code, math, and raw HTML are unchanged. |
+| `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags: `softBreaks?: "preserve" | "hard"` (default `"preserve"`), `emitDiffBlocks`, `outputMode` (`"html"`, `"tokens"`, or `"both"`), `lazyTokenization`, and opt-in `listIndentation`. `"hard"` turns prose soft line endings into `<br>` nodes; code, math, and raw HTML are unchanged. `listIndentation` recovers excess same-line spaces after list markers; fenced and below-marker code remain code. |
 | `themes` | `{ light: string | ThemeRegistration; dark: string | ThemeRegistration }` | Configures light and dark Shiki themes by ID or serializable theme registration. Changing themes re-initializes the engine. Unknown theme IDs report an INIT error and fall back to GitHub light/dark. |
 | `highlightEngine` | `"javascript" | "oniguruma"` | Selects Shiki's JavaScript regex engine or the Oniguruma WASM engine. Defaults to `"javascript"`. |
 | `engineExtensions` | `EngineExtensions` | Supplies native extensions to the in-process engine used by `engine="main"` and the `"auto"` bootstrap. Requires `extensionId`; unavailable with `engine="worker"` because extension functions are not serializable. |
@@ -306,6 +306,7 @@ The constructor accepts `{ post, extensions?, extensionId? }`. `extensions` has 
 - `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).
 - `footnotes`: enables footnote aggregation.
 - `callouts`: enables callout blockquote syntax (disabled by default in the worker).
+- `listIndentation`: opt-in recovery for list items where same-line excess indentation is parsed as code but retains leading whitespace. Recovered content is parsed as paragraph/inline Markdown, including nested content. Fenced code, below-marker indented code, and same-line code without excess indentation remain code. Defaults to `false`; React uses `features.listIndentation`, and direct worker initialization uses `docPlugins.listIndentation`.
 - `formatAnticipation`: (opt-in) withholds formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`). Final output is unchanged.
 - `codeHighlighting`: controls Shiki strategy for fenced code blocks:
   - `"final"` (default): highlight only after the block finalizes.
