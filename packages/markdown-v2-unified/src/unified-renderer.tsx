@@ -7,7 +7,7 @@ import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { defaultUrlTransform, isForbiddenAttribute, type Block, type BlockResolvedLinkReference, type UrlTransform } from "@stream-mdx/core";
-import { ComponentRegistry, createRendererStore, renderNodePresentation, type NodePresentationKey, type NodePresentations, type NodeViewProps } from "@stream-mdx/react";
+import { ComponentRegistry, createRendererStore, renderNodePresentation, type NodePresentationKey, type NodeViewProps } from "@stream-mdx/react";
 import type { UnifiedBlockErrorContext, UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
 function sanitizeHastUrls(node: unknown, transform: UrlTransform): void {
