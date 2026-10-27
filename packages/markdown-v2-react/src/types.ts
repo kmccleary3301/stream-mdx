@@ -13,6 +13,9 @@ import type {
   InlineHtmlDescriptor,
   InlineNode,
   LazyTokenizationPriority,
+  LinkDestinationOptions,
+  MathParseOptions,
+  SoftBreakMode,
   SyntaxExtensionDescriptor,
 } from "@stream-mdx/core";
 import type { FinalizeResult } from "@stream-mdx/protocol";
@@ -21,7 +24,7 @@ import type { TrustedMdxEngine } from "./trusted-mdx-contract";
 import type { CodeEngine } from "@stream-mdx/worker/engine";
 import type { ComponentRegistry } from "./components";
 
-export type { HtmlOptions, SyntaxRuleSpec, SyntaxExtensionDescriptor, ContainerExtensionSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
+export type { HtmlOptions, LinkDestinationOptions, MathParseOptions, SoftBreakMode, SyntaxRuleSpec, SyntaxExtensionDescriptor, ContainerExtensionSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
 export type { CodeEngine } from "@stream-mdx/worker/engine";
 export { defaultUrlTransform } from "@stream-mdx/core";
 import type {
@@ -126,7 +129,7 @@ export interface ElementFilterOptions {
 
 
 /** Math rendering policy. Expressions are isolated unless a document scope is explicitly selected. */
-export interface MathOptions {
+export interface MathOptions extends MathParseOptions {
   macroScope?: "document";
 }
 export type GenericComponent = React.ComponentType<any>;
@@ -350,6 +353,7 @@ export interface RendererConfig extends ElementFilterOptions {
     tables?: boolean;
     callouts?: boolean;
     math?: boolean;
+    softBreaks?: SoftBreakMode;
     formatAnticipation?: FormatAnticipationConfig;
     codeHighlighting?: CodeHighlightingMode;
     outputMode?: CodeHighlightOutputMode;
@@ -358,6 +362,8 @@ export interface RendererConfig extends ElementFilterOptions {
     emitHighlightTokens?: boolean;
     emitDiffBlocks?: boolean;
   };
+  mathOptions?: MathOptions;
+  linkDestinations?: LinkDestinationOptions;
   syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   urlTransform?: (url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined;

@@ -12,7 +12,7 @@ import {
   referenceGuardExtension,
   setActiveReferencePredicate,
 } from "./inline/reference-guard";
-import type { ASTInlinePlugin, HtmlOptions, InlineNode, InlinePlugin, RegexInlinePlugin, SyntaxRuleSpec } from "./types";
+import type { ASTInlinePlugin, HtmlOptions, InlineNode, InlinePlugin, LinkDestinationOptions, MathParseOptions, RegexInlinePlugin, SoftBreakMode, SyntaxRuleSpec } from "./types";
 
 export type { InlineParserOptions, InlineParseOptions, InlineExtension, LinkReferenceDefinition, LinkReferenceMap } from "./inline/types";
 
@@ -73,6 +73,9 @@ export class InlineParser {
   private lastAttemptedReferences = new Set<string>();
   private maxCacheEntries: number;
   private enableMath: boolean;
+  private softBreaks: SoftBreakMode;
+  private mathOptions?: MathParseOptions;
+  private linkDestinations?: LinkDestinationOptions;
   private references?: LinkReferenceMap;
   private html?: HtmlOptions;
   private lezerParser!: MarkdownParser;
@@ -86,8 +89,11 @@ export class InlineParser {
       ? Math.max(0, options.maxCacheEntries ?? 0)
       : 2000;
     this.enableMath = options.enableMath !== false;
+    this.softBreaks = options.softBreaks ?? "preserve";
     this.references = options.references;
     this.html = options.html;
+    this.mathOptions = options.mathOptions;
+    this.linkDestinations = options.linkDestinations;
 
     if (options.extensions) {
       this.extensions.push(...options.extensions);
@@ -201,7 +207,7 @@ export class InlineParser {
     ];
 
     if (this.enableMath) {
-      lezerConfigs.push(createMathExtension());
+      lezerConfigs.push(createMathExtension(this.mathOptions?.singleDollar ?? "permissive"));
     }
     const extensionsByName: Record<string, InlineExtension> = {};
     this.customInlineParserNames.clear();
@@ -251,6 +257,8 @@ export class InlineParser {
       references: this.references,
       extensionsByName,
       html: this.html,
+      softBreaks: this.softBreaks,
+      linkDestinations: this.linkDestinations,
     });
     this.cache.clear();
   }

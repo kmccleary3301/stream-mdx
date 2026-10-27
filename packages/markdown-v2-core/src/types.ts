@@ -96,6 +96,18 @@ export type FormatAnticipationConfig =
 
 export type CodeHighlightingMode = "final" | "incremental" | "live";
 export type CodeHighlightOutputMode = "html" | "tokens" | "both";
+export type SoftBreakMode = "preserve" | "hard";
+export type SingleDollarMathMode = "permissive" | "currency-safe";
+
+/** Lexical policy for single-dollar math; display math is unaffected. */
+export interface MathParseOptions {
+  singleDollar?: SingleDollarMathMode;
+}
+
+export interface LinkDestinationOptions {
+  /** Preserve absolute Windows drive/UNC destinations instead of decoding CommonMark escapes. */
+  windowsDrivePaths?: "commonmark" | "preserve";
+}
 
 export interface CodeHighlightThemes {
   light: string;
@@ -262,6 +274,7 @@ export type WorkerIn =
         tables?: boolean;
         callouts?: boolean;
         math?: boolean;
+        softBreaks?: SoftBreakMode;
         formatAnticipation?: FormatAnticipationConfig;
         codeHighlighting?: CodeHighlightingMode;
         outputMode?: CodeHighlightOutputMode;
@@ -279,6 +292,8 @@ export type WorkerIn =
       contentComponents?: readonly RestrictedComponentDescriptor[];
       syntax?: SyntaxExtensionDescriptor;
       html?: HtmlOptions;
+      mathOptions?: MathParseOptions;
+      linkDestinations?: LinkDestinationOptions;
     }
   | { type: "APPEND"; text: string }
   | { type: "FINALIZE" }

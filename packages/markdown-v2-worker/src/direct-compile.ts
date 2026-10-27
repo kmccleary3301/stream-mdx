@@ -31,6 +31,8 @@ export interface SnapshotArtifactV1 {
     themes?: WorkerInitMessage["themes"];
     syntax?: WorkerInitMessage["syntax"];
     html?: WorkerInitMessage["html"];
+    mathOptions?: WorkerInitMessage["mathOptions"];
+    linkDestinations?: WorkerInitMessage["linkDestinations"];
   };
 }
 
@@ -410,6 +412,8 @@ export async function compileMarkdownSnapshotDirect(
             ...(init.themes === undefined ? {} : { themes: init.themes }),
             ...(init.syntax === undefined ? {} : { syntax: init.syntax }),
             ...(init.html === undefined ? {} : { html: init.html }),
+            ...(init.mathOptions === undefined ? {} : { mathOptions: init.mathOptions }),
+            ...(init.linkDestinations === undefined ? {} : { linkDestinations: init.linkDestinations }),
           }
         : undefined,
     };
