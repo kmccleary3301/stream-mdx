@@ -235,17 +235,14 @@ Changesets is the canonical release path for the coordinated `1.0.0` cut.
 
    Packages published this way carry no provenance attestation. Until Trusted Publishing is configured for all ten packages, later versions follow the same order: publish from the reviewed head of the Changesets version PR, then merge it, so the post-merge `release.yml` run finds nothing to publish.
 
-   `publish-release.sh` requires all ten packages at one version, so it only fits coordinated cuts like `1.0.0`. A later patch or minor release bumps only the changed packages and their dependents, so the versions diverge. Publish those with Changesets, which skips versions already on npm and publishes dependencies before dependents:
+   `publish-release.sh` requires all ten packages at one version, so it only fits coordinated cuts like `1.0.0`. A later patch or minor release bumps only the changed packages and their dependents, so the versions diverge. Publish those with `scripts/publish-pending.sh`, pinned to the reviewed version PR head:
 
    ```bash
-   npm ci
-   npm run build:packages && npm run worker:build
-   npm login --auth-type=web
-   npm run changeset:publish
-   npm logout
+   STREAM_MDX_HEAD=<reviewed changeset-release/main sha> bash scripts/publish-pending.sh --check
+   STREAM_MDX_HEAD=<reviewed changeset-release/main sha> bash scripts/publish-pending.sh
    ```
 
-   `changeset publish` creates a local git tag for each package it publishes (for example `@stream-mdx/worker@1.0.1`). Push those tags and create the matching GitHub releases from the package changelog sections, as was done for `1.0.0`.
+   The script refuses any other head and any head not based on the current `origin/main`. It checks out the head in a scratch worktree, runs `npm ci` and the package builds, and dry-runs every package whose version the head changes. `--check` stops at that point. Without `--check`, it then runs `npm login --auth-type=web`, publishes the unpublished packages with plain `npm publish` in dependency order, logs out, verifies the registry, pushes `<name>@<version>` tags, and creates GitHub releases from each package's changelog section. Reruns skip versions that are already published and still finish any missing tags or releases.
 
 6. After CI publication, confirm `1.0.0` and the intended dist-tag for every package, plus the matching GitHub release/tags:
 
