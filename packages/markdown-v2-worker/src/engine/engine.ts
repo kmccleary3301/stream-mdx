@@ -6511,13 +6511,13 @@ export class MarkdownEngine {
 
       case "paragraph": {
         const rawParagraph = typeof block.payload.raw === "string" ? block.payload.raw : "";
-        const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
-        const isListIndentationRecovery = currentMeta.listIndentationRecoveryContent === true;
+        const recoveryMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
+        const isListIndentationRecovery = recoveryMeta.listIndentationRecoveryContent === true;
         const recoveryInlineSourceText =
-          isListIndentationRecovery && typeof currentMeta.inlineSourceText === "string" ? currentMeta.inlineSourceText : undefined;
+          isListIndentationRecovery && typeof recoveryMeta.inlineSourceText === "string" ? recoveryMeta.inlineSourceText : undefined;
         const recoveryInlineSourcePositions =
-          isListIndentationRecovery && Array.isArray(currentMeta.inlineSourcePositions)
-            ? currentMeta.inlineSourcePositions as number[]
+          isListIndentationRecovery && Array.isArray(recoveryMeta.inlineSourcePositions)
+            ? recoveryMeta.inlineSourcePositions as number[]
             : undefined;
         const hasMappedRecoverySource = recoveryInlineSourceText !== undefined &&
           recoveryInlineSourcePositions !== undefined &&
@@ -6528,6 +6528,7 @@ export class MarkdownEngine {
           ? this.parseInlineStreaming(inlineSourceText, this.inlineContext(block, ancestorTypes))
           : null;
         this.updateInlineLookaheadMeta(block, streamingParsed, shouldTrackInline);
+        const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
 
         const trustedInlineSourceText = trustedNativePath && typeof currentMeta.inlineSourceText === "string"
           ? currentMeta.inlineSourceText
