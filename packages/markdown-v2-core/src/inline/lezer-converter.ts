@@ -212,6 +212,7 @@ export class LezerInlineConverter {
   private html?: HtmlOptions;
   private softBreaks: SoftBreakMode;
   private linkDestinations?: LinkDestinationOptions;
+  private matchedBareAnchorOffsets?: ReadonlySet<number>;
   private unmatchedAnchorScan?: { source: string; offsets: ReadonlySet<number> };
 
   constructor(options: LezerConverterOptions) {
@@ -242,9 +243,16 @@ export class LezerInlineConverter {
     to: number = text.length,
     sourceOffset?: number,
     allowSoftBreaks = true,
+    matchedBareAnchorOffsets?: ReadonlySet<number>,
   ): InlineNode[] {
-    const rawNodes = this.convertRange(elements, text, from, to, sourceOffset, allowSoftBreaks);
-    return mergeAdjacentTextNodes(rawNodes, sourceOffset === undefined ? undefined : text, sourceOffset);
+    const previousMatchedBareAnchorOffsets = this.matchedBareAnchorOffsets;
+    this.matchedBareAnchorOffsets = matchedBareAnchorOffsets;
+    try {
+      const rawNodes = this.convertRange(elements, text, from, to, sourceOffset, allowSoftBreaks);
+      return mergeAdjacentTextNodes(rawNodes, sourceOffset === undefined ? undefined : text, sourceOffset);
+    } finally {
+      this.matchedBareAnchorOffsets = previousMatchedBareAnchorOffsets;
+    }
   }
 
   private findMatchingHtmlClose(
@@ -256,19 +264,36 @@ export class LezerInlineConverter {
   ): number {
     let depth = 1;
     let rawTextTag: string | undefined;
+    let rawTextOffset = elements[index]?.to ?? 0;
+    let rawTextClosePattern: RegExp | undefined;
     for (let next = index + 1; next < elements.length; next++) {
       const candidate = elements[next];
       if (candidate.from >= to) break;
+      if (rawTextTag) {
+        const rawTextClose = rawTextClosePattern ??= new RegExp(`</${rawTextTag}\\s*>`, "gi");
+        rawTextClose.lastIndex = rawTextOffset;
+        const close = rawTextClose.exec(text);
+        if (!close || close.index >= to) {
+          rawTextOffset = Math.min(candidate.to, to);
+          continue;
+        }
+        if (close.index >= candidate.to) {
+          rawTextOffset = Math.min(candidate.to, to);
+          continue;
+        }
+        rawTextTag = undefined;
+        rawTextClosePattern = undefined;
+        rawTextOffset = rawTextClose.lastIndex;
+        if (close.index >= candidate.from) continue;
+      }
       if (this.nodeSet.types[candidate.type]?.name !== "HTMLTag") continue;
       const shape = parseHtmlTagShape(text.slice(candidate.from, candidate.to));
       if (shape.declaration || shape.invalid || !shape.tagName) continue;
       const candidateName = shape.tagName.toLowerCase();
-      if (rawTextTag) {
-        if (shape.isClose && candidateName === rawTextTag) rawTextTag = undefined;
-        continue;
-      }
       if (!shape.isClose && RAW_TEXT_TAGS[candidateName] && !shape.isSelfClosing) {
         rawTextTag = candidateName;
+        rawTextClosePattern = new RegExp(`</${candidateName}\\s*>`, "gi");
+        rawTextOffset = candidate.to;
         continue;
       }
       if (candidateName !== tagName.toLowerCase()) continue;
@@ -360,7 +385,7 @@ export class LezerInlineConverter {
         const raw = text.slice(el.from, el.to);
         const shape = parseHtmlTagShape(raw);
         if (shape.tagName?.toLowerCase() === "a" && !shape.isClose && isBareAnchorOpening(raw)) {
-          if (unmatchedBareAnchorOffsets?.has(el.from)) {
+          if (unmatchedBareAnchorOffsets?.has(el.from) && !this.matchedBareAnchorOffsets?.has(el.from)) {
             const literalNode: InlineNode = { kind: "text", text: raw };
             nodes.push(this.withSourceRange(literalNode, sourceOffset, el.from, el.to));
             cursor = el.to;

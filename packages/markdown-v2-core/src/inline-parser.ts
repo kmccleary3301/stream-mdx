@@ -271,7 +271,8 @@ export class InlineParser {
     const sourceOffset = Number.isSafeInteger(options.sourceOffset) && (options.sourceOffset as number) >= 0
       ? options.sourceOffset
       : undefined;
-    const shouldCache = options.cache !== false && this.maxCacheEntries > 0 && !hasCustomRefs && sourceOffset === undefined;
+    const shouldCache = options.cache !== false && this.maxCacheEntries > 0 && !hasCustomRefs && sourceOffset === undefined &&
+      options.matchedBareAnchorOffsets === undefined;
     if (shouldCache) {
       const cached = this.cache.get(content);
       if (cached) {
@@ -320,7 +321,7 @@ export class InlineParser {
       }
 
       elements = this.lezerParser.parseInline(content, 0) as unknown as MarkdownElement[];
-      result = this.converter.convert(elements, content, 0, content.length, sourceOffset);
+      result = this.converter.convert(elements, content, 0, content.length, sourceOffset, true, options.matchedBareAnchorOffsets);
 
       if (hasCustomRefs) {
         this.converter.setReferences(this.references);
