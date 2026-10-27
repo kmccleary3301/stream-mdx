@@ -54,13 +54,18 @@ for (const closing of ["</a>  ", "<div>more</div>\n</a>"]) {
   const document = await renderDocument(`See <a>label\n\n${closing}\n\nfinish`);
   pairedParagraphTexts.push(document.querySelector("p")?.textContent);
 }
+const scriptDocument = await renderDocument("See <a>label<script><!-- </script> --></a>");
+const scriptParagraphText = scriptDocument.querySelector("p")?.textContent;
+
 assert.deepStrictEqual(
   {
     firstStrong: listDocument.querySelector("ul li strong")?.textContent,
     pairedParagraphTexts,
+    scriptParagraphText,
   },
   {
     firstStrong: '"From <A/>"',
     pairedParagraphTexts: ["See label", "See label"],
+    scriptParagraphText: "See label -->",
   },
 );
