@@ -99,6 +99,11 @@ async function runWorkerThemesTest(): Promise<void> {
     // Verify cache keys differ for the same code and language
     const keyA = getSharedHighlightCacheKey("javascript", { light: "github-light", dark: "github-dark" }, "const x = 1;");
     const keyB = getSharedHighlightCacheKey("javascript", { light: "min-light", dark: "nord" }, "const x = 1;");
+    assert.notStrictEqual(
+      getSharedHighlightCacheKey("javascript", { light: "min-light", dark: "nord" }, "const x = 1;", "javascript"),
+      getSharedHighlightCacheKey("javascript", { light: "min-light", dark: "nord" }, "const x = 1;", "oniguruma"),
+      "cache keys must include the regex engine",
+    );
     assert.notStrictEqual(keyA, keyB, "cache keys for different themes must differ");
 
     // Engine A processes code block
@@ -163,6 +168,50 @@ async function runWorkerThemesTest(): Promise<void> {
 
     engine.dispose();
   }
+  // Test 4: INIT registers serializable runtime themes and can select the WASM regex engine
+  {
+    const customThemes = {
+      light: {
+        name: "runtime-appearance-light",
+        type: "light" as const,
+        colors: { "editor.background": "#ffffff", "editor.foreground": "#101010" },
+        tokenColors: [{ scope: ["keyword"], settings: { foreground: "#123456" } }],
+      },
+      dark: {
+        name: "runtime-appearance-dark",
+        type: "dark" as const,
+        colors: { "editor.background": "#101010", "editor.foreground": "#abcdef" },
+        tokenColors: [{ scope: ["keyword"], settings: { foreground: "#abcdef" } }],
+      },
+    };
+    const messages: WorkerOut[] = [];
+    const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
+    await engine.handle({
+      type: "INIT",
+      schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+      initialContent: "```javascript\nconst custom = true;\n```\n",
+      themes: customThemes,
+      highlightEngine: "oniguruma",
+      docPlugins: { codeHighlighting: "final", outputMode: "both", lazyTokenization: { enabled: false } },
+    });
+    await engine.handle({ type: "FINALIZE" });
+    assert.equal(messages.some((message) => message.type === "ERROR"), false);
+    const code = getCodeBlock(collectBlocks(messages));
+    assert.ok(code.payload.highlightedHtml?.includes("runtime-appearance-light"));
+    assert.ok(code.payload.highlightedHtml?.includes("runtime-appearance-dark"));
+    const tokenLines = code.payload.meta?.tokenLines as Array<{ spans: Array<{ v?: { dark?: { fg?: string } } }> }>;
+    assert.equal(tokenLines[0]?.spans[0]?.v?.dark?.fg?.toUpperCase(), "#ABCDEF");
+    assert.notEqual(
+      getSharedHighlightCacheKey("javascript", customThemes, "const x = 1;"),
+      getSharedHighlightCacheKey("javascript", {
+        light: customThemes.light,
+        dark: { ...customThemes.dark, tokenColors: [{ scope: ["keyword"], settings: { foreground: "#fedcba" } }] },
+      }, "const x = 1;"),
+      "cache identity must include custom theme registration content, not only theme names",
+    );
+    engine.dispose();
+  }
+
 }
 
 await runWorkerThemesTest();

@@ -109,9 +109,12 @@ export interface LinkDestinationOptions {
   windowsDrivePaths?: "commonmark" | "preserve";
 }
 
+export type CodeHighlightTheme = string | object;
+export type CodeHighlightEngine = "javascript" | "oniguruma";
+
 export interface CodeHighlightThemes {
-  light: string;
-  dark: string;
+  light: CodeHighlightTheme;
+  dark: CodeHighlightTheme;
 }
 
 export interface InlineHtmlDescriptor {
@@ -267,6 +270,8 @@ export type WorkerIn =
       prewarmLangs?: string[];
       bootstrap?: boolean;
       themes?: CodeHighlightThemes;
+      highlightEngine?: CodeHighlightEngine;
+      extensionId?: string;
       docPlugins?: {
         footnotes?: boolean;
         html?: boolean;

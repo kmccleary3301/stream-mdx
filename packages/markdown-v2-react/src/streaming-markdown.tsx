@@ -7,7 +7,7 @@ import { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./components"
 import type { ContentComponentsMap } from "./components/content-components";
 import { normalizeContentComponents } from "./components/content-components";
 import type { TrustedMdxEngine } from "./trusted-mdx-contract";
-import type { Block, CodeHighlightOutputMode, CodeHighlightingMode, ContentPolicy, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
+import type { Block, CodeHighlightEngine, CodeHighlightOutputMode, CodeHighlightThemes, CodeHighlightingMode, ContentPolicy, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
 import { SourceCapacityError, StreamSessionError, type AppendResult, type FinalizeResult, type WaitForCapacityOptions } from "@stream-mdx/protocol";
 import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./source-admission-limits";
 export { SourceCapacityError, StreamSessionError } from "@stream-mdx/protocol";
@@ -24,7 +24,7 @@ import { useStreamInputSession } from "./stream-input-session";
 import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
 import { getTrustedRevisionFeed } from "./trusted-revision-feed";
 import { DocumentMathMacroScope, DocumentMathMacroScopeContext } from "./components/katex-math";
-import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlOptions, type LinkDestinationOptions, type InlineComponents, type MathEngine, type MathOptions, type MermaidEngine, type NodePresentations, type RendererConfig, type SoftBreakMode, type SyntaxExtensionDescriptor, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type EngineExtensions, type HtmlOptions, type InlineComponents, type LinkDestinationOptions, type MathEngine, type MathOptions, type MermaidEngine, type NodePresentations, type RendererConfig, type SoftBreakMode, type SyntaxExtensionDescriptor, type TableVirtualizationOptions, type UrlTransform, type VirtualizedCodeConfig } from "./types";
 import type { CodeEngine } from "./types";
 type PendingStreamingCommand = { type: "append"; text: string } | { type: "finalize" };
 type PendingCapacityWaiter = {
@@ -62,7 +62,9 @@ interface StreamingMarkdownConfigSignature {
   syntax?: SyntaxExtensionDescriptor;
   html?: HtmlOptions;
   linkDestinations?: LinkDestinationOptions;
-  themes?: { light: string; dark: string };
+  themes?: CodeHighlightThemes;
+  highlightEngine?: CodeHighlightEngine;
+  extensionId?: string;
   mathOptions?: MathOptions;
   codeEngineId?: string;
 }
@@ -97,7 +99,7 @@ export interface StreamingFeatureFlags {
   liveTokenization?: boolean;
   emitHighlightTokens?: boolean;
   emitDiffBlocks?: boolean;
-  themes?: { light: string; dark: string };
+  themes?: CodeHighlightThemes;
 }
 
 /**
@@ -169,7 +171,10 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   managedWorker?: boolean;
   prewarmLangs?: string[];
   features?: StreamingFeatureFlags;
-  themes?: { light: string; dark: string };
+  themes?: CodeHighlightThemes;
+  highlightEngine?: CodeHighlightEngine;
+  engineExtensions?: EngineExtensions;
+  extensionId?: string;
   colorScheme?: "light" | "dark" | "system";
   components?: NodePresentations;
   scheduling?: StreamingSchedulerOptions;
@@ -261,6 +266,9 @@ function StreamingMarkdownComponent(
     prewarmLangs = [],
     features = {},
     themes,
+    highlightEngine,
+    engineExtensions,
+    extensionId,
     colorScheme,
     components,
     contentPolicy = "restricted",
@@ -297,6 +305,12 @@ function StreamingMarkdownComponent(
   if ((engine as string) === "main-thread") {
     throw new Error('engine="main-thread" has been removed; use engine="main" instead.');
   }
+  if (engineExtensions && !extensionId?.trim()) {
+    throw new Error("engineExtensions requires a non-empty caller-supplied extensionId.");
+  }
+  if (engineExtensions && engine === "worker") {
+    throw new EngineCompatibilityError('engineExtensions is only available to engine="main" and the "auto" bootstrap; worker engines must bundle extensions.');
+  }
   if (engines?.code && engine !== "main") {
     throw new EngineCompatibilityError('The main-realm CodeEngine requires engine="main".');
   }
@@ -329,10 +343,12 @@ function StreamingMarkdownComponent(
         html,
         linkDestinations,
         themes: effectiveThemes,
+        highlightEngine,
+        extensionId,
         mathOptions,
         codeEngineId: engines?.code?.id,
       }),
-    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, linkDestinations, effectiveThemes, mathOptions, engines?.code?.id],
+    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, linkDestinations, effectiveThemes, highlightEngine, extensionId, mathOptions, engines?.code?.id],
   );
   const rendererRef = useRef<{
     renderer: MarkdownRenderer;
@@ -372,6 +388,8 @@ function StreamingMarkdownComponent(
   ) {
     const rendererConfig: RendererConfig = {
       themes: effectiveThemes,
+      highlightEngine,
+      extensionId,
       components,
       allowedElements,
       disallowedElements,
@@ -624,7 +642,7 @@ function StreamingMarkdownComponent(
 
 
   const { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationEpoch, initializationError, readyRendererRef } = useWorkerSession({
-    renderer, workerSource, engine, session, managedWorker, codeEngine, onErrorRef, debug: DEBUG_WORKER,
+    renderer, workerSource, engine, session, managedWorker, codeEngine, engineExtensions, extensionId, onErrorRef, debug: DEBUG_WORKER,
   });
   const rejectPendingCapacityWaiters = useCallback((pending: PendingStreamingCommands, error: Error) => {
     for (const waiter of pending.capacityWaiters) {

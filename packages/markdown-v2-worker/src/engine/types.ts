@@ -35,14 +35,17 @@ export interface EngineExtensions {
 export interface MarkdownEngineOptions {
   post: (message: WorkerOut) => void;
   extensions?: EngineExtensions;
+  extensionId?: string;
 }
 
 export interface InlineEngineWorkerOptions {
   extensions?: EngineExtensions;
+  extensionId?: string;
 }
 
 export interface ServeMarkdownWorkerOptions {
   extensions?: EngineExtensions;
+  extensionId?: string;
   scope?: unknown;
 }
 

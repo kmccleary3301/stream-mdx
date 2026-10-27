@@ -154,7 +154,55 @@ Cache note:
 - In Node-like environments, direct compile reads/writes the same snapshot cache contract as `compileMarkdownSnapshot`.
 - In edge isolates without filesystem APIs, compile still works and skips cache IO.
 
+### Extension-aware snapshots for virtualized messages
+
+Use one compiler instance to serialize finalized-message compiles. It runs in-process when `worker` is omitted, or can send compile requests to a host-bundled worker configured with the same `extensions` and `extensionId`. `maxQueueSize` bounds active plus waiting requests (default `32`); no document multiplexing is added to the worker protocol.
+
+```tsx
+import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { createMarkdownSnapshotCompiler } from "stream-mdx/worker/direct";
+import type { Block } from "@stream-mdx/core";
+import type { NodePresentations } from "@stream-mdx/react";
+
+const compiler = createMarkdownSnapshotCompiler({
+  extensions,
+  extensionId: "chat-markdown-v3",
+  maxQueueSize: 32,
+});
+
+// Compile once when the finalized message arrives, then cache `blocks`.
+const { blocks } = await compiler.compile({ text: finalizedMarkdown });
+
+function VirtualizedMessage({ blocks, components }: {
+  blocks: Block[];
+  components: NodePresentations;
+}) {
+  // Remounting this row renders synchronously from cached blocks; it does not recompile.
+  return <MarkdownBlocksRenderer blocks={blocks} components={components} />;
+}
+```
+
+`MarkdownBlocksRenderer` is also usable in a client-rendered tree, not only during SSR. Its `components`/`NodePresentations` are the same presentation overrides used by `<StreamingMarkdown />`, including extension-node views.
+
+### Runtime Shiki themes and regex engine
+
+Pass serializable Shiki theme registrations as the `light` and `dark` values of `themes`. The worker registers custom themes before resolving the pair, and cache identity includes the registration contents. Changing the pair or `highlightEngine` reinitializes the renderer. Use `highlightEngine="oniguruma"` to select the WASM regex engine when JavaScript regex execution is unsuitable.
+
+Native function extensions can be passed as `engineExtensions` with a caller-chosen `extensionId` for `engine="main"` or the in-process `"auto"` bootstrap. For worker execution, bundle the same extensions into the worker entry using `serveMarkdownWorker({ extensions, extensionId })`; do not attempt to structured-clone extension functions.
+
+```tsx
+<StreamingMarkdown
+  engine="main"
+  engineExtensions={{ inline: chatInlineExtensions }}
+  extensionId="chat-markdown-v3"
+  themes={{ light: lightThemeRegistration, dark: darkThemeRegistration }}
+  highlightEngine="oniguruma"
+  text={markdown}
+/>
+```
+
 ---
+
 
 ## Core Concepts
 
