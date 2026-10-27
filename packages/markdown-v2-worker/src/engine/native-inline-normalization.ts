@@ -60,7 +60,14 @@ export function normalizeNativeInlineParagraph(
       const children = literal
         ? (node.children ?? []).map((child) => child.kind === "text" ? escapeHtml(child.text) : inlineHtml([child])).join("")
         : serialize(node.children ?? []);
-      return open + children + (node.closingRaw ?? "");
+      // Paragraph-local sanitization cannot see a matching close tag in a later HTML block.
+      const closesMatchedBareAnchor =
+        !node.closingRaw &&
+        options?.mode !== "literal" &&
+        options?.unmatchedAnchors === "literal-bare" &&
+        node.tagName?.toLowerCase() === "a" &&
+        /^<a\s*>$/i.test(open);
+      return open + children + (node.closingRaw ?? (closesMatchedBareAnchor ? "</a>" : ""));
     }
     const index = inline.push(inlineNodeMetadata?.get(node) ?? node) - 1;
     const slot = ` ${attribute}="${index}"`;
