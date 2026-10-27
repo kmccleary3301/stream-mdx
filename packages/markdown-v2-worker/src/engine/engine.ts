@@ -7126,7 +7126,10 @@ export class MarkdownEngine {
               first.markers,
             )
         : [];
-      return Object.freeze({ ...first, indentationRanges: Object.freeze(Array.from(indentation)) });
+      return Object.freeze({
+        ...first,
+        indentationRanges: Object.freeze(Array.from(indentation)),
+      });
     };
     const paragraphSourceInputFrom = (node: SyntaxNode, hasPriorReader: boolean): number => {
       if (!hasPriorReader || !change) return node.from;

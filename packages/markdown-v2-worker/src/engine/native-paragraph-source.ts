@@ -27,6 +27,8 @@ export interface NativeParagraphSourceMarker {
   readonly typeName: "QuoteMark" | "ListMark";
   /** Exact physical range of a native syntax marker in the canonical source. */
   readonly range: ParagraphSourceRange;
+  /** Marks a parser anchor that may outlive its speculative syntax node. */
+  readonly fromTailAnchor?: boolean;
 }
 
 /**
@@ -284,6 +286,7 @@ type NativeParagraphOmission = {
 
 function nativeParagraphOmissions(
   context: NativeParagraphSourceContext,
+  input: string,
   sourceRange: ParagraphSourceRange,
   contentFrom: number,
   contentTo: number,
@@ -303,6 +306,17 @@ function nativeParagraphOmissions(
     assertRange(marker.range, context.sourceRange.to, "Native paragraph marker");
     if (marker.range.from < contentFrom || marker.range.to > contentTo) {
       throw new RangeError("Native paragraph marker mapping escapes the requested authored text range");
+    }
+    // A complete tail anchor with no list-item separator was speculative, not syntax.
+    if (marker.fromTailAnchor === true
+      && marker.typeName === "ListMark"
+      && marker.range.to < contentTo) {
+      const markerEnd = marker.range.to - sourceRange.from;
+      const markerLast = input.charCodeAt(markerEnd - 1);
+      const next = input.charCodeAt(markerEnd);
+      const separated = markerLast === 9 || markerLast === 32
+        || next === 9 || next === 10 || next === 13 || next === 32;
+      if (!separated) continue;
     }
     omissions.push({ range: marker.range, markerType: marker.typeName });
   }
@@ -385,8 +399,8 @@ export function nativeParagraphSourceTextFromInput(
     }
   }
   const omissions = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
-    ? nativeParagraphOmissions(context, sourceRange, contentFrom, contentTo, firstIndentation, counters)
-    : nativeParagraphOmissions(context, sourceRange, contentFrom, contentTo, firstIndentation);
+    ? nativeParagraphOmissions(context, input, sourceRange, contentFrom, contentTo, firstIndentation, counters)
+    : nativeParagraphOmissions(context, input, sourceRange, contentFrom, contentTo, firstIndentation);
   const parts: string[] = [];
   const runs: SourceRun[] = [];
   let logicalLength = 0;
@@ -542,7 +556,7 @@ export function nativeParagraphSourceContext(
       counters?.recordPrefixComparisons?.(1, "engine");
     }
     if (marker.from < sourceRange.to && marker.to > sourceRange.from && marker.to > minimumSourceOffset) {
-      markers.push({ typeName: marker.typeName, range: marker });
+      markers.push({ typeName: marker.typeName, range: marker, fromTailAnchor: true });
     }
   }
   let seen: Set<SyntaxNode> | undefined;
@@ -588,7 +602,12 @@ export function nativeParagraphSourceContext(
     if (previous
       && previous.range.from === marker.range.from
       && previous.range.to === marker.range.to
-      && previous.typeName === marker.typeName) continue;
+      && previous.typeName === marker.typeName) {
+      if (previous.fromTailAnchor === true && marker.fromTailAnchor !== true) {
+        markers[uniqueMarkerCount - 1] = marker;
+      }
+      continue;
+    }
     markers[uniqueMarkerCount] = marker;
     uniqueMarkerCount += 1;
   }
