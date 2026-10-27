@@ -270,6 +270,9 @@ export class RootCodeSourceOwner {
   readonly id: string;
   readonly generation: number;
 
+  /** Original fence info remains available before a finalized Block is materialized. */
+  readonly info: string;
+
   private readonly source: AppendSourceDocument;
   private readonly opening: RootCodeSourceOpening;
   private codeLines: CodeLineIndex;
@@ -307,6 +310,7 @@ export class RootCodeSourceOwner {
     this.generation = generation;
     this.source = source;
     this.opening = Object.freeze({ ...opening });
+    this.info = this.opening.info;
     this.processedTo = opening.bodyFrom;
     this.lineStart = opening.bodyFrom;
     this.rawEnd = opening.bodyFrom;

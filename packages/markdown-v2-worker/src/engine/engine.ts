@@ -168,6 +168,7 @@ import {
   type SharedHighlighter,
   toDiffLineKind,
 } from "./highlight";
+import { rootCodeDecorationPlan } from "./root-code-decoration-policy";
 import {
   DEFAULT_LAZY_TOKENIZATION_THRESHOLD,
   MAX_LAZY_TOKENIZATION_THRESHOLD,
@@ -3515,7 +3516,7 @@ export class MarkdownEngine {
     if (!this.isCurrentRootCodeOwner(owner)) return null;
     const isFinalized = owner.getMetadata().state !== "open";
     const block = isFinalized ? owner.materializeBlock() : undefined;
-    const info = typeof block?.payload.meta?.info === "string" ? block.payload.meta.info : "";
+    const info = owner.info;
     const { lang, meta } = parseCodeFenceInfo(info);
     const diffInfo = detectDiffLanguage(lang, meta);
     const isDiff = diffInfo.isDiff;
@@ -3526,8 +3527,7 @@ export class MarkdownEngine {
       Boolean(this.highlighter || this.extensions?.code),
       owner.getLines().materialize().trim().length > 0,
     );
-    const tokenizeFinalizedDiff = isFinalized && isDiff && this.highlightOutputMode !== "html";
-    const skipRootTokenization = isLazy || (isDiff && this.highlightOutputMode !== "html" && !isFinalized);
+    const { tokenizeFinalizedDiff, skipRootTokenization } = rootCodeDecorationPlan(isFinalized, isDiff, isLazy);
     const decorations = skipRootTokenization
       ? []
       : tokenizeFinalizedDiff
