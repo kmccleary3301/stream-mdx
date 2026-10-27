@@ -53,6 +53,7 @@ function copyParagraphSource(source: ParagraphBlockSourceMetadata): ParagraphBlo
     completeSpanCount: source.completeSpanCount,
     spanCount: source.spanCount,
     sourceRange: { from: source.sourceRange.from, to: source.sourceRange.to },
+    ...(source.omittedRanges ? { omittedRanges: source.omittedRanges.map((range) => ({ ...range })) } : {}),
     ...(source.linkReferences ? { linkReferences: source.linkReferences.map((reference) => ({ ...reference })) } : {}),
   };
 }
@@ -60,6 +61,10 @@ function copyParagraphSource(source: ParagraphBlockSourceMetadata): ParagraphBlo
 function freezeParagraphSource(source: ParagraphBlockSourceMetadata): ParagraphBlockSourceMetadata {
   const copy = copyParagraphSource(source);
   Object.freeze(copy.sourceRange);
+  if (copy.omittedRanges) {
+    for (const range of copy.omittedRanges) Object.freeze(range);
+    Object.freeze(copy.omittedRanges);
+  }
   return Object.freeze(copy);
 }
 
@@ -87,6 +92,16 @@ function assertParagraphSource(source: ParagraphBlockSourceMetadata, rawLength: 
     range.to - range.from !== rawLength ||
     (source.state !== "open" && source.spanCount !== source.completeSpanCount)
   ) throw new RangeError("Paragraph source metadata is invalid");
+  if (source.omittedRanges !== undefined) {
+    if (!Array.isArray(source.omittedRanges)) throw new RangeError("Paragraph omitted ranges must be an array");
+    let previousTo = range.from;
+    for (const omitted of source.omittedRanges) {
+      if (!validRange(omitted, range) || omitted.from < previousTo || omitted.to <= omitted.from) {
+        throw new RangeError("Paragraph omitted source ranges must be ordered within their owner");
+      }
+      previousTo = omitted.to;
+    }
+  }
 }
 
 function validRange(range: { readonly from: number; readonly to: number }, within: { readonly from: number; readonly to: number }): boolean {
@@ -471,6 +486,19 @@ export function materializeManagedParagraphSnapshot(state: ManagedParagraphViewS
 }
 
 
+function sameOmittedRanges(
+  left: ParagraphBlockSourceMetadata["omittedRanges"],
+  right: ParagraphBlockSourceMetadata["omittedRanges"],
+): boolean {
+  const leftRanges = left ?? [];
+  const rightRanges = right ?? [];
+  return leftRanges.length === rightRanges.length &&
+    leftRanges.every((range, index) => {
+      const next = rightRanges[index];
+      return next !== undefined && range.from === next.from && range.to === next.to;
+    });
+}
+
 function isParagraphLifecycleFinalize(
   old: ParagraphBlockSourceMetadata,
   next: ParagraphBlockSourceMetadata,
@@ -485,7 +513,8 @@ function isParagraphLifecycleFinalize(
     next.completeSpanCount === old.completeSpanCount &&
     next.spanCount === old.spanCount &&
     next.sourceRange.from === old.sourceRange.from &&
-    next.sourceRange.to === old.sourceRange.to;
+    next.sourceRange.to === old.sourceRange.to &&
+    sameOmittedRanges(old.omittedRanges, next.omittedRanges);
 }
 
 function sameParagraphMetadataExceptRevision(
@@ -499,7 +528,8 @@ function sameParagraphMetadataExceptRevision(
     next.completeSpanCount === old.completeSpanCount &&
     next.spanCount === old.spanCount &&
     next.sourceRange.from === old.sourceRange.from &&
-    next.sourceRange.to === old.sourceRange.to;
+    next.sourceRange.to === old.sourceRange.to &&
+    sameOmittedRanges(old.omittedRanges, next.omittedRanges);
 }
 
 

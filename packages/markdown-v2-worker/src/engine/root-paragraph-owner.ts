@@ -18,6 +18,7 @@ import {
 import type { NativeParagraphTailChange } from "./native-paragraph-tail";
 import {
   readContiguousParagraphSourceText,
+  type ParagraphSourceRange,
   type ParagraphSourceText,
   type ParagraphSourceTextReader,
 } from "./native-paragraph-source";
@@ -164,6 +165,7 @@ function emptyProjectedSourceDraft(
   };
 }
 
+const EMPTY_OMITTED_RANGES: readonly ParagraphSourceRange[] = Object.freeze([]);
 const EMPTY_SPAN_RECORDS: readonly ParagraphSpanRecord[] = Object.freeze([]);
 
 function nextRevision(revision: number, label: string): number {
@@ -219,6 +221,7 @@ export class RootParagraphSourceOwner {
   private readonly spansByDependency = new Map<string, Set<number>>();
   private counters?: RootParagraphSourceOwnerCounters;
   private linkReferences: readonly BlockResolvedLinkReference[] | undefined;
+  private omittedRanges: readonly ParagraphSourceRange[] = EMPTY_OMITTED_RANGES;
   private cachedSnapshot: { readonly revision: number; readonly snapshot: ParagraphBlockSnapshot } | undefined;
 
   constructor(options: RootParagraphSourceOwnerOptions) {
@@ -249,6 +252,7 @@ export class RootParagraphSourceOwner {
     }
     const reader = source.snapshot();
     const initialSourceText = this.readParagraphSourceText(reader, opening.from, opening.to);
+    this.omittedRanges = this.replaceOmittedRanges(opening.from, opening.to, initialSourceText.omittedRanges);
     const initialRaw = initialSourceText.text;
     let initialDrafts: ParagraphDraft[];
     if (opening.state === "open" && inlineSettlement === "native-tail") {
@@ -292,9 +296,35 @@ export class RootParagraphSourceOwner {
       completeSpanCount: this.spanIndex.completeSpanCount,
       spanCount: this.spanIndex.length,
       sourceRange: Object.freeze({ from: this.ownerStart, to: this.rawEnd }),
+      ...(this.omittedRanges.length === 0 ? {} : { omittedRanges: this.omittedRanges }),
       ...(this.linkReferences ? { linkReferences: this.linkReferences } : {}),
     });
   }
+  private replaceOmittedRanges(
+    from: number,
+    to: number,
+    replacements: readonly ParagraphSourceRange[] = EMPTY_OMITTED_RANGES,
+  ): readonly ParagraphSourceRange[] {
+    let prefixCount = 0;
+    while (prefixCount < this.omittedRanges.length && this.omittedRanges[prefixCount]!.to <= from) prefixCount += 1;
+    if (prefixCount < this.omittedRanges.length && this.omittedRanges[prefixCount]!.from < from) {
+      throw new RangeError("Paragraph source update cuts through an omitted range");
+    }
+    if (prefixCount === this.omittedRanges.length && replacements.length === 0) return this.omittedRanges;
+    const combined: ParagraphSourceRange[] = [];
+    for (let index = 0; index < prefixCount; index += 1) combined.push(this.omittedRanges[index]!);
+    let previousTo = from;
+    for (const range of replacements) {
+      if (!Number.isSafeInteger(range.from) || !Number.isSafeInteger(range.to)
+        || range.from < previousTo || range.to <= range.from || range.to > to) {
+        throw new RangeError("Paragraph source update omitted ranges are invalid");
+      }
+      combined.push(Object.freeze({ from: range.from, to: range.to }));
+      previousTo = range.to;
+    }
+    return combined.length === 0 ? EMPTY_OMITTED_RANGES : Object.freeze(combined);
+  }
+
 
   getSpans(): ParagraphSpanIndex {
     return this.spanIndex;
@@ -415,6 +445,8 @@ export class RootParagraphSourceOwner {
     }
 
     let tailDrafts: ParagraphDraft[];
+    let omittedRangeStart: number | undefined;
+    let updatedOmittedRanges = this.omittedRanges;
     const sourceChanged = nativeChange.ownerEnd !== this.rawEnd;
     const lifecycleChanged = nextState !== this.state;
     const preserveTailRecords = !sourceChanged && !lifecycleChanged;
@@ -431,13 +463,16 @@ export class RootParagraphSourceOwner {
           ...(nativeChange.rootResumeFrom === undefined ? {} : { rootResumeFrom: nativeChange.rootResumeFrom }),
         };
       }
+      const tailSourceText = this.readParagraphSourceText(sourceSnapshot, tailStart, nativeChange.ownerEnd, sourceTextReader);
+      omittedRangeStart = tailSourceText.sourceRange.from;
+      updatedOmittedRanges = this.replaceOmittedRanges(omittedRangeStart, nativeChange.ownerEnd, tailSourceText.omittedRanges);
       tailDrafts = this.prepareOpenTail(
         sourceSnapshot,
         tailStart,
         nativeChange.ownerEnd,
         completeSpanCount,
         previousTail,
-        this.readParagraphSourceText(sourceSnapshot, tailStart, nativeChange.ownerEnd, sourceTextReader),
+        tailSourceText,
       );
     } else if (this.inlineSettlement === "original-context") {
       if (completeSpanCount !== 0) {
@@ -450,6 +485,8 @@ export class RootParagraphSourceOwner {
         };
       }
       const sourceText = this.readParagraphSourceText(sourceSnapshot, this.ownerStart, nativeChange.ownerEnd, sourceTextReader);
+      omittedRangeStart = sourceText.sourceRange.from;
+      updatedOmittedRanges = this.replaceOmittedRanges(omittedRangeStart, nativeChange.ownerEnd, sourceText.omittedRanges);
       const parsed = this.parseWithAttempts(sourceText.text);
       const sourceRevision = previousTail
         ? nextRevision(previousTail.sourceRevision, "Paragraph span source")
@@ -472,6 +509,8 @@ export class RootParagraphSourceOwner {
     } else {
       const tailStart = previousTail?.sourceRange.from ?? completePrefixEnd;
       const sourceText = this.readParagraphSourceText(sourceSnapshot, tailStart, nativeChange.ownerEnd, sourceTextReader);
+      omittedRangeStart = sourceText.sourceRange.from;
+      updatedOmittedRanges = this.replaceOmittedRanges(omittedRangeStart, nativeChange.ownerEnd, sourceText.omittedRanges);
       const rawTail = sourceText.text;
       this.countInlineUnits(rawTail.length);
       const settlement = this.inlineParser.parseSettledPrefix(rawTail);
@@ -533,6 +572,7 @@ export class RootParagraphSourceOwner {
     const nextIndex = preserveTailRecords
       ? this.spanIndex
       : this.spanIndex.replaceTail(completeSpanCount, tailRecords);
+    if (omittedRangeStart !== undefined) this.omittedRanges = updatedOmittedRanges;
     const changed = sourceChanged || lifecycleChanged || to !== this.processedTo || nextIndex !== this.spanIndex;
     if (changed) {
       if (nextIndex !== this.spanIndex) {
@@ -631,6 +671,7 @@ export class RootParagraphSourceOwner {
     const tailStart = previousTail?.sourceRange.from ?? completePrefixEnd;
     const finalSource = sourceSnapshot;
     const sourceText = this.readParagraphSourceText(finalSource, tailStart, nativeChange.ownerEnd, sourceTextReader);
+    const nextOmittedRanges = this.replaceOmittedRanges(sourceText.sourceRange.from, nativeChange.ownerEnd, sourceText.omittedRanges);
     const rawTail = sourceText.text;
     let finalNodes: InlineNode[];
     let attemptedReferences: readonly string[];
@@ -669,6 +710,7 @@ export class RootParagraphSourceOwner {
     const nextIndex = this.spanIndex.replaceTail(completeSpanCount, tailRecords);
     for (const span of oldTail) this.removeDependencies(span);
     this.spanIndex = nextIndex;
+    this.omittedRanges = nextOmittedRanges;
     for (const span of tailRecords) this.installDependencies(span);
     this.rawEnd = nativeChange.ownerEnd;
     this.processedTo = nativeChange.processedTo;
