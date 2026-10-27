@@ -447,6 +447,7 @@ export class MarkdownRenderer implements Renderer {
       ...(liveTokenization !== undefined ? { liveTokenization } : {}),
       ...(emitHighlightTokens !== undefined ? { emitHighlightTokens } : {}),
       ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
+      listIndentation: this.config.plugins?.listIndentation ?? false,
     };
     const initialization = {
       ...completion,

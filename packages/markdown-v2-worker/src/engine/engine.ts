@@ -1181,6 +1181,19 @@ function isCustomDocumentPlugin(plugin: DocumentPlugin): boolean {
     && plugin !== HTMLBlockPlugin
     && plugin !== MDXDetectionPlugin;
 }
+function literalizeRecoveredHtml(nodes: readonly InlineNode[]): InlineNode[] {
+  const result: InlineNode[] = [];
+  for (const node of nodes) {
+    if (node.kind === "html") {
+      result.push({ kind: "text", text: node.raw, ...(node.sourceRange ? { sourceRange: node.sourceRange } : {}) });
+    } else if ("children" in node && Array.isArray(node.children)) {
+      result.push({ ...node, children: literalizeRecoveredHtml(node.children) } as InlineNode);
+    } else {
+      result.push(node);
+    }
+  }
+  return result;
+}
 
 
 const LAZY_TOKENIZATION_SLICE_TARGET_MS = 4;
@@ -1296,6 +1309,7 @@ export class MarkdownEngine {
   private emitDiffBlocks = false;
   private liveTokenizationEnabled = true;
   private enableMath = true;
+  private listIndentationRecoveryEnabled = false;
 
   private tocHeadings: TocHeading[] = [];
   private tocSignature = "";
@@ -2086,6 +2100,7 @@ export class MarkdownEngine {
       emitDiffBlocks?: boolean;
       lazyTokenization?: { enabled?: boolean; thresholdLines?: number };
       themes?: CodeHighlightThemes;
+      listIndentation?: boolean;
     },
     syntax?: SyntaxExtensionDescriptor,
     html?: HtmlOptions,
@@ -2207,11 +2222,13 @@ export class MarkdownEngine {
       liveTokenization: docPlugins?.liveTokenization ?? true,
       emitHighlightTokens: docPlugins?.emitHighlightTokens ?? true,
       emitDiffBlocks: docPlugins?.emitDiffBlocks ?? false,
+      listIndentation: docPlugins?.listIndentation ?? false,
     };
     this.buildMarkdownParser(enable.tables, enable.footnotes);
 
     this.mdxEnabled = enable.mdx;
     this.enableMath = enable.math;
+    this.listIndentationRecoveryEnabled = enable.listIndentation;
     this.softBreaks = enable.softBreaks;
     this.mathOptions = mathOptions;
     this.linkDestinations = linkDestinations;
@@ -6494,22 +6511,36 @@ export class MarkdownEngine {
 
       case "paragraph": {
         const rawParagraph = typeof block.payload.raw === "string" ? block.payload.raw : "";
-        const streamingParsed = !block.isFinalized ? this.parseInlineStreaming(rawParagraph, this.inlineContext(block, ancestorTypes)) : null;
+        const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
+        const isListIndentationRecovery = currentMeta.listIndentationRecoveryContent === true;
+        const recoveryInlineSourceText =
+          isListIndentationRecovery && typeof currentMeta.inlineSourceText === "string" ? currentMeta.inlineSourceText : undefined;
+        const recoveryInlineSourcePositions =
+          isListIndentationRecovery && Array.isArray(currentMeta.inlineSourcePositions)
+            ? currentMeta.inlineSourcePositions as number[]
+            : undefined;
+        const hasMappedRecoverySource = recoveryInlineSourceText !== undefined &&
+          recoveryInlineSourcePositions !== undefined &&
+          recoveryInlineSourcePositions.length === recoveryInlineSourceText.length;
+        const hasMappedRecoveryInlineNodes = hasMappedRecoverySource && Array.isArray(block.payload.inline);
+        const inlineSourceText = recoveryInlineSourceText ?? rawParagraph;
+        const streamingParsed = !block.isFinalized
+          ? this.parseInlineStreaming(inlineSourceText, this.inlineContext(block, ancestorTypes))
+          : null;
         this.updateInlineLookaheadMeta(block, streamingParsed, shouldTrackInline);
 
-        const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
         const trustedInlineSourceText = trustedNativePath && typeof currentMeta.inlineSourceText === "string"
           ? currentMeta.inlineSourceText
-          : rawParagraph;
+          : inlineSourceText;
         const trustedInlineSourcePositions = trustedNativePath && Array.isArray(currentMeta.inlineSourcePositions)
           ? currentMeta.inlineSourcePositions as number[]
           : undefined;
         const hasMappedTrustedInlineSource = trustedInlineSourcePositions !== undefined &&
           trustedInlineSourcePositions.length === trustedInlineSourceText.length;
         const hasMappedTrustedInlineNodes = hasMappedTrustedInlineSource && Array.isArray(block.payload.inline);
-        const baseOffset = block.payload.range?.from ?? 0;
+        const baseOffset = hasMappedRecoverySource ? 0 : block.payload.range?.from ?? 0;
         if (block.isFinalized) {
-          if (!hasMappedTrustedInlineNodes) {
+          if (!hasMappedTrustedInlineNodes && !hasMappedRecoveryInlineNodes) {
             if (trustedNativePath && trustedInlineSourcePositions === undefined) {
               block.payload.inline = this.inlineParser.parse(rawParagraph, { sourceOffset: baseOffset });
             } else if (trustedNativePath) {
@@ -6518,13 +6549,13 @@ export class MarkdownEngine {
               block.payload.inline = this.inlineParser.parse(rawParagraph);
             }
           }
-        } else {
-          block.payload.inline = streamingParsed?.inline ?? [{ kind: "text", text: rawParagraph }];
+        } else if (!hasMappedRecoveryInlineNodes) {
+          block.payload.inline = streamingParsed?.inline ?? [{ kind: "text", text: inlineSourceText }];
         }
 
         const nextMeta: Record<string, unknown> = { ...currentMeta };
         let metaChanged = false;
-        const protectedSource = trustedNativePath ? trustedInlineSourceText : rawParagraph;
+        const protectedSource = trustedNativePath ? trustedInlineSourceText : inlineSourceText;
         const protectedRanges = collectCodeProtectedRanges(protectedSource);
         if (this.enableMath) {
           protectedRanges.push(...collectMathProtectedRanges(protectedSource, protectedRanges));
@@ -6554,6 +6585,9 @@ export class MarkdownEngine {
               protectedRanges,
             );
           }
+        }
+        if (isListIndentationRecovery && Array.isArray(block.payload.inline)) {
+          block.payload.inline = literalizeRecoveredHtml(block.payload.inline);
         }
         const shouldExtractSegments = protectedSource.includes("<") || protectedSource.includes("{");
         const hasOwnedHtmlTree = nextMeta.htmlOwnership === true && Array.isArray(nextMeta.htmlTree);
@@ -6599,8 +6633,20 @@ export class MarkdownEngine {
             const inline = block.isFinalized ? this.inlineParser.parse(value) : this.parseInlineStreaming(value, this.inlineContext(block, ancestorTypes, "mixed-content")).inline;
             return this.mdxEnabled ? preserveInlineComponentSource(inline) : inline;
           };
-          const mixedExtraction = extractMixedContentSegmentsWithLookahead(rawParagraph, baseOffset, inlineFn, mixedSegmentOptions);
-          const segments = mixedExtraction.segments;
+          const mixedExtraction = extractMixedContentSegmentsWithLookahead(protectedSource, baseOffset, inlineFn, mixedSegmentOptions);
+          const localSegments = mixedExtraction.segments;
+          const recoverySourcePositions = hasMappedRecoverySource ? recoveryInlineSourcePositions : undefined;
+          const segments = recoverySourcePositions
+            ? localSegments.map((segment) => {
+                const range = segment.range;
+                if (!range || range.to <= range.from) return segment;
+                const from = recoverySourcePositions[range.from];
+                const lastPosition = recoverySourcePositions[range.to - 1];
+                return from === undefined || lastPosition === undefined
+                  ? segment
+                  : { ...segment, range: { from, to: lastPosition + 1 } };
+              })
+            : localSegments;
           if (!block.isFinalized && mixedExtraction.lookahead.length > 0) {
             nextMeta.mixedLookahead = mixedExtraction.lookahead;
           } else {
@@ -6608,7 +6654,13 @@ export class MarkdownEngine {
           }
           metaChanged = true;
           const hasStructuredSegments = segments.some((segment) => segment.kind === "mdx");
-          const htmlRanges = collectHtmlProtectedRangesFromSegments(segments, baseOffset);
+          const htmlRanges = recoverySourcePositions
+            ? localSegments.flatMap((segment) =>
+                segment.kind === "html" && segment.range
+                  ? [{ ...segment.range, kind: "html-block" as const }]
+                  : [],
+              )
+            : collectHtmlProtectedRangesFromSegments(segments, baseOffset);
           if (htmlRanges.length > 0) {
             protectedRanges.push(...htmlRanges);
           }
@@ -8045,6 +8097,8 @@ export class MarkdownEngine {
     const containerMeta: NonNullable<Block["payload"]["meta"]> = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
     if (trustedNativeSource) containerMeta.trustedMdxSource = true;
     else delete containerMeta.trustedMdxSource;
+    if (this.listIndentationRecoveryEnabled) containerMeta.listIndentationRecovery = true;
+    else delete containerMeta.listIndentationRecovery;
     block.payload.meta = containerMeta;
     if (nativeNode && ["BulletList", "OrderedList", "Blockquote"].includes(nativeNode.type.name)) {
       // Native containers carry no materialized raw; read their authored source from canonical input.
@@ -8107,7 +8161,9 @@ export class MarkdownEngine {
       if (nested.type === "list" || nested.type === "blockquote" || nested.type === "list-item") {
         if (nested.type === "list-item") {
           const range = nested.payload.range;
-          const source = range ? listItemSources.get(`${range.from}:${range.to}`) : undefined;
+          const source = nested.payload.meta?.listIndentationRecovered === true
+            ? undefined
+            : range ? listItemSources.get(`${range.from}:${range.to}`) : undefined;
           if (source !== undefined) {
             const { text, from: baseOffset, sourcePositions } = source;
             const trustedNativeListItem = this.hasTrustedNativeSource(nested);
