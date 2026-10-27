@@ -221,7 +221,7 @@ export function useVirtualizedCode(
   const measuredWidthRef = useRef<number | null>(null);
   const measurementGenerationRef = useRef(0);
   const previousScrollTopRef = useRef<number | null>(null);
-  const followTailRef = useRef(false);
+  const followTailRef = useRef(config.followTail === true);
   const followTailOptInRef = useRef(config.followTail === true);
   followTailOptInRef.current = config.followTail === true;
   if (!followTailOptInRef.current) followTailRef.current = false;
@@ -402,8 +402,12 @@ export function useVirtualizedCode(
     const container = containerRef.current;
     if (!container || config.followTail !== true) return;
     const scrollTop = container.scrollTop;
-    const distanceToBottom = container.scrollHeight - container.clientHeight - scrollTop;
-    followTailRef.current = distanceToBottom <= CODE_FOLLOW_TAIL_EPS_BOTTOM_PX;
+    if (previousScrollTopRef.current === null) {
+      followTailRef.current = true;
+    } else {
+      const distanceToBottom = container.scrollHeight - container.clientHeight - scrollTop;
+      followTailRef.current = distanceToBottom <= CODE_FOLLOW_TAIL_EPS_BOTTOM_PX;
+    }
     previousScrollTopRef.current = scrollTop;
   }, [config.followTail]);
 
