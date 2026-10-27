@@ -93,7 +93,7 @@ export function Example() {
 | `engine` | `"auto" \| "main" \| "worker"` | Default `"auto"`. Selects automatic (`"auto"`; the default), inline (`"main"`), or dedicated-worker (`"worker"`) execution. See execution modes below. |
 | `managedWorker` | `boolean` | Requires a supplied Worker instance or caller-accessible factory. The caller sends `INIT` and document commands; automatic commands are disabled. URL/default workers and internally created main-thread engines are rejected. Factory workers remain component-owned; supplied instances remain caller-owned. |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
-| `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `outputMode`, and `lazyTokenization`. |
+| `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `lazyTokenization`, and `outputMode` (`"html"`, `"tokens"`, or `"both"`). |
 | `themes` | `{ light: string; dark: string }` | Configures light and dark Shiki theme IDs (e.g. `{ light: "min-light", dark: "nord" }`). Changing themes re-initializes the engine. Unknown themes report an INIT error and fall back to GitHub light/dark. |
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for restricted source components. Separate from native Markdown presentation overrides. |
@@ -502,7 +502,7 @@ Without a runtime, the slot wraps `children` in `data-stream-mdx-preview-slot` w
 Fences labeled `artifact` or `html-artifact` render as ordinary code unless a `components.code.wrapper` explicitly routes them elsewhere. StreamMDX does not ship a default artifact iframe or sandbox. A custom presentation is application code; if it turns source into active content, the host owns its isolation and security policy.
 
 
-Math uses KaTeX by default. To replace TeX rendering, provide `engines.math`, whose synchronous `render(tex, { displayMode })` method returns React output and has a stable `id`. Math presentations at `components["inline:math"]` only wrap or view that engine output; they do not perform a second TeX render. `features.math: false` disables math recognition, including inside opt-in HTML markdown.
+Math uses KaTeX by default. To replace TeX rendering, provide `engines.math`, whose synchronous `render(tex, { displayMode })` method returns React output and has a stable `id`. Both inline and display math use `components["inline:math"]` to wrap or view that engine output; this presentation does not perform a second TeX render. `features.math: false` disables math recognition, including inside opt-in HTML markdown.
 
 ### Syntax extensions and HTML
 
@@ -687,7 +687,7 @@ const mathEngine: MathEngine = {
 <StreamingMarkdown engines={{ math: mathEngine }} />;
 ```
 
-`MathEngine.render` runs synchronously on the main thread and must be safe during server rendering. A presentation configured at `components["inline:math"]` receives the engine output as its children; it owns only the view or wrapper and does not render TeX a second time. Omitting `engines.math` keeps KaTeX.
+`MathEngine.render` runs synchronously on the main thread and must be safe during server rendering. A presentation at `components["inline:math"]` receives engine output as its children for both inline and display math; it owns only the view or wrapper and does not render TeX a second time. Omitting `engines.math` keeps KaTeX.
 ## 3.5) Element Filtering and Autolink Protocols
 
 StreamMDX mirrors Streamdown / react-markdown element filtering semantics:

@@ -7,7 +7,7 @@ import { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./components"
 import type { ContentComponentsMap } from "./components/content-components";
 import { normalizeContentComponents } from "./components/content-components";
 import type { TrustedMdxEngine } from "./trusted-mdx-contract";
-import type { Block, CodeHighlightingMode, ContentPolicy, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
+import type { Block, CodeHighlightOutputMode, CodeHighlightingMode, ContentPolicy, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
 import { SourceCapacityError, StreamSessionError, type AppendResult, type FinalizeResult, type WaitForCapacityOptions } from "@stream-mdx/protocol";
 import { SOURCE_ADMISSION_HARD_LIMIT, SOURCE_ADMISSION_SOFT_LIMIT } from "./source-admission-limits";
 export { SourceCapacityError, StreamSessionError } from "@stream-mdx/protocol";
@@ -90,6 +90,7 @@ export interface StreamingFeatureFlags {
   math?: boolean;
   formatAnticipation?: FormatAnticipationConfig;
   codeHighlighting?: CodeHighlightingMode;
+  outputMode?: CodeHighlightOutputMode;
   liveCodeHighlighting?: boolean;
   liveTokenization?: boolean;
   emitHighlightTokens?: boolean;
