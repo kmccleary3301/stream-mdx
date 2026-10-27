@@ -565,7 +565,14 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       containerStack.length === 0 &&
       /^\s*<svg(?:\s|>)/i.test(rawSvg)
     ) {
-      const meta = { ...block.payload.meta, code: rawSvg, info: "svg", lang: "svg", sourceKind: "raw-svg", sourceComplete: svgComplete };
+      const meta: NonNullable<Block["payload"]["meta"]> = {
+        ...block.payload.meta,
+        code: rawSvg,
+        info: "svg",
+        lang: "svg",
+        sourceKind: "raw-svg",
+        sourceComplete: svgComplete,
+      };
       delete meta.htmlTree;
       delete meta.htmlOwnership;
       delete meta.htmlParagraphTree;
