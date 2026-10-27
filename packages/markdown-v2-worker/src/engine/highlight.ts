@@ -810,13 +810,10 @@ export async function tokenizeDiffRun(
   // its multi-theme options declaration omits it.
   const options = {
     lang: isSupportedLanguage(language) ? language : "text",
-    themes: { dark: themes.dark, light: themes.light },
+    themes,
     grammarState,
   };
-  const rawTokens = highlighter.codeToTokensWithThemes(
-    text,
-    options,
-  );
+  const rawTokens = highlighter.codeToTokensWithThemes(text, options);
   const nextGrammarState = highlighter.getLastGrammarState(rawTokens);
   return {
     tokenLines: renderTokenLines(rawTokens),
