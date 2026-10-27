@@ -41,6 +41,7 @@ export function serveMarkdownWorker(options?: ServeMarkdownWorkerOptions): Markd
   const engine = new MarkdownEngine({
     post,
     extensions: options?.extensions,
+    extensionId: options?.extensionId,
   });
 
   scope.onmessage = (event: MessageEvent<WorkerIn>) => {
@@ -98,6 +99,7 @@ export function createInlineEngineWorker(options?: InlineEngineWorkerOptions): W
       });
     },
     extensions: options?.extensions,
+    extensionId: options?.extensionId,
   });
 
   const worker: unknown = {

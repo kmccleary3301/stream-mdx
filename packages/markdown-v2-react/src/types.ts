@@ -7,6 +7,8 @@ import type {
   TableNodeHandle,
   CodeHighlightOutputMode,
   CodeHighlightingMode,
+  CodeHighlightEngine,
+  CodeHighlightThemes,
   ContentPolicy,
   FormatAnticipationConfig,
   HtmlOptions,
@@ -24,8 +26,8 @@ import type { TrustedMdxEngine } from "./trusted-mdx-contract";
 import type { CodeEngine } from "@stream-mdx/worker/engine";
 import type { ComponentRegistry } from "./components";
 
-export type { HtmlOptions, LinkDestinationOptions, MathParseOptions, SoftBreakMode, SyntaxRuleSpec, SyntaxExtensionDescriptor, ContainerExtensionSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
-export type { CodeEngine } from "@stream-mdx/worker/engine";
+export type { CodeHighlightEngine, CodeHighlightTheme, CodeHighlightThemes, HtmlOptions, LinkDestinationOptions, MathParseOptions, SoftBreakMode, SyntaxRuleSpec, SyntaxExtensionDescriptor, ContainerExtensionSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
+export type { CodeEngine, EngineExtensions } from "@stream-mdx/worker/engine";
 export { defaultUrlTransform } from "@stream-mdx/core";
 import type {
   TableVirtualizationConfig,
@@ -328,7 +330,9 @@ export interface MermaidEngine {
 }
 
 export interface RendererConfig extends ElementFilterOptions {
-  themes?: { light: string; dark: string };
+  themes?: CodeHighlightThemes;
+  highlightEngine?: CodeHighlightEngine;
+  extensionId?: string;
   highlight?: {
     browserEngine?: "js" | "wasm";
     serverEngine?: "wasm";
