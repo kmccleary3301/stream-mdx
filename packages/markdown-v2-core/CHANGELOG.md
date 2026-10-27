@@ -1,5 +1,21 @@
 # @stream-mdx/core
 
+## 1.1.0
+
+### Minor Changes
+
+- 49b9c1f: Add serializable raw HTML modes and sanitization policies, unmatched-anchor preservation, standalone SVG code ownership, and standalone-image presentation context.
+- 2772411: Add opt-in list-indentation recovery through `StreamingFeatureFlags.listIndentation` and worker `docPlugins.listIndentation`. Same-line over-indented list code that retains leading whitespace is reparsed as paragraph/inline Markdown with original source ranges; fenced code, below-marker indented code, and ordinary same-line code remain unchanged.
+- 576682f: Add opt-in prose soft breaks, currency-safe single-dollar math admission, and preservation of absolute Windows link, image, and reference destinations.
+- 737f520: Add serializable Shiki theme registrations and Oniguruma WASM selection to worker initialization, plus extension-aware main-thread/auto engines and bounded snapshot compilation for in-process or host-provided workers. Cached blocks render through `MarkdownBlocksRenderer` with the same node presentations as streaming.
+- e599a74: Add bounded heading, list, task-marker, callout, and source-range presentation metadata; expose block-extension views and GitHub-alert callouts; and add scoped, class-configurable streaming text animation.
+
+### Patch Changes
+
+- 0a2363b: Carry parser-confirmed source omissions through paragraph metadata so renderers skip only syntax omitted from prepared paragraph text.
+- a898f97: Fix unmatched self-closing anchors in nested Markdown, match anchors across HTML blocks, and ignore raw-text bodies when finding HTML closes.
+- c50ccb3: Extend opt-in list-indentation recovery to nest under-indented sublists and keep aligned ordered markers as siblings with authored source ranges.
+
 ## 1.0.0
 
 ### Major Changes

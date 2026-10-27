@@ -1,5 +1,37 @@
 # stream-mdx
 
+## 1.1.0
+
+### Minor Changes
+
+- 2c71c9d: Re-export the `@stream-mdx/core`, `@stream-mdx/react`, `@stream-mdx/worker` and `@stream-mdx/plugins` 1.1 APIs from the `stream-mdx` convenience package. These include parser compatibility options, raw HTML policies, list-indentation recovery, runtime Shiki themes, extension-aware snapshots and the semantic presentation options.
+
+### Patch Changes
+
+- Updated dependencies [0a2363b]
+- Updated dependencies [49b9c1f]
+- Updated dependencies [852ae1d]
+- Updated dependencies [3f037c0]
+- Updated dependencies [cab9ca9]
+- Updated dependencies [7b127d2]
+- Updated dependencies [84565c0]
+- Updated dependencies [f63ecd9]
+- Updated dependencies [2772411]
+- Updated dependencies [c4c0e78]
+- Updated dependencies [b000e8d]
+- Updated dependencies [31d7049]
+- Updated dependencies [576682f]
+- Updated dependencies [65ac6ac]
+- Updated dependencies [737f520]
+- Updated dependencies [a898f97]
+- Updated dependencies [e599a74]
+- Updated dependencies [48c46fa]
+- Updated dependencies [c50ccb3]
+  - @stream-mdx/core@1.1.0
+  - @stream-mdx/react@1.1.0
+  - @stream-mdx/worker@1.1.0
+  - @stream-mdx/plugins@1.1.0
+
 ## 1.0.0
 
 ### Major Changes

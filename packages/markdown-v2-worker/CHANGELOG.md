@@ -1,5 +1,40 @@
 # @stream-mdx/worker
 
+## 1.1.0
+
+### Minor Changes
+
+- 49b9c1f: Add serializable raw HTML modes and sanitization policies, unmatched-anchor preservation, standalone SVG code ownership, and standalone-image presentation context.
+- 2772411: Add opt-in list-indentation recovery through `StreamingFeatureFlags.listIndentation` and worker `docPlugins.listIndentation`. Same-line over-indented list code that retains leading whitespace is reparsed as paragraph/inline Markdown with original source ranges; fenced code, below-marker indented code, and ordinary same-line code remain unchanged.
+- 576682f: Add opt-in prose soft breaks, currency-safe single-dollar math admission, and preservation of absolute Windows link, image, and reference destinations.
+- 737f520: Add serializable Shiki theme registrations and Oniguruma WASM selection to worker initialization, plus extension-aware main-thread/auto engines and bounded snapshot compilation for in-process or host-provided workers. Cached blocks render through `MarkdownBlocksRenderer` with the same node presentations as streaming.
+- e599a74: Add bounded heading, list, task-marker, callout, and source-range presentation metadata; expose block-extension views and GitHub-alert callouts; and add scoped, class-configurable streaming text animation.
+
+### Patch Changes
+
+- 0a2363b: Carry parser-confirmed source omissions through paragraph metadata so renderers skip only syntax omitted from prepared paragraph text.
+- 852ae1d: Viewer `TOKENIZE_RANGE` demands no longer re-tokenize code lines that another queued highlighting pass already decorated exactly at the current source and configuration revisions. A late demand emits no redundant `decorateCode` patch, but it still publishes the block's real `lazyTokenizedUntil` progress. The renderer store now exposes a progress-only `lazyTokenizedUntil` update on managed code blocks immediately, instead of waiting for the next decoration.
+- 3f037c0: Use retained fence info to classify open diff fences and diff-aware tokenization for completed diff fences across output modes, preventing generic source tokens from leaving duplicated markers in rendered rows.
+- cab9ca9: Forward `mathOptions` and `linkDestinations` from snapshot compiler `init` to the engine.
+- 7b127d2: Ignore stale speculative list-marker anchors when their delimiter is followed by another character after streaming input is finalized.
+- 84565c0: Give a blockquote the same metadata whether its HTML region arrives in one append or several. Previously, a blockquote parsed before its enclosing `<details>`-style region closed kept the root-level compatibility `inline` once the region adopted it, while a single-shot parse left that field empty. Rendered HTML was already identical.
+- f63ecd9: Preserve paired bare-anchor semantics when snapshot compilation sanitizes paragraph-local HTML.
+- c4c0e78: Preserve parser-confirmed source omissions in nested paragraph snapshots.
+- 31d7049: Keep nested native paragraph ownership on the extension-compatible generic path so final root paragraphs receive their complete inline parse.
+- 65ac6ac: Retire nested native paragraph owners when GitHub alert blockquotes become callouts.
+- a898f97: Fix unmatched self-closing anchors in nested Markdown, match anchors across HTML blocks, and ignore raw-text bodies when finding HTML closes.
+- c50ccb3: Extend opt-in list-indentation recovery to nest under-indented sublists and keep aligned ordered markers as siblings with authored source ranges.
+- Updated dependencies [0a2363b]
+- Updated dependencies [49b9c1f]
+- Updated dependencies [2772411]
+- Updated dependencies [576682f]
+- Updated dependencies [737f520]
+- Updated dependencies [a898f97]
+- Updated dependencies [e599a74]
+- Updated dependencies [c50ccb3]
+  - @stream-mdx/core@1.1.0
+  - @stream-mdx/plugins@1.1.0
+
 ## 1.0.0
 
 ### Major Changes

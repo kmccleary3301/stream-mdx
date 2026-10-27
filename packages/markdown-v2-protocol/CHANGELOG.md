@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [0a2363b]
+- Updated dependencies [49b9c1f]
+- Updated dependencies [2772411]
+- Updated dependencies [576682f]
+- Updated dependencies [737f520]
+- Updated dependencies [a898f97]
+- Updated dependencies [e599a74]
+- Updated dependencies [c50ccb3]
+  - @stream-mdx/core@1.1.0
+
 ## 1.0.0
 
 ### Major Changes

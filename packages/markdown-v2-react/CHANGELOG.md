@@ -1,5 +1,42 @@
 # @stream-mdx/react
 
+## 1.1.0
+
+### Minor Changes
+
+- 49b9c1f: Add serializable raw HTML modes and sanitization policies, unmatched-anchor preservation, standalone SVG code ownership, and standalone-image presentation context.
+- 2772411: Add opt-in list-indentation recovery through `StreamingFeatureFlags.listIndentation` and worker `docPlugins.listIndentation`. Same-line over-indented list code that retains leading whitespace is reparsed as paragraph/inline Markdown with original source ranges; fenced code, below-marker indented code, and ordinary same-line code remain unchanged.
+- 576682f: Add opt-in prose soft breaks, currency-safe single-dollar math admission, and preservation of absolute Windows link, image, and reference destinations.
+- 737f520: Add serializable Shiki theme registrations and Oniguruma WASM selection to worker initialization, plus extension-aware main-thread/auto engines and bounded snapshot compilation for in-process or host-provided workers. Cached blocks render through `MarkdownBlocksRenderer` with the same node presentations as streaming.
+- e599a74: Add bounded heading, list, task-marker, callout, and source-range presentation metadata; expose block-extension views and GitHub-alert callouts; and add scoped, class-configurable streaming text animation.
+
+### Patch Changes
+
+- 0a2363b: Carry parser-confirmed source omissions through paragraph metadata so renderers skip only syntax omitted from prepared paragraph text.
+- 852ae1d: Viewer `TOKENIZE_RANGE` demands no longer re-tokenize code lines that another queued highlighting pass already decorated exactly at the current source and configuration revisions. A late demand emits no redundant `decorateCode` patch, but it still publishes the block's real `lazyTokenizedUntil` progress. The renderer store now exposes a progress-only `lazyTokenizedUntil` update on managed code blocks immediately, instead of waiting for the next decoration.
+- b000e8d: Expose the documented code-highlight `outputMode` values on `StreamingFeatureFlags` and clarify that inline and display math share the `components["inline:math"]` presentation key.
+- 48c46fa: Keep opt-in code tail-following active while a streamed code owner is refreshed.
+- Updated dependencies [0a2363b]
+- Updated dependencies [49b9c1f]
+- Updated dependencies [852ae1d]
+- Updated dependencies [3f037c0]
+- Updated dependencies [cab9ca9]
+- Updated dependencies [7b127d2]
+- Updated dependencies [84565c0]
+- Updated dependencies [f63ecd9]
+- Updated dependencies [2772411]
+- Updated dependencies [c4c0e78]
+- Updated dependencies [31d7049]
+- Updated dependencies [576682f]
+- Updated dependencies [65ac6ac]
+- Updated dependencies [737f520]
+- Updated dependencies [a898f97]
+- Updated dependencies [e599a74]
+- Updated dependencies [c50ccb3]
+  - @stream-mdx/core@1.1.0
+  - @stream-mdx/worker@1.1.0
+  - @stream-mdx/protocol@1.0.1
+
 ## 1.0.0
 
 ### Major Changes
