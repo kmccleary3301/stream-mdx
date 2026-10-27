@@ -331,12 +331,12 @@ const unmatchedAnchorHtml: HtmlOptions = {
   allowedTags: { details: [], summary: [] },
 };
 for (const token of ["<A>", "<a>", "<a >", "<a/>", "<A/>", "<a />"]) {
-  const source = `- **"From ${token}"** appears in the header.\n\n- **Tests:** cover inheritance.\n\nThe deferred move continues on B.\n\nSee <a href="https://example.com">the link</a>.`;
+  const source = `- **"Using ${token}"** appears in the header.\n\n- **Tests:** cover inheritance.\n\nThe remaining work continues later.\n\nSee <a href="https://example.com">the link</a>.`;
   for (const document of await staticAndStreamDocuments(source, unmatchedAnchorHtml)) {
-    assert.equal(document.querySelector("strong")?.textContent, `"From ${token}"`);
+    assert.equal(document.querySelector("strong")?.textContent, `"Using ${token}"`);
     assert.deepEqual([...document.querySelectorAll("a")].map((link) => link.textContent), ["the link"]);
     assert.equal(document.querySelectorAll("li").length, 2);
-    assert.ok([...document.querySelectorAll("p")].some((paragraph) => paragraph.textContent === "The deferred move continues on B."));
+    assert.ok([...document.querySelectorAll("p")].some((paragraph) => paragraph.textContent === "The remaining work continues later."));
   }
 }
 for (const closing of ["</a>  ", "<div>more</div>\n</a>"]) {

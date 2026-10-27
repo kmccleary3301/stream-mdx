@@ -19,16 +19,16 @@ const HTML = { mode: "sanitize", unmatchedAnchors: "literal-bare", standaloneSvg
 const CASES = [
   {
     name: "unmatched self-closing anchor stays inside list strong text",
-    source: '- **"From <A/>"** appears in the header.\n\n- **Tests:** cover inheritance.',
+    source: '- **"Using <A/>"** appears in the header.\n\n- **Tests:** cover inheritance.',
     verify(blocks: readonly Block[], text: string, document: Document) {
       const list = blocks.find((block) => block.type === "list");
       const prepared = list?.payload.meta?.preparedNested as { children?: unknown[] } | undefined;
       const firstItem = prepared?.children?.[0];
       const strongs = findRecords(firstItem, (record) => record.kind === "strong");
-      assert.ok(strongs.some((node) => inlineText(node) === '"From <A/>"'), JSON.stringify(blocks));
+      assert.ok(strongs.some((node) => inlineText(node) === '"Using <A/>"'), JSON.stringify(blocks));
       assert.ok(!findRecords(firstItem, (record) => record.type === "mdx" || record.kind === "trusted-mdx-inline").length);
-      assert.equal(document.querySelector("ul li strong")?.textContent, '"From <A/>"');
-      assert.ok(text.includes('"From <A/>"'));
+      assert.equal(document.querySelector("ul li strong")?.textContent, '"Using <A/>"');
+      assert.ok(text.includes('"Using <A/>"'));
     },
   },
   {
