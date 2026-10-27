@@ -221,13 +221,15 @@ export function useVirtualizedCode(
   const measuredWidthRef = useRef<number | null>(null);
   const measurementGenerationRef = useRef(0);
   const previousScrollTopRef = useRef<number | null>(null);
-  const followTailRef = useRef(false);
+  const previousScrollHeightRef = useRef<number | null>(null);
+  const followTailRef = useRef(config.followTail === true);
   const followTailOptInRef = useRef(config.followTail === true);
   followTailOptInRef.current = config.followTail === true;
   if (!followTailOptInRef.current) followTailRef.current = false;
   const writeScrollTop = useCallback((container: HTMLDivElement, nextTop: number) => {
     container.scrollTop = nextTop;
     previousScrollTopRef.current = container.scrollTop;
+    previousScrollHeightRef.current = container.scrollHeight;
   }, []);
   const viewportAnchorRef = useRef<CodeViewportAnchor | null>(null);
   const geometryIdentityRef = useRef<CodeViewportIdentity | null>(null);
@@ -402,9 +404,14 @@ export function useVirtualizedCode(
     const container = containerRef.current;
     if (!container || config.followTail !== true) return;
     const scrollTop = container.scrollTop;
-    const distanceToBottom = container.scrollHeight - container.clientHeight - scrollTop;
-    followTailRef.current = distanceToBottom <= CODE_FOLLOW_TAIL_EPS_BOTTOM_PX;
+    if (previousScrollTopRef.current === null) {
+      followTailRef.current = true;
+    } else {
+      const distanceToBottom = container.scrollHeight - container.clientHeight - scrollTop;
+      followTailRef.current = distanceToBottom <= CODE_FOLLOW_TAIL_EPS_BOTTOM_PX;
+    }
     previousScrollTopRef.current = scrollTop;
+    previousScrollHeightRef.current = container.scrollHeight;
   }, [config.followTail]);
 
   useEffect(() => {
@@ -530,7 +537,7 @@ export function useVirtualizedCode(
       }
     }
     if (ownerChanged) {
-      followTailRef.current = false;
+      followTailRef.current = followTailRef.current && followTailOptInRef.current;
       const container = containerRef.current;
       if (container) {
         if (container.scrollTop !== 0) {
@@ -610,10 +617,15 @@ export function useVirtualizedCode(
     refreshSelection();
     const nextScrollTop = target.scrollTop;
     const previousScrollTop = previousScrollTopRef.current;
+    const previousScrollHeight = previousScrollHeightRef.current;
+    const contentGeometryChanged =
+      previousScrollHeight !== null && previousScrollHeight !== target.scrollHeight;
     const scrolledUp =
       previousScrollTop !== null &&
-      previousScrollTop - nextScrollTop > CODE_FOLLOW_TAIL_DETACH_SCROLL_DELTA_PX;
+      previousScrollTop - nextScrollTop > CODE_FOLLOW_TAIL_DETACH_SCROLL_DELTA_PX &&
+      !contentGeometryChanged;
     previousScrollTopRef.current = nextScrollTop;
+    previousScrollHeightRef.current = target.scrollHeight;
     setScrollTop(nextScrollTop);
     setContainerHeight(target.clientHeight);
     const distanceToBottom = target.scrollHeight - target.clientHeight - nextScrollTop;
@@ -730,10 +742,8 @@ export function useVirtualizedCode(
       if (isPrintingRef.current) printRowsRef.current.add(row);
       changed = measureRow(row) || changed;
     }
-    if (changed) {
-      preserveViewport();
-      setMeasureVersion((version) => version + 1);
-    }
+    if (changed) setMeasureVersion((version) => version + 1);
+    preserveViewport();
     return () => {
       if (rowResizeObserverRef.current === observer) rowResizeObserverRef.current = null;
       observer?.disconnect();
