@@ -2,4 +2,4 @@
 "stream-mdx": minor
 ---
 
-Re-export the new `@stream-mdx/core`, `@stream-mdx/react` and `@stream-mdx/worker` 1.1 APIs (parser compatibility options, runtime Shiki themes and extension-aware snapshots) through the `stream-mdx` convenience package.
+Re-export the `@stream-mdx/core`, `@stream-mdx/react`, `@stream-mdx/worker` and `@stream-mdx/plugins` 1.1 APIs from the `stream-mdx` convenience package. These include parser compatibility options, raw HTML policies, list-indentation recovery, runtime Shiki themes, extension-aware snapshots and the semantic presentation options.
