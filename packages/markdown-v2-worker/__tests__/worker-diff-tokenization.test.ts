@@ -7,14 +7,17 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createHighlighter } from "shiki";
 import { runInNewContext } from "node:vm";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import ts from "typescript";
 
-import type { DiffLineKind, Patch, TokenLineV1, WorkerOut } from "@stream-mdx/core";
+import type { CodeDiffTokenLine, CodeTokenLine, DiffLineKind, Patch, TokenLineV1, WorkerOut } from "@stream-mdx/core";
 import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot } from "@stream-mdx/core";
 import type { Block, NodeSnapshot } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
+import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { MarkdownEngine } from "../src/engine/engine";
 import type { MarkdownEngineOptions } from "../src/engine/types";
 
@@ -134,6 +137,136 @@ async function runChunkedDiffNumberingTest(): Promise<void> {
   assert.deepStrictEqual(byText.get("+y"), { text: "+y", diffKind: "add", oldNo: null, newNo: 11 });
   for (const chunkSize of [1, 5]) {
     assert.deepStrictEqual(await streamDiffRows(source, chunkSize), whole, `chunk size ${chunkSize} must match single-shot diff rows`);
+  }
+}
+
+const MINIMAL_DIFF_FENCE = [
+  "```diff",
+  "--- renderer-before.ts",
+  "+++ renderer-after.ts",
+  "@@ -1,3 +1,4 @@",
+  "-export const engine = \"main-thread\";",
+  "+export const engine = \"main\";",
+  "+export const protocol = \"2.0\";",
+  "```",
+  "",
+].join("\n");
+
+async function streamDecoratedMinimalDiff(
+  chunkSize: number,
+  codeHighlighting: "live" | "incremental",
+  outputMode: "html" | "tokens",
+): Promise<{
+  rows: readonly {
+    readonly text: string;
+    readonly diffKind: DiffLineKind | undefined;
+    readonly oldNo: number | null;
+    readonly newNo: number | null;
+    readonly exactness: "exact" | "isolated";
+    readonly tokens: CodeTokenLine;
+    readonly diffTokens: CodeDiffTokenLine | null;
+    readonly renderedText: string;
+  }[];
+  renderedRows: readonly string[];
+}> {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  applyMessages(store, await harness.send({
+    type: "INIT",
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    initialContent: "",
+    prewarmLangs: ["typescript"],
+    docPlugins: {
+      footnotes: false,
+      html: false,
+      mdx: false,
+      tables: false,
+      callouts: false,
+      codeHighlighting,
+      outputMode,
+      emitHighlightTokens: true,
+    },
+  }));
+  for (let offset = 0; offset < MINIMAL_DIFF_FENCE.length; offset += chunkSize) {
+    applyMessages(
+      store,
+      await harness.send({
+        type: "APPEND",
+        text: MINIMAL_DIFF_FENCE.slice(offset, offset + chunkSize),
+      }),
+    );
+    const openCode = store.getBlocks().find((block) => block.type === "code" && !block.isFinalized);
+    if (openCode) {
+      for (const line of store.getCodeLines(openCode.id, 0, 32)) {
+        const hasMarker = line.diffKind === "add" || line.diffKind === "del" || line.diffKind === "context";
+        if (hasMarker && line.decoration?.exactness === "exact") {
+          assert.ok(
+            line.decoration.diffTokens,
+            `open diff row ${line.index} must not accept a generic whole-source decoration`,
+          );
+        }
+      }
+    }
+  }
+  applyMessages(store, await harness.send({ type: "FINALIZE" }));
+
+  const code = store.getBlocks().find((block) => block.type === "code");
+  assert.ok(code, "the streamed fixture must produce a code block");
+  const lines = store.getCodeLines(code.id, 0, 32);
+  const rows = lines.map((line) => {
+    const decoration = line.decoration;
+    assert.ok(decoration && decoration.exactness !== "unavailable", `line ${line.index} must receive an exact final decoration`);
+    assert.equal(decoration.exactness, "exact", `line ${line.index} must have an exact final decoration`);
+    const marker = line.diffKind === "add" ? "+"
+      : line.diffKind === "del" ? "-"
+        : line.diffKind === "context" ? " "
+          : "";
+    const tokenText = decoration.tokens.spans.map((span) => span.t).join("");
+    if (marker !== "") {
+      assert.ok(decoration.diffTokens, `diff row ${line.index} must retain paired diff token tracks`);
+      assert.equal(
+        tokenText,
+        line.text.slice(marker.length),
+        `diff row ${line.index} token text must exclude its gutter marker`,
+      );
+    }
+    return {
+      text: line.text,
+      diffKind: line.diffKind,
+      oldNo: line.oldNo ?? null,
+      newNo: line.newNo ?? null,
+      exactness: decoration.exactness,
+      tokens: decoration.tokens,
+      diffTokens: decoration.diffTokens ?? null,
+      renderedText: `${marker}${tokenText}`,
+    };
+  });
+  const markup = renderToStaticMarkup(
+    React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store }),
+  );
+  const renderedRows = [...new JSDOM(markup).window.document.querySelectorAll(".line[data-diff-kind]")]
+    .map((row) => row.textContent ?? "");
+  assert.deepStrictEqual(
+    renderedRows,
+    rows.map((row) => row.renderedText),
+    "the rendered diff rows must match their final marker-separated token contents",
+  );
+  return { rows, renderedRows };
+}
+
+async function runMinimalDiffChunkBoundaryDecorationTest(): Promise<void> {
+  assert.equal(MINIMAL_DIFF_FENCE.length, 174, "the regression input must stay byte-for-byte aligned with the supplied fixture");
+  for (const [codeHighlighting, outputMode] of [
+    ["live", "html"],
+    ["incremental", "tokens"],
+  ] as const) {
+    const label = `${codeHighlighting}/${outputMode}`;
+    const oneShot = await streamDecoratedMinimalDiff(MINIMAL_DIFF_FENCE.length, codeHighlighting, outputMode);
+    for (let chunkSize = 1; chunkSize <= 20; chunkSize += 1) {
+      const streamed = await streamDecoratedMinimalDiff(chunkSize, codeHighlighting, outputMode);
+      assert.deepStrictEqual(streamed.rows, oneShot.rows, `${label} chunk size ${chunkSize} must preserve final diff decorations`);
+      assert.deepStrictEqual(streamed.renderedRows, oneShot.renderedRows, `${label} chunk size ${chunkSize} must preserve final rendered diff rows`);
+    }
   }
 }
 
@@ -591,4 +724,5 @@ await runNestedDiffRendererTest();
 await runNativeDiffMissingPrefixContextTest();
 await runDiffFileLanguageSurvivesChunkBoundaryTest();
 await runDiffCheckpointRangeLocalityCounterTest();
+await runMinimalDiffChunkBoundaryDecorationTest();
 console.log("worker-diff-tokenization test passed");
