@@ -221,11 +221,12 @@ Native function extensions can be passed as `engineExtensions` with a caller-cho
 | `text` | `string` | Static markdown content. Changing it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Streaming markdown chunks. Use for live updates. |
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. Recommended: `"/workers/markdown-worker.js"`. |
-| `features` | `StreamingFeatureFlags` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, softBreaks?: "preserve" | "hard", formatAnticipation?, codeHighlighting?, outputMode?: "html" | "tokens" | "both", listIndentation? }`. Soft breaks default to preserving newlines; `"hard"` converts prose soft line endings to `<br>` without changing code, math, or raw HTML. `callouts` accepts `boolean | "github-alerts"`; `listIndentation` is opt-in recovery for excess same-line spaces after list markers; fenced and below-marker code remain code.
+| `features` | `StreamingFeatureFlags` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, softBreaks?: "preserve" | "hard", formatAnticipation?, codeHighlighting?, outputMode?: "html" | "tokens" | "both", listIndentation? }`. Soft breaks default to preserving newlines; `"hard"` converts prose soft line endings to `<br>` without changing code, math, or raw HTML. `callouts` accepts `boolean | "github-alerts"`; `listIndentation` is opt-in recovery for excess same-line spaces after list markers; fenced and below-marker code remain code. |
+| `html` | `HtmlOptions` | Serializable worker HTML mode, sanitizer policy, unmatched-anchor, and standalone-SVG options. See [PUBLIC_API.md](./PUBLIC_API.md#syntax-extensions-and-html). |
 | `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
 | `contentComponents` | `ContentComponentsMap` | Host registrations for recognized restricted source components, separate from native Markdown presentation overrides. |
 | `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator supplied when `contentPolicy="trusted-mdx"`. |
-| `components` | `NodePresentations` | Configure native block, inline (`inline:<kind>`), extension, and HTML (`html:<tag>`) presentations with wrappers, headless views, or native props. |
+| `components` | `NodePresentations` | Configure native block, inline (`inline:<kind>`), extension, and HTML (`html:<tag>`) presentations with wrappers, headless views, or native props. Image headless views receive `context.isStandalone`. |
 | `engines.math` | `MathEngine` | Replace the default KaTeX TeX renderer without changing math parsing. |
 | `mathOptions` | `MathOptions` | Set `singleDollar?: "permissive" \| "currency-safe"` to reject currency-like single-dollar spans before math parsing; display math is unaffected. `$skillName$` is admitted as math when its boundaries pass this policy, before host skill-token presentation. |
 | `linkDestinations` | `LinkDestinationOptions` | Set `windowsDrivePaths: "preserve"` to preserve absolute Windows drive/UNC destination backslashes in links, images, and reference definitions; ordinary CommonMark escapes remain decoded. |
@@ -848,6 +849,8 @@ The `features` prop on `<StreamingMarkdown />` controls built‑in domains:
 - Set `mdx: false` to skip MDX syntax recognition and admission.
 - Set `html: false` to avoid inline/block HTML plugins beyond the core sanitization path.
 - Set `callouts: "github-alerts"` to recognize case-insensitive own-line GitHub alert markers in blockquotes; `true` retains the generic callout mode. Same-line text and unknown markers remain ordinary quotes.
+
+Pass `html={{ mode: "literal" }}` to render authored raw HTML as text while continuing to parse surrounding Markdown. `html.sanitization` is serializable and travels with the worker `INIT`; use the same protocol lists for Markdown links/images and raw HTML URLs. A headless `inline:image` or `html:img` view can read `context?.isStandalone` to distinguish a sole image inside a supported container. With `html={{ standaloneSvg: "code" }}`, standalone SVG blocks use the `code` presentation; `useCodeBlock(handle)` exposes `sourceKind === "raw-svg"`, `sourceComplete`, and `handle.readSource()` for a non-DOM renderer.
 - Set `formatAnticipation: true` to withhold formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`).
 - Set `codeHighlighting: "final" | "incremental" | "live"` to control Shiki behavior:
   - `"final"` (default): highlight only after a code block finalizes.

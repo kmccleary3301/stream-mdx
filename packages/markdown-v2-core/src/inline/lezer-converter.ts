@@ -2,7 +2,7 @@ import type { NodeSet } from "@lezer/common";
 import { decodeHTML5Strict } from "entities";
 import type { HtmlOptions, InlineNode, LinkDestinationOptions, SoftBreakMode } from "../types";
 import { decodeEntity } from "./entities";
-import { sanitizeHtmlTreeInWorker } from "../worker-html-sanitizer";
+import { findUnmatchedBareAnchorOffsets, sanitizeHtmlTreeInWorker } from "../worker-html-sanitizer";
 import { normalizeLinkLabel } from "./reference-collector";
 import { getActiveReferencePredicate } from "./reference-guard";
 import type { InlineExtension, LinkReferenceDefinition, LinkReferenceMap, MarkdownElement } from "./types";
@@ -14,6 +14,21 @@ export interface LezerConverterOptions {
   html?: HtmlOptions;
   softBreaks?: SoftBreakMode;
   linkDestinations?: LinkDestinationOptions;
+}
+const RAW_TEXT_TAGS: Record<string, true> = {
+  script: true,
+  style: true,
+  textarea: true,
+  title: true,
+  xmp: true,
+  iframe: true,
+  noembed: true,
+  noframes: true,
+  plaintext: true,
+};
+
+function isBareAnchorOpening(raw: string): boolean {
+  return /^<a\s*\/?\s*>$/i.test(raw);
 }
 
 function resolveReference(map: LinkReferenceMap | undefined, rawLabel: string): LinkReferenceDefinition | undefined {
@@ -197,6 +212,7 @@ export class LezerInlineConverter {
   private html?: HtmlOptions;
   private softBreaks: SoftBreakMode;
   private linkDestinations?: LinkDestinationOptions;
+  private unmatchedAnchorScan?: { source: string; offsets: ReadonlySet<number> };
 
   constructor(options: LezerConverterOptions) {
     this.nodeSet = options.nodeSet;
@@ -209,6 +225,14 @@ export class LezerInlineConverter {
 
   setReferences(references: LinkReferenceMap | undefined): void {
     this.references = references;
+  }
+
+  private getUnmatchedAnchorOffsets(source: string): ReadonlySet<number> | undefined {
+    if (this.html?.unmatchedAnchors !== "literal-bare") return undefined;
+    if (!this.unmatchedAnchorScan || this.unmatchedAnchorScan.source !== source) {
+      this.unmatchedAnchorScan = { source, offsets: new Set(findUnmatchedBareAnchorOffsets(source)) };
+    }
+    return this.unmatchedAnchorScan.offsets;
   }
 
   convert(
@@ -231,12 +255,23 @@ export class LezerInlineConverter {
     tagName: string,
   ): number {
     let depth = 1;
+    let rawTextTag: string | undefined;
     for (let next = index + 1; next < elements.length; next++) {
       const candidate = elements[next];
       if (candidate.from >= to) break;
       if (this.nodeSet.types[candidate.type]?.name !== "HTMLTag") continue;
       const shape = parseHtmlTagShape(text.slice(candidate.from, candidate.to));
-      if (shape.declaration || shape.invalid || shape.tagName !== tagName) continue;
+      if (shape.declaration || shape.invalid || !shape.tagName) continue;
+      const candidateName = shape.tagName.toLowerCase();
+      if (rawTextTag) {
+        if (shape.isClose && candidateName === rawTextTag) rawTextTag = undefined;
+        continue;
+      }
+      if (!shape.isClose && RAW_TEXT_TAGS[candidateName] && !shape.isSelfClosing) {
+        rawTextTag = candidateName;
+        continue;
+      }
+      if (candidateName !== tagName.toLowerCase()) continue;
       if (shape.isClose) depth--;
       else if (!shape.isSelfClosing) depth++;
       if (depth === 0) return next;
@@ -249,6 +284,7 @@ export class LezerInlineConverter {
     text: string,
     to: number,
   ): number {
+    const unmatchedBareAnchorOffsets = this.getUnmatchedAnchorOffsets(text);
     let safeTo = to;
     const inspect = (siblings: readonly MarkdownElement[], from: number, end: number): void => {
       for (let index = from; index < end; index++) {
@@ -259,6 +295,9 @@ export class LezerInlineConverter {
           if (!shape.declaration && !shape.invalid && shape.tagName && !shape.isClose && !shape.isSelfClosing) {
             const closeIndex = this.findMatchingHtmlClose(siblings, index, text, safeTo, shape.tagName);
             const close = siblings[closeIndex];
+            const bareAnchor = isBareAnchorOpening(text.slice(element.from, element.to));
+            const unmatchedBareAnchor = unmatchedBareAnchorOffsets?.has(element.from) ?? false;
+            if (bareAnchor && (unmatchedBareAnchor || !close || close.to > safeTo)) continue;
             if (!close || close.to > safeTo) {
               safeTo = Math.min(safeTo, element.from);
             } else {
@@ -287,6 +326,7 @@ export class LezerInlineConverter {
     allowSoftBreaks = true,
   ): InlineNode[] {
     const nodes: InlineNode[] = [];
+    const unmatchedBareAnchorOffsets = this.getUnmatchedAnchorOffsets(text);
     let cursor = from;
 
     for (let index = 0; index < elements.length; index++) {
@@ -301,6 +341,34 @@ export class LezerInlineConverter {
       }
 
       const nodeName = this.nodeSet.types[el.type]?.name ?? "";
+      if (this.html?.mode === "literal" && ["HTMLTag", "Comment", "ProcessingInstruction"].includes(nodeName)) {
+        let end = el.to;
+        let closeIndex = index;
+        const shape = nodeName === "HTMLTag" ? parseHtmlTagShape(text.slice(el.from, el.to)) : undefined;
+        if (shape?.tagName && !shape.isClose && !shape.isSelfClosing) {
+          closeIndex = this.findMatchingHtmlClose(elements, index, text, to, shape.tagName);
+          const close = elements[closeIndex];
+          if (close) end = close.to;
+        }
+        const literalNode: InlineNode = { kind: "text", text: text.slice(el.from, end) };
+        nodes.push(this.withSourceRange(literalNode, sourceOffset, el.from, end));
+        index = closeIndex;
+        cursor = end;
+        continue;
+      }
+      if (this.html?.unmatchedAnchors === "literal-bare" && nodeName === "HTMLTag") {
+        const raw = text.slice(el.from, el.to);
+        const shape = parseHtmlTagShape(raw);
+        if (shape.tagName?.toLowerCase() === "a" && !shape.isClose && isBareAnchorOpening(raw)) {
+          if (unmatchedBareAnchorOffsets?.has(el.from)) {
+            const literalNode: InlineNode = { kind: "text", text: raw };
+            nodes.push(this.withSourceRange(literalNode, sourceOffset, el.from, el.to));
+            cursor = el.to;
+            continue;
+          }
+        }
+      }
+      const rawTextTailNodes: InlineNode[] = [];
       const converted = this.convertElement(el, nodeName, text, sourceOffset, allowSoftBreaks);
       let elementEnd = el.to;
       if (converted && !Array.isArray(converted) && converted.kind === "html" &&
@@ -309,6 +377,18 @@ export class LezerInlineConverter {
         const close = elements[closeIndex];
         const innerTo = close?.from ?? to;
         const end = close?.to ?? to;
+        if (!close && RAW_TEXT_TAGS[converted.tagName]) {
+          const rawClose = new RegExp(`</${converted.tagName}\\s*>`, "i").exec(text.slice(el.to, to));
+          if (rawClose) {
+            converted.closingRaw = rawClose[0];
+            const tailStart = el.to + rawClose.index + rawClose[0].length;
+            for (const node of sanitizeHtmlTreeInWorker(text.slice(tailStart, to), this.html)) {
+              if (node.kind === "text") {
+                rawTextTailNodes.push(this.withSourceRange({ kind: "text", text: node.text }, sourceOffset, tailStart, to));
+              }
+            }
+          }
+        }
         const inner = text.slice(el.to, innerTo);
         converted.raw = text.slice(el.from, end);
         if (close) converted.closingRaw = text.slice(close.from, close.to);
@@ -328,6 +408,7 @@ export class LezerInlineConverter {
       } else if (converted !== null && converted !== undefined) {
         nodes.push(this.withSourceRange(converted, sourceOffset, el.from, elementEnd));
       }
+      nodes.push(...rawTextTailNodes);
 
       cursor = Math.max(cursor, elementEnd);
     }

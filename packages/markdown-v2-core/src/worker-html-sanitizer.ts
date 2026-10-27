@@ -3,6 +3,7 @@ import * as rehypeSanitize from "rehype-sanitize";
 import * as rehypeStringify from "rehype-stringify";
 import { type Plugin, unified } from "unified";
 import type { Block, HtmlOptions, HtmlTreeNode, InlineNode } from "./types";
+import { createProtocolPolicyUrlTransform } from "./url-policy";
 
 type RehypeSanitizeModule = typeof import("rehype-sanitize");
 const rehypeSanitizeModule = rehypeSanitize as RehypeSanitizeModule;
@@ -216,27 +217,12 @@ export function sanitizeCodeHtmlInWorker(html: string): string {
   }
 }
 
-export function sanitizeHtmlInWorker(html: string, options?: { allowedTags?: Record<string, string[]> }): string {
+export function sanitizeHtmlInWorker(html: string, options?: HtmlOptions): string {
   if (!html) return "";
-  if (options?.allowedTags && Object.keys(options.allowedTags).length > 0) {
-    const schema = createSchema(options.allowedTags);
-    const customProcessor = unified()
-      .use(rehypeParsePlugin, { fragment: true })
-      .use(rehypeSanitizePlugin, schema)
-      .use(() => (tree) => {
-        sanitizeHastStyles(tree);
-      })
-      .use(rehypeStringifyPlugin)
-      .freeze();
-    try {
-      return customProcessor.processSync(html).toString();
-    } catch (error) {
-      console.warn("[markdown-v2] Failed to sanitize HTML in worker with custom tags:", error);
-      return "";
-    }
-  }
+  if (options?.mode === "literal") return html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const source = options?.unmatchedAnchors === "literal-bare" ? escapeUnmatchedBareAnchors(html) : html;
   try {
-    return sanitizeProcessor.processSync(html).toString();
+    return getHtmlProcessor(options).processSync(source).toString();
   } catch (error) {
     console.warn("[markdown-v2] Failed to sanitize HTML in worker:", error);
     return "";
@@ -245,34 +231,172 @@ export function sanitizeHtmlInWorker(html: string, options?: { allowedTags?: Rec
 
 type TreeSanitize = (html: string) => unknown;
 
-// Schema construction deep-copies the default schema, so processors are built once per
-// (allowed-tags config, marker attribute). Configs are long-lived engine options; markers are a small set.
+const defaultHtmlProcessor = createHtmlProcessor();
+const htmlProcessors = new WeakMap<object, typeof defaultHtmlProcessor>();
+
+function getHtmlProcessor(options?: HtmlOptions) {
+  if (!options) return defaultHtmlProcessor;
+  let processor = htmlProcessors.get(options);
+  if (!processor) {
+    processor = createHtmlProcessor(options);
+    htmlProcessors.set(options, processor);
+  }
+  return processor;
+}
+
+export function findUnmatchedBareAnchorOffsets(source: string): number[] {
+  const tagPattern = /<!--[\s\S]*?(?:-->|$)|<\/?[A-Za-z](?:[^"'<>]|"[^"]*"|'[^']*')*>/g;
+  const anchors: Array<number | null> = [];
+  const unmatched: number[] = [];
+  let rawTextTag: string | undefined;
+  let offset = 0;
+  while (offset < source.length) {
+    if (rawTextTag) {
+      const rawTextClose = new RegExp(`</${rawTextTag}\\s*>`, "gi");
+      rawTextClose.lastIndex = offset;
+      const close = rawTextClose.exec(source);
+      if (!close) break;
+      offset = rawTextClose.lastIndex;
+      rawTextTag = undefined;
+      continue;
+    }
+    tagPattern.lastIndex = offset;
+    const match = tagPattern.exec(source);
+    if (!match) break;
+    offset = tagPattern.lastIndex;
+    const tag = match[0];
+    if (tag.startsWith("<!--")) continue;
+    const name = /^<\/?([A-Za-z][\w:-]*)/.exec(tag)?.[1]?.toLowerCase();
+    if (!name) continue;
+    const closing = tag.startsWith("</");
+    if (!closing && ["script", "style", "textarea", "title", "xmp", "iframe", "noembed", "noframes", "plaintext"].includes(name)) {
+      rawTextTag = name;
+      continue;
+    }
+    if (name !== "a") continue;
+    if (closing) {
+      anchors.pop();
+    } else {
+      const bareAnchor = /^<a\s*\/?\s*>$/i.test(tag);
+      const selfClosing = tag.endsWith("/>");
+      if (bareAnchor && selfClosing) unmatched.push(match.index);
+      else if (bareAnchor) anchors.push(match.index);
+      else if (!selfClosing) anchors.push(null);
+    }
+  }
+  for (const offset of anchors) {
+    if (offset !== null) unmatched.push(offset);
+  }
+  unmatched.sort((left, right) => left - right);
+  return unmatched;
+}
+
+function escapeUnmatchedBareAnchors(source: string): string {
+  const unmatched = findUnmatchedBareAnchorOffsets(source);
+  if (unmatched.length === 0) return source;
+  let result = "";
+  let from = 0;
+  for (const offset of unmatched) {
+    result += `${source.slice(from, offset)}&lt;`;
+    from = offset + 1;
+  }
+  return result + source.slice(from);
+}
+
+function createHtmlProcessor(options?: HtmlOptions, markerAttribute?: string) {
+  const schema = createSchema(options);
+  const urlTransform = createProtocolPolicyUrlTransform(options?.sanitization?.protocols);
+  if (markerAttribute) {
+    schema.attributes = {
+      ...schema.attributes,
+      "*": [...(schema.attributes?.["*"] ?? []), markerAttribute],
+    };
+  }
+  return unified()
+    .use(rehypeParsePlugin, { fragment: true })
+    .use(() => (tree) => preserveImageTitle(tree))
+    .use(rehypeSanitizePlugin, schema)
+    .use(() => (tree) => {
+      sanitizeHastStyles(tree);
+      sanitizeHastUrlProtocols(tree, urlTransform);
+      stripConfiguredAttributes(tree, options?.sanitization?.stripAttributes);
+    })
+    .use(rehypeStringifyPlugin)
+    .freeze();
+}
+
+function preserveImageTitle(node: unknown): void {
+  if (!node || typeof node !== "object") return;
+  const record = node as Record<string, unknown>;
+  if (record.type === "element" && record.tagName === "img" && record.properties && typeof record.properties === "object") {
+    const properties = record.properties as Record<string, unknown>;
+    if (typeof properties.title === "string") properties.dataMarkdownTitle = properties.title;
+  }
+  if (Array.isArray(record.children)) {
+    for (const child of record.children) preserveImageTitle(child);
+  }
+}
+
+function sanitizeHastUrlProtocols(
+  node: unknown,
+  transform: (url: string, attribute: "href" | "src", context: { source: "html" }) => string | null | undefined,
+): void {
+  if (!node || typeof node !== "object") return;
+  const record = node as Record<string, unknown>;
+  if (record.type === "element" && record.properties && typeof record.properties === "object") {
+    const properties = record.properties as Record<string, unknown>;
+    for (const attribute of ["href", "src"] as const) {
+      const value = properties[attribute];
+      if (typeof value !== "string") continue;
+      const safe = transform(value, attribute, { source: "html" });
+      if (safe === null || safe === undefined) delete properties[attribute];
+      else properties[attribute] = safe;
+    }
+  }
+  if (Array.isArray(record.children)) {
+    for (const child of record.children) sanitizeHastUrlProtocols(child, transform);
+  }
+}
+
+function stripConfiguredAttributes(node: unknown, stripped?: readonly string[]): void {
+  if (!node || typeof node !== "object") return;
+  const record = node as Record<string, unknown>;
+  if (record.type === "element" && record.properties && typeof record.properties === "object" && stripped?.length) {
+    const properties = record.properties as Record<string, unknown>;
+    for (const attribute of stripped) {
+      const property = toHastAttributeName(attribute.toLowerCase());
+      delete properties[property];
+      delete properties[attribute];
+    }
+  }
+  if (Array.isArray(record.children)) {
+    for (const child of record.children) stripConfiguredAttributes(child, stripped);
+  }
+}
+
+// Schema construction deep-copies the default schema; cached per serializable config.
 const treeSanitizers = new WeakMap<object, Map<string, TreeSanitize>>();
 const DEFAULT_ALLOWED_TAGS_KEY = {};
 
-function getTreeSanitizer(allowedTags: Record<string, string[]> | undefined, markerAttribute: string | undefined): TreeSanitize {
-  const tagsKey = allowedTags ?? DEFAULT_ALLOWED_TAGS_KEY;
-  let byMarker = treeSanitizers.get(tagsKey);
+function getTreeSanitizer(options: HtmlOptions | undefined, markerAttribute: string | undefined): TreeSanitize {
+  const optionsKey = options ?? DEFAULT_ALLOWED_TAGS_KEY;
+  let byMarker = treeSanitizers.get(optionsKey);
   if (!byMarker) {
     byMarker = new Map();
-    treeSanitizers.set(tagsKey, byMarker);
+    treeSanitizers.set(optionsKey, byMarker);
   }
   const markerKey = markerAttribute ?? "";
   let sanitize = byMarker.get(markerKey);
   if (!sanitize) {
-    const schema = createSchema(allowedTags);
-    if (markerAttribute) {
-      schema.attributes = {
-        ...schema.attributes,
-        "*": [...(schema.attributes?.["*"] ?? []), markerAttribute],
-      };
-    }
-    const processor = unified().use(rehypeParsePlugin, { fragment: true }).use(rehypeSanitizePlugin, schema).freeze();
-    sanitize = (html) => processor.runSync(processor.parse(html));
+    const processor = createHtmlProcessor(options, markerAttribute);
+    sanitize = (html) => processor.runSync(processor.parse(
+      options?.unmatchedAnchors === "literal-bare" ? escapeUnmatchedBareAnchors(html) : html,
+    ));
     byMarker.set(markerKey, sanitize);
   }
   return sanitize;
 }
+
 
 /**
  * Parse and sanitize a complete ownership region, never independent opening fragments.
@@ -284,8 +408,8 @@ export function sanitizeHtmlTreeInWorker(
   marker?: { attribute: string; blocks?: Block[]; inline?: InlineNode[] },
   parseInline?: (text: string) => InlineNode[],
 ): HtmlTreeNode[] {
-  const tree = getTreeSanitizer(options?.allowedTags, marker?.attribute)(html);
-  sanitizeHastStyles(tree);
+  if (options?.mode === "literal") return [{ kind: "text", text: html }];
+  const tree = getTreeSanitizer(options, marker?.attribute)(html);
   type HtmlAst = {
     type: string;
     value?: string;
@@ -334,128 +458,75 @@ export function sanitizeHtmlTreeInWorker(
   return convert(tree as HtmlAst);
 }
 
-function createSchema(customAllowedTags?: Record<string, string[]>): Schema {
+function createSchema(options?: HtmlOptions): Schema {
   const base = JSON.parse(JSON.stringify(defaultSchema)) as Schema;
-  const tagSet = new Set<string>(base.tagNames ?? []);
-  const allowedTags = [
-    "div",
-    "span",
-    "p",
-    "br",
-    "hr",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "strong",
-    "em",
-    "u",
-    "s",
-    "del",
-    "ins",
-    "blockquote",
-    "pre",
-    "code",
-    "ul",
-    "ol",
-    "li",
-    "table",
-    "thead",
-    "tbody",
-    "tfoot",
-    "tr",
-    "th",
-    "td",
-    "a",
-    "img",
-    "section",
-    "article",
-    "aside",
-    "nav",
-    "header",
-    "footer",
-    "main",
-    "annotation",
-    "semantics",
-    "mtext",
-    "mn",
-    "mo",
-    "mi",
-    "mspace",
-    "mrow",
-    "mfrac",
-    "msup",
-    "msub",
-    "msubsup",
-    "munder",
-    "mover",
-    "munderover",
-    "msqrt",
-    "mroot",
-    "mtable",
-    "mtr",
-    "mtd",
-    "sub",
-    "sup",
-    "kbd",
-    "textarea",
+  const customAllowedTags = options?.allowedTags;
+  const policy = options?.sanitization;
+  const tagSet = new Set<string>(policy?.tagNames?.map((tag) => tag.toLowerCase()) ?? base.tagNames ?? []);
+  const defaultTags = [
+    "div", "span", "p", "br", "hr", "h1", "h2", "h3", "h4", "h5", "h6",
+    "strong", "em", "u", "s", "del", "ins", "blockquote", "pre", "code", "ul", "ol", "li",
+    "table", "thead", "tbody", "tfoot", "tr", "th", "td", "a", "img", "section", "article",
+    "aside", "nav", "header", "footer", "main", "annotation", "semantics", "mtext", "mn", "mo",
+    "mi", "mspace", "mrow", "mfrac", "msup", "msub", "msubsup", "munder", "mover",
+    "munderover", "msqrt", "mroot", "mtable", "mtr", "mtd", "sub", "sup", "kbd", "textarea",
   ];
-  for (const tag of allowedTags) {
-    tagSet.add(tag);
-  }
-  if (customAllowedTags) {
-    for (const tag of Object.keys(customAllowedTags)) {
-      tagSet.add(tag.toLowerCase());
-    }
+  if (!policy?.tagNames) {
+    for (const tag of defaultTags) tagSet.add(tag);
+    for (const tag of Object.keys(customAllowedTags ?? {})) tagSet.add(tag.toLowerCase());
   }
   tagSet.delete("script");
   tagSet.delete("style");
   base.tagNames = Array.from(tagSet);
 
   const customAttrs: Record<string, AttributeDefinition[]> = {};
-  if (customAllowedTags) {
+  if (customAllowedTags && !policy?.attributes) {
     for (const [tag, attrs] of Object.entries(customAllowedTags)) {
-      const lowerTag = tag.toLowerCase();
-      if (lowerTag === "script") continue;
-      const attrDefs: string[] = [];
-      for (const a of attrs) {
-        if (isForbiddenAttribute(a)) continue;
-        attrDefs.push(a);
-        const camel = a.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-        if (camel !== a && !isForbiddenAttribute(camel)) {
-          attrDefs.push(camel);
-        }
-      }
-      customAttrs[lowerTag] = attrDefs;
+      customAttrs[tag.toLowerCase()] = attrs.filter((attr) => !isForbiddenAttribute(attr)).flatMap((attr) => {
+        const camel = attr.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+        return camel === attr ? [attr] : [attr, camel];
+      });
     }
   }
-  base.attributes = {
-    ...(base.attributes || {}),
-    "*": customAllowedTags && Object.keys(customAllowedTags).length > 0
-      ? mergeAttributes(base.attributes?.["*"] as AttributeDefinition[] | undefined, ["className", "id", "title", "style"])
-      : mergeAttributes(base.attributes?.["*"] as AttributeDefinition[] | undefined, ["className", "id", "title", "style", "data-*", "aria-*"]),
-    a: mergeAttributes(base.attributes?.a as AttributeDefinition[] | undefined, ["href", "title", "target", "rel"]),
-    img: mergeAttributes(base.attributes?.img as AttributeDefinition[] | undefined, ["src", "alt", "title"]),
-    table: mergeAttributes(base.attributes?.table as AttributeDefinition[] | undefined, ["align", "border", "cellpadding", "cellspacing"]),
-    th: mergeAttributes(base.attributes?.th as AttributeDefinition[] | undefined, ["align", "colspan", "rowspan"]),
-    td: mergeAttributes(base.attributes?.td as AttributeDefinition[] | undefined, ["align", "colspan", "rowspan"]),
-    tr: mergeAttributes(base.attributes?.tr as AttributeDefinition[] | undefined, ["align"]),
-    ...customAttrs,
-  } as Schema["attributes"];
-  if (base.attributes) {
-    delete (base.attributes as Record<string, unknown>)["script"];
+  if (policy?.attributes) {
+    const attributes: Record<string, AttributeDefinition[]> = {};
+    for (const [tag, names] of Object.entries(policy.attributes)) {
+      const key = tag === "*" ? "*" : tag.toLowerCase();
+      attributes[key] = names.filter((name) => !isForbiddenAttribute(name)).map((name) => toHastAttributeName(name.toLowerCase()));
+    }
+    attributes.img = mergeAttributes(attributes.img, ["dataMarkdownTitle"]);
+    base.attributes = attributes as Schema["attributes"];
+  } else {
+    base.attributes = {
+      ...(base.attributes || {}),
+      "*": customAllowedTags && Object.keys(customAllowedTags).length > 0
+        ? mergeAttributes(base.attributes?.["*"] as AttributeDefinition[] | undefined, ["className", "id", "title", "style"])
+        : mergeAttributes(base.attributes?.["*"] as AttributeDefinition[] | undefined, ["className", "id", "title", "style", "data-*", "aria-*"]),
+      a: mergeAttributes(base.attributes?.a as AttributeDefinition[] | undefined, ["href", "title", "target", "rel"]),
+      img: mergeAttributes(base.attributes?.img as AttributeDefinition[] | undefined, ["src", "alt", "title", "dataMarkdownTitle"]),
+      table: mergeAttributes(base.attributes?.table as AttributeDefinition[] | undefined, ["align", "border", "cellpadding", "cellspacing"]),
+      th: mergeAttributes(base.attributes?.th as AttributeDefinition[] | undefined, ["align", "colspan", "rowspan"]),
+      td: mergeAttributes(base.attributes?.td as AttributeDefinition[] | undefined, ["align", "colspan", "rowspan"]),
+      tr: mergeAttributes(base.attributes?.tr as AttributeDefinition[] | undefined, ["align"]),
+      ...customAttrs,
+    } as Schema["attributes"];
   }
+  if (base.attributes) delete (base.attributes as Record<string, unknown>)["script"];
   base.protocols = {
     ...(base.protocols || {}),
-    href: ["http", "https", "mailto", "tel", "callto"],
-    src: ["http", "https", "data"],
+    href: policy?.protocols?.href ?? ["http", "https", "mailto", "tel", "callto"],
+    src: policy?.protocols?.src ?? ["http", "https", "data"],
   };
-
   base.strip = ["script", "style"];
-
   return base;
+}
+
+function toHastAttributeName(attribute: string): string {
+  if (attribute === "data-*") return "data*";
+  if (attribute === "aria-*") return "aria*";
+  if (attribute === "class") return "className";
+  if (attribute === "for") return "htmlFor";
+  return attribute.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
 }
 
 function mergeAttributes(existing: AttributeDefinition[] | undefined, additions: string[]): AttributeDefinition[] {

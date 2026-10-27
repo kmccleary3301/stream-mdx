@@ -1,8 +1,9 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
-import { type ManagedParagraphViewState, type ParagraphSpanRecord } from "@stream-mdx/core";
+import { type InlineNode, type ManagedParagraphViewState, type ParagraphSpanRecord } from "@stream-mdx/core";
 import React from "react";
 import { renderInlineNodes } from "../components";
 import type { ComponentRegistry } from "../components";
+import { containsSingleImage, isStandaloneImageContainer } from "../components/inline-image-context";
 import { MathExpressionCompletenessContext } from "../components/katex-math";
 import { RenderConfigVersionContext, useRendererNode } from "./hooks";
 import { BlockRangeProjectionTree, type BlockRangeProjection, type BlockRangeProjectionRange } from "./block-range-projection";
@@ -210,6 +211,16 @@ const ParagraphSpanRangeView: React.FC<{
   const rendered: React.ReactNode[] = [];
   const inlineComponents = registry.getInlineComponents();
   const urlTransform = registry.getUrlTransform();
+  const allSpans = state.spans.materialize();
+  const allInlineNodes: InlineNode[] = [];
+  let hasNestedChildren = false;
+  for (const span of allSpans) {
+    if (span.children?.length) hasNestedChildren = true;
+    allInlineNodes.push(...span.nodes);
+  }
+  const paragraphIsStandalone = !hasNestedChildren &&
+    isStandaloneImageContainer(parentTagName) &&
+    containsSingleImage(allInlineNodes);
   for (let index = visibleFrom; index < visibleTo; index += 1) {
     const span: ParagraphSpanRecord | undefined = spans[index - from];
     if (!span) throw new RangeError("Paragraph span range cache is incomplete");
@@ -228,7 +239,10 @@ const ParagraphSpanRangeView: React.FC<{
           urlTransform,
           registry,
           parentTagName,
-          registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`, captureNodeSourceGuard(store, blockId)),
+          {
+            ...registry.getRenderInlineContext(!span.isProvisional, `${blockId}:${span.id}`, captureNodeSourceGuard(store, blockId)),
+            isStandalone: paragraphIsStandalone,
+          },
         )}
         </MathExpressionCompletenessContext.Provider>
       </React.Fragment>,

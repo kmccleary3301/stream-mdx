@@ -520,6 +520,7 @@ export function defaultUrlTransform(
 
   return url;
 }
+export { createProtocolPolicyUrlTransform } from "./url-policy";
 
 /**
  * Content Security Policy utilities

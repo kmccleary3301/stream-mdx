@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import {
+  createProtocolPolicyUrlTransform,
   defaultUrlTransform,
+  InlineParser,
   isForbiddenAttribute,
   sanitizeHtmlInWorker,
+  sanitizeHtmlTreeInWorker,
   sanitizeStyle,
 } from "../src";
 
@@ -97,5 +100,67 @@ assert.ok(!cleanedStyle.includes("url("), "url() dropped");
 const htmlWithStyle = sanitizeHtmlInWorker('<span style="position: fixed; color: blue;">Hello</span>');
 assert.ok(htmlWithStyle.includes('style="color: blue"'), "sanitized HTML style keeps color and drops position");
 assert.ok(!htmlWithStyle.includes("position"), "sanitized HTML style drops position");
+
+const protocolPolicy = createProtocolPolicyUrlTransform({
+  href: ["file", "t3-citation", "t3-context", "t3-thread", "https"],
+  src: ["file", "t3-context"],
+});
+assert.equal(protocolPolicy("file:///tmp/image.png", "href", { source: "markdown" }), "file:///tmp/image.png");
+assert.equal(protocolPolicy("t3-citation://v1/item", "href", { source: "markdown" }), "t3-citation://v1/item");
+assert.equal(protocolPolicy("t3-context://v1/image", "src", { source: "markdown" }), "t3-context://v1/image");
+assert.equal(protocolPolicy("", "href", { source: "markdown" }), null);
+assert.equal(protocolPolicy("mailto:user@example.com", "href", { source: "markdown" }), null);
+assert.equal(protocolPolicy("javascript:alert(1)", "href", { source: "markdown" }), null);
+assert.equal(protocolPolicy("data:image/svg+xml,<svg/>", "src", { source: "html" }), null);
+
+const policyHtml = sanitizeHtmlInWorker(
+  '<div title="strip" data-safe="yes"><img src="file:///tmp/image.png" title="image metadata" width="30" height="40" onerror="bad()" srcdoc="bad"><a href="t3-thread://v1/1">thread</a><a href="javascript:bad()">unsafe</a><script>script text</script><style>style text</style></div>',
+  {
+    sanitization: {
+      tagNames: ["div", "img", "a", "script", "style"],
+      attributes: {
+        "*": ["title", "data-safe"],
+        img: ["src", "title", "width", "height"],
+        a: ["href"],
+      },
+      protocols: {
+        href: ["file", "t3-citation", "t3-context", "t3-thread", "https"],
+        src: ["file", "t3-context"],
+      },
+      stripAttributes: ["title"],
+    },
+  },
+);
+assert.ok(policyHtml.includes('data-safe="yes"'));
+assert.ok(policyHtml.includes('src="file:///tmp/image.png"'));
+assert.ok(policyHtml.includes('data-markdown-title="image metadata"'));
+assert.ok(policyHtml.includes('width="30"') && policyHtml.includes('height="40"'));
+assert.ok(policyHtml.includes('href="t3-thread://v1/1"'));
+assert.ok(!/(?:\s|<)title="/.test(policyHtml));
+assert.ok(!policyHtml.includes("onerror") && !policyHtml.includes("srcdoc"));
+assert.ok(!policyHtml.includes("javascript:") && !policyHtml.includes("script text") && !policyHtml.includes("style text"));
+
+const literalOptions = { mode: "literal" as const };
+const literalInline = new InlineParser({ html: literalOptions }).parse(
+  "Before <span>**inside**</span> and **outside**",
+);
+assert.ok(literalInline.some((node) => node.kind === "text" && node.text.includes("<span>**inside**</span>")));
+assert.ok(literalInline.some((node) => node.kind === "strong" && node.children.some((child) => child.kind === "text" && child.text === "outside")));
+assert.deepEqual(sanitizeHtmlTreeInWorker("<div>authored <b>markup</b></div>", literalOptions), [
+  { kind: "text", text: "<div>authored <b>markup</b></div>" },
+]);
+assert.equal(sanitizeHtmlInWorker("<div>authored</div>", literalOptions), "&lt;div&gt;authored&lt;/div&gt;");
+
+const bareAnchorInline = new InlineParser({ html: { unmatchedAnchors: "literal-bare" } }).parse(
+  "Before <A> after **bold**",
+);
+assert.ok(bareAnchorInline.some((node) => node.kind === "text" && node.text.includes("<A>")));
+assert.ok(bareAnchorInline.some((node) => node.kind === "strong"));
+assert.deepEqual(
+  sanitizeHtmlTreeInWorker("<a>unmatched", { unmatchedAnchors: "literal-bare" }),
+  [{ kind: "text", text: "<a>unmatched" }],
+);
+assert.ok(sanitizeHtmlTreeInWorker("<a>paired</a>", { unmatchedAnchors: "literal-bare" })
+  .some((node) => node.kind === "element" && node.tagName === "a"));
 
 console.log("Core security URL, forbidden attribute, and style tests passed.");

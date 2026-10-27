@@ -98,6 +98,8 @@ function metadataSnapshot(source: CodeBlockSourceMetadata): CodeBlockSourceMetad
     lineCount: source.lineCount,
     sourceRange: Object.freeze({ from: source.sourceRange.from, to: source.sourceRange.to }),
     ...(source.diffStatus !== undefined ? { diffStatus: source.diffStatus } : {}),
+    ...(source.sourceKind !== undefined ? { sourceKind: source.sourceKind } : {}),
+    ...(source.sourceComplete !== undefined ? { sourceComplete: source.sourceComplete } : {}),
   });
 }
 
@@ -463,6 +465,9 @@ function legacyCodeState(
     completeLineCount: index.completeLineCount,
     lineCount: index.length,
     sourceRange: { from: sourceFrom, to: sourceTo },
+    ...(meta?.sourceKind === "raw-svg"
+      ? { sourceKind: "raw-svg" as const, sourceComplete: meta.sourceComplete === true }
+      : {}),
   };
   const sourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
     ? sourceStateForRaw(raw, sourceFrom, sourceTo, canonicalSource, counters)
@@ -892,6 +897,9 @@ export function refreshLegacyCodeSource(
     completeLineCount: lines.completeLineCount,
     lineCount: lines.length,
     sourceRange: { from: sourceFrom, to: sourceTo },
+    ...(metadata?.sourceKind === "raw-svg"
+      ? { sourceKind: "raw-svg" as const, sourceComplete: metadata.sourceComplete === true }
+      : {}),
   };
   const validatedSourceState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
     ? sourceStateForRaw(raw, sourceFrom, sourceTo, canonicalSource, counters)

@@ -1,7 +1,7 @@
 import { buildLookaheadContainerContext, createContainerSignature, prepareSurfaceLookahead } from "./streaming/inline-streaming";
 import type { LookaheadContainerContext, LookaheadDecisionTrace } from "./streaming/lookahead-contract";
-import type { InlineNode, MixedContentSegment, ProtectedRange } from "./types";
-import { sanitizeHtmlInWorker } from "./worker-html-sanitizer";
+import type { HtmlOptions, InlineNode, MixedContentSegment, ProtectedRange } from "./types";
+import { findUnmatchedBareAnchorOffsets, sanitizeHtmlInWorker } from "./worker-html-sanitizer";
 
 export interface MixedContentAutoCloseHtmlOptions {
   autoClose?: boolean;
@@ -24,6 +24,7 @@ export interface MixedContentOptions {
   lookaheadContext?: Partial<LookaheadContainerContext>;
   allowedTags?: Record<string, string[]>;
   literalTagContent?: string[];
+  htmlOptions?: HtmlOptions;
 }
 
 export interface MixedContentExtractionResult {
@@ -355,12 +356,13 @@ function splitByTagSegments(
   const baseIsFinite = typeof baseOffset === "number" && Number.isFinite(baseOffset);
   const customAllowed = options?.allowedTags ? Object.keys(options.allowedTags) : undefined;
   const htmlAllowTags = normalizeHtmlAllowlist(options?.html?.allowTags, customAllowed);
-  const sanitizeOptions =
+  const sanitizeOptions = options?.htmlOptions ?? (
     options?.allowedTags || options?.html?.allowedTags
       ? { allowedTags: options.allowedTags ?? options.html?.allowedTags }
-      : undefined;
-  const htmlAutoClose = options?.html?.autoClose === true;
+      : undefined
+  );
   const htmlMaxNewlines = normalizeNewlineLimit(options?.html?.maxNewlines);
+  const htmlAutoClose = options?.html?.autoClose === true;
   const mdxAutoClose = options?.mdx?.autoClose === true;
   const mdxMaxNewlines = normalizeNewlineLimit(options?.mdx?.maxNewlines);
   const mdxAllowlist = normalizeComponentAllowlist(options?.mdx?.componentAllowlist);
@@ -374,9 +376,28 @@ function splitByTagSegments(
     provisional: true,
     ...options?.lookaheadContext,
   });
+  if (options?.htmlOptions?.mode === "literal") {
+    pushTextSegment(
+      segments,
+      source,
+      baseIsFinite ? baseOffset : undefined,
+      baseIsFinite ? (baseOffset as number) + source.length : undefined,
+      parseInline,
+      baseLookaheadContext,
+    );
+    return segments;
+  }
+  const unmatchedAnchorOffsets = options?.htmlOptions?.unmatchedAnchors === "literal-bare"
+    ? new Set(findUnmatchedBareAnchorOffsets(source))
+    : undefined;
 
   while (match !== null) {
     const start = match.index;
+    if (unmatchedAnchorOffsets?.has(start)) {
+      tagPattern.lastIndex = start + 1;
+      match = tagPattern.exec(source);
+      continue;
+    }
     let backslashes = 0;
     for (let i = start - 1; i >= 0 && source[i] === "\\"; i--) {
       backslashes++;

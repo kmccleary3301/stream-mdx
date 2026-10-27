@@ -112,6 +112,7 @@ import {
   parseCodeFenceInfo,
   prepareInlineStreamingLookahead,
   removeHeadingMarkers,
+  findUnmatchedBareAnchorOffsets,
   sanitizeHtmlInWorker,
   sanitizeHtmlTreeInWorker,
   dedentIndentedCode,
@@ -1216,6 +1217,7 @@ export class MarkdownEngine {
   private mixedHtmlConfig: HtmlOptions = { literalTagContent: [] };
   private performanceTimer = new PerformanceTimer();
   private highlighter: SharedHighlighter | null = null;
+  private unmatchedAnchorSourceCache?: { generation: number; sourceLength: number; offsets: ReadonlySet<number> };
 
   private blocks: Block[] = [];
   private lastTree: Tree | null = null;
@@ -1568,6 +1570,7 @@ export class MarkdownEngine {
       protectedRanges: absoluteProtectedRanges,
       allowedTags: this.htmlConfig?.allowedTags,
       literalTagContent: this.htmlConfig?.literalTagContent,
+      htmlOptions: this.htmlConfig,
       lookaheadContext: context,
     });
     const sourceEnd = baseOffset + content.length;
@@ -6527,8 +6530,46 @@ export class MarkdownEngine {
           recoveryInlineSourcePositions.length === recoveryInlineSourceText.length;
         const hasMappedRecoveryInlineNodes = hasMappedRecoverySource && Array.isArray(block.payload.inline);
         const inlineSourceText = recoveryInlineSourceText ?? rawParagraph;
+        let inlineParagraph = inlineSourceText;
+        if (
+          this.htmlConfig?.mode !== "literal" &&
+          this.htmlConfig?.unmatchedAnchors === "literal-bare" &&
+          /<a\s*\/?\s*>/i.test(inlineSourceText)
+        ) {
+          const localUnmatched = findUnmatchedBareAnchorOffsets(inlineSourceText);
+          if (localUnmatched.length > 0) {
+            const sourceLength = this.sourceDocument.length;
+            let anchorCache = this.unmatchedAnchorSourceCache;
+            if (
+              !anchorCache ||
+              anchorCache.generation !== this.documentGeneration ||
+              anchorCache.sourceLength !== sourceLength
+            ) {
+              const source = this.sourceDocument.snapshot();
+              anchorCache = {
+                generation: this.documentGeneration,
+                sourceLength,
+                offsets: new Set(findUnmatchedBareAnchorOffsets(source.read(0, sourceLength))),
+              };
+              this.unmatchedAnchorSourceCache = anchorCache;
+            }
+            const sourceStart = block.payload.range?.from ?? 0;
+            const escapedOffsets = localUnmatched.filter((offset) =>
+              !anchorCache.offsets.has(hasMappedRecoverySource ? recoveryInlineSourcePositions[offset] ?? sourceStart + offset : sourceStart + offset),
+            );
+            if (escapedOffsets.length > 0) {
+              let from = 0;
+              inlineParagraph = "";
+              for (const offset of escapedOffsets) {
+                inlineParagraph += `${inlineSourceText.slice(from, offset)}&lt;`;
+                from = offset + 1;
+              }
+              inlineParagraph += inlineSourceText.slice(from);
+            }
+          }
+        }
         const streamingParsed = !block.isFinalized
-          ? this.parseInlineStreaming(inlineSourceText, this.inlineContext(block, ancestorTypes))
+          ? this.parseInlineStreaming(inlineParagraph, this.inlineContext(block, ancestorTypes))
           : null;
         this.updateInlineLookaheadMeta(block, streamingParsed, shouldTrackInline);
         const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
@@ -6550,7 +6591,7 @@ export class MarkdownEngine {
             } else if (trustedNativePath) {
               block.payload.inline = this.inlineParser.parse(trustedInlineSourceText);
             } else {
-              block.payload.inline = this.inlineParser.parse(rawParagraph);
+              block.payload.inline = this.inlineParser.parse(inlineParagraph);
             }
           }
         } else if (!hasMappedRecoveryInlineNodes) {
@@ -6631,6 +6672,7 @@ export class MarkdownEngine {
             ...(protectedRangesAbsolute ? { protectedRanges: protectedRangesAbsolute } : {}),
             ...(this.htmlConfig?.allowedTags ? { allowedTags: this.htmlConfig.allowedTags } : {}),
             ...(this.htmlConfig?.literalTagContent ? { literalTagContent: this.htmlConfig.literalTagContent } : {}),
+            htmlOptions: this.htmlConfig,
             lookaheadContext: this.inlineContext(block, ancestorTypes, "mixed-content"),
           };
           const inlineFn = (value: string) => {
@@ -8264,6 +8306,7 @@ export class MarkdownEngine {
                         protectedRanges: codeRanges,
                         allowedTags: this.htmlConfig?.allowedTags,
                         literalTagContent: this.htmlConfig?.literalTagContent,
+                        htmlOptions: this.htmlConfig,
                         lookaheadContext: this.inlineContext(nested, ancestors, "mixed-content"),
                       },
                     );
