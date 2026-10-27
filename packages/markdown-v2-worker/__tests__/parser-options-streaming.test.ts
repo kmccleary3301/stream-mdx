@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore, type RendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness, projectConsumerBlocks, type WorkerHarness } from "./worker-test-harness";
+import { createMarkdownSnapshotCompiler } from "../src/direct-compile";
 
 const SOURCE = String.raw`line one
 line two $x$ and $5 and $10 $$display$$ [drive](C:\repo\.t3\file.png) ![image](C:\repo\.t3\image.png) [reference][asset]
@@ -70,5 +71,19 @@ assert.ok(inline.some((node) => node.kind === "link" && node.href === String.raw
 assert.ok(inline.some((node) => node.kind === "image" && node.src === String.raw`C:\repo\.t3\image.png`));
 assert.ok(inline.some((node) => node.kind === "link" && node.href === String.raw`C:\repo\.t3\reference.png`));
 assert.ok(inline.some((node) => node.kind === "text" && node.text.includes("$5 and $10")), "currency text stays literal");
+
+const compiled = await createMarkdownSnapshotCompiler({ extensionId: "parser-options-direct" }).compile({
+  text: SOURCE,
+  init: {
+    docPlugins: INIT.docPlugins,
+    mathOptions: INIT.mathOptions,
+    linkDestinations: INIT.linkDestinations,
+  },
+});
+assert.deepEqual(
+  projectConsumerBlocks(compiled.blocks),
+  expected,
+  "snapshot compiler forwards parse options like a streaming worker session",
+);
 
 console.log("Worker parser option streaming tests passed");
