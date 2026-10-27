@@ -464,6 +464,14 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       );
       result.push(compTree ? retainComponentTree(single, compTree) : single);
     } else if (region.length > 1) {
+      // A blockquote extracted before this region closed was a root block, so document plugins may have given it
+      // root-only compatibility inline (footnotes `numberBlock`), and append reuse keeps that block. Nested, its
+      // text lives in its prepared children, exactly as a single-shot parse builds it.
+      region = region.map((block) => {
+        if (block.type !== "blockquote" || block.payload.inline === undefined) return block;
+        const { inline: _rootInline, ...payload } = block.payload;
+        return { ...block, payload };
+      });
       const first = region[0];
       // Only the region's own source reaches the sanitizer, so the private attribute must avoid that
       // source alone (as in `normalizeHtmlParagraph`); scanning the whole document is O(document) per region.

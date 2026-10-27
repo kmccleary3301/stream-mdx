@@ -1,12 +1,17 @@
 import assert from "node:assert";
 
-import { STREAM_MDX_SCHEMA_VERSION, type ContentPolicy, type WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type ContentPolicy, type WorkerOut, type WorkerIn } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { createWorkerHarness, projectConsumerBlocks, type WorkerHarness } from "./worker-test-harness";
 
 // An HTML region opened by an unclosed tag can be closed by a later block. Every append boundary must
 // produce the blocks of a single-shot parse: the region may not split, drop, or duplicate its members.
-const DOCUMENTS: ReadonlyArray<{ readonly name: string; readonly source: string; readonly contentPolicy: ContentPolicy }> = [
+const DOCUMENTS: ReadonlyArray<{
+  readonly name: string;
+  readonly source: string;
+  readonly contentPolicy: ContentPolicy;
+  readonly contentComponents?: Extract<WorkerIn, { type: "INIT" }>["contentComponents"];
+}> = [
   {
     name: "closer as its own HTML block after a list",
     source: "Plain para.\n\n<section>\nlead:\n\n1. a\n2. b\n</section>\n\nafter\n",
@@ -39,9 +44,25 @@ const DOCUMENTS: ReadonlyArray<{ readonly name: string; readonly source: string;
     source: "Intro.\n\n> quoted\n</Pre>\n\nafter\n",
     contentPolicy: "markdown",
   },
+  {
+    name: "restricted Preview wrapping a list",
+    source: "Plain para.\n\n<Preview>\n\n1. a\n2. b\n</Preview>\n\nafter\n",
+    contentPolicy: "restricted",
+    contentComponents: [{ name: "Preview", renderWhen: "open" }],
+  },
+  {
+    name: "trusted-mdx details wrapping a blockquote",
+    source: "<details>\n\n> quote\n</details>\n\n",
+    contentPolicy: "trusted-mdx",
+  },
 ];
 
-async function finalBlocks(harness: WorkerHarness, chunks: readonly string[], contentPolicy: ContentPolicy): Promise<unknown[]> {
+async function finalBlocks(
+  harness: WorkerHarness,
+  chunks: readonly string[],
+  contentPolicy: ContentPolicy,
+  contentComponents?: Extract<WorkerIn, { type: "INIT" }>["contentComponents"],
+): Promise<unknown[]> {
   const store = createRendererStore();
   const apply = (messages: WorkerOut[]) => {
     for (const message of messages) {
@@ -56,6 +77,7 @@ async function finalBlocks(harness: WorkerHarness, chunks: readonly string[], co
     initialContent: "",
     contentPolicy,
     docPlugins: { footnotes: true, html: true, mdx: true, math: true, tables: true, callouts: true },
+    contentComponents,
   }));
   for (const chunk of chunks) apply(await harness.send({ type: "APPEND", text: chunk }));
   apply(await harness.send({ type: "FINALIZE" }));
@@ -64,12 +86,13 @@ async function finalBlocks(harness: WorkerHarness, chunks: readonly string[], co
 
 const harness = await createWorkerHarness();
 for (const document of DOCUMENTS) {
-  const expected = await finalBlocks(harness, [document.source], document.contentPolicy);
+  const expected = await finalBlocks(harness, [document.source], document.contentPolicy, document.contentComponents);
   for (let cut = 1; cut < document.source.length; cut += 1) {
     const streamed = await finalBlocks(
       harness,
       [document.source.slice(0, cut), document.source.slice(cut)],
       document.contentPolicy,
+      document.contentComponents,
     );
     assert.deepStrictEqual(
       streamed,
