@@ -1,5 +1,23 @@
 # @stream-mdx/plugins
 
+## 1.1.0
+
+### Minor Changes
+
+- e599a74: Add bounded heading, list, task-marker, callout, and source-range presentation metadata; expose block-extension views and GitHub-alert callouts; and add scoped, class-configurable streaming text animation.
+
+### Patch Changes
+
+- Updated dependencies [0a2363b]
+- Updated dependencies [49b9c1f]
+- Updated dependencies [2772411]
+- Updated dependencies [576682f]
+- Updated dependencies [737f520]
+- Updated dependencies [a898f97]
+- Updated dependencies [e599a74]
+- Updated dependencies [c50ccb3]
+  - @stream-mdx/core@1.1.0
+
 ## 1.0.0
 
 ### Major Changes
