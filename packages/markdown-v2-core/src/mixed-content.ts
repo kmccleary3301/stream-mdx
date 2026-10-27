@@ -25,6 +25,7 @@ export interface MixedContentOptions {
   allowedTags?: Record<string, string[]>;
   literalTagContent?: string[];
   htmlOptions?: HtmlOptions;
+  matchedBareAnchorOffsets?: ReadonlySet<number>;
 }
 
 export interface MixedContentExtractionResult {
@@ -393,7 +394,7 @@ function splitByTagSegments(
 
   while (match !== null) {
     const start = match.index;
-    if (unmatchedAnchorOffsets?.has(start)) {
+    if (unmatchedAnchorOffsets?.has(start) && !options?.matchedBareAnchorOffsets?.has(start)) {
       tagPattern.lastIndex = start + 1;
       match = tagPattern.exec(source);
       continue;

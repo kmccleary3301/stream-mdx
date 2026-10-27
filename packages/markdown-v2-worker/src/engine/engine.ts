@@ -1552,10 +1552,24 @@ export class MarkdownEngine {
     const context = this.rootParagraphInlineContext("mixed-content");
     const attemptedReferences = new Set<string>();
     const onAttemptedReference = (label: string) => attemptedReferences.add(label);
+    const matchedBareAnchorOffsets = this.matchedBareAnchorOffsetsForSource(content, baseOffset);
+    let inlineSearchFrom = 0;
     const inline = (value: string): InlineNode[] => {
+      let localFrom = content.indexOf(value, inlineSearchFrom);
+      if (localFrom < 0) localFrom = content.indexOf(value);
+      if (localFrom >= 0) inlineSearchFrom = localFrom + value.length;
+      const localMatchedOffsets = matchedBareAnchorOffsets && localFrom >= 0
+        ? new Set(Array.from(matchedBareAnchorOffsets)
+            .filter((offset) => offset >= localFrom && offset < localFrom + value.length)
+            .map((offset) => offset - localFrom))
+        : undefined;
       const parsed = provisional
         ? this.parseInlineStreaming(value, context, undefined, onAttemptedReference, false).inline
-        : this.inlineParser.parse(value, { cache: false, onAttemptedReference });
+        : this.inlineParser.parse(value, {
+            cache: false,
+            onAttemptedReference,
+            ...(localMatchedOffsets?.size ? { matchedBareAnchorOffsets: localMatchedOffsets } : {}),
+          });
       return this.mdxEnabled ? preserveInlineComponentSource(parsed) : parsed;
     };
     const extraction = extractMixedContentSegmentsWithLookahead(content, baseOffset, inline, {
@@ -1571,6 +1585,7 @@ export class MarkdownEngine {
       allowedTags: this.htmlConfig?.allowedTags,
       literalTagContent: this.htmlConfig?.literalTagContent,
       htmlOptions: this.htmlConfig,
+      ...(matchedBareAnchorOffsets ? { matchedBareAnchorOffsets } : {}),
       lookaheadContext: context,
     });
     const sourceEnd = baseOffset + content.length;
@@ -1632,6 +1647,33 @@ export class MarkdownEngine {
       attemptedReferences: Object.freeze(Array.from(attemptedReferences).sort()),
     };
   }
+  private matchedBareAnchorOffsetsForSource(sourceText: string, sourceStart: number): ReadonlySet<number> | undefined {
+    if (
+      this.htmlConfig?.mode === "literal" ||
+      this.htmlConfig?.unmatchedAnchors !== "literal-bare" ||
+      !/<a\s*\/?\s*>/i.test(sourceText)
+    ) return undefined;
+    const localUnmatched = findUnmatchedBareAnchorOffsets(sourceText);
+    if (localUnmatched.length === 0) return undefined;
+    const sourceLength = this.sourceDocument.length;
+    let anchorCache = this.unmatchedAnchorSourceCache;
+    if (
+      !anchorCache ||
+      anchorCache.generation !== this.documentGeneration ||
+      anchorCache.sourceLength !== sourceLength
+    ) {
+      const source = this.sourceDocument.snapshot();
+      anchorCache = {
+        generation: this.documentGeneration,
+        sourceLength,
+        offsets: new Set(findUnmatchedBareAnchorOffsets(source.read(0, sourceLength))),
+      };
+      this.unmatchedAnchorSourceCache = anchorCache;
+    }
+    const matchedOffsets = localUnmatched.filter((offset) => !anchorCache!.offsets.has(sourceStart + offset));
+    return matchedOffsets.length > 0 ? new Set(matchedOffsets) : undefined;
+  }
+
 
   private clearNativeContainerOwnership(): void {
     this.nativeContainerTails.clear();
@@ -6530,7 +6572,8 @@ export class MarkdownEngine {
           recoveryInlineSourcePositions.length === recoveryInlineSourceText.length;
         const hasMappedRecoveryInlineNodes = hasMappedRecoverySource && Array.isArray(block.payload.inline);
         const inlineSourceText = recoveryInlineSourceText ?? rawParagraph;
-        let inlineParagraph = inlineSourceText;
+        const inlineParagraph = inlineSourceText;
+        let matchedBareAnchorOffsets: ReadonlySet<number> | undefined;
         if (
           this.htmlConfig?.mode !== "literal" &&
           this.htmlConfig?.unmatchedAnchors === "literal-bare" &&
@@ -6554,21 +6597,16 @@ export class MarkdownEngine {
               this.unmatchedAnchorSourceCache = anchorCache;
             }
             const sourceStart = block.payload.range?.from ?? 0;
-            const escapedOffsets = localUnmatched.filter((offset) =>
-              !anchorCache.offsets.has(hasMappedRecoverySource ? recoveryInlineSourcePositions[offset] ?? sourceStart + offset : sourceStart + offset),
+            const matchedOffsets = localUnmatched.filter((offset) =>
+              !anchorCache.offsets.has(
+                hasMappedRecoverySource ? recoveryInlineSourcePositions[offset] ?? sourceStart + offset : sourceStart + offset,
+              ),
             );
-            if (escapedOffsets.length > 0) {
-              let from = 0;
-              inlineParagraph = "";
-              for (const offset of escapedOffsets) {
-                inlineParagraph += `${inlineSourceText.slice(from, offset)}&lt;`;
-                from = offset + 1;
-              }
-              inlineParagraph += inlineSourceText.slice(from);
-            }
+            if (matchedOffsets.length > 0) matchedBareAnchorOffsets = new Set(matchedOffsets);
           }
         }
-        const streamingParsed = !block.isFinalized
+        const isFinalized = block.isFinalized || options?.forceFinalize === true;
+        const streamingParsed = !isFinalized
           ? this.parseInlineStreaming(inlineParagraph, this.inlineContext(block, ancestorTypes))
           : null;
         this.updateInlineLookaheadMeta(block, streamingParsed, shouldTrackInline);
@@ -6584,14 +6622,14 @@ export class MarkdownEngine {
           trustedInlineSourcePositions.length === trustedInlineSourceText.length;
         const hasMappedTrustedInlineNodes = hasMappedTrustedInlineSource && Array.isArray(block.payload.inline);
         const baseOffset = hasMappedRecoverySource ? 0 : block.payload.range?.from ?? 0;
-        if (block.isFinalized) {
+        if (isFinalized) {
           if (!hasMappedTrustedInlineNodes && !hasMappedRecoveryInlineNodes) {
             if (trustedNativePath && trustedInlineSourcePositions === undefined) {
               block.payload.inline = this.inlineParser.parse(rawParagraph, { sourceOffset: baseOffset });
             } else if (trustedNativePath) {
               block.payload.inline = this.inlineParser.parse(trustedInlineSourceText);
             } else {
-              block.payload.inline = this.inlineParser.parse(inlineParagraph);
+              block.payload.inline = this.inlineParser.parse(inlineParagraph, { matchedBareAnchorOffsets });
             }
           }
         } else if (!hasMappedRecoveryInlineNodes) {
@@ -8162,7 +8200,12 @@ export class MarkdownEngine {
       block.payload.raw = containerSource;
     }
     const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text, this.inlineContext(block, ancestorTypes)).inline);
-    const listItemSources = collectNestedListItemInlineSources(block, this.mdParser, nativeNode, trustedNativeSource);
+    const listItemSources = collectNestedListItemInlineSources(
+      block,
+      this.mdParser,
+      options?.forceFinalize ? undefined : nativeNode,
+      trustedNativeSource,
+    );
     const groupChildren = async (children: NodeSnapshot[], ancestors: readonly string[]): Promise<NodeSnapshot[]> => {
       const grouped: NodeSnapshot[] = [];
       let sequence: NodeSnapshot[] = [];
@@ -8264,7 +8307,18 @@ export class MarkdownEngine {
                 from: baseOffset + range.from,
                 to: baseOffset + range.to,
               }));
-              const parsed = nested.isFinalized ? null : this.parseInlineStreaming(text, this.inlineContext(nested, ancestors), nested.payload.inline);
+              if (nested.isFinalized || options?.forceFinalize === true) {
+                const finalizedInline = this.inlineParser.parse(text);
+                nested.payload.inline = finalizedInline;
+                snapshot.props = {
+                  ...snapshot.props,
+                  inline: finalizedInline,
+                  text: inlineNodesToPlainText(finalizedInline),
+                };
+              }
+              const parsed = nested.isFinalized || options?.forceFinalize
+                ? null
+                : this.parseInlineStreaming(text, this.inlineContext(nested, ancestors), nested.payload.inline);
               this.updateInlineLookaheadMeta(nested, parsed, this.tracksInlineStatus());
               if (text.includes("<") || text.includes("{")) {
                 let restrictedInlineTree: HtmlTreeNode[] | null = null;

@@ -350,7 +350,7 @@ for (const document of await staticAndStreamDocuments(
   "See <a>label<script><!-- </script> --></a>",
   unmatchedAnchorHtml,
 )) {
-  assert.equal(document.querySelector("p")?.textContent, "See <a>label -->");
+  assert.equal(document.querySelector("p")?.textContent, "See label -->");
 }
 for (const html of ["<!-- </a> -->", '<div title="</a>">more</div>', '<script>"</a>"</script>']) {
   for (const document of await staticAndStreamDocuments(`Before <A>.\n\n${html}\n\nAfter.`, unmatchedAnchorHtml)) {

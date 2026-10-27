@@ -239,7 +239,7 @@ export async function getSharedHighlighter(
       const highlighter: SharedHighlighter = {
         ...created,
         codeToTokensWithThemes: (code, options) =>
-          created.codeToTokensWithThemes(code, { ...options, tokenizeTimeLimit: 0 }),
+          created.codeToTokensWithThemes(code, { ...options, tokenizeTimeLimit: 0 } as typeof options),
         codeToHtml: (code, options) => created.codeToHtml(code, { ...options, tokenizeTimeLimit: 0 }),
       };
       return highlighter;
@@ -810,10 +810,13 @@ export async function tokenizeDiffRun(
   // its multi-theme options declaration omits it.
   const options = {
     lang: isSupportedLanguage(language) ? language : "text",
-    themes,
+    themes: { dark: themes.dark, light: themes.light },
     grammarState,
   };
-  const rawTokens = highlighter.codeToTokensWithThemes(text, options);
+  const rawTokens = highlighter.codeToTokensWithThemes(
+    text,
+    options as Parameters<typeof highlighter.codeToTokensWithThemes>[1],
+  );
   const nextGrammarState = highlighter.getLastGrammarState(rawTokens);
   return {
     tokenLines: renderTokenLines(rawTokens),

@@ -85,6 +85,8 @@ export interface InlineParseOptions {
    * Provenance parsing bypasses the content-only cache so offsets cannot go stale.
    */
   sourceOffset?: number;
+  /** Bare anchor openings matched by a document-level scan outside this inline source. */
+  matchedBareAnchorOffsets?: ReadonlySet<number>;
   /**
    * Callback invoked whenever a link reference label candidate is evaluated during inline parsing.
    */
