@@ -3112,6 +3112,16 @@ export class MarkdownEngine {
     this.pendingNativeNestedPatches = this.retainPatchesOutsideRetiredContainers(this.pendingNativeNestedPatches, retired);
     this.pendingNativeNestedOwnerPatches = this.retainPatchesOutsideRetiredContainers(this.pendingNativeNestedOwnerPatches, retired);
   }
+  private retireNativeCalloutContainers(): void {
+    if (this.nativeContainerSourceStarts.size === 0) return;
+    for (const [containerId, sourceStart] of this.nativeContainerSourceStarts) {
+      const block = this.rootBlockAtSourceStart(sourceStart);
+      if (block?.type !== "callout" || typeof block.payload.meta?.calloutKind !== "string") continue;
+      // GitHub alerts render from reparsed callout inlines, not the old blockquote paragraph owners.
+      this.retireNativeContainer({ ...block, id: containerId, type: "blockquote" });
+    }
+  }
+
   private retireDisplacedNativeContainers(
     previousBlocks: readonly Block[],
     nextBlocks: readonly Block[],
@@ -10745,6 +10755,7 @@ export class MarkdownEngine {
 
   private async finalizeNestedParagraphs(metricsCollector: WorkerMetricsCollector): Promise<void> {
     const source = this.sourceDocument.snapshot();
+    this.retireNativeCalloutContainers();
     const containersToFinalize = new Set(this.nativeContainerTails.keys());
     const closedParagraphOwners: Array<{ readonly owner: RootParagraphSourceOwner; readonly blockId: string }> = [];
     const registeredOpenCodeOwners: NativeNestedCodeSourceOwner[] = [];
