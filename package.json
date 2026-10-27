@@ -76,7 +76,7 @@
     "release:publish:v0.5.0": "bash scripts/publish-v0.5.0.sh",
     "release:v0.5.0": "bash scripts/release-v0.5.0.sh",
     "changeset": "changeset",
-    "changeset:version": "changeset version",
+    "changeset:version": "changeset version && npm install --package-lock-only --ignore-scripts --no-audit --no-fund",
     "changeset:publish": "changeset publish",
     "docs:style-primitives:audit": "tsx scripts/audit-frontend-style-primitives.ts"
   },

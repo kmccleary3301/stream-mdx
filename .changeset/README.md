@@ -5,7 +5,7 @@ This repo uses [Changesets](https://github.com/changesets/changesets) to manage 
 Common commands:
 
 - `npm run changeset` — create a changeset
-- `npm run changeset:version` — apply version bumps + changelog updates
+- `npm run changeset:version` — apply version bumps + changelog updates, then sync `package-lock.json`
 - `npm run changeset:publish` — publish packages (when ready)
 
 

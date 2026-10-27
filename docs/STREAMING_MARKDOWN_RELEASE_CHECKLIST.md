@@ -190,14 +190,15 @@ Changesets is the canonical release path for the coordinated `1.0.0` cut.
 
 1. Read every pending `.changeset/*.md` file and the [0.5-to-1.0 migration notes](../README.md#migrating-from-050-to-100). A single major changeset must include all ten public packages listed below.
 
-2. Apply versions and changelogs, then synchronize the lockfile without package lifecycle scripts:
+2. Apply versions and changelogs. The script also synchronizes the lockfile without package lifecycle scripts (`npm install --package-lock-only --ignore-scripts`), so the bumped workspace versions and internal dependency pins land in `package-lock.json`. `release.yml` uses the same script for its Version Packages PR.
 
    ```bash
    npm run changeset:version
-   npm install --package-lock-only --ignore-scripts --no-audit --no-fund
    ```
 
    This release's version mutation consumes all pending changesets. Do not apply the major changeset again to an already-versioned `1.0.0` branch. Commit the resulting manifests, generated changelogs, deleted changesets, and lockfile together.
+
+   `.changeset/config.json` sets `onlyUpdatePeerDependentsWhenOutOfRange`. Without it, a minor bump of core or React rewrites `@stream-mdx/unified`'s `^1.x` peer ranges and bumps unified a full major (for example `1.0.0` to `2.0.0`), even though unified itself has no changes. With the setting, unified is bumped only when a new core or React version falls outside its declared peer range.
 
 3. Check the release invariants before merging:
 
@@ -233,6 +234,15 @@ Changesets is the canonical release path for the coordinated `1.0.0` cut.
    ```
 
    Packages published this way carry no provenance attestation. Until Trusted Publishing is configured for all ten packages, later versions follow the same order: publish from the reviewed head of the Changesets version PR, then merge it, so the post-merge `release.yml` run finds nothing to publish.
+
+   `publish-release.sh` requires all ten packages at one version, so it only fits coordinated cuts like `1.0.0`. A later patch or minor release bumps only the changed packages and their dependents, so the versions diverge. Publish those with `scripts/publish-pending.sh`, pinned to the reviewed version PR head:
+
+   ```bash
+   STREAM_MDX_HEAD=<reviewed changeset-release/main sha> bash scripts/publish-pending.sh --check
+   STREAM_MDX_HEAD=<reviewed changeset-release/main sha> bash scripts/publish-pending.sh
+   ```
+
+   The script refuses any other head and any head not based on the current `origin/main`. It checks out the head in a scratch worktree, runs `npm ci` and the package builds, and dry-runs every package whose version the head changes. `--check` stops at that point. Without `--check`, it then runs `npm login --auth-type=web`, publishes the unpublished packages with plain `npm publish` in dependency order, logs out, verifies the registry, pushes `<name>@<version>` tags, and creates GitHub releases from each package's changelog section. Reruns skip versions that are already published and still finish any missing tags or releases.
 
 6. After CI publication, confirm `1.0.0` and the intended dist-tag for every package, plus the matching GitHub release/tags:
 
