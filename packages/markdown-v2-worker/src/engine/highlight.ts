@@ -181,6 +181,7 @@ export const FONT_STYLE_UNDERLINE = 4;
 export const FONT_STYLE_STRIKETHROUGH = 8;
 
 export type SharedHighlighter = Highlighter;
+type ShikiMultiThemes = Parameters<SharedHighlighter["codeToTokensWithThemes"]>[1]["themes"];
 
 const sharedHighlighterPromises = new Map<string, Promise<SharedHighlighter>>();
 
@@ -238,8 +239,9 @@ export async function getSharedHighlighter(
       // thread would change colors. Highlighting through the shared highlighter is never time-limited.
       const highlighter: SharedHighlighter = {
         ...created,
+        // Shiki 1.29 forwards tokenizeTimeLimit to codeToTokensBase, but the multi-theme options type omits it.
         codeToTokensWithThemes: (code, options) =>
-          created.codeToTokensWithThemes(code, { ...options, tokenizeTimeLimit: 0 }),
+          created.codeToTokensWithThemes(code, { ...options, tokenizeTimeLimit: 0 } as typeof options),
         codeToHtml: (code, options) => created.codeToHtml(code, { ...options, tokenizeTimeLimit: 0 }),
       };
       return highlighter;
@@ -808,9 +810,11 @@ export async function tokenizeDiffRun(
   const text = lines.map((line) => line.content ?? "").join("\n");
   // Shiki 1.29 forwards this continuation option to codeToTokensBase, although
   // its multi-theme options declaration omits it.
+  // Theme names and registrations are registered on the highlighter at runtime, so they are not
+  // limited to Shiki's bundled theme names.
   const options = {
     lang: isSupportedLanguage(language) ? language : "text",
-    themes,
+    themes: themes as unknown as ShikiMultiThemes,
     grammarState,
   };
   const rawTokens = highlighter.codeToTokensWithThemes(text, options);
