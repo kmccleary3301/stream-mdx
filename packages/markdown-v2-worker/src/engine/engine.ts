@@ -39,7 +39,7 @@ interface CampaignCounterSink {
 }
 
 import { type Input, type SyntaxNode, type Tree, TreeFragment } from "@lezer/common";
-import { GFM, Table, parser as mdParser } from "@lezer/markdown";
+import { GFM, Table, parser as mdParser, type MarkdownParser } from "@lezer/markdown";
 import type {
   Block,
   BlockResolvedLinkReference,
@@ -345,6 +345,138 @@ const LINK_REFERENCE_FREE_BLOCKS = new Set([
 ]);
 
 type SourceText = string | SourceSnapshot;
+
+interface OrderedListRecoveryEdit {
+  readonly from: number;
+  readonly to: number;
+  readonly replacement: string;
+  readonly kind: "sublist" | "sibling";
+}
+
+interface OrderedListRecoverySource {
+  readonly raw: string;
+  readonly text: string;
+  readonly sourceLength: number;
+  readonly positions: readonly number[];
+}
+
+function indentationColumn(prefix: string, start = 0): number {
+  let column = start;
+  for (const character of prefix) {
+    column = character === "\t" ? column + (4 - (column % 4)) : column + 1;
+  }
+  return column;
+}
+
+function isListRecoveryBlockBoundary(line: string): boolean {
+  const content = line.replace(/^[ \t]{0,3}/, "");
+  return /^(?:#{1,6}(?:[ \t]|$)|`{3,}|~{3,}|>|(?:\*{3,}|-{3,}|_{3,})[ \t]*$|<[A-Za-z/!?])/.test(content);
+}
+
+function recoverOrderedListSource(
+  raw: string,
+  sourceStart: number,
+  parser: MarkdownParser,
+): OrderedListRecoverySource | undefined {
+  const normalized = raw.replace(/\r\n?/g, "\n");
+  const firstLineEnd = normalized.indexOf("\n");
+  const firstLine = normalized.slice(0, firstLineEnd < 0 ? normalized.length : firstLineEnd);
+  const parent = /^([ \t]*)(\d{1,9})([.)])(?=[ \t]+|$)([ \t]*)/.exec(firstLine);
+  if (!parent) return undefined;
+
+  const parentColumn = indentationColumn(parent[1]!);
+  const markerEnd = parentColumn + parent[2]!.length + parent[3]!.length;
+  const padding = indentationColumn(parent[4] ?? "", markerEnd) - markerEnd;
+  const contentColumn = markerEnd + (padding >= 1 && padding <= 4 ? padding : 1);
+  const sublistEdits: OrderedListRecoveryEdit[] = [];
+  const siblingEdits: OrderedListRecoveryEdit[] = [];
+  let regionEnd = firstLineEnd < 0 ? normalized.length : firstLineEnd;
+  let lineFrom = firstLineEnd < 0 ? normalized.length : firstLineEnd + 1;
+
+  while (lineFrom < normalized.length) {
+    const nextLineEnd = normalized.indexOf("\n", lineFrom);
+    const lineTo = nextLineEnd < 0 ? normalized.length : nextLineEnd;
+    const line = normalized.slice(lineFrom, lineTo);
+    if (line.trim() === "" || isListRecoveryBlockBoundary(line)) break;
+
+    const bullet = /^([ \t]*)([-+*])(?=[ \t]+|$)/.exec(line);
+    if (bullet) {
+      const bulletColumn = indentationColumn(bullet[1]!);
+      if (bulletColumn > parentColumn && bulletColumn < contentColumn) {
+        const markerFrom = lineFrom + bullet[1]!.length;
+        sublistEdits.push({
+          from: markerFrom,
+          to: markerFrom,
+          replacement: " ".repeat(contentColumn - bulletColumn),
+          kind: "sublist",
+        });
+      }
+    } else {
+      const sibling = /^([ \t]*)(\d{1,9})([.)])(?=[ \t]+|$)/.exec(line);
+      if (
+        sibling &&
+        sibling[3] === parent[3] &&
+        indentationColumn(sibling[1]!) === parentColumn &&
+        Number.parseInt(sibling[2]!, 10) > 1
+      ) {
+        const markerFrom = lineFrom + sibling[1]!.length;
+        siblingEdits.push({
+          from: markerFrom,
+          to: markerFrom + sibling[2]!.length,
+          replacement: "1",
+          kind: "sibling",
+        });
+      }
+    }
+    regionEnd = lineTo;
+    if (nextLineEnd < 0) break;
+    lineFrom = nextLineEnd + 1;
+  }
+  if (sublistEdits.length === 0) return undefined;
+
+  const regionText = normalized.slice(0, regionEnd);
+  const protectedRanges: Array<{ readonly from: number; readonly to: number }> = [];
+  const collectProtectedRanges = (node: SyntaxNode): void => {
+    if (/(?:code|html)/i.test(node.type.name)) protectedRanges.push({ from: node.from, to: node.to });
+    for (let child = node.firstChild; child; child = child.nextSibling) collectProtectedRanges(child);
+  };
+  collectProtectedRanges(parser.parse(regionText).topNode);
+  const edits = [...sublistEdits, ...siblingEdits]
+    .filter((edit) => !protectedRanges.some((range) => range.from <= edit.from && edit.from < range.to))
+    .sort((left, right) => left.from - right.from);
+  if (!edits.some((edit) => edit.kind === "sublist")) return undefined;
+
+  const normalizedSourcePositions: number[] = [];
+  for (let offset = 0; offset < raw.length; offset += 1) {
+    normalizedSourcePositions.push(sourceStart + offset);
+    if (raw[offset] === "\r" && raw[offset + 1] === "\n") offset += 1;
+  }
+  const sourceLength = normalizedSourcePositions[regionEnd] === undefined
+    ? raw.length
+    : normalizedSourcePositions[regionEnd]! - sourceStart;
+  const sourcePositions = normalizedSourcePositions.slice(0, regionEnd);
+  const transformedCharacters: string[] = [];
+  const transformedPositions: number[] = [];
+  const appendOriginal = (from: number, to: number): void => {
+    transformedCharacters.push(regionText.slice(from, to));
+    for (let offset = from; offset < to; offset += 1) transformedPositions.push(sourcePositions[offset]!);
+  };
+  const appendReplacement = (replacement: string, sourceOffset: number): void => {
+    transformedCharacters.push(replacement);
+    const mappedOffset = sourcePositions[sourceOffset] ?? sourceStart;
+    for (let offset = 0; offset < replacement.length; offset += 1) transformedPositions.push(mappedOffset);
+  };
+  let cursor = 0;
+  for (const edit of edits) {
+    appendOriginal(cursor, edit.from);
+    appendReplacement(edit.replacement, edit.from);
+    cursor = edit.to;
+  }
+  appendOriginal(cursor, regionText.length);
+  const text = transformedCharacters.join("");
+  if (text === regionText) return undefined;
+  return { raw: raw.slice(0, sourceLength), text, sourceLength, positions: transformedPositions };
+}
 
 function rootBlockSourceFrom(block: Block): number {
   return block.payload.range?.from ?? Number.POSITIVE_INFINITY;
@@ -5464,6 +5596,7 @@ export class MarkdownEngine {
       const cursor = tree.cursor();
       const footnotesEnabled = this.documentPluginRegistry.getAll().some((plugin) => plugin.name === "footnotes");
       let hasRecognizedNodes = false;
+      let skipRecoveredListUntil = -1;
       const reusableBlockMap =
         options.firstChangedPos !== undefined && options.previousBlocks
           ? new Map(options.previousBlocks.map((block) => [`${block.payload.range?.from ?? -1}:${block.payload.range?.to ?? -1}`, block]))
@@ -5474,12 +5607,85 @@ export class MarkdownEngine {
 
       if (cursor.firstChild()) {
         do {
+          if (cursor.from < skipRecoveredListUntil) continue;
           const nodeType = cursor.type.name;
           let from = cursor.from;
           const to = cursor.to;
           if (nodeType === "CodeBlock") from = sourceLineStart(content, from);
           const globalFrom = from + sourceOffset;
           const globalTo = to + sourceOffset;
+          if (this.listIndentationRecoveryEnabled && nodeType === "OrderedList") {
+            const localStart = sourceLineStart(content, from);
+            const sourceStart = sourceOffset + localStart;
+            const recovery = recoverOrderedListSource(
+              readSourceRange(content, localStart, content.length),
+              sourceStart,
+              this.mdParser,
+            );
+            if (recovery) {
+              const recoveryInput = new NativeMarkdownInput(recovery.text);
+              const recoveryTree = recoveryInput.parse(this.mdParser);
+              const recoveryRoot = recoveryTree.topNode.firstChild;
+              if (recoveryRoot?.type.name === "OrderedList" && !recoveryRoot.nextSibling) {
+                const recoveredFrom = sourceStart;
+                const recoveredTo = recoveredFrom + recovery.sourceLength;
+                let recoveredBlock: Block | null = null;
+                if (reusableBlockMap && recoveredTo <= options.firstChangedPos!) {
+                  const previous = reusableBlockMap.get(`${recoveredFrom}:${recoveredTo}`);
+                  if (previous?.isFinalized && previous.type === "list") {
+                    recoveredBlock = cloneReusableBlocks ? cloneBlock(previous) : previous;
+                  }
+                }
+                if (!recoveredBlock) {
+                  recoveredBlock = await this.createBlock(
+                    "list",
+                    recovery.raw,
+                    recoveredFrom,
+                    recoveredTo,
+                    content,
+                    options,
+                    "OrderedList",
+                  );
+                  if (recoveredBlock) {
+                    const source = this.sourceDocument.snapshot();
+                    const mapOffset = (offset: number): number => {
+                      if (offset <= 0) return recovery.positions[0] ?? recoveredFrom;
+                      if (offset >= recovery.positions.length) return recoveredTo;
+                      return recovery.positions[offset]!;
+                    };
+                    const mapping: NativeSourceMapping & {
+                      readonly presentationInput: typeof recoveryInput;
+                      readonly markListIndentationRecoveryContent: false;
+                    } = {
+                      input: recoveryInput,
+                      source,
+                      mapOffset,
+                      mapRange: (rangeFrom, rangeTo) => ({
+                        from: mapOffset(rangeFrom),
+                        to: mapOffset(rangeTo),
+                      }),
+                      presentationInput: recoveryInput,
+                      markListIndentationRecoveryContent: false,
+                    };
+                    this.retireNativeContainer(recoveredBlock);
+                    await this.prepareNestedChildren(
+                      recoveredBlock,
+                      options,
+                      [],
+                      undefined,
+                      { node: recoveryRoot, mapping },
+                    );
+                  }
+                }
+                if (recoveredBlock) {
+                  extracted.push(recoveredBlock);
+                  hasRecognizedNodes = true;
+                  skipRecoveredListUntil = localStart + recovery.sourceLength;
+                  continue;
+                }
+              }
+            }
+          }
           if (nodeType === "FencedCode") {
             const owner = this.rootCodeOwnersByStart.get(globalFrom);
             if (owner) {
@@ -8199,7 +8405,13 @@ export class MarkdownEngine {
       });
     }
   }
-  private async prepareNestedChildren(block: Block, options?: ParseOptions, ancestorTypes: readonly string[] = [], nativeNode?: SyntaxNode): Promise<void> {
+  private async prepareNestedChildren(
+    block: Block,
+    options?: ParseOptions,
+    ancestorTypes: readonly string[] = [],
+    nativeNode?: SyntaxNode,
+    recoveredRoot?: { readonly node: SyntaxNode; readonly mapping: NativeSourceMapping },
+  ): Promise<void> {
     const contentComponents = this.getActiveContentComponents();
     const trustedNativeSource = this.hasTrustedNativeSource(block, nativeNode);
     const containerMeta: NonNullable<Block["payload"]["meta"]> = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
@@ -8220,7 +8432,17 @@ export class MarkdownEngine {
       this.retireNativeContainer(block);
       block.payload.raw = containerSource;
     }
-    const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text, this.inlineContext(block, ancestorTypes)).inline);
+    const streamingInline = (text: string) => this.parseInlineStreaming(text, this.inlineContext(block, ancestorTypes)).inline;
+    const prepared = recoveredRoot
+      ? prepareNestedBlockSnapshotFromNative(
+          block,
+          recoveredRoot.node,
+          recoveredRoot.mapping,
+          this.inlineParser,
+          this.mdParser,
+          undefined,
+        )
+      : prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, streamingInline);
     const listItemSources = collectNestedListItemInlineSources(
       block,
       this.mdParser,
