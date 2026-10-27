@@ -14,6 +14,7 @@ import {
   type ParagraphSpanUpdate,
   type ParagraphSpanChildSnapshot,
   type SourceSnapshot,
+  findUnmatchedBareAnchorOffsets,
 } from "@stream-mdx/core";
 import type { NativeParagraphTailChange } from "./native-paragraph-tail";
 import {
@@ -793,6 +794,41 @@ export class RootParagraphSourceOwner {
       updates: Object.freeze(appliedUpdates),
     });
   }
+  refreshPreparedMeaning(
+    source: SourceSnapshot,
+    globallyUnmatchedBareAnchorOffsets: ReadonlySet<number>,
+    cause = "paragraph_document_context",
+  ): ParagraphSemanticChange | null {
+    if (!this.prepareSpanChildren) return null;
+    const updates: PreparedParagraphSpanUpdate[] = [];
+    for (const span of this.spanIndex.materialize()) {
+      const sourceText = this.readParagraphSourceText(source, span.sourceRange.from, span.sourceRange.to);
+      const newlyMatched = findUnmatchedBareAnchorOffsets(sourceText.text).some((offset) =>
+        !globallyUnmatchedBareAnchorOffsets.has(sourceText.sourceRange.from + offset),
+      );
+      if (!newlyMatched) continue;
+      const draft: ParagraphDraft = {
+        index: span.index,
+        from: span.sourceRange.from,
+        to: span.sourceRange.to,
+        sourceRevision: span.sourceRevision,
+        isProvisional: span.isProvisional,
+        nodes: span.nodes,
+        attemptedReferences: span.attemptedReferences,
+        sourceText,
+      };
+      const refreshed = this.createSpanRecord(draft, source, this.sourceTextReader, true);
+      updates.push({
+        index: span.index,
+        expectedSourceRevision: span.sourceRevision,
+        nodes: refreshed.nodes,
+        ...(refreshed.children ? { children: refreshed.children } : {}),
+        attemptedReferences: refreshed.attemptedReferences,
+      });
+    }
+    return this.applyPreparedSpanUpdates(updates, cause);
+  }
+
 
   private createSpanRecord(
     draft: ParagraphDraft,

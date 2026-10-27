@@ -412,6 +412,10 @@ function splitByTagSegments(
     const matchText = match[0];
     const tagNameLower = tagName.toLowerCase();
     const isSelfClosing = matchText.endsWith("/>") || isVoidHtmlTag(tagNameLower);
+    const matchedBareAnchorOpening =
+      tagNameLower === "a" &&
+      /^<a\s*\/?\s*>$/i.test(matchText) &&
+      options?.matchedBareAnchorOffsets?.has(start) === true;
     const mdxCandidate = isLikelyMdxComponent(tagName);
     const mdxAllowed = mdxCandidate && (!mdxAllowlist || mdxAllowlist.has(tagName));
     if (mdxCandidate && mdxAllowlist && !mdxAllowed) {
@@ -443,6 +447,24 @@ function splitByTagSegments(
       const closingIndex = findClosingHtmlTag(lowerSource, tagNameLower, end);
       if (closingIndex !== -1) {
         end = closingIndex;
+      } else if (matchedBareAnchorOpening) {
+        if (start > cursor) {
+          const absoluteFrom = baseIsFinite ? (baseOffset as number) + cursor : undefined;
+          const absoluteTo = baseIsFinite ? (baseOffset as number) + start : undefined;
+          pushTextSegment(segments, source.slice(cursor, start), absoluteFrom, absoluteTo, parseInline, baseLookaheadContext);
+        }
+        const segment: MixedContentSegment = {
+          kind: "html",
+          value: matchText,
+          range: createSegmentRange(baseOffset, start, end),
+          sanitized: sanitizeHtmlInWorker(matchText, sanitizeOptions),
+        };
+        setSegmentRange(segment, createSegmentRange(baseOffset, start, end));
+        segments.push(segment);
+        cursor = end;
+        tagPattern.lastIndex = end;
+        match = tagPattern.exec(source);
+        continue;
       } else if (mdxAllowed) {
         if (!mdxAutoClose) {
           // Without MDX auto-close, avoid emitting a synthetic segment for an unclosed tag.

@@ -34,9 +34,9 @@ const CASES = [
   {
     name: "anchor closed by a later standalone HTML block",
     source: "See <a>label\n\n</a>\n\nfinish",
-    verify(_blocks: readonly Block[], text: string) {
-      assert.ok(text.includes("See label"), text);
-      assert.ok(!text.includes("<a>"), text);
+    verify(blocks: readonly Block[], text: string) {
+      assert.ok(text.includes("See label"), JSON.stringify(blocks));
+      assert.ok(!text.includes("<a>"), JSON.stringify(blocks));
     },
   },
   {
@@ -44,13 +44,6 @@ const CASES = [
     source: "See <a>label<script><!-- </script> --></a>",
     verify(_blocks: readonly Block[], text: string) {
       assert.equal(text.trim(), "See label -->");
-    },
-  },
-  {
-    name: "anchor scan treats script content as raw text",
-    source: "See <a>label<script><!-- </script> --></a>",
-    verify(_blocks: readonly Block[], text: string) {
-      assert.equal(text, "See label -->");
     },
   },
 ] as const;

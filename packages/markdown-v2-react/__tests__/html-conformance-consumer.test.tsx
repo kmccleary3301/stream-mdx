@@ -342,7 +342,7 @@ for (const token of ["<A>", "<a>", "<a >", "<a/>", "<A/>", "<a />"]) {
 for (const closing of ["</a>  ", "<div>more</div>\n</a>"]) {
   const source = `See <a>label\n\n${closing}\n\nfinish`;
   for (const document of await staticAndStreamDocuments(source, unmatchedAnchorHtml)) {
-    assert.equal(document.querySelector("p")?.textContent, "See <a>label");
+    assert.equal(document.querySelector("p")?.textContent, "See label");
     assert.equal(document.querySelectorAll("a").length, 0);
   }
 }

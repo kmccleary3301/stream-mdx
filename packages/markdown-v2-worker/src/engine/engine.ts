@@ -6625,7 +6625,10 @@ export class MarkdownEngine {
         if (isFinalized) {
           if (!hasMappedTrustedInlineNodes && !hasMappedRecoveryInlineNodes) {
             if (trustedNativePath && trustedInlineSourcePositions === undefined) {
-              block.payload.inline = this.inlineParser.parse(rawParagraph, { sourceOffset: baseOffset });
+              block.payload.inline = this.inlineParser.parse(rawParagraph, {
+                sourceOffset: baseOffset,
+                ...(matchedBareAnchorOffsets ? { matchedBareAnchorOffsets } : {}),
+              });
             } else if (trustedNativePath) {
               block.payload.inline = this.inlineParser.parse(trustedInlineSourceText);
             } else {
@@ -10977,6 +10980,27 @@ export class MarkdownEngine {
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
       this.recordParsedProgressPublication(progressPublication);
     }
+    if (
+      this.htmlConfig?.mode !== "literal" &&
+      this.htmlConfig?.unmatchedAnchors === "literal-bare" &&
+      this.rootParagraphOwnersByStart.size > 0
+    ) {
+      const source = this.sourceDocument.snapshot();
+      const globallyUnmatchedBareAnchors = new Set(
+        findUnmatchedBareAnchorOffsets(source.read(0, sourceLength)),
+      );
+      const semanticPatches: Patch[] = [];
+      for (const owner of this.rootParagraphOwnersByStart.values()) {
+        const change = owner.refreshPreparedMeaning(source, globallyUnmatchedBareAnchors);
+        if (!change) continue;
+        this.publishParagraphLinkReferences(owner);
+        const patch = rootParagraphSemanticPatch(owner, change);
+        if (patch && this.emittedRootParagraphIds.has(owner.id)) semanticPatches.push(patch);
+        this.refreshPendingRootParagraphOwner(owner);
+      }
+      if (semanticPatches.length > 0) this.dispatchPatchBatch(semanticPatches, metricsCollector);
+    }
+
 
     const incompleteContainerPatches: Patch[] = [];
     for (const block of this.blocks) {
