@@ -57,7 +57,7 @@
   - `htmlElements` → `components["html:<tag>"]`, applied after HTML admission and sanitization.
   - `tableElements` → `components.table` and the table part keys.
   - `codeRenderers` → `components.code`; route by `metadata.language` and return the prepared `children` for other languages.
-  - `mathRenderer` → `components["inline:math"]` / `components.math` for presentation.
+  - `mathRenderer` → `components["inline:math"]` for inline and display math presentation; use `engines.math` for TeX rendering.
   - `mdxComponents` → `contentComponents` for restricted source components, and the explicit trusted MDX engine provider for trusted MDX.
 
   `ComponentRegistry` now takes a single options object.

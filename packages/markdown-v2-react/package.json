@@ -112,6 +112,7 @@
   "scripts": {
     "build": "npm run clean && tsup",
     "test": "tsx ../../scripts/run-tests.ts __tests__",
+    "typecheck": "tsc --noEmit -p tsconfig.type-tests.json",
     "clean": "rm -rf dist",
     "prepack": "npm run build"
   },

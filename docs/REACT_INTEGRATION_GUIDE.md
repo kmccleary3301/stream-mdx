@@ -595,7 +595,7 @@ export function MathJaxArticle({ content }: { content: string }) {
   );
 }
 ```
-`components["inline:math"]` remains a separate presentation layer for wrapping or replacing the view; its children are already the engine output.
+Both inline and display math use the `components["inline:math"]` presentation layer to wrap or replace the view; its children are already the engine output.
 
 ### Customize Inline Presentations
 
