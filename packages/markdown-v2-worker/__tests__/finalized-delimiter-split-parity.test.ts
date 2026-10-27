@@ -35,7 +35,7 @@ async function assertEverySplit(harness: WorkerHarness, label: string, source: s
 }
 
 const cases = [
-  ["unclosed blockquote strong", "> **Yes, seriously consider it as a spike branch.**\n> **No, do not choose it as the current best mainline plan."],
+  ["unclosed blockquote strong", "> **Yes, keep this as an experiment.**\n> **No, do not ship it as the default."],
   ["strong underscore", "> __bold__ after."],
   ["emphasis star", "> *italic* after."],
   ["emphasis underscore", "> _italic_ after."],

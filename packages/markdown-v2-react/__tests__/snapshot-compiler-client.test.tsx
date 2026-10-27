@@ -119,7 +119,7 @@ async function hostWorkerSnapshotQueueIsSerializedAndBounded(): Promise<void> {
 }
 
 async function nestedQuoteSnapshotUsesManagedParagraphView(): Promise<void> {
-  const text = "> **Yes, seriously consider it as a spike branch.**\n> **No, do not choose it as the current best mainline plan.";
+  const text = "> **Yes, keep this as an experiment.**\n> **No, do not ship it as the default.";
   const compiler = createMarkdownSnapshotCompiler({
     extensions: {
       inline: [nativeBadge("snapshot quote")],
@@ -135,7 +135,7 @@ async function nestedQuoteSnapshotUsesManagedParagraphView(): Promise<void> {
   const paragraph = dom.window.document.querySelector("blockquote > p");
   assert.equal(
     paragraph?.textContent,
-    "Yes, seriously consider it as a spike branch.\n**No, do not choose it as the current best mainline plan.",
+    "Yes, keep this as an experiment.\n**No, do not ship it as the default.",
   );
   dom.window.close();
 }

@@ -47,7 +47,7 @@ async function renderDocument(source: string): Promise<Document> {
 }
 
 const listDocument = await renderDocument(
-  '- **"From <A/>"** appears in the header.\n\n- **Tests:** cover inheritance.\n\nThe deferred move continues on B.\n\nSee <a href="https://example.com">the link</a>.',
+  '- **"Using <A/>"** appears in the header.\n\n- **Tests:** cover inheritance.\n\nThe remaining work continues later.\n\nSee <a href="https://example.com">the link</a>.',
 );
 const pairedParagraphTexts: Array<string | undefined> = [];
 for (const closing of ["</a>  ", "<div>more</div>\n</a>"]) {
@@ -64,7 +64,7 @@ assert.deepStrictEqual(
     scriptParagraphText,
   },
   {
-    firstStrong: '"From <A/>"',
+    firstStrong: '"Using <A/>"',
     pairedParagraphTexts: ["See label", "See label"],
     scriptParagraphText: "See label -->",
   },

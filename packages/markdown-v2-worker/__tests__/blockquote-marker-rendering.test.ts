@@ -7,11 +7,11 @@ import { createRendererStore } from "../../markdown-v2-react/src/renderer/store"
 import { MarkdownBlocksRenderer } from "../../markdown-v2-react/src/server";
 import { createWorkerHarness, type WorkerHarness } from "./worker-test-harness";
 
-const repro = "> **Yes, seriously consider it as a spike branch.**\n> **No, do not choose it as the current best mainline plan.";
+const repro = "> **Yes, keep this as an experiment.**\n> **No, do not ship it as the default.";
 const closedStrongRepro = `${repro}**`;
-const lazyContinuation = "> **Yes, seriously consider it as a spike branch.**\n**No, do not choose it as the current best mainline plan.**";
-const expectedText = "Yes, seriously consider it as a spike branch.\n**No, do not choose it as the current best mainline plan.";
-const expectedClosedText = "Yes, seriously consider it as a spike branch.\nNo, do not choose it as the current best mainline plan.";
+const lazyContinuation = "> **Yes, keep this as an experiment.**\n**No, do not ship it as the default.**";
+const expectedText = "Yes, keep this as an experiment.\n**No, do not ship it as the default.";
+const expectedClosedText = "Yes, keep this as an experiment.\nNo, do not ship it as the default.";
 
 async function render(harness: WorkerHarness, chunks: readonly string[], selector = "blockquote > p"): Promise<string> {
   const store = createRendererStore();
