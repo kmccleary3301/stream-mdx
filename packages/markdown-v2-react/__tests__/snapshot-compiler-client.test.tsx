@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
+import { flushSync } from "react-dom";
 import { JSDOM } from "jsdom";
 import type { InlineExtension, InlineNode } from "@stream-mdx/core";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
@@ -76,11 +77,13 @@ async function extensionAwareSnapshotCompilesAndRendersOnClient(): Promise<void>
   assert.ok(container);
   const root = createRoot(container);
   try {
-    await act(async () => {
-      root.render(React.createElement(MarkdownBlocksRenderer, {
-        blocks: snapshot.blocks,
-        components: presentations,
-      }));
+    act(() => {
+      flushSync(() => {
+        root.render(React.createElement(MarkdownBlocksRenderer, {
+          blocks: snapshot.blocks,
+          components: presentations,
+        }));
+      });
     });
     assert.equal(container.querySelector("mark[data-rendered-from-snapshot='true']")?.textContent, "stored snapshot");
   } finally {
