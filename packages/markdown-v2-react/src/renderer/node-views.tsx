@@ -1,8 +1,14 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
-import { normalizeBlockquoteText, PATCH_ROOT_ID, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
+import { normalizeBlockquoteText, PATCH_ROOT_ID, type Block, type BlockResolvedLinkReference, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TrustedMdxFlowChildSpan, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
-import type { CodeNodeHandle, TableNodeHandle } from "@stream-mdx/core";
+import type {
+  CodeBlockMetadata,
+  CodeNodeHandle,
+  ManagedParagraphViewState,
+  ManagedTableViewState,
+  TableNodeHandle,
+} from "@stream-mdx/core";
 import type { HeadlessNodeViewProps, InlineComponents, NodeHandle, NodePresentationKey, NodeViewActions, NodeViewMetadata, PresentationProps, TableElements } from "../types";
 import {
   TableControlsBar,
@@ -41,7 +47,7 @@ import {
 } from "../trusted-mdx-contract";
 import { captureNodeSourceGuard, getStoreResetVersion } from "./store-reset-version";
 import { NativeCodeViewContext } from "./code-highlight-context";
-import { mergeNodePresentationProps, renderTablePartPresentation, type NativeTablePartPresentationKey } from "./node-presentations";
+import { mergeNodePresentationProps, renderPresentedNode, renderTablePartPresentation, resolveNodePresentationProps, type NativeTablePartPresentationKey } from "./node-presentations";
 import { NodeViewRenderContext, type NodeViewHandle } from "./node-view-context";
 
 const HeadlessNativeCodeView: React.FC<{
@@ -119,6 +125,106 @@ function applyNativePresentationProps(
   );
 }
 
+function readBlockPresentation(block: Block | undefined): { name: string; attrs: Readonly<Record<string, string>> } | undefined {
+  const candidate: unknown = block?.payload.meta?.presentation;
+  if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) return undefined;
+  const presentation = candidate as Record<string, unknown>;
+  const name = presentation.name;
+  const rawAttrs = presentation.attrs;
+  if (typeof name !== "string" || !/^[A-Za-z][A-Za-z0-9_.-]*$/.test(name)) return undefined;
+  if (rawAttrs === null || typeof rawAttrs !== "object" || Array.isArray(rawAttrs)) return undefined;
+  const attrs: Record<string, string> = {};
+  for (const [key, value] of Object.entries(rawAttrs)) {
+    if (typeof value !== "string") return undefined;
+    attrs[key] = value;
+  }
+  return { name, attrs: Object.freeze(attrs) };
+}
+
+function createBlockViewMetadata(
+  block: Block | undefined,
+  store: RendererStore,
+  id: string,
+  type: NodePresentationKey,
+  codeMetadata?: CodeBlockMetadata,
+  tableState?: ManagedTableViewState,
+  paragraphState?: ManagedParagraphViewState,
+): NodeViewMetadata {
+  const record = store.getNode(id);
+  const metadata = block?.payload.meta ?? record?.block?.payload.meta ?? record?.meta;
+  const sourceRange = block?.payload.range ?? record?.range;
+  const rawHeading = block?.payload.raw ?? record?.props.raw;
+  const atxHeading = typeof rawHeading === "string" ? /^ {0,3}(#{1,6})(?:[ \t]|$)/.exec(rawHeading) : null;
+  const setextHeading = typeof rawHeading === "string" ? /(?:^|\r?\n)[ \t]*(=+|-+)[ \t]*$/.exec(rawHeading) : null;
+  const inferredHeadingLevel = atxHeading
+    ? atxHeading[1]!.length
+    : setextHeading
+      ? setextHeading[1]![0] === "=" ? 1 : 2
+      : undefined;
+  const rawHeadingLevel = metadata?.headingLevel ?? record?.props.headingLevel ?? inferredHeadingLevel;
+  const boundedHeadingLevel = typeof rawHeadingLevel === "number" && Number.isInteger(rawHeadingLevel)
+    && rawHeadingLevel >= 1 && rawHeadingLevel <= 6
+    ? rawHeadingLevel as 1 | 2 | 3 | 4 | 5 | 6
+    : block?.type === "heading" ? 1 : undefined;
+  const headingLevel = boundedHeadingLevel;
+  const listRecord = record?.type === "list-item" && record.parentId
+    ? store.getNode(record.parentId)
+    : record;
+  const listMeta = listRecord?.block?.payload.meta ?? listRecord?.meta;
+  const rawOrdered = listMeta?.ordered ?? listRecord?.props.ordered;
+  const ordered = typeof rawOrdered === "boolean" ? rawOrdered : undefined;
+  const rawStart = listMeta?.start ?? listRecord?.props.start;
+  const start = ordered
+    ? typeof rawStart === "number" && Number.isSafeInteger(rawStart) ? rawStart : 1
+    : undefined;
+  let itemCount: number | undefined;
+  if (listRecord?.type === "list") {
+    if (typeof listMeta?.itemCount === "number" && Number.isSafeInteger(listMeta.itemCount)) {
+      itemCount = listMeta.itemCount;
+    } else {
+      itemCount = 0;
+      for (const childId of store.getChildren(listRecord.id)) {
+        if (store.getNode(childId)?.type === "list-item") itemCount += 1;
+      }
+    }
+  }
+  const rawTaskMarkerOffset = metadata?.taskMarkerOffset ?? record?.props.taskMarkerOffset;
+  const taskMarkerOffset = typeof rawTaskMarkerOffset === "number" && Number.isSafeInteger(rawTaskMarkerOffset)
+    ? rawTaskMarkerOffset
+    : undefined;
+  const rawCalloutKind = metadata?.calloutKind;
+  const calloutKind = rawCalloutKind === "note" || rawCalloutKind === "tip"
+    || rawCalloutKind === "important" || rawCalloutKind === "warning" || rawCalloutKind === "caution"
+    ? rawCalloutKind
+    : undefined;
+  const rawLinkReferences = paragraphState === undefined
+    ? metadata?.linkReferences
+    : paragraphState.source.linkReferences;
+  const linkReferences = Array.isArray(rawLinkReferences)
+    ? rawLinkReferences as BlockResolvedLinkReference[]
+    : undefined;
+  return Object.freeze({
+    id,
+    type,
+    isFinalized: block?.isFinalized ?? (codeMetadata !== undefined && codeMetadata.state !== "open"),
+    ...(codeMetadata?.language === undefined ? {} : { language: codeMetadata.language }),
+    ...(codeMetadata === undefined ? {} : { lineCount: codeMetadata.lineCount }),
+    ...(tableState === undefined ? {} : {
+      rowCount: tableState.source.rowCount,
+      columnCount: tableState.header.cells.length,
+      align: tableState.header.align,
+    }),
+    ...(linkReferences === undefined ? {} : { linkReferences }),
+    ...(sourceRange === undefined ? {} : { sourceRange: Object.freeze({ ...sourceRange }) }),
+    ...(headingLevel === undefined ? {} : { headingLevel }),
+    ...(ordered === undefined ? {} : { ordered }),
+    ...(start === undefined ? {} : { start }),
+    ...(itemCount === undefined ? {} : { itemCount }),
+    ...(taskMarkerOffset === undefined ? {} : { taskMarkerOffset }),
+    ...(calloutKind === undefined ? {} : { calloutKind }),
+  });
+}
+
 export function renderNodePresentation(
   block: Block | undefined,
   nativeView: React.ReactNode,
@@ -126,14 +232,51 @@ export function renderNodePresentation(
   registry: ComponentRegistry,
   nodeId?: string,
   bypassPresentation = false,
+  presentationType?: NodePresentationKey,
 ): React.ReactNode {
   if (block?.isFinalized) registry.releaseFinalizedBlockAnimations(block.id);
-  const type = (block?.type ?? "code") as NodePresentationKey;
   const id = block?.id ?? nodeId;
   if (id === undefined) return nativeView;
-  const presentation = registry.getNodePresentation(type);
-  if (!presentation || bypassPresentation) return nativeView;
-  if (type === "table" && "view" in presentation && presentation.view) {
+  const record = store.getNode(id);
+  const blockType = block?.type ?? record?.type ?? "code";
+  const type = presentationType ?? blockType as NodePresentationKey;
+  if (bypassPresentation) return nativeView;
+
+  const blockPresentation = readBlockPresentation(block ?? record?.block);
+  if (blockPresentation && store.getChildren(id).length === 0) {
+    const extensionKey = `block-extension:${blockPresentation.name}` as const;
+    const extension = registry.getNodePresentation(extensionKey);
+    if (extension && "view" in extension && extension.view) {
+      const metadata = createBlockViewMetadata(block, store, id, extensionKey);
+      const sourceGuard = captureNodeSourceGuard(store, id);
+      const readSource = () => {
+        sourceGuard();
+        return readAuthoredNodeSource(store, id);
+      };
+      const actions: NodeViewActions = Object.freeze({
+        readSource,
+        copy: async () => copyToClipboard(readSource()),
+        download: () => downloadFile(readSource(), `${blockType}.txt`),
+      });
+      return React.createElement(extension.view, {
+        name: blockPresentation.name,
+        attrs: blockPresentation.attrs,
+        children: nativeView,
+        metadata,
+        actions,
+      });
+    }
+  }
+
+  let presentation = registry.getNodePresentation(type);
+  let resolvedType = type;
+  if (!presentation && (type === "list-item-ordered" || type === "list-item-unordered")) {
+    presentation = registry.getNodePresentation("list-item");
+    if (presentation) resolvedType = "list-item";
+  }
+  if (!presentation) return nativeView;
+
+  if (resolvedType === "table" && "view" in presentation && presentation.view) {
     const handle = store.getTableNodeHandle(id);
     if (!handle) return null;
     const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: TableNodeHandle }>;
@@ -143,7 +286,7 @@ export function renderNodePresentation(
       </NodeViewRenderContext.Provider>
     );
   }
-  if (type === "code" && "view" in presentation && presentation.view) {
+  if (resolvedType === "code" && "view" in presentation && presentation.view) {
     const handle = store.getCodeNodeHandle(id);
     if (!handle) return null;
     const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: CodeNodeHandle }>;
@@ -153,7 +296,7 @@ export function renderNodePresentation(
       </NodeViewRenderContext.Provider>
     );
   }
-  if (type !== "code" && "view" in presentation && presentation.view) {
+  if ("view" in presentation && presentation.view) {
     const handle = store.getNodeHandle(id);
     if (!handle) return null;
     const HeadlessView = presentation.view as React.ComponentType<{ readonly handle: NodeHandle }>;
@@ -163,38 +306,22 @@ export function renderNodePresentation(
       </NodeViewRenderContext.Provider>
     );
   }
-  const children = presentation.props
-    ? applyNativePresentationProps(nativeView, type, presentation.props)
-    : nativeView;
-  if (!("wrapper" in presentation) || !presentation.wrapper) return children;
 
-  const codeHandle = type === "code" ? store.getCodeNodeHandle(id) : undefined;
-  const tableState = type === "table" ? store.getTableBlock(id) : undefined;
-  const paragraphState = type === "paragraph" ? store.getParagraphBlock(id) : undefined;
+  const codeHandle = resolvedType === "code" ? store.getCodeNodeHandle(id) : undefined;
+  const tableState = resolvedType === "table" ? store.getTableBlock(id) : undefined;
+  const paragraphState = resolvedType === "paragraph" ? store.getParagraphBlock(id) : undefined;
   const codeMetadata = codeHandle?.readMetadata();
   const tableSourceOwner = tableState
     ? { tableId: id, generation: tableState.source.generation }
     : undefined;
   const sourceGuard = captureNodeSourceGuard(store, id, tableSourceOwner);
-  const blockLanguage = block?.payload.meta?.lang;
-  const language = codeMetadata?.language ??
-    (typeof blockLanguage === "string" ? blockLanguage : undefined);
-  const linkReferences = paragraphState === undefined
-    ? block?.payload.meta?.linkReferences
-    : paragraphState.source.linkReferences;
-  const metadata: NodeViewMetadata = Object.freeze({
-    id,
-    type,
-    isFinalized: block?.isFinalized ?? (codeMetadata !== undefined && codeMetadata.state !== "open"),
-    ...(language === undefined ? {} : { language }),
-    ...(codeMetadata === undefined ? {} : { lineCount: codeMetadata.lineCount }),
-    ...(tableState === undefined ? {} : {
-      rowCount: tableState.source.rowCount,
-      columnCount: tableState.header.cells.length,
-      align: tableState.header.align,
-    }),
-    ...(linkReferences === undefined ? {} : { linkReferences }),
-  });
+  const metadata = createBlockViewMetadata(block, store, id, resolvedType, codeMetadata, tableState, paragraphState);
+  const presentationProps = resolveNodePresentationProps(presentation, metadata);
+  const children = presentationProps
+    ? applyNativePresentationProps(nativeView, resolvedType, presentationProps)
+    : nativeView;
+  if (!("wrapper" in presentation) || !presentation.wrapper) return children;
+
   const readSource = (): string => {
     sourceGuard();
     if (codeHandle) return codeHandle.readSource();
@@ -208,7 +335,7 @@ export function renderNodePresentation(
   const actions: NodeViewActions = Object.freeze({
     readSource,
     copy: async () => copyToClipboard(readSource()),
-    download: () => downloadFile(readSource(), `${type}.txt`),
+    download: () => downloadFile(readSource(), `${resolvedType}.txt`),
   });
   return React.createElement(presentation.wrapper, { children, metadata, actions });
 }
@@ -1489,9 +1616,22 @@ const ListBlockView: React.FC<{
       style: listStyle,
       start: ordered && start !== undefined && start !== 1 ? start : undefined,
     };
+    const listPresentation = registry.getNodePresentation("list");
+    const listPresentationMetadata: NodeViewMetadata = Object.freeze({
+      id: blockId,
+      type: "list",
+      isFinalized: block?.isFinalized ?? false,
+      ordered,
+      ...(ordered ? { start: start ?? 1 } : {}),
+      itemCount: projectionCache.itemCount,
+      ...(block?.payload.range === undefined ? {} : { sourceRange: block.payload.range }),
+    });
+    const resolvedListPresentationProps = listPresentation
+      ? resolveNodePresentationProps(listPresentation, listPresentationMetadata)
+      : undefined;
     const listProps = {
       ...nativeListProps,
-      ...mergeNodePresentationProps(nativeListProps, registry.getNodePresentation("list")?.props),
+      ...mergeNodePresentationProps(nativeListProps, resolvedListPresentationProps),
     } as React.OlHTMLAttributes<HTMLOListElement> & React.HTMLAttributes<HTMLUListElement>;
     const renderElement = () => (
       <Tag {...listProps}>
@@ -1529,6 +1669,48 @@ const ListBlockView: React.FC<{
 );
 
 ListBlockView.displayName = "ListBlockView";
+function renderTaskCheckbox(
+  checked: boolean,
+  block: Block | undefined,
+  store: RendererStore,
+  registry: ComponentRegistry,
+  nodeId: string,
+): React.ReactNode {
+  const nativeView = React.createElement("input", {
+    type: "checkbox",
+    className: "markdown-task-checkbox",
+    checked,
+    readOnly: true,
+    disabled: true,
+    tabIndex: -1,
+  });
+  const presentation = registry.getNodePresentation("task-checkbox");
+  if (!presentation) return nativeView;
+  const metadata = createBlockViewMetadata(block, store, nodeId, "task-checkbox");
+  const sourceGuard = captureNodeSourceGuard(store, nodeId);
+  const readSource = () => {
+    sourceGuard();
+    return readAuthoredNodeSource(store, nodeId);
+  };
+  const actions: NodeViewActions = Object.freeze({
+    readSource,
+    copy: async () => copyToClipboard(readSource()),
+    download: () => downloadFile(readSource(), "list-item.txt"),
+  });
+  const viewProps: HeadlessNodeViewProps<"task-checkbox"> = {
+    checked,
+    markerOffset: metadata.taskMarkerOffset,
+    sourceRange: metadata.sourceRange,
+    metadata,
+    actions,
+  };
+  return renderPresentedNode<"task-checkbox">(presentation, nativeView, {
+    key: nodeId,
+    metadata,
+    actions,
+    viewProps,
+  });
+}
 
 const ListItemView: React.FC<{ store: RendererStore; nodeId: string; index: number }> = React.memo(({ store, nodeId, index }) => {
   const itemLayout = React.useContext(ListItemLayoutContext);
@@ -1735,9 +1917,7 @@ const ListItemView: React.FC<{ store: RendererStore; nodeId: string; index: numb
   const hasPrimaryContent = primaryParagraphId !== undefined || isTask || segmentChildIds.length > 0 || inline.length > 0;
   const primaryChildren = (
     <>
-      {isTask ? (
-        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} />
-      ) : null}
+      {isTask ? renderTaskCheckbox(isChecked, block, store, registry, nodeId) : null}
       {isTask ? " " : null}
       {primaryContent}
     </>
@@ -1777,17 +1957,28 @@ const ListItemView: React.FC<{ store: RendererStore; nodeId: string; index: numb
       {renderChildren()}
     </li>
   );
+  let renderedItem: React.ReactNode;
   if (!registry.hasElementFilters()) {
-    return renderElement();
+    renderedItem = renderElement();
+  } else {
+    const filtered = registry.filterElement(
+      { tagName: "li", properties: { className: `markdown-list-item${isTask ? " markdown-list-item-task" : ""}` } },
+      { source: "markdown", parentTagName: ordered ? "ol" : "ul" },
+      renderElement,
+      renderChildren,
+    );
+    if (filtered === null || filtered === undefined) return null;
+    renderedItem = React.isValidElement(filtered) ? filtered : <>{filtered}</>;
   }
-  const filtered = registry.filterElement(
-    { tagName: "li", properties: { className: `markdown-list-item${isTask ? " markdown-list-item-task" : ""}` } },
-    { source: "markdown", parentTagName: ordered ? "ol" : "ul" },
-    renderElement,
-    renderChildren,
+  return renderNodePresentation(
+    block,
+    renderedItem,
+    store,
+    registry,
+    nodeId,
+    false,
+    isOrdered ? "list-item-ordered" : "list-item-unordered",
   );
-  if (filtered === null || filtered === undefined) return null;
-  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 
 ListItemView.displayName = "ListItemView";

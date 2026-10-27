@@ -130,6 +130,26 @@ export function Example() {
 Currency-safe math uses the same source-boundary rules before the parser admits a single-dollar span: opening/closing space, tab, or comma boundaries and a closing dollar immediately followed by a digit leave the span as text. A later unescaped `$` can close a skill-shaped token before any host skill-token presentation; for example, `$skillName$` is math when it satisfies those boundaries. Double-dollar display math always follows the math parser.
 Table-row and table-cell presentations accept only `wrapper` and `props`; headless table customization goes through `components.table.view` with `useTableRows`.
 
+Native block `NodeViewMetadata` is bounded and source-safe:
+
+```ts
+interface NodeViewMetadata {
+  readonly sourceRange?: { readonly from: number; readonly to: number };
+  readonly headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
+  readonly ordered?: boolean;
+  readonly start?: number;
+  readonly itemCount?: number;
+  readonly calloutKind?: "note" | "tip" | "important" | "warning" | "caution";
+}
+```
+
+Source offsets are UTF-16 code units. Native `components.heading.props` and other presentation props accept either a static `PresentationProps` object or `(metadata: NodeViewMetadata) => PresentationProps`; use `metadata.headingLevel` to derive an `aria-level` without inspecting React children. Lists dispatch `list`, `list-item-ordered`, `list-item-unordered`, and the generic `list-item` fallback.
+
+`components["task-checkbox"]` is an opt-in headless view with `checked: boolean`, `markerOffset?: number`, and `sourceRange?: { from: number; to: number }`, plus `metadata` and source-bound `actions`. The default checkbox remains disabled and read-only; a host view can provide an `onChange` and use `markerOffset` to update authored Markdown.
+
+Block extensions use `BlockMeta.presentation?: { name: string; attrs: Readonly<Record<string, string>> }` and a matching `components["block-extension:<name>"]` headless view. It receives `{ name, attrs, children, metadata, actions }`; `children` are the prepared native block output, and actions are bound to the source node. Mark only validated leaf blocks from a native extension or `DocumentPlugin`.
+
+
 `CodeEngine` has this contract:
 
 ```ts
@@ -305,8 +325,8 @@ The constructor accepts `{ post, extensions?, extensionId? }`. `extensions` has 
 - `mdx`: recognizes component syntax. The default restricted policy renders only registered `contentComponents`; full MDX evaluation requires an explicit `TrustedMdxEngine` with `contentPolicy="trusted-mdx"`. A balanced JSX/MDX component whose native HTML block would be split by blank lines (for example `<SmokeBox>` … `</SmokeBox>`) stays one owning root and remains pending until it closes or the document finalizes.
 - `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).
 - `footnotes`: enables footnote aggregation.
-- `callouts`: enables callout blockquote syntax (disabled by default in the worker).
-- `listIndentation`: opt-in recovery for list items where same-line excess indentation is parsed as code but retains leading whitespace. Recovered content is parsed as paragraph/inline Markdown, including nested content. Fenced code, below-marker indented code, and same-line code without excess indentation remain code. Defaults to `false`; React uses `features.listIndentation`, and direct worker initialization uses `docPlugins.listIndentation`.
+- `callouts`: disabled by default; `true` enables the existing generic callouts, while `"github-alerts"` recognizes case-insensitive own-line `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, and `[!CAUTION]` markers on blockquotes. The marker line is removed and `NodeViewMetadata.calloutKind` identifies the alert. Same-line text and unknown markers remain ordinary quotes.
+- `listIndentation`: opt-in recovery for list items where same-line excess indentation is parsed as code but retains leading whitespace. Recovered content is parsed as paragraph/inline Markdown, including nested content. Fenced code, below-marker indented code, and same-line code without excess indentation remain code. Defaults to `false`; React uses `features.listIndentation`, and direct worker initialization uses `docPlugins.listIndentation.
 - `formatAnticipation`: (opt-in) withholds formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`). Final output is unchanged.
 - `codeHighlighting`: controls Shiki strategy for fenced code blocks:
   - `"final"` (default): highlight only after the block finalizes.
@@ -584,15 +604,20 @@ import { STREAM_MDX_ANIMATION_CSS, StreamingMarkdown } from "@stream-mdx/react";
     sep: "word",         // "word" | "char"
     stagger: 20,         // Delay between successive tokens (ms)
     maxBacklogMs: 320,   // Maximum cumulative delay cap (ms)
+    scope: "last-block", // "open-blocks" (default) | "last-block"
+    className: "stream-word",
+    animateWhitespace: false,
   }}
 />
 ```
 
+`scope: "last-block"` limits spans to the last open root block. `className` replaces the default `stream-mdx-anim` span class so the host can supply its own keyframes. `animateWhitespace: false` leaves whitespace unwrapped. Animation wrappers preserve the exact rendered text; code, preformatted content, SVG, math, and images are not word-wrapped.
+
 ### Mechanics
 
-- **Streaming only**: Animation applies only while blocks are streaming (non-finalized). Once a block finalizes, or during static / SSR rendering, it outputs plain text without animation wrapper spans.
+- **Streaming only**: Animation applies only while blocks are streaming (non-finalized). `"open-blocks"` animates every open block; `"last-block"` limits spans to the last open root block. Finalized blocks and static / SSR output contain no animation wrappers.
 - **Stable DOM identities**: When enabled, inline text nodes render as keyed `<span>` elements keyed by segment index within the text node. Appending new text updates the DOM incrementally without remounting or re-animating previously rendered words.
-- **CSS variables**: Each newly mounted span receives class `stream-mdx-anim` and CSS variables `--sm-anim-duration`, `--sm-anim-easing`, and `--sm-anim-delay`.
+- **CSS variables**: Each animated segment receives `className` (default `stream-mdx-anim`) and CSS variables `--sm-anim-duration`, `--sm-anim-easing`, and `--sm-anim-delay`. With `animateWhitespace: false`, whitespace remains a plain text node.
 - **Timeline & backlog capping**: Delay is tracked per renderer in an isolated timeline object. If a large burst of text arrives in a single flush, `stagger` compresses so the cascade stays capped within `maxBacklogMs`.
 - **Reduced motion**: `STREAM_MDX_ANIMATION_CSS` includes `@media (prefers-reduced-motion: reduce)` which disables animation automatically.
 ## 3.5) Remark & Rehype Adapter (`@stream-mdx/unified`)

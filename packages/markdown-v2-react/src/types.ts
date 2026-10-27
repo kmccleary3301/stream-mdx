@@ -3,6 +3,7 @@ import type React from "react";
 import type {
   Block,
   BlockResolvedLinkReference,
+  CalloutKind,
   CodeNodeHandle,
   TableNodeHandle,
   CodeHighlightOutputMode,
@@ -20,6 +21,7 @@ import type {
   SoftBreakMode,
   SyntaxExtensionDescriptor,
 } from "@stream-mdx/core";
+export type { CalloutKind } from "@stream-mdx/core";
 import type { FinalizeResult } from "@stream-mdx/protocol";
 import type { ContentComponentsMap } from "./components/content-components";
 import type { TrustedMdxEngine } from "./trusted-mdx-contract";
@@ -185,14 +187,16 @@ export type NativeNodeKey =
   | "hr"
   | "footnotes"
   | "footnote-def"
-  | "callout";
+  | "callout"
+  | "task-checkbox";
 
 export type NodePresentationKey =
   | NativeNodeKey
   | `inline:${string}`
   | `html:${string}`
   | `component:${string}`
-  | `extension:${string}`;
+  | `extension:${string}`
+  | `block-extension:${string}`;
 
 export interface NodeChildRange {
   readonly from: number;
@@ -206,6 +210,13 @@ export interface NodeHandleMetadata {
   readonly revision: number;
   readonly childCount: number;
   readonly isFinalized: boolean;
+  readonly sourceRange?: NodeChildRange;
+  readonly headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
+  readonly ordered?: boolean;
+  readonly start?: number;
+  readonly itemCount?: number;
+  readonly taskMarkerOffset?: number;
+  readonly calloutKind?: CalloutKind;
 }
 
 /** Opaque read-only identity and subscriptions for one node in one document generation. */
@@ -229,6 +240,13 @@ export interface NodeViewMetadata {
   readonly columnCount?: number;
   readonly align?: ReadonlyArray<"left" | "center" | "right" | null>;
   readonly linkReferences?: ReadonlyArray<BlockResolvedLinkReference>;
+  readonly sourceRange?: NodeChildRange;
+  readonly headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
+  readonly ordered?: boolean;
+  readonly start?: number;
+  readonly itemCount?: number;
+  readonly taskMarkerOffset?: number;
+  readonly calloutKind?: CalloutKind;
 }
 
 export interface NodeViewActions {
@@ -260,17 +278,37 @@ export interface HtmlNodeViewProps {
   readonly metadata: NodeViewMetadata;
   readonly actions: NodeViewActions;
 }
+export interface TaskCheckboxNodeViewProps {
+  readonly checked: boolean;
+  readonly markerOffset?: number;
+  readonly sourceRange?: NodeChildRange;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
+export interface BlockExtensionNodeViewProps {
+  readonly name: string;
+  readonly attrs: Readonly<Record<string, string>>;
+  readonly children: React.ReactNode;
+  readonly metadata: NodeViewMetadata;
+  readonly actions: NodeViewActions;
+}
+
 
 export type HeadlessNodeViewProps<K extends NodePresentationKey = NodePresentationKey> =
-  K extends "code"
-    ? { readonly handle: CodeNodeHandle }
-    : K extends "table"
-      ? { readonly handle: TableNodeHandle }
-      : K extends `inline:${string}` | `extension:${string}`
-        ? InlineNodeViewProps
-        : K extends `html:${string}`
-          ? HtmlNodeViewProps
-          : { readonly handle: NodeHandle };
+  K extends `block-extension:${string}`
+    ? BlockExtensionNodeViewProps
+    : K extends "task-checkbox"
+      ? TaskCheckboxNodeViewProps
+      : K extends "code"
+        ? { readonly handle: CodeNodeHandle }
+        : K extends "table"
+          ? { readonly handle: TableNodeHandle }
+          : K extends `inline:${string}` | `extension:${string}`
+            ? InlineNodeViewProps
+            : K extends `html:${string}`
+              ? HtmlNodeViewProps
+              : { readonly handle: NodeHandle };
 
 export interface PresentationProps {
   readonly className?: string;
@@ -289,15 +327,17 @@ type NodePresentationSlots<K extends NodePresentationKey> =
 
 export type NodePresentation<K extends NodePresentationKey = NodePresentationKey> =
   Readonly<{
-    props?: PresentationProps;
+    props?: PresentationProps | ((metadata: NodeViewMetadata) => PresentationProps);
     slots?: NodePresentationSlots<K>;
   }> &
   (
-    [K] extends ["table-row" | "table-cell" | `component:${string}`]
-      ? { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
-      :
-          | { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
-          | { readonly view: React.ComponentType<HeadlessNodeViewProps<K>>; readonly wrapper?: never }
+    [K] extends [`block-extension:${string}`]
+      ? { readonly view: React.ComponentType<BlockExtensionNodeViewProps>; readonly wrapper?: never }
+      : [K] extends ["table-row" | "table-cell" | `component:${string}`]
+        ? { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
+        :
+            | { readonly wrapper?: React.ComponentType<NodeViewProps>; readonly view?: never }
+            | { readonly view: React.ComponentType<HeadlessNodeViewProps<K>>; readonly wrapper?: never }
   );
 
 export type NodePresentations = Partial<{
@@ -355,7 +395,7 @@ export interface RendererConfig extends ElementFilterOptions {
     html?: boolean;
     mdx?: boolean;
     tables?: boolean;
-    callouts?: boolean;
+    callouts?: boolean | "github-alerts";
     math?: boolean;
     softBreaks?: SoftBreakMode;
     formatAnticipation?: FormatAnticipationConfig;
@@ -429,6 +469,9 @@ export interface AnimatedOptions {
   sep?: "word" | "char";
   stagger?: number;
   maxBacklogMs?: number;
+  scope?: "open-blocks" | "last-block";
+  className?: string;
+  animateWhitespace?: boolean;
 }
 
 export type AnimatedProp = boolean | AnimatedOptions;

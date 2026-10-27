@@ -193,6 +193,19 @@ function samePlainConfig(a: unknown, b: unknown): boolean {
 const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry }>(
   ({ store, componentRegistry }) => {
     const blockIds = useRendererChildren(store, PATCH_ROOT_ID);
+    const animated = componentRegistry.getAnimatedOptions();
+    let animationScopeBlockId: string | undefined;
+    if (animated?.scope === "last-block") {
+      for (let index = blockIds.length - 1; index >= 0; index -= 1) {
+        const candidateId = blockIds[index];
+        const candidate = store.getNode(candidateId)?.block;
+        if (candidate && !candidate.isFinalized) {
+          animationScopeBlockId = candidateId;
+          break;
+        }
+      }
+    }
+    componentRegistry.setAnimationScopeBlockId(animationScopeBlockId);
     return React.createElement(
       React.Fragment,
       null,

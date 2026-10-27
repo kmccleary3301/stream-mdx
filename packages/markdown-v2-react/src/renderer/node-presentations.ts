@@ -23,19 +23,21 @@ export function renderPresentedNode<K extends NodePresentationKey>(
   applyPresentationPropsToCustomElements = false,
 ): React.ReactNode {
   if (!presentation) return nativeView;
+  const presentationProps = resolveNodePresentationProps(presentation, context.metadata);
   let prepared = nativeView;
   if (
-    presentation.props &&
+    presentationProps &&
     React.isValidElement<Record<string, unknown>>(prepared) &&
     (typeof prepared.type === "string" || applyPresentationPropsToCustomElements)
   ) {
     prepared = React.cloneElement(
       prepared,
-      mergeNodePresentationProps(prepared.props, presentation.props),
+      mergeNodePresentationProps(prepared.props, presentationProps),
     );
   }
   if ("view" in presentation && presentation.view) {
-    return React.createElement(presentation.view, {
+    const View = presentation.view as React.ComponentType<HeadlessNodeViewProps<K>>;
+    return React.createElement(View, {
       ...context.viewProps,
       key: context.key,
     });
@@ -63,19 +65,20 @@ export function renderTablePartPresentation<K extends NativeTablePartPresentatio
   },
 ): React.ReactNode {
   if (!presentation) return nativeView;
-  let prepared = nativeView;
-  if (presentation.props && React.isValidElement<Record<string, unknown>>(prepared)) {
-    prepared = React.cloneElement(
-      prepared,
-      mergeNodePresentationProps(prepared.props, presentation.props),
-    );
-  }
-  if (!presentation.wrapper) return prepared;
-  const metadata = Object.freeze({
+  const metadata: NodeViewMetadata = Object.freeze({
     id: context.id,
     type: context.type,
     isFinalized: context.isFinalized,
   });
+  const presentationProps = resolveNodePresentationProps(presentation, metadata);
+  let prepared = nativeView;
+  if (presentationProps && React.isValidElement<Record<string, unknown>>(prepared)) {
+    prepared = React.cloneElement(
+      prepared,
+      mergeNodePresentationProps(prepared.props, presentationProps),
+    );
+  }
+  if (!presentation.wrapper) return prepared;
   return React.createElement(presentation.wrapper, {
     key: context.id,
     children: prepared,
@@ -91,6 +94,7 @@ const PRESENTATION_KEY_PATTERNS = [
   /^html:[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)?$/,
   /^component:[A-Za-z][A-Za-z0-9_.-]*$/,
   /^extension:[A-Za-z][A-Za-z0-9_.-]*$/,
+  /^block-extension:[A-Za-z][A-Za-z0-9_.-]*$/,
 ] as const;
 const RESERVED_PRESENTATION_PROPS: Record<string, true> = {
   className: true,
@@ -109,6 +113,17 @@ export function resolveNodePresentation<K extends keyof NodePresentations & stri
   const candidate = (presentations as unknown as Record<string, unknown>)[key];
   validateNodePresentation(key, candidate);
   return candidate as NodePresentations[K];
+}
+export function resolveNodePresentationProps<K extends NodePresentationKey>(
+  presentation: NodePresentation<K>,
+  metadata: NodeViewMetadata,
+): PresentationProps | undefined {
+  const candidate = typeof presentation.props === "function"
+    ? presentation.props(metadata)
+    : presentation.props;
+  if (candidate === undefined) return undefined;
+  validatePresentationProps(metadata.type, candidate);
+  return candidate;
 }
 export function mergeNodePresentationProps(
   nativeProps: Readonly<Record<string, unknown>>,
@@ -164,6 +179,9 @@ function validateNodePresentation(key: string, candidate: unknown): asserts cand
   if (key.startsWith("component:") && presentation.view !== undefined) {
     throw new TypeError(`node presentation for ${key}: headless views are not supported for restricted content components`);
   }
+  if (key.startsWith("block-extension:") && (presentation.view === undefined || presentation.wrapper !== undefined)) {
+    throw new TypeError(`node presentation for ${key} requires a headless view`);
+  }
   if (presentation.wrapper !== undefined && presentation.view !== undefined) {
     throw new TypeError(`node presentation for ${key}: wrapper and view are mutually exclusive`);
   }
@@ -173,7 +191,9 @@ function validateNodePresentation(key: string, candidate: unknown): asserts cand
   if (presentation.view !== undefined && !isComponentType(presentation.view)) {
     throw new TypeError(`node presentation for ${key} has an invalid view`);
   }
-  if (presentation.props !== undefined) validatePresentationProps(key, presentation.props);
+  if (presentation.props !== undefined && typeof presentation.props !== "function") {
+    validatePresentationProps(key, presentation.props);
+  }
   if (presentation.slots !== undefined) validatePresentationSlots(key, presentation.slots);
   for (const property of Object.keys(presentation)) {
     if (property !== "props" && property !== "wrapper" && property !== "view" && property !== "slots") {

@@ -21,7 +21,7 @@ import { getStoreResetVersion } from "./store-reset-version";
 import { useDeferredRender } from "./use-deferred-render";
 import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 import { useVirtualizedCode } from "./virtualized-code";
-import { mergeNodePresentationProps } from "./node-presentations";
+import { mergeNodePresentationProps, resolveNodePresentationProps } from "./node-presentations";
 import type { NodeViewActions, NodeViewMetadata } from "../types";
 
 type CodeBlockViewCounters = {
@@ -385,9 +385,20 @@ export const CodeBlockView: React.FC<{
     ),
     "data-code-window-size": String(virtualization.config.windowSize),
   };
+  const codePresentation = registry.getNodePresentation("code");
+  const codePresentationMetadata: NodeViewMetadata = Object.freeze({
+    id: blockId,
+    type: "code",
+    isFinalized: blockIsFinalized,
+    ...(lang === undefined ? {} : { language: lang }),
+    lineCount,
+    ...(node.block?.payload.range === undefined ? {} : { sourceRange: node.block.payload.range }),
+  });
   const codeFrameProps = mergeNodePresentationProps(
     { className: codeFrameClass, ...codeMetricsAttrs },
-    registry.getNodePresentation("code")?.props,
+    codePresentation
+      ? resolveNodePresentationProps(codePresentation, codePresentationMetadata)
+      : undefined,
   ) as React.HTMLAttributes<HTMLDivElement>;
 
   const useIncrementalRanges = !shouldVirtualize && !registry.hasElementFilters();

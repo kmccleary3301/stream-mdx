@@ -15,6 +15,9 @@ export interface ResolvedAnimatedOptions {
   sep: "word" | "char";
   stagger: number;
   maxBacklogMs: number;
+  scope: "open-blocks" | "last-block";
+  className: string;
+  animateWhitespace: boolean;
 }
 
 export const DEFAULT_ANIMATED_OPTIONS: ResolvedAnimatedOptions = {
@@ -26,6 +29,9 @@ export const DEFAULT_ANIMATED_OPTIONS: ResolvedAnimatedOptions = {
   sep: "word",
   stagger: 20,
   maxBacklogMs: 320,
+  scope: "open-blocks",
+  className: "stream-mdx-anim",
+  animateWhitespace: true,
 };
 
 export function resolveAnimatedOptions(prop: AnimatedProp | undefined): ResolvedAnimatedOptions | null {
@@ -35,13 +41,18 @@ export function resolveAnimatedOptions(prop: AnimatedProp | undefined): Resolved
   const duration = typeof prop.duration === "number" ? prop.duration : DEFAULT_ANIMATED_OPTIONS.duration;
   return {
     animation,
-    animationName: BUILTIN_ANIMATION_NAMES[animation] ?? animation,
+    animationName: prop.className !== undefined && prop.animation === undefined
+      ? ""
+      : BUILTIN_ANIMATION_NAMES[animation] ?? animation,
     duration,
     durationStr: `${duration}ms`,
     easing: prop.easing ?? DEFAULT_ANIMATED_OPTIONS.easing,
     sep: prop.sep ?? DEFAULT_ANIMATED_OPTIONS.sep,
     stagger: typeof prop.stagger === "number" ? prop.stagger : DEFAULT_ANIMATED_OPTIONS.stagger,
     maxBacklogMs: typeof prop.maxBacklogMs === "number" ? prop.maxBacklogMs : DEFAULT_ANIMATED_OPTIONS.maxBacklogMs,
+    scope: prop.scope ?? DEFAULT_ANIMATED_OPTIONS.scope,
+    className: prop.className ?? DEFAULT_ANIMATED_OPTIONS.className,
+    animateWhitespace: prop.animateWhitespace ?? DEFAULT_ANIMATED_OPTIONS.animateWhitespace,
   };
 }
 

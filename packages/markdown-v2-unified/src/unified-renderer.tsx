@@ -7,7 +7,7 @@ import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { defaultUrlTransform, isForbiddenAttribute, type Block, type BlockResolvedLinkReference, type UrlTransform } from "@stream-mdx/core";
-import { ComponentRegistry, createRendererStore, renderNodePresentation, type NodePresentations, type NodeViewProps } from "@stream-mdx/react";
+import { ComponentRegistry, createRendererStore, renderNodePresentation, type NodePresentationKey, type NodeViewProps } from "@stream-mdx/react";
 import type { UnifiedBlockErrorContext, UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
 function sanitizeHastUrls(node: unknown, transform: UrlTransform): void {
@@ -401,10 +401,14 @@ export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): Uni
       />
     );
   };
+  type UnifiedWrapperKey = Exclude<NodePresentationKey, `block-extension:${string}`>;
+  const routedPresentations: Partial<Record<UnifiedWrapperKey, { readonly wrapper: React.FC<NodeViewProps> }>> = {};
+  for (const type of presentationTypes) {
+    if (type.startsWith("block-extension:")) continue;
+    routedPresentations[type as UnifiedWrapperKey] = { wrapper: renderUnifiedBlock };
+  }
   const renderer = {
-    ...Object.fromEntries(
-      presentationTypes.map((type) => [type, { wrapper: renderUnifiedBlock }]),
-    ) as NodePresentations,
+    ...routedPresentations,
     clearCache() {
       cache.clear();
       inflightJobs.clear();

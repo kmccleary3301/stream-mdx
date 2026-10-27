@@ -125,7 +125,7 @@ export class MarkdownWorkerClient {
       html?: boolean;
       mdx?: boolean;
       tables?: boolean;
-      callouts?: boolean;
+      callouts?: boolean | "github-alerts";
       math?: boolean;
       formatAnticipation?: FormatAnticipationConfig;
       codeHighlighting?: CodeHighlightingMode;

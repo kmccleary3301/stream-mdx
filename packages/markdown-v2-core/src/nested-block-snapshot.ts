@@ -549,6 +549,7 @@ function lowerNestedBlockSnapshot(
               sourceContainer: "list",
               ...(primarySourcePositions ? { inlineSourcePositions: primarySourcePositions } : {}),
               ...(recoveredListIndentation ? { listIndentationRecovered: true } : {}),
+              ...(taskMarkerRange ? { taskMarkerOffset: taskMarkerRange.from } : {}),
             },
           },
         };
@@ -566,6 +567,7 @@ function lowerNestedBlockSnapshot(
               text: inlineNodesToPlainText(inline ?? []),
             }),
             raw: itemRaw,
+            ...(taskMarkerRange ? { taskMarkerOffset: taskMarkerRange.from } : {}),
             task: isTask ? true : undefined,
             checked: isTask ? taskValue?.[1]?.toLowerCase() === "x" : undefined,
           },
