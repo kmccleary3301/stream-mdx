@@ -2,4 +2,4 @@
 "@stream-mdx/react": patch
 ---
 
-Honor `codeVirtualization.followTail` when a streaming code window is first created, keeping the live tail visible.
+Keep opt-in code tail-following active while a streamed code owner is refreshed.

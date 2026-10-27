@@ -9,6 +9,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { ComponentRegistry } from "../src/components";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
 import { createRendererStore } from "../src/renderer/store";
+import { useVirtualizedCode } from "../src/renderer/virtualized-code";
 
 async function flushRendererFrame(): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>();
@@ -22,6 +23,50 @@ class ResizeObserverStub {
   observe() {}
   unobserve() {}
   disconnect() {}
+}
+
+function VirtualizedCodeProbe({
+  totalLines,
+  generation,
+  ownerIdentity,
+}: {
+  totalLines: number;
+  generation: number;
+  ownerIdentity: object;
+}) {
+  const virtualization = useVirtualizedCode(
+    totalLines,
+    generation,
+    { enabled: true, windowSize: 20, bufferSize: 5, virtualizeThreshold: 2, followTail: true },
+    "probe-code",
+    0,
+    ownerIdentity,
+  );
+  const rows = virtualization.renderRanges.flatMap((range) =>
+    Array.from({ length: range.endIndex - range.startIndex }, (_, index) => {
+      const lineNumber = range.startIndex + index + 1;
+      return React.createElement(
+        "div",
+        { key: lineNumber, className: "line", "data-line": String(lineNumber) },
+        `probeLine${lineNumber}`,
+      );
+    }),
+  );
+  return React.createElement(
+    "div",
+    { "data-code-block": "true", "data-code-total-lines": String(totalLines) },
+    React.createElement(
+      "div",
+      {
+        ref: virtualization.containerRef,
+        className: "markdown-code-block-container",
+        onScroll: virtualization.handleScroll,
+      },
+      React.createElement("div", { style: { height: `${virtualization.spacerTopHeight}px` }, "aria-hidden": true }),
+      ...rows,
+      React.createElement("div", { style: { height: `${virtualization.spacerBottomHeight}px` }, "aria-hidden": true }),
+    ),
+  );
 }
 
 async function runFencedCodeStreamingPaintTest(): Promise<void> {
@@ -98,6 +143,48 @@ async function runFencedCodeStreamingPaintTest(): Promise<void> {
   };
 
   try {
+    const ownerIdentity = {};
+    const probeRoot = createRoot(container);
+    root.current = probeRoot;
+    try {
+      await act(async () => {
+        probeRoot.render(React.createElement(VirtualizedCodeProbe, { totalLines: 210, generation: 1, ownerIdentity }));
+      });
+      await flushRendererFrame();
+      const probeViewport = container.querySelector<HTMLElement>(".markdown-code-block-container");
+      const probeOwner = container.querySelector<HTMLElement>('[data-code-block="true"]');
+      assert.ok(probeViewport);
+      assert.ok(probeOwner);
+      const priorBottom = probeViewport.scrollHeight - probeViewport.clientHeight;
+      probeOwner.setAttribute("data-code-total-lines", "211");
+      await act(async () => {
+        probeViewport.scrollTop = priorBottom - 170;
+        probeViewport.dispatchEvent(new window.Event("scroll", { bubbles: true }));
+      });
+      await flushRendererFrame();
+      assert.equal(
+        probeViewport.scrollTop,
+        probeViewport.scrollHeight - probeViewport.clientHeight,
+        "content growth must not detach an opt-in code window after a geometry-induced upward scroll",
+      );
+      await act(async () => {
+        probeRoot.render(React.createElement(VirtualizedCodeProbe, { totalLines: 211, generation: 2, ownerIdentity }));
+      });
+      await flushRendererFrame();
+      await flushRendererFrame();
+      assert.equal(
+        probeViewport.scrollTop,
+        probeViewport.scrollHeight - probeViewport.clientHeight,
+        "an opt-in code window should stay at the tail when its source generation changes",
+      );
+      assert.ok(
+        container.querySelector('.line[data-line="211"]'),
+        "the newest row should remain mounted after a streaming owner refresh",
+      );
+    } finally {
+      await act(async () => probeRoot.unmount());
+      root.current = null;
+    }
     await sendUntil({
       type: "INIT",
       schemaVersion: STREAM_MDX_SCHEMA_VERSION,
@@ -114,11 +201,14 @@ async function runFencedCodeStreamingPaintTest(): Promise<void> {
     }, () => store.getNode(PATCH_ROOT_ID) !== undefined);
 
     const initialLines = Array.from({ length: 210 }, (_, index) => `const streamLine${index} = ${index};`);
+    const initialCodePrefix = "const streamLine0";
     await sendUntil(
-      { type: "APPEND", text: `\`\`\`ts\n${initialLines.join("\n")}\n` },
+      { type: "APPEND", text: `\`\`\`ts\n${initialCodePrefix}` },
       () => store.getChildren(PATCH_ROOT_ID).some((id) => store.getCodeBlock(id) !== undefined),
     );
-    const blockId = store.getChildren(PATCH_ROOT_ID).find((id) => store.getCodeBlock(id) !== undefined);
+    const findCodeBlockId = (): string | undefined =>
+      store.getChildren(PATCH_ROOT_ID).find((id) => store.getCodeBlock(id) !== undefined);
+    let blockId = findCodeBlockId();
     assert.ok(blockId, "worker should publish the open fenced code owner");
     assert.equal(store.getCodeBlock(blockId)?.source.state, "open");
 
@@ -129,18 +219,44 @@ async function runFencedCodeStreamingPaintTest(): Promise<void> {
     });
     await flushRendererFrame();
 
-    const viewport = container.querySelector<HTMLElement>(".markdown-code-block-container");
+    const remainingCode = `${initialLines[0].slice(initialCodePrefix.length)}\n${initialLines.slice(1).join("\n")}\n`;
+    await sendUntil({ type: "APPEND", text: remainingCode }, () => {
+      const currentBlockId = findCodeBlockId();
+      return currentBlockId !== undefined && store.getCodeBlock(currentBlockId)?.source.lineCount === 210;
+    });
+    const grownBlockId = findCodeBlockId();
+    assert.ok(grownBlockId, "the open code owner should remain published while growing");
+    blockId = grownBlockId;
+    await act(async () => {
+      root.current?.render(React.createElement(BlockNodeRenderer, { store, blockId, registry }));
+    });
+    await flushRendererFrame();
+
+    let viewport = container.querySelector<HTMLElement>(".markdown-code-block-container");
     assert.ok(viewport, "followTail should retain the virtualized code viewport");
     assert.equal(
       viewport.scrollTop,
       viewport.scrollHeight - viewport.clientHeight,
-      "followTail should place a newly created open code viewport at its bottom",
+      "followTail should keep the growing open code viewport at its tail across an owner refresh",
+    );
+    assert.ok(
+      container.textContent?.includes(initialLines[209]),
+      "the latest line from an owner refresh should be visible in the virtualized window",
     );
     const appendedLine = "const streamLine210 = 210;";
-    await sendUntil({ type: "APPEND", text: `${appendedLine}\n` }, () =>
-      store.getCodeLines(blockId, 210, 211)[0]?.text === appendedLine,
-    );
+    await sendUntil({ type: "APPEND", text: `${appendedLine}\n` }, () => {
+      const currentBlockId = findCodeBlockId();
+      return currentBlockId !== undefined && store.getCodeLines(currentBlockId, 210, 211)[0]?.text === appendedLine;
+    });
+    const appendedBlockId = findCodeBlockId();
+    assert.ok(appendedBlockId);
+    blockId = appendedBlockId;
+    await act(async () => {
+      root.current?.render(React.createElement(BlockNodeRenderer, { store, blockId, registry }));
+    });
     await flushRendererFrame();
+    viewport = container.querySelector<HTMLElement>(".markdown-code-block-container");
+    assert.ok(viewport, "the appended open code block should retain its viewport");
 
     assert.equal(viewport.scrollTop, viewport.scrollHeight - viewport.clientHeight);
     assert.ok(
